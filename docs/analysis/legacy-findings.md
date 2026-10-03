@@ -36,6 +36,7 @@ Line references are to `/usr/share/nginx/html/karir.pkp` as of 2026-10-03. Plan/
 | B7 | Job-alert preference `received_job_alert` is honored in the admin path but not in the recruiter path | `CompanyStoreService.php:181-190` vs `Admin/JobController.php:122` |
 | B8 | Screening-question answers are rendered but never stored (`applied_jobs.answers` exists and is never written) | `job-details.blade.php:731`, `WebsiteController.php:749` |
 | B9 | No notification is sent to the job seeker when a recruiter moves an application to another stage | `HasCompanyApplication.php` |
+| B10 | Job tags are saved by name but the job forms submit tag ids: choosing an existing tag creates a new junk tag named after its id (e.g. "4") with its translations, and the job is linked to that tag instead of the real one. Each job that reuses a tag adds another numeric tag (the production `tags` table holds 30 tags, 15 of them purely numeric). Found by reading the code; not reproduced by running the application | `JobAble.php:843-872` (insert, name lookup at 851) and `874-` (sync); option values in `postjob.blade.php:47`, `pay-per-job.blade.php:57`, `backend/Job/create.blade.php:435` |
 
 ## Architecture and code quality
 
