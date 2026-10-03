@@ -21,11 +21,15 @@ tests:
       alias: db
   variables:
     MARIADB_ROOT_PASSWORD: ci
-    MARIADB_DATABASE: test_jobportal
+    MARIADB_DATABASE: jobportal_v2
+    APP_ENV: testing
+    DB_CONNECTION: mariadb
     DB_HOST: db
     DB_PORT: "3306"
+    DB_DATABASE: jobportal_v2
     DB_USERNAME: root
     DB_PASSWORD: ci
   script:
     - until mysqladmin ping -h db -uroot -pci --silent; do sleep 2; done
+    - php artisan test:database:migrate
     - php artisan test
