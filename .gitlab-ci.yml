@@ -1,0 +1,32 @@
+stages: [quality, test]
+
+default:
+  image: php:8.3-cli
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git unzip default-mysql-client libzip-dev libpng-dev libjpeg-dev >/dev/null
+    - docker-php-ext-install pdo_mysql zip gd bcmath >/dev/null
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install --no-interaction --prefer-dist
+
+lint:
+  stage: quality
+  script:
+    - vendor/bin/pint --test
+    - vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+tests:
+  stage: test
+  services:
+    - name: mariadb:11
+      alias: db
+  variables:
+    MARIADB_ROOT_PASSWORD: ci
+    MARIADB_DATABASE: test_jobportal
+    DB_HOST: db
+    DB_PORT: "3306"
+    DB_USERNAME: root
+    DB_PASSWORD: ci
+  script:
+    - until mysqladmin ping -h db -uroot -pci --silent; do sleep 2; done
+    - mysql -h db -uroot -pci test_jobportal < database/schema/mysql-schema.sql
+    - php artisan test
