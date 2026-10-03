@@ -76,7 +76,17 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 - **Email templates:** defaults in code; admins can override subject and body through the API (allowed variables, preview).
 - **Audit log:** sensitive actions + login (success and failure): data exports, admin actions (settings, moderation, verification, roles),
   company membership changes, account deletion; with who, when, what, object, IP address. Not an audit of all data changes.
-- **Master data:** multilingual (`id`, `en`) stored as one JSON name column per master table.
+  **Retention 12 months** (scheduled purge); readable only through the admin API by admins with a dedicated permission (e.g. `audit_logs.view`).
+- **Master data:** multilingual (`id`, `en`) stored as one JSON name column per master table. Translatable fields everywhere use JSON columns managed with
+  `spatie/laravel-translatable`, used only in Infrastructure Eloquent models (no `*_translations` tables). Slug generated from the `en` name; name search
+  queries the JSON directly. Location names are untranslated proper names.
+- **Primary keys:** every project table has `id` `bigint unsigned` auto-increment; exceptions are the three RBAC pivots (composite key of the Spatie
+  package) and framework tables (default structure).
+- **Contact data** (phone, WhatsApp, address) is not stored on `identity_users`; it belongs to the job seeker and company profiles (Phase 1).
+- **Account deletion:** anonymisation with a 30-day grace period (details in section 6).
+- **Tags and benefits:** tag popularity is computed automatically with an admin override; benefits are global, and companies may propose new ones
+  that an admin approves or rejects.
+- **In-app notifications** are retained 6 months (read or unread), purged by a scheduled job.
 - **Location:** Indonesia only, administrative hierarchy with BPS codes (province, city, subdistrict, village, postal code); no countries list.
   **Work mode** on jobs: `onsite`, `hybrid`, `remote`; location required for onsite/hybrid, optional for remote.
 - **Currency:** Indonesian Rupiah only (no currency column, no conversion).
@@ -87,8 +97,12 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 - **Religion and nationality:** collected, optional, visible to the profile owner and the companies they applied to; **may be used for filters,
   matching and alerts** (the user's choice). Risk reported: religion-based selection; recommended review against data-protection and
   labor law before release (legal details not verified).
-- **Legal documents and FAQ:** versioned terms/privacy, `id`+`en` JSON; user consent is recorded (version, time, user); migrated accounts accept the
-  active version at first login (flow not detailed).
+- **Legal documents and FAQ:** versioned terms/privacy, `id`+`en` JSON, body and FAQ answers written in Markdown (clients render and sanitise);
+  user consent is recorded (version, time, user; the IP address is cleared on anonymisation); migrated accounts accept the active version at first
+  login (flow not detailed).
+- **Public profile URLs:** a unique, changeable slug (not an opaque id), on the job seeker profile and company tables (Phase 1).
+- **Phase 0 column design:** reviewed table by table and **approved by the user on 2026-10-03** for all five contexts (see `phase-0-schema.md`).
+  Nothing exists in the database yet; migrations are written next with per-table confirmation.
 
 ## 5. Delivery decisions
 
@@ -112,7 +126,19 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 
 ## 6. Still open (see also `phase-0-schema.md`)
 
-Public profile URLs (username vs opaque id); account deletion model; tag popularity flag; company-specific benefits; audit-log retention and access;
-matching weights and signals; salary-insight grouping dimensions; rating scale and reporting for reviews; slot rules for bulk interviews and the number
+Phase 0 open questions were all answered on 2026-10-03 (details in `phase-0-schema.md`): public profile URL = unique changeable slug; account deletion =
+anonymisation; tag popularity = automatic with admin override; benefits = global plus company proposals approved by admin; location names untranslated;
+audit log kept 12 months and readable only by admins with a dedicated permission; migration mapping deferred to Phase 1.
+Account anonymisation details (confirmed 2026-10-03): 30-day grace period (`deletion_requested_at`, account deactivated, scheduled job anonymises
+afterwards); email replaced by `anonymized-{id}@anonymized.invalid`; marker is `anonymized_at` only (no `anonymized` status value). Sign-in stays
+rejected during the grace period (the error explains the scheduled deletion); the user cancels through a dedicated endpoint (valid credentials plus
+explicit confirmation), which reactivates the account. The anonymisation also clears the `ip_address` of consent records and deletes the user's social
+accounts, device tokens and notifications.
+
+Phase 0 details deliberately left open (slug rules, anonymisation column and file list, tag list size and refresh, benefit proposal flow, audit-log
+purge, `notifications` index, verification-code lifetime, location data source and master seed values, package compatibility with Laravel 13) are listed
+in `phase-0-schema.md`, section "Details still open".
+
+Still open: matching weights and signals; salary-insight grouping dimensions; rating scale and reporting for reviews; slot rules for bulk interviews and the number
 of reschedule rounds; offer validity and revisions; fixed rejection reasons for document verification; accepted document types and sizes; export columns;
 anti-spam rules for bulk messages beyond the 50-recipient cap; CV template count; reviewer visibility rules (to be confirmed with legal review).

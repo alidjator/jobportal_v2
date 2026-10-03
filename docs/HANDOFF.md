@@ -70,26 +70,54 @@ Useful details:
 | `docs/analysis/benchmark-notes.md` | Verified benchmark facts per platform, with verification level |
 | `docs/analysis/gap-analysis.md` | Flow gaps vs benchmarks with production-schema evidence |
 | `docs/design/decisions.md` | **All confirmed design decisions** (stages, screening, gap scope, foundation, delivery, phases) |
-| `docs/design/phase-0-schema.md` | Draft column-level design of Phase 0 tables (**not yet reviewed by the user**) |
+| `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
 
 Done: step 1 (flow map), step 2 (benchmarks, five platforms), step 3 (gap analysis), scope of every gap, sequencing (five phases, approved),
-Phase 0 concept decisions and the **approved list of Phase 0 tables**.
+Phase 0 concept decisions, the approved list of Phase 0 tables, the seven open schema questions (all answered), and the **column design of all Phase 0
+tables, reviewed table by table and approved by the user** (Identity, Platform, Notification, ReferenceData, Content). `decisions.md` and
+`phase-0-schema.md` are in sync with every decision taken so far.
 
-Not done: user review of the Phase 0 column design; the seven open questions at the end of `phase-0-schema.md`; no migrations, no domain code.
+Key conventions fixed in that review (details in `phase-0-schema.md`): every project table has `id` `bigint unsigned` auto-increment (exceptions: three
+RBAC pivot tables with the Spatie composite key, and framework tables); translatable text is JSON (`id`/`en`) via `spatie/laravel-translatable` in
+Infrastructure models only; account deletion is anonymisation with a 30-day grace period; contact data lives in Phase 1 profiles, not in `identity_users`.
+The section "Details still open" of `phase-0-schema.md` lists what was deliberately left undecided (do not assume those).
+
+Migrations: the **ten Identity migrations are written** (`database/migrations/2026_10_03_000001` to `000010`, one per table, each confirmed with the user) and
+have been run **only against the `test_` tables** (`php artisan test:database:migrate`). The real (non-prefixed) tables have **not** been created
+(`php artisan migrate` was not run). Lessons: MariaDB limits identifiers to 64 characters, so long index names need an explicit name (done for
+`identity_verification_codes` and `identity_terms_acceptances`); DDL is not transactional, so a failed migration leaves a partial table that must be
+dropped by hand before retrying. The two RBAC pivots `admin_roles` and `admin_permissions` also have an extra `(model_id, model_type)` index copied from the
+Spatie structure (not in the approved design; the user was told). The four Platform migrations (`000011` to `000014`) are also written and run against the `test_` tables only; the `updated_by_admin_id` columns have a plain
+index (cross-context convention) and the long index names in `platform_email_template_overrides` are explicit. The Notification (`000015` to `000017`, with the
+`created_at` index inside the `notifications` migration) and ReferenceData (`000018` to `000039`: five location tables with `RESTRICT` foreign keys, 17
+masters) migrations are also written and run against the `test_` tables only, and so are the three Content migrations (`000040` to `000042`). **All 42 Phase 0
+migrations exist and the **real (non-prefixed) tables were created on 2026-10-03 with `php artisan migrate`, on the user's explicit approval** (`jobportal_v2`
+now holds 43 real tables including `migrations`, and 43 `test_` tables; compared column by column, FK count 13 and CHECK count 42 are identical). Tables are empty.
+Not done: seeders (master data, locations, legal documents), no domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
+(test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` is not unique
+(the design did not say so); `min_years`/`max_years`/`rank` are signed smallint as written in the design.
 New files under `docs/` are **uncommitted** (the user has not asked for a commit).
 
 ## 6. Suggested next steps
 
-1. Walk through the seven open questions in `docs/design/phase-0-schema.md`, one at a time (public profile URLs, account deletion model,
-   tag popularity flag, company-specific benefits, location name translation, audit-log retention/access, migration mapping).
-2. Get the user's approval of the Phase 0 column design, then create the migrations for `jobportal_v2` (confirm every table with the user, since the
-   database is shared with the `test_` objects).
-3. Rework the test setup (`test_` prefix, guard) before writing tests; update `phpunit.xml` and CI.
+1. **Test setup rework: DONE (2026-10-03), code not committed.** `phpunit.xml` and `.gitlab-ci.yml` use `jobportal_v2` with `DB_PREFIX=test_`
+   (forced); `config/database.php` reads `DB_PREFIX`; `Src\Shared\Infrastructure\Testing\TestDatabaseGuard` fails closed (prefix must be exactly `test_`,
+   environment `testing`, no `RefreshDatabase`/`DatabaseMigrations`) and is called from `tests/TestCase.php`; `php artisan test:database:migrate`
+   (`MigrateTestDatabaseCommand`) forces the prefix, runs the guard and a plain `migrate` (never `migrate:fresh`); feature tests use
+   `DatabaseTransactions`. Unit tests for the guard and a smoke feature test pass; Pint and PHPStan are clean. **Not yet run:**
+   `php artisan test:database:migrate` itself (it would create `test_migrations` in `jobportal_v2`; run it once the first migration exists).
+2. Write the Phase 0 migrations for `jobportal_v2` from `phase-0-schema.md`, **confirming every table with the user** (the database is shared with the
+   `test_` objects). Write foreign key columns explicitly as `bigint unsigned` (the design document does not spell out their type). Add the
+   `created_at` index on the framework `notifications` table through a separate migration (confirm when writing it).
+3. Verify package compatibility with Laravel 13 when adding `spatie/laravel-translatable` and the Spatie permission package (custom table names, composite
+   pivot keys).
 4. Re-create an architecture document (the old `docs/ARCHITECTURE.md` was deleted because it described the discarded port).
 5. Audit and translate any remaining non-English comments/docs in the repository (the user has asked to be consulted before doing it).
-6. Then start Phase 0 implementation by bounded context: Identity, Platform, Notification, ReferenceData, Content.
+6. Then start Phase 0 implementation by bounded context: Identity, Platform, Notification, ReferenceData, Content. Open details (seed data and the BPS
+   source, verification-code lifetime, purge jobs) are decided when reached, one question at a time.
+7. Commit the `docs/` files only when the user asks.
 
 ## 7. Items waiting for the user
 
@@ -100,5 +128,5 @@ New files under `docs/` are **uncommitted** (the user has not asked for a commit
 
 ## 8. Suggested first message for the new session
 
-> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/decisions.md`, check the memory index, then continue with the open questions
-> of the Phase 0 schema design, one question at a time.
+> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/decisions.md`, check the memory index, then continue with the Phase 0
+> migrations (confirm every table with me, one question at a time).
