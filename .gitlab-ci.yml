@@ -28,5 +28,4 @@ tests:
     DB_PASSWORD: ci
   script:
     - until mysqladmin ping -h db -uroot -pci --silent; do sleep 2; done
-    - mysql -h db -uroot -pci test_jobportal < database/schema/mysql-schema.sql
     - php artisan test
