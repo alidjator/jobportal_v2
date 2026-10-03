@@ -95,7 +95,13 @@ index (cross-context convention) and the long index names in `platform_email_tem
 masters) migrations are also written and run against the `test_` tables only, and so are the three Content migrations (`000040` to `000042`). **All 42 Phase 0
 migrations exist and the **real (non-prefixed) tables were created on 2026-10-03 with `php artisan migrate`, on the user's explicit approval** (`jobportal_v2`
 now holds 43 real tables including `migrations`, and 43 `test_` tables; compared column by column, FK count 13 and CHECK count 42 are identical). Tables are empty.
-Not done: seeders (master data, locations, legal documents), no domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
+**Master seeders (2026-10-03):** 16 seeders under `database/seeders/Reference/` (one per master, on a shared `MasterSeeder` that inserts by slug and never
+overwrites existing rows) plus `ReferenceDataSeeder`, called by `DatabaseSeeder` (190 rows in total). Their values come from the legacy master tables read
+with the user's explicit approval (SELECT only), tidied and approved per master; English/Indonesian names, ranges, kinds and codes not present in the legacy
+data were written for this project and approved by the user. `reference_tags` is deliberately not seeded (the legacy tags are mostly test data; numeric
+names suggest ids stored as names, unverified in the legacy code). Benefits (12), nationalities (25) and part of the languages (25) are our own lists because
+the legacy tables are empty or hold other data. **Not run against the real tables yet** (only against `test_` tables, in tests); `php artisan db:seed` needs the
+user's approval. Not done: location data (BPS source undecided), legal documents and FAQ content, domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
 (test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` is not unique
 (the design did not say so); `min_years`/`max_years`/`rank` are signed smallint as written in the design.
 New files under `docs/` are **uncommitted** (the user has not asked for a commit).
