@@ -6,8 +6,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Seeds the initial values of every reference master that has any. The `reference_tags` table is
- * not seeded on purpose: tags are free keywords created while posting jobs. Location tables are not
- * seeded here either; their data source is decided separately.
+ * not seeded on purpose: tags are free keywords created while posting jobs. The location tables are
+ * seeded by LocationSeeder, which is much larger and called separately.
  */
 class ReferenceDataSeeder extends Seeder
 {

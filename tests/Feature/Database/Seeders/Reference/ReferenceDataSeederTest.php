@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Database\Seeders\Reference;
 
-use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\Reference\ReferenceDataSeeder;
 use Illuminate\Support\Facades\DB;
 use Tests\FeatureTestCase;
 
@@ -27,18 +27,18 @@ final class ReferenceDataSeederTest extends FeatureTestCase
         'reference_benefits' => 12,
     ];
 
-    public function test_the_database_seeder_fills_every_seeded_master(): void
+    public function test_it_fills_every_seeded_master(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(ReferenceDataSeeder::class);
 
         foreach (self::EXPECTED_COUNTS as $table => $count) {
             $this->assertSame($count, DB::table($table)->count(), $table);
         }
     }
 
-    public function test_tags_and_locations_are_not_seeded(): void
+    public function test_tags_and_locations_are_not_part_of_it(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(ReferenceDataSeeder::class);
 
         foreach (['reference_tags', 'reference_provinces', 'reference_cities', 'reference_subdistricts', 'reference_villages', 'reference_postal_codes'] as $table) {
             $this->assertSame(0, DB::table($table)->count(), $table);
@@ -47,8 +47,8 @@ final class ReferenceDataSeederTest extends FeatureTestCase
 
     public function test_seeding_twice_does_not_duplicate_any_row(): void
     {
-        $this->seed(DatabaseSeeder::class);
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(ReferenceDataSeeder::class);
+        $this->seed(ReferenceDataSeeder::class);
 
         foreach (self::EXPECTED_COUNTS as $table => $count) {
             $this->assertSame($count, DB::table($table)->count(), $table);
