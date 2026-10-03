@@ -102,7 +102,12 @@ data were written for this project and approved by the user. `reference_tags` is
 names suggest ids stored as names, unverified in the legacy code). Benefits (12), nationalities (25) and part of the languages (25) are our own lists because
 the legacy tables are empty or hold other data. **Run against the real tables on 2026-10-03 with `php artisan db:seed`, on the user's explicit approval** (the 16 target
 tables were empty beforehand; afterwards they hold the 192 rows, the `test_` tables stay empty, `reference_tags` and the location tables remain empty). The
-seeders are safe to run again (they only add missing slugs). Not done: location data (BPS source undecided), legal documents and FAQ content, domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
+seeders are safe to run again (they only add missing slugs). **Location data (2026-10-03):** `LocationSeeder` loads the BPS administrative hierarchy from five CSV files in `database/data/locations/` (38 provinces,
+514 cities/regencies, 7,285 subdistricts, 83,762 villages, 83,761 postal codes; exported once, SELECT only, from the legacy tables with the user's approval).
+Decisions: names stay upper case as in the BPS source; the KABUPATEN/KOTA prefix moved into `type` (98 city, 416 regency; the two legacy "KAB ..." names read as
+regencies); no coordinates (the legacy tables have none); village 1101012001 has no postal code. It runs after `ReferenceDataSeeder` from `DatabaseSeeder`, and
+was **run against the real tables on 2026-10-03 on the user's explicit approval** (tables were empty; verified counts, no broken chains, `test_` tables
+untouched). Its test loads about 175,000 rows twice, so the whole suite takes about 24 seconds. Not done: legal documents and FAQ content, domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
 (test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` is not unique
 (the design did not say so); `min_years`/`max_years`/`rank` are signed smallint as written in the design.
 New files under `docs/` are **uncommitted** (the user has not asked for a commit).
