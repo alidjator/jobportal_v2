@@ -1,0 +1,1471 @@
+openapi: 3.0.3
+info:
+  title: Job Portal (Karir PKP) API
+  version: 1.0.0
+  description: |
+    REST API Job Portal untuk aplikasi mobile / frontend terpisah.
+
+    **Autentikasi** — Laravel Sanctum (Bearer token). Dapatkan token dari `POST /login`
+    (atau `POST /social-media-authentication`), lalu kirim header `Authorization: Bearer <token>`.
+
+    **Format respons** — sebagian besar endpoint mengembalikan `{ "data": ... }`.
+    Endpoint yang memakai `ApiResponseHelpers` mengembalikan error sebagai `{ "error": "..." }`;
+    validasi gagal mengembalikan HTTP 422 `{ "message": "...", "errors": { field: [..] } }`.
+
+    **Catatan** — dokumen ini disusun dari pembacaan kode (`routes/api.php` dan controller).
+    Struktur objek di dalam `data` (job, kandidat, perusahaan) berasal dari Resource/Service
+    dan hanya digambarkan secara garis besar.
+servers:
+  - url: /api
+    description: Server saat ini (relatif terhadap host)
+tags:
+  - name: Auth
+    description: Login, registrasi, reset password
+  - name: Website
+    description: Konten publik (home, job, kandidat, perusahaan, blog, halaman statis)
+  - name: Attributes
+    description: Data master / referensi
+  - name: Notifications
+    description: Notifikasi dan device token FCM
+  - name: Candidate
+    description: Endpoint untuk user dengan role candidate
+  - name: Company
+    description: Endpoint untuk user dengan role company
+security: []
+paths:
+  # ---------------------------------------------------------------- Auth
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /register:
+    post:
+      tags: [Auth]
+      summary: Registrasi akun candidate atau company
+      description: "`role` selain `candidate` akan dianggap `company`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                role: { type: string, enum: [candidate, company], default: company }
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email, maxLength: 255 }
+                password: { type: string, format: password, minLength: 8 }
+                password_confirmation: { type: string, format: password }
+      responses:
+        '200':
+          description: Registrasi berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+                  message: { type: string, example: Registration Succeeded }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /social-media-authentication:
+    post:
+      tags: [Auth]
+      summary: Login / registrasi via Google atau Facebook (Firebase)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firebaseToken, provider, actionKey]
+              properties:
+                firebaseToken: { type: string, description: Access token dari provider }
+                provider: { type: string, enum: [google, facebook] }
+                actionKey: { type: string, enum: [login, registration] }
+                role: { type: string, enum: [candidate, company], description: Wajib saat actionKey=registration }
+      responses:
+        '200':
+          description: Berhasil (atau pesan `User does not exist` / `Role is missing` di dalam `data.message`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /profile:
+    get:
+      tags: [Auth]
+      summary: Data user yang sedang login
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /user-info:
+    get:
+      tags: [Auth]
+      summary: Validasi token dan ambil info user
+      description: Token opsional di header; tanpa token mengembalikan 401.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /password/email:
+    post:
+      tags: [Auth]
+      summary: Kirim kode reset password ke email
+      description: |
+        `data.code` hanya ikut dikembalikan saat `APP_ENV` = `local` atau `testing`.
+        Di environment lain kode hanya dikirim lewat email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, description: Harus terdaftar }
+      responses:
+        '200':
+          description: Kode dikirim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message: { type: string }
+                      code: { type: integer, example: 123456 }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /password/reset:
+    post:
+      tags: [Auth]
+      summary: Reset password dengan kode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, email, password]
+              properties:
+                code: { type: string }
+                email: { type: string, format: email, maxLength: 100 }
+                password: { type: string, format: password, minLength: 8, maxLength: 50 }
+      responses:
+        '200':
+          description: Password diubah
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '400':
+          description: Kode salah atau kedaluwarsa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- Website
+  /home:
+    get:
+      tags: [Website]
+      summary: Data halaman beranda
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /about:
+    get:
+      tags: [Website]
+      summary: Testimoni dan statistik (live jobs, companies, candidates)
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /jobs:
+    get:
+      tags: [Website]
+      summary: Daftar lowongan (dengan filter)
+      parameters:
+        - { name: keyword, in: query, schema: { type: string }, description: Cari berdasarkan judul }
+        - { name: category, in: query, schema: { type: integer }, description: ID kategori }
+        - { name: job_role, in: query, schema: { type: integer }, description: ID role }
+        - { name: job_type, in: query, schema: { type: string }, description: Nama tipe pekerjaan }
+        - { name: experience, in: query, schema: { type: string }, description: Nama level pengalaman }
+        - { name: education, in: query, schema: { type: string }, description: Nama level pendidikan }
+        - { name: company, in: query, schema: { type: string }, description: Filter perusahaan }
+        - { name: tag, in: query, schema: { type: string } }
+        - { name: location, in: query, schema: { type: string } }
+        - { name: lat, in: query, schema: { type: number }, description: Dipakai bersama `long` }
+        - { name: long, in: query, schema: { type: number } }
+        - { name: price_min, in: query, schema: { type: number } }
+        - { name: price_max, in: query, schema: { type: number } }
+        - { name: is_remote, in: query, schema: { type: integer, enum: [0, 1] } }
+        - { name: sort_by, in: query, schema: { type: string } }
+        - { name: selected_country, in: header, schema: { type: string }, description: ID negara terpilih }
+        - { $ref: '#/components/parameters/Paginate' }
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /jobs/{slug}:
+    get:
+      tags: [Website]
+      summary: Detail lowongan
+      description: Lowongan berstatus `pending` hanya dapat dilihat oleh pemilik (company) atau admin.
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /candidates:
+    get:
+      tags: [Website]
+      summary: Daftar kandidat
+      parameters:
+        - { name: keyword, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: profession, in: query, schema: { type: integer }, description: ID profesi }
+        - { name: experience, in: query, schema: { type: string }, description: Nama atau `all` }
+        - { name: education, in: query, schema: { type: string }, description: Nama atau `all` }
+        - { name: gender, in: query, schema: { type: string } }
+        - { name: language, in: query, schema: { type: integer } }
+        - { name: skills, in: query, schema: { type: array, items: { type: string } } }
+        - { name: location, in: query, schema: { type: string } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: long, in: query, schema: { type: number } }
+        - { name: sortby, in: query, schema: { type: string, example: latest } }
+        - { $ref: '#/components/parameters/Paginate' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /candidates/{username}:
+    get:
+      tags: [Website]
+      summary: Profil publik kandidat
+      parameters:
+        - { $ref: '#/components/parameters/Username' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /companies:
+    get:
+      tags: [Website]
+      summary: Daftar perusahaan
+      parameters:
+        - { name: keyword, in: query, schema: { type: string } }
+        - { name: industry_type, in: query, schema: { type: string } }
+        - { name: organization_type, in: query, schema: { type: string } }
+        - { name: location, in: query, schema: { type: string } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: long, in: query, schema: { type: number } }
+        - { name: sortBy, in: query, schema: { type: string, example: latest } }
+        - { $ref: '#/components/parameters/Paginate' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /companies/{username}:
+    get:
+      tags: [Website]
+      summary: Detail perusahaan
+      parameters:
+        - { $ref: '#/components/parameters/Username' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /posts:
+    get:
+      tags: [Website]
+      summary: Daftar artikel blog (8 per halaman)
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string }, description: ID kategori dipisah koma, example: '1,2' }
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /post/{slug}:
+    get:
+      tags: [Website]
+      summary: Detail artikel
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /comment/{slug}/store:
+    post:
+      tags: [Website]
+      summary: Kirim komentar pada artikel
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 2, maxLength: 2500 }
+                parent_id: { type: integer, description: ID komentar induk (balasan) }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /pricing:
+    get:
+      tags: [Website]
+      summary: Daftar paket (plan) aktif
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /faq:
+    get:
+      tags: [Website]
+      summary: FAQ per kategori (sesuai bahasa aktif)
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+  /terms-condition:
+    get:
+      tags: [Website]
+      summary: Syarat dan ketentuan
+      responses:
+        '200': { $ref: '#/components/responses/CmsPage' }
+  /privacy-policy:
+    get:
+      tags: [Website]
+      summary: Kebijakan privasi
+      responses:
+        '200': { $ref: '#/components/responses/CmsPage' }
+  /refund-policy:
+    get:
+      tags: [Website]
+      summary: Kebijakan pengembalian dana
+      responses:
+        '200': { $ref: '#/components/responses/CmsPage' }
+  /contact:
+    post:
+      tags: [Website]
+      summary: Kirim pesan kontak
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, subject, message]
+              properties:
+                name: { type: string, minLength: 3 }
+                email: { type: string, format: email }
+                subject: { type: string, minLength: 5 }
+                message: { type: string, minLength: 10 }
+                g-recaptcha-response: { type: string, description: Wajib jika captcha aktif }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /page-list:
+    get:
+      tags: [Website]
+      summary: URL halaman website (blog, about, contact, faq, kebijakan)
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+
+  # ---------------------------------------------------------------- Attributes
+  /languages:
+    get:
+      tags: [Attributes]
+      summary: Daftar bahasa
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /change-language/{code}:
+    get:
+      tags: [Attributes]
+      summary: Ganti bahasa (disimpan di session)
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string, example: en } }
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /language/translations:
+    get:
+      tags: [Attributes]
+      summary: Terjemahan bahasa aktif
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /localizations/{locale}/strings:
+    get:
+      tags: [Attributes]
+      summary: String lokalisasi dari `resources/lang/{locale}.json`
+      description: Mengembalikan objek kosong jika file tidak ada.
+      parameters:
+        - { name: locale, in: path, required: true, schema: { type: string, example: en } }
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /countries:
+    get:
+      tags: [Attributes]
+      summary: Daftar negara
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+                        sortname: { type: string }
+                        status: { type: integer }
+  /change-country/{countryId}:
+    get:
+      tags: [Attributes]
+      summary: Ganti negara terpilih (session)
+      parameters:
+        - { name: countryId, in: path, required: true, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /currencies:
+    get:
+      tags: [Attributes]
+      summary: Daftar mata uang
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+                        code: { type: string, example: IDR }
+                        symbol: { type: string }
+  /change-currency/{code}:
+    get:
+      tags: [Attributes]
+      summary: Ganti mata uang (session)
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string, example: IDR } }
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /categories:
+    get:
+      tags: [Attributes]
+      summary: Kategori pekerjaan
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /job-roles:
+    get:
+      tags: [Attributes]
+      summary: Role pekerjaan
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /experiences:
+    get:
+      tags: [Attributes]
+      summary: Level pengalaman
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /educations:
+    get:
+      tags: [Attributes]
+      summary: Level pendidikan
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /job-types:
+    get:
+      tags: [Attributes]
+      summary: Tipe pekerjaan
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /popular-tags:
+    get:
+      tags: [Attributes]
+      summary: Tag populer
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /professions:
+    get:
+      tags: [Attributes]
+      summary: Daftar profesi
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+  /current-session:
+    get:
+      tags: [Attributes]
+      summary: Bahasa, negara, dan mata uang pada session saat ini
+      responses: { '200': { $ref: '#/components/responses/DataObject' } }
+
+  # ---------------------------------------------------------------- Notifications
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Notifikasi user login (10 per halaman)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /store-token:
+    post:
+      tags: [Notifications]
+      summary: Simpan device token FCM untuk user login
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/DeviceToken' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /store-token-anonymous-user:
+    post:
+      tags: [Notifications]
+      summary: Simpan device token FCM tanpa login
+      requestBody: { $ref: '#/components/requestBodies/DeviceToken' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /send-notification:
+    post:
+      tags: [Notifications]
+      summary: Kirim push notification ke device milik user login
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/PushMessage' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /send-notification-all-users:
+    post:
+      tags: [Notifications]
+      summary: Kirim push notification ke semua device
+      description: |
+        Hanya untuk admin (guard `admin`). User dengan token Sanctum biasa (candidate/company)
+        mendapat 403.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/PushMessage' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403':
+          description: Bukan admin
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- Candidate
+  /candidate/jobs:
+    get:
+      tags: [Candidate]
+      summary: Daftar lowongan untuk kandidat login
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/jobs/{slug}:
+    get:
+      tags: [Candidate]
+      summary: Detail lowongan untuk kandidat login
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate:
+    get:
+      tags: [Candidate]
+      summary: Profil kandidat (dibuat otomatis bila belum ada)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/dashboard:
+    get:
+      tags: [Candidate]
+      summary: Ringkasan dashboard kandidat
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      profileComplated: { type: integer, description: Persentase kelengkapan profil }
+                      appliedJobs: { type: integer }
+                      favoriteJobs: { type: integer }
+                      notifications: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/settings:
+    get:
+      tags: [Candidate]
+      summary: Ambil data pengaturan kandidat
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [personal, profile, social, contact] }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Candidate]
+      summary: Ubah pengaturan kandidat
+      description: |
+        Field yang dibutuhkan bergantung pada `type`:
+
+        | type | field wajib |
+        |---|---|
+        | `personal` | name, title, experience_id, education_id, date_of_birth (opsional: website, image) |
+        | `profile` | gender, marital_status, profession, status, bio (`available_in` bila status=`available_in`; opsional: skills, languages) |
+        | `social` | social_media[], url[] |
+        | `contact` | phone, email (opsional: secondary_phone, secondary_email, whatsapp_number, country, address, exact_location, lat, long) |
+        | `password` | current_password, password, password_confirmation |
+        | `account-delete` | current_password |
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { type: string, enum: [personal, profile, social, contact, password, account-delete] }
+                name: { type: string, maxLength: 100 }
+                title: { type: string, maxLength: 100 }
+                experience_id: { type: integer }
+                education_id: { type: integer }
+                date_of_birth: { type: string, format: date }
+                website: { type: string }
+                image: { type: string, format: binary }
+                gender: { type: string }
+                marital_status: { type: string }
+                profession: { type: string }
+                status: { type: string }
+                available_in: { type: string, format: date }
+                bio: { type: string }
+                skills: { type: array, items: { type: string } }
+                languages: { type: array, items: { type: integer } }
+                social_media: { type: array, items: { type: string } }
+                url: { type: array, items: { type: string, format: uri } }
+                phone: { type: string }
+                secondary_phone: { type: string }
+                email: { type: string, format: email }
+                secondary_email: { type: string, format: email }
+                whatsapp_number: { type: string }
+                country: { type: string }
+                address: { type: string }
+                exact_location: { type: string }
+                lat: { type: number }
+                long: { type: number }
+                current_password: { type: string, format: password }
+                password: { type: string, format: password, minLength: 8 }
+                password_confirmation: { type: string, format: password }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /candidate/resumes:
+    get:
+      tags: [Candidate]
+      summary: Daftar resume milik kandidat
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Resume' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/resumes/{id}:
+    get:
+      tags: [Candidate]
+      summary: Detail resume
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /candidate/upload-resume:
+    post:
+      tags: [Candidate]
+      summary: Upload resume (PDF, maks 5 MB)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, resume_file]
+              properties:
+                name: { type: string, maxLength: 100 }
+                resume_file: { type: string, format: binary }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /candidate/update-resume/{id}:
+    post:
+      tags: [Candidate]
+      summary: Ubah nama atau file resume
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 100 }
+                resume_file: { type: string, format: binary, description: Opsional; mengganti file lama }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /candidate/delete-resume/{id}:
+    delete:
+      tags: [Candidate]
+      summary: Hapus resume
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /candidate/applied-jobs:
+    get:
+      tags: [Candidate]
+      summary: Lowongan yang sudah dilamar
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Paginate' }
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/favorite-jobs:
+    get:
+      tags: [Candidate]
+      summary: Lowongan favorit / bookmark (8 per halaman)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /candidate/jobs/{job}/bookmark:
+    post:
+      tags: [Candidate]
+      summary: Toggle bookmark lowongan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: job, in: path, required: true, schema: { type: integer }, description: ID lowongan }
+      responses:
+        '200':
+          description: "`data.status` true = ditambahkan, false = dihapus"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message: { type: string }
+                      status: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /candidate/jobs/apply:
+    post:
+      tags: [Candidate]
+      summary: Lamar lowongan
+      description: Hanya untuk lowongan dengan `apply_on = app`. Resume harus milik kandidat.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job_id, resume_id, cover_letter]
+              properties:
+                job_id: { type: integer }
+                resume_id: { type: integer }
+                cover_letter: { type: string, maxLength: 2000 }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '400':
+          description: Resume bukan milik kandidat, atau lowongan tidak menerima lamaran lewat aplikasi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /candidate/job-alert:
+    get:
+      tags: [Candidate]
+      summary: Notifikasi job alert (lowongan terkait)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Paginate' }
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  # ---------------------------------------------------------------- Company
+  /company:
+    get:
+      tags: [Company]
+      summary: Profil perusahaan
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/dashboard:
+    get:
+      tags: [Company]
+      summary: Ringkasan dashboard perusahaan
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      openJobCount: { type: integer }
+                      savedCandidateCount: { type: integer }
+                      recentJobs: { type: array, items: { $ref: '#/components/schemas/JobSummary' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/plan:
+    get:
+      tags: [Company]
+      summary: Paket aktif dan riwayat transaksi (8 per halaman)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/plan-limit:
+    get:
+      tags: [Company]
+      summary: Batas penggunaan paket
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/create/job:
+    get:
+      tags: [Company]
+      summary: Data pendukung form buat lowongan
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/store/job:
+    post:
+      tags: [Company]
+      summary: Buat lowongan
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JobInput' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /company/edit/{slug}/job:
+    get:
+      tags: [Company]
+      summary: Data lowongan untuk form edit
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/update/{slug}/job:
+    put:
+      tags: [Company]
+      summary: Ubah lowongan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JobInput' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /company/promote/job:
+    post:
+      tags: [Company]
+      summary: Promosikan lowongan (featured)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, badge]
+              properties:
+                slug: { type: string }
+                badge: { type: string, enum: [featured, highlight] }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/clone/job:
+    post:
+      tags: [Company]
+      summary: Duplikasi lowongan
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug]
+              properties:
+                slug: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/change-status/job:
+    post:
+      tags: [Company]
+      summary: Ubah status lowongan
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, status]
+              properties:
+                slug: { type: string }
+                status: { type: string, enum: [active, expired, pending], description: Nilai yang valid mengikuti kolom `jobs.status` }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/job:
+    get:
+      tags: [Company]
+      summary: Daftar lowongan milik perusahaan (5 per halaman)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, default: active }
+        - { $ref: '#/components/parameters/Page' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/job/{id}/applications:
+    get:
+      tags: [Company]
+      summary: Lamaran pada sebuah lowongan, dikelompokkan per application group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: ID lowongan }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/job/applications/{id}/group-update:
+    post:
+      tags: [Company]
+      summary: Pindahkan lamaran ke application group lain
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: ID lamaran (applied_jobs) }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [group]
+              properties:
+                group: { type: integer, description: ID application group tujuan }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/job/download-cv/{id}:
+    get:
+      tags: [Company]
+      summary: URL unduhan CV kandidat
+      description: Mengembalikan URL file (string), bukan objek JSON.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: ID resume }
+      responses:
+        '200':
+          description: URL file CV
+          content:
+            text/html:
+              schema: { type: string, format: uri }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/bookmark/candidate:
+    post:
+      tags: [Company]
+      summary: Bookmark / ubah kategori bookmark kandidat
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username: { type: string, description: Username kandidat }
+                category_id: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/bookmark/candidates:
+    get:
+      tags: [Company]
+      summary: Kandidat yang di-bookmark
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string }, description: ID kategori atau `all` }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /company/bookmark/categories:
+    get:
+      tags: [Company]
+      summary: Daftar kategori bookmark
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Company]
+      summary: Buat kategori bookmark
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/NameBody' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /company/bookmark/categories/{category}/edit:
+    get:
+      tags: [Company]
+      summary: Ambil satu kategori bookmark
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: category, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/bookmark/categories/{category}:
+    put:
+      tags: [Company]
+      summary: Ubah kategori bookmark
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: category, in: path, required: true, schema: { type: integer } }
+      requestBody: { $ref: '#/components/requestBodies/NameBody' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Company]
+      summary: Hapus kategori bookmark
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: category, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Terhapus
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/application/group:
+    get:
+      tags: [Company]
+      summary: Daftar application group
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Company]
+      summary: Buat application group
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/NameBody' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /company/application/group/{group}:
+    put:
+      tags: [Company]
+      summary: Ubah application group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: integer } }
+      requestBody: { $ref: '#/components/requestBodies/NameBody' }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Company]
+      summary: Hapus application group
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/account-progress:
+    get:
+      tags: [Company]
+      summary: Data progres pengisian profil perusahaan
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Company]
+      summary: Simpan satu langkah pengisian profil perusahaan
+      description: |
+        Field bergantung pada `step`:
+
+        | step | field wajib |
+        |---|---|
+        | `1` | bio, logo (`image`) dan `banner` bila belum ada |
+        | `2` | organization_type_id, industry_type_id, vision (opsional: establishment_date, team_size_id, website) |
+        | `3` | social_media (opsional) |
+        | `4` | phone, email |
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [step]
+              properties:
+                step: { type: integer, enum: [1, 2, 3, 4] }
+                name: { type: string }
+                bio: { type: string }
+                image: { type: string, format: binary, description: jpeg/png/jpg, maks 2 MB }
+                banner: { type: string, format: binary, description: jpeg/png/jpg, maks 5 MB }
+                organization_type_id: { type: integer }
+                industry_type_id: { type: integer }
+                team_size_id: { type: integer }
+                establishment_date: { type: string, format: date }
+                website: { type: string }
+                vision: { type: string }
+                social_media: { type: array, items: { type: string } }
+                url: { type: array, items: { type: string } }
+                phone: { type: string, minLength: 4, maxLength: 16 }
+                email: { type: string, format: email }
+      responses:
+        '200': { $ref: '#/components/responses/DataObject' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /company/download-invoice/{id}:
+    get:
+      tags: [Company]
+      summary: Unduh invoice transaksi (PDF)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: ID transaksi (earning) }
+      responses:
+        '200':
+          description: File PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /company/social-links:
+    get:
+      tags: [Company]
+      summary: Tautan sosial media perusahaan
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      social_media:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            social_media: { type: string }
+                            url: { type: string, format: uri }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token Sanctum dari `POST /login`. Endpoint `/company/*` hanya untuk role `company`.
+  parameters:
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+    Username:
+      name: username
+      in: path
+      required: true
+      schema: { type: string }
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    Paginate:
+      name: paginate
+      in: query
+      schema: { type: integer, default: 12 }
+      description: Jumlah item per halaman
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, default: 1 }
+  requestBodies:
+    DeviceToken:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token: { type: string, description: FCM device token }
+    PushMessage:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title, body]
+            properties:
+              title: { type: string }
+              body: { type: string }
+    NameBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name: { type: string, minLength: 2 }
+  responses:
+    DataObject:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                description: Payload; strukturnya bergantung pada endpoint
+                oneOf:
+                  - type: object
+                  - type: array
+                    items: {}
+    CmsPage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  content: { type: string, nullable: true, description: HTML sesuai bahasa aktif }
+                  default_content: { type: string, nullable: true }
+    Unauthenticated:
+      description: Token tidak ada atau tidak valid
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Data tidak ditemukan
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Validasi gagal
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: { type: string }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: Unauthenticated }
+        message: { type: string }
+    MessageResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message: { type: string }
+            status: { type: boolean }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        role: { type: string, enum: [candidate, company] }
+        name: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            token: { type: string, description: Bearer token Sanctum }
+            message: { type: string }
+            user:
+              type: object
+              description: CandidateResource atau CompanyResource sesuai role
+    Resume:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        file: { type: string }
+        file_size: { type: string }
+    JobSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        country: { type: string }
+        min_salary: { type: number }
+        max_salary: { type: number }
+        deadline: { type: string, format: date }
+        status: { type: string }
+        applied_jobs_count: { type: integer }
+    JobInput:
+      type: object
+      required: [title, vacancies, salary_mode, salary_type, deadline, description, apply_on, hard_skill, soft_skill, benefits, show_salary, min_salary, max_salary]
+      properties:
+        title: { type: string, maxLength: 255 }
+        category_id: { type: integer }
+        role_id: { type: integer }
+        experience: { type: string }
+        education: { type: string }
+        job_type: { type: integer }
+        vacancies: { type: string }
+        salary_mode: { type: string, enum: [range, custom] }
+        custom_salary: { type: string, description: Wajib jika salary_mode=custom }
+        min_salary: { type: number }
+        max_salary: { type: number, description: Tidak boleh lebih kecil dari min_salary }
+        salary_type: { type: integer }
+        show_salary: { type: string }
+        deadline: { type: string, format: date }
+        description: { type: string }
+        apply_on: { type: string, enum: [app, email, custom_url] }
+        apply_email: { type: string, format: email, description: Wajib jika apply_on=email }
+        apply_url: { type: string, format: uri, description: Wajib jika apply_on=custom_url }
+        hard_skill: { type: string }
+        soft_skill: { type: string }
+        benefits: { type: string }
+        notes: { type: string }
+        badge: { type: string, enum: [featured, highlight] }
+        is_remote: { type: integer, enum: [0, 1] }
+        work_time: { type: integer }
+        province_id: { type: string }
+        city_id: { type: string, description: Kode BPS }
+        subdistrict_id: { type: string, description: Kode BPS }
+        grp_pos_id: { type: integer }
+        job_order_id: { type: integer }
+        tags: { type: array, items: { type: string } }
