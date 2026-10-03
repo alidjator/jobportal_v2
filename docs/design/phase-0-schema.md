@@ -163,18 +163,18 @@ The slug is generated from the `en` name (fallback `id` when `en` is empty); **d
 | `reference_job_types` | employment relationship (contract, permanent, internship, freelance) |
 | `reference_job_levels` | |
 | `reference_work_times` | working pattern (full-time, part-time, shift) |
-| `reference_experience_levels` | min_years, max_years smallint null (used by matching) |
-| `reference_education_levels` | rank smallint (minimum-education comparisons) |
+| `reference_experience_levels` | min_years, max_years smallint **unsigned** null (used by matching; made unsigned by migration `000044`, decided 2026-10-03) |
+| `reference_education_levels` | rank smallint **unsigned** (minimum-education comparisons; migration `000044`) |
 | `reference_salary_periods` | |
 | `reference_skills` | kind varchar(10): `hard` or `soft` |
 | `reference_tags` | popularity_override varchar(10) null: `pinned` (always in the popular list), `hidden` (never), null = automatic (computed from usage by active jobs, cached; computed in Phase 1 when jobs exist). Column shape approved |
 | `reference_benefits` | status varchar(10) default `active`: `active`, `pending` (company proposal), `rejected`; `rejection_reason` varchar(255) null; `proposed_by_company_id` bigint unsigned null (plain indexed column, Company context arrives in Phase 1). Only `active` benefits are global and selectable; `is_active` only hides an already approved global benefit. Proposal storage shape approved |
 | `reference_industries` | |
 | `reference_organization_types` | |
-| `reference_team_sizes` | min_size, max_size int null |
+| `reference_team_sizes` | min_size, max_size int **unsigned** null (migration `000044`) |
 | `reference_religions` | |
 | `reference_nationalities` | |
-| `reference_languages` | code varchar(10) (spoken languages for candidate profiles) |
+| `reference_languages` | code varchar(10), **unique** (decided 2026-10-03, user; added by migration `000043`) (spoken languages for candidate profiles) |
 
 ## Content (`content_`)
 

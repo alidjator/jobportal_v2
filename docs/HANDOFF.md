@@ -108,8 +108,9 @@ Decisions: names stay upper case as in the BPS source; the KABUPATEN/KOTA prefix
 regencies); no coordinates (the legacy tables have none); village 1101012001 has no postal code. It runs after `ReferenceDataSeeder` from `DatabaseSeeder`, and
 was **run against the real tables on 2026-10-03 on the user's explicit approval** (tables were empty; verified counts, no broken chains, `test_` tables
 untouched). Its test loads about 175,000 rows twice, so the whole suite takes about 24 seconds. Not done: legal documents and FAQ content, domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
-(test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` is not unique
-(the design did not say so); `min_years`/`max_years`/`rank` are signed smallint as written in the design.
+(test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` was made unique
+(decided 2026-10-03, migration `000043`), and `min_years`/`max_years`/`rank` and the team size `min_size`/`max_size` became unsigned (decided
+2026-10-03, migration `000044`). Both migrations ran against the `test_` tables only; **they are not yet applied to the real tables**, which needs the user's approval.
 New files under `docs/` are **uncommitted** (the user has not asked for a commit).
 
 ## 6. Suggested next steps
