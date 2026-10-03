@@ -70,6 +70,7 @@ Useful details:
 | `docs/analysis/benchmark-notes.md` | Verified benchmark facts per platform, with verification level |
 | `docs/analysis/gap-analysis.md` | Flow gaps vs benchmarks with production-schema evidence |
 | `docs/design/decisions.md` | **All confirmed design decisions** (stages, screening, gap scope, foundation, delivery, phases) |
+| `docs/design/architecture.md` | Cross-cutting architecture decisions (API contract, authentication, authorization, persistence, queues, files, account states) |
 | `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
@@ -110,7 +111,8 @@ was **run against the real tables on 2026-10-03 on the user's explicit approval*
 untouched). Its test loads about 175,000 rows twice, so the whole suite takes about 24 seconds. Not done: legal documents and FAQ content, domain code. From now on every new migration must be run twice: `php artisan test:database:migrate`
 (test tables) and `php artisan migrate` (real tables, only with the user's approval). Open points noticed while writing the migrations: `reference_languages.code` was made unique
 (decided 2026-10-03, migration `000043`), and `min_years`/`max_years`/`rank` and the team size `min_size`/`max_size` became unsigned (decided
-2026-10-03, migration `000044`). Both migrations ran against the `test_` tables only; **they are not yet applied to the real tables**, which needs the user's approval.
+2026-10-03, migration `000044`). Both migrations ran against the `test_` tables first and were then **applied to the real tables on 2026-10-03 on the user's explicit approval**
+(44 migrations recorded; the real and `test_` tables have identical columns again).
 New files under `docs/` are **uncommitted** (the user has not asked for a commit).
 
 ## 6. Suggested next steps
@@ -126,7 +128,10 @@ New files under `docs/` are **uncommitted** (the user has not asked for a commit
    `created_at` index on the framework `notifications` table through a separate migration (confirm when writing it).
 3. Verify package compatibility with Laravel 13 when adding `spatie/laravel-translatable` and the Spatie permission package (custom table names, composite
    pivot keys).
-4. Re-create an architecture document (the old `docs/ARCHITECTURE.md` was deleted because it described the discarded port).
+4. **Architecture document: DONE (2026-10-03).** `docs/design/architecture.md` holds the cross-cutting decisions (RFC 9457 errors and 422/409 statuses,
+   Sanctum tokens with 30-day and 12-hour lifetimes and no abilities, hybrid authorization with an explicit `Actor`, request language, `/api/v1` URLs, pagination
+   and filtering, pure domain entities with query services, `TransactionManager`, domain events after commit, three queues, per-context scheduler, private
+   files, account states). **No code implements them yet**; its section 4 lists the shared-kernel leftovers to clean up first when Phase 0 code starts.
 5. Audit and translate any remaining non-English comments/docs in the repository (the user has asked to be consulted before doing it).
 6. Then start Phase 0 implementation by bounded context: Identity, Platform, Notification, ReferenceData, Content. Open details (seed data and the BPS
    source, verification-code lifetime, purge jobs) are decided when reached, one question at a time.
