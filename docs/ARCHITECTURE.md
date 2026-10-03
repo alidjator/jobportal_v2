@@ -48,6 +48,8 @@ di repository/read-model, dengan komentar yang menyebut tabel & alasannya.
 - **Terjemahan** (`*_translations`): pakai `Shared\Infrastructure\Persistence\TranslatedNames`.
 - **Auth**: `auth:sanctum`, ambil user dari `$request->user()`. Role company: middleware `api_company`.
 - **Tanpa helper global** (`setting()`, `currentLangCode()`, …); bungkus sebagai service yang di-inject.
+- **Upload file**: inject `Shared\Application\Contracts\FileStorage` (`storeFile`, `storeImage`, `delete`); path yang dikembalikan relatif ke `public/` dan disimpan di DB seperti aplikasi lama.
+- **Firebase**: `config/firebase.php` (credentials default `storage/firebase_credentials.json`); bungkus di balik interface domain agar bisa di-fake di test.
 - **Controller** hanya: validasi (FormRequest) → panggil use case → `ApiResponse`.
 - **Route**: `Interface/Http/routes.php` (atau `routes.<nama>.php`) dimuat otomatis dengan prefix `api` oleh `ContextServiceProvider`.
 - **Test**: tiap endpoint punya feature test (`tests/Feature/<Context>`), pakai `Tests\FeatureTestCase`
