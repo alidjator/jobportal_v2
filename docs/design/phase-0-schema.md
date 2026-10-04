@@ -132,7 +132,7 @@ id, template_key varchar(128), locale char(2), subject varchar(255), body medium
 | occurred_at | timestamp(6) | |
 
 Indexes: (actor_type, actor_id, occurred_at), (action, occurred_at), (subject_type, subject_id), (occurred_at) for the retention purge. Append-only
-for the application (no update or delete endpoints); the only deletion is the scheduled purge of rows older than **12 months**. Readable only through
+for the application (no update or delete endpoints); the only deletion is the scheduled purge of rows older than **12 months**. The purge runs daily in batches of 1,000 and records itself as one `audit.purged` entry (decided 2026-10-04). Readable only through
 the admin API by admins holding the `audit_logs.view` permission. How the purge itself is recorded is still to be designed.
 
 ## Notification (`notification_`)

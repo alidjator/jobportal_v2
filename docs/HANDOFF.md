@@ -249,10 +249,46 @@ upload), admin management of locations (BPS data is not editable), benefit propo
 and `legal_documents.manage` in group `content`, `reference_data.manage` in group `reference_data`, guard `admin`), the role `super_admin` and its 3 role-permission links; nothing else
 changed (0 admins, 0 users, `test_` tables untouched). **Still not run on the real database:** `identity:create-admin` (needed before anyone can use the admin API; it writes `identity_admins` and
 `identity_admin_roles`, password from a hidden prompt). Run `identity:sync-permissions` again after every deployment that adds a permission (ask first).
+**Platform part 1, audit log read and purge, DONE (2026-10-04):** order agreed with the user: audit first, then settings, then email templates.
+`GET /api/v1/admin/audit-logs` (guard `admin`, new permission **`audit_logs.view`**, group `platform`) is **cursor-paginated** (`cursor`, `per_page` 1 to 100 default 20, no total; `data`,
+`links.next`, `meta.per_page`, `meta.next_cursor`; keyset on time then id, newest first, so slices never repeat or skip even while entries are appended; an invalid cursor is 422
+`invalid-cursor`). Filters decided with the user: `filter[action]`, `filter[actor_type]`, `filter[actor_id]`, `filter[subject_type]`, `filter[subject_id]`, `filter[from]`, `filter[to]` (ISO 8601,
+both inclusive, converted to UTC); anything else is 422 (no IP filter: it has no index). The log is read-only (no update or delete endpoint). Purge, decided with the user: command
+`platform:purge-audit-logs`, **daily at 03:00** (`withoutOverlapping`, `onOneServer`), deletes entries older than **12 months in batches of 1,000** and records one **`audit.purged`** entry (actor `system`,
+metadata `deleted` and `older_than`; written only when something was deleted; that entry is itself purged 12 months later). New shared pieces: `CursorRequest`/`CursorPage`,
+`CursorPaginatedRequest`, `CursorResources`. **Not run on the real database:** `identity:sync-permissions` must be run again to create `audit_logs.view` (ask first).
+**Platform part 2, settings, DONE (2026-10-04):** decided with the user: **each context registers its own settings** in the shared `SettingsCatalog` from its provider (like permissions);
+Platform provides only the mechanism, so the catalog is **empty today** (the decided settings, such as the screening limit 5, alerts 5, chat attachment 5 MB, salary-insight minimum 5, bulk recipients 50
+and daily invitations 50, are registered by their contexts in Phase 1 to 3 with default, limits and `overridable`); **company overrides: reader and storage exist and are tested, the admin endpoints come with the
+Company context** (they must check the company exists); values are read through an **application cache dropped on every write** (after commit; one hour otherwise; also memoised per request; needs a shared cache store
+with several servers). Mechanism: `SettingDefinition` (types `integer` with range, `boolean`, `text` with max length, `choices` = a list from allowed values with `min_items`; `normalize()` is the single validation),
+`SettingsCatalog` (key `area.name`, duplicates and non-canonical defaults refused at registration), reader port `Settings` (`integer|boolean|text|choices(key, ?companyId)`: company override if the setting is
+`overridable`, else the global value, else the default; a stored value the definition no longer accepts is ignored; an unknown key or wrong type throws), `SettingsStore` (`DatabaseSettingsStore`).
+Admin API (guard `admin`, new permission **`settings.manage`**): `GET /api/v1/admin/settings` (whole catalog, not paginated: key, type, description, default, value, `is_default`, `overridable_per_company`,
+constraints, `updated_at`, `updated_by_admin_id`), `PUT /api/v1/admin/settings/{key} {value}` (422 `invalid-setting-value`, 404 unknown key; setting the value already in force changes and audits nothing; an
+explicit value is stored even when it equals the default), `DELETE /api/v1/admin/settings/{key}` (back to the default). Both write an audit entry (`settings.updated` with `key`, `old`, `new`; `settings.reset` with `key`,
+`old`; actor admin, subject type `setting`, IP and user agent). **Settings must never hold secrets** (values are shown to admins and audited). Note: the `ConvertEmptyStringsToNull` middleware turns an empty string into `null`,
+so an empty text value is refused. `identity:sync-permissions` must be run again on the real database to create `settings.manage` and `audit_logs.view` (ask first).
+**Platform part 3, email templates, DONE (2026-10-04), which completes Platform:** decided with the user: the body is **Markdown with `{{variable}}` placeholders**; on
+saving, **unknown variables are refused and the variables marked required must be present** (for example `{{code}}`), the subject must be one line (max 255) and the body non-empty (max 20,000);
+errors come back per field in `errors` (422 `invalid-email-template`). Each context registers its templates in the shared `EmailTemplateCatalog` from its provider (key `area.name`, description, variables
+with a sample and a `required` flag, default subject and body in `id` and `en`); registration refuses a default that uses an undeclared variable or lacks a required one. Contexts render through the
+shared port `EmailTemplates::render(key, locale, variables)`: the admin's override for that language if any, else the default (languages are overridden independently). Rendering: values are substituted as plain
+text (nothing is evaluated), **escaped for Markdown in the body** (a name cannot add formatting or links) and **stripped of line breaks in the subject** (no header injection); the Markdown is converted with
+**raw HTML escaped and unsafe links such as `javascript:` refused** (league/commonmark directly, not Laravel's internal converter, whose default allows raw HTML) and wrapped in Laravel's standard email layout and theme
+(`resources/views/emails/templated.blade.php`, CSS inlined) with a plain-text alternative. Identity registers `identity.email_verification` and `identity.password_reset` (variables `name`, `code` required, `minutes`);
+their defaults moved from `lang/*/identity.php` and the Blade views (both deleted) into `IdentityEmailTemplates`; `VerificationCodeMail` now renders through the port **when it is sent** (so an override applies to mails
+already queued) and gets its language explicitly from the sender. Admin API (guard `admin`, new permission **`email_templates.manage`**): `GET /api/v1/admin/email-templates` (whole catalog, not paginated),
+`GET .../{key}`, `PUT .../{key}/{id|en} {subject, body}`, `DELETE .../{key}/{id|en}` (back to the default), `POST .../{key}/preview {locale, subject?, body?}` (renders with the variables' samples,
+a draft is checked with the saving rules and nothing is saved or sent; returns `subject`, `html`, `text`). Saves and resets are audited (`email_template.updated`, `email_template.reset`; metadata `template` and
+`locale`, never the text). **Not done:** a "send a test email" action (not decided), sender name and address overrides, a template catalog for the future contexts (they register theirs). `identity:sync-permissions`
+must be run again on the real database to create `email_templates.manage`, `settings.manage` and `audit_logs.view` (ask first).
+**Platform is complete.** Phase 0 remaining: Notification (preferences, device tokens, in-app notifications).
+
 **Not done yet:** account-state middleware (email verified: 409 on actions that affect other parties, decided in architecture.md 2.8, to be added with the first such
 endpoints), audit read endpoint and purge job, audit of admin actions (publishing a legal document), purging resumes and Phase 1 profile data on anonymisation (with
 those features), real-world check of Google sign-in with the actual client IDs.
-Commits (branch `phase-0-foundation`): `27cb3e1` (all Phase 0 code, tests, migrations and config) and `f7b19e9` (documentation). Nothing is uncommitted after them.
+Commits (branch `phase-0-foundation`): `27cb3e1` (Identity, Content, ReferenceData and the shared kernel, with tests, migrations and config), `6c77ad3` (Platform: audit read and purge, settings, email templates) and the documentation commits after each. Nothing is uncommitted after them.
 
 ## 6. Suggested next steps
 

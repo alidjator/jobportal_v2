@@ -79,6 +79,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - **Page size (decided 2026-10-03):** default **20**, maximum **100**; a larger `per_page` is rejected with 422 instead of being silently capped.
   **Minimum (decided 2026-10-04):** `page` and `per_page` must be at least **1**; a smaller value is also rejected with 422.
   **Implemented 2026-10-04:** `PageRequest`/`Page` (Application), `PaginatedRequest` and `PaginatedResources` (Interface); first used by the skills, job roles and tags lists.
+  **Cursor pagination implemented 2026-10-04** (`CursorRequest`/`CursorPage`, same `per_page` limits, no total, `links.next` and `meta.next_cursor`); first used by the audit log.
   **Public reference data** is cacheable (`max-age=3600` and an ETag), so every API response carries `Vary: Accept-Language, Authorization`.
 - **Filtering and sorting (decided 2026-10-03):** filters are written inside `filter[...]` (for example
   `?filter[province]=11&filter[work_mode]=remote&filter[q]=developer`) and ordering uses `sort` with a `-` prefix for descending order and commas between
@@ -156,6 +157,14 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   for example `legal_documents.manage` in group `content`). `php artisan identity:sync-permissions` (idempotent, run after every deployment that adds one) creates
   them with guard `admin` and keeps the role `super_admin` holding all of them; permissions that left the catalog are not deleted. Routes check them with
   `can:<permission>` after `auth:admin`. The first administrator is created with `php artisan identity:create-admin` (password read from a hidden prompt).
+
+### 2.10 Settings and email templates (decided 2026-10-04)
+
+- **Settings:** each context registers its settings (key `area.name`, type `integer`, `boolean`, `text` or `choices`, default, limits, `overridable`) in the shared `SettingsCatalog`; they are read through the
+  `Settings` port (company override, else global value, else default), cached and invalidated on write; admins manage the global values with `settings.manage`, every change is audited, and settings never hold secrets.
+  Company overrides have storage and a reader now and an admin API with the Company context.
+- **Email templates:** each context registers its templates in the shared `EmailTemplateCatalog` and renders through the `EmailTemplates` port; admins override subject and body per language
+  (`email_templates.manage`) in Markdown with `{{variable}}` placeholders, validated against the template's variables, previewed with samples, audited. Raw HTML in a body is never executed.
 
 ## 3. Details left to the context that needs them
 
