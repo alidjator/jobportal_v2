@@ -7,6 +7,7 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
+use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -24,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
         PermissionCatalog::class,
         SettingsCatalog::class,
         EmailTemplateCatalog::class,
+        NotificationPreferenceCatalog::class,
     ];
 
     /** @var array<class-string, class-string> */
