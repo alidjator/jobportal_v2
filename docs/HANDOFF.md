@@ -245,6 +245,10 @@ English name once and never changes**, a taken slug gets `-2`, `-3`, a unique la
 by byte order; search and name sorting now name `COLLATE utf8mb4_unicode_ci` explicitly (checked read-only against the real seeded data). **Not done:** `image_path` of job categories (needs file
 upload), admin management of locations (BPS data is not editable), benefit proposals and tag popularity (Phase 1). `identity:sync-permissions` must be run on the real database to create
 `reference_data.manage` (ask first).
+**Real database, 2026-10-04 (on the user's explicit approval):** `php artisan identity:sync-permissions` was run against the real tables. They now hold 3 permissions (`faqs.manage`
+and `legal_documents.manage` in group `content`, `reference_data.manage` in group `reference_data`, guard `admin`), the role `super_admin` and its 3 role-permission links; nothing else
+changed (0 admins, 0 users, `test_` tables untouched). **Still not run on the real database:** `identity:create-admin` (needed before anyone can use the admin API; it writes `identity_admins` and
+`identity_admin_roles`, password from a hidden prompt). Run `identity:sync-permissions` again after every deployment that adds a permission (ask first).
 **Not done yet:** account-state middleware (email verified: 409 on actions that affect other parties, decided in architecture.md 2.8, to be added with the first such
 endpoints), audit read endpoint and purge job, audit of admin actions (publishing a legal document), purging resumes and Phase 1 profile data on anonymisation (with
 those features), real-world check of Google sign-in with the actual client IDs.
