@@ -306,6 +306,11 @@ caller** (the device is now used with this account). A user keeps **at most 10 t
 is 204 and silent when the token is unknown or not the caller's (nothing is revealed). The token is never returned. **No scheduled purge** of stale tokens (decided): invalid tokens are to be removed
 when the push sender (FCM, not written) learns from FCM that they are invalid. Not decided or done: removing the device token on logout, sending push itself (needs FCM credentials). 8 new tests;
 whole suite 429 passed, Pint and PHPStan clean. Reminder: no migration was added in the Notification work, so the real tables were not touched.
+**Real database, second sync (2026-10-04, on the user's explicit approval):** `php artisan identity:sync-permissions` was run again. The real tables now hold **6 permissions** (the earlier three plus
+`audit_logs.view`, `settings.manage` and `email_templates.manage`, guard `admin`), 1 role (`super_admin`) and 6 role-permission links, which settles the three "must be run again" reminders above.
+0 users.
+**First admin (2026-10-04):** the user ran `php artisan identity:create-admin` themselves (hidden password prompt, nothing typed through Claude). The real tables hold **1 admin**
+(id 1, the user's own work account, status `active`) with the role `super_admin`. The password was never seen or stored anywhere but its hash. The admin API can now be used.
 
 **Not done yet:** account-state middleware (email verified: 409 on actions that affect other parties, decided in architecture.md 2.8, to be added with the first such
 endpoints), audit read endpoint and purge job, audit of admin actions (publishing a legal document), purging resumes and Phase 1 profile data on anonymisation (with
