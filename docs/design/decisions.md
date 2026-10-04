@@ -65,6 +65,9 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
   token authentication. Company membership lives in the Company context and references Identity accounts.
 - **Google login:** the API verifies the Google **ID token directly** (no Firebase). Social identities are stored in a separate table.
   Facebook is not carried over **(interpretation:** the user only mentioned Google login).
+  **Details (2026-10-03, user):** verified with `google/auth`; the Google account is identified by its subject; an existing account with the same email is
+  linked only when Google reports the email as verified, and an account whose email was never verified loses its password and tokens when linked (owner sets a new
+  password through the reset flow); new Google accounts are verified job seekers without a password; company members are created by admins and can only link.
 - **Admin RBAC:** Spatie permission package wrapped behind an interface (Infrastructure), custom `identity_` table names.
 - **Framework tables** keep default Laravel names (no context prefix).
 - **Settings:** typed key-value with a catalog in code; the database stores only changed values; per-company overrides in a separate table.

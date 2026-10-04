@@ -56,7 +56,18 @@ Account deletion (anonymisation), **decided 2026-10-03 (user):**
   `anonymized-{id}@anonymized.invalid` (unique, frees the original address for a new registration); `anonymized_at` is set; the row stays so
   applications, stage history and statistics remain intact. Social accounts and device tokens are deleted; uploaded files are purged.
 - **Marker:** an anonymised account is identified by `anonymized_at` only. `status` gets no `anonymized` value (anonymised accounts are `deactivated`).
-- Still to design: the full list of columns and files cleared (including Phase 1 profile data), the scheduled job, and the audit-log entries.
+- **Decided 2026-10-03 (user), Identity part:** the row keeps `id`, `type`, `locale`, `registration_campaign_code`, `status` (`deactivated`), `deletion_requested_at`,
+  `created_at`; it clears `name` (becomes `Deleted user`), `email` (placeholder), `password` (null), `avatar_path` (null), `email_verified_at` (null) and
+  `last_login_at` (null) and sets `anonymized_at`. Also deleted: social accounts, access tokens and verification codes; the `ip_address` of terms acceptances is
+  set to null. Requesting the deletion needs the current password plus an explicit confirmation (accounts without a password must set one first); it
+  deactivates the account and revokes every token; cancelling needs valid credentials plus confirmation and signs the user in. The scheduled job
+  `identity:anonymize-due-accounts` runs daily at 02:00 (without overlap, on one server). Other contexts erase their own data by listening to the event
+  `UserAnonymized` (Notification: device tokens and notifications, implemented).
+- **Decided 2026-10-03 (user), the rest:** `notification_preferences` rows are deleted too. For submitted applications the rows, stage history and statistics
+  stay, while every file owned by the applicant (avatar, resumes, generated CVs, chat attachments) is deleted and profile data and screening answers with
+  personal data are cleared; the applicant appears as `Deleted user`. Audit entries: `account.deletion_requested`, `account.deletion_cancelled` and
+  `account.anonymized` (system actor), plus `auth.login`, `auth.login_failed` and `auth.password_reset`.
+- Still to design: the exact Phase 1 profile columns and the resume and chat file purge (written with those features, following the principle above).
 
 ### `identity_social_accounts` — **APPROVED by the user (2026-10-03)**
 id, user_id (FK identity_users, cascade), provider varchar(20) (`google`), provider_user_id varchar(191), email varchar(255) null, timestamps.

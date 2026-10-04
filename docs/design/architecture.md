@@ -77,6 +77,9 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   standard `links` and `meta` including the total. High-volume feeds that keep growing (notifications, chat messages, audit logs) use cursor pagination
   (`cursor`, no total). Each list endpoint states which one it uses.
 - **Page size (decided 2026-10-03):** default **20**, maximum **100**; a larger `per_page` is rejected with 422 instead of being silently capped.
+  **Minimum (decided 2026-10-04):** `page` and `per_page` must be at least **1**; a smaller value is also rejected with 422.
+  **Implemented 2026-10-04:** `PageRequest`/`Page` (Application), `PaginatedRequest` and `PaginatedResources` (Interface); first used by the skills, job roles and tags lists.
+  **Public reference data** is cacheable (`max-age=3600` and an ETag), so every API response carries `Vary: Accept-Language, Authorization`.
 - **Filtering and sorting (decided 2026-10-03):** filters are written inside `filter[...]` (for example
   `?filter[province]=11&filter[work_mode]=remote&filter[q]=developer`) and ordering uses `sort` with a `-` prefix for descending order and commas between
   keys (`?sort=-created_at`). Every list endpoint declares its allowed filters and sortable columns, and any other value is rejected with 422. These names
@@ -129,6 +132,8 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - **Terms gate (decided 2026-10-03):** an account that has not accepted the active version of the terms and privacy documents is refused on every endpoint with
   409 and a dedicated problem `type`, except: reading the active legal documents, accepting them, viewing and editing the basic account profile, signing out and
   deleting the account (the user can always leave and exercise the right over their data). Migrated accounts and every new version go through this gate.
+  **Implemented 2026-10-04** (`EnforceTermsAcceptance`; details and the two scope decisions, public users only and "never-published types are not required", in
+  `docs/HANDOFF.md`).
 - **Suspended and deactivated accounts (decided 2026-10-03):** when an admin suspends an account, all its tokens are revoked and sign-in is refused with 403 and
   the problem `type` `urn:jobportal:error:account-suspended`, until an admin reactivates it. A deactivated account behaves the same way (including the one waiting
   for anonymisation, see `phase-0-schema.md`) with `account-deactivated`; the response for the grace period explains the scheduled deletion and the user
@@ -137,6 +142,20 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - **Legacy toggle (decided 2026-10-03):** the `email_verification` on/off admin setting is dropped; the email rule above is always on and is not in the settings
   catalog.
 - Still to decide: nothing further in this section.
+
+### 2.9 Translated text, bounded lists and the permission catalog (decided 2026-10-03)
+
+- **Translated text in responses (decided 2026-10-03):** a public endpoint returns one string in the request language (resolution order of 2.4), falling back to the
+  other language when the translation is empty; an admin endpoint returns the full object `{"id": "...", "en": "..."}` so it can be edited. Domain code uses the
+  value object `Src\Shared\Domain\TranslatedText`; Eloquent models keep the JSON columns with `spatie/laravel-translatable`.
+- **Bounded lists (decided 2026-10-03):** lists whose size is naturally limited (legal documents, FAQ, master data) are returned whole in `data`, without
+  `links` or `meta`, and each list endpoint says so; offset pagination (2.5) is for lists that can grow (jobs, applicants, large admin tables).
+  **Limit (decided 2026-10-04):** a list may be unpaginated only if, by design, it never exceeds **200 items**; a list that can grow beyond that must be
+  paginated or filtered (for example villages, about 83,000 rows).
+- **Admin permissions (decided 2026-10-03):** every context registers its permissions in the shared `PermissionCatalog` from its service provider (name and group,
+  for example `legal_documents.manage` in group `content`). `php artisan identity:sync-permissions` (idempotent, run after every deployment that adds one) creates
+  them with guard `admin` and keeps the role `super_admin` holding all of them; permissions that left the catalog are not deleted. Routes check them with
+  `can:<permission>` after `auth:admin`. The first administrator is created with `php artisan identity:create-admin` (password read from a hidden prompt).
 
 ## 3. Details left to the context that needs them
 
@@ -148,11 +167,16 @@ None of these blocks the start of Phase 0 code; each is decided one question at 
 - Compatibility checks when the packages are added: Sanctum per-token expiry in the installed version, Spatie permission with the custom table names,
   `spatie/laravel-translatable` with Laravel 13.
 
-## 4. Leftovers in the shared kernel (to clean up when the code is written)
+## 4. Shared kernel cleanup (done 2026-10-03, not committed)
 
-- `ApiResponse` is built for the legacy format and has Indonesian comments: replaced by the RFC 9457 problem mapping and Laravel resources.
-- `RequestContext` reads country and currency, which the project does not use: reduced to the request language (section 2.4).
-- `BusinessRuleViolation` is documented as HTTP 400 for legacy compatibility: becomes 422, plus a new `StateConflict` (409), see section 2.1.
-- `ContextServiceProvider` loads routes with the prefix `api`: becomes `api/v1` (section 2.5). Other comments in `src` are still in Indonesian.
-- `routes/` has no API routes, `bootstrap/app.php` has no API routing or authentication middleware, and `composer.json` does not yet require Sanctum,
-  Spatie permission, Spatie translatable or the packages needed by the decisions above (Predis is not needed while the queue driver is `database`).
+- `ApiResponse` was removed. `Src\Shared\Interface\Http\Problem\ProblemDetailsRenderer` is the single mapping from exceptions to RFC 9457 problem
+  responses (validation 422 with `errors`, domain errors, 401, framework HTTP exceptions such as 404 and 405, and a generic 500 that hides internals), registered
+  in `bootstrap/app.php`. Success responses use Laravel resources (added with the first endpoints).
+- Domain exceptions: `DomainException` carries a kebab-case error code (`errorCode()`, a per-class default or a specific code passed by the use case);
+  `BusinessRuleViolation` is 422, the new `StateConflict` is 409, `AccessDenied` is 403, `EntityNotFound` is 404. The catalog of specific codes is still
+  written with the use cases (section 3).
+- `RequestContext` holds only the language (`id`/`en`, default `id`). The resolution middleware (header, then account locale) arrives with Identity.
+- `ContextServiceProvider` loads context routes under `api/v1` (`API_PREFIX`). All comments in `src` are English.
+- Covered by `tests/Feature/Shared/ProblemDetailsTest.php`.
+- Still missing: API routes, authentication middleware, and the packages needed by the decisions above (Sanctum, Spatie permission, Spatie translatable;
+  Predis is not needed while the queue driver is `database`). Package compatibility is checked when each is added (section 3).
