@@ -2,6 +2,7 @@
 
 namespace Src\Platform\Infrastructure;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
@@ -9,9 +10,24 @@ use Src\Identity\Domain\Events\PasswordReset;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Platform\Application\Audit\AuditLogReader;
 use Src\Platform\Application\Audit\AuditLogRepository;
+use Src\Platform\Application\Email\EmailBodyRenderer;
+use Src\Platform\Application\Email\EmailTemplateOverrideRepository;
+use Src\Platform\Application\Email\PlatformEmailTemplates;
+use Src\Platform\Application\PlatformPermissions;
+use Src\Platform\Application\Settings\SettingsStore;
+use Src\Platform\Application\Settings\StoredSettings;
+use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
 use Src\Platform\Infrastructure\Listeners\RecordIdentityAuditEntries;
+use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
+use Src\Platform\Infrastructure\Persistence\DatabaseEmailTemplateOverrideRepository;
+use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
+use Src\Platform\Interface\Console\PurgeAuditLogsCommand;
+use Src\Shared\Application\Email\EmailTemplates;
+use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class PlatformServiceProvider extends ContextServiceProvider
@@ -19,7 +35,30 @@ final class PlatformServiceProvider extends ContextServiceProvider
     /** @var array<class-string, class-string> */
     public array $bindings = [
         AuditLogRepository::class => DatabaseAuditLogRepository::class,
+        AuditLogReader::class => DatabaseAuditLogReader::class,
+        Settings::class => StoredSettings::class,
+        EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
+        EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,
+        EmailTemplates::class => PlatformEmailTemplates::class,
     ];
+
+    /** One store per request, so the in-memory copy of the values is shared and dropped on every write. @var array<class-string, class-string> */
+    public array $singletons = [
+        SettingsStore::class => DatabaseSettingsStore::class,
+    ];
+
+    public function register(): void
+    {
+        $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
+            $catalog->add(...PlatformPermissions::definitions());
+        });
+
+        $this->commands([PurgeAuditLogsCommand::class]);
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(PurgeAuditLogsCommand::class)->dailyAt('03:00')->withoutOverlapping()->onOneServer();
+        });
+    }
 
     public function boot(): void
     {

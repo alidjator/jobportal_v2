@@ -2,6 +2,7 @@
 
 namespace Src\Platform\Infrastructure\Persistence;
 
+use DateTimeImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Src\Platform\Application\Audit\AuditEntry;
 use Src\Platform\Application\Audit\AuditLogRepository;
@@ -11,6 +12,14 @@ final readonly class DatabaseAuditLogRepository implements AuditLogRepository
     private const int USER_AGENT_LENGTH = 255;
 
     public function __construct(private ConnectionInterface $connection) {}
+
+    public function purgeOlderThan(DateTimeImmutable $cutoff, int $limit): int
+    {
+        return $this->connection->table('platform_audit_logs')
+            ->where('occurred_at', '<', $cutoff->format('Y-m-d H:i:s.u'))
+            ->limit($limit)
+            ->delete();
+    }
 
     public function append(AuditEntry $entry): void
     {

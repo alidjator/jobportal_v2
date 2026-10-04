@@ -3,7 +3,6 @@
 namespace Tests\Feature\Identity;
 
 use DateTimeImmutable;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Infrastructure\Mail\EmailVerificationMail;
@@ -12,16 +11,14 @@ use Tests\FeatureTestCase;
 
 final class EmailVerificationMailTest extends FeatureTestCase
 {
-    private function mail(): EmailVerificationMail
+    private function mail(string $language): EmailVerificationMail
     {
-        return new EmailVerificationMail('Siti', '049213', new DateTimeImmutable('2026-10-03 10:15:00'), new DateTimeImmutable('2026-10-03 10:00:00'));
+        return new EmailVerificationMail('Siti', '049213', new DateTimeImmutable('2026-10-03 10:15:00'), new DateTimeImmutable('2026-10-03 10:00:00'), $language);
     }
 
     public function test_the_mail_is_rendered_in_english(): void
     {
-        App::setLocale('en');
-
-        $html = $this->mail()->render();
+        $html = $this->mail('en')->render();
 
         $this->assertStringContainsString('049213', $html);
         $this->assertStringContainsString('Hello Siti,', $html);
@@ -30,9 +27,7 @@ final class EmailVerificationMailTest extends FeatureTestCase
 
     public function test_the_mail_is_rendered_in_indonesian(): void
     {
-        App::setLocale('id');
-
-        $html = $this->mail()->render();
+        $html = $this->mail('id')->render();
 
         $this->assertStringContainsString('049213', $html);
         $this->assertStringContainsString('Halo Siti,', $html);
@@ -41,13 +36,11 @@ final class EmailVerificationMailTest extends FeatureTestCase
 
     public function test_the_password_reset_mail_is_rendered_in_both_languages(): void
     {
-        $mail = new PasswordResetMail('Siti', '049213', new DateTimeImmutable('2026-10-03 10:15:00'), new DateTimeImmutable('2026-10-03 10:00:00'));
+        $make = fn (string $language): PasswordResetMail => new PasswordResetMail('Siti', '049213', new DateTimeImmutable('2026-10-03 10:15:00'), new DateTimeImmutable('2026-10-03 10:00:00'), $language);
 
-        App::setLocale('en');
-        $this->assertStringContainsString('set a new password', $mail->render());
+        $this->assertStringContainsString('set a new password', $make('en')->render());
 
-        App::setLocale('id');
-        $html = $mail->render();
+        $html = $make('id')->render();
         $this->assertStringContainsString('kata sandi baru', $html);
         $this->assertStringContainsString('049213', $html);
     }

@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\RequestContext;
+use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
 use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
@@ -20,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
     /** @var list<class-string> */
     public array $singletons = [
         PermissionCatalog::class,
+        SettingsCatalog::class,
+        EmailTemplateCatalog::class,
     ];
 
     /** @var array<class-string, class-string> */

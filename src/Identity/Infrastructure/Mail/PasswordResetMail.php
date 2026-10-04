@@ -2,15 +2,12 @@
 
 namespace Src\Identity\Infrastructure\Mail;
 
+use Src\Identity\Application\IdentityEmailTemplates;
+
 final class PasswordResetMail extends VerificationCodeMail
 {
-    protected function subjectKey(): string
+    protected function templateKey(): string
     {
-        return 'identity.password_reset.subject';
-    }
-
-    protected function markdownView(): string
-    {
-        return 'identity.password-reset';
+        return IdentityEmailTemplates::PASSWORD_RESET;
     }
 }

@@ -17,12 +17,12 @@ final readonly class MailVerificationCodeSender implements VerificationCodeSende
 
     public function sendEmailVerification(string $email, string $name, string $locale, string $code, DateTimeImmutable $expiresAt): void
     {
-        $this->queue($email, $locale, new EmailVerificationMail($name, $code, $expiresAt, $this->clock->now()));
+        $this->queue($email, $locale, new EmailVerificationMail($name, $code, $expiresAt, $this->clock->now(), $locale));
     }
 
     public function sendPasswordReset(string $email, string $name, string $locale, string $code, DateTimeImmutable $expiresAt): void
     {
-        $this->queue($email, $locale, new PasswordResetMail($name, $code, $expiresAt, $this->clock->now()));
+        $this->queue($email, $locale, new PasswordResetMail($name, $code, $expiresAt, $this->clock->now(), $locale));
     }
 
     private function queue(string $email, string $locale, VerificationCodeMail $mail): void

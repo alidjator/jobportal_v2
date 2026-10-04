@@ -16,4 +16,14 @@ final class AuditAction
     public const string ACCOUNT_DELETION_CANCELLED = 'account.deletion_cancelled';
 
     public const string ACCOUNT_ANONYMIZED = 'account.anonymized';
+
+    public const string AUDIT_PURGED = 'audit.purged';
+
+    public const string SETTING_UPDATED = 'settings.updated';
+
+    public const string SETTING_RESET = 'settings.reset';
+
+    public const string EMAIL_TEMPLATE_UPDATED = 'email_template.updated';
+
+    public const string EMAIL_TEMPLATE_RESET = 'email_template.reset';
 }

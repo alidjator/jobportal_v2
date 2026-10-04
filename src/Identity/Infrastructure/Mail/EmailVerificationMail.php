@@ -2,15 +2,12 @@
 
 namespace Src\Identity\Infrastructure\Mail;
 
+use Src\Identity\Application\IdentityEmailTemplates;
+
 final class EmailVerificationMail extends VerificationCodeMail
 {
-    protected function subjectKey(): string
+    protected function templateKey(): string
     {
-        return 'identity.email_verification.subject';
-    }
-
-    protected function markdownView(): string
-    {
-        return 'identity.email-verification';
+        return IdentityEmailTemplates::EMAIL_VERIFICATION;
     }
 }
