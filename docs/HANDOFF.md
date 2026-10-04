@@ -122,14 +122,14 @@ Identity migrations `000004` to `000008` already create the tables; `config/perm
 Not done: the RBAC interface in Infrastructure, the admin model with `HasRoles` and its guard name, seeding roles and permissions. **Spatie translatable (2026-10-03):** `spatie/laravel-translatable` v6.14.1 installed (supports Laravel 13, no config published); verified by
 `tests/Feature/Shared/SpatieTranslatableCompatibilityTest.php` (JSON `{"id","en"}` column of `reference_job_categories`, locale read, fallback to `en`,
 `where('name->id', ...)` search). All three packages of the architecture decisions are now installed and checked. Not done: the real Eloquent models.
-**Identity foundation (2026-10-03, uncommitted, user chose "account foundation" as slice 1):** shared kernel gained `TransactionManager`, `EventDispatcher`
+**Identity foundation (2026-10-03, user chose "account foundation" as slice 1):** shared kernel gained `TransactionManager`, `EventDispatcher`
 (Laravel implementations bound in `AppServiceProvider`), `Actor`/`ActorKind` (kind and id only; company membership comes with the Company context),
 `DomainEvent` and `AggregateRoot`. `src/Identity`: Domain (`User`, `Admin`, `AccountStatus`, `UserType`, repository interfaces; sign-in refusal is
 `AccessDenied` with codes `account-suspended` / `account-deactivated`, the grace-period message names the deletion date), Infrastructure (`UserModel`,
 `AdminModel` with Sanctum tokens and Spatie roles under guard `admin`, Eloquent repositories, `IdentityServiceProvider`). `config/auth.php` was rewritten:
 two Sanctum guards `user` and `admin` with separate providers (no session guard, **no framework password broker**: resets use verification codes);
 `config/sanctum.php` published with `guard => []` and no global `expiration` (expiry is set per token). Tests prove a user token is refused on admin routes and
-vice versa, expired tokens are refused, and repositories round-trip. **Sign-in slice DONE (2026-10-03, uncommitted):** `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/me` and the same three under
+vice versa, expired tokens are refused, and repositories round-trip. **Sign-in slice DONE (2026-10-03):** `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/me` and the same three under
 `/api/v1/admin/...` (use cases `SignInUser`, `SignInAdmin`, `SignOut`, `GetCurrentUser`, `GetCurrentAdmin`). Decided with the user: at most **5 failed
 attempts per minute per scope+email+IP**, then 429 `too-many-requests` with `Retry-After`, no account lockout, a success clears the counter; a wrong password and an
 unknown email give the identical 401 `invalid-credentials` (and cost one hash check), a suspended/deactivated status is revealed only after the password is
@@ -139,7 +139,7 @@ pieces: `Clock`, `ActorProvider`/`ActorResolver`, exceptions `AuthenticationFail
 `{data: {token, token_type: "Bearer", expires_at, user|admin}}`; `/me` returns the resource under `data`. `/admin/me` lists `roles` and `permissions` as flat, sorted name lists (decided with
 the user; permissions are effective: from roles plus direct grants, no duplicates; `AdminAccessReader` port with a Spatie implementation; the login response
 carries only the basic admin fields). The two sign-in use cases are near-duplicates (one per account kind). Legacy password hashes are not handled yet (the hasher throws on a hash
-that is not bcrypt: decide with the data migration). **Registration slice DONE (2026-10-03, uncommitted):** `POST /api/v1/auth/register` (job seekers only; 201 with the same body as login),
+that is not bcrypt: decide with the data migration). **Registration slice DONE (2026-10-03):** `POST /api/v1/auth/register` (job seekers only; 201 with the same body as login),
 `POST /api/v1/auth/email/verify {code}` (204) and `POST /api/v1/auth/email/resend` (204), the last two behind `auth:user`. Decided with the user: code = 6 digits,
 valid **15 minutes**, single use, **5 wrong attempts** burn the code (then `verification-code-expired`; a wrong code is 422 `invalid-verification-code`);
 a new code only **60 seconds** after the previous one and **at most 5 per hour** (429 `verification-code-cooldown` / `verification-code-limit-reached`, with
@@ -156,7 +156,7 @@ tables and then, on the user's explicit approval, in the real tables (46 real ta
 `MAIL_MAILER=smtp` with comments, and its `DB_DATABASE` was corrected from the legacy `karir_pkp` to `jobportal_v2`; the user's local `.env` was **not** changed
 (it still has `sync` and `log`, fine for development; the production `.env` must use smtp, the `database` queue and workers for `critical,default,bulk`);
 (3) registration keeps revealing an existing email (409), accepted and limited by the rate limits. Still open: the `cache` table or another shared cache store
-(the sign-in and registration limiters use the cache; the current `file` store is fine for one server only). **Password reset DONE (2026-10-03, uncommitted):** `POST /api/v1/auth/password/forgot {email}` and `POST /api/v1/auth/password/reset {email, code, password}`, both
+(the sign-in and registration limiters use the cache; the current `file` store is fine for one server only). **Password reset DONE (2026-10-03):** `POST /api/v1/auth/password/forgot {email}` and `POST /api/v1/auth/password/reset {email, code, password}`, both
 204 and unauthenticated. Decided with the user: two endpoints (code and new password in one call, no intermediate token); `forgot` is **neutral** (always 204, no
 email for unknown, suspended or deactivated accounts, nothing revealed); throttling = **10 requests per IP per hour** (visible 429, independent of the email)
 plus the per-account limits (60 s apart, 5 per hour) applied **silently** (204 but no email); a successful reset sets the password, **marks the email verified**,
@@ -168,7 +168,7 @@ cancelled with the new credentials (endpoint still to be written). Suspended, ot
 `verification-code-expired` as a missing code. Reset codes are separate from verification codes (purpose), same 15-minute / 5-attempt rules. Refactors:
 `VerificationCodeIssuer` (per purpose, replaces `EmailVerificationCodeIssuer`), `VerificationCodeChecker` (shared wrong-attempt logic), `VerificationCodeMail`
 base with `EmailVerificationMail` and `PasswordResetMail`, event `PasswordReset`, `AccessTokenIssuer::revokeAllForUser`.
-**Account deletion DONE (2026-10-03, uncommitted):** `POST /api/v1/me/deletion {password, confirm: true}` (auth:user, 200 with `data.scheduled_for`),
+**Account deletion DONE (2026-10-03):** `POST /api/v1/me/deletion {password, confirm: true}` (auth:user, 200 with `data.scheduled_for`),
 `POST /api/v1/auth/account/restore {email, password, confirm: true}` (unauthenticated, returns a sign-in token like login) and the scheduled command
 `identity:anonymize-due-accounts` (daily 02:00, `withoutOverlapping`, `onOneServer`; `AnonymizeDueAccounts`, batches of 100, one transaction per account).
 Decided with the user: requesting needs the **current password + explicit confirmation** (wrong password 422 `invalid-password`, limited like sign-in; an account
@@ -191,7 +191,7 @@ Platform context: `RecordAuditEntry` / `AuditLogRepository` (append-only, `Datab
 (`default` queue); entries carry the actor, subject, IP address and user agent (cut to 255), metadata only `reason` / `scheduled_for`, never the typed email, a
 password or a code; anonymisation is recorded with the `system` actor. `PasswordReset`, `AccountDeletionRequested` and `AccountDeletionCancelled` events now carry the
 IP address and user agent. Not written yet: the audit read endpoint (`audit_logs.view`) and the 12-month purge job.
-**Google sign-in DONE (2026-10-03, uncommitted):** `POST /api/v1/auth/google {id_token, device_name?, campaign_code?}` returns the sign-in body plus
+**Google sign-in DONE (2026-10-03):** `POST /api/v1/auth/google {id_token, device_name?, campaign_code?}` returns the sign-in body plus
 `data.is_new_user` (200 for both). The API verifies the ID token itself with **`google/auth` v1.55.1** (chosen by the user over `google/apiclient` and a manual
 JWKS check); it needs **`phpseclib/phpseclib` ^3.0.35**, which `google/auth` lists only as a dev dependency, so it was added to `composer.json` (without it every
 verification fails). `GoogleAuthIdentityVerifier` checks signature, issuer and expiry through the library and **always** checks the audience itself against
@@ -205,7 +205,7 @@ sets a password later through the reset flow); an account that already has anoth
 seekers, verified, without a password, language from the request, optional campaign code; company members are never created this way but can link; suspended and
 deactivated accounts are refused as at normal sign-in; invalid tokens count against a per-IP limit (5 failures per minute, shared with sign-in) and are audited as
 `auth.login_failed`. New shared exception `ExternalServiceUnavailable` (503). Not done: unlinking Google, linking from account settings.
-**Content context DONE (2026-10-03, uncommitted):** legal documents and FAQ, public reading plus admin management, with the admin RBAC foundation.
+**Content context DONE (2026-10-03):** legal documents and FAQ, public reading plus admin management, with the admin RBAC foundation.
 Decided with the user: public endpoints return **one language** (request language, fallback to the other), admin endpoints the full `{id, en}` objects; lists of
 bounded size are **not paginated**; legal document lifecycle = **draft is free, publishing locks it forever, a newer version replaces the active one** (the previous
 one is archived in the same transaction; the type is locked first), publishing needs title and body in **both** languages (422 `legal-document-incomplete`), no manual
@@ -218,7 +218,7 @@ active questions in order; **categories without a visible question are left out*
 `/api/v1/admin/faq-categories` and `/api/v1/admin/faqs` (`filter[category_id]`). `LegalDocumentPublished` is dispatched (nobody listens yet; the terms gate and a
 future audit listener will). Details in architecture.md section 2.9. **Not run against the real tables:** `identity:sync-permissions` and `identity:create-admin` (they
 write to the real `identity_` tables: ask the user first); no legal text or FAQ content was written (it is the owner's content: enter it through the admin API).
-**Terms gate DONE (2026-10-04, uncommitted):** `GET /api/v1/me/terms-acceptance` (what is in force and what the user accepted: `data.accepted`, `data.documents[]`) and
+**Terms gate DONE (2026-10-04):** `GET /api/v1/me/terms-acceptance` (what is in force and what the user accepted: `data.accepted`, `data.documents[]`) and
 `POST /api/v1/me/terms-acceptance {terms_version?, privacy_version?}` (204). Decided with the user: the gate concerns **public users only** (admins are not asked);
 the user sends the **version of every document in force that they saw**; a version that is no longer in force is 409 `legal-document-outdated` (the body lists the
 versions in force), a document in force that is left out is 422 `legal-document-missing`, a type that is not in force is 422 `legal-document-not-active`; a type
@@ -230,7 +230,7 @@ client sends a token. **Exempt routes (exactly five, guarded by a test):** `GET 
 verification and resending are gated (the decided exception list did not include them). A route opts out with `->withoutMiddleware(EnforceTermsAcceptance::class)`.
 Content provides the versions in force through the shared port `ActiveLegalVersions` (`DatabaseActiveLegalVersions`, one light query per request, plus one query for the
 acceptances: add caching if it ever shows up in profiling). Registration does not record acceptance; a new account is gated like a migrated one.
-**ReferenceData context DONE (2026-10-04, uncommitted):** public reading of the 17 masters and the 5 location levels, and admin management of the masters, with the
+**ReferenceData context DONE (2026-10-04):** public reading of the 17 masters and the 5 location levels, and admin management of the masters, with the
 **first paginated lists** and the shared pagination component. Decided with the user: **skills, job-roles and tags are paginated** (offset, `page` from 1, `per_page` 1 to 100, default 20,
 else 422; `links` and `meta` with the total; `filter[q]` name search, `sort`, and `filter[kind]` on skills), the other 14 masters are returned whole (bounded, under 200 items,
 `page` parameters are ignored there); admins can **create, update and deactivate but not delete** items (permission `reference_data.manage`; **tags are not admin-managed yet**, Phase 1);
@@ -248,7 +248,7 @@ upload), admin management of locations (BPS data is not editable), benefit propo
 **Not done yet:** account-state middleware (email verified: 409 on actions that affect other parties, decided in architecture.md 2.8, to be added with the first such
 endpoints), audit read endpoint and purge job, audit of admin actions (publishing a legal document), purging resumes and Phase 1 profile data on anonymisation (with
 those features), real-world check of Google sign-in with the actual client IDs.
-New files under `docs/` are **uncommitted** (the user has not asked for a commit).
+Commits (branch `phase-0-foundation`): `27cb3e1` (all Phase 0 code, tests, migrations and config) and `f7b19e9` (documentation). Nothing is uncommitted after them.
 
 ## 6. Suggested next steps
 
@@ -266,7 +266,7 @@ New files under `docs/` are **uncommitted** (the user has not asked for a commit
 4. **Architecture document: DONE (2026-10-03).** `docs/design/architecture.md` holds the cross-cutting decisions (RFC 9457 errors and 422/409 statuses,
    Sanctum tokens with 30-day and 12-hour lifetimes and no abilities, hybrid authorization with an explicit `Actor`, request language, `/api/v1` URLs, pagination
    and filtering, pure domain entities with query services, `TransactionManager`, domain events after commit, three queues, per-context scheduler, private
-   files, account states). **Shared-kernel cleanup DONE (2026-10-03, uncommitted):** `ProblemDetailsRenderer` replaces `ApiResponse`, `StateConflict` added, `RequestContext` reduced to
+   files, account states). **Shared-kernel cleanup DONE (2026-10-03):** `ProblemDetailsRenderer` replaces `ApiResponse`, `StateConflict` added, `RequestContext` reduced to
    the language, routes load under `api/v1`, all `src` comments in English (72 tests, Pint and PHPStan clean; see architecture.md section 4). The rest of the
    decisions (auth, packages, routes) have no code yet.
 5. Audit and translate any remaining non-English comments/docs in the repository (the user has asked to be consulted before doing it).
