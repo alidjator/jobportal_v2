@@ -283,7 +283,29 @@ already queued) and gets its language explicitly from the sender. Admin API (gua
 a draft is checked with the saving rules and nothing is saved or sent; returns `subject`, `html`, `text`). Saves and resets are audited (`email_template.updated`, `email_template.reset`; metadata `template` and
 `locale`, never the text). **Not done:** a "send a test email" action (not decided), sender name and address overrides, a template catalog for the future contexts (they register theirs). `identity:sync-permissions`
 must be run again on the real database to create `email_templates.manage`, `settings.manage` and `audit_logs.view` (ask first).
-**Platform is complete.** Phase 0 remaining: Notification (preferences, device tokens, in-app notifications).
+**Platform is complete.**
+**Notification part 1, in-app notifications, DONE (2026-10-04, code not committed):** decided with the user: the server stores **no text**; a notification is a stable `type`
+key (such as `application.moved_to_interview`) plus structured `data`, and clients write and translate the message. Endpoints (all `auth:user`, so the terms gate applies; ids must be
+UUIDs, else 404): `GET /api/v1/me/notifications` (cursor-paginated like the audit log, newest first by time then id, `filter[read]=true|false`; any other filter is 422; items:
+`id`, `type`, `data`, `read_at`, `created_at`), `GET /api/v1/me/notifications/unread-count` (`data.count`), `POST /api/v1/me/notifications/{id}/read` (204, idempotent: the first read time
+is kept), `POST /api/v1/me/notifications/read-all` (204) and `DELETE /api/v1/me/notifications/{id}` (204). Another user's or an unknown id is 404 `not-found`. Purge, decided with the user:
+command `notification:purge-old`, **daily at 03:30** (`withoutOverlapping`, `onOneServer`), deletes notifications older than **6 months** (read or unread) in batches of 1,000, **no audit entry**.
+Code: `src/Notification/Application/InApp` (six use cases, ports `InAppNotificationReader` and `InAppNotificationRepository`), Database implementations in Infrastructure, controller, request
+and resource in Interface. 14 new tests; whole suite 413 passed, Pint and PHPStan clean. **Not done:** nothing creates in-app notifications yet (the writer/channel arrives with the first
+producing context, Phase 1), the preferences endpoints and the device-token endpoints (FCM).
+**Notification part 2, preferences, DONE (2026-10-04, code not committed):** decided with the user: kinds of notification form a **catalog in code**, registered by each context from its
+provider into the shared `NotificationPreferenceCatalog` (key in lower snake case up to 64 characters, description, and the channels it supports with the default of each: `email`, `push`); the
+catalog is **empty today** (`application_update` is registered by the application context in Phase 1). Only values the user sets are stored (`notification_preferences`, upsert); an explicit value
+is kept even if it equals the default. Endpoints (`auth:user`, gated by the terms): `GET /api/v1/me/notification-preferences` (whole catalog, not paginated: `key`, `description`, `channels`
+as `{email|push: {enabled, is_default}}`, only supported channels) and `PUT /api/v1/me/notification-preferences/{key}/{channel} {enabled}` (204; unknown key, unsupported or unknown channel is
+422 `unknown-notification-preference`; no reset endpoint). Senders ask the shared port `NotificationPreferences::isEnabled(userId, key, NotificationChannel)` (the user's choice, else the default;
+an unregistered key or unsupported channel throws). 8 new tests; whole suite 421 passed, Pint and PHPStan clean.
+**Notification part 3, device tokens, DONE (2026-10-04, code not committed), which completes the Notification context and Phase 0 code:** decided with the user: `POST /api/v1/me/device-tokens
+{token (max 512), platform: android|ios|web}` is an **idempotent upsert** (204): a known token only refreshes `last_used_at` (and platform), and a token registered by **another user moves to the
+caller** (the device is now used with this account). A user keeps **at most 10 tokens**; an eleventh replaces the least recently used (`last_used_at`, then newest id). `DELETE /api/v1/me/device-tokens/{token}`
+is 204 and silent when the token is unknown or not the caller's (nothing is revealed). The token is never returned. **No scheduled purge** of stale tokens (decided): invalid tokens are to be removed
+when the push sender (FCM, not written) learns from FCM that they are invalid. Not decided or done: removing the device token on logout, sending push itself (needs FCM credentials). 8 new tests;
+whole suite 429 passed, Pint and PHPStan clean. Reminder: no migration was added in the Notification work, so the real tables were not touched.
 
 **Not done yet:** account-state middleware (email verified: 409 on actions that affect other parties, decided in architecture.md 2.8, to be added with the first such
 endpoints), audit read endpoint and purge job, audit of admin actions (publishing a legal document), purging resumes and Phase 1 profile data on anonymisation (with
