@@ -10,8 +10,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "google/auth": "^1.55",
         "laravel/framework": "^13.17",
-        "laravel/tinker": "^3.0"
+        "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^3.0",
+        "phpseclib/phpseclib": "^3.0.35",
+        "spatie/laravel-permission": "^8.3",
+        "spatie/laravel-translatable": "^6.14"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

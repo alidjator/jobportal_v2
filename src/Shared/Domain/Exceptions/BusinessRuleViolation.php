@@ -2,5 +2,8 @@
 
 namespace Src\Shared\Domain\Exceptions;
 
-/** Aturan bisnis dilanggar (HTTP 400 `{error}` agar sama dengan aplikasi lama). */
-final class BusinessRuleViolation extends DomainException {}
+/** A syntactically valid request refused by a business rule (HTTP 422), for example exceeding a daily limit. */
+final class BusinessRuleViolation extends DomainException
+{
+    public const string DEFAULT_CODE = 'business-rule-violation';
+}

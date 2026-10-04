@@ -3,17 +3,20 @@
 namespace Src\Shared\Application;
 
 /**
- * Preferensi per-request (bahasa, negara, mata uang).
+ * Per-request preferences. The only one is the language (`id` or `en`).
  *
- * Aplikasi lama menyimpannya di session; API ini stateless sehingga nilainya
- * dikirim klien lewat header: `X-Language` / `Accept-Language`,
- * `selected_country` / `X-Country`, dan `X-Currency`.
+ * The API is stateless. The language is resolved from the `Accept-Language` header, then from the locale stored on
+ * the authenticated account, then falls back to the default. Asynchronous work such as emails never uses a request
+ * header: it uses the locale of the recipient's account.
  */
-final class RequestContext
+final readonly class RequestContext
 {
+    public const string DEFAULT_LANGUAGE = 'id';
+
+    /** @var list<string> */
+    public const array SUPPORTED_LANGUAGES = ['id', 'en'];
+
     public function __construct(
-        public readonly ?string $language = null,
-        public readonly ?int $countryId = null,
-        public readonly ?string $currency = null,
+        public string $language = self::DEFAULT_LANGUAGE,
     ) {}
 }

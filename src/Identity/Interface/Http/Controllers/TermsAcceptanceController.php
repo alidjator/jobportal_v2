@@ -1,0 +1,35 @@
+<?php
+
+namespace Src\Identity\Interface\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Src\Identity\Application\Terms\AcceptTerms;
+use Src\Identity\Application\Terms\GetTermsStatus;
+use Src\Identity\Application\Terms\TermsRequirement;
+use Src\Identity\Interface\Http\Requests\AcceptTermsRequest;
+use Src\Shared\Application\RequestContext;
+use Src\Shared\Interface\Http\ActorResolver;
+use Src\Shared\Interface\Http\ApiController;
+
+/** The terms gate's own endpoints: both are exempt from the gate, otherwise nobody could ever accept. */
+final class TermsAcceptanceController extends ApiController
+{
+    public function show(Request $request, ActorResolver $actors, GetTermsStatus $getStatus): JsonResponse
+    {
+        $requirements = $getStatus->execute($actors->fromRequest($request));
+
+        return new JsonResponse(['data' => [
+            'accepted' => ! in_array(false, array_map(fn (TermsRequirement $r): bool => $r->accepted, $requirements), true),
+            'documents' => array_map(fn (TermsRequirement $r): array => ['type' => $r->type, 'version' => $r->version, 'accepted' => $r->accepted], $requirements),
+        ]]);
+    }
+
+    public function store(AcceptTermsRequest $request, RequestContext $context, ActorResolver $actors, AcceptTerms $acceptTerms): Response
+    {
+        $acceptTerms->execute($actors->fromRequest($request), $request->versions(), $context->language, $request->ip());
+
+        return new Response(status: Response::HTTP_NO_CONTENT);
+    }
+}
