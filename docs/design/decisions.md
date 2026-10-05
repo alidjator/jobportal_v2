@@ -122,10 +122,13 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
     safe file storage, audit log, master data and location, legal pages and FAQ. The source-attribution column is prepared here.
   - **1 Core recruiting loop:** companies and teams (R1), jobs and lifecycle, job search, job seeker profile and resumes, applying (J1),
     hybrid stages and history, screening questions, pipeline, stage notifications, **data migration** (scripts and tests).
-  - **2 Collaboration:** notes and ratings, interview scheduling, offers, bulk actions, chat with attachments, CSV export, document verification.
+  - **2 Collaboration:** notes and ratings, interview scheduling, offers, bulk actions, chat with attachments, CSV export (document verification moved to Phase 1 and is done).
   - **3 Discovery and matching:** job alerts (J5/J6), candidate search, matching engine (J8, R12), job invitation (R10), CV generator (J7).
   - **4 Content and trust:** salary insight, company reviews, campaigns, Moodle training, newsletter.
-- Not yet decided: order inside each phase, estimates, and per-phase bounded-context/schema design beyond Phase 0.
+- **Order inside Phase 1 (confirmed 2026-10-05, company side first):** 1) Company and team (done), 1b) company document verification (done; it was moved here from Phase 2 and is complete),
+  2) jobs, their lifecycle and per-job assignment, 3) public job search, 4) hybrid stages (seven default stages per company), 5) screening questions, 6) job seeker profile and resumes,
+  7) applying (J1), 8) pipeline with stage history and stage notifications, 9) data migration (scripts and tests only). Each step is designed one question at a time before it is coded.
+- Not yet decided: order inside the other phases, estimates, and per-phase bounded-context/schema design beyond Phase 0 and the Company context.
 
 ## 6. Still open (see also `phase-0-schema.md`)
 
@@ -143,5 +146,5 @@ purge, `notifications` index, verification-code lifetime, location data source a
 in `phase-0-schema.md`, section "Details still open".
 
 Still open: matching weights and signals; salary-insight grouping dimensions; rating scale and reporting for reviews; slot rules for bulk interviews and the number
-of reschedule rounds; offer validity and revisions; fixed rejection reasons for document verification; accepted document types and sizes; export columns;
+of reschedule rounds; offer validity and revisions; export columns (the rejection reasons, accepted types and sizes of company document verification were decided on 2026-10-05, see `phase-1-company.md`);
 anti-spam rules for bulk messages beyond the 50-recipient cap; CV template count; reviewer visibility rules (to be confirmed with legal review).
