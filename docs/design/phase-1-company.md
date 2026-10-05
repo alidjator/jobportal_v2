@@ -148,6 +148,27 @@ matches `[a-z0-9-]+`; `Company` now holds a `CompanyProfile` value object and `C
 - **Audit:** profile edits and slug changes are **not** audited (the audit log is not a log of all data changes).
 - New shared ports: `LocationReferences` (chain check and names, provided by ReferenceData) and `ReferenceValues::name` (the name of a master item in a language).
 
+## Slice 4: logo and banner upload (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
+
+The first file feature; the mechanism is shared (image processing, file storage) so avatars and resumes can reuse it. **Done:** 32 new tests (11 for the image processor, 21 for
+the endpoints), whole suite 569 passed, Pint and PHPStan clean. **Deviation from the first agreement, decided with the user the same day:** the upload is a **multipart `POST`**,
+not a `PUT`, because PHP does not read a multipart body on PUT (the file would never arrive). The shared pieces are `ImageProcessor` (`GdImageProcessor`), and `FileStorage` which
+gained `put` and `get`. The settings `company.logo_max_size_kb` and `company.banner_max_size_kb` now appear in the admin settings list.
+
+- **Endpoints (company admin of an active company):** `POST /api/v1/company/logo` and `POST /api/v1/company/banner` (multipart, field `file`, 204) and `DELETE` on the same
+  paths (204, also when there is no image). Reading: public `GET /api/v1/companies/{slug}/logo|banner` (no sign-in; 404 when the company is not public or has no image;
+  `Cache-Control: public, max-age=3600` and an `ETag`) and own `GET /api/v1/company/logo|banner` (any member, also while the company is hidden or suspended; private cache).
+  The profiles carry `logo_url` and `banner_url` (absolute API URLs ending in `?v=<version>` so a replaced image breaks the cache; `null` when there is none); the own profile
+  points to the own routes, the public profile to the public ones.
+- **Processing:** the type comes from the content (JPEG, PNG or WebP, never the extension or the client's type), else 422 `invalid-image`; the image is decoded and **encoded
+  again with GD**, which drops all metadata (EXIF, GPS) and anything hidden in the file; JPEG orientation is applied first. Logos are shrunk to fit **512x512**, banners **1600x600**
+  (never cropped or enlarged). Output is PNG when the result has any transparency, JPEG (quality 85) otherwise. A source above 16 million pixels is refused (decompression bomb).
+- **Size limits** are admin settings registered by Company: `company.logo_max_size_kb` (default 2048) and `company.banner_max_size_kb` (default 5120), both 100 to 10,240;
+  larger files are 422 `file-too-large`.
+- **Storage:** the private disk, random names (`company/logos/<random>.png|jpg`, `company/banners/...`), never the client's name. Replacing stores the new file, updates the
+  row, then deletes the old file (a failed delete is logged and does not fail the upload). Not audited.
+- The PHP limits `upload_max_filesize` and `post_max_size` must be at least the largest configured limit, or the request is cut before the API sees it.
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account

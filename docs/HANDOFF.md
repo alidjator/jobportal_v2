@@ -325,7 +325,11 @@ the choices made while coding (suspended company 403, 20 lookups per IP per hour
 suite 482 passed), **not committed**; decisions in `phase-1-company.md`. Invitations sent and revoked **are audited** (`company.invitation_sent` / `company.invitation_revoked`,
 decided with the user after advice, which supersedes the earlier "membership changes only"). Slices 1 and 2 are committed. **Slice 3, profile, is coded**
 (`GET|PATCH /company/profile`, `PUT /company/slug`, public `GET /companies/{slug}` without contact data; 55 tests, suite 537 passed), **not committed**; logo and banner upload is
-the next slice (the first file feature). Decisions and validation rules are in `phase-1-company.md`. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
+the next slice (the first file feature). Decisions and validation rules are in `phase-1-company.md`. Slice 3 is committed. **Slice 4, logo and banner upload, is coded**
+(`POST|DELETE /company/logo|banner`, `GET /company/logo|banner`, public `GET /companies/{slug}/logo|banner`; the image is checked by content, re-encoded with GD and stored
+under a random name on the private disk; limits are the settings `company.logo_max_size_kb` / `company.banner_max_size_kb`; 32 tests, suite 569 passed), **not committed**.
+It is a multipart POST, not PUT (PHP does not read a multipart PUT). Still to do for Company: the admin slice (list and detail of companies, suspend and restore, company
+setting overrides); and `identity:sync-permissions` plus `php artisan migrate` on the real database. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
 
 ## 6. Suggested next steps
 
