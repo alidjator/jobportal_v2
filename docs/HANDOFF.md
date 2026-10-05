@@ -328,8 +328,11 @@ decided with the user after advice, which supersedes the earlier "membership cha
 the next slice (the first file feature). Decisions and validation rules are in `phase-1-company.md`. Slice 3 is committed. **Slice 4, logo and banner upload, is coded**
 (`POST|DELETE /company/logo|banner`, `GET /company/logo|banner`, public `GET /companies/{slug}/logo|banner`; the image is checked by content, re-encoded with GD and stored
 under a random name on the private disk; limits are the settings `company.logo_max_size_kb` / `company.banner_max_size_kb`; 32 tests, suite 569 passed), **not committed**.
-It is a multipart POST, not PUT (PHP does not read a multipart PUT). Still to do for Company: the admin slice (list and detail of companies, suspend and restore, company
-setting overrides); and `identity:sync-permissions` plus `php artisan migrate` on the real database. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
+It is a multipart POST, not PUT (PHP does not read a multipart PUT). Slice 4 is committed. **Slice 5, admin, is coded** (admin list with filters and paging, detail, suspend and restore with a reason kept on the company and audited,
+and per-company setting overrides under `settings.manage`; 38 tests, suite 618 passed), **not committed**; decisions in `phase-1-company.md`. **Next slice: company document verification**
+(company-side document upload, admin approve or reject with a reason, public badge; new tables; open decisions: document types and sizes, the list of rejection reasons).
+**The real database still needs, with the user's approval:** `php artisan migrate` (the four `company_` migrations `000048` to `000051`: three new tables and the suspension columns) and
+`identity:sync-permissions` (`companies.manage`). Because `.env` is now `production`, run the test-table migration as `APP_ENV=testing php artisan test:database:migrate`.
 
 **Publishing at `https://api-karir.satu.solutions` (2026-10-05, LIVE: the user installed the nginx config as root and `nginx -t` passed; verified from outside the same day: `GET /api/v1/faq`
 200 JSON with the security headers, unknown route 404 with a generic body, `/.env` 403, other `.php` files 404, `/storage/x` 404, HTTP redirects to HTTPS, certificate valid until 2027-01-03;

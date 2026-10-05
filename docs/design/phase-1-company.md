@@ -169,6 +169,31 @@ gained `put` and `get`. The settings `company.logo_max_size_kb` and `company.ban
   row, then deletes the old file (a failed delete is logged and does not fail the upload). Not audited.
 - The PHP limits `upload_max_filesize` and `post_max_size` must be at least the largest configured limit, or the request is cut before the API sees it.
 
+## Slice 5: admin (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
+
+**Done:** 38 new tests (23 for the list, detail, suspend and restore; 15 for the setting overrides), whole suite 618 passed, Pint and PHPStan clean. Migration `000051` (`suspended_at` and
+`suspension_reason` on `company_companies`) was run **only against the `test_` tables**; since `.env` is now `production`, the command needs `APP_ENV=testing php artisan test:database:migrate`
+(its guard refuses to run in production). Implementation notes: suspending and restoring lock the company row, so two admins at the same moment cannot both succeed; the admin detail leaves out
+the picture URLs of the company's own profile (an admin cannot call the company's own routes) and has `has_logo` and `has_banner` instead; the override audit entries use subject type `company`
+and the company id (`old` is the value that applied to the company before the change, `new` the new one; a reset logs the removed override as `old`); the shared port `CompanyDirectory`
+(provided by Company) answers "does the company exist" for Platform.
+
+Four wishes were named; **company document verification becomes its own slice right after this one** (it needs a company-side document upload, new tables and open decisions: document
+types and sizes, the list of rejection reasons). This slice holds three parts, all guard `admin`:
+
+- **List and detail (permission `companies.manage`):** `GET /api/v1/admin/companies` is **offset-paginated** (`page`, `per_page` 1 to 100, default 20, with the total) with `filter[q]`
+  (name or slug, case-insensitive), `filter[status]=active|suspended`, `filter[verified]=true|false` and `sort` (`name`, `-name`, `created_at`, `-created_at`; default newest first). Each
+  row: `id`, `name`, `slug`, `status`, `verified`, `members_count`, `created_at`. `GET /api/v1/admin/companies/{id}` adds the whole profile (as the company sees it), pending invitations count,
+  `created_by_admin_id`, and `suspended_at` and `suspension_reason` while suspended.
+- **Suspend and restore (permission `companies.manage`):** `POST .../{id}/suspend {reason}` (reason **required**, 5 to 1,000 characters) and `POST .../{id}/restore {note}` (note optional, up
+  to 1,000 characters, audit only), both 204. Suspending a suspended company is 409 `company-already-suspended`; restoring an active one 409 `company-not-suspended`; unknown company 404.
+  **The reason is stored on the company** (new columns `suspended_at` and `suspension_reason`, cleared on restore) **and audited** (`company.suspended` with the reason, `company.restored`
+  with the note); **only admins see it**, members just get 403 `company-suspended`. Member tokens are **not** revoked: they can still sign in and see the 403.
+- **Per-company setting overrides (permission `settings.manage`, built in Platform):** `GET /api/v1/admin/companies/{id}/settings` (the overridable settings: global value, the company's
+  override and the effective value), `PUT .../{key} {value}` and `DELETE .../{key}` (back to the global value). Validation and cache handling stay with Platform's settings; "the company
+  exists" comes from a shared port provided by Company. A setting that is not overridable is 422 `setting-not-overridable`; an unknown company or key is 404. Changes are audited
+  (`settings.updated` and `settings.reset` carry the company id).
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account
