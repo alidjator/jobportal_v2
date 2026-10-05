@@ -30,6 +30,7 @@
         <env name="DB_DATABASE" value="jobportal_v2"/>
         <env name="DB_PREFIX" value="test_" force="true"/>
         <env name="DB_URL" value=""/>
+        <env name="LOG_CHANNEL" value="null"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

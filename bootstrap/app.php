@@ -5,6 +5,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
+use Src\Shared\Domain\Exceptions\DomainException;
+use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
 use Src\Shared\Interface\Http\Middleware\ResolveRequestLanguage;
 use Src\Shared\Interface\Http\Problem\ProblemDetailsRenderer;
 
@@ -24,4 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $problems = new ProblemDetailsRenderer;
 
         $exceptions->render(fn (Throwable $e, Request $request) => $problems->render($e, $request));
+
+        // A domain exception is an expected answer to a client (404, 403, 409, 422, 429...): it is rendered, never logged. Logging each one
+        // with its stack trace would let anyone fill the disk by guessing tokens or failing sign-ins, and bury the real faults. An unavailable
+        // external service stays reported, because it needs an operator.
+        $exceptions->dontReportWhen(fn (Throwable $e): bool => $e instanceof DomainException && ! $e instanceof ExternalServiceUnavailable);
     })->create();
