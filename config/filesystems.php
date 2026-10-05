@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off on purpose: with `true` Laravel adds `GET|PUT /storage/{path}` for signed URLs to this private disk. Files leave the API only through
+            // endpoints that check access (see architecture.md section 2.7), so that built-in route stays unregistered.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
