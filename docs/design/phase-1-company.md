@@ -172,8 +172,8 @@ gained `put` and `get`. The settings `company.logo_max_size_kb` and `company.ban
 ## Slice 5: admin (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
 
 **Done:** 38 new tests (23 for the list, detail, suspend and restore; 15 for the setting overrides), whole suite 618 passed, Pint and PHPStan clean. Migration `000051` (`suspended_at` and
-`suspension_reason` on `company_companies`) was run **only against the `test_` tables**; since `.env` is now `production`, the command needs `APP_ENV=testing php artisan test:database:migrate`
-(its guard refuses to run in production). Implementation notes: suspending and restoring lock the company row, so two admins at the same moment cannot both succeed; the admin detail leaves out
+`suspension_reason` on `company_companies`) was run **only against the `test_` tables**; it was later applied to the real tables too, together with `000048` to `000050` (2026-10-05, with the user's approval). (While `.env` was `production`, the
+test-table command needed `APP_ENV=testing`, because its guard refuses to run in production; `.env` is `local` now.) Implementation notes: suspending and restoring lock the company row, so two admins at the same moment cannot both succeed; the admin detail leaves out
 the picture URLs of the company's own profile (an admin cannot call the company's own routes) and has `has_logo` and `has_banner` instead; the override audit entries use subject type `company`
 and the company id (`old` is the value that applied to the company before the change, `new` the new one; a reset logs the removed override as `old`); the shared port `CompanyDirectory`
 (provided by Company) answers "does the company exist" for Platform.

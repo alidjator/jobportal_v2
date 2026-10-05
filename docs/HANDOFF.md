@@ -332,7 +332,11 @@ It is a multipart POST, not PUT (PHP does not read a multipart PUT). Slice 4 is 
 and per-company setting overrides under `settings.manage`; 38 tests, suite 618 passed), **not committed**; decisions in `phase-1-company.md`. **Next slice: company document verification**
 (company-side document upload, admin approve or reject with a reason, public badge; new tables; open decisions: document types and sizes, the list of rejection reasons).
 **The real database still needs, with the user's approval:** `php artisan migrate` (the four `company_` migrations `000048` to `000051`: three new tables and the suspension columns) and
-`identity:sync-permissions` (`companies.manage`). Because `.env` is now `production`, run the test-table migration as `APP_ENV=testing php artisan test:database:migrate`.
+`identity:sync-permissions` (`companies.manage`). **Both were run on the real database on 2026-10-05 with the user's approval** (51 migrations recorded; the three `company_` tables hold 0 rows and match the
+`test_` tables column by column; 7 permissions). **`https://api-karir.satu.solutions` is a DEV domain** (the user's statement, 2026-10-05): errors and half-finished work showing there are acceptable, so
+the live site runs straight from this working folder and **no separate release folder is needed** (proposed and then withdrawn). `master` was fast-forwarded to the tip of `phase-1-company` and tagged
+`v0.1.0` (local repo, no remote). Because the domain is on the open internet, `APP_DEBUG` stays `false` (a debug page would show the configuration, including the database password); `.env` is
+`APP_ENV=local`, so `php artisan test:database:migrate` runs without any override.
 
 **Publishing at `https://api-karir.satu.solutions` (2026-10-05, LIVE: the user installed the nginx config as root and `nginx -t` passed; verified from outside the same day: `GET /api/v1/faq`
 200 JSON with the security headers, unknown route 404 with a generic body, `/.env` 403, other `.php` files 404, `/storage/x` 404, HTTP redirects to HTTPS, certificate valid until 2027-01-03;
@@ -346,7 +350,7 @@ keep failing for those three, which may make the unit report failure and send al
 `/run/php-fpm/www.sock`, upstream `php83-fpm`); DNS resolves and a Let's Encrypt certificate (valid until 2027-01-03, renewed by `certbot-renew.timer`) is already served. The config file is
 `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (root-owned; Claude has no sudo). The new version is prepared at `/home/jobportal/nginx/api-karir.satu.solutions.conf` (root
 `/usr/local/src/jobportal/public`, only `index.php` runs, other `.php` files 404, dotfiles denied, security headers, `client_max_body_size 12m`, Certbot lines untouched); its
-syntax and behaviour were verified in a sandbox nginx plus a private php-fpm on loopback ports. The user installed it as root (the previous file is kept at `/root/api-karir.satu.solutions.conf.bak-20261005`). The `.env` was switched to production values (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `LOG_STACK=daily`, `LOG_LEVEL=warning`; the old file is
+syntax and behaviour were verified in a sandbox nginx plus a private php-fpm on loopback ports. The user installed it as root (the previous file is kept at `/root/api-karir.satu.solutions.conf.bak-20261005`). The `.env` was switched to hardened values (`APP_ENV=production` at first and, since the domain is for dev, `APP_ENV=local` afterwards; `APP_DEBUG=false`, `APP_URL`, `LOG_STACK=daily`, `LOG_LEVEL=warning`; the old file is
 backed up outside the repository at `/home/jobportal/backup/jobportal.env.20261005`). **Decided with the user:** email stays `MAIL_MAILER=log` for now (so verification, password-reset and invitation
 emails are only written to the log and never reach anyone: the site is not ready for real users until SMTP is configured, and the SMTP credentials are to be entered by the user, ideally a
 new SMTP2GO user separate from the legacy app's), `COMPANY_INVITATION_URL` stays empty (inviting fails with 503 `invitation-link-unavailable` until a client page exists), and `QUEUE_CONNECTION`
