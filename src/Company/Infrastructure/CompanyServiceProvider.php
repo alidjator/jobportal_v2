@@ -2,6 +2,7 @@
 
 namespace Src\Company\Infrastructure;
 
+use Src\Company\Application\Admin\AdminCompanyReader;
 use Src\Company\Application\CompanyEmailTemplates;
 use Src\Company\Application\CompanyPermissions;
 use Src\Company\Application\CompanySlugGenerator;
@@ -13,10 +14,13 @@ use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
+use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
+use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
+use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
@@ -29,6 +33,8 @@ final class CompanyServiceProvider extends ContextServiceProvider
     public array $bindings = [
         CompanyRepository::class => DatabaseCompanyRepository::class,
         CompanyMemberRepository::class => DatabaseCompanyMemberRepository::class,
+        AdminCompanyReader::class => DatabaseAdminCompanyReader::class,
+        CompanyDirectory::class => RepositoryCompanyDirectory::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
         CompanySlugGenerator::class => LaravelCompanySlugGenerator::class,

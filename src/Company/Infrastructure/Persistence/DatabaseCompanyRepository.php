@@ -58,6 +58,8 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
             'name' => $profile->name,
             'slug' => $company->slug(),
             'status' => $company->status()->value,
+            'suspended_at' => $company->suspendedAt()?->format(self::TIME_FORMAT),
+            'suspension_reason' => $company->suspensionReason(),
             'logo_path' => $company->logoPath(),
             'banner_path' => $company->bannerPath(),
             'website' => $profile->website,
@@ -99,7 +101,7 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
 
         return new Company(
             (int) $id, $company->slug(), $company->status(), $company->verifiedAt(), $company->createdByAdminId(), $profile,
-            $company->logoPath(), $company->bannerPath(),
+            $company->logoPath(), $company->bannerPath(), $company->suspendedAt(), $company->suspensionReason(),
         );
     }
 
@@ -132,6 +134,9 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
             ),
             $row->logo_path,
             $row->banner_path,
+            $row->suspended_at === null ? null : new DateTimeImmutable((string) $row->suspended_at, new DateTimeZone('UTC')),
+            $row->suspension_reason,
+            $row->created_at === null ? null : new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
         );
     }
 

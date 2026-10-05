@@ -10,6 +10,8 @@ use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
+use Src\Company\Domain\Events\CompanyRestored;
+use Src\Company\Domain\Events\CompanySuspended;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordReset;
@@ -81,6 +83,8 @@ final class PlatformServiceProvider extends ContextServiceProvider
         }
 
         Event::listen(CompanyCreated::class, [RecordCompanyAuditEntries::class, 'onCompanyCreated']);
+        Event::listen(CompanySuspended::class, [RecordCompanyAuditEntries::class, 'onCompanySuspended']);
+        Event::listen(CompanyRestored::class, [RecordCompanyAuditEntries::class, 'onCompanyRestored']);
         Event::listen(CompanyInvitationSent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationSent']);
         Event::listen(CompanyInvitationRevoked::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationRevoked']);
         Event::listen(CompanyMemberJoined::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberJoined']);

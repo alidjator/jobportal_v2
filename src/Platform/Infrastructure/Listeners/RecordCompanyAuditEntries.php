@@ -9,6 +9,8 @@ use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
+use Src\Company\Domain\Events\CompanyRestored;
+use Src\Company\Domain\Events\CompanySuspended;
 use Src\Platform\Application\Audit\AuditAction;
 use Src\Platform\Application\Audit\AuditActorType;
 use Src\Platform\Application\Audit\AuditEntry;
@@ -44,6 +46,23 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->record->execute(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_CREATED,
             self::SUBJECT_TYPE, $event->companyId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanySuspended(CompanySuspended $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_SUSPENDED,
+            self::SUBJECT_TYPE, $event->companyId, ['reason' => $event->reason], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyRestored(CompanyRestored $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_RESTORED,
+            self::SUBJECT_TYPE, $event->companyId, $event->note === null ? [] : ['note' => $event->note],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

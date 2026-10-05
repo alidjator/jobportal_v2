@@ -29,6 +29,10 @@ final class AuditAction
 
     public const string COMPANY_CREATED = 'company.created';
 
+    public const string COMPANY_SUSPENDED = 'company.suspended';
+
+    public const string COMPANY_RESTORED = 'company.restored';
+
     public const string COMPANY_INVITATION_SENT = 'company.invitation_sent';
 
     public const string COMPANY_INVITATION_REVOKED = 'company.invitation_revoked';
