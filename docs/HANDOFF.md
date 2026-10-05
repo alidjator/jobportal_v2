@@ -333,8 +333,13 @@ setting overrides); and `identity:sync-permissions` plus `php artisan migrate` o
 
 **Publishing at `https://api-karir.satu.solutions` (2026-10-05, LIVE: the user installed the nginx config as root and `nginx -t` passed; verified from outside the same day: `GET /api/v1/faq`
 200 JSON with the security headers, unknown route 404 with a generic body, `/.env` 403, other `.php` files 404, `/storage/x` 404, HTTP redirects to HTTPS, certificate valid until 2027-01-03;
-the user also ran `certbot renew --dry-run`, whose final result line was not shown to Claude). Not yet proven: no request has made PHP-FPM write to `storage/` (no file owned by `nginx` exists
-yet), so the write access of the `nginx` user is set through ACLs but untested by a real write.** The server is `nginx/1.20.1` with the system PHP-FPM pool (user `nginx`, socket
+the user also ran `certbot renew --dry-run`: **the renewal of `api-karir.satu.solutions` (and of `api-aws`) simulated fine; 3 other certificates failed for reasons that predate this work and have
+nothing to do with it**: `dev-ocr.satu.solutions` (this server, webroot: the HTTPS side answers 502, its backend is down), and `explore.gajiannow.com` and `integration.gajiannow.com` (their DNS
+points to another server, 2.57.91.92, which answers 500, so Let's Encrypt can never validate them from here; they look like stale renewal entries on this server). The real `certbot-renew.timer` will
+keep failing for those three, which may make the unit report failure and send alerts; the user decides whether to fix the backend or run `certbot delete` for the stale ones). **Proven with one failed sign-in sent to the public domain (the user approved it): 401 `invalid-credentials`; PHP-FPM (user `nginx`) created the rate-limiter files under
+`storage/framework/cache/data` and `jobportal` can read and write them; the audit entry `auth.login_failed` (reason only, no email, IP of the caller) was written to the real
+`platform_audit_logs` (row 1; the audit log is append-only and is purged after 12 months); no new line in the application log.** Note: every response carries
+`Access-Control-Allow-Origin: *` (Laravel's default CORS config); acceptable for a token API without cookies, to be narrowed when the client origins are known. The server is `nginx/1.20.1` with the system PHP-FPM pool (user `nginx`, socket
 `/run/php-fpm/www.sock`, upstream `php83-fpm`); DNS resolves and a Let's Encrypt certificate (valid until 2027-01-03, renewed by `certbot-renew.timer`) is already served. The config file is
 `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (root-owned; Claude has no sudo). The new version is prepared at `/home/jobportal/nginx/api-karir.satu.solutions.conf` (root
 `/usr/local/src/jobportal/public`, only `index.php` runs, other `.php` files 404, dotfiles denied, security headers, `client_max_body_size 12m`, Certbot lines untouched); its
