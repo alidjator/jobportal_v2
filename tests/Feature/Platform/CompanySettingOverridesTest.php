@@ -11,10 +11,13 @@ use Src\Platform\Application\Settings\SettingsStore;
 use Src\Shared\Application\Settings\SettingDefinition;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 
 final class CompanySettingOverridesTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private string $token;
 
     private int $companyId;
@@ -51,7 +54,7 @@ final class CompanySettingOverridesTest extends FeatureTestCase
     private function company(string $slug): int
     {
         return (int) DB::table('company_companies')->insertGetId([
-            'name' => $slug, 'slug' => $slug, 'status' => 'active', 'industry_id' => 1, 'organization_type_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+            'name' => $slug, 'slug' => $slug, 'status' => 'active', 'industry_id' => $this->industryId(), 'organization_type_id' => $this->organizationTypeId(), 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 

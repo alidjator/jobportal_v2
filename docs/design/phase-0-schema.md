@@ -17,7 +17,13 @@ Content). Nothing is created in the database yet; migrations are written next, c
   (no `*_translations` tables) managed with `spatie/laravel-translatable`, used only in Infrastructure Eloquent models (Domain and Application do not
   know the package). Compatibility with Laravel 13 is verified when the package is added to `composer.json`. Static texts from code use `lang/` files or
   the code catalog.
-- No foreign keys across bounded contexts unless noted; cross-context references are plain indexed columns.
+- **Foreign keys (rule changed 2026-10-05, decided by the user; the earlier line "no foreign keys across bounded contexts" was written by Claude and approved only as part of this document):** a foreign key
+  is a database feature, so it applies across contexts too. Columns that reference **reference data (`reference_*`) and companies (`company_companies`)** have a foreign key with `RESTRICT` (those rows
+  are never deleted: reference data is deactivated, companies are suspended). Columns that reference **accounts and admins** (`user_id`, `created_by_user_id`, `*_admin_id`) keep **no foreign key**
+  (accounts are anonymised, and these columns record who acted). Polymorphic columns (`notifiable_id`, `tokenable_id`, `model_id`, audit `actor_id` and `subject_id`) cannot have one. The application
+  still validates references first (ports such as `LocationReferences` and `ReferenceValues`) so a client gets a clear 422, not a database error. Two foreign keys from Notification to `identity_users`
+  existed from the start and stay. Applied to the Company and Job tables (and `reference_benefits.proposed_by_company_id`) by migrations `000059` to `000061`, run against the `test_` tables and then, on the user's explicit
+  approval, against the real tables (2026-10-05; the foreign keys of the real and `test_` tables are identical, 47 each; no row changed).
 - Money, when it appears later: integer Rupiah, no currency column.
 - Coordinates: `decimal(10,7)`.
 

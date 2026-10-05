@@ -10,10 +10,13 @@ use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 
 final class CompanyTeamTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private const string PASSWORD = 'password-123';
 
     private int $companyId;
@@ -50,7 +53,7 @@ final class CompanyTeamTest extends FeatureTestCase
     private function makeCompany(string $name, string $slug, string $status = 'active'): int
     {
         return (int) DB::table('company_companies')->insertGetId([
-            'name' => $name, 'slug' => $slug, 'status' => $status, 'industry_id' => 1, 'organization_type_id' => 1,
+            'name' => $name, 'slug' => $slug, 'status' => $status, 'industry_id' => $this->industryId(), 'organization_type_id' => $this->organizationTypeId(),
             'created_at' => now(), 'updated_at' => now(),
         ]);
     }

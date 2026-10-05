@@ -55,8 +55,9 @@ pivot tables, and creates a "pending" copy of a job when an active one is edited
 
 ## Tables (`job_`) — column design **APPROVED by the user (2026-10-05)**
 
-Conventions as in `phase-0-schema.md`: `bigint unsigned` auto-increment `id`, enumerations as `varchar` with a check constraint, no foreign keys across bounded contexts (references to Company, Identity and
-ReferenceData are plain indexed columns), foreign keys only inside this context.
+Conventions as in `phase-0-schema.md`: `bigint unsigned` auto-increment `id`, enumerations as `varchar` with a check constraint. Foreign keys: **changed 2026-10-05** (see `phase-0-schema.md`):
+`company_id`, every classification column, the salary period, the five location columns and the skill, tag and benefit columns of the pivots have `RESTRICT` foreign keys (migration `000060`); the columns
+that point to accounts and admins (`created_by_user_id`, `reviewed_by_admin_id`, `job_assignments.user_id` and `assigned_by_user_id`) have none. The columns below were first designed without them.
 
 ### `job_jobs`
 id; company_id (index); title varchar(150); slug varchar(160) (lower case from the title; the API builds `{slug}-{id}`); status varchar(20) (check: `draft`, `pending_review`, `active`, `closed`,

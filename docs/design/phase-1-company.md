@@ -36,8 +36,9 @@ into `Actor` and the per-company setting overrides (reader and storage already e
 
 ## Tables (`company_`) — column design **APPROVED by the user (2026-10-05)**
 
-Conventions as in `phase-0-schema.md`: `bigint unsigned` auto-increment `id`, enumerations as `varchar` with a check constraint, no foreign keys across
-bounded contexts (references to Identity and ReferenceData are plain indexed columns), foreign keys only inside this context.
+Conventions as in `phase-0-schema.md`: `bigint unsigned` auto-increment `id`, enumerations as `varchar` with a check constraint. Foreign keys: **changed 2026-10-05** (see `phase-0-schema.md`): the
+reference-data columns of `company_companies` (industry, organization type, team size and the five location columns) have `RESTRICT` foreign keys (migration `000059`); references to accounts and admins
+(`user_id`, `created_by_admin_id`, `invited_by_*`, `reviewed_by_admin_id`) have none. The text below describes the original design.
 
 ### `company_companies`
 id; name varchar(255); slug varchar(60) unique; status varchar(20) default `active` (check: `active`, `suspended`); logo_path, banner_path varchar(255) null;

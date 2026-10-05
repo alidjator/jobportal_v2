@@ -32,6 +32,8 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 - MariaDB `jobportal_v2`; credentials only in the git-ignored `.env`. **Never copy secrets** into docs, memory, commits or chat.
 - Tables are prefixed per bounded context (`identity_`, `company_`, `reference_`, ...). **Every test-related object uses the `test_` prefix** in front
   of that; tests run in the same database and must never touch non-`test_` objects.
+- **Foreign keys** (decided by the user, 2026-10-05): a column that references `reference_*` or `company_companies` has a `RESTRICT` foreign key, also across contexts; columns that reference
+  accounts or admins (`user_id`, `created_by_user_id`, `*_admin_id`) have none, and neither do polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
 - A new migration runs **twice**: `php artisan test:database:migrate` (test tables), then `php artisan migrate` (real tables, only with approval).
 - The production karir.pkp database is reachable only through the read-only account (`KARIR_PKP_DB_*`): **schema only, never read data** without explicit approval.
 

@@ -469,7 +469,8 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
         $this->document($this->nib, 'approved');
         $this->document($this->tax, 'pending', path: 'company/documents/seed-tax.pdf');
         $other = (int) DB::table('company_companies')->insertGetId([
-            'name' => 'PT Lain', 'slug' => 'pt-lain', 'status' => 'active', 'industry_id' => 1, 'organization_type_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+            'name' => 'PT Lain', 'slug' => 'pt-lain', 'status' => 'active', 'industry_id' => DB::table('reference_industries')->value('id'),
+            'organization_type_id' => DB::table('reference_organization_types')->value('id'), 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->app['auth']->forgetGuards();

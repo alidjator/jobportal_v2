@@ -4,14 +4,17 @@ namespace Tests\Feature\Company;
 
 use Illuminate\Support\Facades\DB;
 use Src\Company\Domain\CompanyRepository;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 
 final class CompanyRepositoryBadgeTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private function company(?string $verifiedAt = null): int
     {
         return (int) DB::table('company_companies')->insertGetId([
-            'name' => 'PT Maju', 'slug' => 'pt-maju', 'status' => 'active', 'industry_id' => 1, 'organization_type_id' => 1,
+            'name' => 'PT Maju', 'slug' => 'pt-maju', 'status' => 'active', 'industry_id' => $this->industryId(), 'organization_type_id' => $this->organizationTypeId(),
             'verified_at' => $verifiedAt, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }

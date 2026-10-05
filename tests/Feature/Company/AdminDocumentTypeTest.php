@@ -9,10 +9,13 @@ use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 
 final class AdminDocumentTypeTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private string $token;
 
     protected function setUp(): void
@@ -60,7 +63,7 @@ final class AdminDocumentTypeTest extends FeatureTestCase
     private function company(string $slug, ?string $verifiedAt = null): int
     {
         return (int) DB::table('company_companies')->insertGetId([
-            'name' => strtoupper($slug), 'slug' => $slug, 'status' => 'active', 'industry_id' => 1, 'organization_type_id' => 1,
+            'name' => strtoupper($slug), 'slug' => $slug, 'status' => 'active', 'industry_id' => $this->industryId(), 'organization_type_id' => $this->organizationTypeId(),
             'verified_at' => $verifiedAt, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
