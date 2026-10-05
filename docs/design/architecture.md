@@ -122,6 +122,9 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   has a direct public URL: files are served through API endpoints that check access (streamed) or through temporary signed URLs. Stored names are random,
   never the client's file name; the type is checked from the content, not from the extension; size limits come from the admin settings. Avatars and logos
   take the same route (public caching is only considered later). This also closes the legacy unauthenticated upload finding (S2) for the new project.
+  **Implemented (2026-10-05):** `FileStorage` (`put`, `get`, `delete`) and `ImageProcessor` are shared ports; images are checked by content and encoded again (see
+  `phase-1-company.md`, slice 4); Laravel's built-in `/storage/{path}` route for the local disk is switched off (`'serve' => false`), so the only way out is an endpoint
+  that checks access. The first use of a public cache is the company logo and banner (`public, max-age=3600` with a `?v=<version>` in the URL).
 - Still to decide: nothing further in this section.
 
 ### 2.8 Account states that restrict the API (decided 2026-10-03)
@@ -187,5 +190,9 @@ None of these blocks the start of Phase 0 code; each is decided one question at 
 - `RequestContext` holds only the language (`id`/`en`, default `id`). The resolution middleware (header, then account locale) arrives with Identity.
 - `ContextServiceProvider` loads context routes under `api/v1` (`API_PREFIX`). All comments in `src` are English.
 - Covered by `tests/Feature/Shared/ProblemDetailsTest.php`.
+- **Reporting (decided 2026-10-05):** a `DomainException` is an expected answer to a client (404, 403, 409, 422, 429...), so it is rendered and **never logged**; before this, every one
+  was logged as `ERROR` with a stack trace, which let anyone fill the disk by guessing invitation tokens or failing sign-ins. `ExternalServiceUnavailable` (503) and every other
+  exception are still reported. Configured in `bootstrap/app.php` (`dontReportWhen`), covered by `tests/Feature/Shared/ExceptionReportingTest.php`. The test run no longer writes
+  logs (`LOG_CHANNEL=null` in `phpunit.xml`), so test noise cannot be mistaken for production errors.
 - Still missing: API routes, authentication middleware, and the packages needed by the decisions above (Sanctum, Spatie permission, Spatie translatable;
   Predis is not needed while the queue driver is `database`). Package compatibility is checked when each is added (section 3).

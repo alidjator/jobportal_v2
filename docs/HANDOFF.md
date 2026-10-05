@@ -331,6 +331,27 @@ under a random name on the private disk; limits are the settings `company.logo_m
 It is a multipart POST, not PUT (PHP does not read a multipart PUT). Still to do for Company: the admin slice (list and detail of companies, suspend and restore, company
 setting overrides); and `identity:sync-permissions` plus `php artisan migrate` on the real database. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
 
+**Publishing at `https://api-karir.satu.solutions` (2026-10-05, LIVE: the user installed the nginx config as root and `nginx -t` passed; verified from outside the same day: `GET /api/v1/faq`
+200 JSON with the security headers, unknown route 404 with a generic body, `/.env` 403, other `.php` files 404, `/storage/x` 404, HTTP redirects to HTTPS, certificate valid until 2027-01-03;
+the user also ran `certbot renew --dry-run`, whose final result line was not shown to Claude). Not yet proven: no request has made PHP-FPM write to `storage/` (no file owned by `nginx` exists
+yet), so the write access of the `nginx` user is set through ACLs but untested by a real write.** The server is `nginx/1.20.1` with the system PHP-FPM pool (user `nginx`, socket
+`/run/php-fpm/www.sock`, upstream `php83-fpm`); DNS resolves and a Let's Encrypt certificate (valid until 2027-01-03, renewed by `certbot-renew.timer`) is already served. The config file is
+`/etc/nginx/conf.d/api-karir.satu.solutions.conf` (root-owned; Claude has no sudo). The new version is prepared at `/home/jobportal/nginx/api-karir.satu.solutions.conf` (root
+`/usr/local/src/jobportal/public`, only `index.php` runs, other `.php` files 404, dotfiles denied, security headers, `client_max_body_size 12m`, Certbot lines untouched); its
+syntax and behaviour were verified in a sandbox nginx plus a private php-fpm on loopback ports. The user installed it as root (the previous file is kept at `/root/api-karir.satu.solutions.conf.bak-20261005`). The `.env` was switched to production values (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `LOG_STACK=daily`, `LOG_LEVEL=warning`; the old file is
+backed up outside the repository at `/home/jobportal/backup/jobportal.env.20261005`). **Decided with the user:** email stays `MAIL_MAILER=log` for now (so verification, password-reset and invitation
+emails are only written to the log and never reach anyone: the site is not ready for real users until SMTP is configured, and the SMTP credentials are to be entered by the user, ideally a
+new SMTP2GO user separate from the legacy app's), `COMPANY_INVITATION_URL` stays empty (inviting fails with 503 `invitation-link-unavailable` until a client page exists), and `QUEUE_CONNECTION`
+stays `sync` (audit entries, emails and the anonymisation cleanup run inside the request; it **must** move to `database` with a systemd worker for `critical,default,bulk` before SMTP is switched on).
+**Done on the user's approval (2026-10-05):** POSIX ACLs (XFS) give both `nginx` (the PHP-FPM pool user) and `jobportal` read and write on `storage/` and `bootstrap/cache`, with default
+ACLs so files and folders created later by either user are writable by both (checked: new files get `rw-` for both); `.env` is now mode 600 with a single ACL entry `u:nginx:r` (no other local user can
+read it; the app still reads it as `jobportal`). The built-in `GET|PUT /storage/{path}` route is gone (`'serve' => false` on the local disk, guarded by `tests/Feature/Shared/PrivateStorageTest.php`;
+suite 572 passed). If the project is ever re-cloned or restored, these ACLs must be applied again (they are not part of git). **Still open before real use:** SMTP, the invitation page URL and the queue worker
+(see the decisions above), and the final result of `certbot renew --dry-run`. **PHP limits (checked 2026-10-05, nothing to change):** the pool that serves the socket is the system `php-fpm` master (`/etc/php-fpm.conf`, pool `[www]`,
+shared with the other sites on this server) and it reads `/etc/php.ini` (extra files in `/etc/php.d`); there, `upload_max_filesize = 1G` (line 865), `post_max_size = 0` (line 713, unlimited) and
+`memory_limit = -1` (line 445), and the pool overrides none of them, so the 10 MB uploads of this API are not cut. The effective upload cap for this site is therefore nginx's
+`client_max_body_size 12m` and the admin settings (the PHP values are very loose, but changing `/etc/php.ini` would affect every site on the server).
+
 ## 6. Suggested next steps
 
 1. **Test setup rework: DONE (2026-10-03), code not committed.** `phpunit.xml` and `.gitlab-ci.yml` use `jobportal_v2` with `DB_PREFIX=test_`
