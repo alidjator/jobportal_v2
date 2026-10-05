@@ -194,6 +194,67 @@ types and sizes, the list of rejection reasons). This slice holds three parts, a
   exists" comes from a shared port provided by Company. A setting that is not overridable is 422 `setting-not-overridable`; an unknown company or key is 404. Changes are audited
   (`settings.updated` and `settings.reset` carry the company id).
 
+## Slice 6: company document verification (design in progress, started 2026-10-05; no code yet)
+
+Decisions confirmed by the user, one question at a time:
+
+- **Document types are managed by admins as data** (a master list with a required/optional flag per type), not a fixed list in code.
+- **Where:** a table of the Company context itself (working name `company_document_types`: slug, names `id`/`en`, required flag, active, order), with its own admin
+  endpoints under permission `companies.manage`. ReferenceData is not touched.
+- **Accepted files:** PDF, JPEG, PNG and WebP; the type is checked from the content, never the extension or the client's type. Images are re-encoded like logos
+  (metadata dropped); a PDF is stored as uploaded after its signature is checked.
+- **Size limit:** admin setting `company.document_max_size_kb`, default 5120 KB, range 100 to 10,240, overridable per company.
+- **Statuses and re-submission:** one row per (company, document type) with status `pending`, `approved` or `rejected`. After a rejection the company uploads a new file that
+  replaces the old one (the old file is deleted) and the status returns to `pending`. The history of decisions lives in the audit log.
+- **Rejection reasons:** the admin picks one code from a **fixed list in code** and may add an optional free note (up to 500 characters); clients translate the codes. The codes
+  (confirmed): `unreadable`, `expired`, `wrong_document`, `company_mismatch`, `incomplete`, `other` (`other` requires the note).
+- **Badge:** `verified_at` is filled **automatically** when every required document type is `approved`. It is withdrawn when a company replaces an approved document, or when an
+  admin adds a new required type, until everything is approved again. **No expiry dates** and no scheduled job.
+- **File access:** files stay on the private disk and are served only through endpoints: platform admins (permission `companies.manage`) and the company's own company admins; never
+  public, recruiters cannot see them. Each opening by a platform admin is audited (`company.document_viewed`, no content). Approvals and rejections are audited too.
+- **Notifications:** in-app only, to every company admin of the company: `company.document_approved`, `company.document_rejected` (data: document type, reason code, note) and
+  `company.verified` when the badge is given. No email for now (SMTP is not configured); email and push preferences can be added later.
+- **Initial types (seeded):** `business_registration` (NIB, required), `tax_id` (NPWP, required) and `deed_of_establishment` (company deed, optional); the `id`/`en` names are
+  written for this project and still to be approved. Admins can change the list afterwards. Until a required type exists, no company can be verified.
+- **Type lifecycle:** types are **never deleted**; an admin creates, edits, deactivates and switches required/optional. An inactive type does not count for the badge and accepts no new
+  upload, but existing documents are kept. Every change of the list recalculates the badge of the affected companies.
+- **Endpoints (approved):** company admin: `GET /api/v1/company/documents` (active types with the company's document status), `POST /api/v1/company/documents/{typeId}` (multipart,
+  upload or replace), `GET .../{typeId}/file` (own file), `DELETE .../{typeId}` (only while `pending` or `rejected`; an `approved` document can only be replaced, never deleted
+  without a replacement). Platform admin (`companies.manage`): `GET /api/v1/admin/companies/{id}/documents`, `GET .../{typeId}/file`, `POST .../{typeId}/approve`,
+  `POST .../{typeId}/reject {reason, note?}`, and `GET|POST|PUT /api/v1/admin/company-document-types[/{id}]`.
+- **Tables (columns approved):** `company_document_types` (id; slug varchar(60) unique; name JSON `id`/`en`; is_required, is_active tinyint(1); sort_order int unsigned; timestamps) and
+  `company_documents` (id; company_id FK `company_companies` restrict; document_type_id FK `company_document_types` restrict; status varchar(20) check `pending`/`approved`/`rejected`;
+  file_path varchar(255); original_name varchar(255), display only; mime_type varchar(100); size_bytes int unsigned; rejection_reason varchar(30) null; rejection_note varchar(500) null;
+  submitted_at; reviewed_at null; reviewed_by_admin_id null, plain index; timestamps; unique (company_id, document_type_id); index (status)). Migrations are run against the `test_`
+  tables first; the real tables only with the user's approval.
+- **While a company is suspended:** its company admins get 403 `company-suspended` on every document endpoint (upload, delete, read); platform admins can still view, approve and
+  reject. The badge is not hidden separately (the public profile is already gone during a suspension).
+
+All design questions of this slice are answered. **Migrations (2026-10-05):** `000052` (`company_document_types`) and `000053` (`company_documents`) are written and were run against the
+`test_` tables and, **on the user's explicit approval, against the real tables** (53 migrations recorded; columns identical in both sets; the CHECK on `status` and the JSON validity check
+of `name` exist; both real tables hold 0 rows). **Seeder (2026-10-05):** `Database\Seeders\Company\CompanyDocumentTypeSeeder` (called by `DatabaseSeeder`; inserts by slug, never overwrites admin changes; slugs are explicit and use
+hyphens like the other masters, decided with the user) creates `business-registration` ("Nomor Induk Berusaha (NIB)" / "Business Registration Number (NIB)", required), `tax-id`
+("Nomor Pokok Wajib Pajak (NPWP)" / "Tax Identification Number (NPWP)", required) and `deed-of-establishment` ("Akta Pendirian Perusahaan" / "Deed of Establishment", optional); the names
+were approved by the user. 3 tests; Pint and PHPStan clean. **Run against the real table on 2026-10-05 on the user's explicit approval, with this seeder only** (3 rows; `test_` table
+stays empty). No endpoint or use case code yet.
+
+**Admin side of the document types (started 2026-10-05; the user chose to start with the admin side):** decisions so far:
+- **Slug:** generated from the English name when a type is created (a clash gets `-2`, `-3`; at most 60 characters), never sent by the admin and **never changed afterwards**.
+- **Audit:** `company_document_type.created`, and `company_document_type.updated` only when `is_required` or `is_active` changes (metadata: slug, old and new values); edits of names or order
+  alone are not audited, because they do not affect who is verified.
+- **Badge calculation is built in this slice:** one shared use case recalculates the badge (every active required type `approved` => `verified_at` filled, keeping an existing date;
+  otherwise cleared; no active required type => nobody is verified). It runs for all companies when a type is created or when `is_required` / `is_active` changes, and is reused by the
+  upload and review slices. Notifying companies about a badge gained or lost is **left to the review slice** (the in-app notification writer does not exist yet).
+- **Endpoints (approved; guard `admin`, permission `companies.manage`):** `GET /api/v1/admin/company-document-types` (whole list including inactive types, not paginated, ordered by
+  `sort_order` then id; row: `id`, `slug`, `name {id,en}`, `is_required`, `is_active`, `sort_order`), `POST` (201; `name.id` and `name.en` required, max 255; `is_required` default false;
+  `is_active` default true; `sort_order` 0 to 65,535, default 0) and `PUT /{id}` (the full body as in POST; the slug stays; 404 when unknown). No DELETE.
+- **Done (2026-10-05, branch `phase-1-company`, not committed):** the three endpoints, the badge calculation and the audit. 18 new tests (whole suite 639 passed, Pint and PHPStan clean).
+  Implementation notes: the badge calculation is the port `CompanyVerificationBadge` (`recalculateAll`, `recalculateFor`), implemented with two set-based updates (withdraw, then grant), and
+  it bumps `updated_at` with `verified_at`; creating a type recalculates only when it is required and active; an update recalculates only when `is_required` or `is_active` changed; the
+  audit actions are `company_document_type.created` and `company_document_type.updated` (subject type `company_document_type`; `updated` carries `old` and `new` flags). A name that yields no
+  slug characters gets the slug `document` (`CompanySlugGenerator::make` gained a `$fallback` parameter). No migration and no new permission, so nothing needs to run on the real database.
+  Open point for the review slice: companies are not notified when a recalculation grants or withdraws their badge (the in-app notification writer does not exist yet).
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account

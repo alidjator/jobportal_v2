@@ -10,13 +10,17 @@ use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
+use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
+use Src\Company\Domain\DocumentTypeRepository;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
+use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
+use Src\Company\Infrastructure\Persistence\DatabaseDocumentTypeRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
@@ -41,6 +45,8 @@ final class CompanyServiceProvider extends ContextServiceProvider
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
+        DocumentTypeRepository::class => DatabaseDocumentTypeRepository::class,
+        CompanyVerificationBadge::class => DatabaseCompanyVerificationBadge::class,
     ];
 
     public function register(): void

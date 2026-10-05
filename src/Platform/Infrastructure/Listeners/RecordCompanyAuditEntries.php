@@ -11,6 +11,8 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
+use Src\Company\Domain\Events\DocumentTypeCreated;
+use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Platform\Application\Audit\AuditAction;
 use Src\Platform\Application\Audit\AuditActorType;
 use Src\Platform\Application\Audit\AuditEntry;
@@ -19,12 +21,14 @@ use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
  * Writes the audit entries for the Company context: an admin creating a company, the invitations sent and revoked (they grant access to a
- * company's data) and the membership changes (joining, removal, role change).
+ * company's data), the membership changes (joining, removal, role change) and the document types that affect verification.
  * Runs on the `default` queue, retried 3 times with a growing delay. The entries never hold an email address.
  */
 final class RecordCompanyAuditEntries implements ShouldQueue
 {
     private const string SUBJECT_TYPE = 'company';
+
+    private const string DOCUMENT_TYPE_SUBJECT_TYPE = 'company_document_type';
 
     public int $tries = 3;
 
@@ -99,6 +103,29 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->record->execute(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_ROLE_CHANGED,
             self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'old_role' => $event->oldRole, 'new_role' => $event->newRole],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onDocumentTypeCreated(DocumentTypeCreated $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_TYPE_CREATED,
+            self::DOCUMENT_TYPE_SUBJECT_TYPE, $event->typeId, ['slug' => $event->slug, 'is_required' => $event->isRequired, 'is_active' => $event->isActive],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onDocumentTypeVerificationRulesChanged(DocumentTypeVerificationRulesChanged $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_TYPE_UPDATED,
+            self::DOCUMENT_TYPE_SUBJECT_TYPE, $event->typeId,
+            [
+                'slug' => $event->slug,
+                'old' => ['is_required' => $event->wasRequired, 'is_active' => $event->wasActive],
+                'new' => ['is_required' => $event->isRequired, 'is_active' => $event->isActive],
+            ],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

@@ -12,6 +12,8 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
+use Src\Company\Domain\Events\DocumentTypeCreated;
+use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordReset;
@@ -90,6 +92,8 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Event::listen(CompanyMemberJoined::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberJoined']);
         Event::listen(CompanyMemberRemoved::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRemoved']);
         Event::listen(CompanyMemberRoleChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRoleChanged']);
+        Event::listen(DocumentTypeCreated::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeCreated']);
+        Event::listen(DocumentTypeVerificationRulesChanged::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeVerificationRulesChanged']);
 
         parent::boot();
     }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Company\CompanyDocumentTypeSeeder;
 use Database\Seeders\Reference\LocationSeeder;
 use Database\Seeders\Reference\ReferenceDataSeeder;
 use Illuminate\Database\Seeder;
@@ -16,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ReferenceDataSeeder::class,
             LocationSeeder::class,
+            CompanyDocumentTypeSeeder::class,
         ]);
     }
 }
