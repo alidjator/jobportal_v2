@@ -320,7 +320,10 @@ Commits (branch `phase-0-foundation`): `27cb3e1` (Identity, Content, ReferenceDa
 **Phase 1 started (2026-10-05), branch `phase-1-company`:** the Company context is designed in `docs/design/phase-1-company.md` (profile, one company per account, invitations,
 status, slug, three tables). Migrations `000048` to `000050` exist and ran only against the `test_` tables (the real tables are **not** created; the user postponed it). **Slice 1,
 onboarding, is coded** (create a company and invite its first company admin, preview and accept an invitation, `GET /company/me`; 24 tests, suite 453 passed) but **not committed**;
-the choices made while coding (suspended company 403, 20 lookups per IP per hour, audit of creation and joining, terms gate on `company/me`) were **confirmed by the user**. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
+the choices made while coding (suspended company 403, 20 lookups per IP per hour, audit of creation and joining, terms gate on `company/me`) were **confirmed by the user**.
+**Slice 2, team, is coded** (company admin: invite, list and revoke invitations, list, remove and change the role of members; platform admin: invite a company admin again;
+suite 482 passed), **not committed**; decisions in `phase-1-company.md`. Invitations sent and revoked **are audited** (`company.invitation_sent` / `company.invitation_revoked`,
+decided with the user after advice, which supersedes the earlier "membership changes only"). Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
 
 ## 6. Suggested next steps
 

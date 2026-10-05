@@ -92,6 +92,36 @@ Chosen as the first slice: create a company, invite the first company admin, acc
   `https://example.test/invitations/{token}`; the API replaces `{token}`). When it is empty, creating an invitation fails with 503 `invitation-link-unavailable`
   so no broken email is sent. The invitation email is a registered email template (editable by admins like the others).
 
+## Slice 2: team (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
+
+**Done:** all seven endpoints below; 27 new tests (company suite 51), whole suite 480 passed, Pint and PHPStan clean. Implementation notes: changes to a company's team and
+invitations lock the company row (and the invitation rows) inside a transaction, so two removals, or a revocation and an acceptance, at the same moment cannot break the
+rules; the shared port `CompanyMemberAccounts` gained `deactivate` and `summaries`; `invited_by` shows the inviting member's name, or `null` when a platform admin invited
+(the client can label that "platform"); a platform admin may invite again even while the company is suspended (acceptance stays refused until it is restored); an
+invitation to an email that already has a pending invitation from another company is allowed (the cooldown and replacement are per company). `company/*` team routes are
+gated by the terms like every `auth:user` route.
+
+### Decisions
+
+All endpoints are for **company admins** of the caller's own company (a recruiter gets 403 `company-admin-required`), except the last one, which is for platform admins.
+
+- `POST /api/v1/company/invitations {email, role}`, `GET /api/v1/company/invitations` (pending ones), `DELETE /api/v1/company/invitations/{id}`. Inviting an email that already has a
+  pending invitation **from this company** revokes the old one and sends a new one, at least **60 seconds** after the previous (429 `invitation-cooldown` with `Retry-After`).
+  An email that already has an account is 409 `email-already-registered`.
+- `GET /api/v1/company/members`, `DELETE /api/v1/company/members/{userId}`, `PUT /api/v1/company/members/{userId}/role {role}`.
+- `POST /api/v1/admin/companies/{id}/invitations {email}` (permission `companies.manage`): invites a **company admin** again, for example when the first invitation expired.
+- **Who can be removed or changed:** any member, including other company admins and oneself, as long as at least one company admin remains (409 `last-company-admin`).
+- **Lists** are not paginated. Members: `user_id`, `name`, `email`, `role`, `status` of the account, `joined_at`, `last_login_at`, ordered by role then name; removed members are not listed.
+  Pending invitations: `id`, `email`, `role`, `sent_at`, `expires_at`, `invited_by` (a name), newest first.
+- **A removed member cannot be invited again for now** (their email stays registered, 409 `email-already-registered`); restoring a deactivated account is decided later with
+  account management by admins. The membership row is deleted and the account is deactivated with every token revoked.
+- **Audit:** `company.member_removed` (metadata: old role) and `company.member_role_changed` (metadata: old and new role); actor = the company admin or platform admin, subject = the
+  company, the affected account id in the metadata. **Changed the same day (2026-10-05, user agreed after advice): sending and revoking invitations are audited too**,
+because an invitation grants access to a company's data and a compromised company admin would start by inviting accounts. `company.invitation_sent` (actor: the company admin,
+or the platform admin for the first invitation at company creation and for inviting again; metadata `invitation_id` and `role`) and `company.invitation_revoked` (metadata
+`invitation_id`); never the email address (look it up through `invitation_id` in `company_invitations`). A replaced invitation is audited as a new one sent. Refused requests
+(409, 422, 403, 429) leave no entry.
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account
