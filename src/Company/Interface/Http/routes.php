@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Company\Interface\Http\Controllers\CompanyDocumentController;
 use Src\Company\Interface\Http\Controllers\CompanyImageController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
@@ -35,6 +36,12 @@ Route::middleware('auth:user')->group(function (): void {
         Route::post("company/{$kind}", [CompanyImageController::class, 'store'])->defaults('kind', $kind);
         Route::delete("company/{$kind}", [CompanyImageController::class, 'destroy'])->defaults('kind', $kind);
     }
+
+    // The verification documents of the own company; every use case checks that the caller is a company admin of an active company.
+    Route::get('company/documents', [CompanyDocumentController::class, 'index']);
+    Route::post('company/documents/{typeId}', [CompanyDocumentController::class, 'store'])->whereNumber('typeId');
+    Route::delete('company/documents/{typeId}', [CompanyDocumentController::class, 'destroy'])->whereNumber('typeId');
+    Route::get('company/documents/{typeId}/file', [CompanyDocumentController::class, 'file'])->whereNumber('typeId');
 
     // The own company profile: any member reads it, the use cases check that the caller is a company admin to change it.
     Route::get('company/profile', [CompanyProfileController::class, 'show']);

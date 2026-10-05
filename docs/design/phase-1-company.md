@@ -255,6 +255,31 @@ stays empty). No endpoint or use case code yet.
   slug characters gets the slug `document` (`CompanySlugGenerator::make` gained a `$fallback` parameter). No migration and no new permission, so nothing needs to run on the real database.
   Open point for the review slice: companies are not notified when a recalculation grants or withdraws their badge (the in-app notification writer does not exist yet).
 
+**Company side of the documents (started 2026-10-05; the user chose it before the review side):** decisions so far:
+- **`GET /api/v1/company/documents`** (company admin of an active company): one entry per **active** type in `sort_order`: `type {id, slug, name (request language), is_required}` and
+  `document` (null when none; otherwise `status`, `original_name`, `mime_type`, `size_bytes`, `submitted_at`, `reviewed_at`, and `rejection_reason` + `rejection_note` only while rejected),
+  plus `verified` (boolean, from the badge). Not paginated.
+- **Serving a file:** as a download (`Content-Disposition: attachment` with a safe name, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'`), so a PDF is never
+  rendered by the browser from the API origin; clients show it with their own viewer.
+- **Audit:** `company.document_submitted` (metadata `document_type_id`, `replaced`) and `company.document_deleted` (metadata `document_type_id`, `status` when deleted); actor the company
+  admin, subject the company; never the file name or content. Refused requests leave no entry.
+- **Images:** re-encoded with the shared `ImageProcessor` (metadata dropped), shrunk only when the longest side exceeds **3508 px** (A4 at 300 dpi), never enlarged or cropped; the 16 million
+  pixel limit still applies.
+- **Upload rules (approved):** `POST /api/v1/company/documents/{typeId}` (multipart, field `file`). Unknown type 404; inactive type 422 `document-type-inactive`; not a PDF or image 422
+  `invalid-document`; too large 422 `file-too-large`. No document yet: created `pending` (201). A document exists (pending, rejected or approved): the file is **replaced**, the status returns to
+  `pending`, the rejection reason and note are cleared, `submitted_at` is renewed, the old file is deleted and the badge is recalculated (replacing an approved document withdraws it); 204.
+- **File names:** the client's name is stored as `original_name` for display only (path removed, control characters dropped, cut to 255, empty becomes `document`). On disk the file has a random
+  name (`company/documents/<random>.pdf|jpg|png`). A download is named `<type-slug>.<extension>` (for example `tax-id.pdf`), never the client's name.
+- **Delete:** `DELETE /api/v1/company/documents/{typeId}` (204) only while the document is `pending` or `rejected`; an `approved` one is 409 `document-approved`; an unknown type or no document
+  is 404 `not-found`. The file is deleted; the badge is **not** recalculated, because only a non-approved document can be deleted, so deleting never changes it. `GET .../{typeId}/file` returns the company's own file (404 when none). All four routes are for company admins of an
+  active company (403 `company-admin-required` / `company-suspended`); the size limit is the admin setting `company.document_max_size_kb` (default 5120, 100 to 10,240, **overridable per company**).
+- **Done (2026-10-05, branch `phase-1-company`, not committed):** the four endpoints, the audit and the setting. 28 new tests (whole suite 672 passed, Pint and PHPStan clean). Implementation notes: the
+  list answer is `{data: {verified, documents: [{type, document}]}}`; a new document is 201 with no body, a replacement 204; uploads and deletes lock the company row, so two requests of one company
+  run one after the other; the badge is recalculated only when the replaced document was approved; a PDF is accepted when it starts with `%PDF-` (nothing deeper is checked, as decided); the size
+  is checked on the uploaded bytes before processing, as for images. **Finding fixed with the user's approval:** `CompanyRepository::save` wrote `verified_at` from the entity loaded at the start
+  of the request, so a slow request (a logo upload decoding an image) could overwrite a badge granted or withdrawn meanwhile; `save` no longer writes `verified_at` (only
+  `CompanyVerificationBadge` does), with two regression tests. Not done: the review side (approve, reject, admin file access, notifications), which is the next slice.
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account

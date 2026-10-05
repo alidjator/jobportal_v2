@@ -173,7 +173,7 @@ final class SettingsTest extends FeatureTestCase
 
         $keys = array_column($response->json('data'), 'key');
         $this->assertSame([
-            'company.banner_max_size_kb', 'company.logo_max_size_kb',
+            'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
         ], $keys);
 

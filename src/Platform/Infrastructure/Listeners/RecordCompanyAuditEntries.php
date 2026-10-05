@@ -4,6 +4,8 @@ namespace Src\Platform\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyDocumentDeleted;
+use Src\Company\Domain\Events\CompanyDocumentSubmitted;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
@@ -103,6 +105,24 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->record->execute(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_ROLE_CHANGED,
             self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'old_role' => $event->oldRole, 'new_role' => $event->newRole],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyDocumentSubmitted(CompanyDocumentSubmitted $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::COMPANY_DOCUMENT_SUBMITTED,
+            self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'replaced' => $event->replaced],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyDocumentDeleted(CompanyDocumentDeleted $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::COMPANY_DOCUMENT_DELETED,
+            self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'status' => $event->status],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

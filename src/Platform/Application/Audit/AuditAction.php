@@ -43,6 +43,10 @@ final class AuditAction
 
     public const string COMPANY_MEMBER_ROLE_CHANGED = 'company.member_role_changed';
 
+    public const string COMPANY_DOCUMENT_SUBMITTED = 'company.document_submitted';
+
+    public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';
+
     public const string COMPANY_DOCUMENT_TYPE_CREATED = 'company_document_type.created';
 
     public const string COMPANY_DOCUMENT_TYPE_UPDATED = 'company_document_type.updated';

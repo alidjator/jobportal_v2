@@ -11,12 +11,14 @@ use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
+use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\DocumentTypeRepository;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
+use Src\Company\Infrastructure\Persistence\DatabaseCompanyDocumentRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
@@ -46,6 +48,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
         DocumentTypeRepository::class => DatabaseDocumentTypeRepository::class,
+        CompanyDocumentRepository::class => DatabaseCompanyDocumentRepository::class,
         CompanyVerificationBadge::class => DatabaseCompanyVerificationBadge::class,
     ];
 
