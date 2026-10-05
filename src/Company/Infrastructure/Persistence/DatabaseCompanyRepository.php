@@ -78,7 +78,8 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
             'contact_email' => $profile->contactEmail,
             'contact_phone' => $profile->contactPhone,
             'is_visible' => $profile->isVisible,
-            'verified_at' => $company->verifiedAt()?->format(self::TIME_FORMAT),
+            // `verified_at` is deliberately not written here: only CompanyVerificationBadge changes it, and a company loaded earlier in the request
+            // would otherwise overwrite a badge that was granted or withdrawn in the meantime.
             'updated_at' => $now,
         ];
 
