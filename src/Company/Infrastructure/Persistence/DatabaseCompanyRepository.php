@@ -37,6 +37,11 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
         return $this->connection->table('company_companies')->where('slug', $slug)->exists();
     }
 
+    public function lock(int $companyId): void
+    {
+        $this->connection->table('company_companies')->where('id', $companyId)->lockForUpdate()->first(['id']);
+    }
+
     public function save(Company $company): Company
     {
         $time = $this->clock->now()->format(self::TIME_FORMAT);

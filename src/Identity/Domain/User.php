@@ -183,6 +183,14 @@ final class User extends AggregateRoot
         $this->deletionRequestedAt = $now;
     }
 
+    /** Deactivates the account, for example when a company removes its member. An account that is not active is left as it is. */
+    public function deactivate(): void
+    {
+        if ($this->status === AccountStatus::Active) {
+            $this->status = AccountStatus::Deactivated;
+        }
+    }
+
     /** @throws StateConflict when no deletion is pending */
     public function cancelDeletion(): void
     {

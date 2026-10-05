@@ -13,6 +13,7 @@ use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Accounts\AccountSession;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Accounts\MemberAccountSummary;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 
@@ -42,6 +43,26 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         $this->events->dispatch([new UserRegistered((int) $user->id, $user->type->value, $now)]);
 
         return (int) $user->id;
+    }
+
+    public function deactivate(int $userId): void
+    {
+        $user = $this->users->findById($userId) ?? throw new RuntimeException("Account {$userId} does not exist.");
+
+        $user->deactivate();
+        $this->users->save($user);
+        $this->tokens->revokeAllForUser($userId);
+    }
+
+    public function summaries(array $userIds): array
+    {
+        $summaries = [];
+
+        foreach ($this->users->findByIds($userIds) as $id => $user) {
+            $summaries[$id] = new MemberAccountSummary($id, $user->name(), $user->email(), $user->status()->value, $user->lastLoginAt());
+        }
+
+        return $summaries;
     }
 
     public function signIn(int $userId, string $deviceName, ?string $ipAddress, ?string $userAgent): AccountSession

@@ -5,7 +5,11 @@ namespace Src\Platform\Infrastructure;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyInvitationRevoked;
+use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
+use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordReset;
@@ -77,7 +81,11 @@ final class PlatformServiceProvider extends ContextServiceProvider
         }
 
         Event::listen(CompanyCreated::class, [RecordCompanyAuditEntries::class, 'onCompanyCreated']);
+        Event::listen(CompanyInvitationSent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationSent']);
+        Event::listen(CompanyInvitationRevoked::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationRevoked']);
         Event::listen(CompanyMemberJoined::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberJoined']);
+        Event::listen(CompanyMemberRemoved::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRemoved']);
+        Event::listen(CompanyMemberRoleChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRoleChanged']);
 
         parent::boot();
     }

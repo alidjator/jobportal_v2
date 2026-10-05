@@ -29,5 +29,13 @@ final class AuditAction
 
     public const string COMPANY_CREATED = 'company.created';
 
+    public const string COMPANY_INVITATION_SENT = 'company.invitation_sent';
+
+    public const string COMPANY_INVITATION_REVOKED = 'company.invitation_revoked';
+
     public const string COMPANY_MEMBER_JOINED = 'company.member_joined';
+
+    public const string COMPANY_MEMBER_REMOVED = 'company.member_removed';
+
+    public const string COMPANY_MEMBER_ROLE_CHANGED = 'company.member_role_changed';
 }

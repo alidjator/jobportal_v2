@@ -8,6 +8,7 @@ use Src\Company\Domain\Company;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\CompanyRole;
 use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Invitation;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Domain\InvitationToken;
@@ -84,7 +85,12 @@ final readonly class CreateCompany
         });
 
         $this->sender->send($email, $command->language, $company->name(), $invitation->role, $this->links->build($token->plain), $invitation->expiresAt);
-        $this->events->dispatch([new CompanyCreated((int) $company->id, (int) $actor->id, $command->ipAddress, $command->userAgent, $now)]);
+        $this->events->dispatch([
+            new CompanyCreated((int) $company->id, (int) $actor->id, $command->ipAddress, $command->userAgent, $now),
+            new CompanyInvitationSent(
+                (int) $company->id, (int) $invitation->id, $invitation->role->value, null, (int) $actor->id, $command->ipAddress, $command->userAgent, $now,
+            ),
+        ]);
 
         return new CreatedCompany($company, $invitation);
     }

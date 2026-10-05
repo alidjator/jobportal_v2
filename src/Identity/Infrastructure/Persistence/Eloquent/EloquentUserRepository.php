@@ -26,6 +26,21 @@ final class EloquentUserRepository implements UserRepository
         return $model === null ? null : $this->toDomain($model);
     }
 
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $users = [];
+
+        foreach (UserModel::query()->whereIn('id', $ids)->get() as $model) {
+            $users[(int) $model->id] = $this->toDomain($model);
+        }
+
+        return $users;
+    }
+
     public function findDueForAnonymization(DateTimeImmutable $now, int $limit): array
     {
         $dueRequestedBefore = $now->modify('-'.User::DELETION_GRACE_PERIOD_DAYS.' days');

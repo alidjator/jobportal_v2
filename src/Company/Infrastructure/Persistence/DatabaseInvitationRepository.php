@@ -61,6 +61,30 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
         return $row === null ? null : $this->toInvitation($row);
     }
 
+    public function findOfCompany(int $companyId, int $id, bool $forUpdate = false): ?Invitation
+    {
+        $query = $this->connection->table('company_invitations')->where('company_id', $companyId)->where('id', $id);
+        $row = ($forUpdate ? $query->lockForUpdate() : $query)->first();
+
+        return $row === null ? null : $this->toInvitation($row);
+    }
+
+    public function pendingOfCompany(int $companyId, DateTimeImmutable $now, bool $forUpdate = false): array
+    {
+        $query = $this->connection->table('company_invitations')
+            ->where('company_id', $companyId)
+            ->whereNull('accepted_at')
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', $now->format(self::TIME_FORMAT))
+            ->orderByDesc('sent_at')
+            ->orderByDesc('id');
+
+        return array_map(
+            fn (stdClass $row): Invitation => $this->toInvitation($row),
+            ($forUpdate ? $query->lockForUpdate() : $query)->get()->all(),
+        );
+    }
+
     private function toInvitation(stdClass $row): Invitation
     {
         return new Invitation(

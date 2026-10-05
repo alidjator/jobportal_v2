@@ -11,6 +11,14 @@ interface UserRepository
     public function findByEmail(string $email): ?User;
 
     /**
+     * The accounts with these ids, keyed by id; an id without an account is missing from the result.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, User>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * Accounts whose deletion grace period has ended and that are not anonymised yet, oldest request first.
      *
      * @return list<User>

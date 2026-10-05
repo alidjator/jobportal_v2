@@ -56,4 +56,12 @@ final class Invitation
     {
         $this->acceptedAt = $now;
     }
+
+    /** A pending invitation can no longer be accepted. Revoking one that is not pending changes nothing. */
+    public function revoke(DateTimeImmutable $now): void
+    {
+        if ($this->acceptedAt === null) {
+            $this->revokedAt ??= $now;
+        }
+    }
 }
