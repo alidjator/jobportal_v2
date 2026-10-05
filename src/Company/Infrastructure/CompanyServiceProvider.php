@@ -2,6 +2,7 @@
 
 namespace Src\Company\Infrastructure;
 
+use Illuminate\Support\Facades\Event;
 use Src\Company\Application\Admin\AdminCompanyReader;
 use Src\Company\Application\CompanyEmailTemplates;
 use Src\Company\Application\CompanyPermissions;
@@ -15,7 +16,12 @@ use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\DocumentTypeRepository;
+use Src\Company\Domain\Events\CompanyDocumentApproved;
+use Src\Company\Domain\Events\CompanyDocumentRejected;
+use Src\Company\Domain\Events\CompanyVerificationGranted;
+use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
 use Src\Company\Domain\InvitationRepository;
+use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyDocumentRepository;
@@ -65,5 +71,15 @@ final class CompanyServiceProvider extends ContextServiceProvider
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
             $catalog->add(...CompanySettings::definitions());
         });
+    }
+
+    public function boot(): void
+    {
+        Event::listen(CompanyDocumentApproved::class, [NotifyCompanyAdminsOfVerification::class, 'onDocumentApproved']);
+        Event::listen(CompanyDocumentRejected::class, [NotifyCompanyAdminsOfVerification::class, 'onDocumentRejected']);
+        Event::listen(CompanyVerificationGranted::class, [NotifyCompanyAdminsOfVerification::class, 'onVerificationGranted']);
+        Event::listen(CompanyVerificationWithdrawn::class, [NotifyCompanyAdminsOfVerification::class, 'onVerificationWithdrawn']);
+
+        parent::boot();
     }
 }

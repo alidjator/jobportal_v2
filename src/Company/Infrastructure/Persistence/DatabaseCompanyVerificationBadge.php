@@ -5,30 +5,36 @@ namespace Src\Company\Infrastructure\Persistence;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use Src\Company\Application\Verification\BadgeChanges;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Shared\Application\Clock;
 
-/** Two set-based updates (withdraw, then grant), so recalculating every company never loops over companies. */
+/**
+ * Two passes (withdraw, then grant). Each one reads the ids it will change with a row lock (callers run inside a transaction), then updates
+ * them in chunks, so recalculating every company never loops over companies one by one and the lists it returns match what was written.
+ */
 final readonly class DatabaseCompanyVerificationBadge implements CompanyVerificationBadge
 {
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
+
+    private const int CHUNK_SIZE = 1000;
 
     public function __construct(
         private ConnectionInterface $connection,
         private Clock $clock,
     ) {}
 
-    public function recalculateAll(): void
+    public function recalculateAll(): BadgeChanges
     {
-        $this->recalculate(null);
+        return $this->recalculate(null);
     }
 
-    public function recalculateFor(int $companyId): void
+    public function recalculateFor(int $companyId): BadgeChanges
     {
-        $this->recalculate($companyId);
+        return $this->recalculate($companyId);
     }
 
-    private function recalculate(?int $companyId): void
+    private function recalculate(?int $companyId): BadgeChanges
     {
         $time = $this->clock->now()->format(self::TIME_FORMAT);
         $anyRequiredType = $this->requiredTypes($this->connection->table('company_document_types'))->exists();
@@ -40,15 +46,18 @@ final readonly class DatabaseCompanyVerificationBadge implements CompanyVerifica
             $withdraw->whereExists($this->lacksApprovedRequiredDocument());
         }
 
-        $withdraw->update(['verified_at' => null, 'updated_at' => $time]);
+        $withdrawn = $this->ids($withdraw);
+        $this->write($withdrawn, null, $time);
 
         // Grant: not verified yet, at least one required type exists and every one of them is approved.
+        $granted = [];
+
         if ($anyRequiredType) {
-            $this->companies($companyId)
-                ->whereNull('verified_at')
-                ->whereNotExists($this->lacksApprovedRequiredDocument())
-                ->update(['verified_at' => $time, 'updated_at' => $time]);
+            $granted = $this->ids($this->companies($companyId)->whereNull('verified_at')->whereNotExists($this->lacksApprovedRequiredDocument()));
+            $this->write($granted, $time, $time);
         }
+
+        return new BadgeChanges($granted, $withdrawn);
     }
 
     private function companies(?int $companyId): Builder
@@ -56,6 +65,20 @@ final readonly class DatabaseCompanyVerificationBadge implements CompanyVerifica
         $query = $this->connection->table('company_companies');
 
         return $companyId === null ? $query : $query->where('company_companies.id', $companyId);
+    }
+
+    /** @return list<int> */
+    private function ids(Builder $query): array
+    {
+        return array_map('intval', $query->lockForUpdate()->pluck('company_companies.id')->all());
+    }
+
+    /** @param  list<int>  $ids */
+    private function write(array $ids, ?string $verifiedAt, string $time): void
+    {
+        foreach (array_chunk($ids, self::CHUNK_SIZE) as $chunk) {
+            $this->connection->table('company_companies')->whereIn('id', $chunk)->update(['verified_at' => $verifiedAt, 'updated_at' => $time]);
+        }
     }
 
     private function requiredTypes(Builder $query, string $alias = 'company_document_types'): Builder

@@ -47,6 +47,12 @@ final class AuditAction
 
     public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';
 
+    public const string COMPANY_DOCUMENT_APPROVED = 'company.document_approved';
+
+    public const string COMPANY_DOCUMENT_REJECTED = 'company.document_rejected';
+
+    public const string COMPANY_DOCUMENT_VIEWED = 'company.document_viewed';
+
     public const string COMPANY_DOCUMENT_TYPE_CREATED = 'company_document_type.created';
 
     public const string COMPANY_DOCUMENT_TYPE_UPDATED = 'company_document_type.updated';

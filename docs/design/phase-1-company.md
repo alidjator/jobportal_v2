@@ -253,7 +253,7 @@ stays empty). No endpoint or use case code yet.
   it bumps `updated_at` with `verified_at`; creating a type recalculates only when it is required and active; an update recalculates only when `is_required` or `is_active` changed; the
   audit actions are `company_document_type.created` and `company_document_type.updated` (subject type `company_document_type`; `updated` carries `old` and `new` flags). A name that yields no
   slug characters gets the slug `document` (`CompanySlugGenerator::make` gained a `$fallback` parameter). No migration and no new permission, so nothing needs to run on the real database.
-  Open point for the review slice: companies are not notified when a recalculation grants or withdraws their badge (the in-app notification writer does not exist yet).
+  (Open point settled in the review slice below: companies are now notified when a recalculation grants or withdraws their badge.)
 
 **Company side of the documents (started 2026-10-05; the user chose it before the review side):** decisions so far:
 - **`GET /api/v1/company/documents`** (company admin of an active company): one entry per **active** type in `sort_order`: `type {id, slug, name (request language), is_required}` and
@@ -279,6 +279,36 @@ stays empty). No endpoint or use case code yet.
   is checked on the uploaded bytes before processing, as for images. **Finding fixed with the user's approval:** `CompanyRepository::save` wrote `verified_at` from the entity loaded at the start
   of the request, so a slow request (a logo upload decoding an image) could overwrite a badge granted or withdrawn meanwhile; `save` no longer writes `verified_at` (only
   `CompanyVerificationBadge` does), with two regression tests. Not done: the review side (approve, reject, admin file access, notifications), which is the next slice.
+
+**Review side of the documents (started 2026-10-05):** decisions so far, on top of the ones listed for the whole slice (endpoints, reason codes, audit of file views, in-app notifications):
+- **Only a `pending` document can be reviewed** (approve or reject); anything else is 409 `document-not-pending`. A decision is final until the company uploads a new file, which puts the
+  document back to `pending`.
+- **Version check:** approve and reject must send the `submitted_at` of the document the admin saw (from the admin list). If the company replaced the file since, the answer is 409
+  `document-changed` and nothing changes; the admin reloads and reviews the latest file. A finding of this design (the company can replace a file while an admin reviews it), fixed with
+  the user's choice; no new column is needed.
+- **Admin list** `GET /api/v1/admin/companies/{id}/documents` (permission `companies.manage`; works while the company is suspended; unknown company 404): `data: {verified, documents: [{type
+  {id, slug, name {id,en}, is_required, is_active}, document}]}`. It covers every active type and every inactive type that has a document. `document` is null when there is none; otherwise
+  `status`, `original_name`, `mime_type`, `size_bytes`, `submitted_at`, `reviewed_at`, `reviewed_by_admin_id`, `rejection_reason` and `rejection_note`. Not paginated.
+- **Which events notify (in-app, every company admin of the company):** `company.document_approved`, `company.document_rejected`, `company.verified` (the badge is granted, by an approval or by a
+  recalculation after the type list changed) and `company.verification_withdrawn` (the badge is withdrawn by a change of the type list). A withdrawal caused by the company replacing an approved
+  document is **not** notified (the company did it). `CompanyVerificationBadge` is extended to report which companies were granted or lost the badge.
+- **Delivery:** after the decision is saved the use case dispatches an event; a Company listener on the `default` queue (3 tries, backoff 10/60/300 s, like the audit listeners) finds the
+  company admins and writes the notifications through a new shared port `InAppNotifier` provided by Notification. A failure to notify never undoes a decision and can be retried. The queue is
+  `sync` today, so it runs inside the request.
+- **Notification data (approved):** `company.document_approved` `{document_type_id, document_type_slug}`; `company.document_rejected` the same plus `reason` (the code) and `note` (the admin's
+  note or null); `company.verified` and `company.verification_withdrawn` have empty data. No file name, company name or admin name. One notification per company admin.
+- **Requests and audit (approved):** `POST /api/v1/admin/companies/{id}/documents/{typeId}/approve {submitted_at}` (204) and `POST .../reject {submitted_at, reason, note?}` (204). `reason` is one of
+  the six codes (422 `invalid-rejection-reason` otherwise); `note` is at most 500 characters and required when `reason` is `other` (422 per field); `submitted_at` is the ISO 8601 value of the admin
+  list. Errors: unknown company or document 404, not pending 409 `document-not-pending`, replaced meanwhile 409 `document-changed`. Audit: `company.document_approved` (metadata `document_type_id`),
+  `company.document_rejected` (metadata `document_type_id`, `reason`, `note`) and `company.document_viewed` (metadata `document_type_id`) for every opening of a file by a platform admin
+  (`GET /api/v1/admin/companies/{id}/documents/{typeId}/file`, a download like the company's own); actor the admin, subject the company. Refused requests leave no entry.
+- **Done (2026-10-05, branch `phase-1-company`, not committed):** the four admin endpoints, the audit, the notifications and the badge reporting. 24 new tests (whole suite 696 passed, Pint and PHPStan
+  clean). Implementation notes: an invalid reason or note is an ordinary per-field 422 (`reason`, `note`), not a separate `invalid-rejection-reason` code; `submitted_at` accepts any ISO 8601 timestamp with
+  a zone (`+00:00`, `+07:00` or `Z`) and is compared as a moment, to the second; review and upload of one company lock the company row; the shared port `InAppNotifier` (provided by Notification,
+  `DatabaseInAppNotifier`) is the first writer of in-app notifications (empty data is stored and shown as `{}`); `CompanyVerificationBadge` now returns `BadgeChanges` (granted and withdrawn company ids,
+  selected with a row lock) and the type endpoints dispatch `CompanyVerificationGranted` / `CompanyVerificationWithdrawn` after commit; the listener `NotifyCompanyAdminsOfVerification` (queue `default`)
+  notifies the company admins only, never recruiters. The document types and the review need no migration and no new permission, so nothing has to run on the real database. Not done: email for these
+  events (SMTP is not configured), a way to undo a decision without a new upload.
 
 ## Still open (asked one at a time)
 

@@ -5,8 +5,11 @@ namespace Src\Platform\Infrastructure;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyDocumentApproved;
 use Src\Company\Domain\Events\CompanyDocumentDeleted;
+use Src\Company\Domain\Events\CompanyDocumentRejected;
 use Src\Company\Domain\Events\CompanyDocumentSubmitted;
+use Src\Company\Domain\Events\CompanyDocumentViewed;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
@@ -96,6 +99,9 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Event::listen(CompanyMemberRoleChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRoleChanged']);
         Event::listen(CompanyDocumentSubmitted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentSubmitted']);
         Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
+        Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
+        Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);
+        Event::listen(CompanyDocumentViewed::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentViewed']);
         Event::listen(DocumentTypeCreated::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeCreated']);
         Event::listen(DocumentTypeVerificationRulesChanged::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeVerificationRulesChanged']);
 

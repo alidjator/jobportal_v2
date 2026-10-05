@@ -2,6 +2,7 @@
 
 namespace Src\Company\Application\Documents;
 
+use Src\Company\Application\Verification\BadgeChanges;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\DocumentType;
 use Src\Company\Domain\DocumentTypeRepository;
@@ -42,7 +43,7 @@ final readonly class UpdateDocumentType
 
         $text = TranslatedText::fromArray($name);
 
-        /** @var array{0: DocumentType, 1: DocumentType} $result the type before and after */
+        /** @var array{0: DocumentType, 1: DocumentType, 2: BadgeChanges} $result the type before and after, and the badges that changed */
         $result = $this->transactions->run(function () use ($id, $text, $isRequired, $isActive, $sortOrder): array {
             $this->types->lock($id);
             $before = $this->types->find($id) ?? throw EntityNotFound::of('Document type', $id);
@@ -50,20 +51,22 @@ final readonly class UpdateDocumentType
 
             $this->types->save($after);
 
-            if ($after->affectsVerificationComparedTo($before)) {
-                $this->badge->recalculateAll();
-            }
-
-            return [$before, $after];
+            return [$before, $after, $after->affectsVerificationComparedTo($before) ? $this->badge->recalculateAll() : BadgeChanges::none()];
         });
 
-        [$before, $after] = $result;
+        [$before, $after, $changes] = $result;
 
         if ($after->affectsVerificationComparedTo($before)) {
-            $this->events->dispatch([new DocumentTypeVerificationRulesChanged(
-                $id, $after->slug, $before->isRequired, $after->isRequired, $before->isActive, $after->isActive,
-                (int) $actor->id, $ipAddress, $userAgent, $this->clock->now(),
-            )]);
+            $now = $this->clock->now();
+
+            $this->events->dispatch([
+                new DocumentTypeVerificationRulesChanged(
+                    $id, $after->slug, $before->isRequired, $after->isRequired, $before->isActive, $after->isActive,
+                    (int) $actor->id, $ipAddress, $userAgent, $now,
+                ),
+                ...$changes->granted($now),
+                ...$changes->withdrawn($now),
+            ]);
         }
 
         return $after;

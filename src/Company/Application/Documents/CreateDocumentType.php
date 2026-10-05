@@ -3,6 +3,7 @@
 namespace Src\Company\Application\Documents;
 
 use Src\Company\Application\CompanySlugGenerator;
+use Src\Company\Application\Verification\BadgeChanges;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\DocumentType;
 use Src\Company\Domain\DocumentTypeRepository;
@@ -46,19 +47,21 @@ final readonly class CreateDocumentType
 
         $text = TranslatedText::fromArray($name);
 
-        $type = $this->transactions->run(function () use ($text, $isRequired, $isActive, $sortOrder): DocumentType {
+        /** @var array{0: DocumentType, 1: BadgeChanges} $result */
+        $result = $this->transactions->run(function () use ($text, $isRequired, $isActive, $sortOrder): array {
             $created = $this->types->create(new DocumentType(null, $this->uniqueSlug($text), $text, $isRequired, $isActive, $sortOrder));
 
-            if ($isRequired && $isActive) {
-                $this->badge->recalculateAll();
-            }
-
-            return $created;
+            return [$created, $isRequired && $isActive ? $this->badge->recalculateAll() : BadgeChanges::none()];
         });
 
-        $this->events->dispatch([new DocumentTypeCreated(
-            (int) $type->id, $type->slug, $type->isRequired, $type->isActive, (int) $actor->id, $ipAddress, $userAgent, $this->clock->now(),
-        )]);
+        [$type, $changes] = $result;
+        $now = $this->clock->now();
+
+        $this->events->dispatch([
+            new DocumentTypeCreated((int) $type->id, $type->slug, $type->isRequired, $type->isActive, (int) $actor->id, $ipAddress, $userAgent, $now),
+            ...$changes->granted($now),
+            ...$changes->withdrawn($now),
+        ]);
 
         return $type;
     }

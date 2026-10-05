@@ -4,8 +4,11 @@ namespace Src\Platform\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyDocumentApproved;
 use Src\Company\Domain\Events\CompanyDocumentDeleted;
+use Src\Company\Domain\Events\CompanyDocumentRejected;
 use Src\Company\Domain\Events\CompanyDocumentSubmitted;
+use Src\Company\Domain\Events\CompanyDocumentViewed;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
@@ -124,6 +127,31 @@ final class RecordCompanyAuditEntries implements ShouldQueue
             AuditActorType::User, $event->userId, AuditAction::COMPANY_DOCUMENT_DELETED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'status' => $event->status],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyDocumentApproved(CompanyDocumentApproved $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_APPROVED,
+            self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyDocumentRejected(CompanyDocumentRejected $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_REJECTED,
+            self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'reason' => $event->reason, 'note' => $event->note],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyDocumentViewed(CompanyDocumentViewed $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_VIEWED,
+            self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

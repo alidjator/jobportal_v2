@@ -332,8 +332,8 @@ the next slice (the first file feature). Decisions and validation rules are in `
 (`POST|DELETE /company/logo|banner`, `GET /company/logo|banner`, public `GET /companies/{slug}/logo|banner`; the image is checked by content, re-encoded with GD and stored
 under a random name on the private disk; limits are the settings `company.logo_max_size_kb` / `company.banner_max_size_kb`; 32 tests, suite 569 passed), **not committed**.
 It is a multipart POST, not PUT (PHP does not read a multipart PUT). Slice 4 is committed. **Slice 5, admin, is coded** (admin list with filters and paging, detail, suspend and restore with a reason kept on the company and audited,
-and per-company setting overrides under `settings.manage`; 38 tests, suite 618 passed), **not committed**; decisions in `phase-1-company.md`. **Next slice: company document verification**
-(company-side document upload, admin approve or reject with a reason, public badge; new tables; open decisions: document types and sizes, the list of rejection reasons).
+and per-company setting overrides under `settings.manage`; 38 tests, suite 618 passed), **not committed**; decisions in `phase-1-company.md`. **Company document verification (slice 6) is coded** (2026-10-05, see `phase-1-company.md`: admin-managed document types with seed, company upload/replace/delete/download, admin list, file access, approve and
+reject, automatic badge, in-app notifications, audit; migrations `000052` and `000053` are on the real tables and the 3 document types are seeded there; suite 696 passed).
 **The real database still needs, with the user's approval:** `php artisan migrate` (the four `company_` migrations `000048` to `000051`: three new tables and the suspension columns) and
 `identity:sync-permissions` (`companies.manage`). **Both were run on the real database on 2026-10-05 with the user's approval** (51 migrations recorded; the three `company_` tables hold 0 rows and match the
 `test_` tables column by column; 7 permissions). **`https://api-karir.satu.solutions` is a DEV domain** (the user's statement, 2026-10-05): errors and half-finished work showing there are acceptable, so
@@ -369,17 +369,13 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
-State on 2026-10-05: **Phase 0 is complete** (code, tests, real database) and **Phase 1 has the Company context done** except document verification (git: branch `phase-1-company`, `master`
-fast-forwarded and tagged `v0.1.0` at `ee7b463`; suite 618 tests, Pint and PHPStan clean; everything committed). Continue in this order, one question at a time, confirming each decision with the user:
+State on 2026-10-05: **Phase 0 is complete** (code, tests, real database) and **the Company context of Phase 1 is complete**, including document verification (git: branch `phase-1-company`;
+`master` is at the earlier tag `v0.1.0` (`ee7b463`) and was not moved since; suite 696 tests, Pint and PHPStan clean). Continue in this order, one question at a time, confirming each decision with the user:
 
-1. **Company document verification (R1b), its own slice.** Company side: upload the verification documents; admin side: approve or reject with a reason, which sets `verified_at` (the public badge
-   already reads it). New tables and a company-side upload (reuse `FileStorage`, `ImageProcessor` is for images only, so a document type check is needed). Open decisions to ask: which documents
-   are required, accepted types and sizes (an admin setting), the fixed list of rejection reasons, document statuses (pending, approved, rejected), re-submission after a rejection, what happens to
-   the badge when documents expire or change, and whether the admin can see the files (served only through an endpoint that checks access, audited).
-2. **Rest of Phase 1** (decided in `decisions.md`, order inside the phase still to agree): job seeker profile and resumes, jobs and their lifecycle, job search, applying (J1), hybrid stages and
+1. **Rest of Phase 1** (decided in `decisions.md`, order inside the phase still to agree): job seeker profile and resumes, jobs and their lifecycle, job search, applying (J1), hybrid stages and
    history, screening questions, pipeline, stage notifications, and the data migration (scripts and tests only; running them against real data needs the user's explicit approval at that time).
    Each of these registers its notification kinds in `NotificationPreferenceCatalog` and its settings in `SettingsCatalog` from its own provider.
-3. Items still waiting for the user are in section 7. Commit only when the user asks.
+2. Items still waiting for the user are in section 7. Commit only when the user asks.
 
 ## 7. Items waiting for the user
 
@@ -390,5 +386,5 @@ fast-forwarded and tagged `v0.1.0` at `ee7b463`; suite 618 tests, Pint and PHPSt
 
 ## 8. Suggested first message for the new session
 
-> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/phase-1-company.md`, check the memory index, then continue with the Company document verification slice
-> (one question at a time, and I decide).
+> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/phase-1-company.md`, check the memory index, then continue with the next part of Phase 1
+> (agree the order first; one question at a time, and I decide).
