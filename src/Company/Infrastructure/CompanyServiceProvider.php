@@ -5,6 +5,7 @@ namespace Src\Company\Infrastructure;
 use Src\Company\Application\CompanyEmailTemplates;
 use Src\Company\Application\CompanyPermissions;
 use Src\Company\Application\CompanySlugGenerator;
+use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
@@ -19,6 +20,7 @@ use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class CompanyServiceProvider extends ContextServiceProvider
@@ -43,6 +45,10 @@ final class CompanyServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
             $catalog->add(...CompanyEmailTemplates::definitions());
+        });
+
+        $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
+            $catalog->add(...CompanySettings::definitions());
         });
     }
 }

@@ -18,6 +18,8 @@ final class Company extends AggregateRoot
         private ?DateTimeImmutable $verifiedAt,
         private ?int $createdByAdminId,
         private CompanyProfile $profile,
+        private ?string $logoPath = null,
+        private ?string $bannerPath = null,
     ) {}
 
     public static function create(string $name, string $slug, int $industryId, int $organizationTypeId, int $createdByAdminId): self
@@ -74,6 +76,28 @@ final class Company extends AggregateRoot
     public function isPublic(): bool
     {
         return $this->isActive() && $this->profile->isVisible;
+    }
+
+    /** The storage path of the logo, or null when there is none. */
+    public function logoPath(): ?string
+    {
+        return $this->logoPath;
+    }
+
+    /** The storage path of the banner, or null when there is none. */
+    public function bannerPath(): ?string
+    {
+        return $this->bannerPath;
+    }
+
+    public function changeLogo(?string $path): void
+    {
+        $this->logoPath = $path;
+    }
+
+    public function changeBanner(?string $path): void
+    {
+        $this->bannerPath = $path;
     }
 
     public function changeProfile(CompanyProfile $profile): void

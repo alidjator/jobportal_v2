@@ -21,5 +21,7 @@ final readonly class PublicCompanyView
         public ?string $addressLine,
         public LocationNames $location,
         public ?DateTimeImmutable $verifiedAt,
+        public ?string $logoVersion,
+        public ?string $bannerVersion,
     ) {}
 }

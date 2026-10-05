@@ -2,6 +2,7 @@
 
 namespace Src\Company\Application\Profile;
 
+use Src\Company\Application\Images\CompanyImageFile;
 use Src\Company\Domain\CompanyRepository;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
@@ -40,6 +41,8 @@ final readonly class GetPublicCompany
             $profile->addressLine,
             $this->locations->names($profile->provinceId, $profile->cityId, $profile->subdistrictId, $profile->villageId, $profile->postalCodeId),
             $company->verifiedAt(),
+            $company->logoPath() === null ? null : CompanyImageFile::version($company->logoPath()),
+            $company->bannerPath() === null ? null : CompanyImageFile::version($company->bannerPath()),
         );
     }
 }

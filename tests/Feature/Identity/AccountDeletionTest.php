@@ -256,6 +256,16 @@ final class AccountDeletionTest extends FeatureTestCase
         $user = $this->user(['status' => 'deactivated', 'deletion_requested_at' => '2026-09-01 10:00:00', 'avatar_path' => 'avatars/siti.jpg']);
         $this->app->instance(FileStorage::class, new class implements FileStorage
         {
+            public function put(string $path, string $contents): void
+            {
+                throw new RuntimeException('storage unavailable');
+            }
+
+            public function get(string $path): ?string
+            {
+                throw new RuntimeException('storage unavailable');
+            }
+
             public function delete(string $path): void
             {
                 throw new RuntimeException('storage unavailable');

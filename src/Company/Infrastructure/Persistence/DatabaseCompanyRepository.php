@@ -58,6 +58,8 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
             'name' => $profile->name,
             'slug' => $company->slug(),
             'status' => $company->status()->value,
+            'logo_path' => $company->logoPath(),
+            'banner_path' => $company->bannerPath(),
             'website' => $profile->website,
             'established_on' => $profile->establishedOn?->format('Y-m-d'),
             'bio' => $profile->bio,
@@ -95,7 +97,10 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
             throw new StateConflict('This slug is already taken.', 'slug-taken');
         }
 
-        return new Company((int) $id, $company->slug(), $company->status(), $company->verifiedAt(), $company->createdByAdminId(), $profile);
+        return new Company(
+            (int) $id, $company->slug(), $company->status(), $company->verifiedAt(), $company->createdByAdminId(), $profile,
+            $company->logoPath(), $company->bannerPath(),
+        );
     }
 
     private function toCompany(stdClass $row): Company
@@ -125,6 +130,8 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
                 $row->contact_phone,
                 (bool) $row->is_visible,
             ),
+            $row->logo_path,
+            $row->banner_path,
         );
     }
 

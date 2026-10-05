@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Company\Interface\Http\Controllers\CompanyImageController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
@@ -17,8 +18,23 @@ Route::get('companies/{slug}', [PublicCompanyController::class, 'show'])
     ->where('slug', '[a-z0-9-]+')
     ->middleware('cache.headers:public;max_age=60;etag');
 
+// The pictures are sent by these routes only (the files have no public URL). The URLs carry `?v=<version>`, so a long cache is safe.
+foreach (['logo', 'banner'] as $kind) {
+    Route::get("companies/{slug}/{$kind}", [CompanyImageController::class, 'showPublic'])
+        ->where('slug', '[a-z0-9-]+')
+        ->defaults('kind', $kind)
+        ->middleware('cache.headers:public;max_age=3600;etag');
+}
+
 Route::middleware('auth:user')->group(function (): void {
     Route::get('company/me', CurrentCompanyController::class);
+
+    // Logo and banner of the own company: any member sees them, a company admin uploads (a multipart POST: PHP does not read a multipart PUT) and removes them.
+    foreach (['logo', 'banner'] as $kind) {
+        Route::get("company/{$kind}", [CompanyImageController::class, 'showOwn'])->defaults('kind', $kind)->middleware('cache.headers:private;max_age=3600;etag');
+        Route::post("company/{$kind}", [CompanyImageController::class, 'store'])->defaults('kind', $kind);
+        Route::delete("company/{$kind}", [CompanyImageController::class, 'destroy'])->defaults('kind', $kind);
+    }
 
     // The own company profile: any member reads it, the use cases check that the caller is a company admin to change it.
     Route::get('company/profile', [CompanyProfileController::class, 'show']);
