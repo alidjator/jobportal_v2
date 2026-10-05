@@ -86,6 +86,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Company Invitation Link
+    |--------------------------------------------------------------------------
+    |
+    | The client page that accepts a company invitation, as a URL template where
+    | `{token}` stands for the invitation token, for example
+    | "https://careers.example.com/invitations/{token}". This API has no UI of
+    | its own; when the template is empty, invitations cannot be created.
+    |
+    */
+
+    'invitation_url' => env('COMPANY_INVITATION_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |

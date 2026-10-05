@@ -2,17 +2,31 @@
 
 namespace Src\Shared\Application;
 
+use Src\Shared\Application\Company\CompanyMembership;
+
 /**
  * Who performs a use case. Controllers build it from the authenticated account and pass it explicitly; there is no
  * ambient current user in the Application layer. Queue jobs and console commands build their own (for example the
- * system actor). Company membership and role are added with the Company context.
+ * system actor). A company member also carries their company and role (`membership`), filled in when the HTTP layer
+ * builds the actor; it is null for every other kind, and for a company member who belongs to no company.
  */
 final readonly class Actor
 {
     private function __construct(
         public ActorKind $kind,
         public ?int $id,
+        public ?CompanyMembership $membership = null,
     ) {}
+
+    public function withMembership(?CompanyMembership $membership): self
+    {
+        return new self($this->kind, $this->id, $membership);
+    }
+
+    public function isCompanyAdmin(): bool
+    {
+        return $this->membership?->role === 'company_admin';
+    }
 
     public static function jobSeeker(int $id): self
     {

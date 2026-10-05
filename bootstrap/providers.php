@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Content\Infrastructure\ContentServiceProvider;
 use Src\Identity\Infrastructure\IdentityServiceProvider;
 use Src\Notification\Infrastructure\NotificationServiceProvider;
@@ -14,4 +15,5 @@ return [
     PlatformServiceProvider::class,
     ContentServiceProvider::class,
     ReferenceDataServiceProvider::class,
+    CompanyServiceProvider::class,
 ];

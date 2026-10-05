@@ -4,6 +4,8 @@ namespace Src\Platform\Infrastructure;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Src\Company\Domain\Events\CompanyCreated;
+use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordReset;
@@ -19,6 +21,7 @@ use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Platform\Application\Settings\StoredSettings;
 use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
+use Src\Platform\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
@@ -72,6 +75,9 @@ final class PlatformServiceProvider extends ContextServiceProvider
         ] as $event => $method) {
             Event::listen($event, [RecordIdentityAuditEntries::class, $method]);
         }
+
+        Event::listen(CompanyCreated::class, [RecordCompanyAuditEntries::class, 'onCompanyCreated']);
+        Event::listen(CompanyMemberJoined::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberJoined']);
 
         parent::boot();
     }

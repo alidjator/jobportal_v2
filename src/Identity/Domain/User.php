@@ -52,6 +52,17 @@ final class User extends AggregateRoot
         return new self(null, UserType::JobSeeker, $name, $email, null, $now, AccountStatus::Active, null, $locale, $registrationCampaignCode, null, null, null);
     }
 
+    /** A new company-member account created from an accepted invitation: active, with a verified email, because the invitation proved the owner got it. */
+    public static function createCompanyMember(
+        string $name,
+        string $email,
+        string $passwordHash,
+        string $locale,
+        DateTimeImmutable $now,
+    ): self {
+        return new self(null, UserType::CompanyMember, $name, $email, $passwordHash, $now, AccountStatus::Active, null, $locale, null, null, null, null);
+    }
+
     public function name(): string
     {
         return $this->name;

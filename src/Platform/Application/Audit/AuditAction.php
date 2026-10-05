@@ -26,4 +26,8 @@ final class AuditAction
     public const string EMAIL_TEMPLATE_UPDATED = 'email_template.updated';
 
     public const string EMAIL_TEMPLATE_RESET = 'email_template.reset';
+
+    public const string COMPANY_CREATED = 'company.created';
+
+    public const string COMPANY_MEMBER_JOINED = 'company.member_joined';
 }

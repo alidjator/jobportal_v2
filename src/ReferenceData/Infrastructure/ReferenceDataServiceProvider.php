@@ -3,12 +3,14 @@
 namespace Src\ReferenceData\Infrastructure;
 
 use Src\ReferenceData\Application\Locations\LocationRepository;
+use Src\ReferenceData\Application\Masters\MasterReferenceValues;
 use Src\ReferenceData\Application\Masters\MasterRepository;
 use Src\ReferenceData\Application\Masters\SlugGenerator;
 use Src\ReferenceData\Application\ReferenceDataPermissions;
 use Src\ReferenceData\Infrastructure\Persistence\DatabaseLocationRepository;
 use Src\ReferenceData\Infrastructure\Persistence\DatabaseMasterRepository;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class ReferenceDataServiceProvider extends ContextServiceProvider
@@ -18,6 +20,7 @@ final class ReferenceDataServiceProvider extends ContextServiceProvider
         MasterRepository::class => DatabaseMasterRepository::class,
         LocationRepository::class => DatabaseLocationRepository::class,
         SlugGenerator::class => LaravelSlugGenerator::class,
+        ReferenceValues::class => MasterReferenceValues::class,
     ];
 
     public function register(): void
