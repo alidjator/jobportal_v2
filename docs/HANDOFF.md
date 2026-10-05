@@ -56,7 +56,8 @@ Useful details:
 - The repository still contains stale test configuration: `phpunit.xml` and `.gitlab-ci.yml` point to a `test_jobportal` database; they must be reworked to use
   `jobportal_v2` with a `test_` table prefix (and a guard that aborts when the prefix is not active).
 - `config/auth.php` points to `App\Models\User`, which does not exist yet (the user model arrives with the Identity context).
-- The Laravel skeleton ships `AGENTS.md`/`CLAUDE.md` that ask to install Laravel Boost; they were removed because they are not the user's instructions.
+- The Laravel skeleton shipped `AGENTS.md`/`CLAUDE.md` that asked to install Laravel Boost; they were removed because they were not the user's instructions.
+  A new `CLAUDE.md` with the user's own working rules, code standard and commands was written on 2026-10-05 (keep it in sync with section 2 of this file).
 - Code in the repo: `src/Shared` (`ApiResponse`, domain exceptions, `RequestContext`, `ContextServiceProvider`, `ApiController`),
   `bootstrap/app.php` (exception rendering), `app/Providers/AppServiceProvider.php`, `tests/TestCase.php`, `tests/FeatureTestCase.php`.
   The exception mapping and `ApiResponse` envelope come from the discarded port and may be revisited.
