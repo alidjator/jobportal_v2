@@ -11,11 +11,18 @@ final readonly class MasterReferenceValues implements ReferenceValues
 
     public function isActive(string $master, int $id): bool
     {
-        $definition = MasterCatalog::find($master)
-            ?? throw new InvalidArgumentException("Unknown master {$master}.");
-
-        $item = $this->masters->find($definition, $id);
+        $item = $this->masters->find($this->definition($master), $id);
 
         return $item !== null && $item->isActive;
+    }
+
+    public function name(string $master, int $id, string $language): ?string
+    {
+        return $this->masters->find($this->definition($master), $id)?->name->resolve($language);
+    }
+
+    private function definition(string $master): MasterDefinition
+    {
+        return MasterCatalog::find($master) ?? throw new InvalidArgumentException("Unknown master {$master}.");
     }
 }

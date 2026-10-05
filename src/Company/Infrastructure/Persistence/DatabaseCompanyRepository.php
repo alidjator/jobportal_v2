@@ -2,11 +2,17 @@
 
 namespace Src\Company\Infrastructure\Persistence;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Company\Domain\Company;
+use Src\Company\Domain\CompanyProfile;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\CompanyStatus;
 use Src\Shared\Application\Clock;
+use Src\Shared\Domain\Exceptions\StateConflict;
+use stdClass;
 
 final readonly class DatabaseCompanyRepository implements CompanyRepository
 {
@@ -21,20 +27,22 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
     {
         $row = $this->connection->table('company_companies')->where('id', $id)->first();
 
-        return $row === null ? null : new Company(
-            (int) $row->id,
-            (string) $row->name,
-            (string) $row->slug,
-            CompanyStatus::from($row->status),
-            (int) $row->industry_id,
-            (int) $row->organization_type_id,
-            $row->created_by_admin_id === null ? null : (int) $row->created_by_admin_id,
-        );
+        return $row === null ? null : $this->toCompany($row);
     }
 
-    public function slugExists(string $slug): bool
+    public function findBySlug(string $slug): ?Company
     {
-        return $this->connection->table('company_companies')->where('slug', $slug)->exists();
+        $row = $this->connection->table('company_companies')->where('slug', $slug)->first();
+
+        return $row === null ? null : $this->toCompany($row);
+    }
+
+    public function slugExists(string $slug, ?int $exceptId = null): bool
+    {
+        return $this->connection->table('company_companies')
+            ->where('slug', $slug)
+            ->when($exceptId !== null, fn ($query) => $query->where('id', '!=', $exceptId))
+            ->exists();
     }
 
     public function lock(int $companyId): void
@@ -44,22 +52,84 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
 
     public function save(Company $company): Company
     {
-        $time = $this->clock->now()->format(self::TIME_FORMAT);
-
-        $id = $this->connection->table('company_companies')->insertGetId([
-            'name' => $company->name(),
+        $now = $this->clock->now()->format(self::TIME_FORMAT);
+        $profile = $company->profile();
+        $columns = [
+            'name' => $profile->name,
             'slug' => $company->slug(),
             'status' => $company->status()->value,
-            'industry_id' => $company->industryId(),
-            'organization_type_id' => $company->organizationTypeId(),
-            'created_by_admin_id' => $company->createdByAdminId(),
-            'created_at' => $time,
-            'updated_at' => $time,
-        ]);
+            'website' => $profile->website,
+            'established_on' => $profile->establishedOn?->format('Y-m-d'),
+            'bio' => $profile->bio,
+            'vision' => $profile->vision,
+            'industry_id' => $profile->industryId,
+            'organization_type_id' => $profile->organizationTypeId,
+            'team_size_id' => $profile->teamSizeId,
+            'address_line' => $profile->addressLine,
+            'province_id' => $profile->provinceId,
+            'city_id' => $profile->cityId,
+            'subdistrict_id' => $profile->subdistrictId,
+            'village_id' => $profile->villageId,
+            'postal_code_id' => $profile->postalCodeId,
+            'contact_email' => $profile->contactEmail,
+            'contact_phone' => $profile->contactPhone,
+            'is_visible' => $profile->isVisible,
+            'verified_at' => $company->verifiedAt()?->format(self::TIME_FORMAT),
+            'updated_at' => $now,
+        ];
 
+        try {
+            if ($company->id !== null) {
+                $this->connection->table('company_companies')->where('id', $company->id)->update($columns);
+
+                return $company;
+            }
+
+            $id = $this->connection->table('company_companies')->insertGetId([
+                ...$columns,
+                'created_by_admin_id' => $company->createdByAdminId(),
+                'created_at' => $now,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Two requests took the same slug at the same moment; the unique index decided which one wins.
+            throw new StateConflict('This slug is already taken.', 'slug-taken');
+        }
+
+        return new Company((int) $id, $company->slug(), $company->status(), $company->verifiedAt(), $company->createdByAdminId(), $profile);
+    }
+
+    private function toCompany(stdClass $row): Company
+    {
         return new Company(
-            (int) $id, $company->name(), $company->slug(), $company->status(), $company->industryId(),
-            $company->organizationTypeId(), $company->createdByAdminId(),
+            (int) $row->id,
+            (string) $row->slug,
+            CompanyStatus::from($row->status),
+            $row->verified_at === null ? null : new DateTimeImmutable((string) $row->verified_at, new DateTimeZone('UTC')),
+            $row->created_by_admin_id === null ? null : (int) $row->created_by_admin_id,
+            new CompanyProfile(
+                (string) $row->name,
+                $row->website,
+                $row->established_on === null ? null : new DateTimeImmutable((string) $row->established_on, new DateTimeZone('UTC')),
+                $row->bio,
+                $row->vision,
+                (int) $row->industry_id,
+                (int) $row->organization_type_id,
+                $this->nullableInt($row->team_size_id),
+                $row->address_line,
+                $this->nullableInt($row->province_id),
+                $this->nullableInt($row->city_id),
+                $this->nullableInt($row->subdistrict_id),
+                $this->nullableInt($row->village_id),
+                $this->nullableInt($row->postal_code_id),
+                $row->contact_email,
+                $row->contact_phone,
+                (bool) $row->is_visible,
+            ),
         );
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return $value === null ? null : (int) $value;
     }
 }

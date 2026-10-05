@@ -1,0 +1,77 @@
+<?php
+
+namespace Src\ReferenceData\Infrastructure\Persistence;
+
+use Illuminate\Database\ConnectionInterface;
+use Src\Shared\Application\References\LocationNames;
+use Src\Shared\Application\References\LocationReferences;
+
+/** Table and column names are fixed in this class (never taken from input); the ids are bound parameters. */
+final readonly class DatabaseLocationReferences implements LocationReferences
+{
+    public function __construct(private ConnectionInterface $connection) {}
+
+    public function isValidChain(?int $provinceId, ?int $cityId, ?int $subdistrictId, ?int $villageId, ?int $postalCodeId): bool
+    {
+        // Each level is checked against the one above it; a level without the levels above it is not a chain.
+        $levels = [
+            [$provinceId, 'reference_provinces', null],
+            [$cityId, 'reference_cities', 'province_id'],
+            [$subdistrictId, 'reference_subdistricts', 'city_id'],
+            [$villageId, 'reference_villages', 'subdistrict_id'],
+            [$postalCodeId, 'reference_postal_codes', 'village_id'],
+        ];
+
+        $parent = null;
+        $parentGiven = true;
+
+        foreach ($levels as [$id, $table, $parentColumn]) {
+            if ($id === null) {
+                $parentGiven = false;
+                $parent = null;
+
+                continue;
+            }
+
+            if (! $parentGiven) {
+                return false;
+            }
+
+            $query = $this->connection->table($table)->where('id', $id);
+
+            if ($parentColumn !== null) {
+                $query->where($parentColumn, $parent);
+            }
+
+            if (! $query->exists()) {
+                return false;
+            }
+
+            $parent = $id;
+        }
+
+        return true;
+    }
+
+    public function names(?int $provinceId, ?int $cityId, ?int $subdistrictId, ?int $villageId, ?int $postalCodeId): LocationNames
+    {
+        return new LocationNames(
+            $this->value('reference_provinces', 'name', $provinceId),
+            $this->value('reference_cities', 'name', $cityId),
+            $this->value('reference_subdistricts', 'name', $subdistrictId),
+            $this->value('reference_villages', 'name', $villageId),
+            $this->value('reference_postal_codes', 'code', $postalCodeId),
+        );
+    }
+
+    private function value(string $table, string $column, ?int $id): ?string
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        $value = $this->connection->table($table)->where('id', $id)->value($column);
+
+        return $value === null ? null : (string) $value;
+    }
+}

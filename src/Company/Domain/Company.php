@@ -2,32 +2,32 @@
 
 namespace Src\Company\Domain;
 
+use DateTimeImmutable;
 use Src\Shared\Domain\AggregateRoot;
 
 /**
- * An employer. It only holds what exists from the start (name, slug, status and the two required classifications); the rest of the
- * profile is added when the profile is written. A company is created by an admin, never by self-registration.
+ * An employer. A company is created by an admin, never by self-registration, with the required minimum of its profile; the company admin
+ * completes the rest. Logo and banner come with the file upload feature.
  */
 final class Company extends AggregateRoot
 {
     public function __construct(
         public readonly ?int $id,
-        private string $name,
         private string $slug,
         private CompanyStatus $status,
-        private int $industryId,
-        private int $organizationTypeId,
+        private ?DateTimeImmutable $verifiedAt,
         private ?int $createdByAdminId,
+        private CompanyProfile $profile,
     ) {}
 
     public static function create(string $name, string $slug, int $industryId, int $organizationTypeId, int $createdByAdminId): self
     {
-        return new self(null, $name, $slug, CompanyStatus::Active, $industryId, $organizationTypeId, $createdByAdminId);
+        return new self(null, $slug, CompanyStatus::Active, null, $createdByAdminId, CompanyProfile::minimal($name, $industryId, $organizationTypeId));
     }
 
     public function name(): string
     {
-        return $this->name;
+        return $this->profile->name;
     }
 
     public function slug(): string
@@ -40,14 +40,24 @@ final class Company extends AggregateRoot
         return $this->status;
     }
 
+    public function verifiedAt(): ?DateTimeImmutable
+    {
+        return $this->verifiedAt;
+    }
+
+    public function profile(): CompanyProfile
+    {
+        return $this->profile;
+    }
+
     public function industryId(): int
     {
-        return $this->industryId;
+        return $this->profile->industryId;
     }
 
     public function organizationTypeId(): int
     {
-        return $this->organizationTypeId;
+        return $this->profile->organizationTypeId;
     }
 
     public function createdByAdminId(): ?int
@@ -58,5 +68,21 @@ final class Company extends AggregateRoot
     public function isActive(): bool
     {
         return $this->status === CompanyStatus::Active;
+    }
+
+    /** Whether the public may see this company: it is active and its admin has not hidden it. */
+    public function isPublic(): bool
+    {
+        return $this->isActive() && $this->profile->isVisible;
+    }
+
+    public function changeProfile(CompanyProfile $profile): void
+    {
+        $this->profile = $profile;
+    }
+
+    public function changeSlug(string $slug): void
+    {
+        $this->slug = $slug;
     }
 }
