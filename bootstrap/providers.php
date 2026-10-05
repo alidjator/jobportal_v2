@@ -4,6 +4,7 @@ use App\Providers\AppServiceProvider;
 use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Content\Infrastructure\ContentServiceProvider;
 use Src\Identity\Infrastructure\IdentityServiceProvider;
+use Src\Job\Infrastructure\JobServiceProvider;
 use Src\Notification\Infrastructure\NotificationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
@@ -16,4 +17,5 @@ return [
     ContentServiceProvider::class,
     ReferenceDataServiceProvider::class,
     CompanyServiceProvider::class,
+    JobServiceProvider::class,
 ];

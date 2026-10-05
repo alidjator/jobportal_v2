@@ -73,3 +73,10 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
+
+## Part 1 of the coding: tables and settings (2026-10-05, branch `phase-1-company`, not committed)
+
+Migrations `2026_10_05_000054` to `000058` (one per table: `job_jobs`, `job_job_skills`, `job_job_tags`, `job_job_benefits`, `job_assignments`) are written and were run **only against the `test_` tables**
+(`php artisan test:database:migrate`) and then, **on the user's explicit approval, against the real tables** (58 migrations recorded; columns and indexes identical in both sets, the two CHECK constraints
+exist, all five real tables hold 0 rows). The new context `Src\Job` has `JobServiceProvider` (registered in `bootstrap/providers.php`)
+and `JobSettings`, which registers the two settings in the shared catalog. 12 new tests (schema checks, settings defaults and per-company overrides); the whole suite has 708 tests, Pint and PHPStan clean.
