@@ -122,6 +122,32 @@ or the platform admin for the first invitation at company creation and for invit
 `invitation_id`); never the email address (look it up through `invitation_id` in `company_invitations`). A replaced invitation is audited as a new one sent. Refused requests
 (409, 422, 403, 429) leave no entry.
 
+## Slice 3: profile (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
+
+**Done:** the four endpoints below plus `PUT /company/slug`; 55 new tests (whole suite 537 passed, Pint and PHPStan clean). Implementation notes: a badly formed slug is 422
+`invalid-slug` (a reserved one 422 `slug-reserved`); a slug race between two companies is settled by the unique index and reported as 409 `slug-taken`; only a *changed*
+classification is checked against the masters, so a master item an admin deactivated later neither blocks unrelated edits nor loses its name on the public page; the public route only
+matches `[a-z0-9-]+`; `Company` now holds a `CompanyProfile` value object and `CompanySlug` holds the slug rules. The terms gate applies to the `company/*` routes as before.
+
+- **Scope:** the text profile, the slug and the public page. **Logo and banner upload is the next slice** (the first file feature: content check, size limit from settings, random
+  names, served through the API; avatars and resumes will reuse it). `logo_path` and `banner_path` stay empty and are not exposed yet.
+- **Endpoints (company admin edits, any member of the company may read):** `GET /api/v1/company/profile` (every profile column as stored: ids for the classifications and the
+  location, raw Markdown; works while the company is suspended, like `company/me`), `PATCH /api/v1/company/profile` (send only what changes; `null` clears an optional
+  field; name, industry and organization type cannot be cleared; 204) and `PUT /api/v1/company/slug {slug}` (204). Public: `GET /api/v1/companies/{slug}`.
+- **Validation (422 per field):** name 2 to 255; website an http or https URL up to 255; founding date not in the future; bio and vision Markdown up to 5,000 characters
+  each; address line up to 255; contact email a valid email; contact phone digits with `+`, spaces, hyphens and parentheses, 6 to 32 characters; industry, organization type and
+  team size must be **active** master items (422 `unknown-industry`, `unknown-organization-type`, `unknown-team-size`); the location must be **one matching chain**
+  (the city belongs to the province, the subdistrict to the city, the village to the subdistrict, the postal code to the village; a lower level needs the upper levels), else 422
+  `invalid-location`. When only part of the chain is sent, it is checked together with the stored rest, so changing the province means sending the new city too.
+- **Slug:** 3 to 60 characters, lower case letters, digits and hyphens, no leading, trailing or double hyphen. Refused as 422 `slug-reserved` when it is one of: `admin`, `api`,
+  `auth`, `login`, `register`, `company`, `companies`, `jobs`, `job`, `me`, `search`, `about`, `help`, `faq`, `terms`, `privacy`, `support`, `www`; 409 `slug-taken` when another
+  company has it. Setting the slug already in force does nothing (204). **No limit on how often it changes** (decided with the user); old links are not redirected.
+- **Public profile (no contact data):** name, slug, bio, vision, website, founding date, industry, organization type and team size (names in the request language), location
+  (province to village names, street address, postal code) and the verification badge (`verified_at`). Email and phone are **not** public (spam and scraping; applicants
+  reach the company through chat). 404 when the slug is unknown, the company is suspended or `is_visible` is false. `Cache-Control: public, max-age=60` and an `ETag`.
+- **Audit:** profile edits and slug changes are **not** audited (the audit log is not a log of all data changes).
+- New shared ports: `LocationReferences` (chain check and names, provided by ReferenceData) and `ReferenceValues::name` (the name of a master item in a language).
+
 ## Still open (asked one at a time)
 
 Endpoint list; company logo and banner upload (needs the file-upload design); how the first sign-in of an invited account
