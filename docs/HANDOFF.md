@@ -317,6 +317,11 @@ endpoints), audit read endpoint and purge job, audit of admin actions (publishin
 those features), real-world check of Google sign-in with the actual client IDs.
 Commits (branch `phase-0-foundation`): `27cb3e1` (Identity, Content, ReferenceData and the shared kernel, with tests, migrations and config), `6c77ad3` (Platform: audit read and purge, settings, email templates) and the documentation commits after each. Nothing is uncommitted after them.
 
+**Phase 1 started (2026-10-05), branch `phase-1-company`:** the Company context is designed in `docs/design/phase-1-company.md` (profile, one company per account, invitations,
+status, slug, three tables). Migrations `000048` to `000050` exist and ran only against the `test_` tables (the real tables are **not** created; the user postponed it). **Slice 1,
+onboarding, is coded** (create a company and invite its first company admin, preview and accept an invitation, `GET /company/me`; 24 tests, suite 453 passed) but **not committed**;
+the choices made while coding (suspended company 403, 20 lookups per IP per hour, audit of creation and joining, terms gate on `company/me`) were **confirmed by the user**. Real database still needs: `php artisan migrate` (three tables) and `identity:sync-permissions` (`companies.manage`).
+
 ## 6. Suggested next steps
 
 1. **Test setup rework: DONE (2026-10-03), code not committed.** `phpunit.xml` and `.gitlab-ci.yml` use `jobportal_v2` with `DB_PREFIX=test_`

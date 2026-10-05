@@ -59,7 +59,24 @@ transaction with a row lock, **not** by a unique index, because old invitations 
 **Migrations (2026-10-05):** `2026_10_05_000048` to `000050` (one per table) are written and were run **only against the `test_` tables**
 (`php artisan test:database:migrate`). The user chose to **postpone** the run against the real tables; `php artisan migrate` has not been run for them.
 
-## Slice 1: onboarding (decided 2026-10-05, not yet coded)
+## Slice 1: onboarding (decided and coded 2026-10-05, branch `phase-1-company`, not yet committed)
+
+**Done:** `POST /api/v1/admin/companies`, `GET /api/v1/auth/invitations/{token}`, `POST /api/v1/auth/invitations/{token}/accept` (201) and `GET /api/v1/company/me`;
+24 new tests, whole suite 453 passed, Pint and PHPStan clean. Choices made while coding, **all confirmed by the user on 2026-10-05** (suspended company,
+rate limit, audit scope and terms gate, as listed):
+- Accepting or previewing an invitation of a **suspended company** is 403 `company-suspended`.
+- Invitation lookups and acceptances are limited to **20 per IP per hour** (every call counts; a real invitee needs two).
+- The two admin-facing failures: an unknown or inactive industry or organization type is 422 `unknown-industry` / `unknown-organization-type`; an email that already has
+  an account is 409 `email-already-registered`.
+- **Audit:** `company.created` (actor admin) and `company.member_joined` (actor the new user, metadata `role`), never an email address.
+- `company/me` is gated by the terms like every `auth:user` route (the five exempt routes are unchanged).
+- Cross-context ports added in Shared: `CompanyMemberAccounts` (Identity provides it: email check, account creation, sign-in), `CompanyMembershipResolver` (Company provides it;
+  `ActorResolver` fills `Actor::$membership`), `ReferenceValues` (ReferenceData provides it). New email template `company.invitation`, new permission `companies.manage`,
+  new config `app.invitation_url` (env `COMPANY_INVITATION_URL`).
+- **Not done in this slice:** inviting again, revoking and listing invitations, the team endpoints, the profile endpoints, company suspension endpoints, company
+  override endpoints for settings. `identity:sync-permissions` must be run on the real database to create `companies.manage`, and the three `company_` tables do not exist there yet.
+
+### Decisions
 
 Chosen as the first slice: create a company, invite the first company admin, accept the invitation.
 
