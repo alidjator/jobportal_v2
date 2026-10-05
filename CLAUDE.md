@@ -15,7 +15,9 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 4. **One question at a time.** Do not decide for the user; offer options, record every answer in the design document.
 5. **Confirm before hard-to-reverse or outward-facing actions.** Commit only when asked. Running migrations or seeders against the **real** tables, and any
    write to production or the live site, needs the user's explicit approval each time.
-6. **Out of scope for now:** plans, billing, payments, invoices, pay-per-job and featured promotion.
+6. **Do not re-summarize changes.** Do not recap what was edited or repeat a change list the user can already see in the diff; report only the outcome
+   and what needs a decision.
+7. **Out of scope for now:** plans, billing, payments, invoices, pay-per-job and featured promotion.
 
 ## Code standard
 

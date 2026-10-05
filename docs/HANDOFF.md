@@ -34,6 +34,7 @@ The repository now contains only the Laravel 13 skeleton, a small shared kernel,
 9. **Database objects**: schema is *hybrid* (only needed tables), table prefix per bounded context. **All test-related objects** (tables, triggers, functions,
    procedures, events) must use the **`test_` prefix** in front of the context prefix; tests run inside `jobportal_v2` and must never touch non-`test_` objects.
 10. **Ask one question at a time** and do not decide for the user. The user answers through option prompts; record each answer.
+11. **Do not re-summarize changes** (rule added 2026-10-05): no recap of what was edited or of a change list the user can see in the diff; report only the outcome and what needs a decision.
 
 ## 3. Environment and access
 
