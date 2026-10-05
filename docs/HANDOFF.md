@@ -71,6 +71,7 @@ Useful details:
 | `docs/analysis/gap-analysis.md` | Flow gaps vs benchmarks with production-schema evidence |
 | `docs/design/decisions.md` | **All confirmed design decisions** (stages, screening, gap scope, foundation, delivery, phases) |
 | `docs/design/architecture.md` | Cross-cutting architecture decisions (API contract, authentication, authorization, persistence, queues, files, account states) |
+| `docs/design/phase-1-company.md` | **Company context design and its five coded slices** (onboarding, team, profile, logo and banner, admin), with every decision and the choices the user confirmed |
 | `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
@@ -366,27 +367,17 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
-1. **Test setup rework: DONE (2026-10-03), code not committed.** `phpunit.xml` and `.gitlab-ci.yml` use `jobportal_v2` with `DB_PREFIX=test_`
-   (forced); `config/database.php` reads `DB_PREFIX`; `Src\Shared\Infrastructure\Testing\TestDatabaseGuard` fails closed (prefix must be exactly `test_`,
-   environment `testing`, no `RefreshDatabase`/`DatabaseMigrations`) and is called from `tests/TestCase.php`; `php artisan test:database:migrate`
-   (`MigrateTestDatabaseCommand`) forces the prefix, runs the guard and a plain `migrate` (never `migrate:fresh`); feature tests use
-   `DatabaseTransactions`. Unit tests for the guard and a smoke feature test pass; Pint and PHPStan are clean. **Not yet run:**
-   `php artisan test:database:migrate` itself (it would create `test_migrations` in `jobportal_v2`; run it once the first migration exists).
-2. Write the Phase 0 migrations for `jobportal_v2` from `phase-0-schema.md`, **confirming every table with the user** (the database is shared with the
-   `test_` objects). Write foreign key columns explicitly as `bigint unsigned` (the design document does not spell out their type). Add the
-   `created_at` index on the framework `notifications` table through a separate migration (confirm when writing it).
-3. Verify package compatibility with Laravel 13 when adding `spatie/laravel-translatable` and the Spatie permission package (custom table names, composite
-   pivot keys).
-4. **Architecture document: DONE (2026-10-03).** `docs/design/architecture.md` holds the cross-cutting decisions (RFC 9457 errors and 422/409 statuses,
-   Sanctum tokens with 30-day and 12-hour lifetimes and no abilities, hybrid authorization with an explicit `Actor`, request language, `/api/v1` URLs, pagination
-   and filtering, pure domain entities with query services, `TransactionManager`, domain events after commit, three queues, per-context scheduler, private
-   files, account states). **Shared-kernel cleanup DONE (2026-10-03):** `ProblemDetailsRenderer` replaces `ApiResponse`, `StateConflict` added, `RequestContext` reduced to
-   the language, routes load under `api/v1`, all `src` comments in English (72 tests, Pint and PHPStan clean; see architecture.md section 4). The rest of the
-   decisions (auth, packages, routes) have no code yet.
-5. Audit and translate any remaining non-English comments/docs in the repository (the user has asked to be consulted before doing it).
-6. Then start Phase 0 implementation by bounded context: Identity, Platform, Notification, ReferenceData, Content. Open details (seed data and the BPS
-   source, verification-code lifetime, purge jobs) are decided when reached, one question at a time.
-7. Commit the `docs/` files only when the user asks.
+State on 2026-10-05: **Phase 0 is complete** (code, tests, real database) and **Phase 1 has the Company context done** except document verification (git: branch `phase-1-company`, `master`
+fast-forwarded and tagged `v0.1.0` at `ee7b463`; suite 618 tests, Pint and PHPStan clean; everything committed). Continue in this order, one question at a time, confirming each decision with the user:
+
+1. **Company document verification (R1b), its own slice.** Company side: upload the verification documents; admin side: approve or reject with a reason, which sets `verified_at` (the public badge
+   already reads it). New tables and a company-side upload (reuse `FileStorage`, `ImageProcessor` is for images only, so a document type check is needed). Open decisions to ask: which documents
+   are required, accepted types and sizes (an admin setting), the fixed list of rejection reasons, document statuses (pending, approved, rejected), re-submission after a rejection, what happens to
+   the badge when documents expire or change, and whether the admin can see the files (served only through an endpoint that checks access, audited).
+2. **Rest of Phase 1** (decided in `decisions.md`, order inside the phase still to agree): job seeker profile and resumes, jobs and their lifecycle, job search, applying (J1), hybrid stages and
+   history, screening questions, pipeline, stage notifications, and the data migration (scripts and tests only; running them against real data needs the user's explicit approval at that time).
+   Each of these registers its notification kinds in `NotificationPreferenceCatalog` and its settings in `SettingsCatalog` from its own provider.
+3. Items still waiting for the user are in section 7. Commit only when the user asks.
 
 ## 7. Items waiting for the user
 
@@ -397,5 +388,5 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 8. Suggested first message for the new session
 
-> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/decisions.md`, check the memory index, then continue with the Phase 0
-> migrations (confirm every table with me, one question at a time).
+> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/phase-1-company.md`, check the memory index, then continue with the Company document verification slice
+> (one question at a time, and I decide).
