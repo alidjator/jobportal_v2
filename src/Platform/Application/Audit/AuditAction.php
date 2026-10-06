@@ -47,6 +47,8 @@ final class AuditAction
 
     public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';
 
+    public const string JOB_ASSIGNEES_CHANGED = 'job.assignees_changed';
+
     public const string COMPANY_DOCUMENT_APPROVED = 'company.document_approved';
 
     public const string COMPANY_DOCUMENT_REJECTED = 'company.document_rejected';

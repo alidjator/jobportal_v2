@@ -41,7 +41,14 @@ final readonly class DatabaseMasterRepository implements MasterRepository
 
     public function find(MasterDefinition $definition, int $id): ?MasterItem
     {
-        $row = $this->select($definition)->where('id', $id)->first();
+        $builder = $this->select($definition)->where('id', $id);
+
+        // A master with fixed columns (benefits: only `active`, not a company's pending or rejected proposal) never finds an item outside them.
+        foreach ($definition->fixedColumns as $column => $value) {
+            $builder->where($column, $value);
+        }
+
+        $row = $builder->first();
 
         return $row === null ? null : $this->toItem($definition, $row);
     }

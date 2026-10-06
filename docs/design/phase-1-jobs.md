@@ -75,6 +75,30 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
 
+## Part 2 of the coding: drafts and assignment (shapes approved 2026-10-06)
+
+- **List** `GET /api/v1/company/jobs` (offset-paginated): row `id`, `title`, `status`, `deadline`, `vacancies`, `assignees_count`, `published_at`, `created_at`, `updated_at`; `filter[status]`, `filter[q]` (title,
+  case-insensitive), `filter[assigned_to_me]`; `sort` of `updated_at`, `created_at`, `title` or `deadline`, each with an optional `-`, default `-updated_at`.
+- **Detail** `GET /api/v1/company/jobs/{id}`: every column, with ids for the classification and the location (as the company profile does); `skills` and `benefits` as `[{id, name}]` (name in the request
+  language), `tags` as a list of text, `assignees` as `[{user_id, name, role}]`, and `status_reason` only while `rejected` or `taken_down`.
+- **Saving:** `POST` and `PATCH` take `skill_ids`, `tags` (text) and `benefit_ids`; when sent, the list is replaced as a whole. A draft is checked only for the shape and validity of what it holds;
+  completeness, the deadline and the day limit are checked at publish (part 3). In part 2 `PATCH` applies to `draft` and `rejected` jobs; editing `active`, `closed` and `expired` jobs (including the return to
+  `pending_review`) comes in part 3 with publishing.
+- **Assignment audit and notifications (approved):** a change of assignees is audited as `job.assignees_changed` (actor the company admin, or `system` for the automatic reassignment after a member was
+  removed; metadata `job_id`, `added` and `removed` as account ids, no names or emails), because an assignment gives access to applications. Members newly assigned get the in-app notification
+  `job.assigned` (data `job_id`) and removed ones `job.unassigned`; the creator who is assigned automatically is not notified. Creating, editing and deleting a draft is not audited (as for the company profile).
+- **Tags:** the text is trimmed, lower-cased and its spaces collapsed; 2 to 30 characters from letters, digits, spaces and `+ # . -`, with at least one letter or digit. A tag is identified by its slug (`+`
+  becomes `plus` and `#` becomes `sharp` before slugging) and the name is kept as first written.
+
+**Done (2026-10-06, branch `phase-1-company`, not committed):** the seven company-side endpoints (`GET|POST /company/jobs`, `GET|PATCH|DELETE /company/jobs/{id}`, `GET|PUT /company/jobs/{id}/assignees`),
+the audit and the notifications of assignment, and the automatic hand-over when a member is removed. 56 tests in `tests/Feature/Job` (whole suite 774 passed, Pint and PHPStan clean). Implementation notes:
+`POST` answers 201 and `PATCH` 200 with the whole job (not 204), `PUT .../assignees` 200 with the new list; a job that a recruiter may not see, or that belongs to another company, is 404, and the status
+is checked before the content (409 `job-not-editable` before 422); an invalid draft is 422 `invalid-job` with `errors` per field (`category_id`, `skill_ids`, `tags`, `location`, ...); new shared ports `CompanyTeam`
+(roles of a company's members, provided by Company), `TagRegistry` (tags created while a job is saved, provided by ReferenceData) and `CompanyDirectory::isActive`; the lock "title, category, role, type and level
+cannot change once a job has applications" is **not coded yet** (it needs applications, so it arrives with them). **Finding fixed with the user's approval:** `ReferenceValues::isActive` and `name` ignored the
+fixed columns of a master (benefits are global only while `status` is `active`), so a company's pending or rejected benefit proposal would have counted as a valid benefit; `find` now respects them (3 regression tests).
+A tag's slug turns `+` into `plus` and `#` into `sharp`; two tags with the same slug are one tag.
+
 ## Part 1 of the coding: tables and settings (2026-10-05, branch `phase-1-company`, not committed)
 
 Migrations `2026_10_05_000054` to `000058` (one per table: `job_jobs`, `job_job_skills`, `job_job_tags`, `job_job_benefits`, `job_assignments`) are written and were run **only against the `test_` tables**
