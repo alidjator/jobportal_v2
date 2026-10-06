@@ -88,7 +88,11 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 event `JobStatusChanged` (`published`, `closed`, `reopened`, `sent_for_review`, `expired`) that is audited (`from` and `to`) and, for `expired`, notified (`job.expired`); `published_at` is set once. A brand new
 `reference_*`, migration or permission was not needed: nothing has to run on the real database except the scheduler picking up the new command. Not done in this part: the admin side of the review (approve, reject, take
 down, restore: part 4) and the public job detail (part 5). **Production note:** the hourly expiry only runs when the Laravel scheduler runs (`php artisan schedule:run` every minute, for example from cron or a
-systemd timer); no cron entry or timer for it was found on this server on 2026-10-06 (checked as the `jobportal` user, without root), so none of the scheduled commands (anonymisation, audit and notification purges, this one) runs yet; the user decides how to set it up.
+systemd timer); no cron entry or timer for it was found on this server on 2026-10-06 (checked as the `jobportal` user, without root). **Decided with the user the same day and installed on their approval:** the crontab of the
+`jobportal` user runs `* * * * * cd /usr/local/src/jobportal && /usr/bin/php artisan schedule:run >> /dev/null 2>&1` (every minute: the schedule stays in code and in UTC, so 02:00 is 09:00 WIB; one boot takes about
+0.6 s and 0.45 s of CPU, about 0.75% of one core of eight; the user asked whether it was too frequent, and a sparser pattern such as `0,30 * * * *` would silently skip any task scheduled at another minute). The scheduled
+commands are `job:expire-due` (hourly), `identity:anonymize-due-accounts` (02:00 UTC), `platform:purge-audit-logs` (03:00) and `notification:purge-old` (03:30). Remove it with `crontab -r`. If the project is restored on
+another server, this crontab line must be added again (it is not part of git).
 
 Decisions:
 

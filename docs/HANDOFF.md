@@ -361,7 +361,9 @@ stays `sync` (audit entries, emails and the anonymisation cleanup run inside the
 **Done on the user's approval (2026-10-05):** POSIX ACLs (XFS) give both `nginx` (the PHP-FPM pool user) and `jobportal` read and write on `storage/` and `bootstrap/cache`, with default
 ACLs so files and folders created later by either user are writable by both (checked: new files get `rw-` for both); `.env` is now mode 600 with a single ACL entry `u:nginx:r` (no other local user can
 read it; the app still reads it as `jobportal`). The built-in `GET|PUT /storage/{path}` route is gone (`'serve' => false` on the local disk, guarded by `tests/Feature/Shared/PrivateStorageTest.php`;
-suite 572 passed). If the project is ever re-cloned or restored, these ACLs must be applied again (they are not part of git). **Still open before real use:** SMTP, the invitation page URL and the queue worker
+suite 572 passed). If the project is ever re-cloned or restored, these ACLs must be applied again (they are not part of git).
+**Scheduler (2026-10-06, on the user's approval):** the crontab of the `jobportal` user runs `php artisan schedule:run` every minute (see `docs/design/phase-1-jobs.md`, part 3); it is not part of git and must be
+added again on a new server. The scheduled commands are `job:expire-due`, `identity:anonymize-due-accounts`, `platform:purge-audit-logs` and `notification:purge-old`. **Still open before real use:** SMTP, the invitation page URL and the queue worker
 (see the decisions above), and the final result of `certbot renew --dry-run`. **PHP limits (checked 2026-10-05, nothing to change):** the pool that serves the socket is the system `php-fpm` master (`/etc/php-fpm.conf`, pool `[www]`,
 shared with the other sites on this server) and it reads `/etc/php.ini` (extra files in `/etc/php.d`); there, `upload_max_filesize = 1G` (line 865), `post_max_size = 0` (line 713, unlimited) and
 `memory_limit = -1` (line 445), and the pool overrides none of them, so the 10 MB uploads of this API are not cut. The effective upload cap for this site is therefore nginx's
