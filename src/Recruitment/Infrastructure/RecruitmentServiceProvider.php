@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Infrastructure;
 
 use Illuminate\Support\Facades\Event;
+use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
 use Src\Recruitment\Application\JobApplicationCheck;
@@ -10,13 +11,16 @@ use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
+use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
+use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
@@ -44,6 +48,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
+        ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,
         JobQuestionRepository::class => DatabaseJobQuestionRepository::class,
     ];
@@ -71,5 +76,6 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         parent::boot();
 
         Event::listen(ApplicationSubmitted::class, NotifyAssigneesOfApplication::class);
+        Event::listen(UserAnonymized::class, EraseApplicantDataWhenUserAnonymized::class);
     }
 }

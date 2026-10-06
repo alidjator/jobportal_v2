@@ -374,6 +374,15 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
+**Update 2026-10-07 (read this before the paragraph below):** step 7, applying, is **coded** (`docs/design/phase-1-applications.md`, five parts; context `Recruitment`). Commits on `phase-1-company`:
+`4acf1f3` (tests moved to the database `jobportal_v2_test`, no prefix, credentials in the git-ignored `.env.testing`, `test:database:migrate --env=testing`; the old `test_` tables were dropped from `jobportal_v2` by the
+user on 2026-10-06) and `eddbfac` (parts 1 to 4); **part 5 (anonymisation of applications) is not committed**. Suite 1137 tests, Pint and PHPStan clean. The four application migrations (`000074` to `000077`) exist
+and ran only on the test database; the real database still holds 73 migrations (running them needs the user's approval). Next: **step 8, the pipeline** (recruiter side: applications of a job, the profile snapshot
+a recruiter may see, moving between stages, rejection reasons, history, stage notifications and the `application_update` email), then step 9 (data migration; the `applied_jobs` mapping questions were deferred to then).
+Open decisions: what a recruiter sees of the applicant, whether the applicant sees rejection reasons (hidden for now), the push channel of `application_update` (email only now). Apply facts: verified email required
+(`verified.email` middleware, opt-in per route), daily limit setting `recruitment.max_applications_per_day` (20), snapshot without gender, religion, marital status, nationality, birth date and avatar (age instead),
+the Jobs lock after applications, and deleting an extra stage moves its applications.
+
 **Latest state (end of the session of 2026-10-06; read this first, it supersedes the "not committed" remarks below):** steps 4, 5 and 6 of Phase 1 are **done and committed** on branch
 `phase-1-company`: `1093cdc` (hybrid stages), `fefa761` (screening questions), `4a6c03e` (job seeker profile, resumes and avatar), with the design documents `phase-1-stages.md`, `phase-1-screening.md` and
 `phase-1-jobseeker.md` (the last commits before this handoff edit were `0926fad` and `4978adb`, design only). `master` is still at `v0.1.0`. Suite **1068 tests**, Pint and PHPStan clean. The real database holds

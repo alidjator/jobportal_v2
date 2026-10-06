@@ -78,3 +78,11 @@ application (from the deleted stage to the default one, same type, actor `system
 stages of one type. **Preference:** the kind `application_update` is registered in the notification catalog by the Recruitment provider with the **email channel only**, on by default (decided earlier: in-app is
 always written; the email is what the user tunes); push joins when push can be sent (my choice for the push channel, to confirm). The email itself is sent with the stage notifications in step 8. The old test sample
 of the preference tests was renamed `probe_update`. 7 feature tests; suite 1133 passed, Pint and PHPStan clean.
+
+## Part 5 coded (2026-10-07, not committed), which completes step 7
+
+**Anonymisation:** the queued listener `EraseApplicantDataWhenUserAnonymized` (queue `default`, 3 tries, idempotent) runs `EraseApplicantData`: it deletes the resume copies first, then in one transaction clears, for
+every application of the user, the profile snapshot, the cover letter, the resume name, path and size, and the free-text answers; the application rows, their stage and history, and the yes/no, number and choice
+answers stay. **Addition to the decision (confirmed by the user, 2026-10-07):** the withdrawal note is also cleared, because the applicant wrote it. A failing file deletion stops before any row is cleared, so a retry finishes
+the job. The applicant's own list and detail keep working afterwards (without cover letter, resume and text answers); the "Deleted user" label belongs to the recruiter side (step 8). 4 feature tests; suite 1137
+passed, Pint and PHPStan clean. **Still to do for step 7:** run the four application migrations against the real tables (needs the user's approval); the real database holds 73 migrations.
