@@ -174,6 +174,8 @@ final class SettingsTest extends FeatureTestCase
         $keys = array_column($response->json('data'), 'key');
         $this->assertSame([
             'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb',
+            'identity.avatar_max_size_kb',
+            'job_seeker.available_from_max_days', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
             'jobs.max_deadline_days', 'jobs.require_approval',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
             'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',

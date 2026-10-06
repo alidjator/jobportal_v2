@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Identity\Interface\Http\Controllers\AvatarController;
 use Src\Identity\Interface\Http\Controllers\CancelAccountDeletionController;
 use Src\Identity\Interface\Http\Controllers\CurrentUserController;
 use Src\Identity\Interface\Http\Controllers\ForgotPasswordController;
@@ -25,6 +26,10 @@ Route::post('auth/password/reset', ResetPasswordController::class);
 Route::middleware('auth:user')->group(function (): void {
     Route::post('auth/email/verify', VerifyEmailController::class);
     Route::post('auth/email/resend', ResendEmailVerificationCodeController::class);
+
+    Route::get('me/avatar', [AvatarController::class, 'show']);
+    Route::post('me/avatar', [AvatarController::class, 'store']);
+    Route::delete('me/avatar', [AvatarController::class, 'destroy']);
 
     // The routes a user may use without having accepted the current terms: read the own profile, accept the terms, sign out
     // and delete the account (the user can always leave and exercise the right over their data).

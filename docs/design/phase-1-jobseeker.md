@@ -1,6 +1,6 @@
-# Phase 1: Job seeker profile and resumes (step 6, design complete, not coded)
+# Phase 1: Job seeker profile and resumes (step 6, DONE 2026-10-06)
 
-Status: design confirmed by the user on 2026-10-06 (every answer is recorded below). Coding parts are proposed in the last section. Nothing is coded yet.
+Status: design confirmed by the user on 2026-10-06 (every answer is recorded below); all four coding parts are done, see the end of the document.
 Legacy reference (flow map, web application): the profile has six tabs (profile, CV/resume with several PDF files, experience, education, social media, account with profile and CV visibility); applying
 requires a complete profile, experience and education. Decided earlier: contact data (phone, WhatsApp, address) lives in the profile, not in `identity_users`; the public profile URL is a unique, changeable
 `slug` on the profile (details open); on anonymisation every file of the applicant (avatar, resumes, generated CVs) is deleted and profile data with personal content is cleared (`phase-0-schema.md`).
@@ -66,3 +66,56 @@ requires a complete profile, experience and education. Decided earlier: contact 
 - **Link safety (2026-10-06, refines "Links" above after the risk was discussed):** the types `linkedin`, `github`, `instagram` and `x` accept only their own domain (the usual `www` and other subdomains
   included). For every type, a URL with a raw IP address, a non-standard port or a known URL shortener is refused. `portfolio`, `website` and `other` stay free, so the warning before leaving the portal remains a
   task of the client. The list of shorteners and the domains per type live in code.
+
+## Part 1 coded (2026-10-06, not committed)
+
+The context `src/JobSeeker`, the seven migrations `000067` to `000073` (run on the `test_` tables only; the real tables are **not** created yet), and `GET|PATCH /api/v1/me/profile`. 19 new tests (suite 995 passed,
+Pint and PHPStan clean). Implementation notes: the profile answers with ids for the masters and the location levels (as the company profile does) and `completeness {complete, missing[]}`; `PATCH` checks a changed
+master value for being active, the location as one chain (`invalid-location`), and that an expected salary has its period (`invalid-profile`, `errors` per field); phone numbers are cleaned of spaces, dashes,
+dots and brackets and must be an optional `+` and 8 to 15 digits; the first version of the date rules was my own choice (birth date from 1900 to today, `available_from` free); after the user saw the consequences on 2026-10-06 they became: the birth date must make the job seeker **at least 15 years old** today in Jakarta (the legal basis of the age limit was not verified and should be confirmed) and not be before 1900, and `available_from` must be **from today (Jakarta) up to 365 days ahead**; empty means "available now" and a saved date that has passed is read as available now. Only a date that is being changed is checked, so an old value never blocks other edits.
+The lists (experiences, education, skills, languages, links, resumes) are added to `GET /me/profile` as their parts are coded. Not yet done: the anonymisation listener (part 4).
+
+**Date rules made configurable (2026-10-06, user's decision, replaces the fixed rules above):** three global admin settings (no per-company override; `settings.manage`): `job_seeker.min_age` (default **15**, range
+13 to 30), `job_seeker.max_age` (default **60**, range 40 to 100; 100 effectively switches the upper limit off) and `job_seeker.available_from_max_days` (default **30**, range 1 to 40). The ranges keep the minimum
+below the maximum. A birth date must give an age from the minimum to the maximum today in Jakarta (a person is still `max_age` until the day before their next birthday); `available_from` must be from today
+up to that many days ahead. Only a date that is being changed is checked. **Risk reported:** with the default maximum of 60, a job seeker older than 60 cannot save a birth date at all (and so, since the birth
+date is optional, can only use the portal by leaving it empty); an upper age limit also excludes people from being found. The legal basis of the age limits was not verified.
+
+## Part 2 coded (2026-10-06, not committed)
+
+`GET|POST /me/experiences`, `PATCH|DELETE /me/experiences/{id}`, the same for `/me/educations`, and `PUT /me/skills`, `/me/languages` and `/me/links`; `GET /me/profile` now also carries the six lists (skills as
+`{id, name}` and languages as `{id, name, proficiency}`, the names in the request language). No migration. 43 tests in `tests/Feature/JobSeeker` and 13 unit tests of the link rules. Implementation notes: months are
+sent and returned as `YYYY-MM` (stored as the first day); an entry is checked **as a whole** on every change (`invalid-experience`, `invalid-education`, `errors` per field), so a partial change cannot leave it
+inconsistent; **decided with the user the same day:** for someone still studying `end_year` may be empty or an expected year (from the start year up to this year plus 10), for a finished education it is required
+and not in the future; the limits are 30 experiences and 15 education entries (409 `experience-limit-reached`, `education-limit-reached`); the skill, language and link lists answer with the whole profile
+(`invalid-skills`, `invalid-languages`, `invalid-links`, `errors` per `<list>.<n>.<field>`); the link rules (`LinkRules`) and the shortener list are in the domain; an experience or education entry of another
+account is 404. The limit of 30 or 15 was first read and written without a lock (two simultaneous requests could pass it by one entry); **fixed the same day on the user's decision**: adding an entry first locks the user's profile row (`ProfileRepository::lock`, which creates an empty row when there is none, and leaves an existing profile alone), so simultaneous additions run one after the other. The resume limit of part 3 will use the same lock. A side effect: an empty profile row appears when the first experience or education entry is added; clients see no difference, because `GET /me/profile` already returned an empty profile.
+
+## Part 3 coded (2026-10-06, not committed)
+
+`GET|POST /me/resumes` (multipart `file`), `PATCH /me/resumes/{id} {name}`, `DELETE /me/resumes/{id}` and `GET /me/resumes/{id}/download`; `GET /me/profile` also lists the resumes (`id`, `name`,
+`size_bytes`, `created_at`, newest first; the storage path is never shown). New admin setting `job_seeker.resume_max_size_kb` (global, default 5120, range 512 to 10240). No migration. 18 tests in `ResumeTest`.
+Implementation notes: the file is checked by content only (`ResumePdf`: it must start with `%PDF-`; a scan refuses `/Encrypt`, `/JavaScript`, `/JS`, `/Launch` and `/EmbeddedFile`, matching whole names so
+`/JSON` or `/Launcher` pass), stored first under `jobseeker/resumes/<random>.pdf` on the private disk, then the row is written under the profile-row lock (the 5-resume limit, 409 `resume-limit-reached`), and the
+new file is deleted again if the database step fails; the display name is the client's file name without a path or control characters, at most 100 characters, and a rename must already be clean
+(422 `invalid-resume` with `errors.name`, nothing is silently changed); the download answers `application/pdf` with `attachment`, `no-store`, `nosniff` and `Content-Security-Policy: default-src 'none'`, named after the
+display name with `.pdf` added when missing (an ASCII fallback plus the encoded real name for other letters); a missing file answers 404 and is logged; another account's resume is 404. Deleting a resume that an
+application used is decided with applications (step 7).
+
+## Part 4 coded (2026-10-06, not committed), which completes step 6
+
+**Avatar (Identity):** `POST|GET|DELETE /api/v1/me/avatar` for a job seeker or a company member (403 `public-account-required` for anyone else; behind the terms gate like the other `/me` routes). New global setting
+`identity.avatar_max_size_kb` (default 2048, range 100 to 10240). **Decided with the user the same day, differing from the design above:** the picture is shrunk to **fit 512 by 512, not cropped to a square** (the shared
+image processor never crops; clients crop or round the picture themselves). An opaque picture is stored as a JPEG and one with transparency as a PNG; the file goes under `identity/avatars/<random>` on the private disk,
+the old file is deleted last, `GET` answers `inline` with `no-store`, `nosniff` and `Content-Security-Policy: default-src 'none'`, and an account without a picture, or whose file is missing, gets 404 `avatar-not-found`.
+**Decided with the user later the same day:** `GET /me` (and the sign-in answers that carry the same account) now has `has_avatar`, a boolean, so clients need not ask `GET /me/avatar` and read a 404. The public never sees avatars.
+**Anonymisation (JobSeeker):** the queued listener `EraseJobSeekerDataWhenUserAnonymized` (queue `default`, 3 tries) runs `EraseJobSeekerData`: it deletes the resume files first and every row of the seven
+`jobseeker_` tables for that user in one transaction, so a failing file deletion stops before any row is removed and a retry still knows the files; running it again does nothing. 15 new tests (suite 1067). Nothing
+changed in the database schema: the `jobseeker_` tables on the real database are in place since 2026-10-06.
+
+## Decision for step 7 (2026-10-06): resumes and applications
+
+**Each application keeps its own copy of the resume file.** When a job seeker applies, the chosen PDF (or the CV generated at that moment, J7) is copied and becomes the application's own file, so the job seeker can delete or rename
+resumes at any time without touching applications, and a recruiter always sees exactly what was submitted. The copies count as "files owned by the applicant" and are deleted when the account is anonymised (the principle
+of `phase-0-schema.md`); the five-resume limit counts only the resumes of the profile. The cost is storage (up to the resume size limit per application). Chosen over: a reference that blocks deletion (the job seeker gets stuck
+with five old resumes), a reference that lets the file disappear (the recruiter loses it mid-process) and a soft delete (the user believes the file is gone while it is kept).

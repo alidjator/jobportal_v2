@@ -20,6 +20,7 @@ final class UserResource extends JsonResource
             'email_verified' => $this->resource->isEmailVerified(),
             'status' => $this->resource->status()->value,
             'locale' => $this->resource->locale(),
+            'has_avatar' => $this->resource->avatarPath() !== null,
         ];
     }
 }

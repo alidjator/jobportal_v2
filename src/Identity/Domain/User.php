@@ -89,6 +89,12 @@ final class User extends AggregateRoot
         return $this->avatarPath;
     }
 
+    /** Sets the account's picture to the file at this path, or removes it with null. The caller deletes the file that was replaced. */
+    public function changeAvatar(?string $path): void
+    {
+        $this->avatarPath = $path;
+    }
+
     public function locale(): string
     {
         return $this->locale;

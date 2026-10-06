@@ -75,6 +75,7 @@ Useful details:
 | `docs/design/architecture.md` | Cross-cutting architecture decisions (API contract, authentication, authorization, persistence, queues, files, account states) |
 | `docs/design/phase-1-company.md` | **Company context design and its six coded slices** (onboarding, team, profile, logo and banner, admin, document verification), with every decision and the choices the user confirmed |
 | `docs/design/phase-1-jobs.md` | **Jobs context design, all coded**: lifecycle and moderation, the five parts of the coding, tables, the admin side, the public detail and the public search, with every decision |
+| `docs/design/phase-1-stages.md`, `phase-1-screening.md`, `phase-1-jobseeker.md` | Steps 4 to 6 of Phase 1 (hybrid stages, screening questions, job seeker profile and resumes), each with its decisions and coded parts; context `Recruitment` and context `JobSeeker` |
 | `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
@@ -378,7 +379,7 @@ foreign-key migrations included), 8 permissions (the last is `jobs.manage`), the
 publishing, closing, reopening, cloning, assignees (`/company/jobs...`), admin review (`/admin/jobs...`), the public page (`GET /jobs/{id}`), the public search (`GET /jobs`) and the hourly expiry command; see
 `docs/design/phase-1-jobs.md`. The scheduler runs from the `jobportal` user's crontab (section 5). **Order of the rest of Phase 1 (confirmed 2026-10-05, in `decisions.md` section 5):** 4) **hybrid stages (DONE 2026-10-06, `docs/design/phase-1-stages.md`, context `Recruitment`, migration `000062` on the real table, not committed)**
 (seven default stages per company, one per system stage type, renamable and reorderable; extra stages mapped to a type; defaults cannot be deleted; this includes creating the seven stages for every new company
-and for the existing ones), 5) **screening questions (DONE 2026-10-06, `docs/design/phase-1-screening.md`, migrations `000063` to `000066` on the real tables, not committed)** (per-company library, five answer types, must-have flag as a mark only, limit set by an admin setting), 6) job seeker profile and resumes (the second file
+and for the existing ones), 5) **screening questions (DONE 2026-10-06, `docs/design/phase-1-screening.md`, migrations `000063` to `000066` on the real tables, not committed)** (per-company library, five answer types, must-have flag as a mark only, limit set by an admin setting), 6) **job seeker profile and resumes (DONE 2026-10-06, `docs/design/phase-1-jobseeker.md`, context `JobSeeker`, migrations `000067` to `000073` on the real tables, not committed)** (the second file
 feature), 7) applying (J1: one active application per job seeker and job, withdrawal, re-applying only after withdrawn; this adds the lock "title, category, role, job type and level cannot change once a job has
 applications" that Jobs has not coded yet), 8) pipeline with stage history and stage notifications, 9) data migration (scripts and tests only; running them against real data needs the user's explicit approval
 at that time; legacy jobs that apply by URL or email need a decision then). Each step is designed one question at a time, confirmed with the user, recorded in a design document, then coded in parts, with the

@@ -21,6 +21,7 @@ use Src\Identity\Application\Auth\VerificationCodeGenerator;
 use Src\Identity\Application\Auth\VerificationCodeHasher;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Application\IdentityEmailTemplates;
+use Src\Identity\Application\IdentitySettings;
 use Src\Identity\Domain\AdminRepository;
 use Src\Identity\Domain\SocialAccountRepository;
 use Src\Identity\Domain\TermsAcceptanceRepository;
@@ -50,6 +51,7 @@ use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class IdentityServiceProvider extends ContextServiceProvider
@@ -93,6 +95,10 @@ final class IdentityServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
             $catalog->add(...IdentityEmailTemplates::definitions());
+        });
+
+        $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
+            $catalog->add(...IdentitySettings::definitions());
         });
 
         $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class]);
