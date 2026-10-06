@@ -77,6 +77,7 @@ Useful details:
 | `docs/design/phase-1-company.md` | **Company context design and its six coded slices** (onboarding, team, profile, logo and banner, admin, document verification), with every decision and the choices the user confirmed |
 | `docs/design/phase-1-jobs.md` | **Jobs context design, all coded**: lifecycle and moderation, the five parts of the coding, tables, the admin side, the public detail and the public search, with every decision |
 | `docs/design/phase-1-stages.md`, `phase-1-screening.md`, `phase-1-jobseeker.md` | Steps 4 to 6 of Phase 1 (hybrid stages, screening questions, job seeker profile and resumes), each with its decisions and coded parts; context `Recruitment` and context `JobSeeker` |
+| `docs/design/phase-1-applications.md`, `phase-1-pipeline.md`, `phase-1-migration.md` | Steps 7 to 9 of Phase 1 (applying, the recruiter's pipeline, the data migration from karir.pkp), each with its decisions and coded parts; step 9 is **designed and confirmed, not coded** |
 | `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
@@ -378,7 +379,7 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 (`docs/design/phase-1-pipeline.md`, four parts), both in context `Recruitment`. Commits on `phase-1-company`: `4acf1f3` (tests moved to the database `jobportal_v2_test`, no prefix, credentials in the git-ignored
 `.env.testing`, `test:database:migrate --env=testing`; the old `test_` tables were dropped from `jobportal_v2` by the user on 2026-10-06), `eddbfac` and `b72fd4a` (applying, parts 1 to 5); **the pipeline (step 8)
 is not committed**. Suite 1187 tests, Pint and PHPStan clean. The four application migrations (`000074` to `000077`) were **run on the real database on 2026-10-07 with the user's explicit approval** (77 migrations
-recorded; 72 tables; the four new tables are empty and match the test database). Step 8 needed no migration. **Next: step 9, the data migration** (scripts and tests only; running them against production data
+recorded; 72 tables; the four new tables are empty and match the test database). Step 8 needed no migration. **Next: step 9, the data migration** (its design was confirmed on 2026-10-07 in `docs/design/phase-1-migration.md`: artisan importers in a context `LegacyImport`, five coding parts; scripts and tests only; running them against production data
 needs the user's explicit approval at that time). Its open questions were deferred by the user to then: mapping `applied_jobs` (jobs with a NULL `job_id`, the legacy pipeline groups `application_groups` to stage
 types, the profile snapshot that legacy lacks, duplicates, `answers`, cover letters longer than 2,000 characters, the history) and legacy jobs that apply by URL or email. After Phase 1 comes Phase 2 (collaboration).
 Step 8 facts: recruiters read applications per job (list with stage counts, detail, resume copy) and move or reject them (free moves among active stages, reason mandatory for a rejection, `other` needs a note); a job
