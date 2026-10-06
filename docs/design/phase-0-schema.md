@@ -8,7 +8,7 @@ Content). Nothing is created in the database yet; migrations are written next, c
 
 - Table prefix per bounded context (`identity_`, `platform_`, `notification_`, `reference_`, `content_`).
   Laravel framework tables keep their default names (`migrations`, `personal_access_tokens`, `notifications`, `jobs`, `failed_jobs`, `cache`).
-- Test objects use the `test_` prefix in front of the context prefix (`test_identity_users`).
+- Test objects (until 2026-10-06) used the `test_` prefix in front of the context prefix (`test_identity_users`); tests now run in the separate database `jobportal_v2_test` with the same table names and no prefix.
 - Primary keys: every table has a numeric `id` `bigint unsigned` auto-increment (Laravel convention; **confirmed by the user 2026-10-03**: a primary key
   whose content is a number is `bigint`). Exceptions: the three RBAC pivot tables keep the composite primary key of the Spatie package, and framework
   tables keep their default structure (`notifications` UUID, `cache` string key). Timestamps: `created_at`, `updated_at` (nullable `timestamp`).

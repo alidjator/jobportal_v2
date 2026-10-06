@@ -5,24 +5,31 @@ namespace Src\Shared\Infrastructure\Testing;
 use RuntimeException;
 
 /**
- * Fails closed unless the database connection carries the dedicated test table prefix.
+ * Fails closed unless the connection points at the dedicated test database.
  *
- * Tests share the application database with the real tables, so a missing or wrong prefix
- * would let them create, change or drop objects that do not belong to the tests.
+ * The tests run in their own database, never in the application database, so a misconfigured run
+ * would otherwise create, change or drop real tables.
  */
 final class TestDatabaseGuard
 {
-    public const REQUIRED_PREFIX = 'test_';
+    public const REQUIRED_DATABASE = 'jobportal_v2_test';
 
     public const REQUIRED_ENVIRONMENT = 'testing';
 
-    public static function assertPrefix(?string $prefix): void
+    public static function assertDatabase(?string $database, ?string $prefix): void
     {
-        if ($prefix !== self::REQUIRED_PREFIX) {
+        if ($database !== self::REQUIRED_DATABASE) {
             throw new RuntimeException(sprintf(
-                'Refusing to continue: the database table prefix must be "%s", got "%s".',
-                self::REQUIRED_PREFIX,
-                $prefix ?? '',
+                'Refusing to continue: the database must be "%s", got "%s".',
+                self::REQUIRED_DATABASE,
+                $database ?? '',
+            ));
+        }
+
+        if (($prefix ?? '') !== '') {
+            throw new RuntimeException(sprintf(
+                'Refusing to continue: the test database uses no table prefix, got "%s".',
+                $prefix,
             ));
         }
     }
@@ -39,7 +46,7 @@ final class TestDatabaseGuard
 
         if ($forbidden !== []) {
             throw new RuntimeException(sprintf(
-                'Refusing to continue: %s runs migrate:fresh, which drops every table in the shared database.',
+                'Refusing to continue: %s runs migrate:fresh, which drops every table of the database.',
                 implode(', ', $forbidden),
             ));
         }

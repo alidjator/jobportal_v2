@@ -9,7 +9,7 @@ abstract class TestCase extends BaseTestCase
 {
     /**
      * Runs right after the application boots and before any test trait touches the database,
-     * so a misconfigured run aborts before it can reach tables without the test prefix.
+     * so a misconfigured run aborts before it can reach the application database.
      */
     protected function refreshApplication(): void
     {
@@ -20,6 +20,9 @@ abstract class TestCase extends BaseTestCase
 
         TestDatabaseGuard::assertNoDestructiveTraits(class_uses_recursive(static::class));
         TestDatabaseGuard::assertEnvironment($this->app->environment());
-        TestDatabaseGuard::assertPrefix($config->string("database.connections.{$connection}.prefix"));
+        TestDatabaseGuard::assertDatabase(
+            $config->string("database.connections.{$connection}.database"),
+            $config->string("database.connections.{$connection}.prefix"),
+        );
     }
 }

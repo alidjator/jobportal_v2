@@ -11,7 +11,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - Laravel best practice with DDD is mandatory.
 - Layers per bounded context: **Domain**, **Application**, **Infrastructure**, **Interface**.
 - One use case per class, thin controllers, FormRequests for input validation, no global helpers of our own.
-- Pint and PHPStan stay clean; tests run against `test_`-prefixed tables (see `docs/HANDOFF.md`, section 3).
+- Pint and PHPStan stay clean; tests run in the dedicated database `jobportal_v2_test` (since 2026-10-06; see `docs/HANDOFF.md`, section 3).
 - Everything in the project is written in English: identifiers, comments, documentation, commit messages and API error messages.
 - Bounded contexts of Phase 0: Identity, Platform, Notification, ReferenceData, Content. Code lives in `src/<Context>/...`
   (namespace `Src\<Context>\...`); the shared kernel is `src/Shared`.

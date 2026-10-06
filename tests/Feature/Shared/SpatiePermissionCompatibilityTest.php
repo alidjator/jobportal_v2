@@ -68,9 +68,8 @@ final class SpatiePermissionCompatibilityTest extends FeatureTestCase
         $this->assertFalse($this->admin->fresh()->hasPermissionTo('settings.update'));
     }
 
-    public function test_the_package_uses_the_test_prefixed_tables(): void
+    public function test_the_package_uses_the_identity_tables(): void
     {
-        $this->assertSame('test_', DB::connection()->getTablePrefix());
         $this->assertSame('identity_roles', (new Role)->getTable());
         $this->assertSame('identity_permissions', (new Permission)->getTable());
     }

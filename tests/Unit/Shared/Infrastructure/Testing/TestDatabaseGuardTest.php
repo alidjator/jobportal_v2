@@ -12,33 +12,42 @@ use Src\Shared\Infrastructure\Testing\TestDatabaseGuard;
 
 final class TestDatabaseGuardTest extends TestCase
 {
-    public function test_it_accepts_the_test_prefix(): void
+    public function test_it_accepts_the_test_database_without_a_prefix(): void
     {
-        TestDatabaseGuard::assertPrefix('test_');
+        TestDatabaseGuard::assertDatabase('jobportal_v2_test', '');
+        TestDatabaseGuard::assertDatabase('jobportal_v2_test', null);
 
-        $this->addToAssertionCount(1);
+        $this->addToAssertionCount(2);
     }
 
     /**
      * @return array<string, array{0: string|null}>
      */
-    public static function invalidPrefixes(): array
+    public static function invalidDatabases(): array
     {
         return [
             'null' => [null],
             'empty' => [''],
-            'other prefix' => ['app_'],
-            'test prefix with suffix' => ['test_identity_'],
-            'wrong case' => ['TEST_'],
+            'the application database' => ['jobportal_v2'],
+            'the legacy database' => ['karir_pkp'],
+            'wrong case' => ['JOBPORTAL_V2_TEST'],
+            'with suffix' => ['jobportal_v2_test2'],
         ];
     }
 
-    #[DataProvider('invalidPrefixes')]
-    public function test_it_rejects_any_other_prefix(?string $prefix): void
+    #[DataProvider('invalidDatabases')]
+    public function test_it_rejects_any_other_database(?string $database): void
     {
         $this->expectException(RuntimeException::class);
 
-        TestDatabaseGuard::assertPrefix($prefix);
+        TestDatabaseGuard::assertDatabase($database, '');
+    }
+
+    public function test_it_rejects_a_table_prefix(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        TestDatabaseGuard::assertDatabase('jobportal_v2_test', 'test_');
     }
 
     public function test_it_accepts_the_testing_environment(): void

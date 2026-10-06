@@ -4,35 +4,29 @@ namespace Src\Shared\Infrastructure\Testing;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 
 /**
- * Creates or updates the `test_`-prefixed tables used by the test suite inside the application database.
+ * Creates or updates the tables of the dedicated test database by running the pending migrations.
  *
- * It only runs the pending migrations under the test prefix. It never uses `migrate:fresh`, so tables
- * without the prefix are never dropped or touched.
+ * It must run in the `testing` environment (`--env=testing`, which loads `.env.testing`) and refuses any other
+ * database than `jobportal_v2_test`. It never uses `migrate:fresh`, so nothing is dropped.
  */
 final class MigrateTestDatabaseCommand extends Command
 {
     protected $signature = 'test:database:migrate';
 
-    protected $description = 'Create or update the test_-prefixed tables used by the test suite (never drops tables)';
+    protected $description = 'Create or update the tables of the test database (run with --env=testing; never drops tables)';
 
     public function handle(): int
     {
-        if ($this->laravel->isProduction()) {
-            $this->components->error('This command must not run in the production environment.');
-
-            return self::FAILURE;
-        }
+        TestDatabaseGuard::assertEnvironment($this->laravel->environment());
 
         $connection = Config::string('database.default');
-        $prefixKey = "database.connections.{$connection}.prefix";
 
-        Config::set($prefixKey, TestDatabaseGuard::REQUIRED_PREFIX);
-        DB::purge($connection);
-
-        TestDatabaseGuard::assertPrefix(Config::string($prefixKey));
+        TestDatabaseGuard::assertDatabase(
+            Config::string("database.connections.{$connection}.database"),
+            Config::string("database.connections.{$connection}.prefix"),
+        );
 
         return $this->call('migrate', ['--force' => true]);
     }

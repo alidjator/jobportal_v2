@@ -8,9 +8,10 @@ use Tests\FeatureTestCase;
 
 final class TestDatabaseSetupTest extends FeatureTestCase
 {
-    public function test_the_connection_uses_the_test_table_prefix(): void
+    public function test_the_connection_uses_the_dedicated_test_database_without_a_prefix(): void
     {
-        $this->assertSame(TestDatabaseGuard::REQUIRED_PREFIX, DB::connection()->getTablePrefix());
+        $this->assertSame(TestDatabaseGuard::REQUIRED_DATABASE, DB::connection()->getDatabaseName());
+        $this->assertSame('', DB::connection()->getTablePrefix());
     }
 
     public function test_the_database_is_reachable_inside_a_transaction(): void
