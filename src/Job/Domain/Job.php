@@ -7,8 +7,8 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * A job a company posts. `slug` is a cosmetic form of the title (the public identifier is the id); it follows the title. The content can be changed
- * only while the status allows it. `publishedAt` is set once, when the job first goes live, and never changes. The admin decisions (approve, reject,
- * take down, restore) come with the admin part of the Jobs context.
+ * only while the status allows it. `publishedAt` is set once, when the job first goes live (directly, or by the first approval), and never changes.
+ * An admin's decision stores when it was made and by whom (`reviewedAt`, `reviewedByAdminId`) and, for a rejection or a take-down, the reason.
  */
 final readonly class Job
 {
@@ -112,10 +112,62 @@ final readonly class Job
         return $this->with(status: JobStatus::PendingReview);
     }
 
+    /** An admin approves a job waiting for review: it goes live, and the first approval sets the time it was published. @throws StateConflict `job-not-pending-review` */
+    public function approve(int $adminId, DateTimeImmutable $at): self
+    {
+        $this->assertPendingReview();
+
+        return $this->with(status: JobStatus::Active, statusReason: null, publishedAt: $this->publishedAt ?? $at, reviewedAt: $at, reviewedByAdminId: $adminId);
+    }
+
+    /** An admin rejects a job waiting for review. The company can edit it and publish it again. @throws StateConflict `job-not-pending-review` */
+    public function reject(string $reason, int $adminId, DateTimeImmutable $at): self
+    {
+        $this->assertPendingReview();
+
+        return $this->with(status: JobStatus::Rejected, statusReason: $reason, reviewedAt: $at, reviewedByAdminId: $adminId);
+    }
+
+    /** An admin takes a live job down. Only an admin can restore it. @throws StateConflict `job-not-active` */
+    public function takeDown(string $reason, int $adminId, DateTimeImmutable $at): self
+    {
+        if ($this->status !== JobStatus::Active) {
+            throw new StateConflict('Only a live job can be taken down.', 'job-not-active');
+        }
+
+        return $this->with(status: JobStatus::TakenDown, statusReason: $reason, reviewedAt: $at, reviewedByAdminId: $adminId);
+    }
+
+    /**
+     * An admin lifts the take-down of a job: it goes live again, or becomes `expired` when its deadline has passed (the company can then reopen it).
+     *
+     * @throws StateConflict `job-not-taken-down`
+     */
+    public function restore(int $adminId, DateTimeImmutable $at, bool $deadlinePassed): self
+    {
+        if ($this->status !== JobStatus::TakenDown) {
+            throw new StateConflict('Only a job that was taken down can be restored.', 'job-not-taken-down');
+        }
+
+        return $this->with(
+            status: $deadlinePassed ? JobStatus::Expired : JobStatus::Active,
+            statusReason: null,
+            reviewedAt: $at,
+            reviewedByAdminId: $adminId,
+        );
+    }
+
     /** Only a draft is deleted; every other job is closed, so the history of applications stays whole. */
     public function canBeDeleted(): bool
     {
         return $this->status === JobStatus::Draft;
+    }
+
+    private function assertPendingReview(): void
+    {
+        if ($this->status !== JobStatus::PendingReview) {
+            throw new StateConflict('Only a job waiting for review can be decided.', 'job-not-pending-review');
+        }
     }
 
     private function goLiveOrToReview(bool $requiresApproval, DateTimeImmutable $at): self
@@ -127,17 +179,9 @@ final readonly class Job
         return $this->with(status: JobStatus::Active, statusReason: null, publishedAt: $this->publishedAt ?? $at);
     }
 
-    private function with(
-        ?string $slug = null,
-        ?JobStatus $status = null,
-        ?JobContent $content = null,
-        ?DateTimeImmutable $publishedAt = null,
-        string|false|null $statusReason = false,
-    ): self {
-        return new self(
-            $this->id, $this->companyId, $slug ?? $this->slug, $status ?? $this->status, $statusReason === false ? $this->statusReason : $statusReason,
-            $content ?? $this->content, $this->createdByUserId, $publishedAt ?? $this->publishedAt, $this->reviewedAt, $this->reviewedByAdminId,
-            $this->createdAt, $this->updatedAt,
-        );
+    /** A copy with some properties replaced (named arguments; `null` is a value, so a reason can be cleared). */
+    private function with(mixed ...$changes): self
+    {
+        return new self(...[...get_object_vars($this), ...$changes]);
     }
 }

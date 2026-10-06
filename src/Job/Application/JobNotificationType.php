@@ -10,4 +10,12 @@ final class JobNotificationType
     public const string UNASSIGNED = 'job.unassigned';
 
     public const string EXPIRED = 'job.expired';
+
+    public const string APPROVED = 'job.approved';
+
+    public const string REJECTED = 'job.rejected';
+
+    public const string TAKEN_DOWN = 'job.taken_down';
+
+    public const string RESTORED = 'job.restored';
 }

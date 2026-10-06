@@ -59,6 +59,14 @@ final class AuditAction
 
     public const string JOB_EXPIRED = 'job.expired';
 
+    public const string JOB_APPROVED = 'job.approved';
+
+    public const string JOB_REJECTED = 'job.rejected';
+
+    public const string JOB_TAKEN_DOWN = 'job.taken_down';
+
+    public const string JOB_RESTORED = 'job.restored';
+
     public const string COMPANY_DOCUMENT_APPROVED = 'company.document_approved';
 
     public const string COMPANY_DOCUMENT_REJECTED = 'company.document_rejected';

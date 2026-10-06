@@ -79,6 +79,31 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
 
+## Part 4 of the coding: the admin side (designed and coded 2026-10-06, not committed)
+
+**Done:** `GET /api/v1/admin/jobs`, `GET /admin/jobs/{id}`, `POST /admin/jobs/{id}/approve`, `/reject`, `/take-down` and `/restore` (guard `admin`, permission `jobs.manage`), with the audit (`job.approved`,
+`job.rejected`, `job.taken_down`, `job.restored`; actor the admin; metadata `from`, `to` and, for a rejection and a take-down, `reason`) and the in-app notifications to the assigned members (the data holds the job id
+and the reason, never the admin's name). 25 new tests in `AdminJobTest` (whole suite 838 passed, Pint and PHPStan clean). Implementation notes: a decision answers 200 with the whole job as an admin sees it; the four
+decisions share one base class (`AdminJobDecision`: admin check, row lock, the decision applied with the status checked first, event after commit; `approve` refuses a passed deadline and `restore` turns such a job `expired`); the shared port
+`CompanyDirectory` gained `summaries` (name, slug and status of companies, used instead of the planned `names`) and `idsByName` (so the search text also matches company names; at most 200 companies); the company
+side needed no change: a rejected job is editable and can be published again, and a job taken down is locked (409 on edit, close, publish and reopen). **Real database (2026-10-06, on the user's explicit
+approval):** `php artisan identity:sync-permissions` was run; the permission `jobs.manage` (group `job`, guard `admin`) now exists (8 permissions, 8 role links) and the user's admin account holds it through `super_admin`;
+the `test_` tables were not touched. No migration was needed.
+
+Decisions (on top of the earlier ones: permission `jobs.manage`, `approve`, `reject {reason}`, `take-down {reason}`, `restore`, reason of 5 to 1,000 characters stored on the job and audited, in-app notifications
+`job.approved`, `job.rejected`, `job.taken_down`, `job.restored` to the assigned members):
+- **A deadline that has passed (changed the same day, after the user saw the consequence):** `approve` of a job whose deadline is before today in Jakarta fails with 409 `job-deadline-passed` and changes nothing; the
+  admin rejects the pending job with a reason and the company edits it and publishes again with a new deadline. `restore` of such a job **succeeds and makes it `expired`** (audit `job.restored` with `to` `expired`,
+  notification `job.restored`), because the company cannot edit or reopen a job that is taken down and a refusal would leave it stuck for good; the company then reopens it with a new deadline. The first rule chosen
+  (409 for both) was replaced for `restore`.
+- **Transitions (strict per status):** `approve` and `reject` only from `pending_review` (409 `job-not-pending-review`); `take-down` only from `active` (409 `job-not-active`); `restore` only from `taken_down`
+  (409 `job-not-taken-down`) and it returns the job to `active`. Every decision stores `reviewed_at` and `reviewed_by_admin_id`; the reason is stored for `reject` and `take-down` only, and cleared by
+  `approve`, `restore` and a new publication. `published_at` is set by the first approval, as the job first goes live.
+- **Admin list and detail (approved):** `GET /api/v1/admin/jobs` (offset-paginated): row `id`, `title`, `status`, `company {id, name, slug}`, `deadline`, `vacancies`, `assignees_count`, `published_at`,
+  `created_at`, `updated_at`; `filter[status]`, `filter[company_id]`, `filter[q]` (title or company name, case-insensitive); `sort` of `updated_at`, `created_at`, `published_at`, `title` or `deadline` with an
+  optional `-`, default `-updated_at` (the review queue is `filter[status]=pending_review&sort=updated_at`, oldest first). `GET /admin/jobs/{id}`: every field as the company sees it plus `company {id, name, slug,
+  status}`, and `status_reason`, `reviewed_at` and `reviewed_by_admin_id` whenever they exist. Company names come through the new shared port method `CompanyDirectory::names`.
+
 ## Part 3 of the coding: publishing and the lifecycle (designed and coded 2026-10-06, not committed)
 
 **Done:** `POST /company/jobs/{id}/publish`, `/close`, `/reopen` and `/clone`, the editing of live, closed and expired jobs with the review rule, and the command `job:expire-due` (hourly, `withoutOverlapping`,

@@ -26,6 +26,7 @@ use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobAssigneesChanged;
+use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Platform\Application\Audit\AuditLogReader;
 use Src\Platform\Application\Audit\AuditLogRepository;
@@ -104,6 +105,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
         Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);
         Event::listen(JobStatusChanged::class, [RecordJobAuditEntries::class, 'onJobStatusChanged']);
+        Event::listen(JobDecided::class, [RecordJobAuditEntries::class, 'onJobDecided']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
         Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);
         Event::listen(CompanyDocumentViewed::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentViewed']);

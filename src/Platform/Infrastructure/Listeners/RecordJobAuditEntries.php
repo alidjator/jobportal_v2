@@ -4,6 +4,7 @@ namespace Src\Platform\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Job\Domain\Events\JobAssigneesChanged;
+use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Platform\Application\Audit\AuditAction;
 use Src\Platform\Application\Audit\AuditActorType;
@@ -49,6 +50,23 @@ final class RecordJobAuditEntries implements ShouldQueue
         $this->record->execute(new AuditEntry(
             $event->changedByUserId === null ? AuditActorType::System : AuditActorType::User, $event->changedByUserId, $action,
             self::SUBJECT_TYPE, $event->jobId, ['from' => $event->from, 'to' => $event->to], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onJobDecided(JobDecided $event): void
+    {
+        $action = match ($event->decision) {
+            JobDecided::APPROVED => AuditAction::JOB_APPROVED,
+            JobDecided::REJECTED => AuditAction::JOB_REJECTED,
+            JobDecided::TAKEN_DOWN => AuditAction::JOB_TAKEN_DOWN,
+            JobDecided::RESTORED => AuditAction::JOB_RESTORED,
+            default => throw new \LogicException("Unknown job decision {$event->decision}."),
+        };
+
+        $this->record->execute(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, $action, self::SUBJECT_TYPE, $event->jobId,
+            ['from' => $event->from, 'to' => $event->to, ...($event->reason === null ? [] : ['reason' => $event->reason])],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 
