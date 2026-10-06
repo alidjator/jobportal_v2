@@ -73,7 +73,8 @@ Useful details:
 | `docs/analysis/gap-analysis.md` | Flow gaps vs benchmarks with production-schema evidence |
 | `docs/design/decisions.md` | **All confirmed design decisions** (stages, screening, gap scope, foundation, delivery, phases) |
 | `docs/design/architecture.md` | Cross-cutting architecture decisions (API contract, authentication, authorization, persistence, queues, files, account states) |
-| `docs/design/phase-1-company.md` | **Company context design and its five coded slices** (onboarding, team, profile, logo and banner, admin), with every decision and the choices the user confirmed |
+| `docs/design/phase-1-company.md` | **Company context design and its six coded slices** (onboarding, team, profile, logo and banner, admin, document verification), with every decision and the choices the user confirmed |
+| `docs/design/phase-1-jobs.md` | **Jobs context design, all coded**: lifecycle and moderation, the five parts of the coding, tables, the admin side, the public detail and the public search, with every decision |
 | `docs/design/phase-0-schema.md` | Column-level design of the Phase 0 tables, **reviewed and approved by the user (2026-10-03)**, plus the list of details still open |
 
 ## 5. Status
@@ -371,13 +372,26 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
-State on 2026-10-05: **Phase 0 is complete** (code, tests, real database) and **the Company context of Phase 1 is complete**, including document verification (git: branch `phase-1-company`;
-`master` is at the earlier tag `v0.1.0` (`ee7b463`) and was not moved since; suite 696 tests, Pint and PHPStan clean). Continue in this order, one question at a time, confirming each decision with the user:
+State on 2026-10-06: **Phase 0 is complete**, **the Company context of Phase 1 is complete** (including document verification) and **the Jobs context is complete** (git: branch `phase-1-company`, last commit
+`5937cab`, everything committed; `master` is at the earlier tag `v0.1.0` (`ee7b463`) and was not moved; suite 888 tests, Pint and PHPStan clean). The real database holds 61 migrations (all `company_`, `job_` and the
+foreign-key migrations included), 8 permissions (the last is `jobs.manage`), the three seeded company document types, and **no** companies, jobs or users yet. The Jobs context offers: company-side drafts,
+publishing, closing, reopening, cloning, assignees (`/company/jobs...`), admin review (`/admin/jobs...`), the public page (`GET /jobs/{id}`), the public search (`GET /jobs`) and the hourly expiry command; see
+`docs/design/phase-1-jobs.md`. The scheduler runs from the `jobportal` user's crontab (section 5). **Order of the rest of Phase 1 (confirmed 2026-10-05, in `decisions.md` section 5):** 4) **hybrid stages**
+(seven default stages per company, one per system stage type, renamable and reorderable; extra stages mapped to a type; defaults cannot be deleted; this includes creating the seven stages for every new company
+and for the existing ones), 5) screening questions (per-company library, five answer types, must-have flag as a mark only, limit set by an admin setting), 6) job seeker profile and resumes (the second file
+feature), 7) applying (J1: one active application per job seeker and job, withdrawal, re-applying only after withdrawn; this adds the lock "title, category, role, job type and level cannot change once a job has
+applications" that Jobs has not coded yet), 8) pipeline with stage history and stage notifications, 9) data migration (scripts and tests only; running them against real data needs the user's explicit approval
+at that time; legacy jobs that apply by URL or email need a decision then). Each step is designed one question at a time, confirmed with the user, recorded in a design document, then coded in parts, with the
+migrations run against the `test_` tables first and the real tables only on the user's explicit approval. Each context registers its notification kinds in `NotificationPreferenceCatalog` and its settings
+in `SettingsCatalog` from its own provider.
 
-1. **Rest of Phase 1** (decided in `decisions.md`, order inside the phase still to agree): job seeker profile and resumes, jobs and their lifecycle, job search, applying (J1), hybrid stages and
-   history, screening questions, pipeline, stage notifications, and the data migration (scripts and tests only; running them against real data needs the user's explicit approval at that time).
-   Each of these registers its notification kinds in `NotificationPreferenceCatalog` and its settings in `SettingsCatalog` from its own provider.
-2. Items still waiting for the user are in section 7. Commit only when the user asks.
+Conventions fixed during this work that a new session must know: **foreign keys** go to `reference_*` and `company_companies` (RESTRICT) and never to accounts or admins (decided by the user, in
+`phase-0-schema.md` and `CLAUDE.md`); tests that insert such rows use `tests/Concerns/CreatesReferenceRows.php` (and `BuildsJobFixtures.php` for jobs); table names are `<context>_<entity>` and the repetition in
+`job_jobs` and `company_companies` was kept on purpose; cross-context reads go through ports in `src/Shared`, never through another context's tables; a raw SQL fragment must wrap its column names with the
+grammar (the table prefix `test_` is applied only to wrapped names); `CompanyRepository::save` never writes `verified_at`; the user wants **no recap of changes** at the end of a step (rule 11 above), one tool
+call per step, and decisions asked one at a time.
+
+Items still waiting for the user are in section 7. Commit only when the user asks.
 
 ## 7. Items waiting for the user
 
@@ -388,5 +402,5 @@ State on 2026-10-05: **Phase 0 is complete** (code, tests, real database) and **
 
 ## 8. Suggested first message for the new session
 
-> Read `/usr/local/src/jobportal/docs/HANDOFF.md` and `docs/design/phase-1-company.md`, check the memory index, then continue with the next part of Phase 1
-> (agree the order first; one question at a time, and I decide).
+> Read `/usr/local/src/jobportal/docs/HANDOFF.md`, `CLAUDE.md` and `docs/design/phase-1-jobs.md`, check the memory index, then start step 4 of Phase 1, the hybrid application stages
+> (design it one question at a time, and I decide).
