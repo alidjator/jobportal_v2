@@ -38,9 +38,10 @@ requires a complete profile, experience and education. Decided earlier: contact 
 - **Avatar (2026-10-06):** owned by **Identity**, because `avatar_path` is on the account: `POST|DELETE|GET /api/v1/me/avatar` for every signed-in public account (job seeker or company member). The image is
   checked by its content and re-encoded by GD to a square of at most 512 pixels, stored on the private disk under a random name; the size limit is the admin setting `identity.avatar_max_size_kb` (default
   2048). The old file is deleted when replaced or removed. Other users never see it; a company sees it through an authorised endpoint later (applications).
-- **Complete enough to apply (2026-10-06, strict, as in the legacy application; the lighter option was offered and not chosen):** phone number, province and city, at least one work experience, at least one
-  education entry, and a resume (or, later, a generated CV chosen at apply time). The profile answers with `completeness {complete, missing[]}` (codes such as `phone`, `location`, `experience`, `education`,
-  `resume`) so clients can guide the user; the check is enforced by the apply step (step 7). **Risk reported:** a fresh graduate with no work history cannot apply until they add an entry.
+- **Complete enough to apply (2026-10-06, changed the same day after the user saw the consequence):** the first answer was the strict rule of the legacy application (phone, province and city, at least one
+  experience **and** one education entry, a resume); the user then chose the middle option: **phone number, province and city, a resume (or, later, a generated CV chosen at apply time), and at least one
+  work experience *or* one education entry**. A fresh graduate fills in education; someone without formal education fills in experience. The profile answers with `completeness {complete, missing[]}` (codes
+  `phone`, `location`, `history`, `resume`) so clients can guide the user; the check is enforced by the apply step (step 7) and lives in code, not in the schema.
 - **Tables (approved 2026-10-06):** all with a `bigint unsigned` auto-increment `id` and `user_id` as a plain indexed column (no foreign key to accounts); master columns have `RESTRICT` foreign keys to `reference_*`.
   (1) `jobseeker_profiles`: `user_id` (unique), `phone` varchar(20), `whatsapp` varchar(20), `birth_date`, `gender` and `marital_status` (CHECK), `religion_id`, `nationality_id`, `expected_salary` bigint and
   `expected_salary_period_id`, `experience_level_id`, `availability` (CHECK) and `available_from`, `province_id`, `city_id`, `subdistrict_id`, `village_id`, `postal_code_id`, `address_line` (255), `headline`
@@ -62,3 +63,6 @@ requires a complete profile, experience and education. Decided earlier: contact 
 2. Experiences, education, skills, languages and links, with tests.
 3. Resumes (upload, rename, delete, download, the size setting), with tests.
 4. The avatar in Identity, the anonymisation listener of JobSeeker, and tests.
+- **Link safety (2026-10-06, refines "Links" above after the risk was discussed):** the types `linkedin`, `github`, `instagram` and `x` accept only their own domain (the usual `www` and other subdomains
+  included). For every type, a URL with a raw IP address, a non-standard port or a known URL shortener is refused. `portfolio`, `website` and `other` stay free, so the warning before leaving the portal remains a
+  task of the client. The list of shorteners and the domains per type live in code.
