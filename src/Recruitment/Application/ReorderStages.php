@@ -13,7 +13,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 /** A company admin replaces the whole order of the stages. The list must name every stage once and obey the order rules. */
 final readonly class ReorderStages
 {
-    public function __construct(private StageAccess $access, private StageRepository $stages, private TransactionManager $transactions) {}
+    public function __construct(private RecruitmentAccess $access, private StageRepository $stages, private TransactionManager $transactions) {}
 
     /**
      * @param  list<int>  $stageIds

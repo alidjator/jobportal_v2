@@ -18,7 +18,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 final readonly class CreateStage
 {
     public function __construct(
-        private StageAccess $access,
+        private RecruitmentAccess $access,
         private StageRepository $stages,
         private Settings $settings,
         private TransactionManager $transactions,

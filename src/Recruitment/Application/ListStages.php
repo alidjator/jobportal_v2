@@ -10,7 +10,7 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 /** The stages of the caller's company in their order, for company admins and recruiters. */
 final readonly class ListStages
 {
-    public function __construct(private StageAccess $access, private StageRepository $stages) {}
+    public function __construct(private RecruitmentAccess $access, private StageRepository $stages) {}
 
     /**
      * @return list<Stage>

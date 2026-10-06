@@ -15,7 +15,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 final readonly class RenameStage
 {
     public function __construct(
-        private StageAccess $access,
+        private RecruitmentAccess $access,
         private StageRepository $stages,
         private TransactionManager $transactions,
         private Clock $clock,

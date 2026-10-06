@@ -2,11 +2,9 @@
 
 namespace Src\Job\Application\Browse;
 
-use Src\Job\Application\JakartaDate;
+use Src\Job\Application\JobVisibility;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobRepository;
-use Src\Job\Domain\JobStatus;
-use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
@@ -34,7 +32,7 @@ final readonly class GetPublicJob
         private PublicCompanies $companies,
         private ReferenceValues $references,
         private LocationReferences $locations,
-        private Clock $clock,
+        private JobVisibility $visibility,
     ) {}
 
     /** @throws EntityNotFound */
@@ -42,7 +40,7 @@ final readonly class GetPublicJob
     {
         $job = $this->jobs->find($jobId);
 
-        if ($job === null || ! $this->isLive($job)) {
+        if ($job === null || ! $this->visibility->isLive($job)) {
             throw EntityNotFound::of('Job', $jobId);
         }
 
@@ -64,13 +62,6 @@ final readonly class GetPublicJob
             $this->namedList('skills', $content->skillIds, $language),
             $this->namedList('benefits', $content->benefitIds, $language),
         );
-    }
-
-    private function isLive(Job $job): bool
-    {
-        $deadline = $job->content->deadline;
-
-        return $job->status === JobStatus::Active && $deadline !== null && $deadline >= JakartaDate::today($this->clock->now());
     }
 
     /** @return array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null */

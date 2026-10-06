@@ -27,6 +27,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
+use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -42,6 +43,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSlugGenerator::class => LaravelJobSlugGenerator::class,
         JobSearchReader::class => DatabaseJobSearchReader::class,
         SearchThrottle::class => RateLimiterSearchThrottle::class,
+        JobDirectory::class => RepositoryJobDirectory::class,
     ];
 
     public function register(): void

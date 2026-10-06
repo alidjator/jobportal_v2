@@ -15,7 +15,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  */
 final readonly class DeleteStage
 {
-    public function __construct(private StageAccess $access, private StageRepository $stages, private TransactionManager $transactions) {}
+    public function __construct(private RecruitmentAccess $access, private StageRepository $stages, private TransactionManager $transactions) {}
 
     /**
      * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`

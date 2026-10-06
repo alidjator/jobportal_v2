@@ -9,6 +9,10 @@ final class RecruitmentSettings
 {
     public const string MAX_STAGES = 'recruitment.max_stages';
 
+    public const string SCREENING_ENABLED = 'recruitment.screening_enabled';
+
+    public const string MAX_SCREENING_QUESTIONS = 'recruitment.max_screening_questions';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -16,6 +20,16 @@ final class RecruitmentSettings
             SettingDefinition::integer(
                 self::MAX_STAGES, 10, 7, 20,
                 'The most application stages a company may have, the seven defaults included.',
+                overridable: true,
+            ),
+            SettingDefinition::boolean(
+                self::SCREENING_ENABLED, true,
+                'Whether a company can use screening questions. While off, its questions and their attachment to jobs cannot be changed and its jobs show none.',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::MAX_SCREENING_QUESTIONS, 5, 1, 20,
+                'The most screening questions a job may have.',
                 overridable: true,
             ),
         ];

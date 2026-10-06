@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
+use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
+
+// Public: what an applicant answers for a live job. A job that is not live (or whose company is hidden) is the same 404 as on the job page; clients revalidate with the ETag.
+Route::get('jobs/{job}/screening-questions', [JobScreeningQuestionController::class, 'publicIndex'])
+    ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
+    ->middleware('cache.headers:public;max_age=60;etag');
 
 // The stages of the caller's own company; every use case checks that the caller is a member of an active company (and a company admin for changes).
 Route::middleware('auth:user')->group(function (): void {
@@ -10,4 +17,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/stages/order', [CompanyStageController::class, 'reorder']);
     Route::patch('company/stages/{id}', [CompanyStageController::class, 'update'])->whereNumber('id');
     Route::delete('company/stages/{id}', [CompanyStageController::class, 'destroy'])->whereNumber('id');
+
+    Route::get('company/screening-questions', [ScreeningQuestionController::class, 'index']);
+    Route::post('company/screening-questions', [ScreeningQuestionController::class, 'store']);
+    Route::get('company/screening-questions/{id}', [ScreeningQuestionController::class, 'show'])->whereNumber('id');
+    Route::patch('company/screening-questions/{id}', [ScreeningQuestionController::class, 'update'])->whereNumber('id');
+    Route::delete('company/screening-questions/{id}', [ScreeningQuestionController::class, 'destroy'])->whereNumber('id');
+    Route::post('company/screening-questions/{id}/archive', [ScreeningQuestionController::class, 'archive'])->whereNumber('id');
+    Route::post('company/screening-questions/{id}/restore', [ScreeningQuestionController::class, 'restore'])->whereNumber('id');
+
+    Route::get('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'index'])->whereNumber('id');
+    Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
 });
