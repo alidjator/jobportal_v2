@@ -2,6 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
+use Src\Job\Interface\Http\Controllers\PublicJobController;
+
+// Public: the page of a live job. A closed or taken-down job disappears within a minute (the cache lifetime); clients revalidate with the ETag.
+Route::get('jobs/{job}', [PublicJobController::class, 'show'])
+    ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
+    ->middleware('cache.headers:public;max_age=60;etag');
 
 // The jobs of the caller's own company; every use case checks that the caller is a member of an active company and may see the job.
 Route::middleware('auth:user')->group(function (): void {

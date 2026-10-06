@@ -33,9 +33,11 @@ use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
+use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyTeam;
+use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -50,6 +52,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         AdminCompanyReader::class => DatabaseAdminCompanyReader::class,
         CompanyDirectory::class => RepositoryCompanyDirectory::class,
         CompanyTeam::class => RepositoryCompanyTeam::class,
+        PublicCompanies::class => RepositoryPublicCompanies::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
         CompanySlugGenerator::class => LaravelCompanySlugGenerator::class,

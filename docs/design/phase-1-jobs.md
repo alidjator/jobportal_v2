@@ -79,6 +79,20 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
 
+## Part 5 of the coding: the public job detail (designed and coded 2026-10-06, not committed)
+
+**Done:** `GET /api/v1/jobs/{job}` with the shape below, 17 new tests in `PublicJobTest` (whole suite 857 passed, Pint and PHPStan clean). Implementation notes: the identifier is the route pattern
+`[0-9]+(?:-[a-z0-9-]*)?` (anything else, such as `12abc`, an upper-case slug or `0`, is the framework's 404); a job is shown only when it is `active`, **its deadline day is not over in Jakarta time (checked on every
+request, so a job whose deadline passed is hidden at once instead of waiting for the hourly expiry)** and the company card exists; the new shared port `PublicCompanies` returns the card or null for a company that is
+missing, suspended or hidden; the logo URL is built by Company, so Job never knows Company's routes; a benefit that is not approved is left out of the list. No migration, permission or real-database change was needed.
+
+`GET /api/v1/jobs/{id}` (no sign-in; `{id}` and `{id}-{slug}` are both accepted, the slug part is ignored and nothing redirects; anything else is 404). It shows a job only when the job is `active` and its company is
+active and not hidden by its admin; otherwise the answer is the same 404 as for a job that does not exist. Answer, in the request language: `id`, `slug` (`title-123`), `title`, `description` (Markdown),
+`company {id, name, slug, logo_url, verified}`, `category`, `role`, `job_type`, `job_level`, `work_time`, `experience_level` and `education_level` (each `{id, name}`), `vacancies`, `deadline` (a date, open until
+23:59:59 WIB), `work_mode`, `location {province, city, subdistrict, village, postal_code, address_line}` (names), `skills` and `benefits` (`[{id, name}]`), `tags` (text), `published_at` and `salary {min, max, period
+{id, name}}`, which is `null` when the salary is hidden or empty. It never shows the status, reasons, assignees, creator, review details or the company's email and phone. `Cache-Control: public, max-age=60` and an
+`ETag`, as for the public company page, so a closed or taken-down job disappears within a minute. The company card comes through the new shared port `PublicCompanies` (provided by Company).
+
 ## Part 4 of the coding: the admin side (designed and coded 2026-10-06, not committed)
 
 **Done:** `GET /api/v1/admin/jobs`, `GET /admin/jobs/{id}`, `POST /admin/jobs/{id}/approve`, `/reject`, `/take-down` and `/restore` (guard `admin`, permission `jobs.manage`), with the audit (`job.approved`,
