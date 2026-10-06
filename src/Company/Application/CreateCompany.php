@@ -16,6 +16,7 @@ use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -41,6 +42,7 @@ final readonly class CreateCompany
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
+        private DefaultStageProvisioner $stages,
     ) {}
 
     /**
@@ -80,6 +82,7 @@ final readonly class CreateCompany
             $invitation = $this->invitations->save(Invitation::issue(
                 (int) $company->id, $email, CompanyRole::CompanyAdmin, $token->hash(), null, (int) $actor->id, $now,
             ));
+            $this->stages->provision((int) $company->id);
 
             return [$company, $invitation];
         });

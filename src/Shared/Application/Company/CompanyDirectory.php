@@ -24,4 +24,11 @@ interface CompanyDirectory
      * @return list<int>
      */
     public function idsByName(string $text, int $limit): array;
+
+    /**
+     * The ids of up to `$limit` companies whose id is greater than `$afterId`, in id order (for walking every company in batches).
+     *
+     * @return list<int>
+     */
+    public function idsAfter(int $afterId, int $limit): array;
 }

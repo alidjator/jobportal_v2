@@ -46,4 +46,9 @@ final readonly class RepositoryCompanyDirectory implements CompanyDirectory
             ->pluck('id')
             ->all());
     }
+
+    public function idsAfter(int $afterId, int $limit): array
+    {
+        return array_map('intval', $this->connection->table('company_companies')->where('id', '>', $afterId)->orderBy('id')->limit($limit)->pluck('id')->all());
+    }
 }

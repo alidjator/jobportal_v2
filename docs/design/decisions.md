@@ -13,7 +13,7 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 - **Seven stage types:** `applied`, `screening`, `interview`, `offer`, `hired`, `rejected`, `withdrawn`.
   `assessment` (skill test) is not included now.
 - **Company stages:** every company automatically gets seven default stages, one per type. A company may rename and reorder them
-  and add extra stages mapped to an existing type. **Default stages cannot be deleted.** Extra stages can be deleted; their
+  and add extra stages of the types `screening`, `interview` and `offer` only (see `phase-1-stages.md`). **Default stages cannot be deleted.** Extra stages can be deleted; their
   applications move to the default stage of the same type.
 - **Terminal stages:** `rejected` and `withdrawn` are final; a recruiter cannot move an application back to an active stage.
 - **Rejection reasons are mandatory** from a fixed list: `qualifications_mismatch`, `experience_insufficient`,

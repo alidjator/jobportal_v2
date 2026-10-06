@@ -7,6 +7,7 @@ use Src\Identity\Infrastructure\IdentityServiceProvider;
 use Src\Job\Infrastructure\JobServiceProvider;
 use Src\Notification\Infrastructure\NotificationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
+use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
 
 return [
@@ -18,4 +19,5 @@ return [
     ReferenceDataServiceProvider::class,
     CompanyServiceProvider::class,
     JobServiceProvider::class,
+    RecruitmentServiceProvider::class,
 ];
