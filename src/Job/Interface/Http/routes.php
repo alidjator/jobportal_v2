@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 
+// Public: the search over live jobs (limited per client address, cached like the page below).
+Route::get('jobs', [PublicJobController::class, 'index'])->middleware('cache.headers:public;max_age=60;etag');
+
 // Public: the page of a live job. A closed or taken-down job disappears within a minute (the cache lifetime); clients revalidate with the ETag.
 Route::get('jobs/{job}', [PublicJobController::class, 'show'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')

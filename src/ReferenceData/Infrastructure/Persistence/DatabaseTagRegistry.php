@@ -63,6 +63,17 @@ final readonly class DatabaseTagRegistry implements TagRegistry
         return $names;
     }
 
+    public function idsMatching(string $text, int $limit): array
+    {
+        // The name is JSON with a binary collation: take the text and compare it case-insensitively, so keys such as "en" never match and `PHP` finds `php`.
+        return array_map('intval', $this->connection->table('reference_tags')
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(`name`, '$.en')) COLLATE utf8mb4_unicode_ci LIKE ?", ['%'.addcslashes($text, '%_\\').'%'])
+            ->orderBy('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->all());
+    }
+
     private function slug(string $name): string
     {
         $slug = Str::slug(str_replace(['+', '#'], ['-plus', '-sharp'], $name));

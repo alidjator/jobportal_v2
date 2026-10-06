@@ -25,4 +25,12 @@ interface TagRegistry
      * @return array<int, string>
      */
     public function names(array $ids): array;
+
+    /**
+     * The ids of the tags whose name contains the text, whatever the letter case (`%`, `_` and `\` count as themselves), at most `$limit`. Used by the job
+     * search to find the jobs that carry a tag the keyword matches.
+     *
+     * @return list<int>
+     */
+    public function idsMatching(string $text, int $limit): array;
 }

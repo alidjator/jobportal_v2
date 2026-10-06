@@ -53,6 +53,27 @@ final readonly class DatabaseMasterRepository implements MasterRepository
         return $row === null ? null : $this->toItem($definition, $row);
     }
 
+    public function findMany(MasterDefinition $definition, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $builder = $this->select($definition)->whereIn('id', $ids);
+
+        foreach ($definition->fixedColumns as $column => $value) {
+            $builder->where($column, $value);
+        }
+
+        $items = [];
+
+        foreach ($builder->get() as $row) {
+            $items[(int) $row->id] = $this->toItem($definition, $row);
+        }
+
+        return $items;
+    }
+
     public function slugExists(MasterDefinition $definition, string $slug): bool
     {
         return $this->connection->table($definition->table)->where('slug', $slug)->exists();

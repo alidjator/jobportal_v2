@@ -16,6 +16,14 @@ interface MasterRepository
 
     public function find(MasterDefinition $definition, int $id): ?MasterItem;
 
+    /**
+     * Several items in one query, keyed by id (an id with no item is missing); the same rows `find` would find.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, MasterItem>
+     */
+    public function findMany(MasterDefinition $definition, array $ids): array;
+
     public function slugExists(MasterDefinition $definition, string $slug): bool;
 
     /** Whether another row already has this value in the extra column (for unique columns such as a language code). */

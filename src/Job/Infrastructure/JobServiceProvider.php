@@ -6,6 +6,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Job\Application\Admin\AdminJobReader;
+use Src\Job\Application\Browse\JobSearchReader;
+use Src\Job\Application\Browse\SearchThrottle;
 use Src\Job\Application\JobPermissions;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobSettings;
@@ -23,6 +25,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseAdminJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
+use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -37,6 +40,8 @@ final class JobServiceProvider extends ContextServiceProvider
         JobReader::class => DatabaseJobReader::class,
         AdminJobReader::class => DatabaseAdminJobReader::class,
         JobSlugGenerator::class => LaravelJobSlugGenerator::class,
+        JobSearchReader::class => DatabaseJobSearchReader::class,
+        SearchThrottle::class => RateLimiterSearchThrottle::class,
     ];
 
     public function register(): void

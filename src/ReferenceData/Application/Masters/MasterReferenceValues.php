@@ -21,6 +21,14 @@ final readonly class MasterReferenceValues implements ReferenceValues
         return $this->masters->find($this->definition($master), $id)?->name->resolve($language);
     }
 
+    public function names(string $master, array $ids, string $language): array
+    {
+        return array_map(
+            static fn (MasterItem $item): string => $item->name->resolve($language),
+            $this->masters->findMany($this->definition($master), array_values(array_unique($ids))),
+        );
+    }
+
     private function definition(string $master): MasterDefinition
     {
         return MasterCatalog::find($master) ?? throw new InvalidArgumentException("Unknown master {$master}.");

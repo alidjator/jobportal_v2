@@ -16,4 +16,13 @@ interface ReferenceValues
      * profile that refers to an item an admin later deactivated keeps showing its name. Null when there is no such item.
      */
     public function name(string $master, int $id, string $language): ?string;
+
+    /**
+     * The names of several items in one query, as `name` gives them, keyed by id (an id with no item is missing). For lists, where asking one by one
+     * would take a query per row.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function names(string $master, array $ids, string $language): array;
 }

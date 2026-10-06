@@ -14,4 +14,20 @@ interface LocationReferences
 
     /** The names of the chain. The ids must form a valid chain; a level that is not given (or not found) is null. */
     public function names(?int $provinceId, ?int $cityId, ?int $subdistrictId, ?int $villageId, ?int $postalCodeId): LocationNames;
+
+    /**
+     * The names of several provinces in one query, keyed by id (an id with no province is missing). For lists, where asking one by one would take a query per row.
+     *
+     * @param  list<int>  $provinceIds
+     * @return array<int, string>
+     */
+    public function provinceNames(array $provinceIds): array;
+
+    /**
+     * The names of several cities (or regencies) in one query, keyed by id (an id with no city is missing).
+     *
+     * @param  list<int>  $cityIds
+     * @return array<int, string>
+     */
+    public function cityNames(array $cityIds): array;
 }

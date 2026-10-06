@@ -64,6 +64,35 @@ final readonly class DatabaseLocationReferences implements LocationReferences
         );
     }
 
+    public function provinceNames(array $provinceIds): array
+    {
+        return $this->namesOf('reference_provinces', $provinceIds);
+    }
+
+    public function cityNames(array $cityIds): array
+    {
+        return $this->namesOf('reference_cities', $cityIds);
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    private function namesOf(string $table, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($this->connection->table($table)->whereIn('id', array_values(array_unique($ids)))->get(['id', 'name']) as $row) {
+            $names[(int) $row->id] = (string) $row->name;
+        }
+
+        return $names;
+    }
+
     private function value(string $table, string $column, ?int $id): ?string
     {
         if ($id === null) {

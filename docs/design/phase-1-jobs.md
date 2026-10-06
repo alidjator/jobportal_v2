@@ -79,6 +79,39 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
 
+## Public job search (step 3 of Phase 1; designed and coded 2026-10-06, not committed)
+
+**Done:** `GET /api/v1/jobs` as decided below. 31 new tests in `JobSearchTest` (whole suite 888 passed, Pint and PHPStan clean); it was also run once, read-only, against the real tables (200, empty). No migration,
+permission or real-database change. Implementation notes: the validation lives in `SearchJobsRequest` (a keyword of at most 100 characters and 5 words, each id filter one to 20 positive whole numbers separated
+by commas, `work_mode` the same with its three values; a bad value or an unknown filter is 422); `salary-period-required` and `page-out-of-range` are use-case rules (422); the keyword's words are resolved through
+ports (`TagRegistry::idsMatching`, `CompanyDirectory::idsByName`, at most 200 matches per word) so Job never reads other contexts' tables; the page is built with batch ports (`PublicCompanies::cards` and
+`hiddenIds`, `ReferenceValues::names`, `LocationReferences::provinceNames` and `cityNames`, `MasterRepository::findMany`), so a page of 20 rows takes about ten queries, not one per row (a test caps it at 15); the
+limit is 60 searches per minute per IP through `RateLimiter` (the detail page is not limited); a company that became hidden between the two reads is left out of the page. **A bug the tests found and that is
+fixed:** a raw `COALESCE(job_jobs.salary_max, ...)` ignored the table prefix (it would have worked on the real tables, not on the `test_` ones); the column names are now wrapped by the query grammar. **Performance
+note:** the search relies on the existing indexes `(status, deadline)`, `(company_id, status)` and the single-column ones; no index covers `published_at`. That is fine for the production scale seen so far (149 jobs in
+total), but the plan must be checked with `EXPLAIN` when real data grows (a composite index on `status, published_at` is the likely addition); this is not done now because no data exists to measure.
+
+The criteria of the job alerts (J5, decided earlier: role, category, title keyword, province and city, level, experience, education, job type, minimum salary) are the same as a saved search, so the public search
+uses at least that set and an alert will later store the same filters.
+
+Decisions so far:
+- **Filters:** `filter[q]` (keyword), `filter[category_id]`, `filter[role_id]`, `filter[job_type_id]`, `filter[job_level_id]`, `filter[experience_level_id]`, `filter[education_level_id]`, `filter[work_time_id]`,
+  `filter[work_mode]`, `filter[province_id]`, `filter[city_id]`, `filter[skill_id]` (jobs that need any of them), `filter[company_id]` and a minimum salary (decided separately). Every master id filter accepts several
+  values separated by commas and matches any of them.
+- **Keyword:** `filter[q]` is split into words and **every word must match** as a piece of text, whatever the letter case, in the title, in one of the tags, or in the company name (a LIKE search, so `dev` finds
+  `Developer` and two-letter words such as `QA` or `IT` work). The description is not searched (long and noisy), there is no relevance ranking (the result follows the chosen `sort`), no FULLTEXT index and no
+  migration. `%`, `_` and `\` typed by the caller are searched for literally. A word may match any of the three places; all words must match.
+- **Order and pages:** offset pagination with a total (`page` from 1, `per_page` 1 to 50, default 20, `meta.total`); `sort` of `-published_at` (default, newest first), `published_at`, `deadline` (closing soonest
+  first) or `-deadline`, stable through the id. A position beyond 10,000 (`page` times `per_page`) is 422 `page-out-of-range`, so a very deep page cannot make the database scan hundreds of thousands of rows.
+- **Company visibility:** the search asks Company for the ids of the companies that are suspended or hidden (a new shared port method `PublicCompanies::hiddenIds`) and excludes them (`NOT IN`), so Job never reads
+  Company's tables and nothing is stored twice. This is fine while those companies are few; if they ever pass about 5,000 it is replaced by a derived column kept by events.
+- **Minimum salary:** `filter[salary_min]` (whole rupiah) must come with `filter[salary_period_id]` (422 `salary-period-required` otherwise). A job matches when it has the same period, its salary is visible
+  and its upper bound (`salary_max`, or `salary_min` when that is all it has) is at least the amount asked. Jobs without a salary or with a hidden one never match. No conversion between periods.
+- **Result row (approved), in the request language:** `id`, `slug`, `title`, `company {id, name, slug, logo_url, verified}`, `location {city, province}`, `job_type {id, name}`, `job_level {id, name}`, `work_mode`, `salary`
+  (as on the detail page: `null` when hidden or empty), `deadline` and `published_at`; no description, skills, tags or benefits. `Cache-Control: public, max-age=60` and an `ETag`. The search is limited to **60
+  requests per minute per IP** (429 `too-many-requests` with `Retry-After`); the detail page is not limited.
+- **A job is searchable** when it is `active`, its deadline is not before today in Jakarta time (as on the detail page) and its company is not in that hidden list.
+
 ## Part 5 of the coding: the public job detail (designed and coded 2026-10-06, not committed)
 
 **Done:** `GET /api/v1/jobs/{job}` with the shape below, 17 new tests in `PublicJobTest` (whole suite 857 passed, Pint and PHPStan clean). Implementation notes: the identifier is the route pattern
