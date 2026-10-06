@@ -8,4 +8,6 @@ final class JobNotificationType
     public const string ASSIGNED = 'job.assigned';
 
     public const string UNASSIGNED = 'job.unassigned';
+
+    public const string EXPIRED = 'job.expired';
 }

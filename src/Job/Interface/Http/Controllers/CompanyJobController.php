@@ -6,14 +6,19 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Job\Application\CloneJob;
+use Src\Job\Application\CloseJob;
 use Src\Job\Application\CreateJob;
 use Src\Job\Application\DeleteJob;
 use Src\Job\Application\GetJob;
 use Src\Job\Application\GetJobAssignees;
 use Src\Job\Application\ListJobs;
+use Src\Job\Application\PublishJob;
+use Src\Job\Application\ReopenJob;
 use Src\Job\Application\ReplaceJobAssignees;
 use Src\Job\Application\UpdateJob;
 use Src\Job\Interface\Http\Requests\ListJobsRequest;
+use Src\Job\Interface\Http\Requests\ReopenJobRequest;
 use Src\Job\Interface\Http\Requests\ReplaceJobAssigneesRequest;
 use Src\Job\Interface\Http\Requests\SaveJobRequest;
 use Src\Job\Interface\Http\Resources\JobDetailResource;
@@ -25,7 +30,7 @@ use Src\Shared\Interface\Http\PaginatedResources;
 
 /**
  * The jobs of the caller's own company. A company admin sees and manages every job; a recruiter only the jobs assigned to them (any other job is a 404).
- * The use cases check the caller; the assignees can be changed by company admins only.
+ * The use cases check the caller; the assignees can be changed by company admins only. Every action that changes a job answers with the whole job.
  */
 final class CompanyJobController extends ApiController
 {
@@ -52,7 +57,7 @@ final class CompanyJobController extends ApiController
     public function update(SaveJobRequest $request, int $id, RequestContext $context, ActorResolver $actors, UpdateJob $update, GetJob $get): JobDetailResource
     {
         $actor = $actors->fromRequest($request);
-        $update->execute($actor, $id, $request->changes());
+        $update->execute($actor, $id, $request->changes(), $request->ip(), $request->userAgent());
 
         return new JobDetailResource($get->execute($actor, $id, $context->language));
     }
@@ -62,6 +67,38 @@ final class CompanyJobController extends ApiController
         $delete->execute($actors->fromRequest($request), $id);
 
         return new Response(status: Response::HTTP_NO_CONTENT);
+    }
+
+    public function publish(Request $request, int $id, RequestContext $context, ActorResolver $actors, PublishJob $publish, GetJob $get): JobDetailResource
+    {
+        $actor = $actors->fromRequest($request);
+        $publish->execute($actor, $id, $request->ip(), $request->userAgent());
+
+        return new JobDetailResource($get->execute($actor, $id, $context->language));
+    }
+
+    public function close(Request $request, int $id, RequestContext $context, ActorResolver $actors, CloseJob $close, GetJob $get): JobDetailResource
+    {
+        $actor = $actors->fromRequest($request);
+        $close->execute($actor, $id, $request->ip(), $request->userAgent());
+
+        return new JobDetailResource($get->execute($actor, $id, $context->language));
+    }
+
+    public function reopen(ReopenJobRequest $request, int $id, RequestContext $context, ActorResolver $actors, ReopenJob $reopen, GetJob $get): JobDetailResource
+    {
+        $actor = $actors->fromRequest($request);
+        $reopen->execute($actor, $id, $request->deadline(), $request->ip(), $request->userAgent());
+
+        return new JobDetailResource($get->execute($actor, $id, $context->language));
+    }
+
+    public function clone(Request $request, int $id, RequestContext $context, ActorResolver $actors, CloneJob $clone, GetJob $get): JsonResponse
+    {
+        $actor = $actors->fromRequest($request);
+        $copyId = $clone->execute($actor, $id);
+
+        return (new JobDetailResource($get->execute($actor, $copyId, $context->language)))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
     }
 
     public function assignees(Request $request, int $id, ActorResolver $actors, GetJobAssignees $get): JsonResponse

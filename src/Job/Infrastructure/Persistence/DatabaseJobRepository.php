@@ -71,6 +71,18 @@ final readonly class DatabaseJobRepository implements JobRepository
         $this->connection->table('job_jobs')->where('id', $id)->delete();
     }
 
+    public function idsDueForExpiry(DateTimeImmutable $today, int $limit): array
+    {
+        return array_map('intval', $this->connection->table('job_jobs')
+            ->where('status', JobStatus::Active->value)
+            ->where('deadline', '<', $today->format(self::DATE_FORMAT))
+            ->orderBy('deadline')
+            ->orderBy('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->all());
+    }
+
     /** @return array<string, mixed> */
     private function columns(Job $job): array
     {

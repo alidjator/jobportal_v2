@@ -2,19 +2,23 @@
 
 namespace Src\Job\Infrastructure;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobSettings;
 use Src\Job\Application\JobSlugGenerator;
 use Src\Job\Domain\Events\JobAssigneesChanged;
+use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Infrastructure\Listeners\NotifyAssignees;
+use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
 use Src\Job\Infrastructure\Listeners\ReassignJobsWhenMemberRemoved;
 use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
+use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -30,14 +34,21 @@ final class JobServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->commands([ExpireDueJobsCommand::class]);
+
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
             $catalog->add(...JobSettings::definitions());
+        });
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(ExpireDueJobsCommand::class)->hourly()->withoutOverlapping()->onOneServer();
         });
     }
 
     public function boot(): void
     {
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
+        Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(CompanyMemberRemoved::class, ReassignJobsWhenMemberRemoved::class);
 
         parent::boot();

@@ -2,6 +2,8 @@
 
 namespace Src\Job\Domain;
 
+use DateTimeImmutable;
+
 interface JobRepository
 {
     /** The job with its skills, tags and benefits, or null when there is none. */
@@ -17,4 +19,11 @@ interface JobRepository
     public function save(Job $job): void;
 
     public function delete(int $id): void;
+
+    /**
+     * The ids of live jobs whose deadline is before `$today` (a date; the deadline day itself is still open), oldest deadline first, at most `$limit`.
+     *
+     * @return list<int>
+     */
+    public function idsDueForExpiry(DateTimeImmutable $today, int $limit): array;
 }

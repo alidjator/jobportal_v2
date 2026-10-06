@@ -244,9 +244,9 @@ final class CompanyJobDraftTest extends FeatureTestCase
         $this->api('PATCH', "/company/jobs/{$id}", ['subdistrict_id' => null, 'village_id' => null, 'postal_code_id' => null])->assertOk();
     }
 
-    public function test_only_a_draft_or_a_rejected_job_can_be_edited_for_now(): void
+    public function test_a_job_waiting_for_review_or_taken_down_cannot_be_edited(): void
     {
-        foreach (['pending_review', 'active', 'closed', 'expired', 'taken_down'] as $status) {
+        foreach (['pending_review', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
             $this->api('PATCH', "/company/jobs/{$id}", ['title' => 'Changed'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
@@ -261,7 +261,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
 
     public function test_the_status_is_checked_before_the_content(): void
     {
-        $id = $this->insertJob('Active job', 'active');
+        $id = $this->insertJob('Waiting job', 'pending_review');
 
         $this->api('PATCH', "/company/jobs/{$id}", ['role_id' => 999999])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
     }

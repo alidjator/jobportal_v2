@@ -59,6 +59,10 @@ Conventions as in `phase-0-schema.md`: `bigint unsigned` auto-increment `id`, en
 `company_id`, every classification column, the salary period, the five location columns and the skill, tag and benefit columns of the pivots have `RESTRICT` foreign keys (migration `000060`); the columns
 that point to accounts and admins (`created_by_user_id`, `reviewed_by_admin_id`, `job_assignments.user_id` and `assigned_by_user_id`) have none. The columns below were first designed without them.
 
+**Table names (confirmed with the user, 2026-10-06):** the context prefix is followed by the entity name, so an entity named like its context repeats the word (`job_jobs`, `job_job_skills`,
+`job_job_tags`, `job_job_benefits`, as `company_companies` already did). The main table cannot be called `jobs` because Laravel's queue table already has that name. The user considered renaming the
+three pivots (to `job_skills`, `job_tags`, `job_benefits`) or the entity (to `job_postings`) and chose to **keep the names as they are**.
+
 ### `job_jobs`
 id; company_id (index); title varchar(150); slug varchar(160) (lower case from the title; the API builds `{slug}-{id}`); status varchar(20) (check: `draft`, `pending_review`, `active`, `closed`,
 `expired`, `rejected`, `taken_down`); status_reason varchar(1000) null; description mediumtext null; category_id, role_id, job_type_id, job_level_id, work_time_id, experience_level_id,
@@ -74,6 +78,33 @@ id; job_id (FK `job_jobs`, cascade); user_id (index); assigned_by_user_id null; 
 
 ### Settings (registered by the Jobs context)
 `jobs.require_approval` (boolean, default false, overridable per company) and `jobs.max_deadline_days` (integer, default 90, range 7 to 365, overridable per company).
+
+## Part 3 of the coding: publishing and the lifecycle (designed and coded 2026-10-06, not committed)
+
+**Done:** `POST /company/jobs/{id}/publish`, `/close`, `/reopen` and `/clone`, the editing of live, closed and expired jobs with the review rule, and the command `job:expire-due` (hourly, `withoutOverlapping`,
+`onOneServer`; batches of 200). 39 new tests in `JobLifecycleTest` (whole suite 813 passed, Pint and PHPStan clean). Implementation notes: `JobStatus::isEditable` is now true for every status except
+`pending_review` and `taken_down`; the transitions live on the `Job` entity (`publish`, `close`, `reopen`, `expire`, `sendForReview`); `JobCompleteness` holds the required-field and deadline rules, and
+`JakartaDate` the "today in WIB" rule (a deadline is a date kept as midnight UTC; a job expires when its deadline is before today in Jakarta, so 17:00 UTC is the turn of the day); every status change is one
+event `JobStatusChanged` (`published`, `closed`, `reopened`, `sent_for_review`, `expired`) that is audited (`from` and `to`) and, for `expired`, notified (`job.expired`); `published_at` is set once. A brand new
+`reference_*`, migration or permission was not needed: nothing has to run on the real database except the scheduler picking up the new command. Not done in this part: the admin side of the review (approve, reject, take
+down, restore: part 4) and the public job detail (part 5). **Production note:** the hourly expiry only runs when the Laravel scheduler runs (`php artisan schedule:run` every minute, for example from cron or a
+systemd timer); no cron entry or timer for it was found on this server on 2026-10-06 (checked as the `jobportal` user, without root), so none of the scheduled commands (anonymisation, audit and notification purges, this one) runs yet; the user decides how to set it up.
+
+Decisions:
+
+Decisions so far:
+- **Review rule (when `jobs.require_approval` is on for the company):** every time a job goes live again it goes through review. Publishing from `draft` or `rejected`, reopening from `closed` or `expired`,
+  and editing a **core field** of an `active` job (title, description, salary amounts, period and visibility, work mode, location and street address) all put the job in `pending_review`. Editing a
+  `closed` or `expired` job never triggers a review (it is not live); the review happens when it is reopened. When approval is not required, all of these go straight to `active`. No extra status or column.
+- **Audit of status changes (approved):** `job.published` (draft or rejected to `active` or `pending_review`), `job.closed`, `job.reopened` and `job.sent_for_review` (a core edit of a live job returned it to
+  review); metadata `from` and `to` (statuses), actor the user. The automatic expiry is audited as `job.expired` with the `system` actor. Cloning and ordinary edits are not audited.
+- **Endpoints and rules (approved):** `POST /company/jobs/{id}/publish` (from `draft` or `rejected`; to `active` or `pending_review`), `/close` (from `active` only, to `closed`), `/reopen {deadline}` (from
+  `closed` or `expired`; to `active` or `pending_review`) and `/clone` (201 with the new draft); the first three answer 200 with the whole job. `publish` and `reopen` check **completeness** (the stricter required
+  list: 422 `job-incomplete` with `errors` per field) and the **deadline** (not before today in WIB, not after today plus `jobs.max_deadline_days` of the company). A live (`active`) job can be edited
+  but must stay complete (422 `job-incomplete` when a required field would be emptied); its deadline range is checked only when the deadline itself changes, so a job whose deadline passed minutes ago is not locked
+  before the expiry job runs. `closed` and `expired` jobs can be edited freely. Wrong status: 409 `job-not-publishable`, `job-not-active` or `job-not-reopenable`. Expiry: the command `job:expire-due` runs hourly and
+  sets `active` jobs whose deadline is before today (WIB) to `expired`, with the audit `job.expired` and the in-app notification `job.expired` to the assigned members.
+- **`published_at`:** set **once**, when the job first becomes `active` (directly or through the admin's approval), and never changed afterwards, so closing and reopening cannot be used to push a job up a list.
 
 ## Part 2 of the coding: drafts and assignment (shapes approved 2026-10-06)
 

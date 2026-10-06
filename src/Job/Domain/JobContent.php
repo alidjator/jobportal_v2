@@ -69,6 +69,27 @@ final readonly class JobContent
         return new self(...[...$values, ...$changes]);
     }
 
+    /**
+     * Whether a core field differs from the other content: the title, the description, the salary (amounts, period and visibility), the work mode and
+     * the location with its street address. These are what a reviewer approved, so changing one of them sends a live job back to review.
+     */
+    public function coreDiffersFrom(self $other): bool
+    {
+        return $this->title !== $other->title
+            || $this->description !== $other->description
+            || $this->salaryMin !== $other->salaryMin
+            || $this->salaryMax !== $other->salaryMax
+            || $this->salaryPeriodId !== $other->salaryPeriodId
+            || $this->salaryVisible !== $other->salaryVisible
+            || $this->workMode !== $other->workMode
+            || $this->provinceId !== $other->provinceId
+            || $this->cityId !== $other->cityId
+            || $this->subdistrictId !== $other->subdistrictId
+            || $this->villageId !== $other->villageId
+            || $this->postalCodeId !== $other->postalCodeId
+            || $this->addressLine !== $other->addressLine;
+    }
+
     public function hasSalaryAmount(): bool
     {
         return $this->salaryMin !== null || $this->salaryMax !== null;

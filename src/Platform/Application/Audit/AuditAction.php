@@ -49,6 +49,16 @@ final class AuditAction
 
     public const string JOB_ASSIGNEES_CHANGED = 'job.assignees_changed';
 
+    public const string JOB_PUBLISHED = 'job.published';
+
+    public const string JOB_CLOSED = 'job.closed';
+
+    public const string JOB_REOPENED = 'job.reopened';
+
+    public const string JOB_SENT_FOR_REVIEW = 'job.sent_for_review';
+
+    public const string JOB_EXPIRED = 'job.expired';
+
     public const string COMPANY_DOCUMENT_APPROVED = 'company.document_approved';
 
     public const string COMPANY_DOCUMENT_REJECTED = 'company.document_rejected';

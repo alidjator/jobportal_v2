@@ -4,6 +4,7 @@ namespace Src\Platform\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Job\Domain\Events\JobAssigneesChanged;
+use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Platform\Application\Audit\AuditAction;
 use Src\Platform\Application\Audit\AuditActorType;
 use Src\Platform\Application\Audit\AuditEntry;
@@ -32,6 +33,23 @@ final class RecordJobAuditEntries implements ShouldQueue
     public function backoff(): array
     {
         return [10, 60, 300];
+    }
+
+    public function onJobStatusChanged(JobStatusChanged $event): void
+    {
+        $action = match ($event->change) {
+            JobStatusChanged::PUBLISHED => AuditAction::JOB_PUBLISHED,
+            JobStatusChanged::CLOSED => AuditAction::JOB_CLOSED,
+            JobStatusChanged::REOPENED => AuditAction::JOB_REOPENED,
+            JobStatusChanged::SENT_FOR_REVIEW => AuditAction::JOB_SENT_FOR_REVIEW,
+            JobStatusChanged::EXPIRED => AuditAction::JOB_EXPIRED,
+            default => throw new \LogicException("Unknown job status change {$event->change}."),
+        };
+
+        $this->record->execute(new AuditEntry(
+            $event->changedByUserId === null ? AuditActorType::System : AuditActorType::User, $event->changedByUserId, $action,
+            self::SUBJECT_TYPE, $event->jobId, ['from' => $event->from, 'to' => $event->to], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
     }
 
     public function onJobAssigneesChanged(JobAssigneesChanged $event): void

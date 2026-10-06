@@ -13,9 +13,12 @@ enum JobStatus: string
     case Rejected = 'rejected';
     case TakenDown = 'taken_down';
 
-    /** Whether the company can change the content of a job in this status (part 2: drafts and rejected jobs; the other statuses come with publishing). */
+    /** Whether the company can change the content of a job in this status: not while it waits for a decision, and not once an admin took it down. */
     public function isEditable(): bool
     {
-        return $this === self::Draft || $this === self::Rejected;
+        return match ($this) {
+            self::Draft, self::Rejected, self::Active, self::Closed, self::Expired => true,
+            self::PendingReview, self::TakenDown => false,
+        };
     }
 }
