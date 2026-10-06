@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
+use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
@@ -30,6 +31,12 @@ Route::middleware('auth:user')->group(function (): void {
 
     Route::get('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'index'])->whereNumber('id');
     Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
+
+    Route::get('company/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
+    Route::get('company/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
+    Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
+    Route::post('company/applications/{id}/move', [CompanyApplicationController::class, 'move'])->whereNumber('id');
+    Route::post('company/applications/{id}/reject', [CompanyApplicationController::class, 'reject'])->whereNumber('id');
 });
 
 // A job seeker applies to a live job. Applying affects another party, so the email must be verified.

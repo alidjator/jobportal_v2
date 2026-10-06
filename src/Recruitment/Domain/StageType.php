@@ -19,6 +19,12 @@ enum StageType: string
         return $this === self::Rejected || $this === self::Withdrawn;
     }
 
+    /** A recruiter may move an application into the active stages (not into the final ones: rejecting has its own action and only the applicant withdraws). */
+    public function acceptsRecruiterMoves(): bool
+    {
+        return ! $this->isTerminal();
+    }
+
     /** An applicant may withdraw from every active stage except `hired` (and the final ones, which are over). */
     public function allowsWithdrawal(): bool
     {

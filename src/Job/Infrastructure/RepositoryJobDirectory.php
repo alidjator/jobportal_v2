@@ -5,6 +5,7 @@ namespace Src\Job\Infrastructure;
 use Src\Job\Application\JobVisibility;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobSummary;
@@ -52,6 +53,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
     public function titles(array $jobIds): array
     {
         return $this->jobs->titles($jobIds);
+    }
+
+    public function isTakenDown(int $jobId): bool
+    {
+        return $this->jobs->find($jobId)?->status === JobStatus::TakenDown;
     }
 
     public function lock(int $jobId): void

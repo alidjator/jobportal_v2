@@ -14,6 +14,12 @@ interface ApplicationRepository
     public function countSubmittedSince(int $userId, DateTimeImmutable $since): int;
 
     /**
+     * The application with that id, whoever it belongs to (the caller checks that the company's team may see it). With `$forUpdate` the row is locked until
+     * the transaction ends.
+     */
+    public function find(int $id, bool $forUpdate = false): ?Application;
+
+    /**
      * The applicant's own application, or null when there is none with that id (another person's application does not exist for them).
      * With `$forUpdate` the row is locked until the transaction ends, so two changes to it run one after the other.
      */
@@ -21,6 +27,12 @@ interface ApplicationRepository
 
     /** Stores the withdrawal of an application: the new stage, the freed key, the note, and the history entry (from the stage it was in, by the applicant). */
     public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at): void;
+
+    /**
+     * Stores a move by a recruiter: the new stage (the key stays, a rejected application still blocks applying again) and a history entry with the actor, the
+     * rejection reason and the note.
+     */
+    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void;
 
     /**
      * Moves every application in one stage to another stage of the same type (used when an extra stage is deleted), recording one history entry

@@ -5,11 +5,13 @@ namespace Src\Recruitment\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswer;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
+use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -33,9 +35,18 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             ->count();
     }
 
+    public function find(int $id, bool $forUpdate = false): ?Application
+    {
+        return $this->load($this->connection->table('recruitment_applications')->where('id', $id), $forUpdate);
+    }
+
     public function findOfApplicant(int $userId, int $id, bool $forUpdate = false): ?Application
     {
-        $query = $this->connection->table('recruitment_applications')->where('id', $id)->where('user_id', $userId);
+        return $this->load($this->connection->table('recruitment_applications')->where('id', $id)->where('user_id', $userId), $forUpdate);
+    }
+
+    private function load(Builder $query, bool $forUpdate): ?Application
+    {
         $row = ($forUpdate ? $query->lockForUpdate() : $query)->first();
 
         if ($row === null) {
@@ -62,13 +73,25 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
 
     public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at): void
     {
+        $this->connection->table('recruitment_applications')->where('id', $before->id)->update(['withdrawn_note' => $after->withdrawnNote]);
+
+        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at);
+    }
+
+    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
+    {
+        $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at);
+    }
+
+    /** The new stage, the key (freed by a withdrawal) and one history entry. */
+    private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
+    {
         $time = $this->utc($at);
 
         $this->connection->table('recruitment_applications')->where('id', $before->id)->update([
             'stage_id' => $after->stageId,
             'stage_type' => $after->stageType->value,
             'active_key' => $after->activeKey(),
-            'withdrawn_note' => $after->withdrawnNote,
             'updated_at' => $time,
         ]);
 
@@ -78,10 +101,10 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             'to_stage_id' => $after->stageId,
             'from_type' => $before->stageType->value,
             'to_type' => $after->stageType->value,
-            'actor_kind' => StageMoveActor::Applicant->value,
-            'actor_id' => $before->userId,
-            'rejection_reason' => null,
-            'note' => null,
+            'actor_kind' => $by->value,
+            'actor_id' => $actorId,
+            'rejection_reason' => $reason?->value,
+            'note' => $note,
             'created_at' => $time,
         ]);
     }

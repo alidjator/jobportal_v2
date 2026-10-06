@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Domain;
 
 use DateTimeImmutable;
+use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /** One job seeker's application to one job. The id is null until the application is written. */
@@ -87,6 +88,66 @@ final readonly class Application
             $this->profileSnapshot,
             $this->meetsMustHave,
             $note,
+            $this->appliedAt,
+            $this->id,
+        );
+    }
+
+    /**
+     * The application after a recruiter moved it to another active stage of the company. Any active stage will do (forward, backward or skipping), `hired`
+     * included; a final application never moves again.
+     *
+     * @throws StateConflict `application-final` or `already-in-stage`
+     * @throws BusinessRuleViolation `invalid-stage` when the target is a final stage
+     */
+    public function moveTo(int $stageId, StageType $type): self
+    {
+        $this->assertNotFinal();
+
+        if (! $type->acceptsRecruiterMoves()) {
+            throw new BusinessRuleViolation('An application cannot be moved to this stage.', 'invalid-stage', extensions: ['errors' => ['stage_id' => ['An application cannot be moved to this stage.']]]);
+        }
+
+        if ($stageId === $this->stageId) {
+            throw new StateConflict('The application is already in this stage.', 'already-in-stage');
+        }
+
+        return $this->inStage($stageId, $type);
+    }
+
+    /**
+     * The application after a recruiter rejected it, into the company's default `rejected` stage. It keeps its key, so the applicant cannot apply to the job again.
+     *
+     * @throws StateConflict `application-final`
+     */
+    public function reject(int $rejectedStageId): self
+    {
+        $this->assertNotFinal();
+
+        return $this->inStage($rejectedStageId, StageType::Rejected);
+    }
+
+    /** @throws StateConflict `application-final` */
+    private function assertNotFinal(): void
+    {
+        if ($this->stageType->isTerminal()) {
+            throw new StateConflict('This application is final and cannot be moved.', 'application-final');
+        }
+    }
+
+    private function inStage(int $stageId, StageType $type): self
+    {
+        return new self(
+            $this->userId,
+            $this->jobId,
+            $this->companyId,
+            $stageId,
+            $type,
+            $this->coverLetter,
+            $this->resume,
+            $this->profileSnapshot,
+            $this->meetsMustHave,
+            $this->withdrawnNote,
             $this->appliedAt,
             $this->id,
         );

@@ -8,11 +8,9 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use JsonException;
 use Src\Recruitment\Application\ApplicantApplicationReader;
-use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationDetailData;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationRow;
-use Src\Recruitment\Domain\QuestionType;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Pagination\CursorPage;
@@ -28,7 +26,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
 {
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
 
-    public function __construct(private ConnectionInterface $connection) {}
+    public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers) {}
 
     public function list(int $userId, ?StageType $status, CursorRequest $request): CursorPage
     {
@@ -70,7 +68,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
             $row->resume_path === null ? null : (string) $row->resume_name,
             $row->withdrawn_note,
             $this->history($id),
-            $this->answers($id, (int) $row->job_id),
+            $this->answers->forApplication($id, (int) $row->job_id),
         );
     }
 
@@ -103,41 +101,6 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
         }
 
         return $shown;
-    }
-
-    /** @return list<ApplicationAnswerView> */
-    private function answers(int $applicationId, int $jobId): array
-    {
-        $answers = $this->connection->table('recruitment_application_answers as a')
-            ->join('recruitment_screening_questions as q', 'q.id', '=', 'a.question_id')
-            ->leftJoin('recruitment_job_questions as jq', fn ($join) => $join->on('jq.question_id', '=', 'a.question_id')->where('jq.job_id', '=', $jobId))
-            ->where('a.application_id', $applicationId)
-            ->orderBy('jq.position')
-            ->orderBy('a.id')
-            ->get(['a.id as answer_id', 'a.question_id', 'q.text as question_text', 'q.type as question_type', 'a.answer_text', 'a.answer_number', 'a.answer_bool'])
-            ->all();
-
-        $options = [];
-
-        if ($answers !== []) {
-            foreach ($this->connection->table('recruitment_application_answer_options as ao')
-                ->join('recruitment_screening_question_options as o', 'o.id', '=', 'ao.option_id')
-                ->whereIn('ao.answer_id', array_map(static fn (stdClass $answer): int => (int) $answer->answer_id, $answers))
-                ->orderBy('o.position')
-                ->get(['ao.answer_id', 'o.id', 'o.label']) as $option) {
-                $options[(int) $option->answer_id][] = ['id' => (int) $option->id, 'label' => (string) $option->label];
-            }
-        }
-
-        return array_map(static fn (stdClass $answer): ApplicationAnswerView => new ApplicationAnswerView(
-            (int) $answer->question_id,
-            (string) $answer->question_text,
-            QuestionType::from($answer->question_type),
-            $answer->answer_text,
-            $answer->answer_number === null ? null : (int) $answer->answer_number,
-            $answer->answer_bool === null ? null : (bool) $answer->answer_bool,
-            $options[(int) $answer->answer_id] ?? [],
-        ), $answers);
     }
 
     private function toRow(stdClass $row): ApplicationRow

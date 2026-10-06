@@ -15,6 +15,6 @@ final readonly class IdentityApplicantContacts implements ApplicantContacts
     {
         $user = $this->users->findById($userId);
 
-        return $user === null ? null : new ApplicantContact($user->name(), $user->email());
+        return $user === null || $user->anonymizedAt() !== null ? null : new ApplicantContact($user->name(), $user->email(), $user->locale());
     }
 }

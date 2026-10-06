@@ -374,14 +374,19 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
-**Update 2026-10-07 (read this before the paragraph below):** step 7, applying, is **coded** (`docs/design/phase-1-applications.md`, five parts; context `Recruitment`). Commits on `phase-1-company`:
-`4acf1f3` (tests moved to the database `jobportal_v2_test`, no prefix, credentials in the git-ignored `.env.testing`, `test:database:migrate --env=testing`; the old `test_` tables were dropped from `jobportal_v2` by the
-user on 2026-10-06) and `eddbfac` (parts 1 to 4); **part 5 (anonymisation of applications) is not committed**. Suite 1137 tests, Pint and PHPStan clean. The four application migrations (`000074` to `000077`) exist
-and ran only on the test database; the real database still holds 73 migrations (running them needs the user's approval). Next: **step 8, the pipeline** (recruiter side: applications of a job, the profile snapshot
-a recruiter may see, moving between stages, rejection reasons, history, stage notifications and the `application_update` email), then step 9 (data migration; the `applied_jobs` mapping questions were deferred to then).
-Open decisions: what a recruiter sees of the applicant, whether the applicant sees rejection reasons (hidden for now), the push channel of `application_update` (email only now). Apply facts: verified email required
-(`verified.email` middleware, opt-in per route), daily limit setting `recruitment.max_applications_per_day` (20), snapshot without gender, religion, marital status, nationality, birth date and avatar (age instead),
-the Jobs lock after applications, and deleting an extra stage moves its applications.
+**Update 2026-10-07 (read this before the paragraph below):** steps 7 and 8 of Phase 1 are **coded**: applying (`docs/design/phase-1-applications.md`, five parts) and the pipeline
+(`docs/design/phase-1-pipeline.md`, four parts), both in context `Recruitment`. Commits on `phase-1-company`: `4acf1f3` (tests moved to the database `jobportal_v2_test`, no prefix, credentials in the git-ignored
+`.env.testing`, `test:database:migrate --env=testing`; the old `test_` tables were dropped from `jobportal_v2` by the user on 2026-10-06), `eddbfac` and `b72fd4a` (applying, parts 1 to 5); **the pipeline (step 8)
+is not committed**. Suite 1187 tests, Pint and PHPStan clean. The four application migrations (`000074` to `000077`) were **run on the real database on 2026-10-07 with the user's explicit approval** (77 migrations
+recorded; 72 tables; the four new tables are empty and match the test database). Step 8 needed no migration. **Next: step 9, the data migration** (scripts and tests only; running them against production data
+needs the user's explicit approval at that time). Its open questions were deferred by the user to then: mapping `applied_jobs` (jobs with a NULL `job_id`, the legacy pipeline groups `application_groups` to stage
+types, the profile snapshot that legacy lacks, duplicates, `answers`, cover letters longer than 2,000 characters, the history) and legacy jobs that apply by URL or email. After Phase 1 comes Phase 2 (collaboration).
+Step 8 facts: recruiters read applications per job (list with stage counts, detail, resume copy) and move or reject them (free moves among active stages, reason mandatory for a rejection, `other` needs a note); a job
+taken down cannot be processed; the applicant is notified (in-app always, email by preference `application_update`, email only) when an application enters interview, offer, hired or rejected, never with the reason or
+note; moving to interview is allowed without a schedule until Phase 2 makes the schedule mandatory. Apply facts: verified email required (`verified.email` middleware, opt-in per route), daily limit setting
+`recruitment.max_applications_per_day` (20), snapshot without gender, religion, marital status, nationality, birth date and avatar (age instead), the Jobs lock after applications, deleting an extra stage moves its
+applications, anonymisation erases the personal content of applications. Open decisions: whether the applicant sees rejection reasons (hidden for now), the push channel of `application_update` (email only now),
+sending real email (SMTP, the queue worker for `critical,default,bulk`, and the invitation page URL are still needed before real users).
 
 **Latest state (end of the session of 2026-10-06; read this first, it supersedes the "not committed" remarks below):** steps 4, 5 and 6 of Phase 1 are **done and committed** on branch
 `phase-1-company`: `1093cdc` (hybrid stages), `fefa761` (screening questions), `4a6c03e` (job seeker profile, resumes and avatar), with the design documents `phase-1-stages.md`, `phase-1-screening.md` and

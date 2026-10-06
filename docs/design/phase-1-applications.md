@@ -85,4 +85,4 @@ of the preference tests was renamed `probe_update`. 7 feature tests; suite 1133 
 every application of the user, the profile snapshot, the cover letter, the resume name, path and size, and the free-text answers; the application rows, their stage and history, and the yes/no, number and choice
 answers stay. **Addition to the decision (confirmed by the user, 2026-10-07):** the withdrawal note is also cleared, because the applicant wrote it. A failing file deletion stops before any row is cleared, so a retry finishes
 the job. The applicant's own list and detail keep working afterwards (without cover letter, resume and text answers); the "Deleted user" label belongs to the recruiter side (step 8). 4 feature tests; suite 1137
-passed, Pint and PHPStan clean. **Still to do for step 7:** run the four application migrations against the real tables (needs the user's approval); the real database holds 73 migrations.
+passed, Pint and PHPStan clean. The four application migrations were run against the real tables on 2026-10-07 with the user's approval (77 migrations recorded; the new tables are empty and identical to the test database).

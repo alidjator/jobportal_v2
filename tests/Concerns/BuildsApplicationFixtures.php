@@ -39,9 +39,9 @@ trait BuildsApplicationFixtures
         $this->tearDownJobFixtures();
     }
 
-    protected function seeker(string $email, ?string $verifiedAt = '2026-10-01 00:00:00'): int
+    protected function seeker(string $email, ?string $verifiedAt = '2026-10-01 00:00:00', string $name = 'Siti Rahma'): int
     {
-        return (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti Rahma', 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => $verifiedAt])->id;
+        return (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => $verifiedAt])->id;
     }
 
     protected function pdf(): string

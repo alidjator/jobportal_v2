@@ -29,6 +29,9 @@ interface JobDirectory
      */
     public function titles(array $jobIds): array;
 
+    /** Whether an admin took the job down: its applications stay readable but are no longer processed. A job that does not exist is not taken down. */
+    public function isTakenDown(int $jobId): bool;
+
     /** Locks the job row until the transaction ends, so two changes to what hangs on the job run one after the other. */
     public function lock(int $jobId): void;
 }

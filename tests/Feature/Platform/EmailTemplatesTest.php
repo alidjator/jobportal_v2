@@ -69,7 +69,7 @@ final class EmailTemplatesTest extends FeatureTestCase
     {
         $response = $this->asAdmin('GET', 'email-templates')->assertOk();
 
-        $this->assertSame(['company.invitation', 'identity.email_verification', 'identity.password_reset'], array_column($response->json('data'), 'key'));
+        $this->assertSame(['company.invitation', 'identity.email_verification', 'identity.password_reset', 'recruitment.application_hired', 'recruitment.application_interview', 'recruitment.application_offer', 'recruitment.application_rejected'], array_column($response->json('data'), 'key'));
 
         $template = $response->json('data.1');
         $this->assertSame(['name', 'code', 'minutes'], array_column($template['variables'], 'name'));
