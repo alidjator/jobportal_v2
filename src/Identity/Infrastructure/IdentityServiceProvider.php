@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Src\Identity\Application\Account\AdminAccessReader;
+use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
 use Src\Identity\Application\Admin\AdminRbacWriter;
@@ -50,6 +51,7 @@ use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -80,6 +82,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         PasswordResetRequestThrottle::class => RateLimiterPasswordResetRequestThrottle::class,
         AdminAccessReader::class => SpatieAdminAccessReader::class,
         UserDataEraser::class => EloquentUserDataEraser::class,
+        ApplicantContacts::class => IdentityApplicantContacts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
         TermsAcceptanceRepository::class => DatabaseTermsAcceptanceRepository::class,

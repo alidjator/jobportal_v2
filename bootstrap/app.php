@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
+use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Shared\Domain\Exceptions\DomainException;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
 use Src\Shared\Interface\Http\ApiRootController;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(append: [ResolveRequestLanguage::class, EnforceTermsAcceptance::class]);
+        $middleware->alias([RequireVerifiedEmail::ALIAS => RequireVerifiedEmail::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -9,6 +9,14 @@ interface JobRepository
     /** The job with its skills, tags and benefits, or null when there is none. */
     public function find(int $id): ?Job;
 
+    /**
+     * The titles of these jobs, keyed by job id; an id without a job is missing.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function titles(array $ids): array;
+
     /** Locks the job row until the transaction ends, so two changes to the same job run one after the other. */
     public function lock(int $id): void;
 

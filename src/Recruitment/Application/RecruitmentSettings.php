@@ -13,6 +13,8 @@ final class RecruitmentSettings
 
     public const string MAX_SCREENING_QUESTIONS = 'recruitment.max_screening_questions';
 
+    public const string MAX_APPLICATIONS_PER_DAY = 'recruitment.max_applications_per_day';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -31,6 +33,10 @@ final class RecruitmentSettings
                 self::MAX_SCREENING_QUESTIONS, 5, 1, 20,
                 'The most screening questions a job may have.',
                 overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::MAX_APPLICATIONS_PER_DAY, 20, 1, 100,
+                'The most applications one job seeker may submit per calendar day (Jakarta time), withdrawn ones included.',
             ),
         ];
     }

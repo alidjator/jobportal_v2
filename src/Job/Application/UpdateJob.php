@@ -3,11 +3,13 @@
 namespace Src\Job\Application;
 
 use Src\Job\Domain\Events\JobStatusChanged;
+use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -19,7 +21,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * A member changes some fields of a job they may see: `$changes` holds only what changes, keyed by content property name, and a null clears an optional
  * field. A job waiting for review or taken down cannot be edited. A live job must stay complete (its deadline range is checked only when the deadline
  * changes); when the company's settings require approval, a change to a core field sends it back to review. The job row is locked, so two edits of the
- * same job run one after the other. The slug follows the title.
+ * same job run one after the other. The slug follows the title. Once the job has applications its title, category, role, job type and level are locked.
  */
 final readonly class UpdateJob
 {
@@ -29,6 +31,7 @@ final readonly class UpdateJob
         private JobCompleteness $completeness,
         private JobSlugGenerator $slugs,
         private JobRepository $jobs,
+        private JobApplications $applications,
         private Settings $settings,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -40,7 +43,7 @@ final readonly class UpdateJob
      *
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
-     * @throws StateConflict `job-not-editable`
+     * @throws StateConflict `job-not-editable` or `job-locked-after-applications`, naming the locked fields
      * @throws BusinessRuleViolation `invalid-job` or, for a live job, `job-incomplete`, with `errors` per field
      */
     public function execute(Actor $actor, int $jobId, array $changes, ?string $ipAddress, ?string $userAgent): void
@@ -54,6 +57,7 @@ final readonly class UpdateJob
             $job->assertEditable();
 
             $content = $this->changes->apply($job->content, $changes, isNew: false);
+            $this->assertPositionNotLocked($jobId, $content, $job->content);
             $live = $job->status === JobStatus::Active;
 
             if ($live) {
@@ -80,6 +84,20 @@ final readonly class UpdateJob
 
         if ($event !== null) {
             $this->events->dispatch([$event]);
+        }
+    }
+
+    /** Once a job has applications, what identifies the position (title, category, role, job type and level) cannot change. */
+    private function assertPositionNotLocked(int $jobId, JobContent $content, JobContent $before): void
+    {
+        $fields = $content->lockedFieldsChangedFrom($before);
+
+        if ($fields !== [] && $this->applications->hasApplications($jobId)) {
+            throw new StateConflict(
+                'This job already has applications, so '.implode(', ', $fields).' can no longer change.',
+                'job-locked-after-applications',
+                extensions: ['fields' => $fields],
+            );
         }
     }
 }

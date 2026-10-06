@@ -14,6 +14,21 @@ interface JobDirectory
     /** The id of the company of a live public job (as the public job page shows it), or null when there is no such job for the public. */
     public function publicCompanyId(int $jobId): ?int;
 
+    /**
+     * The accounts the job is assigned to (a job always has at least one), who are told about its applications.
+     *
+     * @return list<int>
+     */
+    public function assigneeUserIds(int $jobId): array;
+
+    /**
+     * The titles of these jobs whatever their status (an applicant keeps seeing the job they applied to), keyed by job id; an id without a job is missing.
+     *
+     * @param  list<int>  $jobIds
+     * @return array<int, string>
+     */
+    public function titles(array $jobIds): array;
+
     /** Locks the job row until the transaction ends, so two changes to what hangs on the job run one after the other. */
     public function lock(int $jobId): void;
 }

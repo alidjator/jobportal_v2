@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
+use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
@@ -28,4 +30,17 @@ Route::middleware('auth:user')->group(function (): void {
 
     Route::get('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'index'])->whereNumber('id');
     Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
+});
+
+// A job seeker applies to a live job. Applying affects another party, so the email must be verified.
+Route::post('jobs/{job}/applications', [ApplicationController::class, 'store'])
+    ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
+    ->middleware(['auth:user', RequireVerifiedEmail::ALIAS]);
+
+// The applicant's own applications.
+Route::middleware('auth:user')->group(function (): void {
+    Route::get('me/applications', [ApplicationController::class, 'index']);
+    Route::get('me/applications/{id}', [ApplicationController::class, 'show'])->whereNumber('id');
+    Route::get('me/applications/{id}/resume', [ApplicationController::class, 'resume'])->whereNumber('id');
+    Route::post('me/applications/{id}/withdraw', [ApplicationController::class, 'withdraw'])->whereNumber('id');
 });

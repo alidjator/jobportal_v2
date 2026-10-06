@@ -25,7 +25,7 @@ final class NotificationPreferencesTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-04 10:00:00');
         $this->app->make(NotificationPreferenceCatalog::class)->add(
-            new NotificationPreferenceDefinition('application_update', 'Updates on your job applications', ['email' => true, 'push' => true]),
+            new NotificationPreferenceDefinition('probe_update', 'Updates on your job applications', ['email' => true, 'push' => true]),
             new NotificationPreferenceDefinition('newsletter', 'News from the portal', ['email' => false]),
         );
         $this->user = $this->makeUser('siti@example.test');
@@ -62,35 +62,35 @@ final class NotificationPreferencesTest extends FeatureTestCase
     {
         $response = $this->api('GET', '')->assertOk();
 
-        $this->assertSame(['application_update', 'newsletter'], array_column($response->json('data'), 'key'));
-        $this->assertSame('Updates on your job applications', $response->json('data.0.description'));
-        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.0.channels.email'));
-        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.0.channels.push'));
+        $this->assertSame(['application_update', 'newsletter', 'probe_update'], array_column($response->json('data'), 'key'));
+        $this->assertSame('Updates on your job applications', $response->json('data.2.description'));
+        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.2.channels.email'));
+        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.2.channels.push'));
         $this->assertSame(['email' => ['enabled' => false, 'is_default' => true]], $response->json('data.1.channels'));
     }
 
     public function test_a_choice_is_stored_and_shown_and_can_be_changed_again(): void
     {
-        $this->api('PUT', '/application_update/email', ['enabled' => false])->assertNoContent();
+        $this->api('PUT', '/probe_update/email', ['enabled' => false])->assertNoContent();
 
-        $channels = $this->api('GET', '')->json('data.0.channels');
+        $channels = $this->api('GET', '')->json('data.2.channels');
         $this->assertSame(['enabled' => false, 'is_default' => false], $channels['email']);
         $this->assertSame(['enabled' => true, 'is_default' => true], $channels['push']);
 
-        $this->api('PUT', '/application_update/email', ['enabled' => true])->assertNoContent();
+        $this->api('PUT', '/probe_update/email', ['enabled' => true])->assertNoContent();
 
-        $this->assertSame(['enabled' => true, 'is_default' => false], $this->api('GET', '')->json('data.0.channels.email'));
+        $this->assertSame(['enabled' => true, 'is_default' => false], $this->api('GET', '')->json('data.2.channels.email'));
         $this->assertSame(1, DB::table('notification_preferences')->where('user_id', $this->user->id)->count());
     }
 
     public function test_choices_are_private_to_each_user(): void
     {
         $other = $this->makeUser('other@example.test');
-        $this->api('PUT', '/application_update/email', ['enabled' => false])->assertNoContent();
+        $this->api('PUT', '/probe_update/email', ['enabled' => false])->assertNoContent();
 
         $preferences = $this->app->make(NotificationPreferences::class);
-        $this->assertFalse($preferences->isEnabled($this->user->id, 'application_update', NotificationChannel::Email));
-        $this->assertTrue($preferences->isEnabled($other->id, 'application_update', NotificationChannel::Email));
+        $this->assertFalse($preferences->isEnabled($this->user->id, 'probe_update', NotificationChannel::Email));
+        $this->assertTrue($preferences->isEnabled($other->id, 'probe_update', NotificationChannel::Email));
     }
 
     public function test_unknown_keys_and_unsupported_channels_are_refused(): void
@@ -111,7 +111,7 @@ final class NotificationPreferencesTest extends FeatureTestCase
     {
         $preferences = $this->app->make(NotificationPreferences::class);
 
-        $this->assertTrue($preferences->isEnabled($this->user->id, 'application_update', NotificationChannel::Push));
+        $this->assertTrue($preferences->isEnabled($this->user->id, 'probe_update', NotificationChannel::Push));
         $this->assertFalse($preferences->isEnabled($this->user->id, 'newsletter', NotificationChannel::Email));
 
         $this->expectException(InvalidArgumentException::class);

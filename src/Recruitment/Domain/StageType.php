@@ -19,6 +19,15 @@ enum StageType: string
         return $this === self::Rejected || $this === self::Withdrawn;
     }
 
+    /** An applicant may withdraw from every active stage except `hired` (and the final ones, which are over). */
+    public function allowsWithdrawal(): bool
+    {
+        return match ($this) {
+            self::Applied, self::Screening, self::Interview, self::Offer => true,
+            self::Hired, self::Rejected, self::Withdrawn => false,
+        };
+    }
+
     /** Whether a company may add stages of this type besides the default one. */
     public function allowsExtraStages(): bool
     {

@@ -33,6 +33,21 @@ final readonly class DatabaseJobRepository implements JobRepository
         return $row === null ? null : $this->toJob($row);
     }
 
+    public function titles(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $titles = [];
+
+        foreach ($this->connection->table('job_jobs')->whereIn('id', $ids)->get(['id', 'title']) as $row) {
+            $titles[(int) $row->id] = (string) $row->title;
+        }
+
+        return $titles;
+    }
+
     public function lock(int $id): void
     {
         $this->connection->table('job_jobs')->where('id', $id)->lockForUpdate()->first(['id']);

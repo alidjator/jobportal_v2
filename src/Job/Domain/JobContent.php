@@ -73,6 +73,23 @@ final readonly class JobContent
      * Whether a core field differs from the other content: the title, the description, the salary (amounts, period and visibility), the work mode and
      * the location with its street address. These are what a reviewer approved, so changing one of them sends a live job back to review.
      */
+    /**
+     * The fields that identify the position and cannot change once the job has applications, among those that differ from the other content,
+     * under their API names.
+     *
+     * @return list<string>
+     */
+    public function lockedFieldsChangedFrom(self $other): array
+    {
+        return array_keys(array_filter([
+            'title' => $this->title !== $other->title,
+            'category_id' => $this->categoryId !== $other->categoryId,
+            'role_id' => $this->roleId !== $other->roleId,
+            'job_type_id' => $this->jobTypeId !== $other->jobTypeId,
+            'job_level_id' => $this->jobLevelId !== $other->jobLevelId,
+        ]));
+    }
+
     public function coreDiffersFrom(self $other): bool
     {
         return $this->title !== $other->title
