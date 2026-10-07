@@ -165,3 +165,59 @@ overwrite; a dry run reads and checks (the resume files too) but stores nothing.
 production data and the real id map table does not exist yet. **Confirmed by the user (2026-10-07):** (1) for links, the per-kind limit is counted inside one run (a re-run only adds the missing ones and does not recount the kinds
 that earlier runs wrote; the total of eight is checked against the table); (2) the legacy `candidates.cv` (a single CV uploaded through the profile settings, per the legacy source) is not migrated: the
 resumes come from `candidate_resumes` only, so a candidate who only has a `cv` uploads it again.
+
+## Part 4 design (jobs and screening questions, in progress, 2026-10-07)
+
+Decisions taken one question at a time, on top of the confirmed decisions above:
+
+- **Job text columns (2026-10-07):** the legacy `jobs.hard_skill`, `soft_skill` and `notes` (required in the legacy posting form and shown publicly as separate sections; the new schema has no column for them) are
+  converted to Markdown like the description and **appended to it** as sections titled "Hard skills", "Soft skills" and "Notes" (only the filled ones). The description length limit of the new rules applies (a longer text
+  is cut and reported).
+  **Extended the same day (the master skill replaces the legacy text fields in `decisions.md`; the legacy `job_skills` pivot is probably sparse: its auto-increment is 27 for about 155 jobs, schema metadata only, to be
+  checked in the approved run):** the legacy `hard_skill` and `soft_skill` text is also **split into items** (lines, list items, commas, semicolons) and each item is matched to the skill master by normalised name
+  (`hard_skill` to kind `hard`, `soft_skill` to kind `soft`; an ambiguous match is not guessed). Matched items become master skills of the job together with the ones from the legacy `job_skills` pivot (no
+  duplicates, at most 15 in all, the rest reported as a count). The whole text is **still appended to the description**, so nothing is lost. The report counts items matched and unmatched per run, without the text.
+- **Job vacancies (2026-10-07):** the legacy `vacancies` is free text (the legacy form only requires a string). After trimming, a bare number (`5`) or a number followed by words (`5 orang`, `10 posisi`) is read as
+  that number; a range (`2-3`, `2 sampai 3`) uses the **larger** number; text with no number, with several unrelated numbers (not a range), a value of 0 or one outside 1 to 65,535 is **emptied and reported** by
+  reason code (such a job becomes a `draft` under the completeness rule).
+- **Admin-created jobs (2026-10-07):** the legacy `jobs` table records no creator. A job an admin created for an existing company (`company_id` set) is imported as a job of that company, with that company's owner as
+  creator and only assignee (the admin origin is not recoverable, and legacy admins are not migrated); the legacy admin form leaves job level, work time and the BPS location empty, so such jobs mostly become
+  `draft` under the completeness rule. A job with `company_id` NULL and only a free-text `company_name` is **skipped and reported** (`company-missing`), as is every application to it.
+- **Job benefits text (2026-10-07):** the legacy `jobs.benefits` text column is **not carried** (the web form stores it next to the master relation `job_benefit`, but the public job page shows only the master
+  relation); only the benefits mapped to the new masters are imported.
+- **Active job with a passed deadline (2026-10-07):** a legacy `active` job whose deadline is before today in Jakarta time is imported as **`expired`** (deadline and `published_at` kept; the company can reopen it with a
+  new deadline) and noted in the report by legacy id and reason code.
+- **Completeness (2026-10-07, extends the five-master rule of "Master data mapping"):** a job that would be `active`, `pending_review` or `expired` but fails the full publish-required list of `phase-1-jobs.md`
+  (description 50 to 20,000 characters, category, role, job type, job level, work time, experience level, education level, vacancies of at least 1, a deadline, province and city unless remote, at least one skill)
+  is imported as **`draft`**; its filled columns are still carried, and the report names the first failing rule by legacy id and reason code. For the deadline of an `expired` job the rule is that a deadline
+  exists (the "future date" test is not applied to a job that is expired by its own deadline; the user did not object when this was shown, 2026-10-07).
+- **Closed jobs and completeness (2026-10-07):** a job imported as `closed` (legacy `apply_on` = email or URL) stays `closed` even when it fails the completeness list (it is history and not public); the gaps are
+  noted in the report, and the full rules apply when the company reopens it.
+- **Job location columns (2026-10-07):** legacy `jobs` holds two sets of BPS codes: the web form writes `region` (province), `district` (city or regency), `subdistrict` and `postcode`, the old API writes
+  `province_id` and `city_id` (no foreign keys). The **web set is used first** (through `LocationLookup`, cut at the deepest valid level); only when it is empty or invalid from the province down, the province and city
+  come from `province_id` and `city_id` (no subdistrict); the use of the fallback is noted in the report.
+- **Job address (2026-10-07):** `address_line` comes from the legacy `address` (cut to 255) when it is filled; `exact_location`, `neighborhood`, `locality`, `place`, `long` and `lat` are not carried (the
+  legacy create form does not fill them; they come from an older location picker). `country` is not carried either: the legacy form fixes it to Indonesia (stated by the user, 2026-10-07), and the new schema has no country column.
+- **Job salary rules (2026-10-07):** only `salary_mode = range` is read. A value of 0 means empty. When both numbers are filled and the minimum is above the maximum, **the two are swapped** and the job is noted in
+  the report; when only one is filled, the other stays empty. The period comes from `salary_type_id` through the master map; a salary without a matching period is **emptied entirely** and noted. `salary_visible` is
+  true only when `show_salary` is `'1'` (anything else, including NULL, hides the salary).
+
+## Part 4 coded (2026-10-07, not committed)
+
+Three importers and their writers (Infrastructure writes `job_*` and `recruitment_*` directly, the documented exception): **jobs** (`JobsImporter`, entity `jobs`, id map `job`; `JobWriter` writes the job, its skills, its
+benefits and its one assignee), **questions** (`QuestionsImporter`, entity `questions`, id map `question`) and **job-questions** (`JobQuestionsImporter`, entity `job-questions`, id map `job-question` by legacy link id;
+`ScreeningWriter`). New: `LegacyMarkdown` (HTML to Markdown; new dependency `league/html-to-markdown` 5.1.3, MIT, needs `ext-dom` and `ext-xml`, checked on Packagist and in `php -m`; unsafe links, images, scripts and
+attributes are dropped and a decoded `<` is escaped), `LegacyVacancies`, `SkillTextMatcher` (`NewMasterReader::skills()` gained the active skills with their kind), `ImportReport::flagged` (an imported row that changed on the
+way, named by legacy id and reason code under `flagged_rows`, also counted in the notes) and the synthetic legacy tables `jobs`, `job_skills`, `job_benefit`, `company_questions` and `company_question_job`.
+**Jobs:** skip reasons `pending-edit-skipped`, `company-missing`, `company-not-imported`, `owner-not-imported`, `title-missing`, `title-too-short` (under 3 characters, the new minimum); flags `deadline-passed-expired`,
+`draft-incomplete-<rule>` and `closed-incomplete-<rule>` with the rules in this order: `description`, `category`, `role`, `job-type`, `job-level`, `work-time`, `experience-level`, `education-level`, `vacancies`, `deadline`,
+`deadline-passed`, `skills`, `location`, and `salary-swapped`; notes `<master>-unmatched`, `vacancies-*`, `skill-unmatched`, `skill-link-incomplete`, `skill-text-matched|unmatched|ambiguous`, `skills-over-limit`,
+`benefit-unmatched`, `benefit-link-incomplete`, `benefits-over-limit`, `salary-period-unmatched`, `location-fallback`, `description-cut`, `title-cut`. `published_at` is the creation time for a job that was `active` or
+`expired` in legacy and is `active`, `expired` or `closed` now, otherwise empty; `reviewed_at` stays empty. **Questions:** skip reasons `company-not-imported`, `owner-not-imported`, `text-too-short`; note
+`archived-single-use`. **Job-questions:** skip reasons `link-incomplete`, `job-not-imported`, `question-not-imported`, `company-mismatch`, `duplicate-link`; note `job-over-question-limit` (limit from the setting
+`recruitment.max_screening_questions`); positions follow the legacy link id and continue after the questions a job already has. 53 new tests (the jobs and screening ones also read the result through the public job
+API and the company screening-questions API); suite 1373 passed, Pint and PHPStan clean. Nothing was run against production data and the real id map table does not exist yet.
+**Six choices made while coding, all confirmed by the user one at a time (2026-10-07):** (1) a legacy `pending` job whose deadline has passed fails the "future date" rule and becomes a `draft` (flag
+`draft-incomplete-deadline-passed`); (2) a legacy `postcode` is dropped (the new chain needs a village, which legacy jobs do not have) and is not counted in the report; (3) a legacy question whose company differs from
+the job's company is not attached (`company-mismatch`), not copied; (4) a legacy job with no status is read as `pending`; (5) the limit of 15 skills and 15 benefits cuts the rest and counts it (no per-job row);
+(6) a title shorter than 3 characters is skipped (`title-too-short`).

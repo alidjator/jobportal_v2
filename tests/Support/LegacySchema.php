@@ -55,7 +55,7 @@ final class LegacySchema
     /** @return list<string> */
     public static function tables(): array
     {
-        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links'];
+        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job'];
 
         foreach (self::TRANSLATED_MASTERS as [$master, $translations]) {
             $tables[] = $master;
@@ -242,6 +242,82 @@ final class LegacySchema
                 $table->string('postcode')->nullable();
                 $table->boolean('is_profile_verified')->default(false);
                 $table->dateTime('document_verified_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('jobs')) {
+            $schema->create('jobs', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id')->nullable();
+                $table->unsignedBigInteger('category_id')->nullable();
+                $table->unsignedBigInteger('role_id')->nullable();
+                $table->unsignedBigInteger('experience_id')->nullable();
+                $table->unsignedBigInteger('education_id')->nullable();
+                $table->unsignedBigInteger('job_type_id')->nullable();
+                $table->unsignedBigInteger('salary_type_id')->nullable();
+                $table->string('title')->nullable();
+                $table->string('vacancies')->nullable();
+                $table->integer('min_salary')->default(0);
+                $table->integer('max_salary')->default(0);
+                $table->date('deadline')->nullable();
+                $table->longText('description')->nullable();
+                $table->string('status')->default('pending');
+                $table->string('apply_on')->default('app');
+                $table->string('apply_email')->nullable();
+                $table->string('apply_url')->nullable();
+                $table->boolean('is_remote')->default(false);
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+                $table->string('address')->nullable();
+                $table->integer('district')->nullable();
+                $table->integer('subdistrict')->nullable();
+                $table->string('postcode')->nullable();
+                $table->integer('region')->nullable();
+                $table->bigInteger('parent_job_id')->nullable();
+                $table->string('salary_mode')->default('range');
+                $table->string('custom_salary')->nullable();
+                $table->string('company_name')->nullable();
+                $table->unsignedBigInteger('work_time')->nullable();
+                $table->integer('city_id')->nullable();
+                $table->integer('province_id')->nullable();
+                $table->unsignedBigInteger('job_level_id')->nullable();
+                $table->text('hard_skill')->nullable();
+                $table->text('soft_skill')->nullable();
+                $table->text('benefits')->nullable();
+                $table->text('notes')->nullable();
+                $table->string('show_salary', 1)->nullable();
+            });
+        }
+
+        foreach ([['job_skills', 'skill_id'], ['job_benefit', 'benefit_id']] as [$pivot, $column]) {
+            if (! $schema->hasTable($pivot)) {
+                $schema->create($pivot, function (Blueprint $table) use ($column): void {
+                    $table->id();
+                    $table->unsignedBigInteger('job_id')->nullable();
+                    $table->unsignedBigInteger($column)->nullable();
+                });
+            }
+        }
+
+        if (! $schema->hasTable('company_questions')) {
+            $schema->create('company_questions', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id');
+                $table->boolean('reuse')->default(true);
+                $table->string('title');
+                $table->boolean('required')->default(false);
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('company_question_job')) {
+            $schema->create('company_question_job', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('job_id')->nullable();
+                $table->unsignedBigInteger('company_question_id')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
             });
         }
 

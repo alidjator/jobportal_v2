@@ -12,7 +12,10 @@ use Src\LegacyImport\Application\ExperiencesImporter;
 use Src\LegacyImport\Application\ImagesImporter;
 use Src\LegacyImport\Application\Importer;
 use Src\LegacyImport\Application\ImportRunner;
+use Src\LegacyImport\Application\JobQuestionsImporter;
 use Src\LegacyImport\Application\JobSeekerWriter;
+use Src\LegacyImport\Application\JobsImporter;
+use Src\LegacyImport\Application\JobWriter;
 use Src\LegacyImport\Application\LanguagesImporter;
 use Src\LegacyImport\Application\LegacyFiles;
 use Src\LegacyImport\Application\LegacySource;
@@ -21,8 +24,10 @@ use Src\LegacyImport\Application\LocationLookup;
 use Src\LegacyImport\Application\MastersImporter;
 use Src\LegacyImport\Application\NewMasterReader;
 use Src\LegacyImport\Application\ProfilesImporter;
+use Src\LegacyImport\Application\QuestionsImporter;
 use Src\LegacyImport\Application\ReportWriter;
 use Src\LegacyImport\Application\ResumesImporter;
+use Src\LegacyImport\Application\ScreeningWriter;
 use Src\LegacyImport\Application\SkillsImporter;
 use Src\LegacyImport\Domain\IdMap;
 use Src\LegacyImport\Interface\Console\LegacyImportCommand;
@@ -48,6 +53,9 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         LanguagesImporter::class,
         LinksImporter::class,
         ResumesImporter::class,
+        JobsImporter::class,
+        QuestionsImporter::class,
+        JobQuestionsImporter::class,
     ];
 
     /** @var array<class-string, class-string> */
@@ -58,6 +66,8 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         AccountWriter::class => DatabaseAccountWriter::class,
         CompanyWriter::class => DatabaseCompanyWriter::class,
         JobSeekerWriter::class => DatabaseJobSeekerWriter::class,
+        JobWriter::class => DatabaseJobWriter::class,
+        ScreeningWriter::class => DatabaseScreeningWriter::class,
         LocationLookup::class => DatabaseLocationLookup::class,
         LegacyFiles::class => LocalLegacyFiles::class,
     ];

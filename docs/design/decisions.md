@@ -148,3 +148,13 @@ in `phase-0-schema.md`, section "Details still open".
 Still open: matching weights and signals; salary-insight grouping dimensions; rating scale and reporting for reviews; slot rules for bulk interviews and the number
 of reschedule rounds; offer validity and revisions; export columns (the rejection reasons, accepted types and sizes of company document verification were decided on 2026-10-05, see `phase-1-company.md`);
 anti-spam rules for bulk messages beyond the 50-recipient cap; CV template count; reviewer visibility rules (to be confirmed with legal review).
+
+**Deferred to Phase 3 (recorded 2026-10-07): the "fresh graduate" category.** Today the only signal is the self-chosen `jobseeker_profiles.experience_level_id`, whose master has a "Fresh Graduated" row (0 to under 1 year), and
+the profile completeness rule (one experience or one education entry) lets a fresh graduate apply. Nothing derives the category from the education and experience history, and nothing matches applicants to jobs by level.
+It is decided together with the matching engine (J8, R12), candidate search and invitation. Questions to answer then: (1) is the category chosen by the job seeker or computed from the history (graduation year in
+`jobseeker_educations`, length of `jobseeker_experiences`); (2) how are the two masters "Fresh Graduated" and "Less than a Year", which share the range 0 to 1 year, told apart. The data migration needs nothing from it:
+the legacy experience level is carried only when it matches a master (confirmed rule of step 9).
+
+**Deferred product decision (recorded 2026-10-07): applicants living abroad.** The location of a profile is Indonesian only (BPS chain), and applying requires province and city, so a job seeker who lives outside Indonesia
+cannot complete a profile, even for a `remote` job. Decide whether that is intended; if not, either allow an empty location for such applicants or add a flat `reference_countries` master (ISO codes; the BPS chain stays
+under Indonesia). Nationality (`reference_nationalities`, a profile attribute) must not be reused as a country list.

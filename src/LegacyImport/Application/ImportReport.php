@@ -9,7 +9,7 @@ namespace Src\LegacyImport\Application;
  */
 final class ImportReport
 {
-    /** @var array<string, array{read: int, imported: int, skipped: int, skipped_rows: list<array{legacy_id: int, reason: string}>, notes: array<string, int>, unmatched: list<array<string, mixed>>}> */
+    /** @var array<string, array{read: int, imported: int, skipped: int, skipped_rows: list<array{legacy_id: int, reason: string}>, notes: array<string, int>, unmatched: list<array<string, mixed>>, flagged_rows?: list<array{legacy_id: int, reason: string}>}> */
     private array $entities = [];
 
     public function read(string $entity, int $count = 1): void
@@ -29,6 +29,13 @@ final class ImportReport
         $this->entry($entity);
         $this->entities[$entity]['skipped']++;
         $this->entities[$entity]['skipped_rows'][] = ['legacy_id' => $legacyId, 'reason' => $reason];
+    }
+
+    /** A row that was imported but changed on the way (for example a job that became a draft), named by its legacy id and a reason code; it also counts as a note. */
+    public function flagged(string $entity, int $legacyId, string $reason): void
+    {
+        $this->note($entity, $reason);
+        $this->entities[$entity]['flagged_rows'][] = ['legacy_id' => $legacyId, 'reason' => $reason];
     }
 
     public function note(string $entity, string $code, int $count = 1): void
