@@ -1,0 +1,19 @@
+<?php
+
+namespace Src\LegacyImport\Application;
+
+/**
+ * One master of the legacy database and the new master it matches. The legacy names live in a translation table (`$translationTable`, its `$foreignKey`
+ * pointing at the master row, one `name` per `locale`); a master without one (`$translationTable` null) keeps its name in `$nameColumn` of the table itself.
+ */
+final readonly class MasterSpec
+{
+    public function __construct(
+        public string $key,
+        public string $legacyTable,
+        public ?string $translationTable,
+        public ?string $foreignKey,
+        public string $newTable,
+        public string $nameColumn = 'name',
+    ) {}
+}

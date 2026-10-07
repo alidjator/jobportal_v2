@@ -375,19 +375,22 @@ shared with the other sites on this server) and it reads `/etc/php.ini` (extra f
 
 ## 6. Suggested next steps
 
-**Update 2026-10-07 (read this before the paragraph below):** steps 7 and 8 of Phase 1 are **coded**: applying (`docs/design/phase-1-applications.md`, five parts) and the pipeline
-(`docs/design/phase-1-pipeline.md`, four parts), both in context `Recruitment`. Commits on `phase-1-company`: `4acf1f3` (tests moved to the database `jobportal_v2_test`, no prefix, credentials in the git-ignored
-`.env.testing`, `test:database:migrate --env=testing`; the old `test_` tables were dropped from `jobportal_v2` by the user on 2026-10-06), `eddbfac` and `b72fd4a` (applying, parts 1 to 5); **the pipeline (step 8)
-is not committed**. Suite 1187 tests, Pint and PHPStan clean. The four application migrations (`000074` to `000077`) were **run on the real database on 2026-10-07 with the user's explicit approval** (77 migrations
-recorded; 72 tables; the four new tables are empty and match the test database). Step 8 needed no migration. **Next: step 9, the data migration** (its design was confirmed on 2026-10-07 in `docs/design/phase-1-migration.md`: artisan importers in a context `LegacyImport`, five coding parts; scripts and tests only; running them against production data
-needs the user's explicit approval at that time). Its open questions were deferred by the user to then: mapping `applied_jobs` (jobs with a NULL `job_id`, the legacy pipeline groups `application_groups` to stage
-types, the profile snapshot that legacy lacks, duplicates, `answers`, cover letters longer than 2,000 characters, the history) and legacy jobs that apply by URL or email. After Phase 1 comes Phase 2 (collaboration).
-Step 8 facts: recruiters read applications per job (list with stage counts, detail, resume copy) and move or reject them (free moves among active stages, reason mandatory for a rejection, `other` needs a note); a job
-taken down cannot be processed; the applicant is notified (in-app always, email by preference `application_update`, email only) when an application enters interview, offer, hired or rejected, never with the reason or
-note; moving to interview is allowed without a schedule until Phase 2 makes the schedule mandatory. Apply facts: verified email required (`verified.email` middleware, opt-in per route), daily limit setting
-`recruitment.max_applications_per_day` (20), snapshot without gender, religion, marital status, nationality, birth date and avatar (age instead), the Jobs lock after applications, deleting an extra stage moves its
-applications, anonymisation erases the personal content of applications. Open decisions: whether the applicant sees rejection reasons (hidden for now), the push channel of `application_update` (email only now),
-sending real email (SMTP, the queue worker for `critical,default,bulk`, and the invitation page URL are still needed before real users).
+**Update 2026-10-07, end of session (read this before the paragraph below):** steps 7 and 8 of Phase 1 are **coded and committed** (applying: `docs/design/phase-1-applications.md`; the pipeline:
+`docs/design/phase-1-pipeline.md`; context `Recruitment`; last commits `b72fd4a`, `9e86635`, and `b34dbe4` for the step 9 design). Tests run in their own database `jobportal_v2_test` (no prefix, credentials in the
+git-ignored `.env.testing`, `php artisan test:database:migrate --env=testing`). The real database holds 77 migrations (the four application tables were created on 2026-10-07 with the user's approval).
+**Step 9, the data migration from karir.pkp, is in progress:** the design is confirmed and committed (`docs/design/phase-1-migration.md`, read it first: every decision of the user is in it, and the "Part N coded"
+sections say what exists); **parts 1 to 3 of its five coding parts are coded and committed** (suite 1320 tests, Pint and PHPStan clean at that point). Part 1: the context `src/LegacyImport` (an operational tool,
+no API; the **documented exception** that lets it write other contexts' tables, recorded in `CLAUDE.md`), the read connection `legacy` (`KARIR_PKP_DB_*`), the id map (migration `000078`, run on the test database
+**only**: the real table does not exist), the runner, the report (JSON on the private disk, legacy ids and reason codes only), the master matcher and the commands `legacy:import {entity|--all} [--write]
+[--map=name=path]` (**a dry run unless `--write`**) and `legacy:masters:check`. Part 2: the importers for accounts, companies (with the owner as company admin) and images. Part 3: profiles, experiences,
+educations, skills, languages, links and resumes. **Still to code:** part 4 (jobs with skills, benefits and the one assignee; screening questions and their attachment to jobs) and part 5 (applications with the
+group mapping file, the snapshot built from the migrated profile, the two-entry history and the duplicate rule; a full-run test; documents). The synthetic legacy tables of the tests are created by
+`tests/Support/LegacySchema.php` in the test database under the prefix `legacy_` (extend it for jobs, `company_questions`, `company_question_job`, `application_groups` and `applied_jobs`). **Nothing was run against
+production data**, and running the import needs the user's explicit approval each time (and `php artisan migrate` for `000078` on the real database needs it too); the legacy project folder for files is set with
+`KARIR_PKP_FILES_ROOT` (not set yet). Open points to remember: the real run reads personal data; the masters mapping file and the pipeline-group mapping file are filled in by the user at the approved run; legacy
+`companies.kelurahan` is an `int(11)` (village codes probably cannot be matched, left empty); `candidates.cv` is not migrated (decided). Other open decisions: whether the applicant sees rejection reasons (hidden for
+now), the push channel of `application_update` (email only now), and sending real email (SMTP, the queue worker for `critical,default,bulk` and the invitation page URL are needed before real users). After
+Phase 1 comes Phase 2 (collaboration). The first message for the next session is in section 8.
 
 **Latest state (end of the session of 2026-10-06; read this first, it supersedes the "not committed" remarks below):** steps 4, 5 and 6 of Phase 1 are **done and committed** on branch
 `phase-1-company`: `1093cdc` (hybrid stages), `fefa761` (screening questions), `4a6c03e` (job seeker profile, resumes and avatar), with the design documents `phase-1-stages.md`, `phase-1-screening.md` and
@@ -440,5 +443,5 @@ Items still waiting for the user are in section 7. Commit only when the user ask
 
 ## 8. Suggested first message for the new session
 
-> Read `/usr/local/src/jobportal/docs/HANDOFF.md` (start with the "Latest state" paragraph of section 6), `CLAUDE.md` and `docs/design/phase-1-jobseeker.md`, check the memory index, then start step 7 of Phase 1,
-> applying to a job (design it one question at a time, and I decide).
+> Read `/usr/local/src/jobportal/docs/HANDOFF.md` (start with the "Update 2026-10-07, end of session" paragraph of section 6), `CLAUDE.md` and `docs/design/phase-1-migration.md`, check the memory index, then
+> continue step 9 of Phase 1 (the data migration) with part 4: jobs and screening questions (design questions one at a time, and I decide). Parts 1 to 3 are coded and committed.

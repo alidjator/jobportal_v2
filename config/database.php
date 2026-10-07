@@ -114,6 +114,22 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        // The legacy application's database (karir.pkp), read by the `legacy:` commands of `src/LegacyImport` through a read-only account. Never the default
+        // connection. The tests point it at synthetic tables with a prefix in the test database.
+        'legacy' => [
+            'driver' => 'mariadb',
+            'host' => env('KARIR_PKP_DB_HOST', '127.0.0.1'),
+            'port' => env('KARIR_PKP_DB_PORT', '3306'),
+            'database' => env('KARIR_PKP_DB_DATABASE', ''),
+            'username' => env('KARIR_PKP_DB_USERNAME', ''),
+            'password' => env('KARIR_PKP_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => env('KARIR_PKP_DB_PREFIX', ''),
+            'prefix_indexes' => true,
+            'strict' => true,
+        ],
+
     ],
 
     /*

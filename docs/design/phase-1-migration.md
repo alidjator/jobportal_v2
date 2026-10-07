@@ -85,7 +85,7 @@ and legacy jobs that apply by URL or email.
   `published_at` = the creation time for `active` and `expired` jobs; `created_by_user_id` and the only assignee = the company owner's account. `company_name`, `job_order_id`, views, featured and highlight are not carried.
 - **Id map and report (approved 2026-10-07):** one table `legacyimport_id_map`: `id`, `entity` varchar(40) (`user`, `company`, `job`, `application`, `resume`, ...), `legacy_id` bigint unsigned, `new_id` bigint
   unsigned, `imported_at`; unique (`entity`, `legacy_id`) and an index (`entity`, `new_id`); no foreign keys; created by a migration (on the test database first, the real tables only with the user's approval) and
-  removable when everything is done. **Report:** one JSON file per run under `storage/app/legacy-import/` (not publicly reachable) with the counts read, imported and skipped per entity and the list of skipped rows by
+  removable when everything is done. **Report:** one JSON file per run under `storage/app/private/legacy-import/` on the private local disk (not publicly reachable) with the counts read, imported and skipped per entity and the list of skipped rows by
   **legacy id and reason code only**; no name, email or personal content (except the names of groups, languages and masters that did not match, which are not personal data). The same summary is printed in the terminal.
 - **Cut-over (2026-10-07):** the importers only **add** rows that are not in the id map and never overwrite a row already imported, so they can be run again (a rehearsal, then the final run) without duplicates. For the
   final run the user freezes karir.pkp (maintenance or read-only) so no data changes in the middle; a change to a row already imported is not carried. There is no `--update` mode, so nothing a user did in the new
@@ -94,6 +94,8 @@ and legacy jobs that apply by URL or email.
   skipped and reported). Name from `name`, email from `email` (lower case), `status = 0` to `deactivated` and otherwise `active`, `email_verified_at` carried as it is, account language `id`, the legacy `created_at`
   and `updated_at` kept. The registration campaign code comes from `candidates.campaign_channel` except the default value `nosession`. The legacy alert flags (`*_alert`) are not carried (the notification
   preferences start at their defaults). Terms acceptances are not carried, so every migrated user is asked to accept the terms at the first sign-in (existing gate). The migration sends no email and no notification.
+- **Writing other contexts' tables (2026-10-07, a conflict with the code standard that the user settled):** `LegacyImport` is a **documented exception**: an operational tool that may write the tables of other
+  contexts directly, only in its own Infrastructure layer, one writer class per entity; recorded in `CLAUDE.md`; its tests check the result through the real API endpoints.
 
 ## Order and coding plan (confirmed 2026-10-07, five parts)
 
@@ -109,3 +111,57 @@ and legacy jobs that apply by URL or email.
 
 Each part is tested with synthetic data in the test database; **nothing is run against production data without the user's explicit approval**, and nothing is written to the real tables except the id map migration,
 which needs the user's approval too.
+
+## Part 1 coded (2026-10-07, not committed)
+
+The context `src/LegacyImport` (an operational tool, no API) with: the read connection `legacy` (`config/database.php`, from `KARIR_PKP_DB_*`, optional `KARIR_PKP_DB_PREFIX`); the migration `000078` of the id map
+(run on the test database only, **the real table is not created**); the id map (`IdMap`: `find`, `findMany`, `remember` that keeps the first answer, `replace` for the masters); the runner (`ImportRunner`: one
+entity or all in dependency order, circles and missing dependencies refused), the report (`ImportReport`, JSON on the private local disk under `legacy-import/`, rows named by legacy id and reason code only) and
+`LegacySource` (the only way to read legacy rows); the master matcher (`MasterMatcher`: normalised name in any language, a mapping file overrides, ambiguous matches are not guessed; `MasterCatalog` lists the 15
+masters including the plain-name languages) and `MastersImporter`; the guard `LegacyConnectionGuard` (refuses an unconfigured legacy connection and one that points at the application's own database and prefix).
+Commands: `php artisan legacy:import {entity|--all} [--write] [--map=name=path]` and `legacy:masters:check [--map=path]`. **Confirmed by the user (2026-10-07):** (1) **a run is a dry run unless `--write` is given**, so nothing can
+be written by accident; (2) the report is written on the private local disk (`storage/app/private/legacy-import/`, not `storage/app/legacy-import/`); (3) the masters are worked out again at every run and stored in
+the id map as `master.<key>` (a corrected mapping file takes effect; rows already imported with the old map are not changed). The tests use synthetic legacy tables (schema only) that the test helper
+`Tests\Support\LegacySchema` creates once in the test database under the prefix `legacy_`, through the `legacy` connection (a second connection, so the test transaction is never touched). 51 new tests; suite 1228
+passed, Pint and PHPStan clean. Nothing was run against production data.
+
+## Part 2 coded (2026-10-07, not committed)
+
+Three importers (each with a writer class in Infrastructure, the documented exception): **accounts** (`AccountsImporter`, entity `accounts`, id map `user`), **companies** (`CompaniesImporter`, entity `companies`,
+id map `company`, after the masters and the accounts) and **images** (`ImagesImporter`, entity `images`, after the accounts and the companies; id maps `images.avatar`, `images.logo`, `images.banner`).
+**Accounts:** every legacy user except demo accounts; a company owner needs a `companies` row; skip reasons `demo-account`, `unknown-role`, `company-owner-without-company`, `name-missing`, `email-invalid`,
+`email-taken` (a duplicate inside the legacy data, compared case-insensitively, or an account of the new schema that already uses it); a bcrypt hash is copied (note `password-not-bcrypt` counts the others, which
+become no password); `status = 0` to `deactivated`; the language is `id`; the legacy `created_at` and `updated_at` are kept; the campaign code comes from `candidates.campaign_channel` except `nosession`, at most 64
+characters. **Companies:** name from the owner's account, the owner becomes the one `company_admin` member, slug from the name (unique, valid, never reserved, `company-<legacy id>` when the name gives nothing
+usable), website (http or https, at most 255), establishment date, bio and vision as plain text cut to 5,000, address cut to 255, the team size, the location through BPS codes (`LocationLookup`: each level must
+belong to the one above, cut at the first that does not), `visibility` to `is_visible`, the badge from `document_verified_at` (that time) or `is_profile_verified` (the run's time); skip reasons
+`owner-not-imported`, `name-missing`, `industry-unmatched`, `organization-type-unmatched`; notes `website-invalid`, `establishment-date-invalid`, `team-size-unmatched`. **Images:** read from the legacy project folder
+(`KARIR_PKP_FILES_ROOT`, looked up under `public`, `storage/app` and `storage/app/public`; a path with `..`, a null byte or a leading slash, or a link that leaves the folder, is refused: `LocalLegacyFiles`),
+checked against the admin size limit of the new upload, then through the image processor (avatar 512 by 512, logo 512 by 512, banner 1600 by 600) and stored under a random name; `candidates.photo` wins over
+`users.image`, `default.png` and empty mean no image; skip reasons `files-root-not-configured`, `file-missing`, `too-large`, `invalid-image`; an account or company that already has an image keeps it (note
+`already-has-image`). All three only add rows that are not in the id map and never overwrite; a dry run reads and reports but writes nothing (the images are still read and processed, to find the broken ones).
+New: config `config/legacy_import.php` (`KARIR_PKP_FILES_ROOT`), `LegacySource::whereIn`, `LegacyText`, `SlugMaker`. **Confirmed by the user (2026-10-07):** a dry run of a dependent entity before its parents were written reports those rows as skipped
+(the command says so); a full rehearsal means `--write` against a scratch database. **Finding (the user chose to leave them empty, 2026-10-07; to be checked in the approved run):** the legacy `companies.kelurahan` column is an `int(11)`, which cannot hold a 10-digit
+BPS village code (the largest is 2,147,483,647), so company villages and postal codes probably cannot be matched; they are then simply left empty. 56 new tests; suite 1273 passed, Pint and PHPStan clean. Nothing was
+run against production data and the real id map table does not exist yet.
+
+## Part 3 coded (2026-10-07, not committed)
+
+Seven importers for the job seeker side, writing through `JobSeekerWriter` (Infrastructure writes `jobseeker_*` directly, the documented exception): **profiles** (`ProfilesImporter`, entity `profiles`, id map `profile`
+by legacy candidate id), **experiences**, **educations**, **skills**, **languages** (the four share `CandidateListImporter`; each depends on the profiles; id maps `experiences`, `educations`, `skills`, `languages`),
+**links** (`LinksImporter`, id maps `link` and `link.website`) and **resumes** (`ResumesImporter`, id map `resume`). **Profiles:** for the job seeker accounts that were imported (a candidate of a skipped
+account is `user-not-imported`, a second row of one account `duplicate-profile`); the visibility switches start off; phone and WhatsApp as an optional `+` and 8 to 15 digits (spaces, dashes, dots and brackets
+removed) else emptied; the birth date must give an age inside the admin settings (15 to 60) else emptied; gender `male` or `female`; marital status from the known texts (English and Indonesian) else emptied; religion
+and experience level through the master map; availability `available` and `available_in` to `open_to_work`, `not_available` to `not_looking`, the `available_in` date kept only from today up to the admin window
+(30 days); the location through the BPS codes (the chain is cut where it stops being valid); headline (100) and summary (2,000, plain text); the expected salary as `monthly` when between 100,000 and 1,000,000,000,
+else dropped; the legacy timestamps are kept; notes count each emptied value. **Experiences:** the title is `job_title` else `designation`; dates are read from free text (`LegacyDates`: `2020-03`, `03/2020`,
+`15/03/2020`, `March 2020`, `Maret 2020`); the new `HistoryRules` decide, and the first failing field is the skip reason (`invalid-start_date`, ...); the employment type is matched to a job type by name; at most
+30. **Educations:** the level through the master map (`education-level-unmatched` otherwise), the institution from `name`, the year as both start and end, the GPA kept only from 0 to 4 with two decimals (note
+`gpa-invalid`), `HistoryRules` for the rest; at most 15. **Skills:** through the master map, one per skill, in order, at most 30. **Languages:** through the master map, `conversational`, at most 10. **Links:** the
+website and the social links under the new `LinkRules` (https, domain, no shortener, own domain for the named kinds), one per kind except `other` (three), eight in all; links of a company owner are
+`not-a-job-seeker`. **Resumes:** read from the legacy project folder, a PDF by content, the scan of `ResumePdf`, the admin size limit, the **newest five that pass** per user, a random name under
+`jobseeker/resumes/`; reasons `files-root-not-configured`, `file-missing`, `too-large`, `not-a-pdf`, `unsafe-pdf`, `over-limit`, `user-not-imported`. All only add rows that are not in the id map and never
+overwrite; a dry run reads and checks (the resume files too) but stores nothing. New: `LegacyDates`, `NewMasterReader::idBySlug`. 47 new tests; suite 1320 passed, Pint and PHPStan clean. Nothing was run against
+production data and the real id map table does not exist yet. **Confirmed by the user (2026-10-07):** (1) for links, the per-kind limit is counted inside one run (a re-run only adds the missing ones and does not recount the kinds
+that earlier runs wrote; the total of eight is checked against the table); (2) the legacy `candidates.cv` (a single CV uploaded through the profile settings, per the legacy source) is not migrated: the
+resumes come from `candidate_resumes` only, so a candidate who only has a `cv` uploads it again.
