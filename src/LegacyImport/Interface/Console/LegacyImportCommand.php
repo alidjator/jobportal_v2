@@ -5,7 +5,9 @@ namespace Src\LegacyImport\Interface\Console;
 use Illuminate\Console\Command;
 use InvalidArgumentException;
 use RuntimeException;
+use Src\LegacyImport\Application\ApplicationsImporter;
 use Src\LegacyImport\Application\ImportRunner;
+use Src\LegacyImport\Application\StageGroupMapping;
 
 /**
  * Imports legacy rows into the new schema. **By default it only reads and reports** (a dry run); nothing is written unless `--write` is given, and `--write`
@@ -70,10 +72,16 @@ final class LegacyImportCommand extends Command
                 throw new RuntimeException("The mapping file \"{$option}\" must be name=path to an existing file.");
             }
 
-            $decoded = json_decode((string) file_get_contents($path), true);
+            $json = (string) file_get_contents($path);
+            $decoded = json_decode($json, true);
 
             if (! is_array($decoded)) {
                 throw new RuntimeException("The mapping file \"{$path}\" is not a JSON object.");
+            }
+
+            // A decoded array cannot show a key written twice (the last one wins), so the pipeline group file is checked on its text.
+            if ($name === ApplicationsImporter::MAPPING && ($duplicates = StageGroupMapping::duplicateKeys($json)) !== []) {
+                throw new RuntimeException('The mapping file "'.$path.'" has the group "'.$duplicates[0].'" more than once.');
             }
 
             $mappings[$name] = $decoded;

@@ -5,6 +5,8 @@ namespace Src\LegacyImport\Infrastructure;
 use Illuminate\Filesystem\FilesystemManager;
 use Src\LegacyImport\Application\AccountsImporter;
 use Src\LegacyImport\Application\AccountWriter;
+use Src\LegacyImport\Application\ApplicationsImporter;
+use Src\LegacyImport\Application\ApplicationWriter;
 use Src\LegacyImport\Application\CompaniesImporter;
 use Src\LegacyImport\Application\CompanyWriter;
 use Src\LegacyImport\Application\EducationsImporter;
@@ -56,6 +58,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         JobsImporter::class,
         QuestionsImporter::class,
         JobQuestionsImporter::class,
+        ApplicationsImporter::class,
     ];
 
     /** @var array<class-string, class-string> */
@@ -68,6 +71,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         JobSeekerWriter::class => DatabaseJobSeekerWriter::class,
         JobWriter::class => DatabaseJobWriter::class,
         ScreeningWriter::class => DatabaseScreeningWriter::class,
+        ApplicationWriter::class => DatabaseApplicationWriter::class,
         LocationLookup::class => DatabaseLocationLookup::class,
         LegacyFiles::class => LocalLegacyFiles::class,
     ];

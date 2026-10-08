@@ -30,7 +30,7 @@ final readonly class ImportRunner
      * @param  array<string, array<string, mixed>>  $mappings  the mapping files by name
      * @return array{report: ImportReport, path: string}
      *
-     * @throws InvalidArgumentException when the entity is unknown
+     * @throws InvalidArgumentException when the entity is unknown or a mapping file is not valid (nothing is imported then)
      */
     public function run(?string $entity, bool $write, array $mappings = []): array
     {
@@ -41,6 +41,12 @@ final readonly class ImportRunner
 
             if ($selected === []) {
                 throw new InvalidArgumentException("Unknown entity \"{$entity}\". Known: ".implode(', ', $this->entities()).'.');
+            }
+        }
+
+        foreach ($selected as $importer) {
+            if ($importer instanceof ValidatesMappings) {
+                $importer->validateMappings($mappings);
             }
         }
 

@@ -130,6 +130,23 @@ final class LegacyImportCommandTest extends FeatureTestCase
         }
     }
 
+    public function test_a_group_mapping_with_a_duplicate_key_or_an_invalid_entry_is_refused_before_the_run(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'groups');
+
+        try {
+            file_put_contents($path, '{"142": {"stage": "interview"}, "142": {"stage": "offer"}}');
+            $this->artisan('legacy:import', ['entity' => 'applications', '--write' => true, '--map' => ['groups='.$path]])->expectsOutputToContain('"142" more than once')->assertFailed();
+
+            file_put_contents($path, '{"142": {"stage": "dinner"}}');
+            $this->artisan('legacy:import', ['entity' => 'applications', '--write' => true, '--map' => ['groups='.$path]])->expectsOutputToContain('Group mapping entry "142"')->assertFailed();
+        } finally {
+            unlink($path);
+        }
+
+        $this->assertSame(0, DB::table('legacyimport_id_map')->count());
+    }
+
     // ----- the connection -----
 
     public function test_a_legacy_connection_that_is_not_configured_is_refused(): void

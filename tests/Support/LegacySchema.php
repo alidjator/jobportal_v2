@@ -55,7 +55,7 @@ final class LegacySchema
     /** @return list<string> */
     public static function tables(): array
     {
-        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job'];
+        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs'];
 
         foreach (self::TRANSLATED_MASTERS as [$master, $translations]) {
             $tables[] = $master;
@@ -316,6 +316,33 @@ final class LegacySchema
                 $table->id();
                 $table->unsignedBigInteger('job_id')->nullable();
                 $table->unsignedBigInteger('company_question_id')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('application_groups')) {
+            $schema->create('application_groups', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id');
+                $table->string('name');
+                $table->smallInteger('order')->default(0);
+                $table->boolean('is_deleteable')->default(true);
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('applied_jobs')) {
+            $schema->create('applied_jobs', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('candidate_id')->nullable();
+                $table->unsignedBigInteger('job_id')->nullable();
+                $table->unsignedBigInteger('candidate_resume_id')->nullable();
+                $table->longText('cover_letter')->nullable();
+                $table->unsignedBigInteger('application_group_id')->nullable();
+                $table->smallInteger('order')->default(0);
+                $table->longText('answers')->nullable();
                 $table->timestamp('created_at')->nullable();
                 $table->timestamp('updated_at')->nullable();
             });

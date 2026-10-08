@@ -12,20 +12,16 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Current state (2026-10-08)
 
-- Branch `phase-1-company`, last commit is the part 5 design commit (`git log`). `master` is at tag `v0.1.0` (`ee7b463`); local repo, no remote.
+- Branch `phase-1-company`, last commit is the part 5 design handoff (`git log`). `master` is at tag `v0.1.0` (`ee7b463`); local repo, no remote.
 - **Phase 0 is complete.** Phase 1 steps 1 to 8 are coded and committed: company (with document verification), jobs, hybrid stages, screening questions,
   job seeker profile and resumes, applying, the recruiter's pipeline.
-- **Step 9, the data migration from karir.pkp (`docs/design/phase-1-migration.md`), is in progress.** Parts 1 to 4 are coded and committed (context
-  `src/LegacyImport`: runner, report, id map, master matcher, importers for accounts, companies, images, job seeker data, jobs and screening questions).
-  Companies now get their seven default stages through `DefaultStageProvisioner`.
-- **Part 5 (applications) is fully designed** (every decision is in the `## Decisions` section and the "Part 5 design" section, including the JSON group mapping file) and not coded.
+- **Step 9, the data migration from karir.pkp (`docs/design/phase-1-migration.md`), is fully coded** (parts 1 to 5, context `src/LegacyImport`: runner, report, id map, master matcher, importers for accounts,
+  companies, images, job seeker data, resumes, jobs, screening questions and applications). Part 5 (2026-10-08) is committed; its six coding choices were confirmed by the user.
 - Nothing has been run against production data. The id map migration `000078` exists only in the test database.
 
 ## Next step
 
-Code part 5 of step 9 in a fresh session: the applications importer with the JSON group mapping file (validated before the run), the snapshot built from the migrated
-profile (`migrated: true`), the two-entry stage history, the duplicate rule (newest keeps its stage, older ones `withdrawn`), a full-run test and the documents.
-Extend `tests/Support/LegacySchema.php` with `application_groups` and `applied_jobs`. After Phase 1 comes Phase 2 (collaboration, see `decisions.md` section 5).
+The approved run (needs the user's explicit approval, `KARIR_PKP_FILES_ROOT` and the two mapping files), or Phase 2 (collaboration, see `decisions.md` section 5).
 
 ## Operational facts not in `CLAUDE.md`
 
@@ -38,7 +34,7 @@ Extend `tests/Support/LegacySchema.php` with `application_groups` and `applied_j
 - After a deployment that adds a permission, `identity:sync-permissions` must be run on the real database (ask first). `tests/Feature/Platform/SettingsTest.php` lists every
   setting key: update it whenever a setting is added.
 - Running the legacy import needs `KARIR_PKP_FILES_ROOT` (not set yet) and the user's explicit approval each time; the masters mapping and the pipeline-group mapping files
-  are filled in by the user at the approved run.
+  (`--map=masters=<path>`, `--map=groups=<path>`) are filled in by the user at the approved run.
 
 ## Items waiting for the user
 
@@ -60,4 +56,4 @@ Extend `tests/Support/LegacySchema.php` with `application_groups` and `applied_j
 
 ## Suggested first message for the next session
 
-> Read `docs/HANDOFF.md` and `docs/design/phase-1-migration.md`, then code part 5 of step 9 (applications) as designed.
+> Read `docs/HANDOFF.md`, then ask me whether to start the approved migration run or Phase 2.

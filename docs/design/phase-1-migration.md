@@ -1,6 +1,6 @@
-# Phase 1: Data migration from karir.pkp (step 9, design confirmed 2026-10-07, not coded yet)
+# Phase 1: Data migration from karir.pkp (step 9, design confirmed 2026-10-07, all five parts coded)
 
-Status: design confirmed by the user on 2026-10-07 (every answer is recorded below); coding has not started.
+Status: design confirmed by the user on 2026-10-07 (every answer is recorded below); parts 1 to 5 are coded (part 5 on 2026-10-08); nothing was run against production data.
 Inputs that already exist: `decisions.md` section 5 (production data migration: yes, all core data: accounts, profiles, resumes, jobs, applications, master data; old password hashes kept if compatible; **scripts
 and tests are written from the schema and synthetic data; running them against real data, which reads personal data from production, needs the user's explicit approval at that time; read from production only,
 write to `jobportal_v2`**), the legacy findings (`docs/analysis/legacy-findings.md`) and the production schema, read through the read-only account (schema only, never data without approval).
@@ -25,6 +25,7 @@ One line per decision; the detail is in the section named. If they disagree, the
 - 2026-10-07 Cut-over: add-only, no update mode; the user freezes karir.pkp for the final run ("Cut-over").
 - 2026-10-07 `LegacyImport` may write other contexts' tables in its Infrastructure layer (documented exception, "Writing other contexts' tables").
 - 2026-10-08 Pipeline group mapping file is JSON, keyed by legacy group id, e.g. `{"142": {"stage": "interview", "create_stage": true}}`; invalid entries are rejected with a clear message ("Part 5 design").
+- 2026-10-08 Part 5 coded; the six choices made while coding were confirmed by the user the same day ("Part 5 coded").
 - Open: the user's approval is needed before any run against production data.
 
 ## Confirmed decisions
@@ -258,3 +259,25 @@ tables; the words "Shortlisted" and "Rejected" are the default group names); to 
 - **Format of the group mapping file (2026-10-08):** **JSON**, one object keyed by legacy group id; each value has `stage` (a stage type) and optional `create_stage` (boolean, only for the types `screening`, `interview` and
   `offer`). Example: `{"142": {"stage": "interview", "create_stage": true}}`. The file is validated before the run: an unknown stage type, `create_stage` on another type, a malformed entry or a duplicate key is rejected with
   a message naming the entry, and nothing is imported.
+
+## Part 5 coded (2026-10-08)
+
+The importer `ApplicationsImporter` (entity `applications`, id map `application`) with its writer `DatabaseApplicationWriter` (Infrastructure writes `recruitment_applications`, the stage history and extra stages in `recruitment_stages`,
+the documented exception). It runs after every other importer (`dependsOn` lists them all) and does what "Part 5 design" and the Decisions say: the pipeline group mapping file (`--map=groups=<path>`, `StageGroupMapping`,
+validated by the runner **before any importer runs** through the new interface `ValidatesMappings`, so a wrong file stops the run with nothing written; a duplicate key is found by the command on the file text, because a decoded
+array cannot show it), the five default group names mapped by name, the snapshot built through the real `ApplicantProfileSource` (same fields and exclusions as a normal application) plus the name and email, marked
+`migrated: true` with `migrated_at` (a user without a migrated profile gets the name, email and the marks only), the two-entry history (applicant `applied` at the legacy time; a system entry at the import time when the stage
+is another one), the duplicate rule over the whole `applied_jobs` table (the newest per applicant and job keeps its stage and the unique key, older ones are `withdrawn` with no note), the resume copy read from the migrated resume
+through the profile port and stored under `recruitment/applications/<random>.pdf` (the file is removed when a batch fails), the whole cover letter, and no notification and no event. Skip reasons: `job-missing`,
+`candidate-missing`, `user-not-imported`, `job-not-imported`, `company-not-imported`, `company-without-stages`. Notes: `already-imported`, `older-duplicate-withdrawn`, `group-missing`, `group-unmapped` (the group id and name
+are listed under `unmatched`), `stage-created`, `stage-name-taken`, `stage-limit-reached`, `stage-name-missing`, `stage-type-missing`, `no-resume`, `resume-not-migrated`, `resume-file-missing`, `answers-not-migrated` (the legacy
+`applied_jobs.answers` column exists, so this counts the rows that have something in it; nothing is migrated). Flags: `live-application-exists`, `cover-letter-cut`. The expected salary needs no code here: it comes through the
+snapshot of the migrated profile (already `monthly` with the range check). `tests/Support/LegacySchema.php` gained `application_groups` and `applied_jobs` (the columns were read from the production schema, schema only).
+27 new tests plus one command test (the full run reads the result through the company API: detail, resume and list); suite 1401 passed, Pint and PHPStan clean. Nothing was run against production data and the real id map table does not exist yet.
+
+**Six choices made while coding, all confirmed by the user (2026-10-08):** (1) an extra stage takes the **legacy group name** (cut to 60 characters, spaces collapsed); a stage of that name **and** type is reused (for example
+a group "Interview" with `create_stage` reuses the default Interview stage), a stage of that name but another type, or the company's stage limit (`recruitment.max_stages`), sends the applications to the default stage of the
+type and is noted. (2) A live application of the new system that already holds the unique key makes the imported newest one `withdrawn` (flag `live-application-exists`), so a re-run never fails on the key. (3) A cover
+letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and flagged, which departs from "imported whole" only for that size. (4) An application whose job's group has no row (`application_group_id` NULL) goes to
+`applied` (note `group-missing`). (5) The extra stages are created inside the batch transaction in the company's own order (before the terminal stages, positions shifted) and cached per company and group, so one group gives one stage.
+(6) The mapping file accepts all seven stage types (a custom group can be mapped to `hired` or `withdrawn`); `create_stage` only for `screening`, `interview` and `offer`, as designed.
