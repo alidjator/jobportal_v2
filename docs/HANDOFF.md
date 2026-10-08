@@ -23,7 +23,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Next step
 
-Continue part 5 of step 9: finish its design (one question at a time), then code it: applications with the group mapping file, the snapshot built from the
+Continue part 5 of step 9: finish its design (questions per `CLAUDE.md` rule 4), then code it: applications with the group mapping file, the snapshot built from the
 migrated profile, the two-entry stage history, the duplicate rule, a full-run test and the documents. Extend `tests/Support/LegacySchema.php` with
 `application_groups` and `applied_jobs`. After Phase 1 comes Phase 2 (collaboration, see `decisions.md` section 5).
 

@@ -13,7 +13,10 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 2. **Decision gate.** Findings in karir.pkp that violate best practice (security, bugs, architecture, performance) and every schema assumption are
    **reported and confirmed with the user first**. Never silently fix or copy them. Never assume a table or column exists or not: read the schema and confirm.
 3. **Rule conflicts.** There is no fixed priority between rules. If two rules conflict, stop and ask.
-4. **One question at a time.** Do not decide for the user; offer options, record every answer in the design document.
+4. **Questions.** Do not decide for the user; offer options with a recommendation, record every answer in the design document. Up to 3–4
+   **independent** routine decisions may be asked in one turn, numbered (relaxed 2026-10-08). Still one at a time: a decision that depends on an earlier
+   answer, a best-practice finding from the decision gate, and an uncertain schema assumption. A decision the user's answer does not mention is not accepted;
+   ask again.
 5. **Confirm before hard-to-reverse or outward-facing actions.** Commit only when asked. Running migrations or seeders against the **real** tables, and any
    write to production or the live site, needs the user's explicit approval each time.
 6. **Do not re-summarize changes.** Do not recap what was edited or repeat a change list the user can already see in the diff; report only the outcome
@@ -56,6 +59,7 @@ php -n -l <file>                          # syntax check; plain `php -l` segfaul
 
 Everything read stays in the context for the rest of the session and is sent again on every step, so read only what the step needs.
 
+- **Sessions:** design a part (questions and answers) in one session and code it in a fresh one; the design document carries the decisions across.
 - **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
