@@ -161,6 +161,16 @@ final class MasterSeedersTest extends FeatureTestCase
     }
 
     /**
+     * The same data sets as `seeders()` without the expected first name.
+     *
+     * @return array<string, array{0: class-string, 1: string, 2: list<string>}>
+     */
+    public static function seedersWithoutNames(): array
+    {
+        return array_map(fn (array $set): array => array_slice($set, 0, 3), self::seeders());
+    }
+
+    /**
      * @param  class-string  $seeder
      * @param  list<string>  $slugs
      * @param  array{id: string, en: string}  $firstName
@@ -246,7 +256,7 @@ final class MasterSeedersTest extends FeatureTestCase
      * @param  class-string  $seeder
      * @param  list<string>  $slugs
      */
-    #[DataProvider('seeders')]
+    #[DataProvider('seedersWithoutNames')]
     public function test_running_it_again_keeps_existing_rows_untouched(string $seeder, string $table, array $slugs): void
     {
         $this->seed($seeder);
