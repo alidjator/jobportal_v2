@@ -83,6 +83,11 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at);
     }
 
+    public function recordHire(Application $before, Application $after, DateTimeImmutable $at): void
+    {
+        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at);
+    }
+
     /** The new stage, the key (freed by a withdrawal) and one history entry. */
     private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
     {

@@ -9,6 +9,7 @@ use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
 use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\JobApplicationCheck;
+use Src\Recruitment\Application\OfferEmailSender;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
@@ -23,15 +24,19 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\InterviewChanged;
+use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\JobQuestionRepository;
+use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
+use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
+use Src\Recruitment\Infrastructure\Mail\MailOfferSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
@@ -41,10 +46,12 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -72,6 +79,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
         InterviewRepository::class => DatabaseInterviewRepository::class,
         InterviewEmailSender::class => MailInterviewSender::class,
+        OfferRepository::class => DatabaseOfferRepository::class,
+        OfferEmailSender::class => MailOfferSender::class,
         ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
         StageChangeEmailSender::class => MailStageChangeSender::class,
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,
@@ -81,10 +90,11 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
@@ -114,6 +124,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
+        Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
+        Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
         Event::listen(UserAnonymized::class, EraseApplicantDataWhenUserAnonymized::class);
     }
 }

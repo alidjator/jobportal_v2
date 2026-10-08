@@ -48,9 +48,13 @@ final class StageNotificationsTest extends FeatureTestCase
     {
         $body = ['stage_id' => $this->stage($type)];
 
-        // A move to an interview stage comes with its schedule; the notifications below are about the stage only.
+        // A move to an interview stage comes with its schedule and one to an offer stage with its offer; the notifications below are about the stage only.
         if ($type === 'interview') {
             $body['interview'] = $this->interviewSchedule();
+        }
+
+        if ($type === 'offer') {
+            $body['offer'] = $this->offerDetails();
         }
 
         return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $this->recruiterToken)->assertNoContent();
@@ -59,7 +63,7 @@ final class StageNotificationsTest extends FeatureTestCase
     /** @return list<object> the in-app notifications of the applicant, oldest first */
     private function notifications(?int $userId = null): array
     {
-        return DB::table('notifications')->where('notifiable_type', 'user')->where('notifiable_id', $userId ?? $this->seekerId)->where('type', 'not like', 'interview.%')->orderBy('created_at')->orderBy('id')->get()->all();
+        return DB::table('notifications')->where('notifiable_type', 'user')->where('notifiable_id', $userId ?? $this->seekerId)->where('type', 'not like', 'interview.%')->where('type', 'not like', 'offer.%')->orderBy('created_at')->orderBy('id')->get()->all();
     }
 
     /** @return list<Email> the emails the array mailer received so far */
@@ -74,7 +78,7 @@ final class StageNotificationsTest extends FeatureTestCase
     /** The emails that went to the applicant (the application itself sends none to them). */
     private function emailsToApplicant(): array
     {
-        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test' && ! preg_match('/Interview scheduled|Your interview for|Reminder: your interview|Jadwal wawancara|Wawancara untuk|Pengingat/', $email->getSubject() ?? '')));
+        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test' && ! preg_match('/Interview scheduled|Your interview for|Reminder: your interview|Jadwal wawancara|Wawancara untuk|Pengingat|Job offer for|Your job offer for|Penawaran kerja untuk/', $email->getSubject() ?? '')));
     }
 
     // ----- the four outcomes -----

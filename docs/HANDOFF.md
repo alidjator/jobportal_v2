@@ -27,7 +27,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Next step
 
-Step 2 is committed (`f7c4a10`) and `000081` ran on the real database. Step 3 (offers) is designed in `docs/design/phase-2-offers.md`; code it next; or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
+Step 2 is committed (`f7c4a10`) and `000081` ran on the real database. Step 3 (offers, `docs/design/phase-2-offers.md`) is coded, checked (1477 tests) and committed; `000082` ran on both databases. Next: design step 4 (bulk actions, R5); or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
 
 ## Operational facts not in `CLAUDE.md`
 

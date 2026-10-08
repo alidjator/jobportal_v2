@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\Events\InterviewChange;
+use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\StageType;
 
 /** The `type` keys of the in-app notifications of this context. The server stores no text: clients write the message from the key and the data. */
@@ -33,6 +34,31 @@ final class ApplicationNotificationType
     public const string INTERVIEW_DECLINED = 'interview.declined';
 
     public const string INTERVIEW_REMINDER = 'interview.reminder';
+
+    public const string OFFER_SENT = 'offer.sent';
+
+    public const string OFFER_REVISED = 'offer.revised';
+
+    public const string OFFER_WITHDRAWN = 'offer.withdrawn';
+
+    public const string OFFER_ACCEPTED = 'offer.accepted';
+
+    public const string OFFER_DECLINED = 'offer.declined';
+
+    public const string OFFER_EXPIRING = 'offer.expiring';
+
+    /** The in-app type of a change to an offer. */
+    public static function forOffer(OfferChange $change): string
+    {
+        return match ($change) {
+            OfferChange::Sent => self::OFFER_SENT,
+            OfferChange::Revised => self::OFFER_REVISED,
+            OfferChange::Withdrawn => self::OFFER_WITHDRAWN,
+            OfferChange::Accepted => self::OFFER_ACCEPTED,
+            OfferChange::Declined => self::OFFER_DECLINED,
+            OfferChange::Expiring => self::OFFER_EXPIRING,
+        };
+    }
 
     /** The in-app type of a change to an interview. */
     public static function forInterview(InterviewChange $change): string

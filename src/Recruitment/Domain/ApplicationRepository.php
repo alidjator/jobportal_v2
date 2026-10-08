@@ -34,6 +34,9 @@ interface ApplicationRepository
      */
     public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void;
 
+    /** Stores the acceptance of a job offer: the application moves to `hired`, with a history entry by the applicant. */
+    public function recordHire(Application $before, Application $after, DateTimeImmutable $at): void;
+
     /**
      * Moves every application in one stage to another stage of the same type (used when an extra stage is deleted), recording one history entry
      * per application with the system as the actor.

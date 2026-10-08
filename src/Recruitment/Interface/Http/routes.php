@@ -10,6 +10,8 @@ use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
+use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
+use Src\Recruitment\Interface\Http\Controllers\OfferController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 
 // Public: what an applicant answers for a live job. A job that is not live (or whose company is hidden) is the same 404 as on the job page; clients revalidate with the ETag.
@@ -54,6 +56,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/cancel', [InterviewController::class, 'cancel'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/complete', [InterviewController::class, 'complete'])->whereNumber('id');
+
+    Route::get('company/applications/{id}/offers', [OfferController::class, 'index'])->whereNumber('id');
+    Route::put('company/applications/{id}/offer', [OfferController::class, 'store'])->whereNumber('id');
+    Route::post('company/applications/{id}/offer/withdraw', [OfferController::class, 'withdraw'])->whereNumber('id');
 });
 
 // A job seeker applies to a live job. Applying affects another party, so the email must be verified.
@@ -72,4 +78,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('me/applications/{id}/interview/confirm', [MyInterviewController::class, 'confirm'])->whereNumber('id');
     Route::post('me/applications/{id}/interview/decline', [MyInterviewController::class, 'decline'])->whereNumber('id');
     Route::post('me/applications/{id}/interview/propose', [MyInterviewController::class, 'propose'])->whereNumber('id');
+
+    Route::get('me/applications/{id}/offer', [MyOfferController::class, 'show'])->whereNumber('id');
+    Route::post('me/applications/{id}/offer/accept', [MyOfferController::class, 'accept'])->whereNumber('id');
+    Route::post('me/applications/{id}/offer/decline', [MyOfferController::class, 'decline'])->whereNumber('id');
 });

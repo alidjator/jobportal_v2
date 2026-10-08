@@ -56,6 +56,23 @@ trait BuildsApplicationFixtures
         ], ...$overrides];
     }
 
+    /**
+     * The offer a recruiter sends with a move to an offer stage: valid for ten days, starting in three weeks.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    protected function offerDetails(array $overrides = []): array
+    {
+        return [...[
+            'position' => 'Backend Developer',
+            'salary' => 12_000_000,
+            'start_date' => now()->addDays(21)->format('Y-m-d'),
+            'note' => 'Welcome aboard.',
+            'expires_at' => now()->addDays(10)->utc()->format('Y-m-d\TH:i:s\Z'),
+        ], ...$overrides];
+    }
+
     protected function seeker(string $email, ?string $verifiedAt = '2026-10-01 00:00:00', string $name = 'Siti Rahma'): int
     {
         return (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => $verifiedAt])->id;

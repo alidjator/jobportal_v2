@@ -50,9 +50,13 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         $body = ['stage_id' => $stageId];
 
-        // A move to an interview stage comes with its schedule.
+        // A move to an interview stage comes with its schedule, and one to an offer stage with its offer.
         if (DB::table('recruitment_stages')->where('id', $stageId)->value('type') === 'interview') {
             $body['interview'] = $this->interviewSchedule();
+        }
+
+        if (DB::table('recruitment_stages')->where('id', $stageId)->value('type') === 'offer') {
+            $body['offer'] = $this->offerDetails();
         }
 
         return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $token ?? $this->recruiterToken);

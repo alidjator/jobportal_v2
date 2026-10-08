@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\Events\InterviewChange;
+use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Email\EmailTemplateDefinition;
 use Src\Shared\Application\Email\EmailVariable;
@@ -29,6 +30,26 @@ final class RecruitmentEmailTemplates
     public const string INTERVIEW_CANCELLED = 'recruitment.interview_cancelled';
 
     public const string INTERVIEW_REMINDER = 'recruitment.interview_reminder';
+
+    public const string OFFER_SENT = 'recruitment.offer_sent';
+
+    public const string OFFER_REVISED = 'recruitment.offer_revised';
+
+    public const string OFFER_WITHDRAWN = 'recruitment.offer_withdrawn';
+
+    public const string OFFER_EXPIRING = 'recruitment.offer_expiring';
+
+    /** The template for a change to an offer, or null when the job seeker is not emailed about it. */
+    public static function keyForOffer(OfferChange $change): ?string
+    {
+        return match ($change) {
+            OfferChange::Sent => self::OFFER_SENT,
+            OfferChange::Revised => self::OFFER_REVISED,
+            OfferChange::Withdrawn => self::OFFER_WITHDRAWN,
+            OfferChange::Expiring => self::OFFER_EXPIRING,
+            OfferChange::Accepted, OfferChange::Declined => null,
+        };
+    }
 
     /** The template for a change to an interview, or null when the job seeker is not emailed about it. */
     public static function keyForInterview(InterviewChange $change): ?string
@@ -57,7 +78,7 @@ final class RecruitmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::stageDefinitions(), ...self::interviewDefinitions()];
+        return [...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions()];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -164,6 +185,63 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nSemoga sukses!",
                     'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nGood luck!",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function offerDefinitions(): array
+    {
+        $variables = [
+            new EmailVariable('name', 'The applicant\'s name', 'Siti'),
+            new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
+            new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+            new EmailVariable('position', 'The position that is offered', 'Backend Developer'),
+            new EmailVariable('salary', 'The monthly salary offered', 'Rp 12.000.000'),
+            new EmailVariable('start_date', 'The start date', '2026-11-02'),
+            new EmailVariable('expires_at', 'The deadline to answer (Jakarta time)', '2026-10-20 17:00 WIB'),
+        ];
+
+        return [
+            new EmailTemplateDefinition(
+                self::OFFER_SENT,
+                'Sent to an applicant when a job offer is sent for their application.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}}', 'en' => 'Job offer for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengirim penawaran kerja untuk {{job_title}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} sent you a job offer for {{job_title}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}\n\nOpen your account to accept or decline the offer.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::OFFER_REVISED,
+                'Sent to an applicant when their job offer was replaced by a new one.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}} diperbarui', 'en' => 'Your job offer for {{job_title}} was updated']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} memperbarui penawaran kerja untuk {{job_title}}. Penawaran sebelumnya tidak berlaku lagi.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} updated the job offer for {{job_title}}. The earlier offer no longer applies.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}\n\nOpen your account to accept or decline the offer.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::OFFER_WITHDRAWN,
+                'Sent to an applicant when their job offer is withdrawn.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}} ditarik', 'en' => 'Your job offer for {{job_title}} was withdrawn']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} menarik penawaran kerja untuk {{job_title}}.\n\nBuka akun Anda untuk melihat status lamaran.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} withdrew the job offer for {{job_title}}.\n\nOpen your account to see the status of your application.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::OFFER_EXPIRING,
+                'Sent to an applicant about a day before their job offer expires.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}} segera berakhir', 'en' => 'Your job offer for {{job_title}} expires soon']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPenawaran kerja dari {{company_name}} untuk {{job_title}} berlaku sampai {{expires_at}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\n\nBuka akun Anda untuk menerima atau menolaknya sebelum waktunya habis.",
+                    'en' => "Hello {{name}},\n\nThe job offer from {{company_name}} for {{job_title}} is valid until {{expires_at}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\n\nOpen your account to accept or decline it before time runs out.",
                 ]),
             ),
         ];

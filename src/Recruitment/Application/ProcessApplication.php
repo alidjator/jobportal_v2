@@ -7,8 +7,12 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
+use Src\Recruitment\Domain\Events\OfferChange;
+use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\Offer;
+use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageRepository;
@@ -29,7 +33,8 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * with another recruiter) runs after it and meets its result. They work for the members who may see the job, on a job in any status but `taken_down`.
  *
  * A move to an interview stage needs an interview schedule (the one in the request, or an active one the application already has) and saves it with the move;
- * a rejection cancels the active interview.
+ * a move to an offer stage needs an offer the same way. A rejection cancels the active interview and withdraws the pending offer, and so does a move out of
+ * the offer stage (an offer only lives while the application is in an offer stage).
  */
 final readonly class ProcessApplication
 {
@@ -43,6 +48,8 @@ final readonly class ProcessApplication
         private JobDirectory $jobs,
         private InterviewRepository $interviews,
         private InterviewScheduler $scheduler,
+        private OfferRepository $offers,
+        private OfferPlacer $offerPlacer,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -52,18 +59,18 @@ final readonly class ProcessApplication
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
      * @throws StateConflict `application-final`, `already-in-stage` or `job-taken-down`
-     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview` or `invalid-interviewer`
+     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input` or `invalid-offer`
      */
-    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null): void
+    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null): void
     {
-        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview): array {
+        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer): array {
             $stage = $this->companyStage($application->companyId, $stageId) ?? throw new BusinessRuleViolation(
                 'Choose one of your company\'s stages.', 'invalid-stage', extensions: ['errors' => ['stage_id' => ['Choose one of your company\'s stages.']]],
             );
 
             $moved = $application->moveTo($stageId, $stage->type);
 
-            return [$moved, null, null, $this->interviewFor($member, $moved, $stage->type, $interview)];
+            return [$moved, null, null, [...$this->interviewFor($member, $moved, $stage->type, $interview), ...$this->offerFor($member, $moved, $stage->type, $offer)]];
         });
     }
 
@@ -82,8 +89,9 @@ final readonly class ProcessApplication
                 ?? throw new StateConflict('This company cannot reject applications right now.', 'applications-unavailable');
 
             $cancelled = $this->interviews->cancelActive((int) $application->id);
+            $extra = $cancelled instanceof Interview ? [InterviewChanged::of(InterviewChange::Cancelled, $application, $cancelled, $this->clock->now())] : [];
 
-            return [$application->reject((int) $rejected->id), $reason, $note, $cancelled instanceof Interview ? [InterviewChanged::of(InterviewChange::Cancelled, $application, $cancelled, $this->clock->now())] : []];
+            return [$application->reject((int) $rejected->id), $reason, $note, [...$extra, ...$this->withdrawOffer($application)]];
         });
     }
 
@@ -140,9 +148,46 @@ final readonly class ProcessApplication
         return [];
     }
 
-    private function refuse(string $code, string $message): never
+    /**
+     * The offer of a move, like the interview: the one in the request is saved (it replaces a pending one); a move to an offer stage without one needs a
+     * pending offer already; an offer for any other stage is refused, and a move out of the offer stage withdraws the pending offer.
+     *
+     * @return list<DomainEvent>
+     */
+    private function offerFor(RecruitmentMember $member, Application $application, StageType $target, ?OfferInput $input): array
     {
-        throw new BusinessRuleViolation($message, $code, extensions: ['errors' => ['interview' => [$message]]]);
+        if ($target !== StageType::Offer) {
+            if ($input instanceof OfferInput) {
+                $this->refuse('invalid-offer-input', 'An offer can only be sent when moving to an offer stage.', 'offer');
+            }
+
+            return $this->withdrawOffer($application);
+        }
+
+        if ($input instanceof OfferInput) {
+            return [$this->offerPlacer->place($member, $application, $input)];
+        }
+
+        $active = $this->offers->active((int) $application->id);
+
+        if (! $active instanceof Offer || ! $active->isOpenAt($this->clock->now())) {
+            $this->refuse('offer-required', 'Send the offer when moving an application to an offer stage.', 'offer');
+        }
+
+        return [];
+    }
+
+    /** @return list<DomainEvent> */
+    private function withdrawOffer(Application $application): array
+    {
+        $withdrawn = $this->offers->withdrawActive((int) $application->id);
+
+        return $withdrawn instanceof Offer ? [OfferChanged::of(OfferChange::Withdrawn, $application, $withdrawn, $this->clock->now())] : [];
+    }
+
+    private function refuse(string $code, string $message, string $field = 'interview'): never
+    {
+        throw new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }
 
     private function companyStage(int $companyId, int $stageId): ?Stage
