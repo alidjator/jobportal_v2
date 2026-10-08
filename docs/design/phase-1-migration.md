@@ -7,6 +7,25 @@ write to `jobportal_v2`**), the legacy findings (`docs/analysis/legacy-findings.
 Questions deferred by the user to this step: the mapping of `applied_jobs` (jobs with a NULL `job_id`, the legacy pipeline groups, the profile snapshot, duplicates, `answers`, long cover letters, the history)
 and legacy jobs that apply by URL or email.
 
+## Decisions
+
+One line per decision; the detail is in the section named. If they disagree, the detail section wins.
+
+- 2026-10-07 Tooling: artisan commands, one idempotent importer per entity, `--dry-run`, context `LegacyImport` (Confirmed decisions, "Tooling").
+- 2026-10-07 Scope: accounts, companies, profiles, resumes, jobs, screening questions, applications; no plans, orders or payments ("Scope").
+- 2026-10-07 Accounts: all except demo; inactive become `deactivated`; bcrypt hashes kept, social ids dropped; legacy admins not migrated ("Which accounts", "Passwords", "Legacy admins", "Account mapping").
+- 2026-10-07 Companies: `active`, verified badge kept, no documents; default seven stages through `DefaultStageProvisioner` ("Company status and badge", "Company and job mapping", "Part 5 design").
+- 2026-10-07 Jobs: status mapping, pending-edit copies skipped, apply-by-email or URL imported `closed`, description converted to Markdown, tags not carried ("Job status", "Legacy jobs", "Rich text", "Job skills").
+- 2026-10-07 Masters: matched by normalised name plus an optional mapping file; unmatched are reported, never created ("Master data mapping", "Languages").
+- 2026-10-07 Profiles, images, resumes: new rules apply to migrated rows; invalid rows skipped and reported; discoverability starts off ("Job seeker profile mapping", "Experience and education", "Images", "Resume files", "Profile visibility").
+- 2026-10-07 Screening questions: every legacy question becomes a text question; `reuse = 0` archived ("Screening questions").
+- 2026-10-07 Applications: snapshot built from the migrated profile and marked `migrated`; newest duplicate keeps its stage, older ones `withdrawn`; whole cover letter; two-entry history; salary `monthly` with range check ("Snapshot", "Duplicate applications", "Cover letter and history", "Expected salary").
+- 2026-10-07 Pipeline groups: the five default names mapped by name (`No Group` and `All Applications` to `applied`, `Shortlisted` to `screening`, `Interview` to `interview`, `Rejected` to `rejected`); a mapping file overrides and covers custom groups; unmapped go to `applied` and are reported ("Legacy pipeline groups", "Part 5 design").
+- 2026-10-07 Id map and report: table `legacyimport_id_map`; JSON report with legacy ids and reason codes only ("Id map and report").
+- 2026-10-07 Cut-over: add-only, no update mode; the user freezes karir.pkp for the final run ("Cut-over").
+- 2026-10-07 `LegacyImport` may write other contexts' tables in its Infrastructure layer (documented exception, "Writing other contexts' tables").
+- Open: part 5 design is still in progress; the user's approval is needed before any run against production data.
+
 ## Confirmed decisions
 
 - **Tooling (2026-10-07):** **artisan commands, one importer per entity**, in a dedicated context `LegacyImport` (no API). Each importer is **idempotent** through an id-map table (legacy id to new id), so it is safe to
