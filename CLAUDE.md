@@ -64,6 +64,8 @@ Everything read stays in the context for the rest of the session and is sent aga
 - **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
   Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.
+- **Exit code:** trust the exit code, not the JSON summary: it can say `"passed"` while a PHPUnit warning makes the run exit with 1. In that case, see the
+  warning with `env -u AI_AGENT -u CLAUDECODE -u CLAUDE_CODE vendor/bin/phpunit --no-progress 2>&1 | tail -n 40 | cut -c1-4000`.
 
 ## Live site
 
