@@ -60,6 +60,9 @@ php -n -l <file>                          # syntax check; plain `php -l` segfaul
 Everything read stays in the context for the rest of the session and is sent again on every step, so read only what the step needs.
 
 - **Sessions:** design a part (questions and answers) in one session and code it in a fresh one; the design document carries the decisions across.
+- **Design documents:** each starts with a short `## Decisions` section (one line per decision: date, decision, link to its detail section; aim for
+  2–4 KB). Read that section first, then the detail sections you need via `grep -n`. Record every new answer in both places in the same edit; if they
+  disagree, the detail section wins. A document without the section gets one the next time it is edited (added 2026-10-08).
 - **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
