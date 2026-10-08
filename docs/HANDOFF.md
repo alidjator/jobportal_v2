@@ -23,11 +23,11 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Leftovers (details in the design doc): legacy group "dev" (7 applications) left unmapped on purpose; 10 accounts need a password reset; some files and masters did not match.
 
 - **Phase 2 started (2026-10-08):** order is notes and ratings, interview scheduling, offers, bulk actions, CSV export, chat (`docs/design/phase-2-notes.md`). Step 1 (notes and ratings) is coded and
-  checked (1414 tests) but **not committed**; migrations `000079` and `000080` ran on the test database only, the real tables need approval.
+  committed (`bbb0a18`); its migrations `000079` and `000080` ran on the real database.
 
 ## Next step
 
-Commit step 1 and run its migrations on the real tables (with approval), then design step 2 (interview scheduling, R7b); or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
+Design step 2 (interview scheduling, R7b) with the user, one batch of questions at a time; or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
 
 ## Operational facts not in `CLAUDE.md`
 
@@ -63,4 +63,4 @@ Commit step 1 and run its migrations on the real tables (with approval), then de
 
 ## Suggested first message for the next session
 
-> Read `docs/HANDOFF.md`, then ask me whether to start the approved migration run or Phase 2.
+> Read `docs/HANDOFF.md`, then ask me whether to continue Phase 2 (step 2, interview scheduling) or the import follow-ups.

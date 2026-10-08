@@ -1,4 +1,4 @@
-# Phase 2, step 1: internal notes and ratings (R7a, designed and coded 2026-10-08, not committed)
+# Phase 2, step 1: internal notes and ratings (R7a, designed and coded 2026-10-08, committed `bbb0a18`)
 
 Phase 2 order (confirmed 2026-10-08): 1 notes and ratings (R7a), 2 interview scheduling (R7b), 3 offers (R7c), 4 bulk actions (R5), 5 CSV export (R13), 6 chat with attachments (J9).
 Each step is designed before it is coded. Context: `Recruitment`.
@@ -31,7 +31,7 @@ Each step is designed before it is coded. Context: `Recruitment`.
 
 ## Coded (2026-10-08)
 
-- Migrations `000079` (notes) and `000080` (ratings, a check on 1 to 5 and a unique key per member). They ran on the test database only; the real tables need the user's approval.
+- Migrations `000079` (notes) and `000080` (ratings, a check on 1 to 5 and a unique key per member). They ran on the test database and, with the user's approval, on the real database.
 - Use cases: `ListApplicationNotes`, `AddApplicationNote`, `UpdateApplicationNote`, `DeleteApplicationNote`, `RateApplication` (rate and withdraw), over `TeamApplicationLookup` (the same
   access as the application detail). Errors: 422 `invalid-note`, 422 `invalid-rating`, 403 `not-note-author`, 409 `application-final` (ratings on a rejected, withdrawn or hired application).
 - A note whose text is only blank is a plain validation 422 (the empty-string middleware makes it null); a text over 2,000 characters is `invalid-note`.
