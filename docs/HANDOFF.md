@@ -23,6 +23,10 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Next step
 
+First steps of the part 5 design session: (1) ask the user to commit the uncommitted part 5 work (`docs/design/phase-1-migration.md`,
+`src/LegacyImport/Application/CompaniesImporter.php`, default stages for migrated companies); (2) give `phase-1-migration.md` its `## Decisions`
+section (`CLAUDE.md`, "Design documents") and commit it separately.
+
 Continue part 5 of step 9: finish its design (questions per `CLAUDE.md` rule 4), then code it: applications with the group mapping file, the snapshot built from the
 migrated profile, the two-entry stage history, the duplicate rule, a full-run test and the documents. Extend `tests/Support/LegacySchema.php` with
 `application_groups` and `applied_jobs`. After Phase 1 comes Phase 2 (collaboration, see `decisions.md` section 5).
