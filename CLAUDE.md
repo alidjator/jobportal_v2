@@ -31,7 +31,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   Infrastructure layer, one writer class per entity, because it must set values the application never writes (`verified_at`, historical stages and times, legacy timestamps); its tests check the result through the real API.
 - **English everywhere:** identifiers, comments, documentation, commit messages, API error messages. Map Indonesian terms to common job-portal English
   (lamaran = application, lowongan = job, pelamar = applicant, perusahaan = company). New table, column and route names are designed freely, not bound to legacy names.
-- Match the surrounding code (comment density, naming, idiom). Every new behaviour gets tests; Pint and PHPStan must be clean.
+- Match the surrounding code (comment density, naming, idiom). Every new behaviour gets tests (written with the code); Pint and PHPStan must be clean before a commit, checked in the separate check step below.
 
 ## Database
 
@@ -66,8 +66,8 @@ Everything read stays in the context for the rest of the session and is sent aga
 - **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
-- **Checks:** while coding, run only the tests of the folder or file you touch; run `composer check` once when a part is done, not Pint, PHPStan and
-  the suite as three separate steps.
+- **Checks (decided 2026-10-08):** testing, debugging and linting are a separate step from coding. After writing code do not run tests, Pint or PHPStan on your own; run them only when the user asks. When asked,
+  run `composer check` once (not Pint, PHPStan and the suite as three separate steps), or only the tests of the folder or file the user names.
 - **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
   Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.

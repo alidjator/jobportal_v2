@@ -2,8 +2,11 @@
 
 namespace Src\Recruitment\Infrastructure;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
@@ -65,6 +68,11 @@ use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class RecruitmentServiceProvider extends ContextServiceProvider
 {
+    /** The name of the route limiter of the applicant export: 10 exports per member per hour. */
+    public const string EXPORT_LIMITER = 'applicant-export';
+
+    private const int EXPORTS_PER_HOUR = 10;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         StageRepository::class => DatabaseStageRepository::class,
@@ -118,6 +126,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        RateLimiter::for(self::EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::EXPORTS_PER_HOUR)->by('applicant-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         Event::listen(ApplicationSubmitted::class, NotifyAssigneesOfApplication::class);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);

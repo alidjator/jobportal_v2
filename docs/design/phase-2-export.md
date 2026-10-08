@@ -1,4 +1,4 @@
-# Phase 2, step 5: applicant CSV export (R13, designed 2026-10-08, not coded)
+# Phase 2, step 5: applicant CSV export (R13, designed and coded 2026-10-08)
 
 Context: `Recruitment` (the export), `Platform` (the audit entry). Spec in `decisions.md` (R13): applicant CSV export per job by company admins and assigned recruiters; every export is audit-logged
 (action `export.applicants`, already named in `phase-0-schema.md`). No table is needed (`gap-analysis.md`).
@@ -27,3 +27,12 @@ Context: `Recruitment` (the export), `Platform` (the audit entry). Spec in `deci
 - **Screening answers:** a multi-choice answer is its choices joined with `; `; an unanswered question is empty; archived questions that the job still holds are included, in the job's question order.
 - **Not in the export:** notes, ratings by person, interviews, offers, resume files and rejection reasons (the last stays hidden from applicants and is not a column by decision).
 - **No migration, no new permission, no new setting.** The audit action constant is added to `AuditAction`; the throttle limit lives in the route definition (a named rate limiter).
+
+## Coded (2026-10-08)
+
+- No migration. Endpoint `GET company/jobs/{id}/applications/export` (filters and `sort` as the list, no paging; throttle `applicant-export`, 10 per member per hour, then 429).
+- Use case `ExportJobApplications`; `RecruiterApplicationReader::export` yields the rows (ids first, then chunks of 200); `CsvDownload` writes the file (BOM, CRLF, formula guard). Audit action `export.applicants`
+  through `ApplicantsExported` and the **non-queued** listener `RecordRecruitmentAuditEntries` (so a failed audit fails the export). Metadata: `filters`, `row_count`, `company_id`.
+- Choices made while coding: the use case collects the rows (a job has few applications) so the count is exact before the audit; the audit is written before the file is returned; the file date is the use case clock's (UTC);
+  the salary period column holds the English name; answers to a multiple choice are joined with `; `.
+- Tests: `ApplicantExportTest` (8).

@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use Src\Recruitment\Application\ApplicantExportRow;
 use Src\Recruitment\Application\RecruiterApplicationDetailData;
 use Src\Recruitment\Application\RecruiterApplicationQuery;
 use Src\Recruitment\Application\RecruiterApplicationReader;
@@ -24,9 +25,56 @@ use stdClass;
  */
 final readonly class DatabaseRecruiterApplicationReader implements RecruiterApplicationReader
 {
+    private const int EXPORT_CHUNK = 200;
+
+    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers) {}
 
     public function page(RecruiterApplicationQuery $query, PageRequest $request): Page
+    {
+        $filtered = $this->filtered($query);
+
+        $total = (clone $filtered)->count();
+        $direction = $query->newestFirst ? 'desc' : 'asc';
+
+        $rows = $this->withRatings($filtered)
+            ->orderBy('a.applied_at', $direction)
+            ->orderBy('a.id', $direction)
+            ->offset($request->offset())
+            ->limit($request->perPage)
+            ->get(self::ROW_COLUMNS)
+            ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row))
+            ->all();
+
+        return new Page($rows, $total, $request);
+    }
+
+    public function export(RecruiterApplicationQuery $query): iterable
+    {
+        $direction = $query->newestFirst ? 'desc' : 'asc';
+
+        // The ids are read first and the rows in chunks, so the export stays consistent while applications arrive and memory stays flat.
+        $ids = $this->filtered($query)->orderBy('a.applied_at', $direction)->orderBy('a.id', $direction)->pluck('a.id')->map(static fn (mixed $id): int => (int) $id)->all();
+
+        foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
+            $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))
+                ->get([...self::ROW_COLUMNS, 'a.job_id'])
+                ->keyBy('id');
+
+            foreach ($chunk as $id) {
+                $row = $rows[$id] ?? null;
+
+                if ($row instanceof stdClass) {
+                    $snapshot = $this->snapshot($row->profile_snapshot);
+
+                    yield new ApplicantExportRow($this->toRow($row), $snapshot['email'] ?? null, $snapshot['phone'] ?? null, $this->answers->forApplication($id, (int) $row->job_id));
+                }
+            }
+        }
+    }
+
+    private function filtered(RecruiterApplicationQuery $query): Builder
     {
         $filtered = $this->connection->table('recruitment_applications as a')
             ->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')
@@ -40,23 +88,15 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $filtered->whereRaw("JSON_UNQUOTE(JSON_EXTRACT({$column}, '\$.name')) COLLATE utf8mb4_unicode_ci LIKE ?", ['%'.addcslashes($query->search, '%_\\').'%']);
         }
 
-        $total = (clone $filtered)->count();
-        $direction = $query->newestFirst ? 'desc' : 'asc';
+        return $filtered;
+    }
 
-        // The ratings are summed per application in one grouped query, so the page needs no lookup per row.
+    /** The ratings are summed per application in one grouped query, so a page needs no lookup per row. */
+    private function withRatings(Builder $builder): Builder
+    {
         $ratings = $this->connection->table('recruitment_application_ratings')->groupBy('application_id')->selectRaw('application_id, AVG(stars) as rating_average, COUNT(*) as rating_count');
 
-        $rows = $filtered
-            ->leftJoinSub($ratings, 'r', 'r.application_id', '=', 'a.id')
-            ->orderBy('a.applied_at', $direction)
-            ->orderBy('a.id', $direction)
-            ->offset($request->offset())
-            ->limit($request->perPage)
-            ->get(['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'])
-            ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row))
-            ->all();
-
-        return new Page($rows, $total, $request);
+        return $builder->leftJoinSub($ratings, 'r', 'r.application_id', '=', 'a.id');
     }
 
     public function countByStage(int $jobId): array
