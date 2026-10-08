@@ -22,9 +22,12 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
   Report: `storage/app/private/legacy-import/20261008-075847-all-write.json`. The importer only adds: a re-run does not fix rows already imported.
 - Leftovers (details in the design doc): legacy group "dev" (7 applications) left unmapped on purpose; 10 accounts need a password reset; some files and masters did not match.
 
+- **Phase 2 started (2026-10-08):** order is notes and ratings, interview scheduling, offers, bulk actions, CSV export, chat (`docs/design/phase-2-notes.md`). Step 1 (notes and ratings) is coded and
+  checked (1414 tests) but **not committed**; migrations `000079` and `000080` ran on the test database only, the real tables need approval.
+
 ## Next step
 
-Phase 2 (collaboration, see `decisions.md` section 5), or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
+Commit step 1 and run its migrations on the real tables (with approval), then design step 2 (interview scheduling, R7b); or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
 
 ## Operational facts not in `CLAUDE.md`
 

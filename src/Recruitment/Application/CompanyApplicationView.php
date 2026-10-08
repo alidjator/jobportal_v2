@@ -18,5 +18,6 @@ final readonly class CompanyApplicationView
         public string $stageName,
         public array $stageNames,
         public array $actorNames,
+        public ApplicationRatingView $rating,
     ) {}
 }

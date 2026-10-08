@@ -43,12 +43,16 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         $total = (clone $filtered)->count();
         $direction = $query->newestFirst ? 'desc' : 'asc';
 
+        // The ratings are summed per application in one grouped query, so the page needs no lookup per row.
+        $ratings = $this->connection->table('recruitment_application_ratings')->groupBy('application_id')->selectRaw('application_id, AVG(stars) as rating_average, COUNT(*) as rating_count');
+
         $rows = $filtered
+            ->leftJoinSub($ratings, 'r', 'r.application_id', '=', 'a.id')
             ->orderBy('a.applied_at', $direction)
             ->orderBy('a.id', $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
-            ->get(['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 's.name as stage_name'])
+            ->get(['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'])
             ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row))
             ->all();
 
@@ -133,6 +137,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             StageType::from($row->stage_type),
             (string) $row->stage_name,
             $this->time((string) $row->applied_at),
+            $row->rating_average === null ? null : round((float) $row->rating_average, 1),
+            (int) $row->rating_count,
         );
     }
 

@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
+use Src\Recruitment\Interface\Http\Controllers\ApplicationNoteController;
+use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
@@ -37,6 +39,13 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('company/applications/{id}/move', [CompanyApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/applications/{id}/reject', [CompanyApplicationController::class, 'reject'])->whereNumber('id');
+
+    Route::get('company/applications/{id}/notes', [ApplicationNoteController::class, 'index'])->whereNumber('id');
+    Route::post('company/applications/{id}/notes', [ApplicationNoteController::class, 'store'])->whereNumber('id');
+    Route::put('company/applications/{id}/notes/{noteId}', [ApplicationNoteController::class, 'update'])->whereNumber(['id', 'noteId']);
+    Route::delete('company/applications/{id}/notes/{noteId}', [ApplicationNoteController::class, 'destroy'])->whereNumber(['id', 'noteId']);
+    Route::put('company/applications/{id}/rating', [ApplicationRatingController::class, 'update'])->whereNumber('id');
+    Route::delete('company/applications/{id}/rating', [ApplicationRatingController::class, 'destroy'])->whereNumber('id');
 });
 
 // A job seeker applies to a live job. Applying affects another party, so the email must be verified.

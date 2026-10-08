@@ -29,6 +29,7 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
+            'rating' => (new ApplicationRatingResource($view->rating))->resolve($request),
             'applicant' => $data->snapshot === null
                 ? ['is_deleted' => true, 'name' => null]
                 : ['is_deleted' => false, ...array_diff_key($data->snapshot, ['version' => true])],

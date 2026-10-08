@@ -15,6 +15,8 @@ use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
 use Src\Recruitment\Domain\ApplicantDataEraser;
+use Src\Recruitment\Domain\ApplicationNoteRepository;
+use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
@@ -27,6 +29,8 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
@@ -56,6 +60,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
+        ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
+        ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
         ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
         StageChangeEmailSender::class => MailStageChangeSender::class,
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,

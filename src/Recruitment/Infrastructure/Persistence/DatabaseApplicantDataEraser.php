@@ -27,6 +27,11 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereNotNull('answer_text')
             ->update(['answer_text' => null]);
 
+        // Notes may quote the applicant, so they go with the rest of the personal content; the ratings hold no personal data and stay.
+        $this->connection->table('recruitment_application_notes')
+            ->whereIn('application_id', (clone $applications)->select('id'))
+            ->delete();
+
         $applications->update([
             'cover_letter' => null,
             'withdrawn_note' => null,

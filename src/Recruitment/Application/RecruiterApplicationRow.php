@@ -29,5 +29,7 @@ final readonly class RecruiterApplicationRow
         public StageType $stageType,
         public string $stageName,
         public DateTimeImmutable $appliedAt,
+        public ?float $ratingAverage = null,
+        public int $ratingCount = 0,
     ) {}
 }

@@ -31,6 +31,7 @@ final class CompanyApplicationResource extends JsonResource
                 'age' => $row->age,
             ],
             'meets_must_have' => $row->meetsMustHave,
+            'rating' => ['average' => $row->ratingAverage, 'count' => $row->ratingCount],
             'stage' => ['id' => $row->stageId, 'type' => $row->stageType->value, 'name' => $row->stageName],
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
         ];

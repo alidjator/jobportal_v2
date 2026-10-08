@@ -20,6 +20,7 @@ final readonly class GetCompanyApplication
         private StageRepository $stages,
         private JobDirectory $jobs,
         private CompanyMemberAccounts $accounts,
+        private ApplicationRatings $ratings,
     ) {}
 
     /**
@@ -58,6 +59,7 @@ final readonly class GetCompanyApplication
             $stageNames[$data->stageId] ?? $data->stageType->defaultName(),
             $stageNames,
             $actorNames,
+            $this->ratings->view($id, $member->userId),
         );
     }
 }
