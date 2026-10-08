@@ -12,24 +12,20 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Current state (2026-10-08)
 
-- Branch `phase-1-company`, last commit `7d6285f` (part 4 of step 9). `master` is at tag `v0.1.0` (`ee7b463`); local repo, no remote.
+- Branch `phase-1-company`, last commit is the part 5 design commit (`git log`). `master` is at tag `v0.1.0` (`ee7b463`); local repo, no remote.
 - **Phase 0 is complete.** Phase 1 steps 1 to 8 are coded and committed: company (with document verification), jobs, hybrid stages, screening questions,
   job seeker profile and resumes, applying, the recruiter's pipeline.
 - **Step 9, the data migration from karir.pkp (`docs/design/phase-1-migration.md`), is in progress.** Parts 1 to 4 are coded and committed (context
   `src/LegacyImport`: runner, report, id map, master matcher, importers for accounts, companies, images, job seeker data, jobs and screening questions).
-- **Part 5 (applications) is being designed** and is not committed: the "Part 5 design" section of `phase-1-migration.md` (group mapping by name and by mapping file),
-  and `CompaniesImporter` now gives every migrated company its seven default stages through `DefaultStageProvisioner`.
+  Companies now get their seven default stages through `DefaultStageProvisioner`.
+- **Part 5 (applications) is fully designed** (every decision is in the `## Decisions` section and the "Part 5 design" section, including the JSON group mapping file) and not coded.
 - Nothing has been run against production data. The id map migration `000078` exists only in the test database.
 
 ## Next step
 
-First steps of the part 5 design session: (1) ask the user to commit the uncommitted part 5 work (`docs/design/phase-1-migration.md`,
-`src/LegacyImport/Application/CompaniesImporter.php`, default stages for migrated companies); (2) give `phase-1-migration.md` its `## Decisions`
-section (`CLAUDE.md`, "Design documents") and commit it separately.
-
-Continue part 5 of step 9: finish its design (questions per `CLAUDE.md` rule 4), then code it: applications with the group mapping file, the snapshot built from the
-migrated profile, the two-entry stage history, the duplicate rule, a full-run test and the documents. Extend `tests/Support/LegacySchema.php` with
-`application_groups` and `applied_jobs`. After Phase 1 comes Phase 2 (collaboration, see `decisions.md` section 5).
+Code part 5 of step 9 in a fresh session: the applications importer with the JSON group mapping file (validated before the run), the snapshot built from the migrated
+profile (`migrated: true`), the two-entry stage history, the duplicate rule (newest keeps its stage, older ones `withdrawn`), a full-run test and the documents.
+Extend `tests/Support/LegacySchema.php` with `application_groups` and `applied_jobs`. After Phase 1 comes Phase 2 (collaboration, see `decisions.md` section 5).
 
 ## Operational facts not in `CLAUDE.md`
 
@@ -64,4 +60,4 @@ migrated profile, the two-entry stage history, the duplicate rule, a full-run te
 
 ## Suggested first message for the next session
 
-> Read `docs/HANDOFF.md` and `docs/design/phase-1-migration.md`, then continue part 5 of step 9 (applications): design questions one at a time, and I decide.
+> Read `docs/HANDOFF.md` and `docs/design/phase-1-migration.md`, then code part 5 of step 9 (applications) as designed.
