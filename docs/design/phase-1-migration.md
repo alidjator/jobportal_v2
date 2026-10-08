@@ -1,4 +1,4 @@
-# Phase 1: Data migration from karir.pkp (step 9, design confirmed 2026-10-07, all five parts coded)
+# Phase 1: Data migration from karir.pkp (step 9, design confirmed 2026-10-07, all five parts coded, first real run done 2026-10-08)
 
 Status: design confirmed by the user on 2026-10-07 (every answer is recorded below); parts 1 to 5 are coded (part 5 on 2026-10-08); nothing was run against production data.
 Inputs that already exist: `decisions.md` section 5 (production data migration: yes, all core data: accounts, profiles, resumes, jobs, applications, master data; old password hashes kept if compatible; **scripts
@@ -281,3 +281,13 @@ type and is noted. (2) A live application of the new system that already holds t
 letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and flagged, which departs from "imported whole" only for that size. (4) An application whose job's group has no row (`application_group_id` NULL) goes to
 `applied` (note `group-missing`). (5) The extra stages are created inside the batch transaction in the company's own order (before the terminal stages, positions shifted) and cached per company and group, so one group gives one stage.
 (6) The mapping file accepts all seven stage types (a custom group can be mapped to `hired` or `withdrawn`); `create_stage` only for `screening`, `interview` and `offer`, as designed.
+
+## First real run (2026-10-08)
+
+- Order: `migrate` on the real database (creates `legacyimport_id_map`), masters dry run, a full rehearsal (`--all --write`) in a scratch database `test_jobportal_rehearsal`
+  with its own storage path, then the same run on `jobportal_v2` after the user's explicit approval. Both runs gave identical numbers. The scratch database was dropped.
+- Used no mapping files. The user chose to leave the legacy group "dev" (id 13, company 3, 7 applications) unmapped, so those applications are in `applied` with no trace of the
+  group in their history. The importer is add-only: moving them later needs manual SQL, or deleting the applications and their id map rows and importing again.
+- Result: 887 id map rows; accounts 179, profiles 173, companies 3, jobs 149 (notes: 116 incomplete description, 26 incomplete skills, 3 expired by deadline), applications 30.
+- Skipped: 17 avatars and 9 resumes missing on disk, 2 resumes over the size limit, 12 applications whose resume was not migrated, 71 candidate skills, 9 languages, 13 experiences,
+  11 screening questions. Masters with no match: industries 18, languages 159, skills 7, religions 2, organization type 1. 10 accounts have non-bcrypt passwords.

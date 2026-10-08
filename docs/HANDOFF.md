@@ -17,11 +17,14 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
   job seeker profile and resumes, applying, the recruiter's pipeline.
 - **Step 9, the data migration from karir.pkp (`docs/design/phase-1-migration.md`), is fully coded** (parts 1 to 5, context `src/LegacyImport`: runner, report, id map, master matcher, importers for accounts,
   companies, images, job seeker data, resumes, jobs, screening questions and applications). Part 5 (2026-10-08) is committed; its six coding choices were confirmed by the user.
-- Nothing has been run against production data. The id map migration `000078` exists only in the test database.
+- **The first real run is done (2026-10-08):** `legacy:import --all --write` (no mapping files) against the real `jobportal_v2`, after a full rehearsal in a scratch database
+  (dropped since). Result: 887 id map rows, 179 accounts, 173 profiles, 3 companies, 149 jobs (many `draft`, see the design doc), 30 applications (all in `applied`).
+  Report: `storage/app/private/legacy-import/20261008-075847-all-write.json`. The importer only adds: a re-run does not fix rows already imported.
+- Leftovers (details in the design doc): legacy group "dev" (7 applications) left unmapped on purpose; 10 accounts need a password reset; some files and masters did not match.
 
 ## Next step
 
-The approved run (needs the user's explicit approval, `KARIR_PKP_FILES_ROOT` and the two mapping files), or Phase 2 (collaboration, see `decisions.md` section 5).
+Phase 2 (collaboration, see `decisions.md` section 5), or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
 
 ## Operational facts not in `CLAUDE.md`
 
@@ -33,13 +36,14 @@ The approved run (needs the user's explicit approval, `KARIR_PKP_FILES_ROOT` and
 - Production schema dump (read-only account, no data): `mariadb-dump --no-data --skip-comments --no-tablespaces --skip-triggers --skip-lock-tables` with the `KARIR_PKP_DB_*` values.
 - After a deployment that adds a permission, `identity:sync-permissions` must be run on the real database (ask first). `tests/Feature/Platform/SettingsTest.php` lists every
   setting key: update it whenever a setting is added.
-- Running the legacy import needs `KARIR_PKP_FILES_ROOT` (not set yet) and the user's explicit approval each time; the masters mapping and the pipeline-group mapping files
-  (`--map=masters=<path>`, `--map=groups=<path>`) are filled in by the user at the approved run.
+- Running the legacy import needs the user's explicit approval each time, and the auto-mode classifier may block a `--write` to the real database (the user then runs it or adds a
+  Bash permission rule). `KARIR_PKP_FILES_ROOT` is set in `.env` (git-ignored). Optional mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
+- A rehearsal database: the app account cannot create databases, but any `test_*` name is open to it. Use `DB_DATABASE=test_<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`
+  (so copied files stay out of the real storage), then `migrate`, `db:seed`, `legacy:import --all --write`.
 
 ## Items waiting for the user
 
 - Decisions on the legacy findings (`docs/analysis/legacy-findings.md`), especially S1 to S3 in the running production application.
-- Approval to run the data migration against real production data.
 - Legal review of the religion and nationality filtering decision, and of the age limits (minimum 15, default maximum 60).
 - Open product points: whether applicants see rejection reasons (hidden now), the push channel of `application_update` (email only now), whether applying needs a verified email.
 
