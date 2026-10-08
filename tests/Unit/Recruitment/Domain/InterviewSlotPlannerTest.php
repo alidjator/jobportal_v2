@@ -18,9 +18,10 @@ final class InterviewSlotPlannerTest extends TestCase
     }
 
     /** @return list<string> the slots as `Y-m-d H:i` in Jakarta time, start to end */
-    private function plan(string $start, int $count, int $duration, int $gap, string $dayStart = '09:00', string $dayEnd = '17:00'): array
+    private function plan(string $start, int $count, int $duration, int $gap, string $dayStart = '09:00', string $dayEnd = '17:00', array $busy = []): array
     {
-        $slots = (new InterviewSlotPlanner)->plan(new DateTimeImmutable($start, $this->jakarta), $count, $duration, $gap, $dayStart, $dayEnd, $this->jakarta);
+        $busy = array_map(fn (array $range): array => [new DateTimeImmutable($range[0], $this->jakarta), new DateTimeImmutable($range[1], $this->jakarta)], $busy);
+        $slots = (new InterviewSlotPlanner)->plan(new DateTimeImmutable($start, $this->jakarta), $count, $duration, $gap, $dayStart, $dayEnd, $this->jakarta, $busy);
 
         return array_map(fn (array $slot): string => $slot[0]->setTimezone($this->jakarta)->format('Y-m-d H:i').'-'.$slot[1]->setTimezone($this->jakarta)->format('H:i'), $slots);
     }
@@ -54,6 +55,25 @@ final class InterviewSlotPlannerTest extends TestCase
         $this->assertSame(['2026-10-12 09:00-09:30'], $this->plan('2026-10-10 11:00', 1, 30, 0));
         $this->assertSame(['2026-10-12 09:00-09:30'], $this->plan('2026-10-12 06:00', 1, 30, 0));
         $this->assertSame(['2026-10-13 09:00-09:30'], $this->plan('2026-10-12 17:00', 1, 30, 0));
+    }
+
+    public function test_a_slot_overlapping_a_busy_range_starts_when_it_ends(): void
+    {
+        $busy = [['2026-10-12 09:15', '2026-10-12 10:00']];
+
+        $this->assertSame(['2026-10-12 10:00-10:30', '2026-10-12 10:30-11:00'], $this->plan('2026-10-12 09:00', 2, 30, 0, busy: $busy));
+    }
+
+    public function test_a_slot_that_ends_where_a_busy_range_starts_is_kept(): void
+    {
+        $this->assertSame(['2026-10-12 09:00-09:30'], $this->plan('2026-10-12 09:00', 1, 30, 0, busy: [['2026-10-12 09:30', '2026-10-12 10:00']]));
+    }
+
+    public function test_a_busy_range_at_the_end_of_the_day_pushes_the_slot_to_the_next_working_day(): void
+    {
+        $busy = [['2026-10-12 16:00', '2026-10-12 17:00']];
+
+        $this->assertSame(['2026-10-13 09:00-09:30'], $this->plan('2026-10-12 16:00', 1, 30, 0, busy: $busy));
     }
 
     public function test_a_slot_longer_than_the_working_day_is_refused(): void

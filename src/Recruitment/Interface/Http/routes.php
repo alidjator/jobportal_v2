@@ -5,6 +5,7 @@ use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationNoteController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
+use Src\Recruitment\Interface\Http\Controllers\BulkApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewController;
@@ -39,6 +40,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
 
     Route::get('company/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
+    Route::post('company/jobs/{id}/applications/bulk-move', [BulkApplicationController::class, 'move'])->whereNumber('id');
+    Route::post('company/jobs/{id}/applications/bulk-reject', [BulkApplicationController::class, 'reject'])->whereNumber('id');
     Route::get('company/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
     Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('company/applications/{id}/move', [CompanyApplicationController::class, 'move'])->whereNumber('id');

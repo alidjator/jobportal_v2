@@ -115,6 +115,19 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
         return $cancelled;
     }
 
+    public function busyRanges(int $interviewerId, DateTimeImmutable $from, array $exceptApplicationIds = []): array
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->where('interviewer_id', $interviewerId)
+            ->whereIn('status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])
+            ->where('ends_at', '>', $this->format($from))
+            ->whereNotIn('application_id', $exceptApplicationIds)
+            ->orderBy('starts_at')
+            ->get(['starts_at', 'ends_at'])
+            ->map(fn (stdClass $row): array => [$this->time((string) $row->starts_at), $this->time((string) $row->ends_at)])
+            ->all();
+    }
+
     public function dueForReminder(DateTimeImmutable $from, DateTimeImmutable $until): array
     {
         return $this->connection->table('recruitment_interviews')

@@ -15,6 +15,8 @@ final class RecruitmentSettings
 
     public const string MAX_APPLICATIONS_PER_DAY = 'recruitment.max_applications_per_day';
 
+    public const string MAX_BULK_APPLICATIONS = 'recruitment.max_bulk_applications';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -37,6 +39,11 @@ final class RecruitmentSettings
             SettingDefinition::integer(
                 self::MAX_APPLICATIONS_PER_DAY, 20, 1, 100,
                 'The most applications one job seeker may submit per calendar day (Jakarta time), withdrawn ones included.',
+            ),
+            SettingDefinition::integer(
+                self::MAX_BULK_APPLICATIONS, 100, 1, 500,
+                'The most applications one bulk move or bulk rejection may cover.',
+                overridable: true,
             ),
         ];
     }

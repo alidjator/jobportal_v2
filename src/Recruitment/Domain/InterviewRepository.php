@@ -24,6 +24,13 @@ interface InterviewRepository
     public function cancelActive(int $applicationId): ?Interview;
 
     /**
+     * The start and end of the interviewer's pending and confirmed interviews that end after `$from`, earliest first.
+     *
+     * @return list<array{0: DateTimeImmutable, 1: DateTimeImmutable}>
+     */
+    public function busyRanges(int $interviewerId, DateTimeImmutable $from, array $exceptApplicationIds = []): array;
+
+    /**
      * Confirmed interviews that start after `$from` and no later than `$until` and were not reminded yet.
      *
      * @return list<Interview>

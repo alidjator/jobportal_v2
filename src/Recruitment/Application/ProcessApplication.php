@@ -64,14 +64,30 @@ final readonly class ProcessApplication
     public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null): void
     {
         $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer): array {
-            $stage = $this->companyStage($application->companyId, $stageId) ?? throw new BusinessRuleViolation(
-                'Choose one of your company\'s stages.', 'invalid-stage', extensions: ['errors' => ['stage_id' => ['Choose one of your company\'s stages.']]],
-            );
+            $stage = $this->movableStage($application->companyId, $stageId);
 
             $moved = $application->moveTo($stageId, $stage->type);
 
             return [$moved, null, null, [...$this->interviewFor($member, $moved, $stage->type, $interview), ...$this->offerFor($member, $moved, $stage->type, $offer)]];
         });
+    }
+
+    /**
+     * The company's stage a recruiter may move an application to (an active stage, never `rejected` or `withdrawn`).
+     *
+     * @throws BusinessRuleViolation `invalid-stage`
+     */
+    public function movableStage(int $companyId, int $stageId): Stage
+    {
+        $stage = $this->companyStage($companyId, $stageId);
+
+        if (! $stage instanceof Stage || ! $stage->type->acceptsRecruiterMoves()) {
+            $message = $stage instanceof Stage ? 'An application cannot be moved to this stage.' : 'Choose one of your company\'s stages.';
+
+            throw new BusinessRuleViolation($message, 'invalid-stage', extensions: ['errors' => ['stage_id' => [$message]]]);
+        }
+
+        return $stage;
     }
 
     /**
@@ -212,8 +228,12 @@ final readonly class ProcessApplication
         return null;
     }
 
-    /** `other` needs a note; any reason may carry one of at most 1,000 characters. */
-    private function rejectionNote(RejectionReason $reason, ?string $note): ?string
+    /**
+     * `other` needs a note; any reason may carry one of at most 1,000 characters.
+     *
+     * @throws BusinessRuleViolation `invalid-rejection`
+     */
+    public function rejectionNote(RejectionReason $reason, ?string $note): ?string
     {
         $note = $note === null ? null : trim($note);
         $note = $note === '' ? null : $note;

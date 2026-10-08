@@ -32,7 +32,7 @@ final readonly class InterviewScheduler
     {
         $now = $this->clock->now();
         $applicationId = (int) $application->id;
-        $this->assertInterviewer($application, $input->interviewerId);
+        $this->assertInterviewer($application->companyId, $application->jobId, $input->interviewerId);
 
         $interview = Interview::schedule(
             $applicationId,
@@ -57,12 +57,16 @@ final readonly class InterviewScheduler
         return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now);
     }
 
-    /** The interviewer is a member of the company who may see the job (an admin, or a recruiter the job is assigned to). */
-    private function assertInterviewer(Application $application, int $interviewerId): void
+    /**
+     * The interviewer is a member of the company who may see the job (an admin, or a recruiter the job is assigned to).
+     *
+     * @throws BusinessRuleViolation `invalid-interviewer`
+     */
+    public function assertInterviewer(int $companyId, int $jobId, int $interviewerId): void
     {
-        $role = $this->team->roles($application->companyId)[$interviewerId] ?? null;
+        $role = $this->team->roles($companyId)[$interviewerId] ?? null;
 
-        if ($role === null || $this->jobs->visibleToMember($application->jobId, $application->companyId, $interviewerId, $role === 'company_admin') === null) {
+        if ($role === null || $this->jobs->visibleToMember($jobId, $companyId, $interviewerId, $role === 'company_admin') === null) {
             $message = 'Choose a member of your team who works on this job.';
 
             throw new BusinessRuleViolation($message, 'invalid-interviewer', extensions: ['errors' => ['interviewer_id' => [$message]]]);

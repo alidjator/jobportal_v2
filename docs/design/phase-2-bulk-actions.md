@@ -1,4 +1,4 @@
-# Phase 2, step 4: bulk actions (R5, design final 2026-10-08, not coded)
+# Phase 2, step 4: bulk actions (R5, designed and coded 2026-10-08)
 
 Context: `Recruitment`. Spec in `decisions.md` (R5): bulk stage move (one reason for all when rejecting; notifications still per application) and bulk chat message (max 50 recipients,
 admin-configurable). **The bulk chat message belongs to step 6 (chat), because it needs the chat itself; this step covers the stage move and the rejection only.**
@@ -45,8 +45,17 @@ Related: `phase-1-pipeline.md` (move and reject rules), `phase-2-interviews.md` 
 - The bulk chat message moves to step 6 (chat); the 50-recipient cap is created there, separate from the 100 cap of this step.
 - No new permission (same access as the pipeline), so `identity:sync-permissions` is not needed. Nothing is open.
 
-## Coding plan (not started)
+## Coded (2026-10-08)
 
-1. Setting for the cap (default 100, update `SettingsTest`); `InterviewSlotPlanner` busy ranges and the `InterviewRepository` query for the interviewer's active interviews, with unit tests.
-2. `BulkProcessApplications` (validation, planning, per-item loop, report), the two endpoints, requests and resources, feature tests.
-3. Final checks (tests, Pint, PHPStan), this document and `HANDOFF.md`.
+- No migration. New setting `recruitment.max_bulk_applications` (default 100, 1 to 500, overridable per company). `InterviewSlotPlanner::plan` takes optional busy ranges;
+  `InterviewRepository::busyRanges` returns the interviewer's pending and confirmed interviews that end after the first slot, leaving out those of the selected applications (they are replaced).
+- Use case `BulkProcessApplications` (`move`, `reject`) on top of `ProcessApplication`, which now exposes `movableStage` and `rejectionNote` for the whole-request checks.
+  `InterviewScheduler::assertInterviewer` is public for the same reason.
+- Endpoints: `POST company/jobs/{id}/applications/bulk-move` and `.../bulk-reject`; body fields as in the single actions plus `application_ids`; `interview` also takes `gap_minutes` (0 to 240, default 0),
+  `day_start` and `day_end` (`H:i`, default `09:00` and `17:00`). Answer 200 `data: [{application_id, status: moved|skipped, code}]`.
+- Whole-request errors (422, nothing changes): `invalid-applications` (an id that is not an application of this job), `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-offer-input`,
+  `invalid-interview` (also an empty window or a slot longer than the window), `invalid-interviewer`, `invalid-offer`, `invalid-rejection`; plus the usual validation (empty or duplicate ids).
+- Choices made while coding: the shared interview and offer are checked once with the single-action rules (a dry run of `Interview::schedule` and `Offer::make`); a move to an interview or offer stage without
+  `interview` or `offer` skips the applications with no active interview or pending offer (`schedule-required`, `offer-required`); an application that is final or already in the target stage is skipped and gets no slot.
+  A side effect on the single move: a target stage that cannot take a recruiter move on a final application now answers `invalid-stage` before `application-final`.
+- Tests: `BulkActionsTest` (14), `InterviewSlotPlannerTest` (3 new).
