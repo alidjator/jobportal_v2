@@ -50,6 +50,16 @@ vendor/bin/phpstan analyse --no-progress  # static analysis
 php -n -l <file>                          # syntax check; plain `php -l` segfaults on this server
 ```
 
+## Keeping the context small
+
+Everything read stays in the context for the rest of the session and is sent again on every step, so read only what the step needs.
+
+- **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
+  (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
+- **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
+- **Command output:** cut it to what is needed: test runs with `2>&1 | tail -n 40` (on a failure, rerun only the failing test with `--filter`), the legacy schema one
+  table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.
+
 ## Live site
 
 `https://api-karir.satu.solutions` is a **dev** domain served straight from this folder (nginx + system PHP-FPM, user `nginx`). `APP_DEBUG` must stay
