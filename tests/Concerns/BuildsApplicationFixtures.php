@@ -39,6 +39,23 @@ trait BuildsApplicationFixtures
         $this->tearDownJobFixtures();
     }
 
+    /**
+     * The interview a recruiter schedules with a move to an interview stage (the recruiter is the interviewer), three days from now.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    protected function interviewSchedule(array $overrides = []): array
+    {
+        return [...[
+            'starts_at' => now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z'),
+            'duration_minutes' => 60,
+            'format' => 'online',
+            'meeting_url' => 'https://meet.example.test/room',
+            'interviewer_id' => $this->recruiterId,
+        ], ...$overrides];
+    }
+
     protected function seeker(string $email, ?string $verifiedAt = '2026-10-01 00:00:00', string $name = 'Siti Rahma'): int
     {
         return (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => $verifiedAt])->id;

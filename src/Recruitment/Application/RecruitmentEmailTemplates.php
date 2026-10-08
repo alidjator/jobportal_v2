@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Email\EmailTemplateDefinition;
 use Src\Shared\Application\Email\EmailVariable;
@@ -21,6 +22,26 @@ final class RecruitmentEmailTemplates
 
     public const string REJECTED = 'recruitment.application_rejected';
 
+    public const string INTERVIEW_SCHEDULED = 'recruitment.interview_scheduled';
+
+    public const string INTERVIEW_RESCHEDULED = 'recruitment.interview_rescheduled';
+
+    public const string INTERVIEW_CANCELLED = 'recruitment.interview_cancelled';
+
+    public const string INTERVIEW_REMINDER = 'recruitment.interview_reminder';
+
+    /** The template for a change to an interview, or null when the job seeker is not emailed about it. */
+    public static function keyForInterview(InterviewChange $change): ?string
+    {
+        return match ($change) {
+            InterviewChange::Scheduled => self::INTERVIEW_SCHEDULED,
+            InterviewChange::Rescheduled => self::INTERVIEW_RESCHEDULED,
+            InterviewChange::Cancelled => self::INTERVIEW_CANCELLED,
+            InterviewChange::Reminder => self::INTERVIEW_REMINDER,
+            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined => null,
+        };
+    }
+
     /** The template of the outcome, or null for a stage type the applicant is not emailed about. */
     public static function keyFor(StageType $type): ?string
     {
@@ -35,6 +56,12 @@ final class RecruitmentEmailTemplates
 
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
+    {
+        return [...self::stageDefinitions(), ...self::interviewDefinitions()];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function stageDefinitions(): array
     {
         $variables = [
             new EmailVariable('name', 'The applicant\'s name', 'Siti'),
@@ -81,6 +108,62 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nTerima kasih telah melamar posisi {{job_title}} di {{company_name}}. Setelah ditinjau, mereka tidak melanjutkan lamaran Anda kali ini.\n\nKami berharap Anda segera mendapat peluang yang tepat.",
                     'en' => "Hello {{name}},\n\nThank you for applying for {{job_title}} at {{company_name}}. After review, they will not move forward with your application this time.\n\nWe wish you every success in finding the right opportunity.",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function interviewDefinitions(): array
+    {
+        $variables = [
+            new EmailVariable('name', 'The applicant\'s name', 'Siti'),
+            new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
+            new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+            new EmailVariable('starts_at', 'When the interview starts (Jakarta time)', '2026-10-12 09:00 WIB'),
+            new EmailVariable('format', 'Online or Onsite', 'Online'),
+            new EmailVariable('place', 'The meeting link or the place of the interview', 'https://meet.example.com/abc'),
+        ];
+
+        return [
+            new EmailTemplateDefinition(
+                self::INTERVIEW_SCHEDULED,
+                'Sent to an applicant when an interview is scheduled for their application.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}}', 'en' => 'Interview scheduled for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} menjadwalkan wawancara untuk posisi {{job_title}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} scheduled an interview for {{job_title}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nOpen your account to confirm it or propose another time.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_RESCHEDULED,
+                'Sent to an applicant when the time of their interview changed.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}} berubah', 'en' => 'Your interview for {{job_title}} was rescheduled']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal wawancara untuk posisi {{job_title}}.\n\nWaktu baru: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} changed the interview for {{job_title}}.\n\nNew time: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nOpen your account to confirm it or propose another time.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_CANCELLED,
+                'Sent to an applicant when their interview is cancelled.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Wawancara untuk {{job_title}} dibatalkan', 'en' => 'Your interview for {{job_title}} was cancelled']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} membatalkan wawancara untuk posisi {{job_title}} yang dijadwalkan pada {{starts_at}}.\n\nBuka akun Anda untuk melihat statusnya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} cancelled the interview for {{job_title}} that was set for {{starts_at}}.\n\nOpen your account to see its status.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_REMINDER,
+                'Sent to an applicant about a day before a confirmed interview.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Pengingat: wawancara untuk {{job_title}}', 'en' => 'Reminder: your interview for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nSemoga sukses!",
+                    'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nGood luck!",
                 ]),
             ),
         ];

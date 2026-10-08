@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
@@ -15,7 +16,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * The applicant withdraws an application from any active stage except `hired`, with an optional note. The application moves to the company's default
- * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again.
+ * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again. An active interview is cancelled.
  */
 final readonly class WithdrawMyApplication
 {
@@ -25,6 +26,7 @@ final readonly class WithdrawMyApplication
         private ApplicantGuard $guard,
         private ApplicationRepository $applications,
         private StageRepository $stages,
+        private InterviewRepository $interviews,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -54,6 +56,7 @@ final readonly class WithdrawMyApplication
             $withdrawn = $application->withdraw($withdrawnStage->id ?? throw new StateConflict('This company cannot take applications right now.', 'applications-unavailable'), $note);
 
             $this->applications->recordWithdrawal($application, $withdrawn, $this->clock->now());
+            $this->interviews->cancelActive($id);
         });
     }
 

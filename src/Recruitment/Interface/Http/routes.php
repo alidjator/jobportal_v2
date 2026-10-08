@@ -7,7 +7,9 @@ use Src\Recruitment\Interface\Http\Controllers\ApplicationNoteController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 
 // Public: what an applicant answers for a live job. A job that is not live (or whose company is hidden) is the same 404 as on the job page; clients revalidate with the ETag.
@@ -46,6 +48,12 @@ Route::middleware('auth:user')->group(function (): void {
     Route::delete('company/applications/{id}/notes/{noteId}', [ApplicationNoteController::class, 'destroy'])->whereNumber(['id', 'noteId']);
     Route::put('company/applications/{id}/rating', [ApplicationRatingController::class, 'update'])->whereNumber('id');
     Route::delete('company/applications/{id}/rating', [ApplicationRatingController::class, 'destroy'])->whereNumber('id');
+
+    Route::get('company/applications/{id}/interviews', [InterviewController::class, 'index'])->whereNumber('id');
+    Route::put('company/applications/{id}/interview', [InterviewController::class, 'store'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/cancel', [InterviewController::class, 'cancel'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/complete', [InterviewController::class, 'complete'])->whereNumber('id');
 });
 
 // A job seeker applies to a live job. Applying affects another party, so the email must be verified.
@@ -59,4 +67,9 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('me/applications/{id}', [ApplicationController::class, 'show'])->whereNumber('id');
     Route::get('me/applications/{id}/resume', [ApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('me/applications/{id}/withdraw', [ApplicationController::class, 'withdraw'])->whereNumber('id');
+
+    Route::get('me/applications/{id}/interview', [MyInterviewController::class, 'show'])->whereNumber('id');
+    Route::post('me/applications/{id}/interview/confirm', [MyInterviewController::class, 'confirm'])->whereNumber('id');
+    Route::post('me/applications/{id}/interview/decline', [MyInterviewController::class, 'decline'])->whereNumber('id');
+    Route::post('me/applications/{id}/interview/propose', [MyInterviewController::class, 'propose'])->whereNumber('id');
 });

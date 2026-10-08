@@ -48,7 +48,14 @@ final class ProcessApplicationTest extends FeatureTestCase
 
     private function move(int $stageId, ?string $token = null, ?int $id = null): TestResponse
     {
-        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', ['stage_id' => $stageId], $token ?? $this->recruiterToken);
+        $body = ['stage_id' => $stageId];
+
+        // A move to an interview stage comes with its schedule.
+        if (DB::table('recruitment_stages')->where('id', $stageId)->value('type') === 'interview') {
+            $body['interview'] = $this->interviewSchedule();
+        }
+
+        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $token ?? $this->recruiterToken);
     }
 
     private function reject(array $body, ?string $token = null, ?int $id = null): TestResponse

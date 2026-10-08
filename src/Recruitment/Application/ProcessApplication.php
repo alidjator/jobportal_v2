@@ -5,6 +5,10 @@ namespace Src\Recruitment\Application;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
+use Src\Recruitment\Domain\Events\InterviewChange;
+use Src\Recruitment\Domain\Events\InterviewChanged;
+use Src\Recruitment\Domain\Interview;
+use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageRepository;
@@ -14,6 +18,7 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Domain\DomainEvent;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -22,6 +27,9 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * A recruiter moves an application to another active stage or rejects it. Both lock the application row first, so a move that races with a withdrawal (or
  * with another recruiter) runs after it and meets its result. They work for the members who may see the job, on a job in any status but `taken_down`.
+ *
+ * A move to an interview stage needs an interview schedule (the one in the request, or an active one the application already has) and saves it with the move;
+ * a rejection cancels the active interview.
  */
 final readonly class ProcessApplication
 {
@@ -33,6 +41,8 @@ final readonly class ProcessApplication
         private ApplicationRepository $applications,
         private StageRepository $stages,
         private JobDirectory $jobs,
+        private InterviewRepository $interviews,
+        private InterviewScheduler $scheduler,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -42,16 +52,18 @@ final readonly class ProcessApplication
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
      * @throws StateConflict `application-final`, `already-in-stage` or `job-taken-down`
-     * @throws BusinessRuleViolation `invalid-stage`
+     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview` or `invalid-interviewer`
      */
-    public function move(Actor $actor, int $applicationId, int $stageId): void
+    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null): void
     {
-        $this->process($actor, $applicationId, function (Application $application) use ($stageId): array {
+        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview): array {
             $stage = $this->companyStage($application->companyId, $stageId) ?? throw new BusinessRuleViolation(
                 'Choose one of your company\'s stages.', 'invalid-stage', extensions: ['errors' => ['stage_id' => ['Choose one of your company\'s stages.']]],
             );
 
-            return [$application->moveTo($stageId, $stage->type), null, null];
+            $moved = $application->moveTo($stageId, $stage->type);
+
+            return [$moved, null, null, $this->interviewFor($member, $moved, $stage->type, $interview)];
         });
     }
 
@@ -69,18 +81,20 @@ final readonly class ProcessApplication
             $rejected = $this->defaultStage($application->companyId, StageType::Rejected)
                 ?? throw new StateConflict('This company cannot reject applications right now.', 'applications-unavailable');
 
-            return [$application->reject((int) $rejected->id), $reason, $note];
+            $cancelled = $this->interviews->cancelActive((int) $application->id);
+
+            return [$application->reject((int) $rejected->id), $reason, $note, $cancelled instanceof Interview ? [InterviewChanged::of(InterviewChange::Cancelled, $application, $cancelled, $this->clock->now())] : []];
         });
     }
 
     /**
-     * @param  callable(Application): array{0: Application, 1: ?RejectionReason, 2: ?string}  $change
+     * @param  callable(Application, RecruitmentMember): array{0: Application, 1: ?RejectionReason, 2: ?string, 3: list<DomainEvent>}  $change
      */
     private function process(Actor $actor, int $applicationId, callable $change): void
     {
         $member = $this->access->member($actor);
 
-        $event = $this->transactions->run(function () use ($member, $applicationId, $change): ApplicationStageChanged {
+        $events = $this->transactions->run(function () use ($member, $applicationId, $change): array {
             $before = $this->applications->find($applicationId, forUpdate: true) ?? throw EntityNotFound::of('Application', $applicationId);
             $this->applicationAccess->assertCanSee($member, $applicationId, $before->companyId, $before->jobId);
 
@@ -88,15 +102,47 @@ final readonly class ProcessApplication
                 throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');
             }
 
-            [$after, $reason, $note] = $change($before);
+            [$after, $reason, $note, $extra] = $change($before, $member);
             $now = $this->clock->now();
 
             $this->applications->recordMove($before, $after, $member->userId, $reason, $note, $now);
 
-            return new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now);
+            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now), ...$extra];
         });
 
-        $this->events->dispatch([$event]);
+        $this->events->dispatch($events);
+    }
+
+    /**
+     * The interview of a move: the one in the request is saved (it replaces an active one); a move to an interview stage without one needs an active interview
+     * already; a schedule for any other stage is refused.
+     *
+     * @return list<DomainEvent>
+     */
+    private function interviewFor(RecruitmentMember $member, Application $application, StageType $target, ?InterviewInput $input): array
+    {
+        if ($target !== StageType::Interview) {
+            if ($input instanceof InterviewInput) {
+                $this->refuse('invalid-schedule', 'An interview can only be scheduled when moving to an interview stage.');
+            }
+
+            return [];
+        }
+
+        if ($input instanceof InterviewInput) {
+            return [$this->scheduler->schedule($member, $application, $input)];
+        }
+
+        if ($this->interviews->active((int) $application->id) === null) {
+            $this->refuse('schedule-required', 'Schedule the interview when moving an application to an interview stage.');
+        }
+
+        return [];
+    }
+
+    private function refuse(string $code, string $message): never
+    {
+        throw new BusinessRuleViolation($message, $code, extensions: ['errors' => ['interview' => [$message]]]);
     }
 
     private function companyStage(int $companyId, int $stageId): ?Stage

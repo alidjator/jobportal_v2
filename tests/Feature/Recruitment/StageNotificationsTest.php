@@ -46,13 +46,20 @@ final class StageNotificationsTest extends FeatureTestCase
 
     private function move(string $type, ?int $id = null): TestResponse
     {
-        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', ['stage_id' => $this->stage($type)], $this->recruiterToken)->assertNoContent();
+        $body = ['stage_id' => $this->stage($type)];
+
+        // A move to an interview stage comes with its schedule; the notifications below are about the stage only.
+        if ($type === 'interview') {
+            $body['interview'] = $this->interviewSchedule();
+        }
+
+        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $this->recruiterToken)->assertNoContent();
     }
 
     /** @return list<object> the in-app notifications of the applicant, oldest first */
     private function notifications(?int $userId = null): array
     {
-        return DB::table('notifications')->where('notifiable_type', 'user')->where('notifiable_id', $userId ?? $this->seekerId)->orderBy('created_at')->orderBy('id')->get()->all();
+        return DB::table('notifications')->where('notifiable_type', 'user')->where('notifiable_id', $userId ?? $this->seekerId)->where('type', 'not like', 'interview.%')->orderBy('created_at')->orderBy('id')->get()->all();
     }
 
     /** @return list<Email> the emails the array mailer received so far */
@@ -67,7 +74,7 @@ final class StageNotificationsTest extends FeatureTestCase
     /** The emails that went to the applicant (the application itself sends none to them). */
     private function emailsToApplicant(): array
     {
-        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test'));
+        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test' && ! preg_match('/Interview scheduled|Your interview for|Reminder: your interview|Jadwal wawancara|Wawancara untuk|Pengingat/', $email->getSubject() ?? '')));
     }
 
     // ----- the four outcomes -----

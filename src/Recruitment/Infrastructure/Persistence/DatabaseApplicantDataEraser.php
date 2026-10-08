@@ -32,6 +32,11 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();
 
+        // Interviews hold the applicant's meeting details, so they go too.
+        $this->connection->table('recruitment_interviews')
+            ->whereIn('application_id', (clone $applications)->select('id'))
+            ->delete();
+
         $applications->update([
             'cover_letter' => null,
             'withdrawn_note' => null,
