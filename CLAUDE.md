@@ -44,6 +44,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 ## Commands
 
 ```bash
+composer check 2>&1 | tail -n 40 | cut -c1-4000  # Pint, PHPStan and the whole suite in one step; stops at the first failure
 php artisan test                          # whole suite (about 1 minute)
 php artisan test tests/Feature/Company    # a folder or file
 vendor/bin/pint --test                    # style check (drop --test to fix)
@@ -58,7 +59,10 @@ Everything read stays in the context for the rest of the session and is sent aga
 - **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
-- **Command output:** cut it to what is needed: test runs with `2>&1 | tail -n 40` (on a failure, rerun only the failing test with `--filter`), the legacy schema one
+- **Checks:** while coding, run only the tests of the folder or file you touch; run `composer check` once when a part is done, not Pint, PHPStan and
+  the suite as three separate steps.
+- **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
+  Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.
 
 ## Live site

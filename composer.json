@@ -82,6 +82,13 @@
         ],
         "lint": [
             "vendor/bin/pint --test"
+        ],
+        "check": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/pint --test",
+            "vendor/bin/phpstan analyse --no-progress --memory-limit=1G",
+            "@php artisan config:clear",
+            "@php artisan test"
         ]
     },
     "extra": {
