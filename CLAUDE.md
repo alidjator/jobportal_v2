@@ -8,7 +8,8 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 
 ## Working rules (mandatory, set by the user)
 
-1. **Work alone and strictly sequentially.** No sub-agents, no Workflow, no background tasks, and **one tool call per step** (no parallel tool calls).
+1. **Work alone.** No sub-agents, no Workflow, no background tasks. Independent tool calls (reading several files, read-only checks) may be batched in one step;
+   calls that depend on an earlier result, and actions that change something (edits, migrations, commits), run one after another (relaxed 2026-10-08).
 2. **Decision gate.** Findings in karir.pkp that violate best practice (security, bugs, architecture, performance) and every schema assumption are
    **reported and confirmed with the user first**. Never silently fix or copy them. Never assume a table or column exists or not: read the schema and confirm.
 3. **Rule conflicts.** There is no fixed priority between rules. If two rules conflict, stop and ask.
