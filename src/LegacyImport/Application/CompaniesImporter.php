@@ -5,6 +5,7 @@ namespace Src\LegacyImport\Application;
 use DateTimeImmutable;
 use DateTimeZone;
 use Src\Company\Domain\CompanySlug;
+use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
@@ -13,7 +14,7 @@ use stdClass;
  * Imports the legacy `companies`. The name comes from the owner's account (`users.name`), the owner becomes the company's one company admin, and the slug is made
  * from the name under the rules of the new schema. The industry and the organization type are required and come through the master map (a company without a
  * counterpart is skipped); the team size, website, establishment date and location are kept when valid and emptied (with a note) when not. A company with
- * `document_verified_at` set or `is_profile_verified = 1` keeps the verified badge. No verification document exists in legacy, so none is migrated.
+ * `document_verified_at` set or `is_profile_verified = 1` keeps the verified badge. No verification document exists in legacy, so none is migrated. Like a company made through the application, each one gets its seven default stages.
  */
 final readonly class CompaniesImporter implements Importer
 {
@@ -30,6 +31,7 @@ final readonly class CompaniesImporter implements Importer
         private LegacySource $legacy,
         private CompanyWriter $companies,
         private LocationLookup $locations,
+        private DefaultStageProvisioner $stages,
         private TransactionManager $transactions,
     ) {}
 
@@ -136,7 +138,9 @@ final readonly class CompaniesImporter implements Importer
         );
 
         if ($context->write) {
-            $context->idMap->remember(self::COMPANY, $legacyId, $this->companies->insert($company), $context->clock->now());
+            $companyId = $this->companies->insert($company);
+            $this->stages->provision($companyId);
+            $context->idMap->remember(self::COMPANY, $legacyId, $companyId, $context->clock->now());
         }
 
         $report->imported(self::ENTITY);

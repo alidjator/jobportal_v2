@@ -221,3 +221,17 @@ API and the company screening-questions API); suite 1373 passed, Pint and PHPSta
 `draft-incomplete-deadline-passed`); (2) a legacy `postcode` is dropped (the new chain needs a village, which legacy jobs do not have) and is not counted in the report; (3) a legacy question whose company differs from
 the job's company is not attached (`company-mismatch`), not copied; (4) a legacy job with no status is read as `pending`; (5) the limit of 15 skills and 15 benefits cuts the rest and counts it (no per-job row);
 (6) a title shorter than 3 characters is skipped (`title-too-short`).
+
+## Part 5 design (applications, in progress, 2026-10-07)
+
+Findings from the legacy schema and source (schema only, no data read): the only status of a legacy application is its pipeline group (`applied_jobs.application_group_id`); `applied_jobs` has no status, rejection
+reason or expected salary. Every legacy company gets five default groups by name when it is created (`Company::booted`): `No Group` (not deletable), `All Applications`, `Shortlisted`, `Interview` and `Rejected`;
+companies can add their own. The tables `company_applied_job_rejected` and `company_applied_job_shortlist` look unused (their dumps carry no `AUTO_INCREMENT`, so they never held a row, and no source refers to the
+tables; the words "Shortlisted" and "Rejected" are the default group names); to be checked in the approved run.
+
+- **Group mapping (2026-10-07):** the five default names (letter case ignored) are mapped **by name**: `No Group` and `All Applications` to `applied`, `Shortlisted` to `screening`, `Interview` to `interview`,
+  `Rejected` to `rejected`. The mapping file (legacy group id to a stage type, optionally creating an extra stage of the same name for the types `screening`, `interview` and `offer`) overrides these and covers the groups
+  the companies made themselves. A group that is neither a default name nor in the file sends its applications to `applied` and is reported with its group name (company configuration, not personal data).
+- **Default stages of migrated companies (2026-10-07):** the importer of companies (part 2) did not give a company its seven default stages (the application code does it through the port `DefaultStageProvisioner`
+  inside `CreateCompany`). It is **changed to call the port** for every company it writes, inside the same transaction, so a migrated company equals one made through the application and the importer of applications
+  can rely on the stages. A dry run writes nothing.
