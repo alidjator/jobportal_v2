@@ -11,7 +11,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - Laravel best practice with DDD is mandatory.
 - Layers per bounded context: **Domain**, **Application**, **Infrastructure**, **Interface**.
 - One use case per class, thin controllers, FormRequests for input validation, no global helpers of our own.
-- Pint and PHPStan stay clean; tests run in the dedicated database `jobportal_v2_test` (since 2026-10-06; see `docs/HANDOFF.md`, section 3).
+- Pint and PHPStan stay clean; tests run in the dedicated database `jobportal_v2_test` (since 2026-10-06; see `docs/handoff-history.md`, section 3).
 - Everything in the project is written in English: identifiers, comments, documentation, commit messages and API error messages.
 - Bounded contexts of Phase 0: Identity, Platform, Notification, ReferenceData, Content. Code lives in `src/<Context>/...`
   (namespace `Src\<Context>\...`); the shared kernel is `src/Shared`.
@@ -137,7 +137,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   409 and a dedicated problem `type`, except: reading the active legal documents, accepting them, viewing and editing the basic account profile, signing out and
   deleting the account (the user can always leave and exercise the right over their data). Migrated accounts and every new version go through this gate.
   **Implemented 2026-10-04** (`EnforceTermsAcceptance`; details and the two scope decisions, public users only and "never-published types are not required", in
-  `docs/HANDOFF.md`).
+  `docs/handoff-history.md`).
 - **Suspended and deactivated accounts (decided 2026-10-03):** when an admin suspends an account, all its tokens are revoked and sign-in is refused with 403 and
   the problem `type` `urn:jobportal:error:account-suspended`, until an admin reactivates it. A deactivated account behaves the same way (including the one waiting
   for anonymisation, see `phase-0-schema.md`) with `account-deactivated`; the response for the grace period explains the scheduled deletion and the user

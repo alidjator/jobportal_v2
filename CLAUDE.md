@@ -3,7 +3,7 @@
 A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web application **karir.pkp** (`/usr/share/nginx/html/karir.pkp`).
 `karir.pkp` is a **reference only**: read-only, never ported 1:1, never modified.
 
-**Read `docs/HANDOFF.md` first** (status, environment, decisions), then the design document of the phase you work on
+**Read `docs/HANDOFF.md` first** (current status and next step; short), then the design document of the phase you work on
 (`docs/design/`). The user talks to you in Indonesian; everything in the project is English.
 
 ## Working rules (mandatory, set by the user)
@@ -53,5 +53,5 @@ php -n -l <file>                          # syntax check; plain `php -l` segfaul
 ## Live site
 
 `https://api-karir.satu.solutions` is a **dev** domain served straight from this folder (nginx + system PHP-FPM, user `nginx`). `APP_DEBUG` must stay
-`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/HANDOFF.md`). Karir.pkp live-site accounts are
+`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/handoff-history.md`, section 5). Karir.pkp live-site accounts are
 never stored; ask the user when needed.
