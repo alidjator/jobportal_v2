@@ -12,7 +12,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Current state (2026-10-09)
 
-- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1661 tests, all passing.
+- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1662 tests, all passing.
 - **Phase 0, Phase 1, Phase 2 and Phase 3 are complete**, coded, checked and committed; every migration (to `000094`) ran on the real database.
   Phase 3: job alerts, candidate search, invitations, matching engine, CV generator (`docs/design/phase-3-*.md`).
 - **Legacy import (`docs/design/phase-1-migration.md`) ran once on the real database (2026-10-08):** 179 accounts, 173 profiles, 3 companies, 149 jobs, 30 applications.
@@ -26,7 +26,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Grant `cv_templates.manage` to the admins who manage the CV templates (`identity:sync-permissions` already ran).
 - SMTP (credentials entered by the user); then a command sends reset emails to the 10 accounts without a password (ids 16, 17, 18, 20, 24, 25, 26, 27, 35, 36): dry-run first, ask before running.
 - Deployment: Reverb process, nginx WebSocket proxy, upload limits, queue worker for `critical,default,bulk` (see `docs/design/phase-2-chat.md`), the invitation page URL.
-- Legal review of the religion, nationality, age and gender filters (candidate search, minimum age 15, default maximum 60) and of the CV personal-detail options.
+- Legal review: the brief for the adviser is `docs/legal-review.md`. The candidate-search filters by religion, nationality, age and gender are switched off by default (`job_seeker.candidate_sensitive_filters_enabled`, coded and committed 2026-10-09); an admin switches them on after the answer. The account age limits and the CV personal details are in the brief too.
 - Decisions on the legacy findings (`docs/analysis/legacy-findings.md`), especially S1 to S3 in the running production application.
 - Look at one PDF of each CV template (they were only smoke-rendered; `pdftoppm` is not installed here).
 - If the weekly recommendation email grows past a few thousand job seekers, rework it into one queue job per batch (`docs/design/phase-3-matching.md`).

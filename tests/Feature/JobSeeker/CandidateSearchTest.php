@@ -102,6 +102,11 @@ final class CandidateSearchTest extends FeatureTestCase
      * @param  array<string, mixed>  $filter
      * @return list<string>
      */
+    private function allowSensitiveFilters(): void
+    {
+        $this->app->make(SettingsStore::class)->setGlobal(JobSeekerSettings::CANDIDATE_SENSITIVE_FILTERS, true, null);
+    }
+
     private function found(array $filter = [], ?string $token = null): array
     {
         $slugs = $this->api('GET', '/company/candidates?'.http_build_query(['filter' => $filter, 'per_page' => 100]), token: $token)->assertOk()->json('data.*.slug');
@@ -276,8 +281,25 @@ final class CandidateSearchTest extends FeatureTestCase
         $this->assertSame([], $this->found(['expected_salary_max' => 9_000_000, 'salary_period_id' => $this->referenceId('reference_salary_periods', 'yearly')]));
     }
 
+    public function test_the_sensitive_filters_are_refused_until_an_admin_switches_them_on(): void
+    {
+        $this->threeCandidates();
+
+        foreach ([['religion_id' => [$this->referenceId('reference_religions', 'islam')]], ['nationality_id' => [$this->referenceId('reference_nationalities', 'indonesian')]], ['age_min' => 20], ['age_max' => 40], ['gender' => 'female']] as $filter) {
+            $this->api('GET', '/company/candidates?'.http_build_query(['filter' => $filter]), token: $this->adminToken)
+                ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:filter-not-available');
+        }
+
+        // The other filters are not affected.
+        $this->assertSame($this->slugs([$this->ana]), $this->found(['availability' => ['open_to_work']]));
+
+        $this->allowSensitiveFilters();
+        $this->assertSame($this->slugs([$this->ana]), $this->found(['gender' => 'female']));
+    }
+
     public function test_religion_nationality_age_and_gender_filter(): void
     {
+        $this->allowSensitiveFilters();
         $this->threeCandidates();
 
         $this->assertSame($this->slugs([$this->ana]), $this->found(['religion_id' => [$this->referenceId('reference_religions', 'islam')]]));
@@ -297,6 +319,7 @@ final class CandidateSearchTest extends FeatureTestCase
 
     public function test_filters_combine(): void
     {
+        $this->allowSensitiveFilters();
         $this->threeCandidates();
 
         $this->assertSame($this->slugs([$this->ana]), $this->found(['skill_id' => [$this->skillId('php')], 'gender' => 'female', 'q' => 'backend']));

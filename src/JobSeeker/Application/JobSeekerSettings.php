@@ -19,6 +19,8 @@ final class JobSeekerSettings
 
     public const string CV_GENERATIONS_PER_HOUR = 'job_seeker.cv_generations_per_hour';
 
+    public const string CANDIDATE_SENSITIVE_FILTERS = 'job_seeker.candidate_sensitive_filters_enabled';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -34,6 +36,10 @@ final class JobSeekerSettings
             SettingDefinition::integer(
                 self::CANDIDATE_VIEWS_PER_DAY, 200, 10, 5000,
                 'How many different candidate profiles a company member may open per day (Jakarta time). Opening the same profile again the same day does not count.',
+            ),
+            SettingDefinition::boolean(
+                self::CANDIDATE_SENSITIVE_FILTERS, false,
+                'Whether a company may filter the candidate search by religion, nationality, age and gender. Off until the legal review has cleared these filters; while off, a search that uses one is refused.',
             ),
             SettingDefinition::integer(
                 self::CV_GENERATIONS_PER_HOUR, 10, 1, 200,

@@ -36,4 +36,10 @@ final readonly class CandidateSearchQuery
         public ?int $maxAge = null,
         public ?Gender $gender = null,
     ) {}
+
+    /** Whether the search filters on religion, nationality, age or gender, which an admin setting can switch off. */
+    public function usesSensitiveFilter(): bool
+    {
+        return $this->religionIds !== [] || $this->nationalityIds !== [] || $this->minAge !== null || $this->maxAge !== null || $this->gender !== null;
+    }
 }
