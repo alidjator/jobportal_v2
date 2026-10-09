@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Job\Infrastructure\JobServiceProvider;
 use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
@@ -15,6 +16,11 @@ Route::get('jobs', [PublicJobController::class, 'index'])->middleware(PublicCach
 Route::get('jobs/{job}', [PublicJobController::class, 'show'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
     ->middleware(PublicCacheHeaders::class.':public;max_age=60;etag');
+
+// Public: one counted view of a live job, sent by the client when a person looks at the page (the page itself is cached and only reads). Limited per client address.
+Route::post('jobs/{job}/view', [PublicJobController::class, 'view'])
+    ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
+    ->middleware('throttle:'.JobServiceProvider::VIEW_LIMITER);
 
 // The live jobs one of the job seeker's own alerts matches right now (the alert itself is managed by the JobAlert context).
 Route::get('me/job-alerts/{id}/jobs', [AlertJobController::class, 'index'])->whereNumber('id')->middleware('auth:user');

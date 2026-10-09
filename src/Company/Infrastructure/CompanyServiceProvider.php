@@ -21,6 +21,8 @@ use Src\Company\Domain\Events\CompanyDocumentRejected;
 use Src\Company\Domain\Events\CompanyVerificationGranted;
 use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
 use Src\Company\Domain\InvitationRepository;
+use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
+use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
@@ -38,6 +40,7 @@ use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\PublicCompanies;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -66,6 +69,13 @@ final class CompanyServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(PlatformCompaniesCard::class),
+                $this->app->make(CompanyVerificationQueueCard::class),
+            );
+        });
+
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...CompanyPermissions::definitions());
         });

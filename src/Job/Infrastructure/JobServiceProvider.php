@@ -2,9 +2,13 @@
 
 namespace Src\Job\Infrastructure;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Application\Admin\AdminJobReader;
 use Src\Job\Application\Browse\AlertJobMatcher;
 use Src\Job\Application\Browse\JobSearchReader;
@@ -15,11 +19,19 @@ use Src\Job\Application\JobSettings;
 use Src\Job\Application\JobSlugGenerator;
 use Src\Job\Application\Matching\JobSignalProvider;
 use Src\Job\Application\Matching\JobSignalReader;
+use Src\Job\Application\Views\JobViewLog;
+use Src\Job\Application\Views\JobViewRecorder;
+use Src\Job\Application\Views\VisitorKeys;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Infrastructure\Dashboard\CompanyJobsCard;
+use Src\Job\Infrastructure\Dashboard\JobApprovalQueueCard;
+use Src\Job\Infrastructure\Dashboard\JobPerformanceCard;
+use Src\Job\Infrastructure\Dashboard\PlatformJobsCard;
+use Src\Job\Infrastructure\Listeners\EraseJobViewsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
@@ -30,7 +42,10 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
+use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
+use Src\Job\Interface\Console\FoldJobViewsCommand;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
 use Src\Shared\Application\Matching\JobSignalSource;
@@ -40,6 +55,11 @@ use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class JobServiceProvider extends ContextServiceProvider
 {
+    /** The name of the route limiter of the view counter: 120 requests per client address per minute. */
+    public const string VIEW_LIMITER = 'job-view';
+
+    private const int VIEWS_PER_MINUTE = 120;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         JobRepository::class => DatabaseJobRepository::class,
@@ -53,14 +73,26 @@ final class JobServiceProvider extends ContextServiceProvider
         JobMatcher::class => AlertJobMatcher::class,
         JobSignalReader::class => DatabaseJobSignalReader::class,
         JobSignalSource::class => JobSignalProvider::class,
+        JobViewLog::class => DatabaseJobViewLog::class,
+        JobViewRecorder::class => QueuedJobViewRecorder::class,
+        VisitorKeys::class => HashedVisitorKeys::class,
     ];
 
     public function register(): void
     {
-        $this->commands([ExpireDueJobsCommand::class]);
+        $this->commands([ExpireDueJobsCommand::class, FoldJobViewsCommand::class]);
 
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...JobPermissions::definitions());
+        });
+
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(CompanyJobsCard::class),
+                $this->app->make(JobPerformanceCard::class),
+                $this->app->make(PlatformJobsCard::class),
+                $this->app->make(JobApprovalQueueCard::class),
+            );
         });
 
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
@@ -69,15 +101,20 @@ final class JobServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(ExpireDueJobsCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            // Once a night, Jakarta time: raw views older than 90 days are folded into the daily counts.
+            $schedule->command(FoldJobViewsCommand::class)->dailyAt('03:00')->timezone('Asia/Jakarta')->withoutOverlapping()->onOneServer();
         });
     }
 
     public function boot(): void
     {
+        RateLimiter::for(self::VIEW_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::VIEWS_PER_MINUTE)->by('job-view|'.$request->ip()));
+
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(JobDecided::class, NotifyAssigneesOfDecision::class);
         Event::listen(CompanyMemberRemoved::class, ReassignJobsWhenMemberRemoved::class);
+        Event::listen(UserAnonymized::class, EraseJobViewsWhenUserAnonymized::class);
 
         parent::boot();
     }

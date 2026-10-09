@@ -24,6 +24,7 @@ use Src\Messaging\Domain\Events\MessagesRead;
 use Src\Messaging\Domain\MessageRepository;
 use Src\Messaging\Domain\MessagingDataEraser;
 use Src\Messaging\Domain\ReadStateRepository;
+use Src\Messaging\Infrastructure\Dashboard\UnreadConversationsCard;
 use Src\Messaging\Infrastructure\Listeners\BroadcastMessagingEvents;
 use Src\Messaging\Infrastructure\Listeners\EraseMessagingDataWhenUserAnonymized;
 use Src\Messaging\Infrastructure\Listeners\NotifyOfMessageListener;
@@ -38,6 +39,7 @@ use Src\Messaging\Infrastructure\Persistence\DatabaseReadStateRepository;
 use Src\Messaging\Infrastructure\Presence\ReverbCompanyPresence;
 use Src\Messaging\Interface\Broadcasting\MessagingChannels;
 use Src\Messaging\Interface\Console\SendUnreadMessageEmailsCommand;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
@@ -67,6 +69,12 @@ final class MessagingServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(UnreadConversationsCard::class),
+            );
+        });
+
         $this->commands([SendUnreadMessageEmailsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

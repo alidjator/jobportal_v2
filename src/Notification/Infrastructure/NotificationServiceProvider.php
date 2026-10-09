@@ -11,6 +11,7 @@ use Src\Notification\Application\InApp\InAppNotificationRepository;
 use Src\Notification\Application\Preferences\NotificationPreferenceStore;
 use Src\Notification\Application\Preferences\StoredNotificationPreferences;
 use Src\Notification\Application\UserNotificationDataPurger;
+use Src\Notification\Infrastructure\Dashboard\UnreadNotificationsCard;
 use Src\Notification\Infrastructure\Listeners\PurgeNotificationDataWhenUserAnonymized;
 use Src\Notification\Infrastructure\Persistence\DatabaseDeviceTokenRepository;
 use Src\Notification\Infrastructure\Persistence\DatabaseInAppNotificationReader;
@@ -19,6 +20,7 @@ use Src\Notification\Infrastructure\Persistence\DatabaseInAppNotifier;
 use Src\Notification\Infrastructure\Persistence\DatabaseNotificationPreferenceStore;
 use Src\Notification\Infrastructure\Persistence\DatabaseUserNotificationDataPurger;
 use Src\Notification\Interface\Console\PurgeNotificationsCommand;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Application\Notifications\NotificationPreferences;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -38,6 +40,12 @@ final class NotificationServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(UnreadNotificationsCard::class),
+            );
+        });
+
         $this->commands([PurgeNotificationsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

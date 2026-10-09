@@ -36,6 +36,7 @@ use Src\Platform\Application\Email\PlatformEmailTemplates;
 use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Platform\Application\Settings\StoredSettings;
+use Src\Platform\Infrastructure\Dashboard\OperationsCard;
 use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
 use Src\Platform\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordIdentityAuditEntries;
@@ -47,6 +48,7 @@ use Src\Platform\Infrastructure\Persistence\DatabaseEmailTemplateOverrideReposit
 use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
 use Src\Platform\Interface\Console\PurgeAuditLogsCommand;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\Settings;
@@ -71,6 +73,12 @@ final class PlatformServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(OperationsCard::class),
+            );
+        });
+
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...PlatformPermissions::definitions());
         });

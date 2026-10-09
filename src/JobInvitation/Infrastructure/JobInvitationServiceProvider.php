@@ -9,12 +9,14 @@ use Src\JobInvitation\Application\InvitationEmailTemplates;
 use Src\JobInvitation\Application\InvitationNotificationType;
 use Src\JobInvitation\Application\InvitationSettings;
 use Src\JobInvitation\Domain\InvitationRepository;
+use Src\JobInvitation\Infrastructure\Dashboard\PendingInvitationsCard;
 use Src\JobInvitation\Infrastructure\Listeners\EraseInvitationsWhenUserAnonymized;
 use Src\JobInvitation\Infrastructure\Listeners\MarkInvitationAppliedWhenApplicationSubmitted;
 use Src\JobInvitation\Infrastructure\Mail\MailInvitationSender;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitedCandidates;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\JobInvitation\InvitedCandidates;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -34,6 +36,12 @@ final class JobInvitationServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(PendingInvitationsCard::class),
+            );
+        });
+
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
             $catalog->add(...InvitationSettings::definitions());
         });

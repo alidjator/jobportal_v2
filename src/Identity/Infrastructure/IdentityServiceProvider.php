@@ -38,6 +38,7 @@ use Src\Identity\Infrastructure\Auth\RateLimiterSignInThrottle;
 use Src\Identity\Infrastructure\Auth\SanctumAccessTokenIssuer;
 use Src\Identity\Infrastructure\Auth\SpatieAdminAccessReader;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
+use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
@@ -52,6 +53,7 @@ use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -91,6 +93,12 @@ final class IdentityServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(PlatformJobSeekersCard::class),
+            );
+        });
+
         $this->app->bind(GoogleIdentityVerifier::class, fn (Application $app): GoogleIdentityVerifier => new GoogleAuthIdentityVerifier(
             new AccessToken(cache: new FileSystemCacheItemPool($app->storagePath('framework/cache/google-auth'))),
             $app->make('config')->get('services.google.client_ids', []),

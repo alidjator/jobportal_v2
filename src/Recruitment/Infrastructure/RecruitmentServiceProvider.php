@@ -33,6 +33,11 @@ use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
+use Src\Recruitment\Infrastructure\Dashboard\ApplicantApplicationsCard;
+use Src\Recruitment\Infrastructure\Dashboard\ApplicantInterviewsCard;
+use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
+use Src\Recruitment\Infrastructure\Dashboard\CompanyScheduleCard;
+use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
@@ -58,11 +63,13 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
+use Src\Shared\Application\Recruitment\ApplicationCounts;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -77,6 +84,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
     /** @var array<class-string, class-string> */
     public array $bindings = [
+        ApplicationCounts::class => DatabaseApplicationCounts::class,
         StageRepository::class => DatabaseStageRepository::class,
         DefaultStageProvisioner::class => ProvisionDefaultStages::class,
         ScreeningQuestionRepository::class => DatabaseScreeningQuestionRepository::class,
@@ -101,6 +109,16 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(ApplicantApplicationsCard::class),
+                $this->app->make(ApplicantInterviewsCard::class),
+                $this->app->make(CompanyApplicationsCard::class),
+                $this->app->make(CompanyScheduleCard::class),
+                $this->app->make(PlatformApplicationsCard::class),
+            );
+        });
+
         $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

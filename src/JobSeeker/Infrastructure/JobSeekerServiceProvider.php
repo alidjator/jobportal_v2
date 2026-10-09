@@ -23,6 +23,7 @@ use Src\JobSeeker\Domain\ProfileListRepository;
 use Src\JobSeeker\Domain\ProfileRepository;
 use Src\JobSeeker\Domain\ProfileViewRepository;
 use Src\JobSeeker\Domain\ResumeRepository;
+use Src\JobSeeker\Infrastructure\Dashboard\ProfileCard;
 use Src\JobSeeker\Infrastructure\Listeners\EraseJobSeekerDataWhenUserAnonymized;
 use Src\JobSeeker\Infrastructure\Pdf\DompdfCvRenderer;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseAccountPictures;
@@ -39,6 +40,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileViewRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseResumeRepository;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\Candidate\CandidateDirectory;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Matching\CandidateSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -72,6 +74,12 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add(
+                $this->app->make(ProfileCard::class),
+            );
+        });
+
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
             $catalog->add(...JobSeekerSettings::definitions());
         });

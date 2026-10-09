@@ -3,6 +3,7 @@
 use App\Providers\AppServiceProvider;
 use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Content\Infrastructure\ContentServiceProvider;
+use Src\Dashboard\Infrastructure\DashboardServiceProvider;
 use Src\Identity\Infrastructure\IdentityServiceProvider;
 use Src\Job\Infrastructure\JobServiceProvider;
 use Src\JobAlert\Infrastructure\JobAlertServiceProvider;
@@ -32,4 +33,5 @@ return [
     MatchingServiceProvider::class,
     JobSeekerServiceProvider::class,
     LegacyImportServiceProvider::class,
+    DashboardServiceProvider::class,
 ];

@@ -19,7 +19,9 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
   The importer only adds. The 142 `draft` jobs stay as they are by decision. Legacy group "dev" (7 applications) was left unmapped on purpose.
 - Product points settled 2026-10-09: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it
   (email only now); applying needs a verified email.
-- Nothing is in progress. Do not start new work without asking the user.
+- **In progress: Phase 4, step 1 dashboards (`docs/design/phase-4-dashboards.md`) is coded and checked, committed; real-DB migration pending** (new migrations `000095`, `000096`; new permission `dashboard.view`).
+  The user must run `php artisan test:database:migrate --env=testing`, then `composer check`; after approval commit, then run the two migrations and `identity:sync-permissions` on the real database.
+  Business intelligence (`phase-4-business-intelligence.md`) is designed, not coded. Campaigns and Moodle are not designed. Do not start new work without asking the user.
 
 ## Items waiting for the user
 
@@ -48,7 +50,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 | `docs/design/decisions.md` | Cross-phase decisions |
 | `docs/design/architecture.md` | API contract, authentication, authorization, persistence, queues, files, account states |
 | `docs/design/phase-0-schema.md` | Column design of the Phase 0 tables |
-| `docs/design/phase-1-*.md`, `phase-2-*.md`, `phase-3-*.md` | One per step, with the decisions and what was coded |
+| `docs/design/phase-1-*.md`, `phase-2-*.md`, `phase-3-*.md`, `phase-4-*.md` | One per step, with the decisions and what was coded |
 | `docs/handoff-history.md` | Session log, including the status of every step of Phases 2 and 3 |
 
 ## Suggested first message for the next session

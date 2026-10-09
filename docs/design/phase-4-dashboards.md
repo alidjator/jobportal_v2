@@ -1,4 +1,4 @@
-# Phase 4, step 1: dashboards (designed 2026-10-09)
+# Phase 4, step 1: dashboards (designed 2026-10-09, coded 2026-10-09, checked)
 
 One summary endpoint per role. The numbers are computed on the server so a client needs one call; the details stay on the endpoints that already exist.
 New bounded context `Dashboard` (`src/Dashboard`, read side only: no domain model, no tables of its own except the job view tables below). It reads other contexts through their `Shared` read interfaces, never their tables.
@@ -41,7 +41,7 @@ A company needs views to judge a job, and the platform records none today. Decis
 - **Viewer:** the account id when logged in; for an anonymous visitor a hash of IP and user agent with a **daily salt** (no raw IP is stored, and the hash cannot be followed across days).
 - **Counted once** per viewer per job per day. Members of the owning company and recognised bots are not counted.
 - **Retention:** raw rows are kept **90 days**. A scheduled job first folds them into a daily counter per job (`job_id`, `day`, `views`), then deletes the raw rows older than 90 days. The long-term trend survives without any viewer trace.
-- **Write path:** the public job detail request must not wait for the write; the view is recorded through the `bulk` queue.
+- **Write path:** the client reports a view with `POST /jobs/{job}/view` (204, limited to 120 per client address per minute) when a person looks at the page; the public job page itself only reads (it is cached for 60 seconds, so counting there would miss views and a GET would write). The view is recorded through the `bulk` queue. Decided 2026-10-09, user.
 - **Legal:** the view log keeps a trace of who looked at which job, so it goes into `docs/legal-review.md` (records and retention, privacy policy text).
 
 ## Details (decided 2026-10-09, user)
@@ -62,3 +62,12 @@ The tables carry the prefix of the context that owns them (job views belong to t
 ## Open points to settle while coding
 
 - The scheduled fold runs daily; the exact hour is chosen with the other nightly jobs.
+
+## What was coded (2026-10-09)
+
+- **Cards are owned by the context that owns the data.** `Shared/Application/Dashboard` holds the contract (`DashboardCardProvider`, `DashboardCards`, `DashboardScope`, `DashboardWindow`); each context registers its read-only cards from its service provider (`Infrastructure/Dashboard/*Card.php`). The `Dashboard` context only composes them per audience, applies the admin permission of a card, and caches the result (`GetJobSeekerDashboard`, `GetCompanyDashboard`, `GetAdminDashboard`; `DashboardComposer`).
+- **Endpoints:** `GET /me/dashboard`, `GET /company/dashboard`, `GET /admin/dashboard` (permission `dashboard.view`, which needs `identity:sync-permissions`). The response is `{data: {generated_at, cards: {<key>: {...}}}}`.
+- **Job views:** `TrackJobView` runs on `POST /jobs/{job}/view` (404 when the job is not live); the write goes through the `bulk` queue (`WriteJobView`); `job:fold-views` runs nightly at 03:00 Jakarta; `UserAnonymized` removes the `u<id>` rows. Bots are recognised by the user agent (`TrackJobView::BOT_PATTERN`).
+- **Job performance card (decided 2026-10-09, user):** views, applications and applications per view **per job**, and the 30-day daily series of views and applications for **all jobs in scope together**. A series per job comes later as a separate endpoint (`GET /company/jobs/{id}/performance`) when a client needs it.
+- **Operations card:** only failed (last 24 hours) and waiting queue jobs, per queue.
+- **Tests:** `tests/Feature/Dashboard/DashboardTest.php`, `tests/Feature/Job/JobViewsTest.php`, `tests/Unit/Dashboard/*`.
