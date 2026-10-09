@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Src\Campaign\Infrastructure\CampaignServiceProvider;
 use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Content\Infrastructure\ContentServiceProvider;
 use Src\Dashboard\Infrastructure\DashboardServiceProvider;
@@ -29,6 +30,7 @@ return [
     RecruitmentServiceProvider::class,
     MessagingServiceProvider::class,
     JobAlertServiceProvider::class,
+    CampaignServiceProvider::class,
     JobInvitationServiceProvider::class,
     MatchingServiceProvider::class,
     JobSeekerServiceProvider::class,

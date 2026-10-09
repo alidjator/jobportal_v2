@@ -10,11 +10,14 @@ use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\UserRegistered;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 use Tests\Support\RecordingVerificationCodeSender;
 
 final class RegistrationTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private const string PASSWORD = 'a-long-enough-password';
 
     private RecordingVerificationCodeSender $sender;
@@ -55,6 +58,7 @@ final class RegistrationTest extends FeatureTestCase
     public function test_a_job_seeker_registers_and_is_signed_in(): void
     {
         Event::fake([UserRegistered::class, SignedIn::class]);
+        $this->campaignRowId('jobfair-2026');
 
         $response = $this->postJson('/api/v1/auth/register', $this->payload(['campaign_code' => 'jobfair-2026']), ['Accept-Language' => 'en'])
             ->assertCreated()

@@ -100,6 +100,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Campaign registration link
+    |--------------------------------------------------------------------------
+    |
+    | The client page where a person registers through a campaign, with `{code}` standing for the campaign code (the legacy format is `https://your-site.example/{code}/register`). The API only builds the link (and its QR
+    | code); when the template is empty, campaigns work but carry no link.
+    |
+    */
+
+    'campaign_registration_url' => env('CAMPAIGN_REGISTRATION_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |

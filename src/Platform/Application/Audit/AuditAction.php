@@ -78,4 +78,10 @@ final class AuditAction
     public const string COMPANY_DOCUMENT_TYPE_CREATED = 'company_document_type.created';
 
     public const string COMPANY_DOCUMENT_TYPE_UPDATED = 'company_document_type.updated';
+
+    public const string CAMPAIGN_CREATED = 'campaign.created';
+
+    public const string CAMPAIGN_UPDATED = 'campaign.updated';
+
+    public const string CAMPAIGN_DELETED = 'campaign.deleted';
 }

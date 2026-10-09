@@ -8,6 +8,7 @@ use Src\Identity\Domain\Events\UserRegistered;
 use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Identity\Domain\VerificationPurpose;
+use Src\Shared\Application\Campaign\CampaignCodes;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -27,6 +28,7 @@ final readonly class RegisterJobSeeker
         private RegistrationThrottle $throttle,
         private VerificationCodeIssuer $codes,
         private VerificationCodeSender $sender,
+        private CampaignCodes $campaigns,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -48,7 +50,7 @@ final readonly class RegisterJobSeeker
 
         $now = $this->clock->now();
         $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
-        $user = User::registerJobSeeker($command->name, $email, $this->hasher->make($command->password), $command->language, $command->campaignCode);
+        $user = User::registerJobSeeker($command->name, $email, $this->hasher->make($command->password), $command->language, $this->campaigns->activeCode($command->campaignCode));
         $user->recordSignIn($now);
 
         [$user, $token, $issued] = $this->transactions->run(function () use ($user, $command, $expiresAt): array {

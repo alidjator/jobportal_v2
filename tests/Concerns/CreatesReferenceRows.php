@@ -94,4 +94,17 @@ trait CreatesReferenceRows
         return (int) (AdminModel::query()->where('email', $email)->value('id')
             ?? AdminModel::query()->create(['name' => 'Admin', 'email' => $email, 'password' => 'hash', 'status' => 'active'])->id);
     }
+
+    /**
+     * A platform campaign (no company) created by an admin; with no dates it is active on any day.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    protected function campaignRowId(string $code, array $overrides = []): int
+    {
+        return (int) DB::table('campaign_campaigns')->insertGetId([
+            'company_id' => null, 'code' => $code, 'name' => 'Campaign '.$code, 'type' => 'job_fair', 'starts_on' => null, 'ends_on' => null, 'is_active' => true,
+            'created_by_user_id' => null, 'created_by_admin_id' => $this->adminRowId(), 'created_at' => now(), 'updated_at' => now(), ...$overrides,
+        ]);
+    }
 }

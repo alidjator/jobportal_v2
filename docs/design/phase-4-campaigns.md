@@ -1,4 +1,4 @@
-# Campaigns and source attribution (design, 2026-10-10; decided, not coded)
+# Campaigns and source attribution (designed and coded 2026-10-10)
 
 A campaign is a registration link with a code, a type and an active period, used to find out where new job seekers come from (a job fair, a school, a partner, social media). In the legacy system it is owned by a company, produces a link and a QR code, and writes the code to `candidates.campaign_channel` at registration. The new system keeps that and adds the results. The account column `identity_users.registration_campaign_code` and the `campaign_code` field of the registration and Google sign-in requests already exist.
 
@@ -21,6 +21,18 @@ A campaign is a registration link with a code, a type and an active period, used
   - Company admin: `GET|POST company/campaigns`, `GET|PATCH|DELETE company/campaigns/{id}`, `GET company/campaigns/{id}/results`, `GET company/campaigns/{id}/qr`. A recruiter has no access; another company's campaign is a 404.
   - Admin with the new permission `campaigns.manage` (needs `identity:sync-permissions`): the same under `admin/campaigns`, with a `company_id` filter and the ability to create a platform campaign.
   - Public: `GET campaigns/{code}` returns the name, the type and the company's name and logo, for the registration page; 404 when the campaign is not active; limited per client address and cached like the public job page.
-- **Registration link:** built from a new setting `CAMPAIGN_REGISTRATION_URL` (a template with `{code}`, like `COMPANY_INVITATION_URL`); the campaign responses carry the full link and the QR encodes it.
+- **Registration link:** built from a new setting `CAMPAIGN_REGISTRATION_URL` (a template with `{code}`, like `COMPANY_INVITATION_URL`); the user chose the legacy shape, `https://<client site>/{code}/register`, so the client route `/{code}/register` calls `GET campaigns/{code}` and then registers with `campaign_code`; the campaign responses carry the full link and the QR encodes it.
 - **Hooks:** the Identity registration and Google sign-in ask a shared interface (`CampaignCodes::activeCode(string $code): ?string`, provided by Campaign) when a new account is created. Changes to a campaign go to the audit log like the other admin and company actions.
 - **Legacy import:** the 11 production campaigns come with their own importer later (a slug that does not fit the code pattern is normalised and the change recorded in the id map); it is a separate step and runs on real data only with approval.
+
+## What was coded (2026-10-10)
+
+- **Context `Campaign`** (`src/Campaign`), migration `000103` (table `campaign_campaigns` with keys to `company_companies`, `identity_users` and `identity_admins`, checks for the type, the period, exactly one creator and a lower-case code, and a partial index on `lower(identity_users.registration_campaign_code)`). Added to `CrossContextForeignKeysTest`.
+- **Use cases** `CreateCampaign`, `UpdateCampaign` (PUT, every editable field; `code` and `company_id` are refused), `DeleteCampaign` (409 `campaign-has-registrations`), `ListCampaigns` (filters `q`, `type`, `status`, `company_id` for admins), `GetCampaign`, `GetCampaignResults`, `RenderCampaignQr`, `GetPublicCampaign`. `CampaignAccess` gives the scope: a company admin of an active company (their own campaigns, others are 404) or a platform admin.
+- **Endpoints:** `company/campaigns[/{id}[/results|/qr]]` and the same under `admin/campaigns` (permission `campaigns.manage`, needs `identity:sync-permissions`), and the public `GET campaigns/{code}` (limited per address, cached like the public job page, 404 unless running).
+- **Registration:** `RunningCampaignCodes` implements the shared `CampaignCodes`; `RegisterJobSeeker` and `SignInWithGoogle` store the canonical code of a running campaign and drop any other code.
+- **Results:** `DatabaseCampaignStatistics`, one reporting query over accounts and applications (counts only).
+- **QR:** `BaconQrCodes` draws an SVG of the link; the link comes from `CAMPAIGN_REGISTRATION_URL` (template with `{code}`; empty means no link and a 503 `campaign-link-unavailable` for the QR). The QR endpoint needs the bearer token, so the client fetches it and shows the result.
+- **Audit:** `CampaignChanged` (created, updated, deleted) is recorded by `RecordCampaignAuditEntries` (`campaign.created`, `campaign.updated`, `campaign.deleted`).
+- **Tests:** `tests/Feature/Campaign/CampaignTest.php`; the two registration tests that sent a campaign code now create the campaign first.
+- **Not done:** the importer of the 11 legacy campaigns (a separate step that runs on real data only with approval).

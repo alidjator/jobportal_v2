@@ -39,6 +39,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'messaging_conversation_reads' => ['user_id'],
             'jobalert_alerts' => ['user_id'],
             'jobinvitation_invitations' => ['user_id', 'invited_by_user_id'],
+            'campaign_campaigns' => ['created_by_user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -48,8 +49,9 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'content_legal_documents' => ['created_by_admin_id'],
             'platform_settings' => ['updated_by_admin_id'],
             'platform_setting_overrides' => ['updated_by_admin_id'],
+            'campaign_campaigns' => ['created_by_admin_id'],
         ],
-        'company_companies' => ['jobinvitation_invitations' => ['company_id']],
+        'company_companies' => ['jobinvitation_invitations' => ['company_id'], 'campaign_campaigns' => ['company_id']],
         'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id']],
     ];

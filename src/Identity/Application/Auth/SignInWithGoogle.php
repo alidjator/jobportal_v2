@@ -9,6 +9,7 @@ use Src\Identity\Domain\Events\UserRegistered;
 use Src\Identity\Domain\SocialAccountRepository;
 use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
+use Src\Shared\Application\Campaign\CampaignCodes;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -31,6 +32,7 @@ final readonly class SignInWithGoogle
         private SocialAccountRepository $socialAccounts,
         private AccessTokenIssuer $tokens,
         private SignInThrottle $throttle,
+        private CampaignCodes $campaigns,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -79,7 +81,7 @@ final readonly class SignInWithGoogle
         $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
 
         [$user, $token] = $this->transactions->run(function () use ($user, $identity, $email, $linkedUserId, $command, $now, $expiresAt): array {
-            $user ??= User::registerWithGoogle($this->nameOf($identity, $email), $email, $command->language, $command->campaignCode, $now);
+            $user ??= User::registerWithGoogle($this->nameOf($identity, $email), $email, $command->language, $this->campaigns->activeCode($command->campaignCode), $now);
             $passwordRemoved = $linkedUserId === null && $user->id !== null && $user->confirmEmailOwnershipThroughGoogle($now);
 
             $user->recordSignIn($now);

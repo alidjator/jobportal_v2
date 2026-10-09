@@ -12,12 +12,15 @@ use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\UserRegistered;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
 use Tests\Support\FakeGoogleIdentityVerifier;
 use Tests\Support\RecordingVerificationCodeSender;
 
 final class GoogleSignInTest extends FeatureTestCase
 {
+    use CreatesReferenceRows;
+
     private const string PASSWORD = 'correct-horse-battery';
 
     private FakeGoogleIdentityVerifier $google;
@@ -61,6 +64,7 @@ final class GoogleSignInTest extends FeatureTestCase
     public function test_the_first_google_sign_in_creates_a_verified_job_seeker_without_a_password(): void
     {
         Event::fake([UserRegistered::class, SignedIn::class]);
+        $this->campaignRowId('jobfair-2026');
 
         $response = $this->signIn(extra: ['campaign_code' => 'jobfair-2026'], headers: ['Accept-Language' => 'en'])
             ->assertOk()

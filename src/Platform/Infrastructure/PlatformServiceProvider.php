@@ -4,6 +4,7 @@ namespace Src\Platform\Infrastructure;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Src\Campaign\Domain\Events\CampaignChanged;
 use Src\Company\Domain\Events\CompanyCreated;
 use Src\Company\Domain\Events\CompanyDocumentApproved;
 use Src\Company\Domain\Events\CompanyDocumentDeleted;
@@ -38,6 +39,7 @@ use Src\Platform\Application\Settings\SettingsStore;
 use Src\Platform\Application\Settings\StoredSettings;
 use Src\Platform\Infrastructure\Dashboard\OperationsCard;
 use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
+use Src\Platform\Infrastructure\Listeners\RecordCampaignAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordJobAuditEntries;
@@ -116,6 +118,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);
         Event::listen(JobStatusChanged::class, [RecordJobAuditEntries::class, 'onJobStatusChanged']);
         Event::listen(JobDecided::class, [RecordJobAuditEntries::class, 'onJobDecided']);
+        Event::listen(CampaignChanged::class, [RecordCampaignAuditEntries::class, 'onCampaignChanged']);
         Event::listen(ApplicantsExported::class, [RecordRecruitmentAuditEntries::class, 'onApplicantsExported']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
         Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);
