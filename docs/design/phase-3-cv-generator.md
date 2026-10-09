@@ -32,3 +32,18 @@ This closes Phase 3 (discovery and matching).
 - **No new notification, no new email.** The legacy has nothing to import.
 - **Tests:** the content of the document for each option (a fake renderer records it), each template really rendered to a PDF (starts with `%PDF-`), section order and omitted empty sections, language, access, template availability rules (default, last one), the admin endpoints and permission,
   the limit and its setting, an application with `cv` (file copied, limit, both-or-neither rule), erasure.
+
+## Coded (2026-10-09, checked with 1661 tests, committed)
+
+Inside `src/JobSeeker`: `Application/Cv` (use cases, `CvDocumentBuilder`, `CvTemplates`, `CvQuota`, `CvLabels`), `Domain` (`CvTemplate`, `CvInclusion`, `CvTemplateState` and the two repositories), `Infrastructure/Pdf/DompdfCvRenderer`, the views `resources/views/cv/{classic,modern,compact}.blade.php`,
+`CvController` and `AdminCvTemplateController` (routes in `routes.php` and the new `routes.admin.php`), permission `cv_templates.manage` (`JobSeekerPermissions`), setting `job_seeker.cv_generations_per_hour`, migrations `000093` (`jobseeker_cv_templates`, with its three rows) and `000094` (`jobseeker_cv_generations`).
+Shared: `GeneratedCvSpec` and the new method `ApplicantProfileSource::forApplicationWithGeneratedCv`; Recruitment: `ApplyToJobInput`, `ApplyToJobRequest` and `ApplyToJob`. New dependency `dompdf/dompdf` ^3.1. Tests: `tests/Feature/JobSeeker/CvGeneratorTest.php`; `SettingsTest` lists the new setting.
+The proposed details were coded as written; what was decided while coding:
+
+- **A job seeker with no uploaded resume can apply with a generated CV.** The CV stands in for the resume, so for this path the profile needs only a phone, a location and one experience or education entry; a profile that still lacks something gets `422 profile-incomplete` and no PDF is made (and no slot used).
+- **`cv: {}` means the default choices.** `resume_id` and `cv` are both optional in the request; the use case refuses both or neither with `422 invalid-application` (error under `resume_id`). Bad `cv` fields (language other than `id`/`en`, `include` not a map of booleans) are ordinary validation errors; an unknown key in `include` is `422 invalid-cv`.
+- **Photo:** the account picture when it is a JPEG or PNG (the avatar processor stores nothing else); otherwise the photo is silently left out.
+- **The default of the templates:** the stored default that is on; with none stored, the first template that is on. The default cannot be taken away directly (make another template the default); switching the default off hands the flag to the first template that stays on.
+- **File name:** `CV <account name>.pdf` (control characters and path separators removed, name cut at 100 characters).
+- **The PDF renderer** keeps dompdf's own font folder (DejaVu Sans) and writes only its font cache and temporary files under `storage/framework/dompdf`. The layout was checked by rendering the three templates, not by eye: a visual check of each template is worth doing once.
+- **After deploying:** run `php artisan identity:sync-permissions` so the permission `cv_templates.manage` exists, then give it to the admins who should manage the templates.

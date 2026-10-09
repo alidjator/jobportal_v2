@@ -2,6 +2,7 @@
 
 namespace Src\JobSeeker\Application;
 
+use Src\JobSeeker\Application\Cv\GenerateCv;
 use Src\JobSeeker\Domain\Education;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
@@ -14,6 +15,7 @@ use Src\JobSeeker\Domain\WorkExperience;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\Applicant\ApplicantResume;
 use Src\Shared\Application\Applicant\ApplicantSubmission;
+use Src\Shared\Application\Applicant\GeneratedCvSpec;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\References\LocationReferences;
@@ -42,6 +44,7 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
         private LocationReferences $locations,
         private JakartaToday $today,
         private Clock $clock,
+        private GenerateCv $cvs,
     ) {}
 
     public function forApplication(int $userId, int $resumeId): ApplicantSubmission
@@ -51,6 +54,22 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
         $completeness = ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], $counts['resumes']);
 
         return new ApplicantSubmission($completeness->missing, $this->resume($userId, $resumeId), $this->snapshot($profile));
+    }
+
+    public function forApplicationWithGeneratedCv(int $userId, GeneratedCvSpec $cv): ApplicantSubmission
+    {
+        $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
+        $counts = $this->profiles->counts($userId);
+        // The CV is made from the profile as it is now, and only when the application can go ahead: a profile that still lacks something needs no PDF.
+        $completeness = ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], 1);
+
+        if ($completeness->missing !== []) {
+            return new ApplicantSubmission($completeness->missing, null, $this->snapshot($profile));
+        }
+
+        $generated = $this->cvs->execute($userId, $cv);
+
+        return new ApplicantSubmission([], new ApplicantResume($generated->name, $generated->contents), $this->snapshot($profile));
     }
 
     public function lock(int $userId): void

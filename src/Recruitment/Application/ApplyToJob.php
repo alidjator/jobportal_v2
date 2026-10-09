@@ -59,8 +59,8 @@ final readonly class ApplyToJob
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound the job is not live
      * @throws StateConflict `already-applied`
-     * @throws TooManyAttempts `application-limit-reached`
-     * @throws BusinessRuleViolation `profile-incomplete`, `invalid-application`, `invalid-answers`
+     * @throws TooManyAttempts `application-limit-reached` or `cv-limit`
+     * @throws BusinessRuleViolation `profile-incomplete`, `invalid-application`, `invalid-answers`, `template-unavailable`, `invalid-cv`
      */
     public function execute(Actor $actor, int $jobId, ApplyToJobInput $input): Application
     {
@@ -79,7 +79,13 @@ final readonly class ApplyToJob
 
                 $this->assertBelowDailyLimit($userId);
 
-                $submission = $this->applicants->forApplication($userId, $input->resumeId);
+                if (($input->resumeId === null) === ($input->cv === null)) {
+                    throw new BusinessRuleViolation('Choose one of your own resumes or a CV to generate.', 'invalid-application', extensions: ['errors' => ['resume_id' => ['Choose one of your own resumes or a CV to generate.']]]);
+                }
+
+                $submission = $input->cv !== null
+                    ? $this->applicants->forApplicationWithGeneratedCv($userId, $input->cv)
+                    : $this->applicants->forApplication($userId, (int) $input->resumeId);
 
                 if ($submission->missing !== []) {
                     throw new BusinessRuleViolation('Complete your profile before applying.', 'profile-incomplete', extensions: ['missing' => $submission->missing]);

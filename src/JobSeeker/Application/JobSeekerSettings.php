@@ -17,6 +17,8 @@ final class JobSeekerSettings
 
     public const string CANDIDATE_VIEWS_PER_DAY = 'job_seeker.candidate_views_per_day';
 
+    public const string CV_GENERATIONS_PER_HOUR = 'job_seeker.cv_generations_per_hour';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -32,6 +34,10 @@ final class JobSeekerSettings
             SettingDefinition::integer(
                 self::CANDIDATE_VIEWS_PER_DAY, 200, 10, 5000,
                 'How many different candidate profiles a company member may open per day (Jakarta time). Opening the same profile again the same day does not count.',
+            ),
+            SettingDefinition::integer(
+                self::CV_GENERATIONS_PER_HOUR, 10, 1, 200,
+                'How many CVs a job seeker may have generated per hour, downloads and applications together. Making a CV is heavy work.',
             ),
         ];
     }

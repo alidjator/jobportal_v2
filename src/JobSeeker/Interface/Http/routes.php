@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
 use Src\JobSeeker\Interface\Http\Controllers\CandidateController;
+use Src\JobSeeker\Interface\Http\Controllers\CvController;
 use Src\JobSeeker\Interface\Http\Controllers\MyProfileController;
 
 // The job seeker's own profile and its lists; every use case checks that the caller is a job seeker.
@@ -29,6 +30,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('me/resumes/{id}', [MyProfileController::class, 'renameResume'])->whereNumber('id');
     Route::delete('me/resumes/{id}', [MyProfileController::class, 'deleteResume'])->whereNumber('id');
     Route::get('me/resumes/{id}/download', [MyProfileController::class, 'downloadResume'])->whereNumber('id');
+
+    // The CV generator: the templates on offer, and a PDF made from the latest profile.
+    Route::get('me/cv/templates', [CvController::class, 'templates']);
+    Route::post('me/cv', [CvController::class, 'generate']);
 
     // The companies that opened the job seeker's profile or resumes.
     Route::get('me/profile/views', [CandidateController::class, 'views']);
