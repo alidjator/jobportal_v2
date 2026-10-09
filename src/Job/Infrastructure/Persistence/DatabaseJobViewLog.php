@@ -34,6 +34,21 @@ final readonly class DatabaseJobViewLog implements JobViewLog
         });
     }
 
+    public function dailyViews(int $jobId, string $from): array
+    {
+        $views = [];
+
+        foreach ($this->connection->table('job_views')
+            ->where('job_id', $jobId)
+            ->where('day', '>=', $from)
+            ->groupBy('day')
+            ->get(['day', $this->connection->raw('COUNT(*) as total')]) as $row) {
+            $views[(string) $row->day] = (int) $row->total;
+        }
+
+        return $views;
+    }
+
     public function eraseViewer(int $userId): int
     {
         return $this->connection->table('job_views')->where('viewer_key', 'u'.$userId)->delete();

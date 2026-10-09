@@ -241,6 +241,43 @@ final class DashboardTest extends FeatureTestCase
         $this->assertSame(1, $recruiter['applications_daily'][29]['count']);
     }
 
+    public function test_the_performance_of_one_job_has_its_own_totals_and_daily_series(): void
+    {
+        [$mine, $admins] = $this->companyJobs();
+
+        foreach ([[$mine, 'u1', '2026-10-05'], [$mine, 'u2', '2026-10-05'], [$mine, 'u3', '2026-10-04'], [$admins, 'u1', '2026-10-05'], [$mine, 'u9', '2026-08-01']] as [$job, $key, $day]) {
+            DB::table('job_views')->insert(['job_id' => $job, 'viewer_key' => $key, 'day' => $day, 'created_at' => now()]);
+        }
+
+        $data = $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->adminToken)->assertOk()->json('data');
+
+        $this->assertSame($mine, $data['job_id']);
+        $this->assertSame('active', $data['status']);
+        $this->assertSame(3, $data['views']);
+        $this->assertSame(1, $data['applications']);
+        $this->assertEqualsWithDelta(0.3333, $data['applications_per_view'], 0.0001);
+        $this->assertSame('2026-10-05', $data['to']);
+        $this->assertCount(30, $data['views_daily']);
+        $this->assertSame(['day' => '2026-10-05', 'count' => 2], $data['views_daily'][29]);
+        $this->assertSame(['day' => '2026-10-04', 'count' => 1], $data['views_daily'][28]);
+        $this->assertSame(['day' => '2026-10-05', 'count' => 1], $data['applications_daily'][29]);
+
+        $quiet = $this->api('GET', "/company/jobs/{$this->companyJobs()[2]}/performance", [], $this->adminToken)->assertOk()->json('data');
+
+        $this->assertSame(0, $quiet['views']);
+        $this->assertNull($quiet['applications_per_view']);
+    }
+
+    public function test_the_performance_of_a_job_follows_the_job_access_rules(): void
+    {
+        [$mine, $admins] = $this->companyJobs();
+
+        $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->recruiterToken)->assertOk();
+        $this->api('GET', "/company/jobs/{$admins}/performance", [], $this->recruiterToken)->assertNotFound();
+        $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->otherAdminToken)->assertNotFound();
+        $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+    }
+
     public function test_a_job_without_views_has_no_rate(): void
     {
         [$mine] = $this->companyJobs();
@@ -274,6 +311,7 @@ final class DashboardTest extends FeatureTestCase
         $this->getJson('/api/v1/me/dashboard')->assertStatus(401);
         $this->getJson('/api/v1/company/dashboard')->assertStatus(401);
         $this->getJson('/api/v1/admin/dashboard')->assertStatus(401);
+        $this->getJson('/api/v1/company/jobs/1/performance')->assertStatus(401);
         $this->platform($this->seekerToken)->assertStatus(401);
     }
 

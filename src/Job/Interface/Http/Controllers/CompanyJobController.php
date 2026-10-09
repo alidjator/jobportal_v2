@@ -12,6 +12,7 @@ use Src\Job\Application\CreateJob;
 use Src\Job\Application\DeleteJob;
 use Src\Job\Application\GetJob;
 use Src\Job\Application\GetJobAssignees;
+use Src\Job\Application\GetJobPerformance;
 use Src\Job\Application\ListJobs;
 use Src\Job\Application\PublishJob;
 use Src\Job\Application\ReopenJob;
@@ -23,6 +24,7 @@ use Src\Job\Interface\Http\Requests\ReplaceJobAssigneesRequest;
 use Src\Job\Interface\Http\Requests\SaveJobRequest;
 use Src\Job\Interface\Http\Resources\JobDetailResource;
 use Src\Job\Interface\Http\Resources\JobListResource;
+use Src\Job\Interface\Http\Resources\JobPerformanceResource;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -44,6 +46,11 @@ final class CompanyJobController extends ApiController
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJob $get): JobDetailResource
     {
         return new JobDetailResource($get->execute($actors->fromRequest($request), $id, $context->language));
+    }
+
+    public function performance(Request $request, int $id, ActorResolver $actors, GetJobPerformance $get): JobPerformanceResource
+    {
+        return new JobPerformanceResource($get->execute($actors->fromRequest($request), $id));
     }
 
     public function store(SaveJobRequest $request, RequestContext $context, ActorResolver $actors, CreateJob $create, GetJob $get): JsonResponse

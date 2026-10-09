@@ -16,6 +16,14 @@ interface JobViewLog
      */
     public function foldBefore(string $before): int;
 
+    /**
+     * The counted views of one job per Jakarta calendar day, from a day on.
+     *
+     * @param  string  $from  a Jakarta calendar day, `Y-m-d`, included
+     * @return array<string, int> `Y-m-d` => views, quiet days missing
+     */
+    public function dailyViews(int $jobId, string $from): array;
+
     /** Deletes the raw rows of a signed-in viewer; the daily counts hold no viewer. @return int how many rows were removed */
     public function eraseViewer(int $userId): int;
 }
