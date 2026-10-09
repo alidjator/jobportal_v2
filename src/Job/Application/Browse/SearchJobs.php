@@ -2,38 +2,30 @@
 
 namespace Src\Job\Application\Browse;
 
-use Src\Job\Application\JakartaDate;
-use Src\Shared\Application\Clock;
-use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
-use Src\Shared\Application\References\TagRegistry;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
 /**
  * The public job search, for anyone. It limits each client address, refuses a minimum salary without its period and a position deeper than 10,000, looks up
- * which tags and companies each keyword word matches, and asks the reader for the live jobs of companies the public may see. The rows come back with the
+ * the query it runs (see `JobSearchQueryBuilder`), and asks the reader for the live jobs of companies the public may see. The rows come back with the
  * company card and names in the language of the request.
  */
 final readonly class SearchJobs
 {
     public const int MAX_POSITION = 10000;
 
-    private const int MAX_MATCHES_PER_WORD = 200;
-
     public function __construct(
         private SearchThrottle $throttle,
         private JobSearchReader $reader,
+        private JobSearchQueryBuilder $queries,
         private PublicCompanies $publicCompanies,
-        private CompanyDirectory $companies,
-        private TagRegistry $tags,
         private ReferenceValues $references,
         private LocationReferences $locations,
-        private Clock $clock,
     ) {}
 
     /**
@@ -54,16 +46,7 @@ final readonly class SearchJobs
             throw new BusinessRuleViolation('The search shows at most the first '.self::MAX_POSITION.' results; narrow it down instead.', 'page-out-of-range');
         }
 
-        $words = array_map(
-            fn (string $word): SearchWord => new SearchWord(
-                $word,
-                $this->tags->idsMatching($word, self::MAX_MATCHES_PER_WORD),
-                $this->companies->idsByName($word, self::MAX_MATCHES_PER_WORD),
-            ),
-            $criteria->words,
-        );
-
-        $hits = $this->reader->page(new JobSearchQuery($criteria, $words, JakartaDate::today($this->clock->now()), $this->publicCompanies->hiddenIds()), $page);
+        $hits = $this->reader->page($this->queries->build($criteria), $page);
 
         return new Page($this->items($hits->items, $language), $hits->total, $hits->request);
     }

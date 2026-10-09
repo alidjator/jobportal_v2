@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Job\Application\Admin\AdminJobReader;
+use Src\Job\Application\Browse\AlertJobMatcher;
 use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\SearchThrottle;
 use Src\Job\Application\JobPermissions;
@@ -28,6 +29,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\Job\JobMatcher;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -44,6 +46,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSearchReader::class => DatabaseJobSearchReader::class,
         SearchThrottle::class => RateLimiterSearchThrottle::class,
         JobDirectory::class => RepositoryJobDirectory::class,
+        JobMatcher::class => AlertJobMatcher::class,
     ];
 
     public function register(): void

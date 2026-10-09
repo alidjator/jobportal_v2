@@ -176,6 +176,7 @@ final class SettingsTest extends FeatureTestCase
             'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb',
             'identity.avatar_max_size_kb',
             'job_seeker.available_from_max_days', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
+            'jobalert.max_alerts_per_user',
             'jobs.max_deadline_days', 'jobs.require_approval',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',

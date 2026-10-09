@@ -50,6 +50,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         }
 
         $this->applyFilters($filtered, $query);
+        $this->applyWindow($filtered, $query);
 
         $total = (clone $filtered)->count();
 
@@ -74,6 +75,22 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
             ->all();
 
         return new Page(array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows), $total, $request);
+    }
+
+    /** What a job alert adds: a window on the first go-live (after the first time, up to and including the second) and one job. */
+    private function applyWindow(Builder $builder, JobSearchQuery $query): void
+    {
+        if ($query->publishedAfter !== null) {
+            $builder->where('job_jobs.published_at', '>', $query->publishedAfter->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'));
+        }
+
+        if ($query->publishedUntil !== null) {
+            $builder->where('job_jobs.published_at', '<=', $query->publishedUntil->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'));
+        }
+
+        if ($query->onlyJobId !== null) {
+            $builder->where('job_jobs.id', $query->onlyJobId);
+        }
     }
 
     private function applyFilters(Builder $builder, JobSearchQuery $query): void

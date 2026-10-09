@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 
@@ -11,6 +12,9 @@ Route::get('jobs', [PublicJobController::class, 'index'])->middleware('cache.hea
 Route::get('jobs/{job}', [PublicJobController::class, 'show'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
     ->middleware('cache.headers:public;max_age=60;etag');
+
+// The live jobs one of the job seeker's own alerts matches right now (the alert itself is managed by the JobAlert context).
+Route::get('me/job-alerts/{id}/jobs', [AlertJobController::class, 'index'])->whereNumber('id')->middleware('auth:user');
 
 // The jobs of the caller's own company; every use case checks that the caller is a member of an active company and may see the job.
 Route::middleware('auth:user')->group(function (): void {
