@@ -11,6 +11,7 @@ use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationDetailData;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationRow;
+use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Pagination\CursorPage;
@@ -84,11 +85,12 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
             ->where('application_id', $applicationId)
             ->orderBy('created_at')
             ->orderBy('id')
-            ->get(['to_type', 'actor_kind', 'created_at'])
+            ->get(['to_type', 'actor_kind', 'rejection_reason', 'created_at'])
             ->map(static fn (stdClass $entry): ApplicationHistoryEntry => new ApplicationHistoryEntry(
                 StageType::from($entry->to_type),
                 new DateTimeImmutable((string) $entry->created_at, new DateTimeZone('UTC')),
                 StageMoveActor::from($entry->actor_kind),
+                $entry->rejection_reason === null ? null : RejectionReason::from($entry->rejection_reason),
             ))
             ->all();
 

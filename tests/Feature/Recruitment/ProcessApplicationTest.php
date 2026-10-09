@@ -195,11 +195,11 @@ final class ProcessApplicationTest extends FeatureTestCase
         $this->assertSame(['applied', 'rejected', 'recruiter', $this->recruiterId, 'salary_expectation_mismatch', 'Above our band'], [$entry->from_type, $entry->to_type, $entry->actor_kind, (int) $entry->actor_id, $entry->rejection_reason, $entry->note]);
         $this->assertSame(['rejected'], array_map(fn (ApplicationStageChanged $e): string => $e->toType->value, $this->events));
 
-        // The applicant sees the status only: neither the reason nor the note.
+        // The applicant sees the status and the reason code, never the free note.
         $detail = $this->api('GET', "/me/applications/{$this->applicationId}", token: $this->seekerToken)->assertOk();
         $detail->assertJsonPath('data.status', 'rejected');
         $this->assertStringNotContainsString('Above our band', (string) json_encode($detail->json()));
-        $this->assertStringNotContainsString('salary_expectation_mismatch', (string) json_encode($detail->json()));
+        $detail->assertJsonPath('data.rejection_reason', 'salary_expectation_mismatch');
     }
 
     public function test_every_reason_works_and_the_note_rules_hold(): void

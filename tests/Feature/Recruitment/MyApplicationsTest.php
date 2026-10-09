@@ -161,7 +161,7 @@ final class MyApplicationsTest extends FeatureTestCase
         $body = json_encode($response->json());
         $this->assertStringNotContainsString('meets_must_have', (string) $body);
         $this->assertStringNotContainsString('snapshot', (string) $body);
-        $this->assertStringNotContainsString('rejection', (string) $body);
+        $response->assertJsonPath('data.rejection_reason', null);
     }
 
     public function test_an_unknown_application_is_not_found(): void

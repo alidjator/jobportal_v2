@@ -54,11 +54,12 @@ final class PipelineJourneyTest extends FeatureTestCase
         $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.moved_to_interview')->count());
         $this->assertSame([0, 0, 1, 0, 0, 0, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
 
-        // 4. The recruiter rejects it with a reason; the applicant sees only the status.
+        // 4. The recruiter rejects it with a reason; the applicant sees the status and the reason code, not the note.
         $this->api('POST', "/company/applications/{$id}/reject", ['reason' => 'failed_screening', 'note' => 'Weak answers'], $this->recruiterToken)->assertNoContent();
         $mine = $this->api('GET', "/me/applications/{$id}", token: $this->seekerToken)->assertOk();
         $mine->assertJsonPath('data.status', 'rejected');
-        $this->assertStringNotContainsString('failed_screening', (string) json_encode($mine->json()));
+        $mine->assertJsonPath('data.rejection_reason', 'failed_screening');
+        $this->assertStringNotContainsString('Weak answers', (string) json_encode($mine->json()));
         $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.rejected')->count());
 
         // 5. The application is final: the applicant can neither withdraw nor apply again, and the recruiter cannot move it.

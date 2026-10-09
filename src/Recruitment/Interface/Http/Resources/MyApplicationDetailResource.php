@@ -7,9 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationView;
+use Src\Recruitment\Domain\RejectionReason;
+use Src\Recruitment\Domain\StageType;
 
 /**
- * The applicant's own detail of an application. The must-have result, the profile snapshot, the recruiter's notes and the rejection reasons are not part of it.
+ * The applicant's own detail of an application. The must-have result, the profile snapshot, the recruiter's notes and the free note of a rejection are not part of it; the reason code of a rejection is.
  *
  * @property ApplicationView $resource
  */
@@ -20,6 +22,7 @@ final class MyApplicationDetailResource extends JsonResource
     {
         $data = $this->resource->data;
         $row = $data->row;
+        $rejection = $row->status === StageType::Rejected ? $this->rejectionReason($data->history) : null;
 
         return [
             'id' => $row->id,
@@ -27,6 +30,7 @@ final class MyApplicationDetailResource extends JsonResource
             'company' => ['id' => $row->companyId, 'name' => $this->resource->companyName],
             'status' => $row->status->value,
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
+            'rejection_reason' => $rejection?->value,
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,
@@ -43,5 +47,17 @@ final class MyApplicationDetailResource extends JsonResource
                 'options' => $answer->options,
             ], $data->answers),
         ];
+    }
+
+    /** @param list<ApplicationHistoryEntry> $history */
+    private function rejectionReason(array $history): ?RejectionReason
+    {
+        foreach (array_reverse($history) as $entry) {
+            if ($entry->status === StageType::Rejected) {
+                return $entry->reason;
+            }
+        }
+
+        return null;
     }
 }

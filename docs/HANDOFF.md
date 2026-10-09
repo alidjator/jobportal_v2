@@ -48,7 +48,7 @@ Step 2 is committed (`f7c4a10`) and `000081` ran on the real database. Step 3 (o
 
 - Decisions on the legacy findings (`docs/analysis/legacy-findings.md`), especially S1 to S3 in the running production application.
 - Legal review of the religion and nationality filtering decision, and of the age limits (minimum 15, default maximum 60).
-- Open product points: whether applicants see rejection reasons (hidden now), the push channel of `application_update` (email only now), whether applying needs a verified email.
+- Product points settled 2026-10-09: applicants see the rejection reason code (not the note; checked with 1661 tests and committed); the push channel of `application_update` is postponed until a client can receive push (email only now); applying needs a verified email (already coded).
 
 ## Document index
 
