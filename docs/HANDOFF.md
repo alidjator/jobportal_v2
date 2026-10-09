@@ -27,7 +27,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Next step
 
-Step 2 is committed (`f7c4a10`) and `000081` ran on the real database. Step 3 (offers, `docs/design/phase-2-offers.md`) is coded, checked (1477 tests) and committed; `000082` ran on both databases. Step 4 (bulk actions, `docs/design/phase-2-bulk-actions.md`) is designed (`618a2dd`), coded, checked (1494 tests) and committed; no migration. Step 5 (CSV export, R13, `docs/design/phase-2-export.md`) is coded, checked (1502 tests) and committed; no migration. Step 6 (chat with attachments and bulk message, `docs/design/phase-2-chat.md`) is designed and approved, not coded yet (needs `laravel/reverb`, migrations from `000083`). Or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
+Step 2 is committed (`f7c4a10`) and `000081` ran on the real database. Step 3 (offers, `docs/design/phase-2-offers.md`) is coded, checked (1477 tests) and committed; `000082` ran on both databases. Step 4 (bulk actions, `docs/design/phase-2-bulk-actions.md`) is designed (`618a2dd`), coded, checked (1494 tests) and committed; no migration. Step 5 (CSV export, R13, `docs/design/phase-2-export.md`) is coded, checked (1502 tests) and committed; no migration. Step 6 (chat with attachments and bulk message, `docs/design/phase-2-chat.md`) is designed (`ef76aa6`), coded, checked (1534 tests) and committed; migrations `000083` to `000086` ran on both databases. Next: Phase 2 is complete apart from the deployment tasks of the user (Reverb process, nginx WebSocket proxy, upload limits; see the design doc). Or follow-ups of the run: reset the 10 non-bcrypt accounts, review the `draft` jobs with the user.
 
 ## Operational facts not in `CLAUDE.md`
 

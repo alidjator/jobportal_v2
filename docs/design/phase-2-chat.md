@@ -41,3 +41,17 @@ a recruiter can start a conversation any time, a job seeker only with a company 
 - **Scheduled commands:** `messaging:send-unread-emails` every minute (the 15-minute rule), `messaging:purge-...` not needed. Emails go on the `default` queue; bulk sends run in the request for up to 50 recipients (as step 4), the emails and
   notifications on the `bulk` queue.
 - **Verification note:** the server-side presence lookup (Reverb's HTTP API) is the one piece that needs a live server to verify; it is coded behind an interface with a fake for the tests.
+
+## Coded (2026-10-08, checked and committed)
+
+- `laravel/reverb` installed (`composer require -W`: this lowered guzzle 8.2.0 to 7.15.5, both allowed by Laravel; no project code uses Guzzle directly). `config/broadcasting.php` and `config/reverb.php` added; allowed origins come from `REVERB_ALLOWED_ORIGINS`
+  (empty refuses every browser) and clients cannot send events. `.env.example` lists the `REVERB_*` names (no values). `BROADCAST_CONNECTION` stays `log` until the user deploys Reverb.
+- Migrations `000083` to `000086` (conversations, messages, attachments with the message link table, read states). Ran on the test and the real database.
+- Context `Messaging`. Use cases are side-agnostic where the rules are the same (`ListConversations`, `SendMessage`, `DeleteMessage`...), decided by the caller's kind; routes exist under `company/` and `me/`.
+- Choices made while coding: a closed conversation refuses writing from **both** sides until reopened; the unread reminder email goes to whoever was told (job seeker, or the company-side member) and the read row holds `unread_since` and `emailed_at`;
+  a message sent also moves the sender's own read pointer; the daily cap counts company messages per Jakarta day (setting is overridable per company, as the bulk limit); bulk items skipped with a code: `application-not-found`, `duplicate-recipient`,
+  `daily-limit`, `recipient-unavailable`, `conversation-closed`; a company member starting a thread with an existing thread they may not see gets 409 `conversation-exists`; erasure of a job seeker clears only seeker-side texts and files.
+- Shared contract changes: `ApplicantRelations` (new, Recruitment), `JobDirectory::assignedJobIds`, `ApplicantContacts::isActiveJobSeeker`, `InAppNotifier::refresh` (updates the unread notification of the same conversation).
+- Tests: `ChatTest`, `ChatNotificationsTest`, `BulkMessageTest` (37 tests; full suite 1534).
+- Deployment tasks for the user: run Reverb under a process manager, proxy the WebSocket path in nginx, raise `client_max_body_size` and PHP `upload_max_filesize`/`post_max_size` to at least 5 files of 5 MB, run migrations `000083` to `000086` on the real
+  database, then `identity:sync-permissions` is not needed (no permission added).

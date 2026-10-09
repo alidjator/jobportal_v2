@@ -177,6 +177,7 @@ final class SettingsTest extends FeatureTestCase
             'identity.avatar_max_size_kb',
             'job_seeker.available_from_max_days', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
             'jobs.max_deadline_days', 'jobs.require_approval',
+            'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
             'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',
         ], $keys);

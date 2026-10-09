@@ -45,4 +45,29 @@ final readonly class DatabaseInAppNotifier implements InAppNotifier
             $userIds,
         ));
     }
+
+    public function refresh(array $userIds, string $type, string $groupKey, array $data): void
+    {
+        $time = $this->clock->now()->format(self::TIME_FORMAT);
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $group = (string) ($data[$groupKey] ?? '');
+        $path = '$.'.$groupKey;
+        $missing = [];
+
+        foreach (array_values(array_unique($userIds)) as $userId) {
+            $updated = $this->connection->table('notifications')
+                ->where('notifiable_type', self::USER_MORPH_TYPE)
+                ->where('notifiable_id', $userId)
+                ->where('type', $type)
+                ->whereNull('read_at')
+                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(data, ?)) = ?', [$path, $group])
+                ->update(['data' => $json, 'created_at' => $time, 'updated_at' => $time]);
+
+            if ($updated === 0) {
+                $missing[] = $userId;
+            }
+        }
+
+        $this->send($missing, $type, $data);
+    }
 }

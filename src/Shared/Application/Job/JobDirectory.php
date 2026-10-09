@@ -11,6 +11,13 @@ interface JobDirectory
      */
     public function visibleToMember(int $jobId, int $companyId, int $userId, bool $isCompanyAdmin): ?JobSummary;
 
+    /**
+     * The ids of the jobs of the company that the account is assigned to.
+     *
+     * @return list<int>
+     */
+    public function assignedJobIds(int $companyId, int $userId): array;
+
     /** The id of the company of a live public job (as the public job page shows it), or null when there is no such job for the public. */
     public function publicCompanyId(int $jobId): ?int;
 

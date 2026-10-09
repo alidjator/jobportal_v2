@@ -34,6 +34,14 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return new JobSummary($jobId, $companyId, $job->status->isEditable());
     }
 
+    public function assignedJobIds(int $companyId, int $userId): array
+    {
+        return array_values(array_filter(
+            $this->assignments->jobIdsOf($userId),
+            fn (int $jobId): bool => $this->jobs->find($jobId)?->companyId === $companyId,
+        ));
+    }
+
     public function publicCompanyId(int $jobId): ?int
     {
         $job = $this->jobs->find($jobId);

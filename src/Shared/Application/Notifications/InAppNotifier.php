@@ -17,4 +17,13 @@ interface InAppNotifier
      * @param  array<string, mixed>  $data  values that can be written as JSON; never secrets or whole personal records
      */
     public function send(array $userIds, string $type, array $data = []): void;
+
+    /**
+     * Like `send`, but a user who still has an unread notification of the same type and the same value in the data field `$groupKey` gets that notification
+     * updated (new data, new time) instead of another one. Used for a feed that would otherwise flood the list, such as the messages of one conversation.
+     *
+     * @param  list<int>  $userIds
+     * @param  array<string, mixed>  $data  must hold `$groupKey`
+     */
+    public function refresh(array $userIds, string $type, string $groupKey, array $data): void;
 }
