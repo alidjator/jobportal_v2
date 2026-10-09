@@ -10,6 +10,11 @@ final readonly class DatabaseApplicantRelations implements ApplicantRelations
 {
     public function __construct(private ConnectionInterface $connection, private JobDirectory $jobs) {}
 
+    public function hasAppliedToJob(int $jobId, int $applicantUserId): bool
+    {
+        return $this->connection->table('recruitment_applications')->where('job_id', $jobId)->where('user_id', $applicantUserId)->exists();
+    }
+
     public function hasApplied(int $companyId, int $applicantUserId): bool
     {
         return $this->connection->table('recruitment_applications')

@@ -62,24 +62,24 @@ final class NotificationPreferencesTest extends FeatureTestCase
     {
         $response = $this->api('GET', '')->assertOk();
 
-        $this->assertSame(['application_update', 'chat_message', 'job_alert', 'newsletter', 'probe_update'], array_column($response->json('data'), 'key'));
-        $this->assertSame('Updates on your job applications', $response->json('data.4.description'));
-        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.4.channels.email'));
-        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.4.channels.push'));
-        $this->assertSame(['email' => ['enabled' => false, 'is_default' => true]], $response->json('data.3.channels'));
+        $this->assertSame(['application_update', 'chat_message', 'invitation', 'job_alert', 'newsletter', 'probe_update'], array_column($response->json('data'), 'key'));
+        $this->assertSame('Updates on your job applications', $response->json('data.5.description'));
+        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.5.channels.email'));
+        $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.5.channels.push'));
+        $this->assertSame(['email' => ['enabled' => false, 'is_default' => true]], $response->json('data.4.channels'));
     }
 
     public function test_a_choice_is_stored_and_shown_and_can_be_changed_again(): void
     {
         $this->api('PUT', '/probe_update/email', ['enabled' => false])->assertNoContent();
 
-        $channels = $this->api('GET', '')->json('data.4.channels');
+        $channels = $this->api('GET', '')->json('data.5.channels');
         $this->assertSame(['enabled' => false, 'is_default' => false], $channels['email']);
         $this->assertSame(['enabled' => true, 'is_default' => true], $channels['push']);
 
         $this->api('PUT', '/probe_update/email', ['enabled' => true])->assertNoContent();
 
-        $this->assertSame(['enabled' => true, 'is_default' => false], $this->api('GET', '')->json('data.4.channels.email'));
+        $this->assertSame(['enabled' => true, 'is_default' => false], $this->api('GET', '')->json('data.5.channels.email'));
         $this->assertSame(1, DB::table('notification_preferences')->where('user_id', $this->user->id)->count());
     }
 

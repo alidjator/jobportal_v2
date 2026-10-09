@@ -6,6 +6,7 @@ use Src\Content\Infrastructure\ContentServiceProvider;
 use Src\Identity\Infrastructure\IdentityServiceProvider;
 use Src\Job\Infrastructure\JobServiceProvider;
 use Src\JobAlert\Infrastructure\JobAlertServiceProvider;
+use Src\JobInvitation\Infrastructure\JobInvitationServiceProvider;
 use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
 use Src\LegacyImport\Infrastructure\LegacyImportServiceProvider;
 use Src\Messaging\Infrastructure\MessagingServiceProvider;
@@ -26,6 +27,7 @@ return [
     RecruitmentServiceProvider::class,
     MessagingServiceProvider::class,
     JobAlertServiceProvider::class,
+    JobInvitationServiceProvider::class,
     JobSeekerServiceProvider::class,
     LegacyImportServiceProvider::class,
 ];

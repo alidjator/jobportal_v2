@@ -22,6 +22,14 @@ interface JobDirectory
     public function publicCompanyId(int $jobId): ?int;
 
     /**
+     * The jobs among these that are live for the public, as `publicCompanyId` decides.
+     *
+     * @param  list<int>  $jobIds
+     * @return list<int>
+     */
+    public function liveJobIds(array $jobIds): array;
+
+    /**
      * The accounts the job is assigned to (a job always has at least one), who are told about its applications.
      *
      * @return list<int>

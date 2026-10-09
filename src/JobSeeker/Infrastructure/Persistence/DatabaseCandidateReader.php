@@ -40,6 +40,24 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return $row === null ? null : $this->candidates([$row])[0];
     }
 
+    public function namesOfUsers(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($this->connection->table('jobseeker_profiles as p')
+            ->join('identity_users as u', 'u.id', '=', 'p.user_id')
+            ->whereIn('p.user_id', $userIds)->whereNotNull('p.slug')->whereNull('u.anonymized_at')
+            ->get(['p.user_id', 'p.slug', 'u.name']) as $row) {
+            $names[(int) $row->user_id] = ['slug' => (string) $row->slug, 'name' => (string) $row->name];
+        }
+
+        return $names;
+    }
+
     /** @return list<string> */
     private function columns(): array
     {

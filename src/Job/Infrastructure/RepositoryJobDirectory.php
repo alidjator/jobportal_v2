@@ -53,6 +53,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return $job->companyId;
     }
 
+    public function liveJobIds(array $jobIds): array
+    {
+        return array_values(array_filter($jobIds, fn (int $jobId): bool => $this->publicCompanyId($jobId) !== null));
+    }
+
     public function assigneeUserIds(int $jobId): array
     {
         return $this->assignments->userIds($jobId);

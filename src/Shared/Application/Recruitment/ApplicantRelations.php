@@ -8,6 +8,9 @@ namespace Src\Shared\Application\Recruitment;
  */
 interface ApplicantRelations
 {
+    /** Whether the job seeker has an application on the job, whatever its status (a withdrawn one counts). */
+    public function hasAppliedToJob(int $jobId, int $applicantUserId): bool;
+
     /** Whether the job seeker has any application with the company, whatever its status (a withdrawn one counts). */
     public function hasApplied(int $companyId, int $applicantUserId): bool;
 

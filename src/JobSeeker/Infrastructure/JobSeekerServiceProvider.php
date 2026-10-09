@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\JobSeeker\Application\ApplicantProfileReader;
 use Src\JobSeeker\Application\Candidates\CandidateReader;
+use Src\JobSeeker\Application\Candidates\JobSeekerCandidateDirectory;
 use Src\JobSeeker\Application\JobSeekerSettings;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
@@ -27,6 +28,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileViewRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseResumeRepository;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
+use Src\Shared\Application\Candidate\CandidateDirectory;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -46,6 +48,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
         ResumeRepository::class => DatabaseResumeRepository::class,
         ProfileViewRepository::class => DatabaseProfileViewRepository::class,
         CandidateReader::class => DatabaseCandidateReader::class,
+        CandidateDirectory::class => JobSeekerCandidateDirectory::class,
         JobSeekerDataEraser::class => DatabaseJobSeekerDataEraser::class,
         ApplicantProfileSource::class => ApplicantProfileReader::class,
     ];

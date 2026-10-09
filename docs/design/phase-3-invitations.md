@@ -26,3 +26,14 @@ A company member invites a candidate they found (see `phase-3-candidate-search.m
 - **Contact data:** an invitation does not open the candidate's contact data; they appear only through an application, as before.
 - **Erasure:** anonymising the candidate deletes their invitations; the member who invited stays on the rows of others.
 - **Tests:** access by role and assignment, each error, the cap and its override, the note and reason limits, the status flow (viewed once, applied by an application, declined, expired and back), the lists and filters, the notifications and the email, erasure.
+
+## Coded (2026-10-09, checked with 1600 tests, committed)
+
+Context `src/JobInvitation` (Domain, Application, Infrastructure, Interface), provider `JobInvitationServiceProvider` (in `bootstrap/providers.php`), migration `000091` (`jobinvitation_invitations`), setting `invitations.max_per_day`, template `invitation.received`, preference `invitation`.
+Tests: `tests/Feature/JobInvitation/InvitationTest.php`; `SettingsTest`, `EmailTemplatesTest` and `NotificationPreferencesTest` list the new setting, template and preference. The details above were coded as proposed; what was decided while coding:
+
+- **`expired` is a flag, not a status value.** Every row carries `status` (the stored one: `sent`, `viewed`, `applied`, `declined`) and `expired` (true while the invitation is still open and its job is not live). The list filter works on the stored status; there is no `filter[status]=expired`, because liveness belongs to Job and cannot be put in the SQL of this context without copying its rule.
+- **New Shared contracts:** `CandidateDirectory` (provided by JobSeeker: `findable(slug)` and `refs(userIds)`), `JobDirectory::liveJobIds` (Job) and `ApplicantRelations::hasAppliedToJob` (Recruitment).
+- **The daily cap is read before the row is written**, like the chat quota, so two requests at the very same moment may overshoot it by one. The `already-invited` check comes first, so a refused invitation never uses a slot.
+- **Declining needs a live job** (otherwise 409 `invitation-closed`, as for an answered invitation); opening an expired invitation still works and marks it `viewed`.
+- **Member names on the company side** come from `CompanyMemberAccounts::summaries`; the candidate never gets the member (`invited_by` is absent from their responses).
