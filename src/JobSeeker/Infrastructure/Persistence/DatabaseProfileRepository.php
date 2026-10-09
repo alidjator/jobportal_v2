@@ -10,6 +10,7 @@ use Src\JobSeeker\Domain\Gender;
 use Src\JobSeeker\Domain\JobSeekerProfile;
 use Src\JobSeeker\Domain\MaritalStatus;
 use Src\JobSeeker\Domain\ProfileRepository;
+use Src\JobSeeker\Domain\ProfileSlug;
 use stdClass;
 
 final readonly class DatabaseProfileRepository implements ProfileRepository
@@ -34,6 +35,7 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
         $this->connection->table('jobseeker_profiles')->upsert(
             [[
                 'user_id' => $profile->userId,
+                'slug' => $this->slugOf($profile->userId),
                 'phone' => $profile->phone,
                 'whatsapp' => $profile->whatsapp,
                 'birth_date' => $profile->birthDate?->format(self::DATE_FORMAT),
@@ -61,11 +63,27 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
             ]],
             ['user_id'],
             [
-                'phone', 'whatsapp', 'birth_date', 'gender', 'marital_status', 'religion_id', 'nationality_id', 'expected_salary', 'expected_salary_period_id',
+                'slug', 'phone', 'whatsapp', 'birth_date', 'gender', 'marital_status', 'religion_id', 'nationality_id', 'expected_salary', 'expected_salary_period_id',
                 'experience_level_id', 'availability', 'available_from', 'province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id', 'address_line',
                 'headline', 'summary', 'is_discoverable', 'resume_discoverable', 'updated_at',
             ],
         );
+    }
+
+    /** The permanent slug of the profile; a profile row created without one (the legacy import) gets it here. */
+    private function slugOf(int $userId): string
+    {
+        $existing = $this->connection->table('jobseeker_profiles')->where('user_id', $userId)->value('slug');
+
+        if (is_string($existing)) {
+            return $existing;
+        }
+
+        do {
+            $slug = ProfileSlug::generate();
+        } while ($this->connection->table('jobseeker_profiles')->where('slug', $slug)->exists());
+
+        return $slug;
     }
 
     public function lock(int $userId, DateTimeImmutable $at): void

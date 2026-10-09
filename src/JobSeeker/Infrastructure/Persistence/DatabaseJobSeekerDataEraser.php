@@ -8,7 +8,7 @@ use Src\JobSeeker\Domain\JobSeekerDataEraser;
 final readonly class DatabaseJobSeekerDataEraser implements JobSeekerDataEraser
 {
     private const array TABLES = [
-        'jobseeker_profiles', 'jobseeker_experiences', 'jobseeker_educations', 'jobseeker_skills', 'jobseeker_languages', 'jobseeker_links', 'jobseeker_resumes',
+        'jobseeker_profiles', 'jobseeker_experiences', 'jobseeker_educations', 'jobseeker_skills', 'jobseeker_languages', 'jobseeker_links', 'jobseeker_resumes', 'jobseeker_profile_views',
     ];
 
     public function __construct(private ConnectionInterface $connection) {}

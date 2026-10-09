@@ -27,3 +27,17 @@ Recommendations (R12), invitations (R10) and the matching engine are separate st
 - **Rate limit:** per member (searching and opening profiles), a setting `jobseeker.candidate_views_per_day` (default 200 profile opens per member per Jakarta day) so the pool cannot be scraped.
 - **Audit:** none beyond the view log (a search is not an export); the log is kept as long as the profile exists and deleted when the account is anonymised.
 - **Tests:** visibility (opt-in, inactive account, incomplete profile), hidden contact fields, each filter, the protected-attribute filters, the day limit, the view log (once per day) and what the candidate sees, resume rule, slug uniqueness, erasure.
+
+## Coded (2026-10-09, checked with 1583 tests, committed)
+
+Inside `src/JobSeeker` (`Application/Candidates`, `CandidateController`, `DatabaseCandidateReader`, `DatabaseProfileViewRepository`), migrations `000089` (`jobseeker_profiles.slug`) and `000090` (`jobseeker_profile_views`), setting `job_seeker.candidate_views_per_day` (200, 10 to 5000).
+Tests: `tests/Feature/JobSeeker/CandidateSearchTest.php`; `SettingsTest` and `ErasureTest` updated. The proposed details above were coded as written; the choices that were left open:
+
+- **The slug column is nullable** (unique): a profile row made without one (the legacy import, `lock()`) gets its slug the first time the owner saves the profile; migration `000089` fills every existing row. A profile without a slug is not searchable. The slug is not part of the owner's profile response.
+- **The reader joins `identity_users`** (type, status, anonymisation, name, picture) in the same query, so the account rules and the order run in SQL instead of one Identity call per row.
+- **Skills and languages ask for all of them**, the other lists for any; the education filter is a minimum rank (a master degree satisfies a bachelor minimum); a candidate with no expected salary, or no birth date, does not match a salary or age filter.
+- **Contact data** (email, phone, WhatsApp, street address, links) is decided by `ApplicantRelations::canSeeApplicant` (admin: any application of the company; recruiter: the jobs assigned to them). Gender, religion, nationality, marital status, birth date and age are never shown to a company by this endpoint; they can only be filtered on.
+- **Also added:** `GET company/candidates/{slug}/avatar` (the picture is visible by decision; a list row has `has_avatar`) and a route limiter of 60 requests per member per minute on the four company endpoints (the 200 profiles a day cap does not limit the list itself).
+- **The view limit counts different profiles** opened per member and Jakarta day (kind `profile`); reopening one is free, resume downloads are logged but not limited. Over the limit the answer is 429 `candidate-view-limit`.
+- **The log** keeps one row per member, candidate, kind and day; the candidate's list groups by company, kind and day. Erasing the job seeker deletes the log of their profile.
+- **Legal review** of the religion, nationality, age and gender filters is still needed before release.

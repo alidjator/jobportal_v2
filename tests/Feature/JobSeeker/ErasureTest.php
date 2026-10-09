@@ -35,6 +35,7 @@ final class ErasureTest extends FeatureTestCase
         DB::table('jobseeker_skills')->insert(['user_id' => $userId, 'skill_id' => $this->skillId('php'), 'position' => 1]);
         DB::table('jobseeker_languages')->insert(['user_id' => $userId, 'language_id' => $this->referenceId('reference_languages', 'english', ['code' => 'en']), 'proficiency' => 'fluent']);
         DB::table('jobseeker_links')->insert(['user_id' => $userId, 'type' => 'github', 'url' => 'https://github.com/siti']);
+        DB::table('jobseeker_profile_views')->insert(['user_id' => $userId, 'company_id' => 1, 'member_id' => 1, 'kind' => 'profile', 'day' => '2026-10-05', 'created_at' => $now]);
 
         foreach (['a', 'b'] as $name) {
             Storage::put("jobseeker/resumes/{$userId}-{$name}.pdf", '%PDF-1.4');
@@ -47,7 +48,7 @@ final class ErasureTest extends FeatureTestCase
     {
         $counts = [];
 
-        foreach (['jobseeker_profiles', 'jobseeker_experiences', 'jobseeker_educations', 'jobseeker_skills', 'jobseeker_languages', 'jobseeker_links', 'jobseeker_resumes'] as $table) {
+        foreach (['jobseeker_profiles', 'jobseeker_experiences', 'jobseeker_educations', 'jobseeker_skills', 'jobseeker_languages', 'jobseeker_links', 'jobseeker_resumes', 'jobseeker_profile_views'] as $table) {
             $counts[$table] = DB::table($table)->where('user_id', $userId)->count();
         }
 

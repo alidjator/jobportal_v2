@@ -15,6 +15,8 @@ final class JobSeekerSettings
 
     public const string RESUME_MAX_SIZE_KB = 'job_seeker.resume_max_size_kb';
 
+    public const string CANDIDATE_VIEWS_PER_DAY = 'job_seeker.candidate_views_per_day';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -27,6 +29,10 @@ final class JobSeekerSettings
                 'How many days ahead a job seeker may set the date from which they are available.',
             ),
             SettingDefinition::integer(self::RESUME_MAX_SIZE_KB, 5120, 512, 10240, 'The largest resume file a job seeker may upload, in kilobytes.'),
+            SettingDefinition::integer(
+                self::CANDIDATE_VIEWS_PER_DAY, 200, 10, 5000,
+                'How many different candidate profiles a company member may open per day (Jakarta time). Opening the same profile again the same day does not count.',
+            ),
         ];
     }
 }
