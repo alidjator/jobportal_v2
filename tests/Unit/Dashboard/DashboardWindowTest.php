@@ -49,6 +49,6 @@ final class DashboardWindowTest extends TestCase
 
     public function test_the_day_expression_shifts_a_column_to_jakarta_time(): void
     {
-        $this->assertSame('DATE(DATE_ADD(created_at, INTERVAL 7 HOUR))', DashboardWindow::dayOf('created_at'));
+        $this->assertSame("CAST(created_at + INTERVAL '7 hours' AS date)", DashboardWindow::dayOf('created_at'));
     }
 }

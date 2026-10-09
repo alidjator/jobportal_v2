@@ -13,6 +13,8 @@ use Src\Job\Application\JobReader;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\NullOrder;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 final readonly class DatabaseJobReader implements JobReader
@@ -44,7 +46,7 @@ final readonly class DatabaseJobReader implements JobReader
         $rows = $filtered
             ->select(['job_jobs.id', 'job_jobs.title', 'job_jobs.status', 'job_jobs.deadline', 'job_jobs.vacancies', 'job_jobs.published_at', 'job_jobs.created_at', 'job_jobs.updated_at'])
             ->selectSub($assignees, 'assignees_count')
-            ->orderBy($column, $direction)
+            ->orderByRaw(NullOrder::sql($column, $direction))
             ->orderBy('job_jobs.id', $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
@@ -69,8 +71,7 @@ final readonly class DatabaseJobReader implements JobReader
         }
 
         if ($query->search !== null && $query->search !== '') {
-            // The title column uses a case-insensitive collation; `%`, `_` and `\` typed by the member are searched for literally.
-            $builder->where('job_jobs.title', 'like', '%'.addcslashes($query->search, '%_\\').'%');
+            TextSearch::contains($builder, 'job_jobs.title', $query->search);
         }
     }
 

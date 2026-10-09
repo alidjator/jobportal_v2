@@ -64,7 +64,7 @@ final class LocationSeederTest extends FeatureTestCase
             $this->assertSame(0, DB::table($table)->whereNotNull('latitude')->orWhereNotNull('longitude')->count(), $table);
         }
 
-        $this->assertSame(0, DB::table('reference_postal_codes')->whereRaw('code NOT REGEXP ?', ['^[0-9]{5}$'])->count());
+        $this->assertSame(0, DB::table('reference_postal_codes')->whereRaw('code !~ ?', ['^[0-9]{5}$'])->count());
     }
 
     private function assertTheVillageWithoutPostalCode(): void
@@ -73,6 +73,10 @@ final class LocationSeederTest extends FeatureTestCase
 
         $this->assertNotNull($villageId);
         $this->assertSame(0, DB::table('reference_postal_codes')->where('village_id', $villageId)->count());
+        // The rows are new in this transaction, so the planner has no statistics yet and picks a nested loop that takes minutes.
+        DB::statement('ANALYZE reference_villages');
+        DB::statement('ANALYZE reference_postal_codes');
+
         $this->assertSame(1, DB::table('reference_villages as v')->whereNotExists(fn ($query) => $query->selectRaw('1')->from('reference_postal_codes as z')->whereColumn('z.village_id', 'v.id'))->count());
     }
 }

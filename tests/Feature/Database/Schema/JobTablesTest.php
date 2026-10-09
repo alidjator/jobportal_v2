@@ -110,7 +110,7 @@ final class JobTablesTest extends FeatureTestCase
             DB::table($table)->insert(['job_id' => $job, $column => $second]);
 
             try {
-                DB::table($table)->insert(['job_id' => $job, $column => $first]);
+                DB::transaction(fn () => DB::table($table)->insert(['job_id' => $job, $column => $first]));
                 $this->fail("{$table} accepted a duplicate");
             } catch (UniqueConstraintViolationException) {
                 $this->assertSame(2, DB::table($table)->where('job_id', $job)->count(), $table);
@@ -121,7 +121,7 @@ final class JobTablesTest extends FeatureTestCase
     public function test_a_relation_needs_an_existing_job_and_goes_away_with_it(): void
     {
         try {
-            DB::table('job_job_skills')->insert(['job_id' => 999999, 'skill_id' => $this->skillId()]);
+            DB::transaction(fn () => DB::table('job_job_skills')->insert(['job_id' => 999999, 'skill_id' => $this->skillId()]));
             $this->fail('A skill was attached to a job that does not exist.');
         } catch (QueryException) {
             $this->assertSame(0, DB::table('job_job_skills')->count());
@@ -172,7 +172,7 @@ final class JobTablesTest extends FeatureTestCase
 
         foreach ($columns as $column) {
             try {
-                $this->job([$column => 999999]);
+                DB::transaction(fn () => $this->job([$column => 999999]));
                 $this->fail("{$column} accepted an id that does not exist");
             } catch (QueryException) {
                 $this->addToAssertionCount(1);
@@ -185,7 +185,7 @@ final class JobTablesTest extends FeatureTestCase
 
         foreach ([['job_job_skills', 'skill_id'], ['job_job_tags', 'tag_id'], ['job_job_benefits', 'benefit_id']] as [$table, $column]) {
             try {
-                DB::table($table)->insert(['job_id' => $job, $column => 999999]);
+                DB::transaction(fn () => DB::table($table)->insert(['job_id' => $job, $column => 999999]));
                 $this->fail("{$table} accepted an id that does not exist");
             } catch (QueryException) {
                 $this->assertSame(0, DB::table($table)->count(), $table);
@@ -203,7 +203,7 @@ final class JobTablesTest extends FeatureTestCase
             ['reference_postal_codes', 'postal_code_id'], ['company_companies', 'company_id'],
         ] as [$table, $column]) {
             try {
-                DB::table($table)->where('id', $references[$column] ?? DB::table('job_jobs')->value($column))->delete();
+                DB::transaction(fn () => DB::table($table)->where('id', $references[$column] ?? DB::table('job_jobs')->value($column))->delete());
                 $this->fail("{$table} row was deleted while a job uses it");
             } catch (QueryException) {
                 $this->addToAssertionCount(1);

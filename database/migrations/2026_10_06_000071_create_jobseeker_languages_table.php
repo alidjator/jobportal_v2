@@ -21,7 +21,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'jobseeker_languages';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_proficiency_check` CHECK (`proficiency` IN ('basic', 'conversational', 'fluent', 'native'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_proficiency_check\" CHECK (\"proficiency\" IN ('basic', 'conversational', 'fluent', 'native'))"
         );
     }
 

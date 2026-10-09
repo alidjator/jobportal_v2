@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('platform_settings', function (Blueprint $table): void {
             $table->id();
             $table->string('key', 128)->unique();
-            $table->json('value');
+            $table->jsonb('value');
             $table->unsignedBigInteger('updated_by_admin_id')->nullable()->index();
             $table->timestamps();
         });

@@ -25,7 +25,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'recruitment_screening_questions';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_type_check` CHECK (`type` IN ('text', 'yes_no', 'single_choice', 'multiple_choice', 'number'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_type_check\" CHECK (\"type\" IN ('text', 'yes_no', 'single_choice', 'multiple_choice', 'number'))"
         );
     }
 

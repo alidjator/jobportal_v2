@@ -25,7 +25,7 @@ return new class extends Migration
 
         $tableName = $prefix.'recruitment_application_ratings';
 
-        Schema::getConnection()->statement("ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_stars_check` CHECK (`stars` BETWEEN 1 AND 5)");
+        Schema::getConnection()->statement("ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_stars_check\" CHECK (\"stars\" BETWEEN 1 AND 5)");
     }
 
     public function down(): void

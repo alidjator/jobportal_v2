@@ -49,7 +49,7 @@ final class CompanyForeignKeysTest extends FeatureTestCase
     {
         foreach (['industry_id', 'organization_type_id', 'team_size_id', 'province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id'] as $column) {
             try {
-                $this->company([$column => 999999]);
+                DB::transaction(fn () => $this->company([$column => 999999]));
                 $this->fail("{$column} accepted an id that does not exist");
             } catch (QueryException) {
                 $this->assertSame(0, DB::table('company_companies')->count(), $column);
@@ -63,7 +63,7 @@ final class CompanyForeignKeysTest extends FeatureTestCase
 
         foreach (['reference_industries', 'reference_organization_types'] as $table) {
             try {
-                DB::table($table)->delete();
+                DB::transaction(fn () => DB::table($table)->delete());
                 $this->fail("{$table} row was deleted while a company uses it");
             } catch (QueryException) {
                 $this->assertGreaterThan(0, DB::table($table)->count(), $table);

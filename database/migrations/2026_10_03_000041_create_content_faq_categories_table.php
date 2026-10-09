@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('content_faq_categories', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->smallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

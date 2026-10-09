@@ -18,10 +18,10 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'recruitment_applications';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_source_check` CHECK (`source` IS NULL OR `source` IN ('search', 'recommendation', 'alert', 'direct', 'invitation'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_source_check\" CHECK (\"source\" IS NULL OR \"source\" IN ('search', 'recommendation', 'alert', 'direct', 'invitation'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_match_score_check` CHECK (`match_score` IS NULL OR `match_score` <= 100)"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_match_score_check\" CHECK (\"match_score\" IS NULL OR \"match_score\" <= 100)"
         );
     }
 
@@ -30,8 +30,8 @@ return new class extends Migration
         $connection = Schema::getConnection();
         $tableName = $connection->getTablePrefix().'recruitment_applications';
 
-        $connection->statement("ALTER TABLE `{$tableName}` DROP CONSTRAINT `{$tableName}_source_check`");
-        $connection->statement("ALTER TABLE `{$tableName}` DROP CONSTRAINT `{$tableName}_match_score_check`");
+        $connection->statement("ALTER TABLE \"{$tableName}\" DROP CONSTRAINT \"{$tableName}_source_check\"");
+        $connection->statement("ALTER TABLE \"{$tableName}\" DROP CONSTRAINT \"{$tableName}_match_score_check\"");
 
         Schema::table('recruitment_applications', function (Blueprint $table): void {
             $table->dropColumn(['source', 'match_score']);

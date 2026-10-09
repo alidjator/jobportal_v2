@@ -1,4 +1,4 @@
-# Move from MySQL to PostgreSQL 16 (designed 2026-10-10, not yet coded)
+# Move from MySQL to PostgreSQL 16 (designed 2026-10-10, step 1 coded and checked)
 
 The application database moves from MySQL (MariaDB) to PostgreSQL 16. Reasons (user): PostgreSQL features and performance.
 Two steps, in this order: **step 1 the port** (this document), then **step 2 selective cross-context foreign keys** (designed after step 1 is green).
@@ -36,3 +36,11 @@ Two steps, in this order: **step 1 the port** (this document), then **step 2 sel
 
 - Which columns get a trigram index (decided from the real `ILIKE` calls found in step 3).
 - Whether the database account may create extensions (otherwise the administrator runs two `CREATE EXTENSION` statements once).
+
+## What was coded (2026-10-10)
+
+- `database/migrations/2026_10_03_000000_enable_postgres_extensions.php` (extensions and `immutable_unaccent`), `2026_10_10_000101_add_text_search_indexes.php` (trigram indexes on job title, company name and slug, profile headline and summary, experience job title, screening question text).
+- Existing migrations were edited in place (the database is empty): `json` is `jsonb`; CHECK statements use double quotes; the stage name and the screening option label are unique through `lower()` indexes; the default stage per type is a partial unique index (the generated column is gone); `000044` adds `>= 0` checks instead of unsigned columns (PostgreSQL has none).
+- `Shared/Infrastructure/Persistence/TextSearch` (all `like` searches, ignoring case and accents) and `NullOrder` (NULLs first when ascending, last when descending, as before); JSON reads use `->>`; the Jakarta day SQL is `CAST(column + INTERVAL '7 hours' AS date)`; `insertUsing` and the alert e-mail counter were rewritten for PostgreSQL.
+- The `pgsql` connection sets the session time zone to UTC. `DB_CONNECTION` defaults to `pgsql`.
+- Not changed: the `legacy` connection (MariaDB), the legacy tests (synthetic tables on the default connection with a prefix).

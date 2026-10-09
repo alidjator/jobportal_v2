@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('action', 128);
             $table->string('subject_type', 64)->nullable();
             $table->unsignedBigInteger('subject_id')->nullable();
+            // `json`, not `jsonb`: an audit entry is kept exactly as it was written (key order included).
             $table->json('metadata')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent')->nullable();
@@ -30,7 +31,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'platform_audit_logs';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_actor_type_check` CHECK (`actor_type` IN ('user', 'admin', 'system'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_actor_type_check\" CHECK (\"actor_type\" IN ('user', 'admin', 'system'))"
         );
     }
 

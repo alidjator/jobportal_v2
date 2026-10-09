@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_benefits', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->string('status', 10)->default('active');
             $table->string('rejection_reason')->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'reference_benefits';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('active', 'pending', 'rejected'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('active', 'pending', 'rejected'))"
         );
     }
 

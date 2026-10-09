@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_job_categories', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->string('image_path')->nullable();
             $table->smallInteger('sort_order')->default(0);

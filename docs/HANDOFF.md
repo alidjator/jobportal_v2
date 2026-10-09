@@ -20,8 +20,9 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Product points settled 2026-10-09: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it
   (email only now); applying needs a verified email.
 - **Phase 4, step 1 dashboards (`docs/design/phase-4-dashboards.md`) is coded, checked and committed;** its real-database migrations (`000095`, `000096`) and `identity:sync-permissions` (`dashboard.view`) wait for the user.
-- **In progress: Phase 4, step 2 business intelligence (`docs/design/phase-4-business-intelligence.md`) is coded and checked, not yet committed** (new migrations `000097` to `000100`; new permission `analytics.view`; new setting `analytics.min_group_size`).
-  The user must run `php artisan test:database:migrate --env=testing`, then `composer check`; after approval commit, then migrate the real database, run `identity:sync-permissions` and `php artisan analytics:rollup --backfill` once.
+- **Phase 4, step 2 business intelligence (`docs/design/phase-4-business-intelligence.md`) is coded, checked and committed** (migrations `000097` to `000100`; permission `analytics.view`; setting `analytics.min_group_size`). Its real-database steps are not run on MySQL: they run once on the new PostgreSQL database.
+- **In progress: move from MySQL to PostgreSQL 16 (`docs/design/postgres-migration.md`), step 1 the port is coded and checked (composer check green, 1724 tests).** The real and the test database are empty PostgreSQL databases (`jobportal_v2`, `jobportal_v2_test`, role `jobportal_v2`, port 5432; credentials only in `.env` and `.env.testing`).
+  The user must create the test database, set both env files, run `php artisan test:database:migrate --env=testing`, then `composer check`; after approval commit, then `php artisan migrate`, `identity:sync-permissions`, `db:seed`, `analytics:rollup --backfill` on the real database. Step 2 (selective cross-context foreign keys) is designed after the port is green; then the median in SQL.
   Campaigns and Moodle are not designed. Do not start new work without asking the user.
 
 ## Items waiting for the user
@@ -41,7 +42,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Production schema dump (read-only account, no data): `mariadb-dump --no-data --skip-comments --no-tablespaces --skip-triggers --skip-lock-tables` with the `KARIR_PKP_DB_*` values.
 - After a deployment that adds a permission, `identity:sync-permissions` must be run on the real database (ask first). `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added.
 - The user runs `composer check`, real-database migrations and the legacy import (explicit approval each time). `KARIR_PKP_FILES_ROOT` is set in `.env`. Mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
-- A rehearsal database: any `test_*` name is open to the app account. Use `DB_DATABASE=test_<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`.
+- A rehearsal database: create one (the role has `CREATEDB`). Use `DB_DATABASE=<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`. The legacy source (`legacy` connection) stays MariaDB.
 
 ## Document index
 

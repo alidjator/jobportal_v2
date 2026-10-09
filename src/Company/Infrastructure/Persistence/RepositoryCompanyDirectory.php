@@ -6,6 +6,7 @@ use Illuminate\Database\ConnectionInterface;
 use Src\Company\Domain\CompanyStatus;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanySummary;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 
 final readonly class RepositoryCompanyDirectory implements CompanyDirectory
 {
@@ -38,9 +39,7 @@ final readonly class RepositoryCompanyDirectory implements CompanyDirectory
 
     public function idsByName(string $text, int $limit): array
     {
-        // The name column uses a case-insensitive collation; `%`, `_` and `\` typed by the caller are searched for literally.
-        return array_map('intval', $this->connection->table('company_companies')
-            ->where('name', 'like', '%'.addcslashes($text, '%_\\').'%')
+        return array_map('intval', TextSearch::contains($this->connection->table('company_companies'), 'name', $text)
             ->orderBy('id')
             ->limit($limit)
             ->pluck('id')

@@ -24,7 +24,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'identity_social_accounts';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_provider_check` CHECK (`provider` IN ('google'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_provider_check\" CHECK (\"provider\" IN ('google'))"
         );
     }
 

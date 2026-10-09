@@ -21,7 +21,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'notification_device_tokens';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_platform_check` CHECK (`platform` IN ('android', 'ios', 'web'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_platform_check\" CHECK (\"platform\" IN ('android', 'ios', 'web'))"
         );
     }
 

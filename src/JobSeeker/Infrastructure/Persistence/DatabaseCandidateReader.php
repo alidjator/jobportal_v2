@@ -12,6 +12,7 @@ use Src\JobSeeker\Application\Candidates\CandidateSearchQuery;
 use Src\JobSeeker\Domain\Availability;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
@@ -88,11 +89,15 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         $builder = $this->searchable();
 
         if ($query->keyword !== null) {
-            $like = '%'.addcslashes($query->keyword, '\\%_').'%';
-            $builder->where(fn (Builder $q) => $q
-                ->where('p.headline', 'like', $like)
-                ->orWhere('p.summary', 'like', $like)
-                ->orWhereExists(fn (Builder $e) => $e->selectRaw('1')->from('jobseeker_experiences as x')->whereColumn('x.user_id', 'p.user_id')->where('x.job_title', 'like', $like)));
+            $builder->where(function (Builder $q) use ($query): void {
+                TextSearch::contains($q, 'p.headline', $query->keyword);
+                TextSearch::contains($q, 'p.summary', $query->keyword, 'or');
+                $q->orWhereExists(fn (Builder $e) => TextSearch::contains(
+                    $e->selectRaw('1')->from('jobseeker_experiences as x')->whereColumn('x.user_id', 'p.user_id'),
+                    'x.job_title',
+                    $query->keyword,
+                ));
+            });
         }
 
         foreach ($query->skillIds as $skillId) {

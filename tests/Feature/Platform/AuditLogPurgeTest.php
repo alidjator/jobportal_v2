@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Platform;
 
+use DateTimeImmutable;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -39,7 +40,7 @@ final class AuditLogPurgeTest extends FeatureTestCase
         $this->assertSame(0, Artisan::call('platform:purge-audit-logs'));
 
         $remaining = DB::table('platform_audit_logs')->where('action', 'auth.login')->orderBy('occurred_at')->pluck('occurred_at')->all();
-        $this->assertSame(['2025-10-03 03:00:00.000000', '2026-05-01 00:00:00.000000'], $remaining);
+        $this->assertSame(['2025-10-03 03:00:00.000000', '2026-05-01 00:00:00.000000'], array_map(fn (string $time): string => (new DateTimeImmutable($time))->format('Y-m-d H:i:s.u'), $remaining));
     }
 
     public function test_the_purge_records_itself_with_the_number_deleted_and_the_cutoff(): void

@@ -19,7 +19,7 @@ final readonly class DashboardWindow
     /** The SQL that turns a UTC timestamp column into its Jakarta calendar day. */
     public static function dayOf(string $column): string
     {
-        return 'DATE(DATE_ADD('.$column.', INTERVAL '.self::OFFSET_HOURS.' HOUR))';
+        return 'CAST('.$column.' + INTERVAL \''.self::OFFSET_HOURS.' hours\' AS date)';
     }
 
     /** A UTC timestamp read from the database (`Y-m-d H:i:s`) as the ISO 8601 text the API uses. */

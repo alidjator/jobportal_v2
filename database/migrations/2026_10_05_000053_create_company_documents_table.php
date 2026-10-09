@@ -32,7 +32,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'company_documents';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('pending', 'approved', 'rejected'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('pending', 'approved', 'rejected'))"
         );
     }
 

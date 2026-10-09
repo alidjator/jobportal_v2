@@ -3,8 +3,8 @@ stages: [quality, test]
 default:
   image: php:8.3-cli
   before_script:
-    - apt-get update -qq && apt-get install -y -qq git unzip default-mysql-client libzip-dev libpng-dev libjpeg-dev >/dev/null
-    - docker-php-ext-install pdo_mysql zip gd bcmath >/dev/null
+    - apt-get update -qq && apt-get install -y -qq git unzip libpq-dev libzip-dev libpng-dev libjpeg-dev >/dev/null
+    - docker-php-ext-install pdo_pgsql zip gd bcmath >/dev/null
     - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
     - composer install --no-interaction --prefer-dist
 
@@ -17,19 +17,18 @@ lint:
 tests:
   stage: test
   services:
-    - name: mariadb:11
+    - name: postgres:16
       alias: db
   variables:
-    MARIADB_ROOT_PASSWORD: ci
-    MARIADB_DATABASE: jobportal_v2_test
+    POSTGRES_PASSWORD: ci
+    POSTGRES_DB: jobportal_v2_test
     APP_ENV: testing
-    DB_CONNECTION: mariadb
+    DB_CONNECTION: pgsql
     DB_HOST: db
-    DB_PORT: "3306"
+    DB_PORT: "5432"
     DB_DATABASE: jobportal_v2_test
-    DB_USERNAME: root
+    DB_USERNAME: postgres
     DB_PASSWORD: ci
   script:
-    - until mysqladmin ping -h db -uroot -pci --silent; do sleep 2; done
     - php artisan test:database:migrate --env=testing
     - php artisan test

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_skills', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->string('kind', 10);
             $table->smallInteger('sort_order')->default(0);
@@ -22,7 +22,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'reference_skills';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_kind_check` CHECK (`kind` IN ('hard', 'soft'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_kind_check\" CHECK (\"kind\" IN ('hard', 'soft'))"
         );
     }
 

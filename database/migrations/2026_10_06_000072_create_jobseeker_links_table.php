@@ -19,7 +19,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'jobseeker_links';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_type_check` CHECK (`type` IN ('linkedin', 'github', 'portfolio', 'website', 'instagram', 'x', 'other'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_type_check\" CHECK (\"type\" IN ('linkedin', 'github', 'portfolio', 'website', 'instagram', 'x', 'other'))"
         );
     }
 

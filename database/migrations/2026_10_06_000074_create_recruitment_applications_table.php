@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('resume_path', 255)->nullable();
             $table->unsignedInteger('resume_size_bytes')->nullable();
             // The profile as it was when the applicant applied; erased on anonymisation.
-            $table->json('profile_snapshot')->nullable();
+            $table->jsonb('profile_snapshot')->nullable();
             // NULL when the job has no must-have question.
             $table->boolean('meets_must_have')->nullable();
             $table->text('withdrawn_note')->nullable();
@@ -41,7 +41,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'recruitment_applications';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_stage_type_check` CHECK (`stage_type` IN ('applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_stage_type_check\" CHECK (\"stage_type\" IN ('applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'))"
         );
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('job_question_id');
             $table->unsignedBigInteger('option_id');
 
-            // MariaDB limits identifiers to 64 characters, so the foreign keys need explicit names (the generated ones are too long with the `test_` prefix).
+            // PostgreSQL limits identifiers to 63 characters, so the foreign keys need explicit names (the generated ones are too long with the `test_` prefix).
             $table->foreign('job_question_id', $prefix.'recruitment_ideal_options_job_question_foreign')->references('id')->on('recruitment_job_questions')->cascadeOnDelete();
             $table->foreign('option_id', $prefix.'recruitment_ideal_options_option_foreign')->references('id')->on('recruitment_screening_question_options')->restrictOnDelete();
 

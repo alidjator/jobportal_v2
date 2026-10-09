@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Src\Notification\Application\DeviceTokens\DevicePlatform;
 use Src\Notification\Application\DeviceTokens\DeviceTokenRepository;
+use Src\Shared\Infrastructure\Persistence\NullOrder;
 
 final readonly class DatabaseDeviceTokenRepository implements DeviceTokenRepository
 {
@@ -26,10 +27,10 @@ final readonly class DatabaseDeviceTokenRepository implements DeviceTokenReposit
 
     public function trim(int $userId, int $keep): void
     {
-        // MariaDB has no LIMIT inside an IN subquery, and a user holds only a handful of tokens, so the ids to keep are read first.
+        // A user holds only a handful of tokens, so the ids to keep are read first.
         $kept = $this->connection->table('notification_device_tokens')
             ->where('user_id', $userId)
-            ->orderByDesc('last_used_at')
+            ->orderByRaw(NullOrder::sql('last_used_at', 'desc'))
             ->orderByDesc('id')
             ->limit($keep)
             ->pluck('id')

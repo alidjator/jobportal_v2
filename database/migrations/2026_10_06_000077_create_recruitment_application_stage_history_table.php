@@ -26,7 +26,7 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->timestamp('created_at');
 
-            // MariaDB limits identifiers to 64 characters, so the foreign key needs an explicit name.
+            // PostgreSQL limits identifiers to 63 characters, so the foreign key needs an explicit name.
             $table->foreign('application_id', $prefix.'recruitment_stage_history_application_foreign')->references('id')->on('recruitment_applications')->cascadeOnDelete();
 
             $table->index(['application_id', 'created_at'], 'recruitment_stage_history_application_time_index');
@@ -36,11 +36,11 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'recruitment_application_stage_history';
         $types = "'applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'";
 
-        $connection->statement("ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_to_type_check` CHECK (`to_type` IN ({$types}))");
-        $connection->statement("ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_from_type_check` CHECK (`from_type` IS NULL OR `from_type` IN ({$types}))");
-        $connection->statement("ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_actor_kind_check` CHECK (`actor_kind` IN ('applicant', 'recruiter', 'system'))");
+        $connection->statement("ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_to_type_check\" CHECK (\"to_type\" IN ({$types}))");
+        $connection->statement("ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_from_type_check\" CHECK (\"from_type\" IS NULL OR \"from_type\" IN ({$types}))");
+        $connection->statement("ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_actor_kind_check\" CHECK (\"actor_kind\" IN ('applicant', 'recruiter', 'system'))");
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_reason_check` CHECK (`rejection_reason` IS NULL OR `rejection_reason` IN ('qualifications_mismatch', 'experience_insufficient', 'salary_expectation_mismatch', 'location_mismatch', 'failed_screening', 'position_filled', 'other'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_reason_check\" CHECK (\"rejection_reason\" IS NULL OR \"rejection_reason\" IN ('qualifications_mismatch', 'experience_insufficient', 'salary_expectation_mismatch', 'location_mismatch', 'failed_screening', 'position_filled', 'other'))"
         );
     }
 

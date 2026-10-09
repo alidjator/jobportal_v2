@@ -23,7 +23,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'reference_cities';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_type_check` CHECK (`type` IN ('city', 'regency'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_type_check\" CHECK (\"type\" IN ('city', 'regency'))"
         );
     }
 

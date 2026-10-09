@@ -23,7 +23,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'notification_preferences';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_channel_check` CHECK (`channel` IN ('email', 'push'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_channel_check\" CHECK (\"channel\" IN ('email', 'push'))"
         );
     }
 

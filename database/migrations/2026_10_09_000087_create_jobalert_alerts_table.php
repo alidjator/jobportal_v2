@@ -16,7 +16,7 @@ return new class extends Migration
             // immediate, daily or weekly.
             $table->string('frequency', 16);
             // The search filters, by the names of the public job search.
-            $table->json('criteria');
+            $table->jsonb('criteria');
             $table->boolean('email')->default(true);
             $table->boolean('in_app')->default(true);
             $table->boolean('paused')->default(false);

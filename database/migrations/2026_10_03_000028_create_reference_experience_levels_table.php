@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_experience_levels', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->smallInteger('min_years')->nullable();
             $table->smallInteger('max_years')->nullable();

@@ -35,7 +35,7 @@ final class NonNegativeNumberColumnsTest extends FeatureTestCase
         $row[$column] = -1;
 
         $this->expectException(QueryException::class);
-        $this->expectExceptionMessage('Out of range value');
+        $this->expectExceptionMessage('violates check constraint');
 
         DB::table($table)->insert($row);
     }

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('company_document_types', function (Blueprint $table): void {
             $table->id();
             $table->string('slug', 60)->unique();
-            $table->json('name');
+            $table->jsonb('name');
             $table->boolean('is_required')->default(false);
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);

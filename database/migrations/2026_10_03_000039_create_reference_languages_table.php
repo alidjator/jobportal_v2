@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_languages', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->string('code', 10);
             $table->smallInteger('sort_order')->default(0);

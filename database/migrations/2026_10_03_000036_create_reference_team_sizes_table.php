@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_team_sizes', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->integer('min_size')->nullable();
             $table->integer('max_size')->nullable();

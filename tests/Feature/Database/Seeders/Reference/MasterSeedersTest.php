@@ -183,7 +183,8 @@ final class MasterSeedersTest extends FeatureTestCase
         $rows = DB::table($table)->orderBy('sort_order')->get();
 
         $this->assertSame($slugs, $rows->pluck('slug')->all());
-        $this->assertSame($firstName, json_decode($rows->first()->name, true));
+        // The names are `jsonb`, which does not keep the order of the keys.
+        $this->assertEquals($firstName, json_decode($rows->first()->name, true));
         $this->assertSame(range(1, count($slugs)), $rows->pluck('sort_order')->map(fn ($order) => (int) $order)->all());
     }
 

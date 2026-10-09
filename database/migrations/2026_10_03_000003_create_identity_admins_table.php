@@ -24,7 +24,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'identity_admins';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('active', 'suspended', 'deactivated'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('active', 'suspended', 'deactivated'))"
         );
     }
 

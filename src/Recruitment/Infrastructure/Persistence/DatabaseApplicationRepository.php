@@ -125,7 +125,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             ['application_id', 'from_stage_id', 'to_stage_id', 'from_type', 'to_type', 'actor_kind', 'actor_id', 'rejection_reason', 'note', 'created_at'],
             $this->connection->table('recruitment_applications')
                 ->where('stage_id', $fromStageId)
-                ->selectRaw('id, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?', [$fromStageId, $toStageId, $type->value, $type->value, StageMoveActor::System->value, $time]),
+                ->selectRaw('id, ?::bigint, ?::bigint, ?::varchar, ?::varchar, ?::varchar, NULL::bigint, NULL::varchar, NULL::varchar, ?::timestamp', [$fromStageId, $toStageId, $type->value, $type->value, StageMoveActor::System->value, $time]),
         );
 
         return $this->connection->table('recruitment_applications')->where('stage_id', $fromStageId)->update(['stage_id' => $toStageId, 'updated_at' => $time]);

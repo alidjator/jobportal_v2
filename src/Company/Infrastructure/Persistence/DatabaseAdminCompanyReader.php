@@ -14,6 +14,8 @@ use Src\Company\Application\Admin\CompanyListSort;
 use Src\Company\Domain\CompanyStatus;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\NullOrder;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 final readonly class DatabaseAdminCompanyReader implements AdminCompanyReader
@@ -44,7 +46,7 @@ final readonly class DatabaseAdminCompanyReader implements AdminCompanyReader
             CompanyListSort::NewestFirst => ['created_at', 'desc'],
         };
 
-        $rows = $builder->orderBy($column, $direction)->orderBy('company_companies.id', $direction)
+        $rows = $builder->orderByRaw(NullOrder::sql($column, $direction))->orderBy('company_companies.id', $direction)
             ->offset($request->offset())->limit($request->perPage)->get()->all();
 
         return new Page(array_map(fn (stdClass $row): CompanyListItem => $this->toItem($row), $rows), $total, $request);
@@ -66,9 +68,7 @@ final readonly class DatabaseAdminCompanyReader implements AdminCompanyReader
     private function applyFilters(Builder $builder, CompanyListQuery $query): void
     {
         if ($query->search !== null && $query->search !== '') {
-            // The name and slug columns use a case-insensitive collation; `%`, `_` and `\` typed by the admin are searched for literally.
-            $like = '%'.addcslashes($query->search, '%_\\').'%';
-            $builder->where(fn (Builder $match) => $match->where('name', 'like', $like)->orWhere('slug', 'like', $like));
+            $builder->where(fn (Builder $match) => TextSearch::contains(TextSearch::contains($match, 'name', $query->search), 'slug', $query->search, 'or'));
         }
 
         if ($query->status !== null) {

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_tags', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->string('popularity_override', 10)->nullable();
             $table->smallInteger('sort_order')->default(0);
@@ -22,7 +22,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'reference_tags';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_popularity_override_check` CHECK (`popularity_override` IN ('pinned', 'hidden'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_popularity_override_check\" CHECK (\"popularity_override\" IN ('pinned', 'hidden'))"
         );
     }
 

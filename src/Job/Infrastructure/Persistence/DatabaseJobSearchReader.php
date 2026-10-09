@@ -15,11 +15,13 @@ use Src\Job\Domain\JobStatus;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\NullOrder;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
  * Only live jobs are searched: `active`, deadline not before today (Jakarta time), company not in the excluded list. Table and column names are fixed in this
- * class (never taken from input); every value is a bound parameter. The title column uses a case-insensitive collation, so the keyword needs no lower-casing.
+ * class (never taken from input); every value is a bound parameter. The title is matched through `TextSearch` (ignoring case and accents), so the keyword needs no lower-casing.
  */
 final readonly class DatabaseJobSearchReader implements JobSearchReader
 {
@@ -67,7 +69,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
                 'job_jobs.job_level_id', 'job_jobs.work_mode', 'job_jobs.salary_min', 'job_jobs.salary_max', 'job_jobs.salary_period_id', 'job_jobs.salary_visible',
                 'job_jobs.deadline', 'job_jobs.published_at',
             ])
-            ->orderBy($column, $direction)
+            ->orderByRaw(NullOrder::sql($column, $direction))
             ->orderBy('job_jobs.id', $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
@@ -133,10 +135,8 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
     /** A word matches through the title, one of the tags it matches, or one of the companies whose name it matches. */
     private function matchWord(Builder $builder, SearchWord $word): void
     {
-        $like = '%'.addcslashes($word->text, '%_\\').'%';
-
-        $builder->where(function (Builder $match) use ($word, $like): void {
-            $match->where('job_jobs.title', 'like', $like);
+        $builder->where(function (Builder $match) use ($word): void {
+            TextSearch::contains($match, 'job_jobs.title', $word->text);
 
             if ($word->tagIds !== []) {
                 $match->orWhereExists(fn (Builder $tags) => $tags

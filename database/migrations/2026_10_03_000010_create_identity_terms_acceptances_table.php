@@ -17,7 +17,7 @@ return new class extends Migration
             $table->timestamp('accepted_at');
             $table->string('ip_address', 45)->nullable();
 
-            // The generated name would exceed the 64-character identifier limit of MariaDB.
+            // The generated name would exceed the identifier limit of PostgreSQL (63 characters).
             $table->unique(['user_id', 'document_type', 'document_version'], 'terms_acceptances_user_document_version_unique');
         });
 
@@ -25,7 +25,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'identity_terms_acceptances';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_document_type_check` CHECK (`document_type` IN ('terms', 'privacy'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_document_type_check\" CHECK (\"document_type\" IN ('terms', 'privacy'))"
         );
     }
 

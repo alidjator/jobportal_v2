@@ -13,6 +13,8 @@ use Src\Job\Application\Admin\AdminJobSort;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\NullOrder;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 final readonly class DatabaseAdminJobReader implements AdminJobReader
@@ -49,7 +51,7 @@ final readonly class DatabaseAdminJobReader implements AdminJobReader
                 'job_jobs.created_at', 'job_jobs.updated_at',
             ])
             ->selectSub($assignees, 'assignees_count')
-            ->orderBy($column, $direction)
+            ->orderByRaw(NullOrder::sql($column, $direction))
             ->orderBy('job_jobs.id', $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
@@ -70,11 +72,8 @@ final readonly class DatabaseAdminJobReader implements AdminJobReader
         }
 
         if ($query->search !== null && $query->search !== '') {
-            // The title column uses a case-insensitive collation; `%`, `_` and `\` typed by the admin are searched for literally.
-            $like = '%'.addcslashes($query->search, '%_\\').'%';
-
-            $builder->where(function (Builder $match) use ($like, $query): void {
-                $match->where('job_jobs.title', 'like', $like);
+            $builder->where(function (Builder $match) use ($query): void {
+                TextSearch::contains($match, 'job_jobs.title', $query->search);
 
                 if ($query->searchCompanyIds !== []) {
                     $match->orWhereIn('job_jobs.company_id', $query->searchCompanyIds);

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('reference_work_times', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->jsonb('name');
             $table->string('slug', 150)->unique();
             $table->smallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);

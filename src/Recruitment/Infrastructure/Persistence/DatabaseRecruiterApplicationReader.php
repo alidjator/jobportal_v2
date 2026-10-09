@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Src\Recruitment\Application\ApplicantExportRow;
 use Src\Recruitment\Application\RecruiterApplicationDetailData;
 use Src\Recruitment\Application\RecruiterApplicationQuery;
@@ -17,11 +18,12 @@ use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
  * The applicant's name is searched inside the profile snapshot (JSON), which holds a name only until the account is anonymised. A job has few
- * applications, so the search needs no index. The JSON text comes back with a binary collation, so the search names the case-insensitive one.
+ * applications, so the search needs no index. The search ignores case and accents (`TextSearch`).
  */
 final readonly class DatabaseRecruiterApplicationReader implements RecruiterApplicationReader
 {
@@ -84,8 +86,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->when($query->meetsMustHave !== null, fn (Builder $b) => $b->where('a.meets_must_have', $query->meetsMustHave === true ? 1 : 0));
 
         if ($query->search !== null && $query->search !== '') {
-            $column = $filtered->getGrammar()->wrap('a.profile_snapshot');
-            $filtered->whereRaw("JSON_UNQUOTE(JSON_EXTRACT({$column}, '\$.name')) COLLATE utf8mb4_unicode_ci LIKE ?", ['%'.addcslashes($query->search, '%_\\').'%']);
+            TextSearch::contains($filtered, new Expression("a.profile_snapshot->>'name'"), $query->search);
         }
 
         return $filtered;

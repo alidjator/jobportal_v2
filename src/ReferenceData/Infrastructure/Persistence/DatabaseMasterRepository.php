@@ -4,6 +4,7 @@ namespace Src\ReferenceData\Infrastructure\Persistence;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Src\ReferenceData\Application\Masters\FieldType;
 use Src\ReferenceData\Application\Masters\MasterDefinition;
 use Src\ReferenceData\Application\Masters\MasterItem;
@@ -11,6 +12,7 @@ use Src\ReferenceData\Application\Masters\MasterQuery;
 use Src\ReferenceData\Application\Masters\MasterRepository;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Domain\TranslatedText;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
@@ -19,8 +21,6 @@ use stdClass;
  */
 final readonly class DatabaseMasterRepository implements MasterRepository
 {
-    private const string TEXT_COLLATION = 'utf8mb4_unicode_ci';
-
     public function __construct(private ConnectionInterface $connection) {}
 
     public function all(MasterDefinition $definition, MasterQuery $query): array
@@ -142,11 +142,12 @@ final readonly class DatabaseMasterRepository implements MasterRepository
         }
 
         if ($query->search !== null && $query->search !== '') {
-            $like = '%'.addcslashes($query->search, '%_\\').'%';
-            // The JSON column is compared as binary text, so the collation is named to make the search ignore case and accents.
-            $builder->where(fn (Builder $search) => $search
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) COLLATE ".self::TEXT_COLLATION.' LIKE ?', [$like])
-                ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name, '$.id')) COLLATE ".self::TEXT_COLLATION.' LIKE ?', [$like]));
+            $builder->where(fn (Builder $search) => TextSearch::contains(
+                TextSearch::contains($search, new Expression("name->>'en'"), $query->search),
+                new Expression("name->>'id'"),
+                $query->search,
+                'or',
+            ));
         }
 
         return $this->ordered($builder, $query);
@@ -155,7 +156,7 @@ final readonly class DatabaseMasterRepository implements MasterRepository
     private function ordered(Builder $builder, MasterQuery $query): Builder
     {
         $language = in_array($query->language, TranslatedText::LANGUAGES, true) ? $query->language : TranslatedText::LANGUAGES[0];
-        $name = "JSON_UNQUOTE(JSON_EXTRACT(name, '$.{$language}')) COLLATE ".self::TEXT_COLLATION;
+        $name = "name->>'{$language}'";
 
         return match ($query->sort) {
             MasterQuery::SORT_NAME => $builder->orderByRaw("{$name} asc")->orderBy('id'),

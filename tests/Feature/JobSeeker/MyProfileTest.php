@@ -339,7 +339,7 @@ final class MyProfileTest extends FeatureTestCase
 
         foreach ([['gender' => 'robot'], ['marital_status' => 'engaged'], ['availability' => 'maybe']] as $bad) {
             try {
-                DB::table('jobseeker_profiles')->insert(['user_id' => 78, 'created_at' => now(), 'updated_at' => now(), ...$bad]);
+                DB::transaction(fn () => DB::table('jobseeker_profiles')->insert(['user_id' => 78, 'created_at' => now(), 'updated_at' => now(), ...$bad]));
                 $this->fail('A bad value was stored: '.json_encode($bad));
             } catch (QueryException) {
                 $this->addToAssertionCount(1);

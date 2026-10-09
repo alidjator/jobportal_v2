@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('key', 128);
             $table->string('scope_type', 20);
             $table->unsignedBigInteger('scope_id');
-            $table->json('value');
+            $table->jsonb('value');
             $table->unsignedBigInteger('updated_by_admin_id')->nullable()->index();
             $table->timestamps();
 
@@ -24,7 +24,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'platform_setting_overrides';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_scope_type_check` CHECK (`scope_type` IN ('company'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_scope_type_check\" CHECK (\"scope_type\" IN ('company'))"
         );
     }
 

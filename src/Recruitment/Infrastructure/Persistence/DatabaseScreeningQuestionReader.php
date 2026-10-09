@@ -8,6 +8,7 @@ use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 
 final readonly class DatabaseScreeningQuestionReader implements ScreeningQuestionReader
 {
@@ -20,8 +21,7 @@ final readonly class DatabaseScreeningQuestionReader implements ScreeningQuestio
         $query->archived ? $filtered->whereNotNull('archived_at') : $filtered->whereNull('archived_at');
 
         if ($query->search !== null && $query->search !== '') {
-            // The text column uses a case-insensitive collation; `%`, `_` and `\` typed by the caller are searched for literally.
-            $filtered->where('text', 'like', '%'.addcslashes($query->search, '%_\\').'%');
+            TextSearch::contains($filtered, 'text', $query->search);
         }
 
         $total = (clone $filtered)->count();

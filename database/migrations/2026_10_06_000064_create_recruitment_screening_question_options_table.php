@@ -11,12 +11,17 @@ return new class extends Migration
         Schema::create('recruitment_screening_question_options', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('question_id')->constrained('recruitment_screening_questions')->cascadeOnDelete();
-            // The case-insensitive collation makes the unique key a case-insensitive "unique choice per question" rule.
-            $table->string('label', 100)->collation('utf8mb4_unicode_ci');
+            $table->string('label', 100);
             $table->unsignedTinyInteger('position');
-
-            $table->unique(['question_id', 'label'], 'recruitment_screening_options_question_label_unique');
         });
+
+        // A choice is unique per question ignoring case.
+        $connection = Schema::getConnection();
+        $tableName = $connection->getTablePrefix().'recruitment_screening_question_options';
+
+        $connection->statement(
+            "CREATE UNIQUE INDEX \"recruitment_screening_options_question_label_unique\" ON \"{$tableName}\" (\"question_id\", lower(\"label\"))"
+        );
     }
 
     public function down(): void

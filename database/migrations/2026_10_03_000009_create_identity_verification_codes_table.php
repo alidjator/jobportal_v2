@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('created_at')->nullable();
 
-            // The generated name would exceed the 64-character identifier limit of MariaDB.
+            // The generated name would exceed the identifier limit of PostgreSQL (63 characters).
             $table->index(['subject_type', 'subject_id', 'purpose'], 'verification_codes_subject_purpose_index');
         });
 
@@ -27,10 +27,10 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'identity_verification_codes';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_subject_type_check` CHECK (`subject_type` IN ('user', 'admin'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_subject_type_check\" CHECK (\"subject_type\" IN ('user', 'admin'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_purpose_check` CHECK (`purpose` IN ('email_verification', 'password_reset'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_purpose_check\" CHECK (\"purpose\" IN ('email_verification', 'password_reset'))"
         );
     }
 

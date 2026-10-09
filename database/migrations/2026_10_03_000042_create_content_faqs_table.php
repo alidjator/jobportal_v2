@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('content_faqs', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('category_id')->constrained('content_faq_categories')->cascadeOnDelete();
-            $table->json('question');
-            $table->json('answer');
+            $table->jsonb('question');
+            $table->jsonb('answer');
             $table->smallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

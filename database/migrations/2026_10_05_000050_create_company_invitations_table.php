@@ -27,7 +27,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'company_invitations';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_role_check` CHECK (`role` IN ('company_admin', 'recruiter'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_role_check\" CHECK (\"role\" IN ('company_admin', 'recruiter'))"
         );
     }
 

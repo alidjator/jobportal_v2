@@ -31,10 +31,10 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'identity_users';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_type_check` CHECK (`type` IN ('job_seeker', 'company_member'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_type_check\" CHECK (\"type\" IN ('job_seeker', 'company_member'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('active', 'suspended', 'deactivated'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('active', 'suspended', 'deactivated'))"
         );
     }
 

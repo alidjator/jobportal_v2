@@ -186,7 +186,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
         $this->app->make(ImportRunner::class)->run('applications', true);
 
         $snapshot = json_decode((string) DB::table('recruitment_applications')->value('profile_snapshot'), true);
-        $this->assertSame(['version', 'name', 'email', 'migrated', 'migrated_at'], array_keys($snapshot));
+        $this->assertEqualsCanonicalizing(['version', 'name', 'email', 'migrated', 'migrated_at'], array_keys($snapshot));
         $this->assertSame(['Budi Santoso', 'budi@example.test'], [$snapshot['name'], $snapshot['email']]);
     }
 

@@ -46,7 +46,8 @@ final readonly class DatabaseProfileViewRepository implements ProfileViewReposit
 
     public function ofCandidate(int $userId, PageRequest $request): Page
     {
-        $total = (int) $this->connection->table('jobseeker_profile_views')->where('user_id', $userId)->selectRaw('COUNT(DISTINCT company_id, kind, day) as total')->value('total');
+        $views = $this->connection->table('jobseeker_profile_views')->where('user_id', $userId)->select('company_id', 'kind', 'day')->distinct();
+        $total = $this->connection->table($views, 'v')->count();
 
         $rows = $this->connection->table('jobseeker_profile_views')
             ->where('user_id', $userId)

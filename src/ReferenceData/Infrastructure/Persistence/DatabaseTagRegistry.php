@@ -3,9 +3,11 @@
 namespace Src\ReferenceData\Infrastructure\Persistence;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Str;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\References\TagRegistry;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 
 final readonly class DatabaseTagRegistry implements TagRegistry
 {
@@ -65,9 +67,8 @@ final readonly class DatabaseTagRegistry implements TagRegistry
 
     public function idsMatching(string $text, int $limit): array
     {
-        // The name is JSON with a binary collation: take the text and compare it case-insensitively, so keys such as "en" never match and `PHP` finds `php`.
-        return array_map('intval', $this->connection->table('reference_tags')
-            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(`name`, '$.en')) COLLATE utf8mb4_unicode_ci LIKE ?", ['%'.addcslashes($text, '%_\\').'%'])
+        // The text of the English name is compared, so keys such as "en" never match and `PHP` finds `php`.
+        return array_map('intval', TextSearch::contains($this->connection->table('reference_tags'), new Expression("name->>'en'"), $text)
             ->orderBy('id')
             ->limit($limit)
             ->pluck('id')

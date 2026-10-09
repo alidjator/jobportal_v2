@@ -103,14 +103,14 @@ final class ScreeningSchemaTest extends FeatureTestCase
         DB::table('recruitment_job_question_ideal_options')->insert(['job_question_id' => $attached, 'option_id' => $option]);
 
         try {
-            DB::table('recruitment_job_question_ideal_options')->insert(['job_question_id' => $attached, 'option_id' => $option]);
+            DB::transaction(fn () => DB::table('recruitment_job_question_ideal_options')->insert(['job_question_id' => $attached, 'option_id' => $option]));
             $this->fail('The same ideal option was stored twice.');
         } catch (QueryException) {
             $this->addToAssertionCount(1);
         }
 
         try {
-            DB::table('recruitment_screening_question_options')->where('id', $option)->delete();
+            DB::transaction(fn () => DB::table('recruitment_screening_question_options')->where('id', $option)->delete());
             $this->fail('An ideal option was deleted.');
         } catch (QueryException) {
             $this->addToAssertionCount(1);

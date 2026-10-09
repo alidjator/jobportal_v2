@@ -86,6 +86,9 @@ final readonly class DatabaseAuditLogReader implements AuditLogReader
 
     private function encode(string $time, int $id): string
     {
+        // PostgreSQL leaves out trailing zero fractions (`09:00:00`), so the time is written in the one format the cursor is read in.
+        $time = (new DateTimeImmutable($time, new DateTimeZone('UTC')))->format(self::TIME_FORMAT);
+
         return rtrim(strtr(base64_encode(json_encode([$time, $id], JSON_THROW_ON_ERROR)), '+/', '-_'), '=');
     }
 

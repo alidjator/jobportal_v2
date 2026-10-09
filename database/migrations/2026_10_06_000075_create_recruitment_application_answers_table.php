@@ -20,7 +20,7 @@ return new class extends Migration
             $table->bigInteger('answer_number')->nullable();
             $table->boolean('answer_bool')->nullable();
 
-            // MariaDB limits identifiers to 64 characters, so the foreign keys need explicit names.
+            // PostgreSQL limits identifiers to 63 characters, so the foreign keys need explicit names.
             $table->foreign('application_id', $prefix.'recruitment_answers_application_foreign')->references('id')->on('recruitment_applications')->cascadeOnDelete();
             $table->foreign('question_id', $prefix.'recruitment_answers_question_foreign')->references('id')->on('recruitment_screening_questions')->restrictOnDelete();
 

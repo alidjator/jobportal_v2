@@ -41,13 +41,13 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'jobseeker_profiles';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_gender_check` CHECK (`gender` IS NULL OR `gender` IN ('male', 'female'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_gender_check\" CHECK (\"gender\" IS NULL OR \"gender\" IN ('male', 'female'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_marital_status_check` CHECK (`marital_status` IS NULL OR `marital_status` IN ('single', 'married', 'divorced', 'widowed'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_marital_status_check\" CHECK (\"marital_status\" IS NULL OR \"marital_status\" IN ('single', 'married', 'divorced', 'widowed'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_availability_check` CHECK (`availability` IS NULL OR `availability` IN ('open_to_work', 'employed_open_to_offers', 'not_looking'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_availability_check\" CHECK (\"availability\" IS NULL OR \"availability\" IN ('open_to_work', 'employed_open_to_offers', 'not_looking'))"
         );
     }
 

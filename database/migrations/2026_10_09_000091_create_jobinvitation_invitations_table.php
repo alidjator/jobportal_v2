@@ -33,7 +33,7 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'jobinvitation_invitations';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('sent', 'viewed', 'applied', 'declined'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('sent', 'viewed', 'applied', 'declined'))"
         );
     }
 

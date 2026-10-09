@@ -89,10 +89,10 @@ final class BulkMessageTest extends FeatureTestCase
 
     public function test_two_applications_of_one_person_get_one_message(): void
     {
-        DB::table('recruitment_applications')->insert([
-            ...(array) DB::table('recruitment_applications')->where('id', $this->applicationId)->first(),
-            'id' => null, 'active_key' => null, 'stage_type' => 'withdrawn',
-        ]);
+        $copy = (array) DB::table('recruitment_applications')->where('id', $this->applicationId)->first();
+        unset($copy['id']);
+
+        DB::table('recruitment_applications')->insert([...$copy, 'active_key' => null, 'stage_type' => 'withdrawn']);
         $second = (int) DB::table('recruitment_applications')->max('id');
 
         $response = $this->bulk([$this->applicationId, $second])->assertOk();

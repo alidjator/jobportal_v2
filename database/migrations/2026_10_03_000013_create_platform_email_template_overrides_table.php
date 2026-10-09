@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by_admin_id')->nullable();
             $table->timestamps();
 
-            // The generated names would reach or exceed the 64-character identifier limit of MariaDB.
+            // The generated names would reach or exceed the identifier limit of PostgreSQL (63 characters).
             $table->unique(['template_key', 'locale'], 'email_template_overrides_key_locale_unique');
             $table->index('updated_by_admin_id', 'email_template_overrides_updated_by_admin_id_index');
         });

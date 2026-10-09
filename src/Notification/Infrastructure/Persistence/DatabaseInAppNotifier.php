@@ -51,7 +51,6 @@ final readonly class DatabaseInAppNotifier implements InAppNotifier
         $time = $this->clock->now()->format(self::TIME_FORMAT);
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $group = (string) ($data[$groupKey] ?? '');
-        $path = '$.'.$groupKey;
         $missing = [];
 
         foreach (array_values(array_unique($userIds)) as $userId) {
@@ -60,7 +59,7 @@ final readonly class DatabaseInAppNotifier implements InAppNotifier
                 ->where('notifiable_id', $userId)
                 ->where('type', $type)
                 ->whereNull('read_at')
-                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(data, ?)) = ?', [$path, $group])
+                ->whereRaw('(data::jsonb ->> ?) = ?', [$groupKey, $group])
                 ->update(['data' => $json, 'created_at' => $time, 'updated_at' => $time]);
 
             if ($updated === 0) {

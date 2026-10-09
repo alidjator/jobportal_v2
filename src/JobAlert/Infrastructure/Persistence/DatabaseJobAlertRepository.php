@@ -117,10 +117,10 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
     {
         $table = $this->connection->table('jobalert_alerts')->getGrammar()->wrapTable('jobalert_alerts');
 
-        // One statement, so two jobs going live at once cannot both take the last slot. MySQL reads `emails_day` before this same statement changes it (the
-        // assignments run left to right), so the count restarts at 1 on a new day.
+        // One statement, so two jobs going live at once cannot both take the last slot. Every expression reads the row as it was before
+        // the statement, so the count restarts at 1 on a new day.
         return $this->connection->update(
-            "UPDATE {$table} SET emails_sent = IF(emails_day = ?, emails_sent + 1, 1), emails_day = ? "
+            "UPDATE {$table} SET emails_sent = CASE WHEN emails_day = ? THEN emails_sent + 1 ELSE 1 END, emails_day = ? "
             .'WHERE id = ? AND (emails_day IS NULL OR emails_day <> ? OR emails_sent < ?)',
             [$day, $day, $alertId, $day, JobAlert::MAX_EMAILS_PER_DAY],
         ) === 1;

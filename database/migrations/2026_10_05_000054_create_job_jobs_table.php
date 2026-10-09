@@ -56,10 +56,10 @@ return new class extends Migration
         $tableName = $connection->getTablePrefix().'job_jobs';
 
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_status_check` CHECK (`status` IN ('draft', 'pending_review', 'active', 'closed', 'expired', 'rejected', 'taken_down'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_status_check\" CHECK (\"status\" IN ('draft', 'pending_review', 'active', 'closed', 'expired', 'rejected', 'taken_down'))"
         );
         $connection->statement(
-            "ALTER TABLE `{$tableName}` ADD CONSTRAINT `{$tableName}_work_mode_check` CHECK (`work_mode` IS NULL OR `work_mode` IN ('onsite', 'hybrid', 'remote'))"
+            "ALTER TABLE \"{$tableName}\" ADD CONSTRAINT \"{$tableName}_work_mode_check\" CHECK (\"work_mode\" IS NULL OR \"work_mode\" IN ('onsite', 'hybrid', 'remote'))"
         );
     }
 

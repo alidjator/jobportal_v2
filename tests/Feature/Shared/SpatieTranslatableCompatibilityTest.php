@@ -37,7 +37,8 @@ final class SpatieTranslatableCompatibilityTest extends FeatureTestCase
 
         $stored = $this->makeModel()->newQuery()->findOrFail($category->getKey());
 
-        $this->assertSame(['id' => 'Teknik', 'en' => 'Engineering'], $stored->getTranslations('name'));
+        // The column is `jsonb`, which does not keep the order of the keys.
+        $this->assertEquals(['id' => 'Teknik', 'en' => 'Engineering'], $stored->getTranslations('name'));
 
         App::setLocale('id');
         $this->assertSame('Teknik', $stored->name);
