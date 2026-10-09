@@ -13,6 +13,7 @@ It is a factual inventory, not legal advice, and the legal references in the que
 | CV generator | A job seeker may print photo, birth date, gender, religion, marital status and nationality on their own generated CV. All are off unless the job seeker ticks them for that CV. The CV can be attached to an application. Expected salary, street address and WhatsApp number are never printed. |
 | Matching and alerts | Job recommendations, candidate recommendations, the match percentage and job alerts use **no** sensitive attribute: only skills, location and work mode, experience, education, salary and role. |
 | Profile views | A company member opening a candidate profile or resume is logged (company, member, candidate, time); the candidate sees which companies looked. Contact data stays hidden until the candidate applies. |
+| Job views | Planned (dashboards): each view of a job is logged with the account id, or a daily-salted hash of IP and user agent for a visitor who is not logged in, for 90 days; afterwards only a daily count per job remains. Companies see the counts, never the viewers. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
 
 ## 2. Questions
