@@ -83,5 +83,9 @@ Whether and how to report them to the people who maintain it is the user's decis
 | S11 | State-changing routes use POST, PUT, PATCH or DELETE; the few GET routes only read. |
 | S12 | The training (Moodle) integration is not built yet; the token must travel in a header or the body, never the query string (`decisions.md`). |
 
-S13 (admin checks) stays open for the same reason as S7: the admin side of the new project uses permissions on every route (`can:<permission>`), but the item was not part of this marking.
+**S13 (marked 2026-10-09, user): not carried over.**
+
+| # | Status in the new project |
+|---|---|
+| S13 | Every admin job route sits behind `auth:admin` and `can:jobs.manage` (`routes.admin.php`; test "a weak admin gets 403", `AdminJobTest`). There is no endpoint that sets a status to any value: the admin has the named actions approve, reject, take down and restore, and the `Job` state machine refuses an invalid transition with 409 (`job-not-active`, `job-not-publishable`, ...). The status filter of the admin list is validated with `Rule::enum(JobStatus::class)`. |
 

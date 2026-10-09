@@ -27,7 +27,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - SMTP (credentials entered by the user); then a command sends reset emails to the 10 accounts without a password (ids 16, 17, 18, 20, 24, 25, 26, 27, 35, 36): dry-run first, ask before running.
 - Deployment: Reverb process, nginx WebSocket proxy, upload limits, queue worker for `critical,default,bulk` (see `docs/design/phase-2-chat.md`), the invitation page URL.
 - Legal review: the brief for the adviser is `docs/legal-review.md`. The candidate-search filters by religion, nationality, age and gender are switched off by default (`job_seeker.candidate_sensitive_filters_enabled`, coded and committed 2026-10-09); an admin switches them on after the answer. The account age limits and the CV personal details are in the brief too.
-- Deliver `docs/analysis/legacy-security-report.md` (S1 to S3 of the running karir.pkp, critical) to its maintainers. S4 to S12 are marked as not carried over; S13 is unmarked.
+- Deliver `docs/analysis/legacy-security-report.md` (S1 to S3 of the running karir.pkp, critical) to its maintainers. S4 to S13 are marked as not carried over.
 - If the weekly recommendation email grows past a few thousand job seekers, rework it into one queue job per batch (`docs/design/phase-3-matching.md`).
 
 ## Operational facts not in `CLAUDE.md`
