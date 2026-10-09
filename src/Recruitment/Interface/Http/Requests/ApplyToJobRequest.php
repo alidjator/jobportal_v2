@@ -23,6 +23,7 @@ final class ApplyToJobRequest extends FormRequest
             'cv.include' => ['nullable', 'array'],
             'cv.include.*' => ['boolean'],
             'cover_letter' => ['nullable', 'string'],
+            'source' => ['nullable', 'string', 'max:30'],
             'answers' => ['nullable', 'array', 'max:50'],
             'answers.*.question_id' => ['required', 'integer', 'min:1', 'distinct'],
             'answers.*.value' => ['present'],
@@ -47,6 +48,7 @@ final class ApplyToJobRequest extends FormRequest
             is_string($coverLetter) ? $coverLetter : null,
             $answers,
             is_array($cv) ? $this->cvSpec($cv) : null,
+            is_string($source = $this->input('source')) ? $source : null,
         );
     }
 

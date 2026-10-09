@@ -14,6 +14,7 @@ It is a factual inventory, not legal advice, and the legal references in the que
 | Matching and alerts | Job recommendations, candidate recommendations, the match percentage and job alerts use **no** sensitive attribute: only skills, location and work mode, experience, education, salary and role. |
 | Profile views | A company member opening a candidate profile or resume is logged (company, member, candidate, time); the candidate sees which companies looked. Contact data stays hidden until the candidate applies. |
 | Job views | Planned (dashboards): each view of a job is logged with the account id, or a daily-salted hash of IP and user agent for a visitor who is not logged in, for 90 days; afterwards only a daily count per job remains. Companies see the counts, never the viewers. |
+| Application source and match score | Each application records where the applicant came from (search, recommendation, alert, direct link or invitation) and the match percentage at the time of applying. Both are used only in aggregate analytics for the platform and the company admin (groups under 5 are hidden); no endpoint returns them for a person. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
 
 ## 2. Questions

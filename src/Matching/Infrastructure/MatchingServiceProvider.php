@@ -9,12 +9,14 @@ use Src\Matching\Application\MatchScorer;
 use Src\Matching\Application\RecommendationEmailSender;
 use Src\Matching\Application\RecommendationEmailTemplates;
 use Src\Matching\Application\RecommendationNotificationType;
+use Src\Matching\Application\ScoreApplicant;
 use Src\Matching\Domain\DeliveryRepository;
 use Src\Matching\Infrastructure\Listeners\EraseRecommendationsWhenUserAnonymized;
 use Src\Matching\Infrastructure\Mail\MailRecommendationSender;
 use Src\Matching\Infrastructure\Persistence\DatabaseDeliveryRepository;
 use Src\Matching\Interface\Console\SendRecommendationsCommand;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\Matching\ApplicantMatchScores;
 use Src\Shared\Application\Matching\MatchScoring;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
@@ -28,6 +30,7 @@ final class MatchingServiceProvider extends ContextServiceProvider
         DeliveryRepository::class => DatabaseDeliveryRepository::class,
         RecommendationEmailSender::class => MailRecommendationSender::class,
         MatchScoring::class => MatchScorer::class,
+        ApplicantMatchScores::class => ScoreApplicant::class,
     ];
 
     public function register(): void

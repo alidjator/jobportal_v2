@@ -23,6 +23,8 @@ final readonly class Application
         public ?string $withdrawnNote,
         public DateTimeImmutable $appliedAt,
         public ?int $id = null,
+        public ?ApplicationSource $source = null,
+        public ?int $matchScore = null,
     ) {}
 
     /**
@@ -40,6 +42,8 @@ final readonly class Application
         array $profileSnapshot,
         ?bool $meetsMustHave,
         DateTimeImmutable $now,
+        ?ApplicationSource $source = null,
+        ?int $matchScore = null,
     ): self {
         return new self(
             $userId,
@@ -53,6 +57,9 @@ final readonly class Application
             $meetsMustHave,
             null,
             $now,
+            null,
+            $source,
+            $matchScore,
         );
     }
 
@@ -90,6 +97,8 @@ final readonly class Application
             $note,
             $this->appliedAt,
             $this->id,
+            $this->source,
+            $this->matchScore,
         );
     }
 
@@ -150,6 +159,8 @@ final readonly class Application
             $this->withdrawnNote,
             $this->appliedAt,
             $this->id,
+            $this->source,
+            $this->matchScore,
         );
     }
 }

@@ -1,4 +1,4 @@
-# Phase 4, step 2: business intelligence (designed 2026-10-09)
+# Phase 4, step 2: business intelligence (designed 2026-10-09, coded 2026-10-09, checked)
 
 Analytics for the platform admin and for each company, next to the dashboards of `phase-4-dashboards.md` (the dashboards show the present; this answers analytical questions over a date range).
 Lives in the `Dashboard` context (read side). Reads other contexts through their `Shared` read interfaces.
@@ -40,3 +40,13 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 
 - The CSV columns of each analysis.
 - Add the BI rows to `docs/legal-review.md` if the summaries keep anything per person (they should not).
+
+## What was coded (2026-10-09)
+
+- **Contract** in `Shared/Application/Analytics`: `AnalyticsReportProvider` (one analysis, built by the context that owns the data), `AnalyticsReports` and `AnalyticsRollups` (registries every context fills from its service provider, like the dashboard cards), `AnalyticsRollup` (a daily summary that can rebuild any day), `AnalyticsScope`, `AnalyticsTable`, `AnalyticsDays`. The `Dashboard` context serves them: range check, small-group rule, 10-minute cache, JSON and CSV, the command and its schedule.
+- **Application data:** `recruitment_applications.source` and `match_score` (migration `000097`). `ApplyToJob` sets them: `invitation` when the applicant has an invitation for the job, else the validated hint (`search`, `recommendation`, `alert`, `direct`), else `direct`; the score comes from the new port `ApplicantMatchScores` (Matching, same scorer as the recommendations). Neither field is returned by any endpoint.
+- **Summaries:** `recruitment_applications_daily` (per day, job, source, match band) and `recruitment_transitions_daily` (per day, job, recruiter, stage pair, rejection reason, source, band, with the sums of seconds in the stage and since the application) in Recruitment; `job_market_daily` (per day, company, category, province, experience level, salary period) in Job. Match bands: unknown, low (under 40), fair (40 to 59), good (60 to 79), strong (80 and up). `php artisan analytics:rollup` rebuilds yesterday at 00:30 Jakarta every night; `--from`, `--to` and `--backfill` rebuild any past days. The rates are rates of moves in the range (not cohorts), capped at 1.
+- **Analyses** (`GET /company/analytics/{report}` for a company admin, `GET /admin/analytics/{report}` with `analytics.view`; `from`, `to`, `format=csv`, `table`): `funnel` (stages, speed, offers, and for a company by_job and by_recruiter), `rejections` (reasons, sources, and for a company worst_jobs), `matching` (bands, invitations), `market` (categories, provinces, experience levels, salary per period). Medians (time in a stage, time to an offer and to a hire) are read live from the stage history, over the same range.
+- **Small groups:** setting `analytics.min_group_size` (default 5, 2 to 50). A row whose count is below it has its figures set to `null` and `suppressed: true` (the market tables hide only the applicant figures, the salary table the whole row); a CSV writes the count as `<5`. A median over fewer values than that is `null`.
+- **CSV:** one table per file (`table` picks it, the first by default); the file name carries the report, the table and the range.
+- **Not done:** the legal-review row only mentions the new per-application fields (the summaries hold no person). A recruiter filter on `by_job` and a per-job time series are not built.

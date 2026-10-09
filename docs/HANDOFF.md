@@ -12,16 +12,17 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Current state (2026-10-09)
 
-- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1662 tests, all passing.
+- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1724 tests, all passing.
 - **Phase 0, Phase 1, Phase 2 and Phase 3 are complete**, coded, checked and committed; every migration (to `000094`) ran on the real database.
   Phase 3: job alerts, candidate search, invitations, matching engine, CV generator (`docs/design/phase-3-*.md`).
 - **Legacy import (`docs/design/phase-1-migration.md`) ran once on the real database (2026-10-08):** 179 accounts, 173 profiles, 3 companies, 149 jobs, 30 applications.
   The importer only adds. The 142 `draft` jobs stay as they are by decision. Legacy group "dev" (7 applications) was left unmapped on purpose.
 - Product points settled 2026-10-09: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it
   (email only now); applying needs a verified email.
-- **In progress: Phase 4, step 1 dashboards (`docs/design/phase-4-dashboards.md`) is coded and checked, committed; real-DB migration pending** (new migrations `000095`, `000096`; new permission `dashboard.view`).
-  The user must run `php artisan test:database:migrate --env=testing`, then `composer check`; after approval commit, then run the two migrations and `identity:sync-permissions` on the real database.
-  Business intelligence (`phase-4-business-intelligence.md`) is designed, not coded. Campaigns and Moodle are not designed. Do not start new work without asking the user.
+- **Phase 4, step 1 dashboards (`docs/design/phase-4-dashboards.md`) is coded, checked and committed;** its real-database migrations (`000095`, `000096`) and `identity:sync-permissions` (`dashboard.view`) wait for the user.
+- **In progress: Phase 4, step 2 business intelligence (`docs/design/phase-4-business-intelligence.md`) is coded and checked, not yet committed** (new migrations `000097` to `000100`; new permission `analytics.view`; new setting `analytics.min_group_size`).
+  The user must run `php artisan test:database:migrate --env=testing`, then `composer check`; after approval commit, then migrate the real database, run `identity:sync-permissions` and `php artisan analytics:rollup --backfill` once.
+  Campaigns and Moodle are not designed. Do not start new work without asking the user.
 
 ## Items waiting for the user
 

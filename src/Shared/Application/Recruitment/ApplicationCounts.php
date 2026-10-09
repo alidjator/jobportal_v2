@@ -22,4 +22,11 @@ interface ApplicationCounts
      * @return array<string, int> `Y-m-d` => count, quiet days missing
      */
     public function perDay(array $jobIds, DateTimeImmutable $since): array;
+
+    /**
+     * How many applications each job received on one Jakarta calendar day (`Y-m-d`).
+     *
+     * @return array<int, int> job id => count, jobs without an application that day missing
+     */
+    public function onDay(string $day): array;
 }

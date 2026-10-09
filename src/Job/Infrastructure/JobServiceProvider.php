@@ -27,6 +27,8 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Infrastructure\Analytics\JobMarketDailyRollup;
+use Src\Job\Infrastructure\Analytics\MarketReport;
 use Src\Job\Infrastructure\Dashboard\CompanyJobsCard;
 use Src\Job\Infrastructure\Dashboard\JobApprovalQueueCard;
 use Src\Job\Infrastructure\Dashboard\JobPerformanceCard;
@@ -45,6 +47,8 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Job\Interface\Console\FoldJobViewsCommand;
+use Src\Shared\Application\Analytics\AnalyticsReports;
+use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
@@ -84,6 +88,14 @@ final class JobServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...JobPermissions::definitions());
+        });
+
+        $this->callAfterResolving(AnalyticsReports::class, function (AnalyticsReports $reports): void {
+            $reports->add($this->app->make(MarketReport::class));
+        });
+
+        $this->callAfterResolving(AnalyticsRollups::class, function (AnalyticsRollups $rollups): void {
+            $rollups->add($this->app->make(JobMarketDailyRollup::class));
         });
 
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {

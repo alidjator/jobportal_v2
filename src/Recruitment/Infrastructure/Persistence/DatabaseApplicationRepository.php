@@ -11,6 +11,7 @@ use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswer;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
+use Src\Recruitment\Domain\ApplicationSource;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
@@ -68,6 +69,8 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             $row->withdrawn_note,
             new DateTimeImmutable((string) $row->applied_at, new DateTimeZone('UTC')),
             (int) $row->id,
+            $row->source === null ? null : ApplicationSource::from($row->source),
+            $row->match_score === null ? null : (int) $row->match_score,
         );
     }
 
@@ -146,6 +149,8 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
                 'resume_size_bytes' => $application->resume?->sizeBytes,
                 'profile_snapshot' => json_encode($application->profileSnapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
                 'meets_must_have' => $application->meetsMustHave,
+                'source' => $application->source?->value,
+                'match_score' => $application->matchScore,
                 'withdrawn_note' => $application->withdrawnNote,
                 'applied_at' => $appliedAt,
                 'created_at' => $appliedAt,
@@ -185,6 +190,8 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             $application->withdrawnNote,
             $application->appliedAt,
             $id,
+            $application->source,
+            $application->matchScore,
         );
     }
 

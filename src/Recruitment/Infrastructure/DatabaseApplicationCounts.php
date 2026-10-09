@@ -4,6 +4,7 @@ namespace Src\Recruitment\Infrastructure;
 
 use DateTimeImmutable;
 use Illuminate\Database\ConnectionInterface;
+use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Dashboard\DashboardWindow;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
 
@@ -44,6 +45,21 @@ final readonly class DatabaseApplicationCounts implements ApplicationCounts
             ->groupBy('day')
             ->get([$this->connection->raw(DashboardWindow::dayOf('applied_at').' as day'), $this->connection->raw('COUNT(*) as total')]) as $row) {
             $counts[(string) $row->day] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
+    public function onDay(string $day): array
+    {
+        $counts = [];
+
+        foreach ($this->connection->table('recruitment_applications')
+            ->where('applied_at', '>=', AnalyticsDays::startUtc($day))
+            ->where('applied_at', '<', AnalyticsDays::endUtc($day))
+            ->groupBy('job_id')
+            ->get(['job_id', $this->connection->raw('COUNT(*) as total')]) as $row) {
+            $counts[(int) $row->job_id] = (int) $row->total;
         }
 
         return $counts;

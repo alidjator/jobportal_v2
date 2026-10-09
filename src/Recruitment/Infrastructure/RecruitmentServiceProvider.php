@@ -33,6 +33,11 @@ use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
+use Src\Recruitment\Infrastructure\Analytics\ApplicationsDailyRollup;
+use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
+use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
+use Src\Recruitment\Infrastructure\Analytics\RejectionsReport;
+use Src\Recruitment\Infrastructure\Analytics\TransitionsDailyRollup;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantInterviewsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
@@ -63,6 +68,8 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
+use Src\Shared\Application\Analytics\AnalyticsReports;
+use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -109,6 +116,18 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(AnalyticsReports::class, function (AnalyticsReports $reports): void {
+            $reports->add(
+                $this->app->make(FunnelReport::class),
+                $this->app->make(RejectionsReport::class),
+                $this->app->make(MatchingReport::class),
+            );
+        });
+
+        $this->callAfterResolving(AnalyticsRollups::class, function (AnalyticsRollups $rollups): void {
+            $rollups->add($this->app->make(ApplicationsDailyRollup::class), $this->app->make(TransitionsDailyRollup::class));
+        });
+
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
             $cards->add(
                 $this->app->make(ApplicantApplicationsCard::class),

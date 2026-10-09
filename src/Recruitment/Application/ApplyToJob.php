@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswerChecker;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
+use Src\Recruitment\Domain\ApplicationSource;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
@@ -19,6 +20,8 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\JobInvitation\InvitedCandidates;
+use Src\Shared\Application\Matching\ApplicantMatchScores;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -31,7 +34,8 @@ use Throwable;
 /**
  * A job seeker applies to a live public job. The application keeps its own copy of the chosen resume and a snapshot of the profile as it is now, so
  * what the recruiter sees never changes under them. The applicant is locked first, so two requests of the same person (and the daily count) run one
- * after the other; the unique key of the application is the last line of defence against a duplicate.
+ * after the other; the unique key of the application is the last line of defence against a duplicate. It also records where the applicant came from (an invitation
+ * wins over the hint of the client) and how well they fitted the job, for the analytics.
  */
 final readonly class ApplyToJob
 {
@@ -44,6 +48,8 @@ final readonly class ApplyToJob
         private JobDirectory $jobs,
         private ApplicantProfileSource $applicants,
         private ApplicantContacts $contacts,
+        private InvitedCandidates $invitations,
+        private ApplicantMatchScores $matchScores,
         private ApplicationRepository $applications,
         private JobQuestionRepository $jobQuestions,
         private StageRepository $stages,
@@ -126,6 +132,8 @@ final readonly class ApplyToJob
                         ['name' => $contact->name, 'email' => $contact->email] + $submission->snapshot,
                         $checked->meetsMustHave,
                         $this->clock->now(),
+                        $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation,
+                        $this->matchScores->percent($userId, $jobId),
                     ),
                     $checked->answers,
                 );
