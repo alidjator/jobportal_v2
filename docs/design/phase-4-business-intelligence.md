@@ -21,7 +21,10 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 
 ## Consequences of the summary tables
 
-- A daily table can only be added up, so every measure is stored as a **count and a sum** (for example number of transitions and total seconds), never as a median or a percentile. Averages are computed from the sums; the medians the admin might want are not offered.
+- A daily table can only be added up, so every measure in it is stored as a **count and a sum** (for example number of transitions and total seconds). Averages are computed from the sums.
+- **Median (decided 2026-10-09, user):** a median cannot be added up from daily rows, so it is **not** taken from the summary tables. The median of a duration (time in a stage, time from application to offer and to hired) is computed **live** from `recruitment_application_stage_history` for the requested range: the durations are read in order and the median is taken in the application (MySQL has no median function). Only duration measures get a median.
+  The date range of a request is capped, the result is cached, and the small-group rule applies ("fewer than 5" instead of a median over fewer than 5 applications).
+  If this proves slow, the fallback is a duration histogram in the daily table (buckets can be added up, so a percentile can be estimated for any range); the endpoint shape does not change.
 - The job rebuilds a day from the source tables, so it can be run again for any past day (idempotent). Applications and stage history that already exist are **backfilled** by running the job over the past days; only `source` and `match_score` cannot be backfilled.
 - The small-group rule is applied to the total of the requested range, not to each day.
 - Tables and exact columns are decided when coding.
