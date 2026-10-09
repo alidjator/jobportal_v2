@@ -4,106 +4,114 @@
 <meta charset="UTF-8">
 <title>{{ $cv->name }}</title>
 <style>
-    @page { margin: 0; }
-    body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5pt; line-height: 1.45; color: #222; margin: 0; }
-    .band { position: fixed; left: 0; top: 0; bottom: 0; width: 68mm; background: #1f3a5f; }
-    table.layout { width: 100%; border-collapse: collapse; }
-    td.side { width: 68mm; vertical-align: top; padding: 14mm 8mm 10mm 9mm; color: #fff; font-size: 8.8pt; }
-    td.main { vertical-align: top; padding: 14mm 14mm 10mm 12mm; }
-    .photo { text-align: center; margin-bottom: 10px; }
-    .photo img { width: 40mm; height: 40mm; }
-    td.side h3 { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #8fa6c4; padding-bottom: 2px; margin: 14px 0 6px 0; color: #fff; }
-    td.side p { margin: 0 0 4px 0; word-wrap: break-word; }
-    td.side .muted { color: #c5d2e4; font-size: 8pt; }
-    h1 { font-size: 22pt; margin: 0; color: #1f3a5f; }
-    .headline { font-size: 11pt; color: #555; margin: 2px 0 0 0; }
-    h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: 1px; color: #1f3a5f; border-bottom: 2px solid #1f3a5f; padding-bottom: 2px; margin: 16px 0 7px 0; }
+    @page { margin: 12mm 16mm 14mm 16mm; }
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5pt; line-height: 1.45; color: #222; }
+    table { border-collapse: collapse; width: 100%; }
+    td { vertical-align: top; padding: 0; }
+    .top { background: #1f3a5f; color: #fff; margin: -12mm -16mm 6mm -16mm; padding: 12mm 16mm 7mm 16mm; }
+    .top td { vertical-align: middle; }
+    .photo { width: 34mm; }
+    .photo img { width: 28mm; height: 28mm; }
+    h1 { font-size: 19pt; margin: 0; color: #fff; }
+    .headline { font-size: 11pt; color: #c5d2e4; margin: 2px 0 0 0; }
+    .contact { text-align: right; font-size: 8.5pt; color: #e3eaf4; width: 32%; }
+    h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: 1px; color: #1f3a5f; border-bottom: 2px solid #1f3a5f; padding-bottom: 2px; margin: 15px 0 7px 0; }
     .entry { margin-bottom: 9px; page-break-inside: avoid; }
+    .head td.period { text-align: right; color: #666; font-size: 8.5pt; white-space: nowrap; width: 30%; }
     .title { font-weight: bold; }
     .sub { color: #444; }
-    .period { color: #777; font-size: 8.5pt; }
     .text { margin: 3px 0 0 0; }
+    .chip { display: inline-block; background: #e8eef7; color: #1f3a5f; padding: 1px 6px; margin: 0 4px 4px 0; font-size: 8.5pt; }
+    .col { width: 50%; padding-right: 10px; }
+    .muted { color: #666; }
 </style>
 </head>
 <body>
-<div class="band"></div>
-<table class="layout"><tr>
-<td class="side">
-    @if ($cv->photo)
-        <div class="photo"><img src="{{ $cv->photo }}" alt=""></div>
-    @endif
-    <h3>{{ $cv->labels['contact'] }}</h3>
-    <p>{{ $cv->email }}</p>
-    @if ($cv->phone)<p>{{ $cv->phone }}</p>@endif
-    @if ($cv->location)<p>{{ $cv->location }}</p>@endif
+<div class="top">
+    <table><tr>
+        @if ($cv->photo)<td class="photo"><img src="{{ $cv->photo }}" alt=""></td>@endif
+        <td>
+            <h1>{{ $cv->name }}</h1>
+            @if ($cv->headline)<p class="headline">{{ $cv->headline }}</p>@endif
+        </td>
+        <td class="contact">
+            {{ $cv->email }}@if ($cv->phone)<br>{{ $cv->phone }}@endif @if ($cv->location)<br>{{ $cv->location }}@endif
+        </td>
+    </tr></table>
+</div>
 
-    @if ($cv->personal)
-        <h3>{{ $cv->labels['personal'] }}</h3>
-        @foreach ($cv->personal as $row)
-            <p><span class="muted">{{ $row['label'] }}</span><br>{{ $row['value'] }}</p>
-        @endforeach
-    @endif
+@if ($cv->summary)
+    <h2>{{ $cv->labels['summary'] }}</h2>
+    <p class="text">{!! nl2br(e($cv->summary)) !!}</p>
+@endif
 
-    @if ($cv->skills)
-        <h3>{{ $cv->labels['skills'] }}</h3>
-        @foreach ($cv->skills as $skill)
-            <p>{{ $skill }}</p>
-        @endforeach
-    @endif
+@if ($cv->experiences)
+    <h2>{{ $cv->labels['experience'] }}</h2>
+    @foreach ($cv->experiences as $entry)
+        <div class="entry">
+            <table class="head"><tr>
+                <td>
+                    <span class="title">{{ $entry['title'] }}</span><br>
+                    <span class="sub">{{ $entry['company'] }}@if ($entry['location']), {{ $entry['location'] }}@endif</span>
+                </td>
+                <td class="period">{{ $entry['period'] }}</td>
+            </tr></table>
+            @if ($entry['description'])
+                <p class="text">{!! nl2br(e($entry['description'])) !!}</p>
+            @endif
+        </div>
+    @endforeach
+@endif
 
-    @if ($cv->languages)
-        <h3>{{ $cv->labels['languages'] }}</h3>
-        @foreach ($cv->languages as $language)
-            <p>{{ $language['name'] }}<br><span class="muted">{{ $language['level'] }}</span></p>
-        @endforeach
-    @endif
+@if ($cv->educations)
+    <h2>{{ $cv->labels['education'] }}</h2>
+    @foreach ($cv->educations as $entry)
+        <div class="entry">
+            <table class="head"><tr>
+                <td>
+                    <span class="title">{{ $entry['institution'] }}</span>
+                    @if ($entry['title'])<br><span class="sub">{{ $entry['title'] }}@if ($entry['gpa']) &nbsp;&middot;&nbsp; {{ $entry['gpa'] }}@endif</span>@endif
+                </td>
+                <td class="period">{{ $entry['period'] }}</td>
+            </tr></table>
+            @if ($entry['description'])
+                <p class="text">{!! nl2br(e($entry['description'])) !!}</p>
+            @endif
+        </div>
+    @endforeach
+@endif
 
-    @if ($cv->links)
-        <h3>{{ $cv->labels['links'] }}</h3>
-        @foreach ($cv->links as $link)
-            <p><span class="muted">{{ $link['label'] }}</span><br>{{ $link['url'] }}</p>
-        @endforeach
-    @endif
-</td>
-<td class="main">
-    <h1>{{ $cv->name }}</h1>
-    @if ($cv->headline)
-        <p class="headline">{{ $cv->headline }}</p>
-    @endif
+@if ($cv->skills)
+    <h2>{{ $cv->labels['skills'] }}</h2>
+    <div>@foreach ($cv->skills as $skill)<span class="chip">{{ $skill }}</span> @endforeach</div>
+@endif
 
-    @if ($cv->summary)
-        <h2>{{ $cv->labels['summary'] }}</h2>
-        <p class="text">{!! nl2br(e($cv->summary)) !!}</p>
-    @endif
+@if ($cv->languages || $cv->personal)
+    <table><tr>
+        <td class="col">
+            @if ($cv->languages)
+                <h2>{{ $cv->labels['languages'] }}</h2>
+                @foreach ($cv->languages as $language)
+                    <p class="text">{{ $language['name'] }} <span class="muted">- {{ $language['level'] }}</span></p>
+                @endforeach
+            @endif
+        </td>
+        <td class="col">
+            @if ($cv->personal)
+                <h2>{{ $cv->labels['personal'] }}</h2>
+                @foreach ($cv->personal as $row)
+                    <p class="text"><span class="muted">{{ $row['label'] }}:</span> {{ $row['value'] }}</p>
+                @endforeach
+            @endif
+        </td>
+    </tr></table>
+@endif
 
-    @if ($cv->experiences)
-        <h2>{{ $cv->labels['experience'] }}</h2>
-        @foreach ($cv->experiences as $entry)
-            <div class="entry">
-                <div class="title">{{ $entry['title'] }}</div>
-                <div class="sub">{{ $entry['company'] }}@if ($entry['location']), {{ $entry['location'] }}@endif</div>
-                <div class="period">{{ $entry['period'] }}</div>
-                @if ($entry['description'])
-                    <p class="text">{!! nl2br(e($entry['description'])) !!}</p>
-                @endif
-            </div>
-        @endforeach
-    @endif
-
-    @if ($cv->educations)
-        <h2>{{ $cv->labels['education'] }}</h2>
-        @foreach ($cv->educations as $entry)
-            <div class="entry">
-                <div class="title">{{ $entry['institution'] }}</div>
-                @if ($entry['title'])<div class="sub">{{ $entry['title'] }}@if ($entry['gpa']) &nbsp;&middot;&nbsp; {{ $entry['gpa'] }}@endif</div>@endif
-                <div class="period">{{ $entry['period'] }}</div>
-                @if ($entry['description'])
-                    <p class="text">{!! nl2br(e($entry['description'])) !!}</p>
-                @endif
-            </div>
-        @endforeach
-    @endif
-</td>
-</tr></table>
+@if ($cv->links)
+    <h2>{{ $cv->labels['links'] }}</h2>
+    @foreach ($cv->links as $link)
+        <p class="text"><span class="muted">{{ $link['label'] }}:</span> {{ $link['url'] }}</p>
+    @endforeach
+@endif
 </body>
 </html>
