@@ -1,7 +1,7 @@
 # Legacy findings (karir.pkp)
 
 Findings that violate common best practice, reported under the "decision gate" rule (security, bugs/correctness,
-architecture/code quality, performance). **Status of all items: reported to the user; no per-item decision recorded.**
+architecture/code quality, performance). **Status: reported to the user; the per-item decisions are in the "Decisions" section at the end.**
 Do not silently copy these behaviors into the new project, and do not silently "fix" them either; confirm with the user.
 Line references are to `/usr/share/nginx/html/karir.pkp` as of 2026-10-03. Plan/billing items are excluded by scope.
 
@@ -64,3 +64,24 @@ Line references are to `/usr/share/nginx/html/karir.pkp` as of 2026-10-03. Plan/
 
 S1 to S3 are issues in the **running production application**. The new project does not touch `karir.pkp` (read-only reference).
 Whether and how to report them to the people who maintain it is the user's decision.
+
+## Decisions
+
+**S1 to S3 (decided 2026-10-09, user):** reported to the maintainers of the running application in `docs/analysis/legacy-security-report.md` (findings, fixes and what to check, without exploit steps); the user delivers it. Nothing was run against the live site.
+
+**S4 to S12 (marked 2026-10-09, user): not carried over, the new project is written from scratch.** The behaviour is not copied; where a test proves the replacement, it is named.
+
+| # | Status in the new project |
+|---|---|
+| S4 | No password is ever sent by email; accounts set their own password, and a reset uses a one-time code (valid for a few minutes) and the user chooses the new password. |
+| S5 | Applying checks that the resume belongs to the applicant, that the job exists and is live and that the person has not already applied (`ApplyToJob`; test "a resume of another account or a missing one is refused"). |
+| S6 | Every pipeline action goes through the member's access to the application (admin: the company's jobs; recruiter: the jobs assigned to them); another company's application is 404 (`ApplicationLocksTest`, `ProcessApplicationTest`, `CompanyApplicationsTest`). |
+| S7 | Campaigns are not built yet (carried over as a Phase 4 feature). When built they must follow the same company-scoped access rule and use DELETE, never GET. |
+| S8 | A job cannot become live without approval when the company needs it; expire, reopen and restore check the job belongs to the member's company (Job context tests). |
+| S9 | Screening questions are scoped to the company; another company's question is 404 (test "a question of another company does not exist"). |
+| S10 | Chat threads are scoped to their two parties and the company's team; a recipient is never taken from the request body (Messaging tests). |
+| S11 | State-changing routes use POST, PUT, PATCH or DELETE; the few GET routes only read. |
+| S12 | The training (Moodle) integration is not built yet; the token must travel in a header or the body, never the query string (`decisions.md`). |
+
+S13 (admin checks) stays open for the same reason as S7: the admin side of the new project uses permissions on every route (`can:<permission>`), but the item was not part of this marking.
+
