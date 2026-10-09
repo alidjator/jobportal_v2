@@ -19,7 +19,7 @@ final class ScreeningSchemaTest extends FeatureTestCase
     private function question(string $type = 'single_choice', ?int $companyId = null): int
     {
         return (int) DB::table('recruitment_screening_questions')->insertGetId([
-            'company_id' => $companyId ?? $this->companyRowId(), 'type' => $type, 'text' => 'Can you relocate?', 'created_by_user_id' => 1,
+            'company_id' => $companyId ?? $this->companyRowId(), 'type' => $type, 'text' => 'Can you relocate?', 'created_by_user_id' => $this->userRowId(),
             'created_at' => now(), 'updated_at' => now(),
         ]);
     }
@@ -27,6 +27,13 @@ final class ScreeningSchemaTest extends FeatureTestCase
     private function option(int $questionId, string $label, int $position = 1): int
     {
         return (int) DB::table('recruitment_screening_question_options')->insertGetId(['question_id' => $questionId, 'label' => $label, 'position' => $position]);
+    }
+
+    private function jobRow(string $slug): int
+    {
+        return (int) (DB::table('job_jobs')->where('slug', $slug)->value('id') ?? DB::table('job_jobs')->insertGetId([
+            'company_id' => $this->companyRowId(), 'title' => ucfirst($slug), 'slug' => $slug, 'created_by_user_id' => $this->userRowId(), 'created_at' => now(), 'updated_at' => now(),
+        ]));
     }
 
     private function jobQuestion(int $jobId, int $questionId, array $extra = []): int
@@ -77,7 +84,7 @@ final class ScreeningSchemaTest extends FeatureTestCase
         $this->assertSame(0, DB::table('recruitment_screening_question_options')->count());
 
         $used = $this->question();
-        $this->jobQuestion(10, $used);
+        $this->jobQuestion($this->jobRow('first'), $used);
 
         $this->expectException(QueryException::class);
         DB::table('recruitment_screening_questions')->where('id', $used)->delete();
@@ -86,11 +93,11 @@ final class ScreeningSchemaTest extends FeatureTestCase
     public function test_a_question_is_attached_to_a_job_once(): void
     {
         $question = $this->question();
-        $this->jobQuestion(10, $question);
-        $this->jobQuestion(11, $question);
+        $this->jobQuestion($this->jobRow('first'), $question);
+        $this->jobQuestion($this->jobRow('second'), $question);
 
         $this->expectException(QueryException::class);
-        $this->jobQuestion(10, $question);
+        $this->jobQuestion($this->jobRow('first'), $question);
     }
 
     public function test_ideal_options_follow_the_attachment_and_protect_the_option(): void
@@ -98,7 +105,7 @@ final class ScreeningSchemaTest extends FeatureTestCase
         $question = $this->question();
         $option = $this->option($question, 'A');
         $other = $this->option($question, 'B', 2);
-        $attached = $this->jobQuestion(10, $question, ['is_required' => true, 'is_must_have' => true]);
+        $attached = $this->jobQuestion($this->jobRow('first'), $question, ['is_required' => true, 'is_must_have' => true]);
 
         DB::table('recruitment_job_question_ideal_options')->insert(['job_question_id' => $attached, 'option_id' => $option]);
 

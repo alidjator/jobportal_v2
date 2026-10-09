@@ -50,6 +50,12 @@ final class CompanyTeamTest extends FeatureTestCase
         parent::tearDown();
     }
 
+    private function seededAdminId(): int
+    {
+        return (int) (AdminModel::query()->where('email', 'seeded-admin@example.test')->value('id')
+            ?? AdminModel::query()->create(['name' => 'Seeded', 'email' => 'seeded-admin@example.test', 'password' => 'hash', 'status' => 'active'])->id);
+    }
+
     private function makeCompany(string $name, string $slug, string $status = 'active'): int
     {
         return (int) DB::table('company_companies')->insertGetId([
@@ -246,7 +252,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $second = (int) DB::table('company_invitations')->where('email', 'second@example.test')->value('id');
         DB::table('company_invitations')->insert([
             'company_id' => $this->companyId, 'email' => 'by-platform@example.test', 'role' => 'company_admin', 'token_hash' => str_repeat('a', 64),
-            'invited_by_admin_id' => 1, 'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
+            'invited_by_admin_id' => $this->seededAdminId(), 'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
         // Not pending: accepted, revoked, expired; and one of another company.
         foreach ([['accepted_at', '2026-10-05 08:30:00', 'b'], ['revoked_at', '2026-10-05 08:30:00', 'c']] as [$column, $time, $hash]) {

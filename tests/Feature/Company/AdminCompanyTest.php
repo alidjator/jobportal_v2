@@ -36,6 +36,12 @@ final class AdminCompanyTest extends FeatureTestCase
     }
 
     /** @param  list<string>  $permissions */
+    private function seededAdminId(): int
+    {
+        return (int) (AdminModel::query()->where('email', 'seeded-admin@example.test')->value('id')
+            ?? AdminModel::query()->create(['name' => 'Seeded', 'email' => 'seeded-admin@example.test', 'password' => 'hash', 'status' => 'active'])->id);
+    }
+
     private function adminToken(array $permissions, string $email = 'ops@example.test'): string
     {
         $admin = AdminModel::query()->create(['name' => 'Ops', 'email' => $email, 'password' => 'hash', 'status' => 'active']);
@@ -221,7 +227,7 @@ final class AdminCompanyTest extends FeatureTestCase
     {
         $id = $this->company('PT Maju Bersama', 'pt-maju-bersama', [
             'website' => 'https://maju.example', 'bio' => 'Bio', 'contact_email' => 'hr@maju.example', 'verified_at' => '2026-10-01 08:30:00',
-            'logo_path' => 'company/logos/abc.jpg', 'created_by_admin_id' => 7, 'created_at' => '2026-09-01 10:00:00',
+            'logo_path' => 'company/logos/abc.jpg', 'created_by_admin_id' => $this->seededAdminId(), 'created_at' => '2026-09-01 10:00:00',
         ]);
         $this->member($id, 'andi@example.test', 'company_admin');
         $invitation = fn (string $email, string $hash, string $sent, string $expires, array $state = []) => DB::table('company_invitations')->insert([
@@ -246,7 +252,7 @@ final class AdminCompanyTest extends FeatureTestCase
             ->assertJsonPath('data.has_banner', false)
             ->assertJsonPath('data.members_count', 1)
             ->assertJsonPath('data.pending_invitations_count', 1)
-            ->assertJsonPath('data.created_by_admin_id', 7)
+            ->assertJsonPath('data.created_by_admin_id', $this->seededAdminId())
             ->assertJsonPath('data.created_at', '2026-09-01T10:00:00+00:00')
             ->assertJsonPath('data.suspended_at', null)
             ->assertJsonPath('data.suspension_reason', null);

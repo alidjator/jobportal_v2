@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
+use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Tests\Concerns\BuildsApplicationFixtures;
@@ -54,7 +55,7 @@ final class AnalyticsTest extends FeatureTestCase
 
     private function submitted(int $companyId, int $jobId, string $appliedAt, ?string $source, ?int $score): int
     {
-        $userId = ++$this->nextApplicant;
+        $userId = (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Applicant', 'email' => 'applicant'.++$this->nextApplicant.'@example.test', 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00'])->id;
         $stage = $this->stageId($companyId, 'applied');
 
         $id = (int) DB::table('recruitment_applications')->insertGetId([

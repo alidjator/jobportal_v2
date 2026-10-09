@@ -50,10 +50,10 @@ final class ScreeningQuestionTest extends FeatureTestCase
         return (int) DB::table('recruitment_screening_question_options')->where('question_id', $questionId)->where('label', $label)->value('id');
     }
 
-    private function attach(int $questionId, int $jobId = 10): int
+    private function attach(int $questionId, ?int $jobId = null): int
     {
         return (int) DB::table('recruitment_job_questions')->insertGetId([
-            'job_id' => $jobId, 'question_id' => $questionId, 'position' => 1, 'created_at' => now(), 'updated_at' => now(),
+            'job_id' => $jobId ?? $this->insertJob(), 'question_id' => $questionId, 'position' => 1, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 

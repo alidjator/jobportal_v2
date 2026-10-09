@@ -5,6 +5,7 @@ namespace Tests\Feature\Job;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Tests\Concerns\BuildsJobFixtures;
 use Tests\FeatureTestCase;
 
@@ -27,6 +28,12 @@ final class PublicJobTest extends FeatureTestCase
     }
 
     /** A complete job that is live, created and published through the company API. */
+    private function seededAdminId(): int
+    {
+        return (int) (AdminModel::query()->where('email', 'seeded-admin@example.test')->value('id')
+            ?? AdminModel::query()->create(['name' => 'Seeded', 'email' => 'seeded-admin@example.test', 'password' => 'hash', 'status' => 'active'])->id);
+    }
+
     private function liveJob(string $title = 'Senior Backend Developer', array $override = []): int
     {
         $id = (int) $this->api('POST', '/company/jobs', [...$this->fullJobBody($title), ...$override])->assertCreated()->json('data.id');
@@ -149,7 +156,7 @@ final class PublicJobTest extends FeatureTestCase
     {
         $id = $this->liveJob();
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [$this->adminId, $this->recruiterId]])->assertOk();
-        DB::table('job_jobs')->where('id', $id)->update(['status_reason' => 'Internal note.', 'reviewed_by_admin_id' => 9, 'reviewed_at' => '2026-10-04 08:00:00']);
+        DB::table('job_jobs')->where('id', $id)->update(['status_reason' => 'Internal note.', 'reviewed_by_admin_id' => $this->seededAdminId(), 'reviewed_at' => '2026-10-04 08:00:00']);
 
         $json = $this->publicJob((string) $id)->assertOk()->getContent();
 

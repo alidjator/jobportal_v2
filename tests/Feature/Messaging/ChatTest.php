@@ -164,7 +164,7 @@ final class ChatTest extends FeatureTestCase
 
     public function test_the_admin_can_change_the_largest_attachment(): void
     {
-        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_attachment_bytes', 102_400, $this->adminId);
+        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_attachment_bytes', 102_400, null);
         $id = $this->seekerStarts();
 
         $this->say($id, null, $this->seekerToken, [$this->upload('a.png', $this->png().str_repeat('a', 102_400))], 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
@@ -312,7 +312,7 @@ final class ChatTest extends FeatureTestCase
 
     public function test_the_company_has_a_daily_cap_on_messages(): void
     {
-        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_daily_company_messages', 2, $this->adminId);
+        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_daily_company_messages', 2, null);
         $id = $this->seekerStarts();
 
         $this->say($id, 'one', $this->recruiterToken)->assertCreated();

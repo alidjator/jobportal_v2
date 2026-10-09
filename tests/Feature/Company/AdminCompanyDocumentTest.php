@@ -65,6 +65,12 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
         parent::tearDown();
     }
 
+    private function seededAdminId(): int
+    {
+        return (int) (AdminModel::query()->where('email', 'seeded-admin@example.test')->value('id')
+            ?? AdminModel::query()->create(['name' => 'Seeded', 'email' => 'seeded-admin@example.test', 'password' => 'hash', 'status' => 'active'])->id);
+    }
+
     private function master(string $table, string $slug): int
     {
         return (int) DB::table($table)->insertGetId([
@@ -105,7 +111,7 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
             'original_name' => 'client name.pdf', 'mime_type' => 'application/pdf', 'size_bytes' => 100,
             'rejection_reason' => $status === 'rejected' ? 'unreadable' : null, 'rejection_note' => $status === 'rejected' ? 'Blurry.' : null,
             'submitted_at' => '2026-10-01 08:00:00', 'reviewed_at' => $status === 'pending' ? null : '2026-10-02 08:00:00',
-            'reviewed_by_admin_id' => $status === 'pending' ? null : 77, 'created_at' => now(), 'updated_at' => now(),
+            'reviewed_by_admin_id' => $status === 'pending' ? null : $this->seededAdminId(), 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 
@@ -179,7 +185,7 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
         $this->assertFalse($response->json('data.documents.3.type.is_active'));
         $this->assertSame([
             'status' => 'rejected', 'original_name' => 'client name.pdf', 'mime_type' => 'application/pdf', 'size_bytes' => 100,
-            'submitted_at' => self::SEEN, 'reviewed_at' => '2026-10-02T08:00:00+00:00', 'reviewed_by_admin_id' => 77,
+            'submitted_at' => self::SEEN, 'reviewed_at' => '2026-10-02T08:00:00+00:00', 'reviewed_by_admin_id' => $this->seededAdminId(),
             'rejection_reason' => 'unreadable', 'rejection_note' => 'Blurry.',
         ], $response->json('data.documents.0.document'));
         $this->assertNull($response->json('data.documents.1.document'));

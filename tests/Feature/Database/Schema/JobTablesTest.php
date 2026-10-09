@@ -17,7 +17,7 @@ final class JobTablesTest extends FeatureTestCase
     private function job(array $attributes = []): int
     {
         return (int) DB::table('job_jobs')->insertGetId([
-            'company_id' => $this->companyRowId(), 'title' => 'Backend Developer', 'slug' => 'backend-developer', 'created_by_user_id' => 1,
+            'company_id' => $this->companyRowId(), 'title' => 'Backend Developer', 'slug' => 'backend-developer', 'created_by_user_id' => $this->userRowId(),
             'created_at' => now(), 'updated_at' => now(), ...$attributes,
         ]);
     }
@@ -102,7 +102,7 @@ final class JobTablesTest extends FeatureTestCase
             ['job_job_skills', 'skill_id', $this->skillId('a'), $this->skillId('b')],
             ['job_job_tags', 'tag_id', $this->tagId('a'), $this->tagId('b')],
             ['job_job_benefits', 'benefit_id', $this->benefitId('a'), $this->benefitId('b')],
-            ['job_assignments', 'user_id', 5, 6],
+            ['job_assignments', 'user_id', $this->userRowId('first@example.test'), $this->userRowId('second@example.test')],
         ];
 
         foreach ($items as [$table, $column, $first, $second]) {
@@ -131,7 +131,7 @@ final class JobTablesTest extends FeatureTestCase
         DB::table('job_job_skills')->insert(['job_id' => $job, 'skill_id' => $this->skillId()]);
         DB::table('job_job_tags')->insert(['job_id' => $job, 'tag_id' => $this->tagId()]);
         DB::table('job_job_benefits')->insert(['job_id' => $job, 'benefit_id' => $this->benefitId()]);
-        DB::table('job_assignments')->insert(['job_id' => $job, 'user_id' => 1]);
+        DB::table('job_assignments')->insert(['job_id' => $job, 'user_id' => $this->userRowId()]);
 
         DB::table('job_jobs')->where('id', $job)->delete();
 
@@ -142,20 +142,18 @@ final class JobTablesTest extends FeatureTestCase
 
     // ----- foreign keys to reference data and companies -----
 
-    public function test_the_job_table_has_foreign_keys_to_the_company_and_the_reference_data_only(): void
+    public function test_the_job_table_has_foreign_keys_to_the_company_the_reference_data_and_the_accounts(): void
     {
         $this->assertSame(
-            ['category_id', 'city_id', 'company_id', 'education_level_id', 'experience_level_id', 'job_level_id', 'job_type_id', 'postal_code_id',
-                'province_id', 'role_id', 'salary_period_id', 'subdistrict_id', 'village_id', 'work_time_id'],
+            ['category_id', 'city_id', 'company_id', 'created_by_user_id', 'education_level_id', 'experience_level_id', 'job_level_id', 'job_type_id', 'postal_code_id',
+                'province_id', 'reviewed_by_admin_id', 'role_id', 'salary_period_id', 'subdistrict_id', 'village_id', 'work_time_id'],
             $this->foreignKeyColumns('job_jobs'),
         );
     }
 
-    public function test_the_columns_that_point_to_accounts_and_admins_have_no_foreign_key(): void
+    public function test_the_assignments_point_to_the_job_and_to_accounts(): void
     {
-        $this->assertNotContains('created_by_user_id', $this->foreignKeyColumns('job_jobs'));
-        $this->assertNotContains('reviewed_by_admin_id', $this->foreignKeyColumns('job_jobs'));
-        $this->assertSame(['job_id'], $this->foreignKeyColumns('job_assignments'), 'only the job; the member columns have none');
+        $this->assertSame(['assigned_by_user_id', 'job_id', 'user_id'], $this->foreignKeyColumns('job_assignments'));
     }
 
     public function test_the_pivots_point_to_their_reference_tables(): void

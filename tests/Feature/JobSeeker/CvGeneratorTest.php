@@ -11,6 +11,7 @@ use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
+use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\JobSeeker\Application\Cv\CvDocument;
 use Src\JobSeeker\Application\Cv\CvRenderer;
 use Src\JobSeeker\Domain\CvTemplate;
@@ -409,15 +410,16 @@ final class CvGeneratorTest extends FeatureTestCase
     public function test_old_records_are_deleted_when_a_new_one_is_added(): void
     {
         $this->recordDocuments();
+        $other = (int) UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Other', 'email' => 'other-cv@example.test', 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00'])->id;
         DB::table('jobseeker_cv_generations')->insert([
             ['user_id' => $this->seekerId, 'created_at' => '2026-10-03 09:00:00'],
-            ['user_id' => $this->seekerId + 1000, 'created_at' => '2026-10-03 09:00:00'],
+            ['user_id' => $other, 'created_at' => '2026-10-03 09:00:00'],
         ]);
 
         $this->cv()->assertOk();
 
         $this->assertSame(1, DB::table('jobseeker_cv_generations')->where('user_id', $this->seekerId)->count());
-        $this->assertSame(1, DB::table('jobseeker_cv_generations')->where('user_id', $this->seekerId + 1000)->count(), 'Another user\'s records are not touched.');
+        $this->assertSame(1, DB::table('jobseeker_cv_generations')->where('user_id', $other)->count(), 'Another user\'s records are not touched.');
     }
 
     // ----- applying with a generated CV -----

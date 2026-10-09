@@ -27,13 +27,12 @@ final class CompanyForeignKeysTest extends FeatureTestCase
         return collect(Schema::getForeignKeys($table))->flatMap(fn (array $key): array => $key['columns'])->sort()->values()->all();
     }
 
-    public function test_a_company_points_to_the_reference_data_with_foreign_keys(): void
+    public function test_a_company_points_to_the_reference_data_and_its_creator_with_foreign_keys(): void
     {
         $this->assertSame(
-            ['city_id', 'industry_id', 'organization_type_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'team_size_id', 'village_id'],
+            ['city_id', 'created_by_admin_id', 'industry_id', 'organization_type_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'team_size_id', 'village_id'],
             $this->foreignKeyColumns('company_companies'),
         );
-        $this->assertNotContains('created_by_admin_id', $this->foreignKeyColumns('company_companies'));
     }
 
     public function test_a_company_with_a_full_valid_profile_is_accepted(): void
@@ -90,7 +89,7 @@ final class CompanyForeignKeysTest extends FeatureTestCase
     public function test_a_company_cannot_be_deleted_while_it_has_jobs_or_proposals(): void
     {
         $company = $this->company();
-        DB::table('job_jobs')->insert(['company_id' => $company, 'title' => 'Job', 'slug' => 'job', 'created_by_user_id' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('job_jobs')->insert(['company_id' => $company, 'title' => 'Job', 'slug' => 'job', 'created_by_user_id' => $this->userRowId(), 'created_at' => now(), 'updated_at' => now()]);
 
         $this->expectException(QueryException::class);
 

@@ -3,10 +3,12 @@
 namespace Tests\Concerns;
 
 use Illuminate\Support\Facades\DB;
+use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
+use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 
 /**
  * Tests that insert rows pointing to reference data or to a company need real parent rows now that the database holds foreign keys to
- * `reference_*` and `company_companies`. Every helper finds the row by its slug or creates it, so calling it again in the same test returns
+ * `reference_*`, `company_companies`, `identity_users` and `identity_admins`. Every helper finds the row by its slug or creates it, so calling it again in the same test returns
  * the same id.
  */
 trait CreatesReferenceRows
@@ -79,5 +81,17 @@ trait CreatesReferenceRows
             'name' => strtoupper($slug), 'slug' => $slug, 'status' => 'active', 'industry_id' => $this->industryId(),
             'organization_type_id' => $this->organizationTypeId(), 'created_at' => now(), 'updated_at' => now(),
         ]);
+    }
+
+    protected function userRowId(string $email = 'someone@example.test'): int
+    {
+        return (int) (UserModel::query()->where('email', $email)->value('id')
+            ?? UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Someone', 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00'])->id);
+    }
+
+    protected function adminRowId(string $email = 'admin@example.test'): int
+    {
+        return (int) (AdminModel::query()->where('email', $email)->value('id')
+            ?? AdminModel::query()->create(['name' => 'Admin', 'email' => $email, 'password' => 'hash', 'status' => 'active'])->id);
     }
 }

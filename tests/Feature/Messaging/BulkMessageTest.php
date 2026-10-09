@@ -124,7 +124,7 @@ final class BulkMessageTest extends FeatureTestCase
     public function test_a_refused_bulk_message_leaves_no_files_behind(): void
     {
         Storage::fake();
-        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_bulk_recipients', 1, $this->adminId);
+        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_bulk_recipients', 1, null);
 
         $this->bulk([$this->applicationId, $this->secondApplicationId], files: [$this->upload('info.pdf', $this->pdf())])
             ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:too-many-recipients');
@@ -136,7 +136,7 @@ final class BulkMessageTest extends FeatureTestCase
 
     public function test_the_daily_cap_counts_every_recipient_and_the_rest_are_skipped(): void
     {
-        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_daily_company_messages', 1, $this->adminId);
+        $this->app->make(SettingsStore::class)->setGlobal('messaging.max_daily_company_messages', 1, null);
 
         $response = $this->bulk([$this->applicationId, $this->secondApplicationId])->assertOk();
 

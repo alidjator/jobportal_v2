@@ -1,4 +1,4 @@
-# Selective cross-context foreign keys (designed 2026-10-10, decisions confirmed, not coded)
+# Selective cross-context foreign keys (designed 2026-10-10, decisions confirmed, coded and checked)
 
 Step 2 after the PostgreSQL port (`postgres-migration.md`, committed `5ad9e30`). Until now no foreign key crossed a bounded context, except to the `reference_*` tables, to `company_companies` (from Job, Recruitment, Messaging, Company) and the benefit proposal. The columns that point to accounts, to jobs and to applications of another context are plain indexed columns. This step adds the keys that protect core data, and only those.
 
@@ -31,7 +31,7 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 | `recruitment_interviews` | `interviewer_id`, `created_by` (index) |
 | `recruitment_offers` | `created_by` (index) |
 | `jobseeker_profiles`, `jobseeker_experiences`, `jobseeker_educations`, `jobseeker_skills`, `jobseeker_languages`, `jobseeker_links`, `jobseeker_resumes`, `jobseeker_cv_generations` | `user_id` |
-| `messaging_conversations` | `user_id` (the job seeker) |
+| `messaging_conversations` | `job_seeker_user_id`, `started_by_user_id`, `closed_by_user_id` (nullable) |
 | `messaging_messages` | `sender_user_id` |
 | `messaging_conversation_reads` | `user_id` |
 | `jobalert_alerts` | `user_id` |
@@ -65,3 +65,9 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 
 1. `recruitment_job_questions.job_id` is `ON DELETE CASCADE` (an attachment of the job, like `job_job_skills`), so a draft with attached screening questions can still be deleted. Every other key is `RESTRICT`.
 2. The "who did it" columns (author of a note, interviewer, sender, inviter, assigner) get a key too, because accounts are never deleted.
+
+## What was coded (2026-10-10)
+
+- Migration `2026_10_10_000102_add_cross_context_foreign_keys` (the lists above; explicit names cut to 63 characters with a checksum; it adds an index first where the column is not the lead of one). `recruitment_job_questions.job_id` is the only `CASCADE`.
+- Tests: `CrossContextForeignKeysTest` (every key and its action, the tables without keys, a missing parent refused, a used parent not deletable, a draft job going away with its attached questions). `CreatesReferenceRows` got `userRowId` and `adminRowId`; the tests that inserted invented ids (schema tests, `MyProfileTest`, `ErasureTest`, `AnalyticsTest`, `CvGeneratorTest`, the admin company and document tests, `CompanyTeamTest`, `PublicJobTest`) use real rows. The key lists in `JobTablesTest` and `CompanyForeignKeysTest` now include the account and admin columns.
+- Not done: the legacy import was only read (it writes in dependency order, and the creator ids come from the imported accounts); its tests decide.

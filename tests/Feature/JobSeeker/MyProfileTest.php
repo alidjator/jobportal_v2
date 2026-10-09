@@ -334,12 +334,12 @@ final class MyProfileTest extends FeatureTestCase
 
     public function test_the_database_guards_the_fixed_values_and_one_profile_per_account(): void
     {
-        $row = ['user_id' => 77, 'created_at' => now(), 'updated_at' => now()];
+        $row = ['user_id' => $this->userRowId('guard-a@example.test'), 'created_at' => now(), 'updated_at' => now()];
         DB::table('jobseeker_profiles')->insert($row);
 
         foreach ([['gender' => 'robot'], ['marital_status' => 'engaged'], ['availability' => 'maybe']] as $bad) {
             try {
-                DB::transaction(fn () => DB::table('jobseeker_profiles')->insert(['user_id' => 78, 'created_at' => now(), 'updated_at' => now(), ...$bad]));
+                DB::transaction(fn () => DB::table('jobseeker_profiles')->insert(['user_id' => $this->userRowId('guard-b@example.test'), 'created_at' => now(), 'updated_at' => now(), ...$bad]));
                 $this->fail('A bad value was stored: '.json_encode($bad));
             } catch (QueryException) {
                 $this->addToAssertionCount(1);
@@ -353,6 +353,6 @@ final class MyProfileTest extends FeatureTestCase
     public function test_the_database_refuses_a_master_that_does_not_exist(): void
     {
         $this->expectException(QueryException::class);
-        DB::table('jobseeker_profiles')->insert(['user_id' => 77, 'religion_id' => 999_999, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('jobseeker_profiles')->insert(['user_id' => $this->userRowId('guard-a@example.test'), 'religion_id' => 999_999, 'created_at' => now(), 'updated_at' => now()]);
     }
 }
