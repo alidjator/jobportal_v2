@@ -12,6 +12,13 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 - **Computation:** daily summary tables from the start, filled by a scheduled job (not computed live).
 - **Privacy:** the company BI shows aggregates only. A group of fewer than **5** people is shown as "fewer than 5" (the threshold is the same as the salary insight one, an admin setting). No religion, gender, age or nationality in any analysis, for the company or the admin.
 
+- **Source of an application (decided 2026-10-09, user):** the apply request may carry an optional `source` hint from a fixed list (`search`, `recommendation`, `alert`, `direct`). The server validates it, overrides it with `invitation` when the applicant has an invitation for that job, and uses `direct` when the hint is missing or invalid. The hint can be forged by the applicant; it only affects statistics.
+- **Date range (decided 2026-10-09, user):** at most 366 days per request, for every analysis.
+- **Freshness (decided 2026-10-09, user):** data runs up to yesterday. The summary job rebuilds the previous Jakarta day shortly after midnight; today is not shown. The live medians use the same cut-off so the figures agree.
+- **Endpoints (decided 2026-10-09, user):** one endpoint per analysis (funnel and speed, job market, rejection and source, matching quality) under `/admin/analytics/...` and `/company/analytics/...`, with `from`, `to` and `format=csv`. All are GET and only read.
+- **CSV (decided 2026-10-09, user):** UTF-8 with a byte order mark, comma separator, dot as decimal mark. The columns are the fields of the matching JSON response, flattened, with small groups written as `<5`.
+- **Access (follows `phase-4-dashboards.md`):** the admin analytics need the new permission `analytics.view` (needs `identity:sync-permissions`); the company analytics are for the company admin role only (`CompanyRole::CompanyAdmin`), not for recruiters.
+
 ## Analyses
 
 - **Funnel and speed:** conversion between pipeline stages, average time in each stage, average time from application to offer and to hired, offer acceptance rate. Company: per job and per recruiter. Admin: platform-wide.
@@ -31,6 +38,5 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 
 ## Open points to settle while coding
 
-- The date-range limit (a maximum range per request) and the CSV columns of each analysis.
-- Permissions: the admin analytics use a new permission (`analytics.view`, separate from `dashboard.view`); company members: which roles may see the company BI (owner and admin of the company, not every recruiter).
+- The CSV columns of each analysis.
 - Add the BI rows to `docs/legal-review.md` if the summaries keep anything per person (they should not).
