@@ -43,3 +43,18 @@ It also settles the "fresh graduate" category deferred in `decisions.md` (record
   and recommending jobs to visitors who are not logged in.
 - **Tests:** each signal with and without data, normalisation, the threshold, the fresh graduate rule (both masters), overlapping experience, the two pools and their exclusions, visibility and hidden contact fields, `match` on the public list and detail,
   access by role and assignment, the email (once per job, preference, verified address, schedule), erasure.
+
+## Coded (2026-10-09, checked with 1635 tests, committed)
+
+Context `src/Matching` (provider `MatchingServiceProvider`, in `bootstrap/providers.php`; table `matching_deliveries`, migration `000092`), the Shared contracts in `src/Shared/Application/Matching` (`CandidateSignals`, `JobSignals`, `MatchScore`, `MatchScoring`, `CandidateSignalSource`, `JobSignalSource`)
+and `Shared/Application/JobInvitation/InvitedCandidates`, new methods `ApplicantRelations::appliedJobIds` and `appliedUserIds`. Tests: `tests/Unit/Matching/MatchScorerTest.php`, `tests/Unit/JobSeeker/Domain/CareerSummaryTest.php`, `tests/Feature/Matching/RecommendationsTest.php`;
+`EmailTemplatesTest` and `NotificationPreferencesTest` list the new template and preference. The proposed details were coded as written; what was decided while coding:
+
+- **Who owns what:** `Matching` holds the scorer (`MatchScorer`, weights in `MatchSignal`) and the weekly email; it has no routes. The endpoints sit with the data they list, as for job alerts: `GET me/recommendations` and the `match` on `GET /jobs`, `GET /jobs/{id}` and `GET me/job-alerts/{id}/jobs`
+  are Job (`RecommendJobs`, `ScoreJobsForSeeker`, `JobPool`, `JobSignalProvider`), `GET company/jobs/{id}/candidates` is JobSeeker (`RecommendCandidates`, `CandidateSignalSource` implemented by `DatabaseCandidateSignalSource`).
+- **Experience and fresh graduate** are computed by `JobSeeker\Domain\CareerSummary` (months of each period counted once, both end months included). The level "Fresh Graduated" is found by its master slug `fresh-graduated` (generated from the English name by the seeder).
+- **The job pool reuses the public search reader** (one query for the province, one for remote jobs, 100 rows a page up to 300 each, merged newest first), so what is live is what the search shows. A profile counts as complete by the same query as the candidate search (`CompleteProfiles`).
+- **`match` on the public routes:** `{percent}` on list rows; the page also gets `signals`. The key is absent for anonymous callers, company members and job seekers with an incomplete profile. The routes use the new middleware `PublicCacheHeaders` (public cache without a token; `private, no-store` with one; `Vary: Authorization` both ways).
+- **Recommended candidates** (`GET company/jobs/{id}/candidates`): the row of the candidate search plus `match {percent, signals}` and `invited`; not paged (the 20 best); `404` for a job the member cannot see, `422 job-not-live` for a job that is not live; same route limiter as the candidate search.
+- **The email:** command `matching:send-recommendations`, Monday 08:00 Jakarta; a person who was sent one in the last 6 days is skipped, so a second run does nothing; the recommendation line reads "Title (82% match)" in both languages. Every active job seeker with a complete profile is walked in batches of 200, each with one pool query;
+  that is fine for a few thousand job seekers and the first thing to rework (a queue job per batch) if it grows.

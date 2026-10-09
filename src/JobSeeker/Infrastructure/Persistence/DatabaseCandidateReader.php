@@ -40,6 +40,17 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return $row === null ? null : $this->candidates([$row])[0];
     }
 
+    public function pool(?int $provinceId, int $limit): array
+    {
+        $builder = $this->searchable();
+
+        if ($provinceId !== null) {
+            $builder->where('p.province_id', $provinceId);
+        }
+
+        return $this->candidates($builder->orderByDesc('p.updated_at')->orderByDesc('p.id')->limit($limit)->get($this->columns())->all());
+    }
+
     public function namesOfUsers(array $userIds): array
     {
         if ($userIds === []) {
@@ -69,20 +80,7 @@ final readonly class DatabaseCandidateReader implements CandidateReader
     /** The candidates anyone may find, before any filter. */
     private function searchable(): Builder
     {
-        return $this->connection->table('jobseeker_profiles as p')
-            ->join('identity_users as u', 'u.id', '=', 'p.user_id')
-            ->where('p.is_discoverable', true)
-            ->whereNotNull('p.slug')
-            ->where('u.type', 'job_seeker')
-            ->where('u.status', 'active')
-            ->whereNull('u.anonymized_at')
-            ->whereNotNull('p.phone')
-            ->whereNotNull('p.province_id')
-            ->whereNotNull('p.city_id')
-            ->whereExists(fn (Builder $q) => $q->selectRaw('1')->from('jobseeker_resumes as r')->whereColumn('r.user_id', 'p.user_id'))
-            ->where(fn (Builder $q) => $q
-                ->whereExists(fn (Builder $e) => $e->selectRaw('1')->from('jobseeker_experiences as x')->whereColumn('x.user_id', 'p.user_id'))
-                ->orWhereExists(fn (Builder $e) => $e->selectRaw('1')->from('jobseeker_educations as d')->whereColumn('d.user_id', 'p.user_id')));
+        return CompleteProfiles::query($this->connection)->where('p.is_discoverable', true)->whereNotNull('p.slug');
     }
 
     private function filtered(CandidateSearchQuery $query, DateTimeImmutable $today): Builder

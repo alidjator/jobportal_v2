@@ -11,7 +11,7 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 /** The candidate search of a company member. Nothing is logged here: a list shows no more than a headline; opening a profile is what the log records. */
 final readonly class SearchCandidates
 {
-    public function __construct(private CandidateAccess $access, private CandidateReader $candidates, private CandidateLabels $labels, private JakartaToday $today) {}
+    public function __construct(private CandidateAccess $access, private CandidateReader $candidates, private CandidateListItems $items, private JakartaToday $today) {}
 
     /**
      * @return Page<CandidateListItem>
@@ -22,24 +22,7 @@ final readonly class SearchCandidates
     {
         $this->access->viewer($actor);
         $page = $this->candidates->search($query, $request, $this->today->date());
-        $rows = $page->items;
 
-        $provinces = $this->labels->provinces(array_map(static fn (CandidateRow $row): ?int => $row->provinceId, $rows));
-        $cities = $this->labels->cities(array_map(static fn (CandidateRow $row): ?int => $row->cityId, $rows));
-        $levels = $this->labels->names('experience-levels', array_map(static fn (CandidateRow $row): ?int => $row->experienceLevelId, $rows), $language);
-        $educations = $this->labels->names('education-levels', array_map(static fn (CandidateRow $row): ?int => $row->highestEducationLevelId, $rows), $language);
-
-        return new Page(array_map(static fn (CandidateRow $row): CandidateListItem => new CandidateListItem(
-            $row->slug,
-            $row->name,
-            $row->avatarPath !== null,
-            $row->headline,
-            CandidateLabels::named($provinces, $row->provinceId),
-            CandidateLabels::named($cities, $row->cityId),
-            CandidateLabels::named($levels, $row->experienceLevelId),
-            $row->availability?->value,
-            CandidateLabels::named($educations, $row->highestEducationLevelId),
-            $row->updatedAt,
-        ), $rows), $page->total, $page->request);
+        return new Page($this->items->of($page->items, $language), $page->total, $page->request);
     }
 }

@@ -9,12 +9,14 @@ use Src\JobSeeker\Application\Candidates\GetCandidate;
 use Src\JobSeeker\Application\Candidates\GetCandidateAvatar;
 use Src\JobSeeker\Application\Candidates\GetCandidateResume;
 use Src\JobSeeker\Application\Candidates\ListMyProfileViews;
+use Src\JobSeeker\Application\Candidates\RecommendCandidates;
 use Src\JobSeeker\Application\Candidates\SearchCandidates;
 use Src\JobSeeker\Interface\Http\Requests\ListProfileViewsRequest;
 use Src\JobSeeker\Interface\Http\Requests\SearchCandidatesRequest;
 use Src\JobSeeker\Interface\Http\Resources\CandidateListResource;
 use Src\JobSeeker\Interface\Http\Resources\CandidateResource;
 use Src\JobSeeker\Interface\Http\Resources\ProfileViewResource;
+use Src\JobSeeker\Interface\Http\Resources\RecommendedCandidateResource;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -29,6 +31,11 @@ final class CandidateController extends ApiController
         $page = $search->execute($actors->fromRequest($request), $request->toQuery(), $request->pageRequest(), $context->language);
 
         return PaginatedResources::of($page, CandidateListResource::class, $request);
+    }
+
+    public function recommended(Request $request, int $id, RequestContext $context, ActorResolver $actors, RecommendCandidates $recommend): AnonymousResourceCollection
+    {
+        return RecommendedCandidateResource::collection($recommend->execute($actors->fromRequest($request), $id, $context->language));
     }
 
     public function show(Request $request, string $slug, RequestContext $context, ActorResolver $actors, GetCandidate $get): CandidateResource

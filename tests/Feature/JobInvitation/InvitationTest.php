@@ -299,7 +299,10 @@ final class InvitationTest extends FeatureTestCase
 
         $this->api('POST', "/me/invitations/{$id}/decline", ['reason' => str_repeat('é', 500)], $this->ana['token'])->assertOk()->assertJsonPath('data.decline_reason', str_repeat('é', 500));
         $this->api('POST', "/me/invitations/{$other}/decline", token: $b['token'])->assertOk()->assertJsonPath('data.decline_reason', null);
-        $this->assertSame([str_repeat('é', 500), null], array_column($this->notes($this->adminId, 'invitation.declined'), 'reason'));
+        // Both notifications are made in the same second and their ids are random, so the order is not fixed.
+        $reasons = array_column($this->notes($this->adminId, 'invitation.declined'), 'reason');
+        sort($reasons);
+        $this->assertSame([null, str_repeat('é', 500)], $reasons);
     }
 
     // ----- applying and expiry -----

@@ -52,6 +52,8 @@ final class PublicJobResource extends JsonResource
             'tags' => $content->tags,
             'benefits' => $this->resource->benefits,
             'published_at' => $job->publishedAt?->format(DateTimeInterface::ATOM),
+            // Only for a signed-in job seeker with a complete profile; `signals` is the fit of each signal as 0 to 100, null when it could not be judged.
+            ...($this->resource->match === null ? [] : ['match' => ['percent' => $this->resource->match->percent, 'signals' => $this->resource->match->signals]]),
         ];
     }
 }

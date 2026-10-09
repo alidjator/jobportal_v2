@@ -11,6 +11,22 @@ interface ApplicantRelations
     /** Whether the job seeker has an application on the job, whatever its status (a withdrawn one counts). */
     public function hasAppliedToJob(int $jobId, int $applicantUserId): bool;
 
+    /**
+     * Among these jobs, the ones the job seeker has an application on, whatever its status.
+     *
+     * @param  list<int>  $jobIds
+     * @return list<int>
+     */
+    public function appliedJobIds(int $applicantUserId, array $jobIds): array;
+
+    /**
+     * Among these job seekers, the ones with an application on the job, whatever its status.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function appliedUserIds(int $jobId, array $userIds): array;
+
     /** Whether the job seeker has any application with the company, whatever its status (a withdrawn one counts). */
     public function hasApplied(int $companyId, int $applicantUserId): bool;
 

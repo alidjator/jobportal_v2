@@ -36,6 +36,7 @@ Route::middleware('auth:user')->group(function (): void {
     // The candidate search of company members; every use case checks the caller's company.
     Route::middleware('throttle:'.JobSeekerServiceProvider::CANDIDATE_SEARCH_LIMITER)->group(function (): void {
         Route::get('company/candidates', [CandidateController::class, 'index']);
+        Route::get('company/jobs/{id}/candidates', [CandidateController::class, 'recommended'])->whereNumber('id');
         Route::get('company/candidates/{slug}', [CandidateController::class, 'show']);
         Route::get('company/candidates/{slug}/avatar', [CandidateController::class, 'avatar']);
         Route::get('company/candidates/{slug}/resumes/{id}', [CandidateController::class, 'resume'])->whereNumber('id');

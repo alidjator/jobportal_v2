@@ -5,8 +5,9 @@ namespace Src\Job\Application\Browse;
 use DateTimeImmutable;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Company\PublicCompanyCard;
+use Src\Shared\Application\Matching\MatchScore;
 
-/** One row of the public job search, in the language of the request. The salary is null when the company hides it or gave none. */
+/** One row of the public job search, in the language of the request. The salary is null when the company hides it or gave none. `match` is set only for a job seeker with a complete profile. */
 final readonly class PublicJobListItem
 {
     /**
@@ -27,5 +28,14 @@ final readonly class PublicJobListItem
         public ?array $salary,
         public ?DateTimeImmutable $deadline,
         public ?DateTimeImmutable $publishedAt,
+        public ?MatchScore $match = null,
     ) {}
+
+    public function withMatch(?MatchScore $match): self
+    {
+        return new self(
+            $this->id, $this->slug, $this->title, $this->company, $this->city, $this->province, $this->jobType, $this->jobLevel, $this->workMode, $this->salary,
+            $this->deadline, $this->publishedAt, $match ?? new MatchScore(null, []),
+        );
+    }
 }

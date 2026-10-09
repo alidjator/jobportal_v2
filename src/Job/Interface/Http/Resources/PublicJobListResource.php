@@ -33,6 +33,8 @@ final class PublicJobListResource extends JsonResource
             'salary' => $this->resource->salary,
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),
+            // Only for a signed-in job seeker with a complete profile; the percentage is null when too little is known about the job.
+            ...($this->resource->match === null ? [] : ['match' => ['percent' => $this->resource->match->percent]]),
         ];
     }
 }

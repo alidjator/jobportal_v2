@@ -20,6 +20,7 @@ use Src\JobSeeker\Domain\ProfileViewRepository;
 use Src\JobSeeker\Domain\ResumeRepository;
 use Src\JobSeeker\Infrastructure\Listeners\EraseJobSeekerDataWhenUserAnonymized;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseCandidateReader;
+use Src\JobSeeker\Infrastructure\Persistence\DatabaseCandidateSignalSource;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseEducationRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseExperienceRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseJobSeekerDataEraser;
@@ -29,6 +30,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileViewRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseResumeRepository;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\Candidate\CandidateDirectory;
+use Src\Shared\Application\Matching\CandidateSignalSource;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -49,6 +51,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
         ProfileViewRepository::class => DatabaseProfileViewRepository::class,
         CandidateReader::class => DatabaseCandidateReader::class,
         CandidateDirectory::class => JobSeekerCandidateDirectory::class,
+        CandidateSignalSource::class => DatabaseCandidateSignalSource::class,
         JobSeekerDataEraser::class => DatabaseJobSeekerDataEraser::class,
         ApplicantProfileSource::class => ApplicantProfileReader::class,
     ];

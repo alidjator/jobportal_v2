@@ -33,6 +33,6 @@ final readonly class SearchJobsOfAlert
 
         $filters = $this->alerts->filtersOf($actor->id, $alertId) ?? throw EntityNotFound::of('Job alert', $alertId);
 
-        return $this->search->execute(JobSearchCriteria::fromFilters($filters), $page, $ipAddress, $language);
+        return $this->search->execute(JobSearchCriteria::fromFilters($filters), $page, $ipAddress, $language, $actor->id);
     }
 }

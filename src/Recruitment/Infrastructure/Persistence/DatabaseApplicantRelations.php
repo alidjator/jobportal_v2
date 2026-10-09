@@ -15,6 +15,28 @@ final readonly class DatabaseApplicantRelations implements ApplicantRelations
         return $this->connection->table('recruitment_applications')->where('job_id', $jobId)->where('user_id', $applicantUserId)->exists();
     }
 
+    public function appliedJobIds(int $applicantUserId, array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        return $this->connection->table('recruitment_applications')
+            ->where('user_id', $applicantUserId)->whereIn('job_id', $jobIds)->distinct()->pluck('job_id')
+            ->map(fn (mixed $id): int => (int) $id)->values()->all();
+    }
+
+    public function appliedUserIds(int $jobId, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return $this->connection->table('recruitment_applications')
+            ->where('job_id', $jobId)->whereIn('user_id', $userIds)->distinct()->pluck('user_id')
+            ->map(fn (mixed $id): int => (int) $id)->values()->all();
+    }
+
     public function hasApplied(int $companyId, int $applicantUserId): bool
     {
         return $this->connection->table('recruitment_applications')

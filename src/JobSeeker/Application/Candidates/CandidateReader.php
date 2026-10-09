@@ -21,6 +21,14 @@ interface CandidateReader
     public function findBySlug(string $slug): ?CandidateRow;
 
     /**
+     * The most recently updated candidates who can be found, in the province (anywhere when it is null), at most `$limit`: the pool a job's recommendations
+     * are scored from.
+     *
+     * @return list<CandidateRow>
+     */
+    public function pool(?int $provinceId, int $limit): array;
+
+    /**
      * The slug and name of these accounts whether or not they can be found now; an account without a slug or whose account was anonymised is missing.
      *
      * @param  list<int>  $userIds

@@ -9,6 +9,7 @@ use Src\JobAlert\Infrastructure\JobAlertServiceProvider;
 use Src\JobInvitation\Infrastructure\JobInvitationServiceProvider;
 use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
 use Src\LegacyImport\Infrastructure\LegacyImportServiceProvider;
+use Src\Matching\Infrastructure\MatchingServiceProvider;
 use Src\Messaging\Infrastructure\MessagingServiceProvider;
 use Src\Notification\Infrastructure\NotificationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
@@ -28,6 +29,7 @@ return [
     MessagingServiceProvider::class,
     JobAlertServiceProvider::class,
     JobInvitationServiceProvider::class,
+    MatchingServiceProvider::class,
     JobSeekerServiceProvider::class,
     LegacyImportServiceProvider::class,
 ];

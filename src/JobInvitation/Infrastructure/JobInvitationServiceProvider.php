@@ -13,8 +13,10 @@ use Src\JobInvitation\Infrastructure\Listeners\EraseInvitationsWhenUserAnonymize
 use Src\JobInvitation\Infrastructure\Listeners\MarkInvitationAppliedWhenApplicationSubmitted;
 use Src\JobInvitation\Infrastructure\Mail\MailInvitationSender;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitationRepository;
+use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitedCandidates;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\JobInvitation\InvitedCandidates;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
@@ -27,6 +29,7 @@ final class JobInvitationServiceProvider extends ContextServiceProvider
     public array $bindings = [
         InvitationRepository::class => DatabaseInvitationRepository::class,
         InvitationEmailSender::class => MailInvitationSender::class,
+        InvitedCandidates::class => DatabaseInvitedCandidates::class,
     ];
 
     public function register(): void

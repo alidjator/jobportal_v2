@@ -3,6 +3,7 @@
 namespace Src\Job\Application\Browse;
 
 use Src\Job\Application\JobVisibility;
+use Src\Job\Application\Matching\ScoreJobsForSeeker;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Company\PublicCompanies;
@@ -13,6 +14,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 /**
  * The public page of a job. Only a live job is shown: `active`, its deadline day not over (Jakarta time, checked here so the page does not wait for the hourly
  * expiry), and its company active and not hidden. In every other case, and when there is no such job, the answer is the same `EntityNotFound`.
+ * For a job seeker with a complete profile (`$viewerId`) the page also says how well they match the job.
  */
 final readonly class GetPublicJob
 {
@@ -33,10 +35,11 @@ final readonly class GetPublicJob
         private ReferenceValues $references,
         private LocationReferences $locations,
         private JobVisibility $visibility,
+        private ScoreJobsForSeeker $scores,
     ) {}
 
     /** @throws EntityNotFound */
-    public function execute(int $jobId, string $language): PublicJobView
+    public function execute(int $jobId, string $language, ?int $viewerId = null): PublicJobView
     {
         $job = $this->jobs->find($jobId);
 
@@ -53,7 +56,7 @@ final readonly class GetPublicJob
             $classification[$field] = $this->named($master, $content->{$property}, $language);
         }
 
-        return new PublicJobView(
+        $view = new PublicJobView(
             $job,
             $company,
             $classification,
@@ -62,6 +65,9 @@ final readonly class GetPublicJob
             $this->namedList('skills', $content->skillIds, $language),
             $this->namedList('benefits', $content->benefitIds, $language),
         );
+        $scores = $viewerId === null ? null : $this->scores->forJobs($viewerId, [$jobId]);
+
+        return $scores === null ? $view : $view->withMatch($scores[$jobId] ?? null);
     }
 
     /** @return array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null */

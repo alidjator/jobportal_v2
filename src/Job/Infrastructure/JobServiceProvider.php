@@ -13,6 +13,8 @@ use Src\Job\Application\JobPermissions;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobSettings;
 use Src\Job\Application\JobSlugGenerator;
+use Src\Job\Application\Matching\JobSignalProvider;
+use Src\Job\Application\Matching\JobSignalReader;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
@@ -27,9 +29,11 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
+use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
+use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -47,6 +51,8 @@ final class JobServiceProvider extends ContextServiceProvider
         SearchThrottle::class => RateLimiterSearchThrottle::class,
         JobDirectory::class => RepositoryJobDirectory::class,
         JobMatcher::class => AlertJobMatcher::class,
+        JobSignalReader::class => DatabaseJobSignalReader::class,
+        JobSignalSource::class => JobSignalProvider::class,
     ];
 
     public function register(): void
