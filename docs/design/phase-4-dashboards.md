@@ -44,8 +44,21 @@ A company needs views to judge a job, and the platform records none today. Decis
 - **Write path:** the public job detail request must not wait for the write; the view is recorded through the `bulk` queue.
 - **Legal:** the view log keeps a trace of who looked at which job, so it goes into `docs/legal-review.md` (records and retention, privacy policy text).
 
-## Open points to settle while coding (verify before relying on them)
+## Details (decided 2026-10-09, user)
 
-- Profile completeness is not computed anywhere yet: define the sections and weights in the job seeker context.
-- Failed email and notification deliveries: check whether the delivery outcome is recorded today; if not, the operations card shows only failed queue jobs.
-- Exact cache lifetime and the cache key per role.
+- **Profile completeness:** eight sections of 12.5 percent each: headline and summary, contact (phone), location, work experience, education, skills, languages, uploaded resume. Religion, gender, age, marital status, nationality and photo are **never** counted, so the system does not push anyone to fill them. The dashboard lists the sections still empty.
+- **Operations card (admin):** only what exists today: failed queue jobs of the last 24 hours per queue and the number of jobs waiting. The outcome of an email or a notification is not recorded, so a failed email shows up only as a failed job; no delivery log is added.
+- **Cache:** 2 minutes for the job seeker and the company summaries, 5 minutes for the admin summary.
+- **Company roles:** every member sees the company dashboard, scoped by the access to jobs that already applies to applications: a company admin sees all jobs of the company, a recruiter only the jobs assigned to them (in every card, the job performance card included). The business intelligence analytics are for the company admin only.
+
+## Job view tables (design, to be finalised in the migration)
+
+The tables carry the prefix of the context that owns them (job views belong to the `Job` context, which records them; the `Dashboard` context only reads them).
+
+- `job_views`: `id`, `job_id` (indexed, no foreign key across contexts), `viewer_key` (string: `u<user_id>` for an account, a daily-salted hash for a visitor), `day` (date, Jakarta), `created_at`. Unique key on (`job_id`, `viewer_key`, `day`), so a repeated view in a day is a no-op insert.
+- `job_view_daily`: `job_id`, `day`, `views`; primary key (`job_id`, `day`). Filled by the scheduled fold before the raw rows older than 90 days are deleted.
+- Erasure: a deleted account's `u<user_id>` rows are removed with the rest of its data.
+
+## Open points to settle while coding
+
+- The scheduled fold runs daily; the exact hour is chosen with the other nightly jobs.
