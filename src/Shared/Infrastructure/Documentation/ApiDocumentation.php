@@ -7,6 +7,7 @@ use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\Operation;
 use Dedoc\Scramble\Support\Generator\SecurityRequirement;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Dedoc\Scramble\Support\Generator\Tag;
 use Dedoc\Scramble\Support\RouteInfo;
 use Illuminate\Support\Str;
 
@@ -28,7 +29,16 @@ final class ApiDocumentation
             $config->expose(false);
         }
 
+        Scramble::resolveTagsUsing(static fn (RouteInfo $routeInfo): array => [ApiTags::forPath($routeInfo->route->uri())]);
+
         $config->withDocumentTransformers(static function (OpenApi $openApi): void {
+            $used = [];
+            foreach ($openApi->paths as $path) {
+                foreach ($path->operations as $operation) {
+                    $used = [...$used, ...$operation->tags];
+                }
+            }
+            $openApi->tags = array_values(array_filter(ApiTags::tags(), static fn (Tag $tag): bool => in_array($tag->name, $used, true)));
             $openApi->info->setDescription(trim($openApi->info->description."\n\n## Errors\n\n".ErrorCatalogDocument::section(new ErrorCatalog(base_path('src')))));
             $openApi->components->addSecurityScheme(self::USER_SCHEME, SecurityScheme::http('bearer')->as(self::USER_SCHEME)->setDescription('Token of a job seeker or a company member (`auth:user`).'));
             $openApi->components->addSecurityScheme(self::ADMIN_SCHEME, SecurityScheme::http('bearer')->as(self::ADMIN_SCHEME)->setDescription('Token of an administrator (`auth:admin`).'));
