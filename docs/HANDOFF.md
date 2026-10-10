@@ -25,6 +25,8 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
   Waiting for the user on the real database: `php artisan migrate`, `identity:sync-permissions`, `db:seed`, `analytics:rollup --backfill` (ask before each). The live BI medians now run in SQL (`35427a4`). `GET /company/jobs/{id}/performance` is coded and committed (`b69ef0b`). Campaigns are designed and coded in `docs/design/phase-4-campaigns.md` (context `Campaign`, migration `000103`; full suite green (1746 tests); needs `php artisan migrate` and `identity:sync-permissions` on the real database, and `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register` in `.env`). Run artisan and tests as `jobportal`, never as root (root-owned `storage` breaks the tests).
   Moodle training is designed and coded in `docs/design/phase-4-training.md` (context `Training`, no tables; tests green; needs `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL` in `.env`). The campaign importer is coded (`CampaignsImporter`, tests green, not run on the real data; run `php artisan legacy:import campaigns` first (it only reads and reports), ask before adding `--write`). Do not start new work without asking the user.
 
+- Later (user, 2026-10-10): no menu table (clients render menus; access stays in permissions and roles). Check whether `GET admin/me` returns the admin's permissions so clients can build menus; add a `permissions` field there if not.
+
 ## Items waiting for the user
 
 - Grant `cv_templates.manage` to the admins who manage the CV templates (`identity:sync-permissions` already ran).
