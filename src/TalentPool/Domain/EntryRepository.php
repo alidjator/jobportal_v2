@@ -37,4 +37,18 @@ interface EntryRepository
     public function countsByCategory(int $companyId): array;
 
     public function deleteOfCandidate(int $candidateUserId): void;
+
+    /**
+     * Entries that carry a note, in id order, starting after `$afterId`.
+     *
+     * @return list<Entry>
+     */
+    public function withNotesAfter(int $afterId, int $limit): array;
+
+    /**
+     * Clears the note of these entries (their candidates stay saved) and returns how many were cleared.
+     *
+     * @param  list<int>  $ids
+     */
+    public function clearNotes(array $ids): int;
 }

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\TalentPool;
 
+use Illuminate\Console\Scheduling\Event as ScheduledEvent;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\TalentPool\Application\CreateCategory;
@@ -351,7 +354,7 @@ final class TalentPoolTest extends FeatureTestCase
             ->assertJsonPath('data.note', 'Third note')->assertJsonPath('data.category', null);
     }
 
-    public function test_the_note_is_hidden_while_the_candidate_cannot_be_found_and_comes_back_with_them(): void
+    public function test_the_note_is_hidden_at_once_while_the_candidate_cannot_be_found(): void
     {
         $this->entryId($this->ana, extra: ['note' => 'Private words about Ana']);
         DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
@@ -364,5 +367,60 @@ final class TalentPoolTest extends FeatureTestCase
         DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => true]);
 
         $this->assertSame('Private words about Ana', $this->listing()->json('data.0.note'));
+    }
+
+    public function test_the_nightly_clean_up_deletes_the_notes_of_candidates_who_cannot_be_found_and_keeps_the_entries(): void
+    {
+        $categoryId = $this->categoryId();
+        $ana = $this->entryId($this->ana, extra: ['note' => 'Private words about Ana', 'category_id' => $categoryId]);
+        $budi = $this->entryId($this->budi, extra: ['note' => 'Still findable']);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+
+        Artisan::call('talentpool:clear-hidden-notes');
+
+        $this->assertStringContainsString('Cleared 1 note.', Artisan::output());
+        $this->assertNull(DB::table('talentpool_entries')->where('id', $ana)->value('note'));
+        $this->assertSame($categoryId, (int) DB::table('talentpool_entries')->where('id', $ana)->value('category_id'));
+        $this->assertSame('Still findable', DB::table('talentpool_entries')->where('id', $budi)->value('note'));
+    }
+
+    public function test_a_candidate_who_is_findable_again_starts_without_the_deleted_note_and_a_second_run_does_nothing(): void
+    {
+        $id = $this->entryId($this->ana, extra: ['note' => 'Private words about Ana']);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+        Artisan::call('talentpool:clear-hidden-notes');
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => true]);
+
+        $this->assertNull($this->listing()->json('data.0.note'));
+        $this->assertSame($id, $this->listing()->json('data.0.id'));
+
+        Artisan::call('talentpool:clear-hidden-notes');
+
+        $this->assertStringContainsString('Cleared 0 notes.', Artisan::output());
+    }
+
+    public function test_the_clean_up_clears_every_hidden_candidates_note(): void
+    {
+        $other = $this->candidate('citra@example.test', 'Citra Other');
+        $this->entryId($this->ana, extra: ['note' => 'Note A']);
+        $this->entryId($other, extra: ['note' => 'Note C']);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+        DB::table('jobseeker_profiles')->where('user_id', $other['id'])->update(['is_discoverable' => false]);
+
+        Artisan::call('talentpool:clear-hidden-notes');
+
+        $this->assertStringContainsString('Cleared 2 notes.', Artisan::output());
+        $this->assertSame(0, DB::table('talentpool_entries')->whereNotNull('note')->count());
+    }
+
+    public function test_the_clean_up_is_scheduled_nightly_without_overlapping(): void
+    {
+        $events = collect($this->app->make(Schedule::class)->events())
+            ->filter(fn (ScheduledEvent $event): bool => str_contains((string) $event->command, 'talentpool:clear-hidden-notes'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame('0 4 * * *', $events->first()->expression);
+        $this->assertTrue($events->first()->withoutOverlapping);
     }
 }

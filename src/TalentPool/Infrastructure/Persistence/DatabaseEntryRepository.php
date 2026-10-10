@@ -106,6 +106,19 @@ final readonly class DatabaseEntryRepository implements EntryRepository
         $this->connection->table('talentpool_entries')->where('candidate_user_id', $candidateUserId)->delete();
     }
 
+    public function withNotesAfter(int $afterId, int $limit): array
+    {
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->connection->table('talentpool_entries')->whereNotNull('note')->where('id', '>', $afterId)->orderBy('id')->limit($limit)->get()->all(),
+        );
+    }
+
+    public function clearNotes(array $ids): int
+    {
+        return $ids === [] ? 0 : $this->connection->table('talentpool_entries')->whereIn('id', $ids)->whereNotNull('note')->update(['note' => null, 'updated_at' => $this->format(new DateTimeImmutable)]);
+    }
+
     private function toEntry(stdClass $row): Entry
     {
         return new Entry(

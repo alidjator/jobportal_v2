@@ -3,6 +3,7 @@
 namespace Src\TalentPool\Infrastructure;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,6 +14,7 @@ use Src\TalentPool\Domain\EntryRepository;
 use Src\TalentPool\Infrastructure\Listeners\EraseTalentEntriesWhenUserAnonymized;
 use Src\TalentPool\Infrastructure\Persistence\DatabaseCategoryRepository;
 use Src\TalentPool\Infrastructure\Persistence\DatabaseEntryRepository;
+use Src\TalentPool\Interface\Console\ClearHiddenNotesCommand;
 
 final class TalentPoolServiceProvider extends ContextServiceProvider
 {
@@ -26,6 +28,16 @@ final class TalentPoolServiceProvider extends ContextServiceProvider
         CategoryRepository::class => DatabaseCategoryRepository::class,
         EntryRepository::class => DatabaseEntryRepository::class,
     ];
+
+    public function register(): void
+    {
+        $this->commands([ClearHiddenNotesCommand::class]);
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            // Once a night, Jakarta time: the notes of candidates who can no longer be found are deleted.
+            $schedule->command(ClearHiddenNotesCommand::class)->dailyAt('04:00')->timezone('Asia/Jakarta')->withoutOverlapping()->onOneServer();
+        });
+    }
 
     public function boot(): void
     {
