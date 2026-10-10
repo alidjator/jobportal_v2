@@ -19,11 +19,11 @@ final class LocalLegacyFilesTest extends TestCase
         $this->root = $base.'/project';
         $this->outside = $base.'/outside';
 
-        foreach (['/public/uploads', '/storage/app/resumes', '/storage/app/public/docs', '/..'] as $directory) {
-            @mkdir($this->root.$directory, 0777, true);
+        foreach (['/public/uploads', '/storage/app/resumes', '/storage/app/public/docs'] as $directory) {
+            mkdir($this->root.$directory, 0777, true);
         }
 
-        @mkdir($this->outside, 0777, true);
+        mkdir($this->outside, 0777, true);
         file_put_contents($this->root.'/public/uploads/photo.png', 'PUBLIC');
         file_put_contents($this->root.'/storage/app/resumes/cv.pdf', 'STORAGE');
         file_put_contents($this->root.'/storage/app/public/docs/doc.pdf', 'STORAGEPUBLIC');
