@@ -27,6 +27,8 @@ use Src\LegacyImport\Application\LinksImporter;
 use Src\LegacyImport\Application\LocationLookup;
 use Src\LegacyImport\Application\MastersImporter;
 use Src\LegacyImport\Application\NewMasterReader;
+use Src\LegacyImport\Application\NewsletterSubscribersImporter;
+use Src\LegacyImport\Application\NewsletterSubscriberWriter;
 use Src\LegacyImport\Application\ProfilesImporter;
 use Src\LegacyImport\Application\QuestionsImporter;
 use Src\LegacyImport\Application\ReportWriter;
@@ -62,6 +64,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         JobQuestionsImporter::class,
         ApplicationsImporter::class,
         CampaignsImporter::class,
+        NewsletterSubscribersImporter::class,
     ];
 
     /** @var array<class-string, class-string> */
@@ -76,6 +79,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         ScreeningWriter::class => DatabaseScreeningWriter::class,
         ApplicationWriter::class => DatabaseApplicationWriter::class,
         CampaignWriter::class => DatabaseCampaignWriter::class,
+        NewsletterSubscriberWriter::class => DatabaseNewsletterSubscriberWriter::class,
         LocationLookup::class => DatabaseLocationLookup::class,
         LegacyFiles::class => LocalLegacyFiles::class,
     ];

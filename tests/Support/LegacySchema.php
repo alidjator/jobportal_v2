@@ -55,7 +55,7 @@ final class LegacySchema
     /** @return list<string> */
     public static function tables(): array
     {
-        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs', 'campaigns'];
+        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs', 'campaigns', 'emails'];
 
         foreach (self::TRANSLATED_MASTERS as [$master, $translations]) {
             $tables[] = $master;
@@ -313,6 +313,15 @@ final class LegacySchema
                 $table->timestamp('created_at')->nullable();
                 $table->timestamp('updated_at')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('emails')) {
+            $schema->create('emails', function (Blueprint $table): void {
+                $table->id();
+                $table->string('email');
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
             });
         }
 
