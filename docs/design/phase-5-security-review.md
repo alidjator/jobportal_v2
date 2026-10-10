@@ -12,7 +12,7 @@ user confirms. Every fix gets tests.
 - 2026-10-10: P1 numbers: 120 requests per minute per account, 60 per minute per IP without sign-in; in configuration, overridable from `.env` ([P1](#p1-baseline-rate-limit)).
 - 2026-10-10: P2: `sanctum:prune-expired --hours=24` scheduled nightly ([P2, P3, P6](#p2-p3-p6)).
 - 2026-10-10: P3: the `sanctum/csrf-cookie` route is switched off (`sanctum.routes` = `false` in `config/sanctum.php`; corrected 2026-10-10, this Sanctum version has no `ignoreRoutes()`) ([P2, P3, P6](#p2-p3-p6)).
-- 2026-10-10: P6: security headers set by a middleware on the `api` group; HSTS stays in nginx ([P2, P3, P6](#p2-p3-p6)).
+- 2026-10-10: P6: security headers set by a global middleware (also on paths without a route, decided with the user 2026-10-10); HSTS stays in nginx ([P2, P3, P6](#p2-p3-p6)).
 - 2026-10-10: P7: add password change for users and admins and sign-out from every device; admin password reset stays on the console; a wrong current password counts in the sign-in throttle; both actions audited; 409 `password-not-set` for an account without password ([P7](#p7-password-change-and-sign-out-everywhere)).
 - 2026-10-10: A1: sign-in throttle gets two more layers, no lockout: 20 failures per hour per account from any IP, 30 failures per hour per IP over any account ([Identity](#identity-checked-2026-10-10)).
 - 2026-10-10: A2: TOTP second factor, mandatory for admins, with one-time recovery codes; reset through the console; `pragmarx/google2fa`; two-step sign-in with a 5-minute challenge; forced enrolment at the next sign-in; 10 recovery codes, regenerable; schema: three columns on `identity_admins` and two new tables ([A2](#a2-admin-totp)).
@@ -65,7 +65,7 @@ no cookies). Added to `.env.example`.
 
 - **P2 (decided 2026-10-10, user):** the Identity schedule runs `sanctum:prune-expired --hours=24` nightly, `withoutOverlapping` and `onOneServer` like every task.
 - **P3 (decided 2026-10-10, user; mechanism corrected 2026-10-10):** `'routes' => false` in `config/sanctum.php` (the installed Sanctum has no `Sanctum::ignoreRoutes()`); the route list then has no route in the `web` group except the docs (local only).
-- **P6 (decided 2026-10-10, user):** a Shared middleware appended to the `api` group sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+- **P6 (decided 2026-10-10, user; widened 2026-10-10):** a Shared middleware appended globally (so a 404 for a path without a route carries the headers too, as it did under nginx; the rate limiter stays on the `api` group, a flood of unknown paths is nginx `limit_req` territory) sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer` and, on JSON answers, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. File downloads keep their own headers.
   HSTS stays in nginx (it belongs to TLS). The three other nginx `add_header` lines are removed when the middleware is deployed: a header sent twice
   (`X-Frame-Options: DENY, DENY`) is treated as invalid by some browsers.

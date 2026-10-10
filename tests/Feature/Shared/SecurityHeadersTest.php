@@ -36,6 +36,15 @@ final class SecurityHeadersTest extends FeatureTestCase
             ->assertHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
     }
 
+    public function test_a_path_without_a_route_carries_them_too(): void
+    {
+        $this->getJson('/api/v1/no-such-path')
+            ->assertNotFound()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    }
+
     public function test_a_response_keeps_a_header_it_already_sets(): void
     {
         $this->get('/api/v1/probe/download')
