@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Src\Identity\Application\Admin\AdminRoles;
 use Src\Identity\Application\Admin\CreateAdmin;
 use Src\Shared\Domain\Exceptions\DomainException;
+use Src\Shared\Interface\Http\Rules\NewPassword;
 
 /** The operator's way to create the first administrator. The password is read from a hidden prompt, never from an argument or option. */
 final class CreateAdminCommand extends Command
@@ -29,7 +30,7 @@ final class CreateAdminCommand extends Command
 
         $validator = Validator::make(
             ['name' => $name, 'email' => $email, 'password' => $password],
-            ['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255'], 'password' => ['required', 'string', 'min:8', 'max:255']],
+            ['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255'], 'password' => NewPassword::rules()],
         );
 
         if ($validator->fails()) {

@@ -5,17 +5,18 @@ namespace Src\Company\Interface\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Src\Company\Application\Invitations\AcceptInvitationCommand;
 use Src\Shared\Application\RequestContext;
+use Src\Shared\Interface\Http\Rules\NewPassword;
 
 final class AcceptInvitationRequest extends FormRequest
 {
     private const string DEFAULT_DEVICE_NAME = 'api';
 
-    /** @return array<string, list<string>> */
+    /** @return array<string, array<mixed>> */
     public function rules(): array
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'password' => ['required', 'string', 'min:8', 'max:255'],
+            'password' => NewPassword::rules(),
             'device_name' => ['nullable', 'string', 'max:100'],
         ];
     }

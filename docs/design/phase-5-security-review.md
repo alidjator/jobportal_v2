@@ -7,7 +7,7 @@ user confirms. Every fix gets tests.
 
 - 2026-10-10: Method: OWASP API Security Top 10 (2023) over every context and every route; findings are recorded first, fixed after the user confirms ([Review checklist](#review-checklist)).
 - 2026-10-10: P1: a global baseline limiter on the `api` group, per account (per IP without sign-in); the existing named limiters stay on top ([P1](#p1-baseline-rate-limit)).
-- 2026-10-10: P4: passwords `Password::min(8)->uncompromised()` (Have I Been Pwned, k-anonymity; skipped when the service is down) ([P4](#p4-password-rule)).
+- 2026-10-10: P4: passwords `Password::min(8)->uncompromised()` (Have I Been Pwned, k-anonymity; skipped when the service is down) kept in `Shared` as `NewPassword::rules()` ([P4](#p4-password-rule)).
 - 2026-10-10: P5: CORS limited to the origins in `CORS_ALLOWED_ORIGINS` (`.env`) ([P5](#p5-cors)).
 - 2026-10-10: P1 numbers: 120 requests per minute per account, 60 per minute per IP without sign-in; in configuration, overridable from `.env` ([P1](#p1-baseline-rate-limit)).
 - 2026-10-10: P2: `sanctum:prune-expired --hours=24` scheduled nightly ([P2, P3, P6](#p2-p3-p6)).
@@ -55,6 +55,8 @@ configuration with `.env` overrides (not admin settings). A 429 uses the existin
 Decided 2026-10-10 (user): every rule that sets a password (registration, invitation acceptance, password reset, the `CreateAdminCommand` console command; there is no change-password endpoint) uses
 `Password::min(8)->uncompromised()`, kept in one place in `Identity`. The check sends only the first 5 characters of the SHA-1 hash; when the service cannot
 be reached the password is accepted (framework behaviour). Sign-in keeps no rule beyond `max:255`.
+
+Coded 2026-10-10: the rule is `Src\Shared\Interface\Http\Rules\NewPassword::rules()` (in `Shared`, not `Identity`, because the Company context's invitation request uses it too and contexts do not import each other; confirmed by the user 2026-10-10). `FeatureTestCase` fakes the breach service for every test (no password is breached unless a test says so).
 
 ## P5 CORS
 
