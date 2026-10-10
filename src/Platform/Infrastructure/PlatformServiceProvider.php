@@ -29,10 +29,13 @@ use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
+use Src\Newsletter\Domain\Events\NewsletterIssueSent;
+use Src\Newsletter\Domain\Events\NewsletterSubscriberDeleted;
 use Src\Platform\Application\Audit\AuditLogReader;
 use Src\Platform\Application\Audit\AuditLogRepository;
 use Src\Platform\Application\Email\EmailBodyRenderer;
 use Src\Platform\Application\Email\EmailTemplateOverrideRepository;
+use Src\Platform\Application\Email\PlatformAdHocEmails;
 use Src\Platform\Application\Email\PlatformEmailTemplates;
 use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\Settings\SettingsStore;
@@ -43,6 +46,7 @@ use Src\Platform\Infrastructure\Listeners\RecordCampaignAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordJobAuditEntries;
+use Src\Platform\Infrastructure\Listeners\RecordNewsletterAuditEntries;
 use Src\Platform\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
@@ -51,6 +55,7 @@ use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
 use Src\Platform\Interface\Console\PurgeAuditLogsCommand;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
 use Src\Shared\Application\Dashboard\DashboardCards;
+use Src\Shared\Application\Email\AdHocEmails;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\Settings;
@@ -66,6 +71,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
         EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,
         EmailTemplates::class => PlatformEmailTemplates::class,
+        AdHocEmails::class => PlatformAdHocEmails::class,
     ];
 
     /** One store per request, so the in-memory copy of the values is shared and dropped on every write. @var array<class-string, class-string> */
@@ -119,6 +125,8 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Event::listen(JobStatusChanged::class, [RecordJobAuditEntries::class, 'onJobStatusChanged']);
         Event::listen(JobDecided::class, [RecordJobAuditEntries::class, 'onJobDecided']);
         Event::listen(CampaignChanged::class, [RecordCampaignAuditEntries::class, 'onCampaignChanged']);
+        Event::listen(NewsletterIssueSent::class, [RecordNewsletterAuditEntries::class, 'onNewsletterIssueSent']);
+        Event::listen(NewsletterSubscriberDeleted::class, [RecordNewsletterAuditEntries::class, 'onNewsletterSubscriberDeleted']);
         Event::listen(ApplicantsExported::class, [RecordRecruitmentAuditEntries::class, 'onApplicantsExported']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
         Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);

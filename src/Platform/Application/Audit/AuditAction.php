@@ -84,4 +84,8 @@ final class AuditAction
     public const string CAMPAIGN_UPDATED = 'campaign.updated';
 
     public const string CAMPAIGN_DELETED = 'campaign.deleted';
+
+    public const string NEWSLETTER_ISSUE_SENT = 'newsletter.issue_sent';
+
+    public const string NEWSLETTER_SUBSCRIBER_DELETED = 'newsletter.subscriber_deleted';
 }

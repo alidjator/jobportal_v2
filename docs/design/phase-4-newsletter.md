@@ -1,4 +1,4 @@
-# Newsletter (designed 2026-10-10)
+# Newsletter (designed and coded 2026-10-10)
 
 A public email list that people join with an email address only (no account), and an admin who sends issues to it. The legacy module (`Modules/Newsletter`) has table `emails` (`id`, `email`, timestamps), a public `POST /subscribe`, a confirmation link, and for admins a list, a delete and a bulk send.
 
@@ -39,3 +39,16 @@ A public email list that people join with an email address only (no account), an
 ## Not in this phase
 
 - Segments, scheduled sends, open and click tracking, templates for issues, importing subscribers from a file, subscribing a signed-in account's own email from the profile.
+
+## What was coded (2026-10-10)
+
+- **Context `Newsletter`** (`src/Newsletter`), migrations `000104` (subscribers), `000105` (issues) and `000106` (deliveries); `newsletter_issues` also keeps `dispatched_at` and `newsletter_subscribers` keeps `confirmation_sent_at` (the 10-minute resend rule), both added to the proposal above. Keys to `identity_admins` are in `CrossContextForeignKeysTest`.
+- **Public routes:** `POST newsletter/subscribers`, `POST newsletter/confirm`, `POST newsletter/unsubscribe`, `POST newsletter/unsubscribe/{token}`. **Admin routes** (`auth:admin`, `can:newsletter.manage`): `admin/newsletter/subscribers` (GET, DELETE) and `admin/newsletter/issues` (GET, POST, GET/PUT/DELETE by id, `POST .../test`, `POST .../send`). The subscriber list answers `counts` (per status) next to `data`, `links` and `meta`.
+- **Sending:** `SendIssue` marks the issue `sending` and queues `DispatchNewsletterIssueJob`; it walks the confirmed subscribers in chunks of 500, inserts the deliveries (unique per issue and subscriber) and queues one `SendNewsletterDeliveryJob` each (`bulk`, 3 tries, backoff 10/60/300 s); after the last try the delivery is `failed`. The issue becomes `sent` once it was fully dispatched and nothing is queued. A subscriber who left or was erased between the dispatch and the delivery counts as failed and gets nothing.
+- **Mails:** `newsletter.confirm` is a registered template (queue `default`). An issue is rendered through the new `Shared` port `AdHocEmails` (provided by Platform, the same Markdown renderer as the templates: raw HTML shown as text, unsafe links refused) with a footer in the subscriber's language; it carries `List-Unsubscribe` and `List-Unsubscribe-Post`. The test send (`[Test] ` prefix) uses the new `Shared` port `AdminContacts` (provided by Identity) to find the admin's email.
+- **Tokens:** confirmation tokens are 43 random URL-safe characters, only their SHA-256 hash is stored; unsubscribe tokens are `{id}.{HMAC-SHA256}` with the application key.
+- **Limits:** 5 subscribe requests per client address per minute and 3 per address per hour; 30 token requests per client address per minute.
+- **Settings:** `NEWSLETTER_CONFIRM_URL`, `NEWSLETTER_UNSUBSCRIBE_URL` (`app.newsletter_*_url`, templates with `{token}`; either missing gives 503 `newsletter-unavailable`, also when sending).
+- **Cleanup and audit:** `newsletter:purge-pending` (daily 03:00 Jakarta); audit actions `newsletter.issue_sent` (metadata: recipients) and `newsletter.subscriber_deleted`, written by `RecordNewsletterAuditEntries`.
+- **Tests:** `tests/Feature/Newsletter/NewsletterTest.php` (22 tests, reading the mails from the array transport).
+- **Not coded yet:** the legacy importer of the `emails` table (own step, runs on real data only with approval). On the real server: `php artisan migrate`, `identity:sync-permissions` (`newsletter.manage`), the two `NEWSLETTER_*` variables, and the queue worker already planned for `critical,default,bulk`.

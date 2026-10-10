@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Src\Identity\Application\Account\AdminAccessReader;
+use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
@@ -51,6 +52,7 @@ use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
+use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
@@ -85,6 +87,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         AdminAccessReader::class => SpatieAdminAccessReader::class,
         UserDataEraser::class => EloquentUserDataEraser::class,
         ApplicantContacts::class => IdentityApplicantContacts::class,
+        AdminContacts::class => IdentityAdminContacts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
         TermsAcceptanceRepository::class => DatabaseTermsAcceptanceRepository::class,

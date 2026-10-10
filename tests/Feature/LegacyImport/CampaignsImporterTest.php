@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\LegacyImport\Application\ImportReport;
 use Src\LegacyImport\Application\ImportRunner;
+use Src\LegacyImport\Domain\IdMap;
 use Tests\Concerns\CreatesReferenceRows;
 use Tests\Concerns\UsesLegacyDatabase;
 use Tests\FeatureTestCase;
@@ -94,7 +95,7 @@ final class CampaignsImporterTest extends FeatureTestCase
         $this->assertNull($row->created_by_admin_id);
         $this->assertSame('2026-09-01 08:00:00', $row->created_at);
         $this->assertSame('2026-09-02 09:00:00', $row->updated_at);
-        $this->assertSame((int) $row->id, $this->app->make(\Src\LegacyImport\Domain\IdMap::class)->find('campaign', $legacy));
+        $this->assertSame((int) $row->id, $this->app->make(IdMap::class)->find('campaign', $legacy));
         $this->assertSame((int) DB::table('company_companies')->value('id'), (int) $row->company_id);
         $this->assertSame((int) UserModel::query()->where('email', 'like', 'legacy%')->value('id'), (int) $row->created_by_user_id);
 
@@ -170,7 +171,7 @@ final class CampaignsImporterTest extends FeatureTestCase
         $this->assertSame(['code-taken'], $this->skipReasons($report));
         $this->assertSame($second, $this->entity($report)['skipped_rows'][0]['legacy_id']);
         $this->assertSame(1, DB::table('campaign_campaigns')->count());
-        $this->assertNotNull($this->app->make(\Src\LegacyImport\Domain\IdMap::class)->find('campaign', $first));
+        $this->assertNotNull($this->app->make(IdMap::class)->find('campaign', $first));
     }
 
     public function test_a_code_already_in_the_new_system_is_not_taken_again(): void

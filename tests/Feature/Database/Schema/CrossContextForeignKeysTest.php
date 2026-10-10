@@ -50,6 +50,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'platform_settings' => ['updated_by_admin_id'],
             'platform_setting_overrides' => ['updated_by_admin_id'],
             'campaign_campaigns' => ['created_by_admin_id'],
+            'newsletter_issues' => ['created_by_admin_id', 'sent_by_admin_id'],
         ],
         'company_companies' => ['jobinvitation_invitations' => ['company_id'], 'campaign_campaigns' => ['company_id']],
         'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id']],
