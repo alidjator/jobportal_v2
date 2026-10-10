@@ -43,7 +43,7 @@ No row exists yet to measure on. Proposal: a rehearsal database (the role has `C
 
 1. Migration `000112`: the 39 foreign key indexes, drop the two redundant ones, the partial candidate index (I1 to I3); run by the user on the test database, then the real one with approval.
 2. (Coded 2026-10-10: lateral join in `DatabaseRecruiterApplicationReader`; `ThrottledPersonalAccessToken` in `AppServiceProvider`; `TokenLastUsedTest`.) Q1 rewrite of `withRatings`; R1 token model that throttles `last_used_at` (`Sanctum::usePersonalAccessTokenModel`), each with tests.
-3. R2: `composer require predis/predis` and the `.env.example` keys (`CACHE_STORE`, `REDIS_*`); the user switches the live `.env`.
+3. (Coded 2026-10-10: `predis/predis` required, `REDIS_CLIENT=predis` in `config/database.php` and `.env.example`; the live `.env` switches with `CACHE_STORE=redis` at deployment.) R2: `composer require predis/predis` and the `.env.example` keys (`CACHE_STORE`, `REDIS_*`); the user switches the live `.env`.
 4. Measurement on the rehearsal database (synthetic seeder as a console tool, EXPLAIN of the hot queries); its result decides I4, Q2 and any further index.
 5. T1: decided 2026-10-10: parallel runs with `paratest`, coded (see T1 note below the findings list).
 6. R3: query-count tests for the fixed cost of a request.
