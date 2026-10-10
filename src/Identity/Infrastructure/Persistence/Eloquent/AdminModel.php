@@ -18,6 +18,9 @@ use Src\Shared\Application\ActorProvider;
  * @property string $name
  * @property string $email
  * @property string $password
+ * @property string|null $two_factor_secret
+ * @property Carbon|null $two_factor_confirmed_at
+ * @property int|null $two_factor_last_step
  * @property Carbon|null $email_verified_at
  * @property string $status
  * @property string|null $avatar_path
@@ -34,7 +37,7 @@ final class AdminModel extends Authenticatable implements ActorProvider, HasApiT
 
     protected $guarded = [];
 
-    protected $hidden = ['password'];
+    protected $hidden = ['password', 'two_factor_secret'];
 
     protected string $guard_name = self::GUARD;
 
@@ -48,6 +51,8 @@ final class AdminModel extends Authenticatable implements ActorProvider, HasApiT
         return [
             'email_verified_at' => 'immutable_datetime',
             'last_login_at' => 'immutable_datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_confirmed_at' => 'immutable_datetime',
         ];
     }
 }

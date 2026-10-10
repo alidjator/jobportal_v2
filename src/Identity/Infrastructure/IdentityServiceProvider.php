@@ -24,14 +24,20 @@ use Src\Identity\Application\Auth\VerificationCodeHasher;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Application\IdentityEmailTemplates;
 use Src\Identity\Application\IdentitySettings;
+use Src\Identity\Application\TwoFactor\RecoveryCodes;
+use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
+use Src\Identity\Application\TwoFactor\TwoFactorChallenges;
+use Src\Identity\Application\TwoFactor\TwoFactorTokens;
 use Src\Identity\Domain\AdminRepository;
 use Src\Identity\Domain\SocialAccountRepository;
 use Src\Identity\Domain\TermsAcceptanceRepository;
 use Src\Identity\Domain\UserRepository;
 use Src\Identity\Domain\VerificationCodeRepository;
+use Src\Identity\Infrastructure\Auth\Google2faTwoFactorAuthenticator;
 use Src\Identity\Infrastructure\Auth\GoogleAuthIdentityVerifier;
 use Src\Identity\Infrastructure\Auth\HmacVerificationCodeHasher;
 use Src\Identity\Infrastructure\Auth\LaravelPasswordHasher;
+use Src\Identity\Infrastructure\Auth\RandomTwoFactorTokens;
 use Src\Identity\Infrastructure\Auth\RandomVerificationCodeGenerator;
 use Src\Identity\Infrastructure\Auth\RateLimiterPasswordResetRequestThrottle;
 use Src\Identity\Infrastructure\Auth\RateLimiterRegistrationThrottle;
@@ -41,7 +47,9 @@ use Src\Identity\Infrastructure\Auth\SpatieAdminAccessReader;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
+use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
+use Src\Identity\Infrastructure\Persistence\DatabaseTwoFactorChallenges;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentAdminRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentUserRepository;
@@ -51,6 +59,8 @@ use Src\Identity\Infrastructure\Persistence\EloquentSocialAccountRepository;
 use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
+use Src\Identity\Interface\Console\PurgeTwoFactorChallengesCommand;
+use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
@@ -92,6 +102,9 @@ final class IdentityServiceProvider extends ContextServiceProvider
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
         TermsAcceptanceRepository::class => DatabaseTermsAcceptanceRepository::class,
         CompanyMemberAccounts::class => IdentityCompanyMemberAccounts::class,
+        TwoFactorTokens::class => RandomTwoFactorTokens::class,
+        TwoFactorChallenges::class => DatabaseTwoFactorChallenges::class,
+        RecoveryCodes::class => DatabaseRecoveryCodes::class,
     ];
 
     public function register(): void
@@ -107,6 +120,10 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $app->make('config')->get('services.google.client_ids', []),
         ));
 
+        $this->app->bind(TwoFactorAuthenticator::class, fn (Application $app): TwoFactorAuthenticator => new Google2faTwoFactorAuthenticator(
+            (string) $app->make('config')->get('app.name'),
+        ));
+
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
             $catalog->add(...IdentityEmailTemplates::definitions());
         });
@@ -115,10 +132,11 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class]);
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(AnonymizeDueAccountsCommand::class)->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeTwoFactorChallengesCommand::class)->dailyAt('02:45')->withoutOverlapping()->onOneServer();
             $schedule->command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('02:30')->withoutOverlapping()->onOneServer();
         });
     }

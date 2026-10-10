@@ -24,9 +24,13 @@ use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
+use Src\Identity\Domain\Events\RecoveryCodesRegenerated;
+use Src\Identity\Domain\Events\RecoveryCodeUsed;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignedOutEverywhere;
 use Src\Identity\Domain\Events\SignInFailed;
+use Src\Identity\Domain\Events\TwoFactorEnabled;
+use Src\Identity\Domain\Events\TwoFactorReset;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
@@ -110,6 +114,10 @@ final class PlatformServiceProvider extends ContextServiceProvider
             PasswordReset::class => 'onPasswordReset',
             PasswordChanged::class => 'onPasswordChanged',
             SignedOutEverywhere::class => 'onSignedOutEverywhere',
+            TwoFactorEnabled::class => 'onTwoFactorEnabled',
+            RecoveryCodeUsed::class => 'onRecoveryCodeUsed',
+            RecoveryCodesRegenerated::class => 'onRecoveryCodesRegenerated',
+            TwoFactorReset::class => 'onTwoFactorReset',
             AccountDeletionRequested::class => 'onAccountDeletionRequested',
             AccountDeletionCancelled::class => 'onAccountDeletionCancelled',
             UserAnonymized::class => 'onUserAnonymized',

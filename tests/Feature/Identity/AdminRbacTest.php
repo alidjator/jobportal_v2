@@ -11,10 +11,13 @@ use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Permissions\PermissionDefinition;
+use Tests\Concerns\SignsInAdmins;
 use Tests\FeatureTestCase;
 
 final class AdminRbacTest extends FeatureTestCase
 {
+    use SignsInAdmins;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -89,7 +92,7 @@ final class AdminRbacTest extends FeatureTestCase
         $this->assertTrue($admin->hasRole('super_admin'));
         $this->assertNotSame('a-strong-password', $admin->password);
 
-        $token = $this->postJson('/api/v1/admin/auth/login', ['email' => 'root@example.test', 'password' => 'a-strong-password'])->assertOk()->json('data.token');
+        $token = $this->completeAdminLogin('root@example.test', 'a-strong-password')->assertOk()->json('data.token');
         $this->withToken($token)->getJson('/api/v1/admin/me')
             ->assertOk()
             ->assertJsonPath('data.roles', ['super_admin']);

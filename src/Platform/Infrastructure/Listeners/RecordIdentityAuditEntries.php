@@ -8,9 +8,13 @@ use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
+use Src\Identity\Domain\Events\RecoveryCodesRegenerated;
+use Src\Identity\Domain\Events\RecoveryCodeUsed;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignedOutEverywhere;
 use Src\Identity\Domain\Events\SignInFailed;
+use Src\Identity\Domain\Events\TwoFactorEnabled;
+use Src\Identity\Domain\Events\TwoFactorReset;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Platform\Application\Audit\AuditAction;
 use Src\Platform\Application\Audit\AuditActorType;
@@ -19,7 +23,7 @@ use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
- * Writes the audit entries for Identity's security events: sign-in (success and failure), password reset and change, sign-out from every device and the account
+ * Writes the audit entries for Identity's security events: sign-in (success and failure), password reset and change, sign-out from every device, the admin second factor and the account
  * deletion lifecycle. Runs on the `default` queue, retried 3 times with a growing delay. The entries hold no sensitive values:
  * never the email address that was typed, a password or a code.
  */
@@ -72,6 +76,30 @@ final class RecordIdentityAuditEntries implements ShouldQueue
         $this->record->execute($this->accountEntry(AuditAction::SIGNED_OUT_EVERYWHERE, $event));
     }
 
+    public function onTwoFactorEnabled(TwoFactorEnabled $event): void
+    {
+        $this->record->execute($this->adminEntry(AuditAction::TWO_FACTOR_ENABLED, $event));
+    }
+
+    public function onRecoveryCodeUsed(RecoveryCodeUsed $event): void
+    {
+        $this->record->execute($this->adminEntry(AuditAction::RECOVERY_CODE_USED, $event));
+    }
+
+    public function onRecoveryCodesRegenerated(RecoveryCodesRegenerated $event): void
+    {
+        $this->record->execute($this->adminEntry(AuditAction::RECOVERY_CODES_REGENERATED, $event));
+    }
+
+    /** Done by an operator on the console, so the actor is the system. */
+    public function onTwoFactorReset(TwoFactorReset $event): void
+    {
+        $this->record->execute(new AuditEntry(
+            AuditActorType::System, null, AuditAction::TWO_FACTOR_RESET,
+            AccountScope::Admin->value, $event->adminId, [], null, null, $event->occurredAt(),
+        ));
+    }
+
     public function onAccountDeletionRequested(AccountDeletionRequested $event): void
     {
         $this->record->execute($this->userEntry(
@@ -103,6 +131,14 @@ final class RecordIdentityAuditEntries implements ShouldQueue
         return new AuditEntry(
             $this->actorType($event->scope), $event->accountId, $action,
             $event->scope->value, $event->accountId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
+    }
+
+    private function adminEntry(string $action, TwoFactorEnabled|RecoveryCodeUsed|RecoveryCodesRegenerated $event): AuditEntry
+    {
+        return new AuditEntry(
+            AuditActorType::Admin, $event->adminId, $action,
+            AccountScope::Admin->value, $event->adminId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         );
     }
 

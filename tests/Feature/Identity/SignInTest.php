@@ -10,10 +10,13 @@ use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\SignsInAdmins;
 use Tests\FeatureTestCase;
 
 final class SignInTest extends FeatureTestCase
 {
+    use SignsInAdmins;
+
     private const string PASSWORD = 'correct-horse-battery';
 
     protected function setUp(): void
@@ -182,7 +185,7 @@ final class SignInTest extends FeatureTestCase
     {
         $admin = $this->admin();
 
-        $response = $this->postJson('/api/v1/admin/auth/login', ['email' => 'root@example.test', 'password' => self::PASSWORD])
+        $response = $this->completeAdminLogin('root@example.test', self::PASSWORD)
             ->assertOk()
             ->assertJsonPath('data.expires_at', '2026-10-03T22:00:00+00:00')
             ->assertJsonPath('data.admin.id', $admin->id);
@@ -204,7 +207,7 @@ final class SignInTest extends FeatureTestCase
     public function test_an_admin_logout_revokes_the_admin_token(): void
     {
         $admin = $this->admin();
-        $token = $this->postJson('/api/v1/admin/auth/login', ['email' => 'root@example.test', 'password' => self::PASSWORD])->json('data.token');
+        $token = $this->completeAdminLogin('root@example.test', self::PASSWORD)->json('data.token');
 
         $this->withToken($token)->postJson('/api/v1/admin/auth/logout')->assertNoContent();
 

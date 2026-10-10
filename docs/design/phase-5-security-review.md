@@ -145,6 +145,7 @@ is reset through the console.
   `two_factor_last_step` (bigint, nullable). New `identity_admin_recovery_codes` (`id`, `admin_id` FK `RESTRICT` to `identity_admins`, `code_hash`, `used_at`
   nullable, `created_at`) and `identity_admin_two_factor_challenges` (`id`, `admin_id` FK `RESTRICT`, `token_hash` unique, `expires_at`, `used_at` nullable,
   `created_at`); expired challenges are deleted nightly.
+- **Coded 2026-10-10:** `POST /admin/auth/login` answers `data.status` `two_factor_required` or `two_factor_enrolment_required` (with `enrolment.secret`, `otpauth_url`, `qr_code` as an SVG data URI) and a `challenge_token`; `POST /admin/auth/two-factor` takes `challenge_token`, `code` or `recovery_code`, and `device_name`, and answers the token (plus `recovery_codes` once, at enrolment); `POST /admin/me/two-factor/recovery-codes` takes `code`. A new login replaces the admin's open challenge; a wrong code leaves the challenge usable and counts in the A1 throttle; the throttle is cleared only after the second step. Console: `identity:reset-admin-two-factor {email}` (also signs the admin out everywhere), `identity:purge-two-factor-challenges` (02:45 daily). Audit: `auth.two_factor_enabled`, `auth.recovery_code_used`, `auth.recovery_codes_regenerated`, `auth.two_factor_reset`. Migration `000111`. Tokens issued before the rollout stay valid until they expire (at most 12 hours).
 
 ### Recruitment (checked 2026-10-10)
 

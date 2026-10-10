@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Hash;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Concerns\SignsInAdmins;
 use Tests\FeatureTestCase;
 use Tests\Support\RecordingVerificationCodeSender;
 
 final class IdentityAuditTest extends FeatureTestCase
 {
+    use SignsInAdmins;
+
     private const string PASSWORD = 'correct-horse-battery';
 
     private const array AGENT = ['User-Agent' => 'TestAgent/1.0'];
@@ -98,7 +101,7 @@ final class IdentityAuditTest extends FeatureTestCase
     {
         $admin = AdminModel::query()->create(['name' => 'Root', 'email' => 'root@example.test', 'password' => Hash::make(self::PASSWORD), 'status' => 'active']);
 
-        $this->postJson('/api/v1/admin/auth/login', ['email' => 'root@example.test', 'password' => self::PASSWORD])->assertOk();
+        $this->completeAdminLogin('root@example.test', self::PASSWORD)->assertOk();
 
         $row = $this->rows('auth.login')[0];
         $this->assertSame('admin', $row->actor_type);

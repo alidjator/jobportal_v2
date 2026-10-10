@@ -15,6 +15,14 @@ final class AuditAction
 
     public const string SIGNED_OUT_EVERYWHERE = 'auth.signed_out_everywhere';
 
+    public const string TWO_FACTOR_ENABLED = 'auth.two_factor_enabled';
+
+    public const string RECOVERY_CODE_USED = 'auth.recovery_code_used';
+
+    public const string RECOVERY_CODES_REGENERATED = 'auth.recovery_codes_regenerated';
+
+    public const string TWO_FACTOR_RESET = 'auth.two_factor_reset';
+
     public const string ACCOUNT_DELETION_REQUESTED = 'account.deletion_requested';
 
     public const string ACCOUNT_DELETION_CANCELLED = 'account.deletion_cancelled';

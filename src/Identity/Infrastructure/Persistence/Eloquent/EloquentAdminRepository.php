@@ -36,6 +36,9 @@ final class EloquentAdminRepository implements AdminRepository
             'status' => $admin->status()->value,
             'avatar_path' => $admin->avatarPath(),
             'last_login_at' => $admin->lastLoginAt(),
+            'two_factor_secret' => $admin->twoFactorSecret(),
+            'two_factor_confirmed_at' => $admin->twoFactorConfirmedAt(),
+            'two_factor_last_step' => $admin->twoFactorLastStep(),
         ]);
 
         try {
@@ -58,6 +61,9 @@ final class EloquentAdminRepository implements AdminRepository
             AccountStatus::from($model->status),
             $model->avatar_path,
             $model->last_login_at?->toDateTimeImmutable(),
+            $model->two_factor_secret,
+            $model->two_factor_confirmed_at?->toDateTimeImmutable(),
+            $model->two_factor_last_step,
         );
     }
 }

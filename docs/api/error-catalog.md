@@ -110,6 +110,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
 | `invalid-stage` | 422 | Recruitment | An application cannot be moved to this stage. |
 | `invalid-stage-order` | 422 | Recruitment |  |
+| `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
 | `invalid-withdrawal` | 422 | Recruitment |  |
 | `invitation-closed` | 409 | JobInvitation | This invitation expired because the job is not live. |
@@ -198,6 +199,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `too-many-recipients` | 422 | Messaging |  |
 | `too-many-requests` | 429 | Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
+| `two-factor-already-enabled` | 409 | Identity | This administrator already has a second factor. |
+| `two-factor-challenge-expired` | 401 | Identity | The sign-in has expired. Sign in again. |
+| `two-factor-not-enabled` | 409 | Identity | This administrator has no second factor yet. |
 | `unauthenticated` | 401 | Platform | Authentication is required. |
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
