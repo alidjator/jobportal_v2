@@ -49,6 +49,8 @@ final class ApiTagsTest extends TestCase
         $this->assertSame('Reference data', ApiTags::forPath('api/v1/job-roles'));
         $this->assertSame('Admin: Reference data', ApiTags::forPath('api/v1/admin/job-roles/{id}'));
         $this->assertSame('Job search', ApiTags::forPath('api/v1/salary-insight'));
+        $this->assertSame('Job search', ApiTags::forPath('api/v1/me/saved-jobs/{id}'));
+        $this->assertSame('Candidate search', ApiTags::forPath('api/v1/company/talent-pool/categories/{id}'));
     }
 
     public function test_the_group_names_are_unique(): void

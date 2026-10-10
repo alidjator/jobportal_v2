@@ -44,6 +44,7 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 | J1 | Duplicate prevention + withdraw (see section 1) |
 | J5 | Multi-criteria job alerts: several alerts per job seeker; criteria = role, category, title keyword; location (province, city); level, experience, education; job type and minimum salary. **Default 5 alerts** (admin global setting). Frequency: immediate, daily, weekly; channels in-app/email chosen per alert |
 | J6 | Merged into J5: an alert is a saved search; the same results can be opened from the alert |
+| J6b | Saved jobs (the legacy favourites): a job seeker saves and removes live jobs, at most 200; a job that stops being live stays in the list as unavailable. See `phase-4-saved-jobs-and-talent-pool.md` |
 | J7 | CV generator: PDF built from the structured profile; several built-in templates in code; admin can enable/disable templates and set the default; at apply time the job seeker picks an uploaded resume **or** a CV generated at that moment from the latest profile, and the generated PDF is attached to the application |
 | J8 | Job recommendations: simple weighted rules (no machine learning) on skill, experience, location, expected salary, role. Shown on the job seeker dashboard, as a match percentage on job lists/details (logged-in job seeker), and by periodic email |
 | J9 | Chat: attachments (documents and images), **default 5 MB** per file, types PDF/JPG/PNG, admin-configurable, content-based type checks. Only the **recruiter's** online status is visible to job seekers. A recruiter can start a conversation any time; a job seeker only with a company they have applied to |
@@ -56,6 +57,7 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 | R7b | Interview scheduling: time, format (online/onsite), location or link, interviewer; the job seeker confirms or proposes another time. **A schedule is mandatory when moving to `interview`** (one by one). **Bulk move to `interview`:** the recruiter enters one base schedule and the system creates sequential slots per applicant |
 | R7c | Structured offers: position, salary, start date, note; the job seeker accepts or declines in the system. **Accept moves the application to `hired`; decline moves it to `withdrawn`** (optional note) |
 | R10 | Job invitation tied to a job; status tracked (sent, viewed, applied, declined); **default 50 invitations per day per company** (admin global setting, per-company override); **one invitation per candidate per job**; candidates who already applied cannot be invited |
+| R11 | Talent pool: a company saves findable candidates (shared by its members, at most 1,000) into free categories of its own (at most 30; only a company admin renames or deletes one); a candidate who is no longer findable shows as unavailable. See `phase-4-saved-jobs-and-talent-pool.md` |
 | R12 | Candidate recommendations using the same matching engine as J8 (reversed); match percentage and an invite button; only candidates whose profile is visible |
 | R13 | Applicant CSV export per job by company admins and assigned recruiters; every export is audit-logged |
 

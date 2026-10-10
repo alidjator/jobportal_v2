@@ -42,6 +42,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'campaign_campaigns' => ['created_by_user_id'],
             'review_reviews' => ['user_id'],
             'review_replies' => ['written_by_user_id'],
+            'job_saved_jobs' => ['user_id'],
+            'talentpool_entries' => ['candidate_user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -57,8 +59,14 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'review_replies' => ['moderated_by_admin_id'],
             'review_reports' => ['resolved_by_admin_id'],
         ],
-        'company_companies' => ['jobinvitation_invitations' => ['company_id'], 'campaign_campaigns' => ['company_id'], 'review_reviews' => ['company_id']],
-        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id']],
+        'company_companies' => [
+            'jobinvitation_invitations' => ['company_id'],
+            'campaign_campaigns' => ['company_id'],
+            'review_reviews' => ['company_id'],
+            'talentpool_categories' => ['company_id'],
+            'talentpool_entries' => ['company_id'],
+        ],
+        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'job_saved_jobs' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id']],
     ];
 

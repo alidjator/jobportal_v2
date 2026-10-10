@@ -19,6 +19,7 @@ use Src\Platform\Infrastructure\PlatformServiceProvider;
 use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
 use Src\Review\Infrastructure\ReviewServiceProvider;
+use Src\TalentPool\Infrastructure\TalentPoolServiceProvider;
 use Src\Training\Infrastructure\TrainingServiceProvider;
 
 return [
@@ -42,4 +43,5 @@ return [
     LegacyImportServiceProvider::class,
     DashboardServiceProvider::class,
     ReviewServiceProvider::class,
+    TalentPoolServiceProvider::class,
 ];

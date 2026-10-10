@@ -1,0 +1,300 @@
+<?php
+
+namespace Tests\Feature\TalentPool;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
+use Src\TalentPool\Application\CreateCategory;
+use Src\TalentPool\Application\EraseTalentEntries;
+use Src\TalentPool\Application\SaveCandidate;
+use Tests\Concerns\BuildsApplicationFixtures;
+use Tests\FeatureTestCase;
+
+final class TalentPoolTest extends FeatureTestCase
+{
+    use BuildsApplicationFixtures;
+
+    /** @var array{id: int, slug: string, token: string, resume: int} */
+    private array $ana;
+
+    /** @var array{id: int, slug: string, token: string, resume: int} */
+    private array $budi;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->buildApplicationFixtures();
+        $this->ana = $this->candidate('ana@example.test', 'Ana Putri');
+        $this->budi = $this->candidate('budi.c@example.test', 'Budi Candidate');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownApplicationFixtures();
+
+        parent::tearDown();
+    }
+
+    /**
+     * A job seeker who can be found: a complete profile that is switched on for search.
+     *
+     * @return array{id: int, slug: string, token: string, resume: int}
+     */
+    private function candidate(string $email, string $name): array
+    {
+        $id = $this->seeker($email, name: $name);
+        $token = $this->tokenFor($id);
+        $resume = $this->completeProfile($token);
+        DB::table('jobseeker_profiles')->where('user_id', $id)->update(['is_discoverable' => true]);
+
+        return ['id' => $id, 'slug' => (string) DB::table('jobseeker_profiles')->where('user_id', $id)->value('slug'), 'token' => $token, 'resume' => $resume];
+    }
+
+    /** @param  array<string, mixed>  $extra */
+    private function save(array $candidate, ?string $token = null, array $extra = []): TestResponse
+    {
+        return $this->api('POST', '/company/talent-pool', ['candidate' => $candidate['slug'], ...$extra], $token ?? $this->recruiterToken);
+    }
+
+    private function entryId(array $candidate, ?string $token = null, array $extra = []): int
+    {
+        return (int) $this->save($candidate, $token, $extra)->assertCreated()->json('data.id');
+    }
+
+    private function categoryId(string $name = 'Designers', ?string $token = null): int
+    {
+        return (int) $this->api('POST', '/company/talent-pool/categories', ['name' => $name], $token ?? $this->recruiterToken)->assertCreated()->json('data.id');
+    }
+
+    private function listing(string $query = '', ?string $token = null): TestResponse
+    {
+        return $this->api('GET', '/company/talent-pool'.$query, token: $token ?? $this->recruiterToken)->assertOk();
+    }
+
+    public function test_a_member_saves_a_findable_candidate_and_every_member_of_the_company_sees_them(): void
+    {
+        $id = $this->entryId($this->ana);
+
+        $row = $this->listing()->json('data.0');
+
+        $this->assertSame($id, $row['id']);
+        $this->assertTrue($row['available']);
+        $this->assertSame(['slug' => $this->ana['slug'], 'name' => 'Ana Putri'], $row['candidate']);
+        $this->assertNull($row['category']);
+        $this->assertNotNull($row['saved_at']);
+
+        // The admin and the other recruiter see the same pool.
+        $this->assertSame([$id], $this->listing(token: $this->adminToken)->json('data.*.id'));
+        $this->assertSame([$id], $this->listing(token: $this->secondRecruiterToken)->json('data.*.id'));
+    }
+
+    public function test_a_candidate_is_saved_once_per_company_whoever_saves_them(): void
+    {
+        $this->entryId($this->ana);
+
+        $this->save($this->ana, $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-in-talent-pool');
+        $this->assertSame(1, DB::table('talentpool_entries')->count());
+
+        // Another company has its own pool.
+        $this->save($this->ana, $this->otherAdminToken)->assertCreated();
+        $this->assertSame(2, DB::table('talentpool_entries')->count());
+    }
+
+    public function test_the_pool_of_a_company_is_never_shown_to_another(): void
+    {
+        $id = $this->entryId($this->ana);
+
+        $this->assertSame([], $this->listing(token: $this->otherAdminToken)->json('data'));
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => null], $this->otherAdminToken)->assertNotFound();
+        $this->api('DELETE', "/company/talent-pool/{$id}", token: $this->otherAdminToken)->assertNoContent();
+
+        $this->assertSame(1, DB::table('talentpool_entries')->count());
+    }
+
+    public function test_a_candidate_who_cannot_be_found_cannot_be_saved(): void
+    {
+        $this->save(['slug' => 'nobody-here'])->assertNotFound();
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+        $this->save($this->ana)->assertNotFound();
+
+        $this->assertSame(0, DB::table('talentpool_entries')->count());
+    }
+
+    public function test_a_candidate_who_stops_being_findable_is_shown_without_their_data_and_can_be_removed(): void
+    {
+        $id = $this->entryId($this->ana);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+
+        $row = $this->listing()->json('data.0');
+
+        $this->assertSame($id, $row['id']);
+        $this->assertFalse($row['available']);
+        $this->assertNull($row['candidate']);
+        $this->assertStringNotContainsString('Ana', (string) json_encode($row));
+
+        $this->api('DELETE', "/company/talent-pool/{$id}", token: $this->recruiterToken)->assertNoContent();
+        $this->assertSame([], $this->listing()->json('data'));
+    }
+
+    public function test_a_candidate_who_switches_the_profile_on_again_is_shown_again(): void
+    {
+        $this->entryId($this->ana);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+        $this->assertFalse($this->listing()->json('data.0.available'));
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => true]);
+
+        $this->assertTrue($this->listing()->json('data.0.available'));
+    }
+
+    public function test_a_candidate_is_saved_in_a_category_moved_and_taken_out_of_it(): void
+    {
+        $designers = $this->categoryId('Designers');
+        $callBack = $this->categoryId('Call back');
+        $id = $this->entryId($this->ana, extra: ['category_id' => $designers]);
+
+        $this->assertSame(['id' => $designers, 'name' => 'Designers'], $this->listing()->json('data.0.category'));
+
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => $callBack], $this->recruiterToken)->assertOk()->assertJsonPath('data.category.name', 'Call back');
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => null], $this->recruiterToken)->assertOk()->assertJsonPath('data.category', null);
+        $this->api('PATCH', "/company/talent-pool/{$id}", [], $this->recruiterToken)->assertStatus(422)->assertJsonValidationErrors(['category_id']);
+    }
+
+    public function test_the_list_can_be_filtered_by_category_and_is_the_most_recently_saved_first(): void
+    {
+        $designers = $this->categoryId('Designers');
+        $first = $this->entryId($this->ana, extra: ['category_id' => $designers]);
+        DB::table('talentpool_entries')->where('id', $first)->update(['created_at' => now()->subDay()]);
+        $second = $this->entryId($this->budi);
+
+        $this->assertSame([$second, $first], $this->listing()->json('data.*.id'));
+        $this->assertSame([$first], $this->listing('?'.http_build_query(['filter' => ['category_id' => $designers]]))->json('data.*.id'));
+        $this->api('GET', '/company/talent-pool?'.http_build_query(['filter' => ['unknown' => 1]]), token: $this->recruiterToken)->assertStatus(422);
+        $this->assertSame(2, $this->listing('?per_page=1')->json('meta.total'));
+    }
+
+    public function test_a_category_of_another_company_is_refused(): void
+    {
+        $foreign = $this->categoryId('Foreign', $this->otherAdminToken);
+        $id = $this->entryId($this->ana);
+
+        $this->save($this->budi, extra: ['category_id' => $foreign])->assertNotFound();
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => $foreign], $this->recruiterToken)->assertNotFound();
+        $this->save($this->budi, extra: ['category_id' => 999_999])->assertNotFound();
+    }
+
+    public function test_categories_are_listed_with_their_counts(): void
+    {
+        $designers = $this->categoryId('Designers');
+        $this->categoryId('Backend');
+        $this->entryId($this->ana, extra: ['category_id' => $designers]);
+        $this->entryId($this->budi, extra: ['category_id' => $designers]);
+
+        $rows = $this->api('GET', '/company/talent-pool/categories', token: $this->recruiterToken)->assertOk()->json('data');
+
+        $this->assertSame([['name' => 'Backend', 'entries' => 0], ['name' => 'Designers', 'entries' => 2]], array_map(static fn (array $row): array => ['name' => $row['name'], 'entries' => $row['entries']], $rows));
+    }
+
+    public function test_a_category_name_is_trimmed_and_unique_whatever_its_case(): void
+    {
+        $this->assertSame('Designers', $this->api('POST', '/company/talent-pool/categories', ['name' => '  Designers  '], $this->recruiterToken)->assertCreated()->json('data.name'));
+
+        $this->api('POST', '/company/talent-pool/categories', ['name' => 'designers'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:category-name-taken');
+        $this->api('POST', '/company/talent-pool/categories', ['name' => '   '], $this->recruiterToken)->assertStatus(422);
+        $this->api('POST', '/company/talent-pool/categories', ['name' => str_repeat('a', 51)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:category-name-invalid');
+
+        // Another company may use the same name.
+        $this->api('POST', '/company/talent-pool/categories', ['name' => 'Designers'], $this->otherAdminToken)->assertCreated();
+    }
+
+    public function test_only_a_company_admin_renames_or_deletes_a_category(): void
+    {
+        $id = $this->categoryId('Designers');
+
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->adminToken)->assertOk()->assertJsonPath('data.name', 'UX');
+
+        $other = $this->categoryId('Backend');
+        $this->api('PATCH', "/company/talent-pool/categories/{$other}", ['name' => 'ux'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:category-name-taken');
+        // Keeping its own name in another case is allowed.
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'Ux'], $this->adminToken)->assertOk();
+        $this->api('PATCH', '/company/talent-pool/categories/999999', ['name' => 'Nothing'], $this->adminToken)->assertNotFound();
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->otherAdminToken)->assertNotFound();
+    }
+
+    public function test_deleting_a_category_keeps_its_candidates_uncategorised(): void
+    {
+        $id = $this->categoryId('Designers');
+        $entry = $this->entryId($this->ana, extra: ['category_id' => $id]);
+
+        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $this->adminToken)->assertNoContent();
+        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $this->adminToken)->assertNoContent();
+
+        $row = $this->listing()->json('data.0');
+        $this->assertSame($entry, $row['id']);
+        $this->assertNull($row['category']);
+    }
+
+    public function test_removing_a_candidate_twice_is_not_an_error(): void
+    {
+        $id = $this->entryId($this->ana);
+
+        $this->api('DELETE', "/company/talent-pool/{$id}", token: $this->recruiterToken)->assertNoContent();
+        $this->api('DELETE', "/company/talent-pool/{$id}", token: $this->recruiterToken)->assertNoContent();
+
+        $this->assertSame(0, DB::table('talentpool_entries')->count());
+    }
+
+    public function test_a_company_keeps_at_most_thirty_categories_and_a_thousand_candidates(): void
+    {
+        for ($index = 1; $index <= CreateCategory::MAX_CATEGORIES; $index++) {
+            DB::table('talentpool_categories')->insert(['company_id' => $this->companyId, 'name' => "Category {$index}", 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $this->api('POST', '/company/talent-pool/categories', ['name' => 'One more'], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:category-limit');
+
+        $rows = [];
+
+        for ($index = 0; $index < SaveCandidate::MAX_ENTRIES; $index++) {
+            $user = $this->seeker("pool{$index}@example.test", name: "Pool {$index}");
+            $rows[] = ['company_id' => $this->companyId, 'candidate_user_id' => $user, 'created_at' => now(), 'updated_at' => now()];
+        }
+
+        DB::table('talentpool_entries')->insert($rows);
+
+        $this->save($this->ana)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:talent-pool-limit');
+        $this->save($this->ana, $this->otherAdminToken)->assertCreated();
+    }
+
+    public function test_only_a_member_of_an_active_company_has_a_talent_pool(): void
+    {
+        $this->api('GET', '/company/talent-pool')->assertUnauthorized();
+
+        foreach ([['GET', '/company/talent-pool'], ['GET', '/company/talent-pool/categories']] as [$method, $uri]) {
+            $this->api($method, $uri, token: $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        }
+
+        $this->save($this->budi, $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+
+        DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
+
+        $this->api('GET', '/company/talent-pool', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+    }
+
+    public function test_the_entries_of_an_anonymised_candidate_are_deleted(): void
+    {
+        $this->entryId($this->ana);
+        $this->save($this->ana, $this->otherAdminToken)->assertCreated();
+        $this->entryId($this->budi);
+
+        $this->app->make(EraseTalentEntries::class)->execute($this->ana['id']);
+        $this->app->make(EraseTalentEntries::class)->execute($this->ana['id']);
+
+        $this->assertSame(1, DB::table('talentpool_entries')->count());
+        $this->assertSame($this->budi['id'], (int) DB::table('talentpool_entries')->value('candidate_user_id'));
+    }
+}

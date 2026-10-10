@@ -41,6 +41,15 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return $row === null ? null : $this->candidates([$row])[0];
     }
 
+    public function findableUserIds(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return array_map('intval', $this->searchable()->whereIn('p.user_id', $userIds)->pluck('p.user_id')->all());
+    }
+
     public function pool(?int $provinceId, int $limit): array
     {
         $builder = $this->searchable();

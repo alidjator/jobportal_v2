@@ -9,6 +9,14 @@ interface CandidateDirectory
     public function findable(string $slug): ?CandidateRef;
 
     /**
+     * Those of these accounts that can be found right now, under the same rule as `findable`.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function findableIds(array $userIds): array;
+
+    /**
      * The slug and name of these accounts, found or not (a company keeps seeing whom it invited); an account without a profile slug or that was anonymised is missing.
      *
      * @param  list<int>  $userIds

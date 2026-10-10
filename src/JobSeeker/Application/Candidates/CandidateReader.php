@@ -21,6 +21,14 @@ interface CandidateReader
     public function findBySlug(string $slug): ?CandidateRow;
 
     /**
+     * Those of these accounts that can be found now (the rule of `findBySlug`).
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function findableUserIds(array $userIds): array;
+
+    /**
      * The most recently updated candidates who can be found, in the province (anywhere when it is null), at most `$limit`: the pool a job's recommendations
      * are scored from.
      *

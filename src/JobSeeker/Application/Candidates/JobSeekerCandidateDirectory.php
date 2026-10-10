@@ -17,6 +17,11 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
         return $row === null ? null : new CandidateRef($row->userId, $row->slug, $row->name);
     }
 
+    public function findableIds(array $userIds): array
+    {
+        return $this->candidates->findableUserIds($userIds);
+    }
+
     public function refs(array $userIds): array
     {
         $refs = [];
