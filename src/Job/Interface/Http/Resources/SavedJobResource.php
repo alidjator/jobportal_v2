@@ -9,7 +9,9 @@ use Src\Job\Application\Saved\SavedJobEntry;
 
 /**
  * A saved job. While the job is live, `job` is the row of the public search; otherwise `available` is false and `job` is null (the title and the saving time
- * remain). @property SavedJobEntry $resource
+ * remain).
+ *
+ * @property SavedJobEntry $resource
  */
 final class SavedJobResource extends JsonResource
 {

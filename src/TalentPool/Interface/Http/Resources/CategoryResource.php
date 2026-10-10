@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\TalentPool\Application\CategoryView;
 
-/** A category of the company with the number of candidates in it. @property CategoryView $resource */
+/**
+ * A category of the company with the number of candidates in it.
+ *
+ * @property CategoryView $resource
+ */
 final class CategoryResource extends JsonResource
 {
     /** @return array<string, mixed> */
