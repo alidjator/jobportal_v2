@@ -44,6 +44,7 @@ final readonly class EntryViews
             $entry->categoryId === null ? null : ($names[$entry->categoryId] ?? null),
             isset($findable[$entry->candidateUserId]) ? ($refs[$entry->candidateUserId]->slug ?? null) : null,
             isset($findable[$entry->candidateUserId]) ? ($refs[$entry->candidateUserId]->name ?? null) : null,
+            isset($findable[$entry->candidateUserId]) ? $entry->note : null,
             $entry->createdAt,
         ), $entries);
     }

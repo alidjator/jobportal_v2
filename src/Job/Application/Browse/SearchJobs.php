@@ -3,6 +3,7 @@
 namespace Src\Job\Application\Browse;
 
 use Src\Job\Application\Matching\ScoreJobsForSeeker;
+use Src\Job\Domain\SavedJobRepository;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -11,7 +12,8 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
 /**
  * The public job search, for anyone. It limits each client address, refuses a minimum salary without its period and a position deeper than 10,000, looks up
  * the query it runs (see `JobSearchQueryBuilder`), and asks the reader for the live jobs of companies the public may see. The rows come back with the
- * company card and names in the language of the request. For a job seeker with a complete profile (`$viewerId`) every row also carries how well they match it.
+ * company card and names in the language of the request. For a job seeker (`$viewerId`) every row also says whether they saved the job, and, with a complete
+ * profile, how well they match it.
  */
 final readonly class SearchJobs
 {
@@ -23,6 +25,7 @@ final readonly class SearchJobs
         private JobSearchQueryBuilder $queries,
         private PublicJobListItems $items,
         private ScoreJobsForSeeker $scores,
+        private SavedJobRepository $saved,
     ) {}
 
     /**
@@ -50,6 +53,11 @@ final readonly class SearchJobs
 
         if ($scores !== null) {
             $items = array_map(static fn (PublicJobListItem $item): PublicJobListItem => $item->withMatch($scores[$item->id] ?? null), $items);
+        }
+
+        if ($viewerId !== null) {
+            $saved = $this->saved->savedAmong($viewerId, array_map(static fn (PublicJobListItem $item): int => $item->id, $items));
+            $items = array_map(static fn (PublicJobListItem $item): PublicJobListItem => $item->withSaved(in_array($item->id, $saved, true)), $items);
         }
 
         return new Page($items, $hits->total, $hits->request);

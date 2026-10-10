@@ -15,7 +15,8 @@ use Src\TalentPool\Domain\Entry;
 use Src\TalentPool\Domain\EntryRepository;
 
 /**
- * A member saves a candidate they found (one who can be found right now) into their company's talent pool, optionally in one of the company's categories. A
+ * A member saves a candidate they found (one who can be found right now) into their company's talent pool, optionally in one of the company's categories and
+ * with a note of up to 500 characters that every member of the company sees. A
  * candidate is saved once per company, whoever saved them; a company keeps at most 1,000 candidates.
  */
 final readonly class SaveCandidate
@@ -35,15 +36,16 @@ final readonly class SaveCandidate
     /**
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound the candidate (missing or not findable) or the category (missing or another company's)
-     * @throws BusinessRuleViolation `talent-pool-limit`
+     * @throws BusinessRuleViolation `note-too-long` or `talent-pool-limit`
      * @throws StateConflict `already-in-talent-pool`
      */
-    public function execute(Actor $actor, string $candidateSlug, ?int $categoryId): EntryView
+    public function execute(Actor $actor, string $candidateSlug, ?int $categoryId, ?string $note = null): EntryView
     {
         $member = $this->access->member($actor);
+        $note = Entry::cleanNote($note);
         $candidate = $this->candidates->findable($candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug);
 
-        $entry = $this->transactions->run(function () use ($member, $candidate, $categoryId): Entry {
+        $entry = $this->transactions->run(function () use ($member, $candidate, $categoryId, $note): Entry {
             if ($categoryId !== null) {
                 $this->categories->find($member->companyId, $categoryId) ?? throw EntityNotFound::of('Category', $categoryId);
             }
@@ -56,7 +58,7 @@ final readonly class SaveCandidate
                 throw new BusinessRuleViolation('A company keeps at most '.self::MAX_ENTRIES.' candidates in its talent pool.', 'talent-pool-limit');
             }
 
-            return $this->entries->add(new Entry($member->companyId, $candidate->userId, $categoryId, $this->clock->now()));
+            return $this->entries->add(new Entry($member->companyId, $candidate->userId, $categoryId, $this->clock->now(), note: $note));
         });
 
         return $this->views->views($member->companyId, [$entry])[0];

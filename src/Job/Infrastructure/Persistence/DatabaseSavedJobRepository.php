@@ -37,6 +37,15 @@ final readonly class DatabaseSavedJobRepository implements SavedJobRepository
         return $this->connection->table('job_saved_jobs')->where('user_id', $userId)->count();
     }
 
+    public function savedAmong(int $userId, array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        return array_map('intval', $this->connection->table('job_saved_jobs')->where('user_id', $userId)->whereIn('job_id', $jobIds)->pluck('job_id')->all());
+    }
+
     public function ofUser(int $userId, PageRequest $request): Page
     {
         $total = $this->count($userId);

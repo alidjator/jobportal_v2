@@ -297,4 +297,64 @@ final class TalentPoolTest extends FeatureTestCase
         $this->assertSame(1, DB::table('talentpool_entries')->count());
         $this->assertSame($this->budi['id'], (int) DB::table('talentpool_entries')->value('candidate_user_id'));
     }
+
+    public function test_a_note_is_saved_trimmed_shown_to_every_member_and_cleared_with_null(): void
+    {
+        $id = $this->entryId($this->ana, extra: ['note' => "  Strong on Laravel, call back in spring.  "]);
+
+        $this->assertSame('Strong on Laravel, call back in spring.', $this->listing()->json('data.0.note'));
+        $this->assertSame('Strong on Laravel, call back in spring.', $this->listing(token: $this->adminToken)->json('data.0.note'));
+
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => 'Called on Monday.'], $this->adminToken)->assertOk()->assertJsonPath('data.note', 'Called on Monday.');
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => null], $this->recruiterToken)->assertOk()->assertJsonPath('data.note', null);
+        $this->assertNull(DB::table('talentpool_entries')->where('id', $id)->value('note'));
+    }
+
+    public function test_an_entry_without_a_note_shows_null_and_a_blank_note_is_not_stored(): void
+    {
+        $this->entryId($this->ana);
+        $this->entryId($this->budi, extra: ['note' => '   ']);
+
+        $this->assertSame([null, null], $this->listing()->json('data.*.note'));
+    }
+
+    public function test_a_note_is_at_most_five_hundred_characters(): void
+    {
+        $id = $this->entryId($this->ana, extra: ['note' => str_repeat('a', 500)]);
+
+        $this->save($this->budi, extra: ['note' => str_repeat('a', 501)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:note-too-long');
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => str_repeat('b', 501)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:note-too-long');
+
+        $this->assertSame(str_repeat('a', 500), DB::table('talentpool_entries')->where('id', $id)->value('note'));
+        $this->assertSame(1, DB::table('talentpool_entries')->count());
+    }
+
+    public function test_changing_the_note_keeps_the_category_and_changing_the_category_keeps_the_note(): void
+    {
+        $designers = $this->categoryId('Designers');
+        $callBack = $this->categoryId('Call back');
+        $id = $this->entryId($this->ana, extra: ['category_id' => $designers, 'note' => 'First note']);
+
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => 'Second note'], $this->recruiterToken)->assertOk()
+            ->assertJsonPath('data.note', 'Second note')->assertJsonPath('data.category.id', $designers);
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => $callBack], $this->recruiterToken)->assertOk()
+            ->assertJsonPath('data.note', 'Second note')->assertJsonPath('data.category.id', $callBack);
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['category_id' => null, 'note' => 'Third note'], $this->recruiterToken)->assertOk()
+            ->assertJsonPath('data.note', 'Third note')->assertJsonPath('data.category', null);
+    }
+
+    public function test_the_note_is_hidden_while_the_candidate_cannot_be_found_and_comes_back_with_them(): void
+    {
+        $this->entryId($this->ana, extra: ['note' => 'Private words about Ana']);
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
+
+        $row = $this->listing()->json('data.0');
+
+        $this->assertNull($row['note']);
+        $this->assertStringNotContainsString('Private words', (string) json_encode($row));
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => true]);
+
+        $this->assertSame('Private words about Ana', $this->listing()->json('data.0.note'));
+    }
 }

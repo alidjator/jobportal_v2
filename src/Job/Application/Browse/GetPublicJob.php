@@ -6,6 +6,7 @@ use Src\Job\Application\JobVisibility;
 use Src\Job\Application\Matching\ScoreJobsForSeeker;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Domain\SavedJobRepository;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
@@ -14,7 +15,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 /**
  * The public page of a job. Only a live job is shown: `active`, its deadline day not over (Jakarta time, checked here so the page does not wait for the hourly
  * expiry), and its company active and not hidden. In every other case, and when there is no such job, the answer is the same `EntityNotFound`.
- * For a job seeker with a complete profile (`$viewerId`) the page also says how well they match the job.
+ * For a job seeker (`$viewerId`) the page also says whether they saved the job and, with a complete profile, how well they match it.
  */
 final readonly class GetPublicJob
 {
@@ -36,6 +37,7 @@ final readonly class GetPublicJob
         private LocationReferences $locations,
         private JobVisibility $visibility,
         private ScoreJobsForSeeker $scores,
+        private SavedJobRepository $saved,
     ) {}
 
     /** @throws EntityNotFound */
@@ -65,9 +67,14 @@ final readonly class GetPublicJob
             $this->namedList('skills', $content->skillIds, $language),
             $this->namedList('benefits', $content->benefitIds, $language),
         );
-        $scores = $viewerId === null ? null : $this->scores->forJobs($viewerId, [$jobId]);
 
-        return $scores === null ? $view : $view->withMatch($scores[$jobId] ?? null);
+        if ($viewerId === null) {
+            return $view;
+        }
+
+        $scores = $this->scores->forJobs($viewerId, [$jobId]);
+
+        return $view->withMatch($scores[$jobId] ?? null)->withSaved($this->saved->savedAmong($viewerId, [$jobId]) !== []);
     }
 
     /** @return array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null */

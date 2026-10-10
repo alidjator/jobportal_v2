@@ -4,6 +4,7 @@ namespace Src\Job\Application\Matching;
 
 use Src\Job\Application\Browse\JobSearchHit;
 use Src\Job\Application\Browse\PublicJobListItems;
+use Src\Job\Domain\SavedJobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\JobInvitation\InvitedCandidates;
@@ -31,6 +32,7 @@ final readonly class RecommendJobs
         private ApplicantRelations $applications,
         private InvitedCandidates $invitations,
         private PublicJobListItems $items,
+        private SavedJobRepository $saved,
     ) {}
 
     /**
@@ -75,9 +77,10 @@ final readonly class RecommendJobs
         $best = array_slice($best, 0, self::LIMIT);
 
         $items = [];
+        $savedIds = $this->saved->savedAmong($actor->id, array_map(static fn (array $entry): int => $entry['hit']->id, $best));
 
         foreach ($this->items->of(array_map(static fn (array $entry): JobSearchHit => $entry['hit'], $best), $language) as $item) {
-            $items[$item->id] = $item;
+            $items[$item->id] = $item->withSaved(in_array($item->id, $savedIds, true));
         }
 
         $recommended = [];

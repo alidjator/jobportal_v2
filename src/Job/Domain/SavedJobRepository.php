@@ -17,6 +17,14 @@ interface SavedJobRepository
     public function count(int $userId): int;
 
     /**
+     * Those of these jobs that the account saved.
+     *
+     * @param  list<int>  $jobIds
+     * @return list<int>
+     */
+    public function savedAmong(int $userId, array $jobIds): array;
+
+    /**
      * @return Page<SavedJob> the most recently saved first
      */
     public function ofUser(int $userId, PageRequest $request): Page;

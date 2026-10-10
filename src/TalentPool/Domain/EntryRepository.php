@@ -20,6 +20,8 @@ interface EntryRepository
 
     public function changeCategory(int $companyId, int $id, ?int $categoryId): void;
 
+    public function changeNote(int $companyId, int $id, ?string $note): void;
+
     public function remove(int $companyId, int $id): void;
 
     /**

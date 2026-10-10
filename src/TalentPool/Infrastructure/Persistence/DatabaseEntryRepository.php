@@ -26,6 +26,7 @@ final readonly class DatabaseEntryRepository implements EntryRepository
                 'company_id' => $entry->companyId,
                 'candidate_user_id' => $entry->candidateUserId,
                 'category_id' => $entry->categoryId,
+                'note' => $entry->note,
                 'created_at' => $this->format($entry->createdAt),
                 'updated_at' => $this->format($entry->createdAt),
             ]);
@@ -33,7 +34,7 @@ final readonly class DatabaseEntryRepository implements EntryRepository
             throw new StateConflict('This candidate is already in your talent pool.', 'already-in-talent-pool');
         }
 
-        return new Entry($entry->companyId, $entry->candidateUserId, $entry->categoryId, $entry->createdAt, $id);
+        return new Entry($entry->companyId, $entry->candidateUserId, $entry->categoryId, $entry->createdAt, $id, $entry->note);
     }
 
     public function find(int $companyId, int $id): ?Entry
@@ -57,6 +58,14 @@ final readonly class DatabaseEntryRepository implements EntryRepository
     {
         $this->connection->table('talentpool_entries')->where('company_id', $companyId)->where('id', $id)->update([
             'category_id' => $categoryId,
+            'updated_at' => $this->format(new DateTimeImmutable),
+        ]);
+    }
+
+    public function changeNote(int $companyId, int $id, ?string $note): void
+    {
+        $this->connection->table('talentpool_entries')->where('company_id', $companyId)->where('id', $id)->update([
+            'note' => $note,
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
     }
@@ -105,6 +114,7 @@ final readonly class DatabaseEntryRepository implements EntryRepository
             $row->category_id === null ? null : (int) $row->category_id,
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
             (int) $row->id,
+            $row->note === null ? null : (string) $row->note,
         );
     }
 

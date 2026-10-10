@@ -190,4 +190,34 @@ final class SavedJobTest extends FeatureTestCase
 
         $this->assertSame(0, $this->savedCount());
     }
+
+    public function test_the_public_list_and_page_say_whether_a_signed_in_job_seeker_saved_the_job(): void
+    {
+        $saved = $this->liveJob();
+        $other = $this->liveJob();
+        $this->api('PUT', "/me/saved-jobs/{$saved}", token: $this->seekerToken)->assertNoContent();
+
+        $rows = collect($this->api('GET', '/jobs', token: $this->seekerToken)->assertOk()->json('data'))->mapWithKeys(fn (array $row): array => [$row['id'] => $row['saved']])->all();
+
+        $this->assertSame([$saved => true, $other => false], $rows);
+        $this->assertTrue($this->api('GET', "/jobs/{$saved}", token: $this->seekerToken)->assertOk()->json('data.saved'));
+        $this->assertFalse($this->api('GET', "/jobs/{$other}", token: $this->seekerToken)->assertOk()->json('data.saved'));
+    }
+
+    public function test_the_saved_flag_is_left_out_for_a_visitor_and_for_a_company_member(): void
+    {
+        $job = $this->liveJob();
+
+        $this->assertArrayNotHasKey('saved', $this->api('GET', '/jobs')->assertOk()->json('data.0'));
+        $this->assertArrayNotHasKey('saved', $this->api('GET', "/jobs/{$job}")->assertOk()->json('data'));
+        $this->assertArrayNotHasKey('saved', $this->api('GET', '/jobs', token: $this->adminToken)->assertOk()->json('data.0'));
+    }
+
+    public function test_a_saved_job_in_the_saved_list_is_marked_saved(): void
+    {
+        $job = $this->liveJob();
+        $this->api('PUT', "/me/saved-jobs/{$job}", token: $this->seekerToken)->assertNoContent();
+
+        $this->assertTrue($this->api('GET', '/me/saved-jobs', token: $this->seekerToken)->assertOk()->json('data.0.job.saved'));
+    }
 }

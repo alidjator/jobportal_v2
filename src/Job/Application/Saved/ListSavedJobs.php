@@ -43,7 +43,7 @@ final readonly class ListSavedJobs
         $live = [];
 
         foreach ($this->items->of($hits, $language) as $item) {
-            $live[$item->id] = $item;
+            $live[$item->id] = $item->withSaved(true);
         }
 
         return new Page(
