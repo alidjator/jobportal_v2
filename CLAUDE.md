@@ -35,12 +35,15 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 
 ## Database
 
-- MariaDB `jobportal_v2`; credentials only in the git-ignored `.env`. **Never copy secrets** into docs, memory, commits or chat.
+- PostgreSQL 16 `jobportal_v2` (moved from MariaDB on 2026-10-10, see `docs/design/postgres-migration.md`; extensions `pg_trgm` and `unaccent`; searches go through
+  `Shared/Infrastructure/Persistence/TextSearch`, NULL ordering through `NullOrder`); credentials only in the git-ignored `.env`. **Never copy secrets** into docs, memory, commits or chat.
+  The legacy source (`legacy` connection, used only by `src/LegacyImport`) stays MariaDB, so the server needs both `pdo_pgsql` and `pdo_mysql`.
 - Tables are prefixed per bounded context (`identity_`, `company_`, `reference_`, ...). **Tests run in their own database, `jobportal_v2_test`** (decided 2026-10-06, replacing the
   old `test_` table prefix), with the same table names and no prefix; credentials are only in the git-ignored `.env.testing`. A guard aborts any test run or test migration whose
   database is not `jobportal_v2_test`.
-- **Foreign keys** (decided by the user, 2026-10-05): a column that references `reference_*` or `company_companies` has a `RESTRICT` foreign key, also across contexts; columns that reference
-  accounts or admins (`user_id`, `created_by_user_id`, `*_admin_id`) have none, and neither do polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
+- **Foreign keys** (decided by the user, 2026-10-05, widened 2026-10-10 in `docs/design/cross-context-foreign-keys.md`): a column that references `reference_*`, `company_companies`,
+  `identity_users`, `identity_admins` or `job_jobs` has a `RESTRICT` foreign key, also across contexts (only `recruitment_job_questions.job_id` is `CASCADE`). Never on logs, audit,
+  notifications, `*_daily` tables, the legacy id map, match deliveries or polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
 - A new migration runs **twice**, both by the user (see the hard rule on checks): `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, only with approval). Tell the user when a migration is new.
 - The production karir.pkp database is reachable only through the read-only account (`KARIR_PKP_DB_*`): **schema only, never read data** without explicit approval.
 
