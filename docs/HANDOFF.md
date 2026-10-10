@@ -10,22 +10,14 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 2. The design document of the step you work on (`docs/design/`, see the index below). Each records the user's decisions and what was coded.
 3. Only when needed: `docs/design/decisions.md` (cross-phase decisions), `architecture.md` (API contract, auth, persistence, queues, files), `phase-0-schema.md`.
 
-## Current state (2026-10-09)
+## Current state (2026-10-10)
 
-- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1724 tests, all passing.
-- **Phase 0, Phase 1, Phase 2 and Phase 3 are complete**, coded, checked and committed; every migration (to `000094`) ran on the real database.
-  Phase 3: job alerts, candidate search, invitations, matching engine, CV generator (`docs/design/phase-3-*.md`).
-- **Legacy import (`docs/design/phase-1-migration.md`) ran once on the former MySQL database (2026-10-08); the real PostgreSQL `jobportal_v2` holds none of it (checked 2026-10-10: 0 accounts, 0 companies, empty id map, 38 provinces seeded), so the whole import must run again there (dry run `php artisan legacy:import --all` first; ask before `--write`).** Migration `000103` is applied on the real database; a dry run of `campaigns` read 13 legacy campaigns (2 of company 1, 11 of company 3) and skipped all as `company-not-imported`, as expected. The user is preparing the mapping files and the freeze date. That first run was: 179 accounts, 173 profiles, 3 companies, 149 jobs, 30 applications.
-  The importer only adds. The 142 `draft` jobs stay as they are by decision. Legacy group "dev" (7 applications) was left unmapped on purpose.
-- Product points settled 2026-10-09: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it
-  (email only now); applying needs a verified email.
-- **Phase 4, step 1 dashboards (`docs/design/phase-4-dashboards.md`) is coded, checked and committed;** its real-database migrations (`000095`, `000096`) and `identity:sync-permissions` (`dashboard.view`) wait for the user.
-- **Phase 4, step 2 business intelligence (`docs/design/phase-4-business-intelligence.md`) is coded, checked and committed** (migrations `000097` to `000100`; permission `analytics.view`; setting `analytics.min_group_size`). Its real-database steps are not run on MySQL: they run once on the new PostgreSQL database.
-- **PostgreSQL 16 port (`docs/design/postgres-migration.md`) is coded, checked and committed (`5ad9e30`).** Cross-context foreign keys (`docs/design/cross-context-foreign-keys.md`, migration `000102`) are coded and checked too (1731 tests). The real and the test database are empty PostgreSQL databases (`jobportal_v2`, `jobportal_v2_test`, role `jobportal_v2`, port 5432; credentials only in `.env` and `.env.testing`).
-  Waiting for the user on the real database: `php artisan migrate`, `identity:sync-permissions`, `db:seed`, `analytics:rollup --backfill` (ask before each). The live BI medians now run in SQL (`35427a4`). `GET /company/jobs/{id}/performance` is coded and committed (`b69ef0b`). Campaigns are designed and coded in `docs/design/phase-4-campaigns.md` (context `Campaign`, migration `000103`; full suite green (1746 tests); needs `php artisan migrate` and `identity:sync-permissions` on the real database, and `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register` in `.env`). Run artisan and tests as `jobportal`, never as root (root-owned `storage` breaks the tests).
-  Moodle training is designed and coded in `docs/design/phase-4-training.md` (context `Training`, no tables; tests green; needs `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL` in `.env`). The campaign importer is coded (`CampaignsImporter`, tests green, not run on the real data; run `php artisan legacy:import campaigns` first (it only reads and reports), ask before adding `--write`). Newsletter is designed and coded in `docs/design/phase-4-newsletter.md` (context `Newsletter`, migrations `000104` to `000106` applied to the test database only; tests green; needs `php artisan migrate`, `identity:sync-permissions` (`newsletter.manage`) and `NEWSLETTER_CONFIRM_URL` / `NEWSLETTER_UNSUBSCRIBE_URL` on the real server; the importer of the legacy `emails` table is coded: `NewsletterSubscribersImporter`, entity `newsletter-subscribers`, tests green, not run on the real data; dry run `php artisan legacy:import newsletter-subscribers` first, ask before `--write`). Do not start new work without asking the user.
-
-- Later (user, 2026-10-10): no menu table (clients render menus; access stays in permissions and roles). Check whether `GET admin/me` returns the admin's permissions so clients can build menus; add a `permissions` field there if not.
+- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1798 tests, all passing (2026-10-10).
+- **Phases 0 to 4 are coded, checked and committed** (Phase 4: dashboards, business intelligence, campaigns, Moodle training, newsletter; designs in `docs/design/phase-4-*.md`). Phase 5 is not defined: ask the user what to work on next, do not start new work unasked.
+- **The real PostgreSQL `jobportal_v2` holds only seeded reference data** (migrations to `000103`; 0 accounts, 0 companies, empty id map). The legacy import ran once on the former MySQL database, so the whole import must run again there: dry run `php artisan legacy:import --all` (it only reads and reports; the campaign and newsletter importers are included), ask before `--write`. The user is preparing the mapping files and the freeze date.
+- **Waiting for the user on the real database** (ask before each): `php artisan migrate` (adds `000104` to `000106`), `identity:sync-permissions` (`dashboard.view`, `analytics.view`, `campaigns.manage`, `newsletter.manage`), `db:seed`, `analytics:rollup --backfill`. `.env` needs `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register`, `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL`, `NEWSLETTER_CONFIRM_URL`, `NEWSLETTER_UNSUBSCRIBE_URL`.
+- Product points settled: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it; applying needs a verified email; no menu table (clients build menus from `GET admin/me`, which returns `roles` and `permissions`).
+- Run artisan and tests as `jobportal`, never as root (root-owned `storage` breaks the tests).
 
 ## Items waiting for the user
 
@@ -45,6 +37,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - After a deployment that adds a permission, `identity:sync-permissions` must be run on the real database (ask first). `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added.
 - The user runs `composer check`, real-database migrations and the legacy import (explicit approval each time). `KARIR_PKP_FILES_ROOT` is set in `.env`. Mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
 - A rehearsal database: create one (the role has `CREATEDB`). Use `DB_DATABASE=<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`. The legacy source (`legacy` connection) stays MariaDB.
+- API documentation (Scramble) and the error catalog: the rules for writing controllers and resources so the document stays complete are in `docs/api/README.md`. The pages `/docs/api` are not served in production; `php artisan scramble:export` writes `api.json`.
 
 ## Document index
 
@@ -55,11 +48,9 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 | `docs/design/architecture.md` | API contract, authentication, authorization, persistence, queues, files, account states |
 | `docs/design/phase-0-schema.md` | Column design of the Phase 0 tables |
 | `docs/design/phase-1-*.md`, `phase-2-*.md`, `phase-3-*.md`, `phase-4-*.md` | One per step, with the decisions and what was coded |
+| `docs/api/` | How the API document is kept complete, and the generated error catalog |
 | `docs/handoff-history.md` | Session log, including the status of every step of Phases 2 and 3 |
 
 ## Suggested first message for the next session
 
 > Read `docs/HANDOFF.md`, then ask me what to work on next.
-
-- API documentation: Scramble is installed (`config/scramble.php`, `src/Shared/Infrastructure/Documentation/ApiDocumentation.php`). `php artisan scramble:export` writes `api.json` (git-ignored); the pages `/docs/api` are not served in production. Response bodies are documented: a list is returned as `XResource::collection(PaginatedResources::paginator(...))` or `XResource::collection($page->items)->additional(CursorResources::envelope(...))` (never through a class-string helper, which hides the resource from the generator); loose fields of a resource carry a `/** @var ... */` comment above their key (a docblock on `toArray()` is ignored); a 204 is `response()->noContent()`.
-- Error catalog: `docs/api/error-catalog.md` is generated from the source by `php artisan api:error-catalog` (`--check` fails when the file is stale; a unit test runs it, so run the command after adding or changing an error code). The same table is the "Errors" section of the OpenAPI document.
