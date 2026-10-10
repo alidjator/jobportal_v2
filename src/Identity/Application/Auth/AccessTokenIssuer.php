@@ -18,4 +18,10 @@ interface AccessTokenIssuer
 
     /** Revokes every token of a public user, on every device. */
     public function revokeAllForUser(int $userId): void;
+
+    /** Revokes every token of the actor's own account, the one in use included. */
+    public function revokeAll(Actor $actor): void;
+
+    /** Revokes every token of the actor's own account except the one in use. */
+    public function revokeOthers(Actor $actor, int $keepTokenId): void;
 }

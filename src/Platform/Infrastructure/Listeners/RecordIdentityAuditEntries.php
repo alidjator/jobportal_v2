@@ -6,8 +6,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
+use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
 use Src\Identity\Domain\Events\SignedIn;
+use Src\Identity\Domain\Events\SignedOutEverywhere;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Platform\Application\Audit\AuditAction;
@@ -17,7 +19,7 @@ use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
- * Writes the audit entries for Identity's security events: sign-in (success and failure), password reset and the account
+ * Writes the audit entries for Identity's security events: sign-in (success and failure), password reset and change, sign-out from every device and the account
  * deletion lifecycle. Runs on the `default` queue, retried 3 times with a growing delay. The entries hold no sensitive values:
  * never the email address that was typed, a password or a code.
  */
@@ -60,6 +62,16 @@ final class RecordIdentityAuditEntries implements ShouldQueue
         $this->record->execute($this->userEntry(AuditAction::PASSWORD_RESET, $event->userId, [], $event->ipAddress, $event->userAgent, $event));
     }
 
+    public function onPasswordChanged(PasswordChanged $event): void
+    {
+        $this->record->execute($this->accountEntry(AuditAction::PASSWORD_CHANGED, $event));
+    }
+
+    public function onSignedOutEverywhere(SignedOutEverywhere $event): void
+    {
+        $this->record->execute($this->accountEntry(AuditAction::SIGNED_OUT_EVERYWHERE, $event));
+    }
+
     public function onAccountDeletionRequested(AccountDeletionRequested $event): void
     {
         $this->record->execute($this->userEntry(
@@ -84,6 +96,14 @@ final class RecordIdentityAuditEntries implements ShouldQueue
     private function actorType(AccountScope $scope): AuditActorType
     {
         return $scope === AccountScope::Admin ? AuditActorType::Admin : AuditActorType::User;
+    }
+
+    private function accountEntry(string $action, PasswordChanged|SignedOutEverywhere $event): AuditEntry
+    {
+        return new AuditEntry(
+            $this->actorType($event->scope), $event->accountId, $action,
+            $event->scope->value, $event->accountId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
     }
 
     /** @param  array<string, scalar|null>  $metadata */

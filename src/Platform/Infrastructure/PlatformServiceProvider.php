@@ -22,8 +22,10 @@ use Src\Company\Domain\Events\DocumentTypeCreated;
 use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
+use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
 use Src\Identity\Domain\Events\SignedIn;
+use Src\Identity\Domain\Events\SignedOutEverywhere;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobAssigneesChanged;
@@ -106,6 +108,8 @@ final class PlatformServiceProvider extends ContextServiceProvider
             SignedIn::class => 'onSignedIn',
             SignInFailed::class => 'onSignInFailed',
             PasswordReset::class => 'onPasswordReset',
+            PasswordChanged::class => 'onPasswordChanged',
+            SignedOutEverywhere::class => 'onSignedOutEverywhere',
             AccountDeletionRequested::class => 'onAccountDeletionRequested',
             AccountDeletionCancelled::class => 'onAccountDeletionCancelled',
             UserAnonymized::class => 'onUserAnonymized',

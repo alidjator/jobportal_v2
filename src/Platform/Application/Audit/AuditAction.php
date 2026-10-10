@@ -11,6 +11,10 @@ final class AuditAction
 
     public const string PASSWORD_RESET = 'auth.password_reset';
 
+    public const string PASSWORD_CHANGED = 'auth.password_changed';
+
+    public const string SIGNED_OUT_EVERYWHERE = 'auth.signed_out_everywhere';
+
     public const string ACCOUNT_DELETION_REQUESTED = 'account.deletion_requested';
 
     public const string ACCOUNT_DELETION_CANCELLED = 'account.deletion_cancelled';

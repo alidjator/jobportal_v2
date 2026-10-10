@@ -160,6 +160,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `offer-required` | 422 | Recruitment |  |
 | `own-review` | 403 | Review | You cannot report your own review. |
 | `page-out-of-range` | 422 | Job |  |
+| `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |

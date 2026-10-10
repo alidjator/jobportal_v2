@@ -3,6 +3,7 @@
 namespace Src\Identity\Infrastructure\Auth;
 
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 use Laravel\Sanctum\PersonalAccessToken;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
@@ -30,16 +31,30 @@ final class SanctumAccessTokenIssuer implements AccessTokenIssuer
 
     public function revoke(Actor $actor, int $tokenId): void
     {
+        $this->tokensOf($actor)->whereKey($tokenId)->delete();
+    }
+
+    public function revokeAll(Actor $actor): void
+    {
+        $this->tokensOf($actor)->delete();
+    }
+
+    public function revokeOthers(Actor $actor, int $keepTokenId): void
+    {
+        $this->tokensOf($actor)->whereKeyNot($keepTokenId)->delete();
+    }
+
+    /** @return Builder<PersonalAccessToken> */
+    private function tokensOf(Actor $actor): Builder
+    {
         $owner = match ($actor->kind) {
             ActorKind::JobSeeker, ActorKind::CompanyMember => UserModel::class,
             ActorKind::Admin => AdminModel::class,
             ActorKind::System => throw new InvalidArgumentException('The system actor has no tokens.'),
         };
 
-        PersonalAccessToken::query()
-            ->whereKey($tokenId)
+        return PersonalAccessToken::query()
             ->where('tokenable_type', (new $owner)->getMorphClass())
-            ->where('tokenable_id', $actor->id)
-            ->delete();
+            ->where('tokenable_id', $actor->id);
     }
 }

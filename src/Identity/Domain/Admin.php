@@ -71,4 +71,9 @@ final class Admin extends AggregateRoot
     {
         $this->lastLoginAt = $at;
     }
+
+    public function changePassword(string $passwordHash): void
+    {
+        $this->passwordHash = $passwordHash;
+    }
 }
