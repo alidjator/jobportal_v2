@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Application\Candidates\ProfileViewEntry;
 
-/** A company that opened the candidate's profile or resume. @property ProfileViewEntry $resource */
+/**
+ * A company that opened the candidate's profile or resume.
+ *
+ * @property ProfileViewEntry $resource
+ */
 final class ProfileViewResource extends JsonResource
 {
     /** @return array<string, mixed> */

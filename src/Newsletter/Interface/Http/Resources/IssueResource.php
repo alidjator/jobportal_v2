@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Newsletter\Domain\Issue;
 
-/** An issue with its sending figures. @property Issue $resource */
+/**
+ * An issue with its sending figures.
+ *
+ * @property Issue $resource
+ */
 final class IssueResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Company\Application\CreatedCompany;
 
-/** The new company and the invitation sent to its first company admin. The invitation token is never returned: it only travels in the email. @property CreatedCompany $resource */
+/**
+ * The new company and the invitation sent to its first company admin. The invitation token is never returned: it only travels in the email.
+ *
+ * @property CreatedCompany $resource
+ */
 final class CreatedCompanyResource extends JsonResource
 {
     /** @return array<string, mixed> */

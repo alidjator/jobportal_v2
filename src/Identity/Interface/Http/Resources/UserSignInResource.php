@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Identity\Application\Auth\UserSignInResult;
 
-/** The token a user receives when signing in or registering, with their account. @property UserSignInResult $resource */
+/**
+ * The token a user receives when signing in or registering, with their account.
+ *
+ * @property UserSignInResult $resource
+ */
 final class UserSignInResource extends JsonResource
 {
     /** @return array<string, mixed> */

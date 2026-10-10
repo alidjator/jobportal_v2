@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\ReportItem;
 
-/** A report in the moderator's queue with the review it is about. @property ReportItem $resource */
+/**
+ * A report in the moderator's queue with the review it is about.
+ *
+ * @property ReportItem $resource
+ */
 final class ReportItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

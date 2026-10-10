@@ -7,7 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\PublicScreeningQuestion;
 use Src\Recruitment\Domain\QuestionOption;
 
-/** A question as an applicant sees it: never the must-have flag or the ideal answer. @property PublicScreeningQuestion $resource */
+/**
+ * A question as an applicant sees it: never the must-have flag or the ideal answer.
+ *
+ * @property PublicScreeningQuestion $resource
+ */
 final class PublicScreeningQuestionResource extends JsonResource
 {
     /** @return array<string, mixed> */

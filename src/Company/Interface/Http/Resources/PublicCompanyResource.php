@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
 use Src\Company\Application\Profile\PublicCompanyView;
 
-/** The public company page. No contact data, no ids of other contexts; the classifications and places are names. @property PublicCompanyView $resource */
+/**
+ * The public company page. No contact data, no ids of other contexts; the classifications and places are names.
+ *
+ * @property PublicCompanyView $resource
+ */
 final class PublicCompanyResource extends JsonResource
 {
     /** @return array<string, mixed> */

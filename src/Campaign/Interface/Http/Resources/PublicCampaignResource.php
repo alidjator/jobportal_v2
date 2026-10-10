@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Campaign\Application\PublicCampaign;
 
-/** What the registration page shows about a running campaign. @property PublicCampaign $resource */
+/**
+ * What the registration page shows about a running campaign.
+ *
+ * @property PublicCampaign $resource
+ */
 final class PublicCampaignResource extends JsonResource
 {
     /** @return array<string, mixed> */

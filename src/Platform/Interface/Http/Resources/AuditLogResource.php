@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Platform\Application\Audit\AuditLogRecord;
 
-/** One audit entry. It holds IP addresses and user agents (personal data), which is why only admins with `audit_logs.view` can read it. @property AuditLogRecord $resource */
+/**
+ * One audit entry. It holds IP addresses and user agents (personal data), which is why only admins with `audit_logs.view` can read it.
+ *
+ * @property AuditLogRecord $resource
+ */
 final class AuditLogResource extends JsonResource
 {
     /** @return array<string, mixed> */

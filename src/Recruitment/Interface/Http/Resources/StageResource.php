@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Domain\Stage;
 
-/** One stage of the company's pipeline. @property Stage $resource */
+/**
+ * One stage of the company's pipeline.
+ *
+ * @property Stage $resource
+ */
 final class StageResource extends JsonResource
 {
     /** @return array<string, mixed> */

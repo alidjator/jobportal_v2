@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\Browse\PublicJobListItem;
 
-/** One row of the public job search: enough to choose a job; the whole page is `GET /jobs/{id}`. @property PublicJobListItem $resource */
+/**
+ * One row of the public job search: enough to choose a job; the whole page is `GET /jobs/{id}`.
+ *
+ * @property PublicJobListItem $resource
+ */
 final class PublicJobListResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\ReplyItem;
 
-/** A reply in the moderator's queue, with the title of the review it answers. @property ReplyItem $resource */
+/**
+ * A reply in the moderator's queue, with the title of the review it answers.
+ *
+ * @property ReplyItem $resource
+ */
 final class ReplyItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

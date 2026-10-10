@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Company\Domain\DocumentType;
 
-/** The admin view of a document type: both languages, the flags and the order. @property DocumentType $resource */
+/**
+ * The admin view of a document type: both languages, the flags and the order.
+ *
+ * @property DocumentType $resource
+ */
 final class DocumentTypeResource extends JsonResource
 {
     /** @return array<string, mixed> */

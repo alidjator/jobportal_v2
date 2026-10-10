@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\ReferenceData\Application\Locations\LocationItem;
 
-/** An area; a field the level does not have (a postal code has no name) is left out. @property LocationItem $resource */
+/**
+ * An area; a field the level does not have (a postal code has no name) is left out.
+ *
+ * @property LocationItem $resource
+ */
 final class LocationResource extends JsonResource
 {
     /** @return array<string, mixed> */

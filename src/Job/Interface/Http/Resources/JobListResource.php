@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\JobListItem;
 
-/** One row of the company's job list. @property JobListItem $resource */
+/**
+ * One row of the company's job list.
+ *
+ * @property JobListItem $resource
+ */
 final class JobListResource extends JsonResource
 {
     /** @return array<string, mixed> */

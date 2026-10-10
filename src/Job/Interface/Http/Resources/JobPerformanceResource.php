@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\JobPerformance;
 
-/** How one job did over the last 30 Jakarta days. @property JobPerformance $resource */
+/**
+ * How one job did over the last 30 Jakarta days.
+ *
+ * @property JobPerformance $resource
+ */
 final class JobPerformanceResource extends JsonResource
 {
     /** @return array<string, mixed> */

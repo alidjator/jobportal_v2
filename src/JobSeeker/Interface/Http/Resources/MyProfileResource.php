@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Application\MyProfile;
 
-/** The owner's profile: master values and location levels as ids (clients read the names from the masters), and whether it is complete enough to apply. @property MyProfile $resource */
+/**
+ * The owner's profile: master values and location levels as ids (clients read the names from the masters), and whether it is complete enough to apply.
+ *
+ * @property MyProfile $resource
+ */
 final class MyProfileResource extends JsonResource
 {
     /** @return array<string, mixed> */

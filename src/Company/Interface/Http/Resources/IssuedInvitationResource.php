@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Company\Domain\Invitation;
 
-/** An invitation that was just sent. The token is never returned: it only travels in the email. @property Invitation $resource */
+/**
+ * An invitation that was just sent. The token is never returned: it only travels in the email.
+ *
+ * @property Invitation $resource
+ */
 final class IssuedInvitationResource extends JsonResource
 {
     /** @return array<string, mixed> */

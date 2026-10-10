@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\ReferenceData\Application\Masters\MasterItem;
 
-/** The admin view of a master item: both languages, order and active flag. @property MasterItem $resource */
+/**
+ * The admin view of a master item: both languages, order and active flag.
+ *
+ * @property MasterItem $resource
+ */
 final class AdminMasterItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Domain\CvTemplateState;
 
-/** A CV template with its state, for an admin. @property CvTemplateState $resource */
+/**
+ * A CV template with its state, for an admin.
+ *
+ * @property CvTemplateState $resource
+ */
 final class AdminCvTemplateResource extends JsonResource
 {
     /** @return array<string, mixed> */

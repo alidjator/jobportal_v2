@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\ReviewView;
 
-/** A published review as the public sees it: the ratings, the text, the author's name and the published reply. @property ReviewView $resource */
+/**
+ * A published review as the public sees it: the ratings, the text, the author's name and the published reply.
+ *
+ * @property ReviewView $resource
+ */
 final class PublicReviewResource extends JsonResource
 {
     /** @return array<string, mixed> */

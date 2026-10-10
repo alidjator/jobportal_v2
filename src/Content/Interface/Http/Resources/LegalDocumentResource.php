@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Content\Domain\LegalDocument;
 use Src\Shared\Interface\Http\RequestLanguage;
 
-/** The public view of a legal document: title and body in the request language (Markdown body, rendered and sanitised by the client). @property LegalDocument $resource */
+/**
+ * The public view of a legal document: title and body in the request language (Markdown body, rendered and sanitised by the client).
+ *
+ * @property LegalDocument $resource
+ */
 final class LegalDocumentResource extends JsonResource
 {
     /** @return array<string, mixed> */

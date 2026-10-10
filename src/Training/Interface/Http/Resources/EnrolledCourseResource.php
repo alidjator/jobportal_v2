@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Training\Domain\EnrolledCourse;
 
-/** A course of the catalog plus the job seeker's progress in it. @property EnrolledCourse $resource */
+/**
+ * A course of the catalog plus the job seeker's progress in it.
+ *
+ * @property EnrolledCourse $resource
+ */
 final class EnrolledCourseResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Domain\Reply;
 
-/** The company's reply to a review with its state. @property Reply $resource */
+/**
+ * The company's reply to a review with its state.
+ *
+ * @property Reply $resource
+ */
 final class ReplyResource extends JsonResource
 {
     /** @return array<string, mixed> */

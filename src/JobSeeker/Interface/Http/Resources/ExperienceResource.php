@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Domain\WorkExperience;
 
-/** One work experience; months are `YYYY-MM`. @property WorkExperience $resource */
+/**
+ * One work experience; months are `YYYY-MM`.
+ *
+ * @property WorkExperience $resource
+ */
 final class ExperienceResource extends JsonResource
 {
     /** @return array<string, mixed> */

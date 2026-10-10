@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Shared\Application\Accounts\AccountSession;
 
-/** The sign-in answer after accepting an invitation, shaped like the Identity sign-in answer. @property AccountSession $resource */
+/**
+ * The sign-in answer after accepting an invitation, shaped like the Identity sign-in answer.
+ *
+ * @property AccountSession $resource
+ */
 final class AccountSessionResource extends JsonResource
 {
     /** @return array<string, mixed> */

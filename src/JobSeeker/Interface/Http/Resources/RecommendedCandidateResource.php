@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Application\Candidates\RecommendedCandidate;
 
-/** A candidate recommended for a job: the row of the candidate search with the match and whether the company already invited them. @property RecommendedCandidate $resource */
+/**
+ * A candidate recommended for a job: the row of the candidate search with the match and whether the company already invited them.
+ *
+ * @property RecommendedCandidate $resource
+ */
 final class RecommendedCandidateResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Identity\Application\Account\CurrentAdmin;
 
-/** The signed-in administrator with their roles and effective permissions. @property CurrentAdmin $resource */
+/**
+ * The signed-in administrator with their roles and effective permissions.
+ *
+ * @property CurrentAdmin $resource
+ */
 final class CurrentAdminResource extends JsonResource
 {
     /** @return array<string, mixed> */

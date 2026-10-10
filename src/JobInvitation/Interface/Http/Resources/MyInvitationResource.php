@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobInvitation\Application\InvitationView;
 
-/** An invitation as the candidate sees it: the company, the job and the note, never the member who invited. @property InvitationView $resource */
+/**
+ * An invitation as the candidate sees it: the company, the job and the note, never the member who invited.
+ *
+ * @property InvitationView $resource
+ */
 final class MyInvitationResource extends JsonResource
 {
     /** @return array<string, mixed> */

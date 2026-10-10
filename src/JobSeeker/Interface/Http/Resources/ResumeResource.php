@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Domain\Resume;
 
-/** One resume of the owner. The storage path is never shown. @property Resume $resource */
+/**
+ * One resume of the owner. The storage path is never shown.
+ *
+ * @property Resume $resource
+ */
 final class ResumeResource extends JsonResource
 {
     /** @return array<string, mixed> */

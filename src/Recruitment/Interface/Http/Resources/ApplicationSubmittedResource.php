@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Domain\Application;
 
-/** What the applicant gets back after applying: the id, the job and the stage type. The must-have result is never shown to the applicant. @property Application $resource */
+/**
+ * What the applicant gets back after applying: the id, the job and the stage type. The must-have result is never shown to the applicant.
+ *
+ * @property Application $resource
+ */
 final class ApplicationSubmittedResource extends JsonResource
 {
     /** @return array<string, mixed> */

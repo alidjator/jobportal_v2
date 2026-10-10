@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Domain\QuestionOption;
 use Src\Recruitment\Domain\ScreeningQuestion;
 
-/** One question of the company's library. @property ScreeningQuestion $resource */
+/**
+ * One question of the company's library.
+ *
+ * @property ScreeningQuestion $resource
+ */
 final class ScreeningQuestionResource extends JsonResource
 {
     /** @return array<string, mixed> */

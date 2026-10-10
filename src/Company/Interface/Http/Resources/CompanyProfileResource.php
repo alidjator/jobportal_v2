@@ -9,7 +9,11 @@ use Illuminate\Support\Facades\URL;
 use Src\Company\Application\Images\CompanyImageFile;
 use Src\Company\Domain\Company;
 
-/** A company's own profile, as stored: ids for the classifications and the location, Markdown as written. @property Company $resource */
+/**
+ * A company's own profile, as stored: ids for the classifications and the location, Markdown as written.
+ *
+ * @property Company $resource
+ */
 final class CompanyProfileResource extends JsonResource
 {
     /** @return array<string, mixed> */

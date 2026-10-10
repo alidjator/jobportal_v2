@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Content\Domain\LegalDocument;
 
-/** The admin view of a legal document: every language, status and author. @property LegalDocument $resource */
+/**
+ * The admin view of a legal document: every language, status and author.
+ *
+ * @property LegalDocument $resource
+ */
 final class AdminLegalDocumentResource extends JsonResource
 {
     /** @return array<string, mixed> */

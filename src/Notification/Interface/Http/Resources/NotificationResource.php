@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Notification\Application\InApp\InAppNotification;
 
-/** One in-app notification: a stable `type` key and structured `data`; the client writes and translates the message. @property InAppNotification $resource */
+/**
+ * One in-app notification: a stable `type` key and structured `data`; the client writes and translates the message.
+ *
+ * @property InAppNotification $resource
+ */
 final class NotificationResource extends JsonResource
 {
     /** @return array<string, mixed> */

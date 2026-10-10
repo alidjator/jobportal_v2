@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationSummary;
 
-/** One line of the applicant's list. The status is the system stage type; the company's own stage names are never shown. @property ApplicationSummary $resource */
+/**
+ * One line of the applicant's list. The status is the system stage type; the company's own stage names are never shown.
+ *
+ * @property ApplicationSummary $resource
+ */
 final class MyApplicationResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -7,7 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\AdminReviewDetail;
 use Src\Review\Domain\Report;
 
-/** One review for the moderator with every report on it. @property AdminReviewDetail $resource */
+/**
+ * One review for the moderator with every report on it.
+ *
+ * @property AdminReviewDetail $resource
+ */
 final class AdminReviewDetailResource extends JsonResource
 {
     /** @return array<string, mixed> */

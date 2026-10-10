@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Campaign\Application\CampaignView;
 
-/** A campaign with its status today, its registration link and its company (null for a platform campaign). @property CampaignView $resource */
+/**
+ * A campaign with its status today, its registration link and its company (null for a platform campaign).
+ *
+ * @property CampaignView $resource
+ */
 final class CampaignResource extends JsonResource
 {
     /** @return array<string, mixed> */

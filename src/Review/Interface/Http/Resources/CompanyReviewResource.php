@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\ReviewView;
 
-/** A published review for the company's members: like the public one, with the company's reply in whatever state it is in. @property ReviewView $resource */
+/**
+ * A published review for the company's members: like the public one, with the company's reply in whatever state it is in.
+ *
+ * @property ReviewView $resource
+ */
 final class CompanyReviewResource extends JsonResource
 {
     /** @return array<string, mixed> */

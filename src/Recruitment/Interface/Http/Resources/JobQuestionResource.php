@@ -9,7 +9,11 @@ use Src\Recruitment\Domain\JobQuestion;
 use Src\Recruitment\Domain\QuestionOption;
 use Src\Recruitment\Domain\QuestionType;
 
-/** A question of a job as its own company sees it, with the flags and the ideal answer. @property JobQuestion $resource */
+/**
+ * A question of a job as its own company sees it, with the flags and the ideal answer.
+ *
+ * @property JobQuestion $resource
+ */
 final class JobQuestionResource extends JsonResource
 {
     /** @return array<string, mixed> */

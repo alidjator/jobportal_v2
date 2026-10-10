@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Application\Candidates\CandidateListItem;
 
-/** One candidate in the search results; the picture is at `company/candidates/{slug}/avatar`. @property CandidateListItem $resource */
+/**
+ * One candidate in the search results; the picture is at `company/candidates/{slug}/avatar`.
+ *
+ * @property CandidateListItem $resource
+ */
 final class CandidateListResource extends JsonResource
 {
     /** @return array<string, mixed> */

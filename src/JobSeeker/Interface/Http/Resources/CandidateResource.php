@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Application\Candidates\CandidateProfileView;
 
-/** A candidate's profile as a company finds it. `contact` is null unless the member already sees an application of the candidate. @property CandidateProfileView $resource */
+/**
+ * A candidate's profile as a company finds it. `contact` is null unless the member already sees an application of the candidate.
+ *
+ * @property CandidateProfileView $resource
+ */
 final class CandidateResource extends JsonResource
 {
     /** @return array<string, mixed> */

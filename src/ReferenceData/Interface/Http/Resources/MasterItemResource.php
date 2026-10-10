@@ -7,7 +7,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\ReferenceData\Application\Masters\MasterItem;
 use Src\Shared\Interface\Http\RequestLanguage;
 
-/** The public view of a master item: the name in the request language, plus the master's extra columns. @property MasterItem $resource */
+/**
+ * The public view of a master item: the name in the request language, plus the master's extra columns.
+ *
+ * @property MasterItem $resource
+ */
 final class MasterItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

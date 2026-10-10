@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\JobSeeker\Domain\Education;
 
-/** One education entry. @property Education $resource */
+/**
+ * One education entry.
+ *
+ * @property Education $resource
+ */
 final class EducationResource extends JsonResource
 {
     /** @return array<string, mixed> */

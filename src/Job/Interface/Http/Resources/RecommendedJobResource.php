@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\Matching\RecommendedJob;
 
-/** A recommended job: the row of the public search with the match, including the fit of each signal. @property RecommendedJob $resource */
+/**
+ * A recommended job: the row of the public search with the match, including the fit of each signal.
+ *
+ * @property RecommendedJob $resource
+ */
 final class RecommendedJobResource extends JsonResource
 {
     /** @return array<string, mixed> */

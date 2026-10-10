@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Review\Application\ReviewView;
 
-/** A review as its author sees it: in any state, with the moderator's reason and note when it was rejected or taken down. @property ReviewView $resource */
+/**
+ * A review as its author sees it: in any state, with the moderator's reason and note when it was rejected or taken down.
+ *
+ * @property ReviewView $resource
+ */
 final class MyReviewResource extends JsonResource
 {
     /** @return array<string, mixed> */
