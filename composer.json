@@ -26,6 +26,7 @@
         "spatie/laravel-translatable": "^6.14"
     },
     "require-dev": {
+        "brianium/paratest": "^7.20",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.12",
         "laravel/pail": "^1.2.5",
@@ -60,6 +61,10 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
+        ],
+        "test:parallel": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test --parallel --without-databases --processes=8"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

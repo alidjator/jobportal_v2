@@ -16,11 +16,26 @@ final class TestDatabaseGuard
 
     public const REQUIRED_ENVIRONMENT = 'testing';
 
+    /** A parallel test process works in its own copy, named after the dedicated database and the process token. */
+    private const PROCESS_DATABASE_PATTERN = '/^jobportal_v2_test_[1-9][0-9]*$/';
+
+    public static function isTestDatabase(?string $database): bool
+    {
+        return $database === self::REQUIRED_DATABASE
+            || preg_match(self::PROCESS_DATABASE_PATTERN, (string) $database) === 1;
+    }
+
+    /** The database a parallel test process uses: its own copy for a token, the dedicated database without one. */
+    public static function databaseForProcess(string|false|null $token): string
+    {
+        return in_array($token, [null, false, '', '0'], true) ? self::REQUIRED_DATABASE : self::REQUIRED_DATABASE.'_'.(int) $token;
+    }
+
     public static function assertDatabase(?string $database, ?string $prefix): void
     {
-        if ($database !== self::REQUIRED_DATABASE) {
+        if (! self::isTestDatabase($database)) {
             throw new RuntimeException(sprintf(
-                'Refusing to continue: the database must be "%s", got "%s".',
+                'Refusing to continue: the database must be "%s" or one of its process copies, got "%s".',
                 self::REQUIRED_DATABASE,
                 $database ?? '',
             ));

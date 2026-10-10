@@ -6,6 +6,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Src\Shared\Infrastructure\Testing\TestDatabaseGuard;
 
 /**
  * Synthetic tables shaped like the legacy database (schema only, no real data), created once in the test database under the table prefix `legacy_` and read
@@ -38,8 +39,8 @@ final class LegacySchema
     {
         $default = (array) config('database.connections.'.config('database.default'));
 
-        if (($default['database'] ?? null) !== 'jobportal_v2_test') {
-            throw new RuntimeException('Refusing to continue: the synthetic legacy tables are only created in jobportal_v2_test.');
+        if (! TestDatabaseGuard::isTestDatabase($default['database'] ?? null)) {
+            throw new RuntimeException('Refusing to continue: the synthetic legacy tables are only created in the test database.');
         }
 
         config(['database.connections.legacy' => [...$default, 'prefix' => self::PREFIX]]);

@@ -21,6 +21,7 @@ use Src\Shared\Infrastructure\Images\GdImageProcessor;
 use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
 use Src\Shared\Infrastructure\Storage\LaravelFileStorage;
 use Src\Shared\Infrastructure\Testing\MigrateTestDatabaseCommand;
+use Src\Shared\Infrastructure\Testing\PrepareParallelTestDatabasesCommand;
 use Src\Shared\Infrastructure\Time\SystemClock;
 use Src\Shared\Interface\Http\RateLimit\ApiRateLimit;
 
@@ -47,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(RequestContext::class, fn () => new RequestContext);
 
-        $this->commands([MigrateTestDatabaseCommand::class, ErrorCatalogCommand::class]);
+        $this->commands([MigrateTestDatabaseCommand::class, PrepareParallelTestDatabasesCommand::class, ErrorCatalogCommand::class]);
     }
 
     public function boot(): void

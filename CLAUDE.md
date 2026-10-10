@@ -51,7 +51,8 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 
 ```bash
 composer check 2>&1 | tail -n 40 | cut -c1-4000  # Pint, PHPStan and the whole suite in one step; stops at the first failure
-php artisan test                          # whole suite (about 1 minute)
+php artisan test                          # whole suite (about 7.5 minutes, serial)
+composer test:parallel                    # whole suite in 8 processes; first `php artisan test:database:parallel --env=testing` (again after each new migration)
 php artisan test tests/Feature/Company    # a folder or file
 vendor/bin/pint --test                    # style check (drop --test to fix)
 vendor/bin/phpstan analyse --no-progress  # static analysis

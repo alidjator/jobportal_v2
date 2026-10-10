@@ -20,6 +20,15 @@ final class TestDatabaseGuardTest extends TestCase
         $this->addToAssertionCount(2);
     }
 
+    public function test_it_accepts_the_copy_of_a_parallel_process(): void
+    {
+        TestDatabaseGuard::assertDatabase('jobportal_v2_test_3', '');
+
+        $this->assertSame('jobportal_v2_test_3', TestDatabaseGuard::databaseForProcess('3'));
+        $this->assertSame('jobportal_v2_test', TestDatabaseGuard::databaseForProcess(false));
+        $this->assertSame('jobportal_v2_test', TestDatabaseGuard::databaseForProcess('0'));
+    }
+
     /**
      * @return array<string, array{0: string|null}>
      */
@@ -30,6 +39,9 @@ final class TestDatabaseGuardTest extends TestCase
             'empty' => [''],
             'the application database' => ['jobportal_v2'],
             'the legacy database' => ['karir_pkp'],
+            'a copy without a number' => ['jobportal_v2_test_'],
+            'a copy of the application database' => ['jobportal_v2_3'],
+            'a copy with a suffix' => ['jobportal_v2_test_3x'],
             'wrong case' => ['JOBPORTAL_V2_TEST'],
             'with suffix' => ['jobportal_v2_test2'],
         ];
