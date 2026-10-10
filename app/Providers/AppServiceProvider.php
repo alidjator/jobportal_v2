@@ -13,6 +13,7 @@ use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
 use Src\Shared\Infrastructure\Images\GdImageProcessor;
 use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
@@ -48,6 +49,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        ApiDocumentation::configure($this->app->isProduction());
     }
 }

@@ -60,3 +60,5 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 ## Suggested first message for the next session
 
 > Read `docs/HANDOFF.md`, then ask me what to work on next.
+
+- API documentation: Scramble is installed (`config/scramble.php`, `src/Shared/Infrastructure/Documentation/ApiDocumentation.php`). `php artisan scramble:export` writes `api.json` (git-ignored); the pages `/docs/api` are not served in production. Response bodies of most resources are still empty in the document (see the open decision in the chat of 2026-10-10).
