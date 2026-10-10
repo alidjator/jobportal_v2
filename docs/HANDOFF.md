@@ -15,7 +15,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1724 tests, all passing.
 - **Phase 0, Phase 1, Phase 2 and Phase 3 are complete**, coded, checked and committed; every migration (to `000094`) ran on the real database.
   Phase 3: job alerts, candidate search, invitations, matching engine, CV generator (`docs/design/phase-3-*.md`).
-- **Legacy import (`docs/design/phase-1-migration.md`) ran once on the real database (2026-10-08):** 179 accounts, 173 profiles, 3 companies, 149 jobs, 30 applications.
+- **Legacy import (`docs/design/phase-1-migration.md`) ran once on the former MySQL database (2026-10-08); the real PostgreSQL `jobportal_v2` holds none of it (checked 2026-10-10: 0 accounts, 0 companies, empty id map, 38 provinces seeded), so the whole import must run again there (dry run `php artisan legacy:import --all` first; ask before `--write`).** Migration `000103` is applied on the real database; a dry run of `campaigns` read 13 legacy campaigns (2 of company 1, 11 of company 3) and skipped all as `company-not-imported`, as expected. The user is preparing the mapping files and the freeze date. That first run was: 179 accounts, 173 profiles, 3 companies, 149 jobs, 30 applications.
   The importer only adds. The 142 `draft` jobs stay as they are by decision. Legacy group "dev" (7 applications) was left unmapped on purpose.
 - Product points settled 2026-10-09: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it
   (email only now); applying needs a verified email.
