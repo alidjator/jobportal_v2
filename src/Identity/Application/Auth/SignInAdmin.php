@@ -36,14 +36,12 @@ final readonly class SignInAdmin
     public function execute(SignInCommand $command): AdminSignInResult
     {
         $email = mb_strtolower(trim($command->email));
-        $throttleKey = AccountScope::Admin->value.'|'.$email.'|'.$command->ipAddress;
-
-        $this->throttle->assertNotLocked($throttleKey);
+        $this->throttle->assertCredentialsNotLocked(AccountScope::Admin, $email, $command->ipAddress);
 
         $admin = $this->admins->findByEmail($email);
 
         if (! $this->hasher->check($command->password, $admin?->passwordHash()) || $admin === null) {
-            $this->throttle->recordFailure($throttleKey);
+            $this->throttle->recordCredentialFailure(AccountScope::Admin, $email, $command->ipAddress);
             $this->events->dispatch([$this->failure($admin?->id, 'invalid-credentials', $command)]);
 
             throw new AuthenticationFailed('The email or password is incorrect.');
@@ -67,7 +65,7 @@ final readonly class SignInAdmin
             return $this->tokens->issueForAdmin((int) $admin->id, $command->deviceName, $expiresAt);
         });
 
-        $this->throttle->clear($throttleKey);
+        $this->throttle->clearCredentials(AccountScope::Admin, $email, $command->ipAddress);
         $this->events->dispatch([new SignedIn(AccountScope::Admin, (int) $admin->id, $command->ipAddress, $command->userAgent, $now)]);
 
         return new AdminSignInResult($token, $expiresAt, $admin);

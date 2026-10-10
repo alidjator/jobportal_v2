@@ -122,6 +122,9 @@ resources expose no secret. Registration answers 409 `email-already-registered` 
 - **A1:** keep 5 failures per minute per email + IP; add 20 failures per hour per account (any IP) and 30 failures per hour per IP (any account), each
   answering 429 with `Retry-After` until its window ends. No permanent lockout. Applies to user sign-in, admin sign-in, account restore, and the wrong current
   password of P7. Google sign-in keeps its per-IP key.
+  Coded 2026-10-10 in `RateLimiterSignInThrottle` (credential methods of `SignInThrottle`): the account layer is keyed by scope and email (a user and an admin with the same
+  email count apart), the address layer is shared by user and admin sign-in, every wrong password counts in all three layers, and a successful sign-in clears only the
+  email and address layer (the hourly layers keep counting). The wait of a 429 is that of the longest locked layer. The account deletion request keeps its own key.
 - **A2:** TOTP for admins, mandatory; designed in [A2 admin TOTP](#a2-admin-totp).
 
 #### A2 admin TOTP

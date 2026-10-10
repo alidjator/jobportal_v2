@@ -45,14 +45,12 @@ final readonly class CancelAccountDeletion
     public function execute(SignInCommand $command): UserSignInResult
     {
         $email = mb_strtolower(trim($command->email));
-        $throttleKey = AccountScope::User->value.'|'.$email.'|'.$command->ipAddress;
-
-        $this->throttle->assertNotLocked($throttleKey);
+        $this->throttle->assertCredentialsNotLocked(AccountScope::User, $email, $command->ipAddress);
 
         $user = $this->users->findByEmail($email);
 
         if (! $this->hasher->check($command->password, $user?->passwordHash()) || $user === null) {
-            $this->throttle->recordFailure($throttleKey);
+            $this->throttle->recordCredentialFailure(AccountScope::User, $email, $command->ipAddress);
             $this->events->dispatch([new SignInFailed(AccountScope::User, $user?->id, 'invalid-credentials', $command->ipAddress, $command->userAgent, $this->clock->now())]);
 
             throw new AuthenticationFailed('The email or password is incorrect.');
@@ -69,7 +67,7 @@ final readonly class CancelAccountDeletion
             return $this->tokens->issueForUser((int) $user->id, $command->deviceName, $expiresAt);
         });
 
-        $this->throttle->clear($throttleKey);
+        $this->throttle->clearCredentials(AccountScope::User, $email, $command->ipAddress);
         $this->events->dispatch([
             new AccountDeletionCancelled((int) $user->id, $command->ipAddress, $command->userAgent, $now),
             new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now),
