@@ -39,6 +39,7 @@ final class ApiDocumentation
                 }
             }
             $openApi->tags = array_values(array_filter(ApiTags::tags(), static fn (Tag $tag): bool => in_array($tag->name, $used, true)));
+            $openApi->setInfo(InfoWithContact::from($openApi->info, (array) config('scramble.info.contact', [])));
             $openApi->info->setDescription(trim($openApi->info->description."\n\n## Errors\n\n".ErrorCatalogDocument::section(new ErrorCatalog(base_path('src')))));
             $openApi->components->addSecurityScheme(self::USER_SCHEME, SecurityScheme::http('bearer')->as(self::USER_SCHEME)->setDescription('Token of a job seeker or a company member (`auth:user`).'));
             $openApi->components->addSecurityScheme(self::ADMIN_SCHEME, SecurityScheme::http('bearer')->as(self::ADMIN_SCHEME)->setDescription('Token of an administrator (`auth:admin`).'));
