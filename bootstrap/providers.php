@@ -17,6 +17,7 @@ use Src\Notification\Infrastructure\NotificationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
 use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
+use Src\Training\Infrastructure\TrainingServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -31,6 +32,7 @@ return [
     MessagingServiceProvider::class,
     JobAlertServiceProvider::class,
     CampaignServiceProvider::class,
+    TrainingServiceProvider::class,
     JobInvitationServiceProvider::class,
     MatchingServiceProvider::class,
     JobSeekerServiceProvider::class,

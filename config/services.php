@@ -33,6 +33,14 @@ return [
         'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', ''))))),
     ],
 
+    'moodle' => [
+        // The training platform (Moodle web service): the server URL (`.../webservice/rest/server.php`), a token with read access, and the course page template
+        // where `{id}` stands for the course id. Any of them empty means the training endpoints answer 503.
+        'url' => env('MOODLE_BASE_URL'),
+        'token' => env('MOODLE_TOKEN'),
+        'course_url' => env('MOODLE_COURSE_URL'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

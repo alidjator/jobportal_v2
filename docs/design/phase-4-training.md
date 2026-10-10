@@ -1,4 +1,4 @@
-# Moodle training integration (designed 2026-10-10)
+# Moodle training integration (designed and coded 2026-10-10)
 
 The legacy site shows a "Training" page to job seekers: the catalog of the PKP Moodle (`course.training.pkp.co.id`, 16 courses) and the courses the signed-in job seeker is enrolled in, with progress. It calls the Moodle web service (`core_course_get_courses_by_field`, `core_user_get_users_by_field`, `core_enrol_get_users_courses`) from the web server. The new system keeps both lists and fixes the problems below. Nothing is written to Moodle and nothing is stored in our database.
 
@@ -30,3 +30,11 @@ The legacy site shows a "Training" page to job seekers: the catalog of the PKP M
 ## Not in this phase
 
 - Enrolling a job seeker in a course, creating Moodle accounts, single sign-on, certificates on the profile, per-company training recommendations.
+
+## What was coded (2026-10-10)
+
+- **Context `Training`** (`src/Training`, no tables, no migration): `Course` and `EnrolledCourse` (domain), port `TrainingCatalog`, `ListCourses`, `ListMyCourses` (application), `MoodleTrainingCatalog` and `CachedTrainingCatalog` (infrastructure), `TrainingController` (`GET training/courses`, `GET me/training/courses`). Settings `services.moodle.{url,token,course_url}` from `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL` (in `.env.example`).
+- **Cache:** the catalog is fresh 15 minutes with a one-day copy for outages; the courses of one account are kept 5 minutes under a hash of the email.
+- **Image (decided 2026-10-10, user):** only the catalog's `courseimage` is used, because Moodle's `overviewfiles` links need the token and are never returned. An enrolled course with no image takes the image of the same course (by id) from the cached catalog; when the catalog cannot be read the image stays null and the list is still served.
+- **Tests:** `tests/Feature/Training/TrainingTest.php` (12 tests, `Http::fake`).
+- **On the real server:** set the three `MOODLE_*` variables in `.env` (the token is a secret; the old one was in the legacy code and should be rotated on Moodle).
