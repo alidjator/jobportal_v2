@@ -14,6 +14,7 @@ use Src\Shared\Application\RequestContext;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
+use Src\Shared\Infrastructure\Documentation\ErrorCatalogCommand;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
 use Src\Shared\Infrastructure\Images\GdImageProcessor;
 use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
@@ -44,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(RequestContext::class, fn () => new RequestContext);
 
-        $this->commands([MigrateTestDatabaseCommand::class]);
+        $this->commands([MigrateTestDatabaseCommand::class, ErrorCatalogCommand::class]);
     }
 
     public function boot(): void

@@ -19,6 +19,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "league/html-to-markdown": "^5.1",
+        "nikic/php-parser": "^5.0",
         "phpseclib/phpseclib": "^3.0.35",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-translatable": "^6.14"
