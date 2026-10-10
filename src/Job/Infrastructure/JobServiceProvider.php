@@ -13,6 +13,7 @@ use Src\Job\Application\Admin\AdminJobReader;
 use Src\Job\Application\Browse\AlertJobMatcher;
 use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\SearchThrottle;
+use Src\Job\Application\Insight\SalaryInsightReader;
 use Src\Job\Application\JobPermissions;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobSettings;
@@ -33,6 +34,7 @@ use Src\Job\Infrastructure\Dashboard\CompanyJobsCard;
 use Src\Job\Infrastructure\Dashboard\JobApprovalQueueCard;
 use Src\Job\Infrastructure\Dashboard\JobPerformanceCard;
 use Src\Job\Infrastructure\Dashboard\PlatformJobsCard;
+use Src\Job\Infrastructure\Insight\CachedSalaryInsightReader;
 use Src\Job\Infrastructure\Listeners\EraseJobViewsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
@@ -64,6 +66,11 @@ final class JobServiceProvider extends ContextServiceProvider
 
     private const int VIEWS_PER_MINUTE = 120;
 
+    /** The name of the route limiter of the salary insight: 60 requests per client address per minute. */
+    public const string INSIGHT_LIMITER = 'salary-insight';
+
+    private const int INSIGHTS_PER_MINUTE = 60;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         JobRepository::class => DatabaseJobRepository::class,
@@ -78,6 +85,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSignalReader::class => DatabaseJobSignalReader::class,
         JobSignalSource::class => JobSignalProvider::class,
         JobViewLog::class => DatabaseJobViewLog::class,
+        SalaryInsightReader::class => CachedSalaryInsightReader::class,
         JobViewRecorder::class => QueuedJobViewRecorder::class,
         VisitorKeys::class => HashedVisitorKeys::class,
     ];
@@ -121,6 +129,8 @@ final class JobServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         RateLimiter::for(self::VIEW_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::VIEWS_PER_MINUTE)->by('job-view|'.$request->ip()));
+
+        RateLimiter::for(self::INSIGHT_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::INSIGHTS_PER_MINUTE)->by('salary-insight|'.$request->ip()));
 
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);

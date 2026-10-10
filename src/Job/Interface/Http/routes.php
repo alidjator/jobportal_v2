@@ -6,6 +6,7 @@ use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 use Src\Job\Interface\Http\Controllers\RecommendationController;
+use Src\Job\Interface\Http\Controllers\SalaryInsightController;
 use Src\Shared\Interface\Http\Middleware\PublicCacheHeaders;
 
 // Public: the search over live jobs (limited per client address, cached like the page below). A job seeker who sends a token also gets the match with their
@@ -21,6 +22,10 @@ Route::get('jobs/{job}', [PublicJobController::class, 'show'])
 Route::post('jobs/{job}/view', [PublicJobController::class, 'view'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
     ->middleware('throttle:'.JobServiceProvider::VIEW_LIMITER);
+
+// Public: what the jobs on this platform pay for a role (J10a): a median and a spread, widened when the group is too small. Limited per client address, cached for 5 minutes.
+Route::get('salary-insight', [SalaryInsightController::class, 'show'])
+    ->middleware(['throttle:'.JobServiceProvider::INSIGHT_LIMITER, PublicCacheHeaders::class.':public;max_age=300;etag']);
 
 // The live jobs one of the job seeker's own alerts matches right now (the alert itself is managed by the JobAlert context).
 Route::get('me/job-alerts/{id}/jobs', [AlertJobController::class, 'index'])->whereNumber('id')->middleware('auth:user');

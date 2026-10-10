@@ -69,6 +69,13 @@ final readonly class DatabaseLocationReferences implements LocationReferences
         return $this->namesOf('reference_provinces', $provinceIds);
     }
 
+    public function provinceOfCity(int $cityId): ?int
+    {
+        $id = $this->connection->table('reference_cities')->where('id', $cityId)->value('province_id');
+
+        return $id === null ? null : (int) $id;
+    }
+
     public function cityNames(array $cityIds): array
     {
         return $this->namesOf('reference_cities', $cityIds);

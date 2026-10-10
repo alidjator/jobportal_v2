@@ -26,6 +26,9 @@ interface MasterRepository
 
     public function slugExists(MasterDefinition $definition, string $slug): bool;
 
+    /** The id of the row with this slug, or null when there is none. */
+    public function idBySlug(MasterDefinition $definition, string $slug): ?int;
+
     /** Whether another row already has this value in the extra column (for unique columns such as a language code). */
     public function extraValueTaken(MasterDefinition $definition, string $column, string $value, ?int $exceptId): bool;
 

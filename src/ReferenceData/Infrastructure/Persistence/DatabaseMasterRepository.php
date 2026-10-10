@@ -79,6 +79,13 @@ final readonly class DatabaseMasterRepository implements MasterRepository
         return $this->connection->table($definition->table)->where('slug', $slug)->exists();
     }
 
+    public function idBySlug(MasterDefinition $definition, string $slug): ?int
+    {
+        $id = $this->connection->table($definition->table)->where('slug', $slug)->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
+
     public function extraValueTaken(MasterDefinition $definition, string $column, string $value, ?int $exceptId): bool
     {
         $this->assertExtra($definition, $column);

@@ -25,4 +25,7 @@ interface ReferenceValues
      * @return array<int, string>
      */
     public function names(string $master, array $ids, string $language): array;
+
+    /** The id of the item with that slug, active or not, or null when there is none. For a fixed, well-known item such as the monthly salary period. */
+    public function idBySlug(string $master, string $slug): ?int;
 }

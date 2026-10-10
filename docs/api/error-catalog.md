@@ -94,6 +94,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-profile` | 422 | JobSeeker |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
+| `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-schedule` | 422 | Recruitment |  |

@@ -23,6 +23,9 @@ interface LocationReferences
      */
     public function provinceNames(array $provinceIds): array;
 
+    /** The province a city belongs to, or null when there is no such city. */
+    public function provinceOfCity(int $cityId): ?int;
+
     /**
      * The names of several cities (or regencies) in one query, keyed by id (an id with no city is missing).
      *

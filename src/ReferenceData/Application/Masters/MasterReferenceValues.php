@@ -29,6 +29,11 @@ final readonly class MasterReferenceValues implements ReferenceValues
         );
     }
 
+    public function idBySlug(string $master, string $slug): ?int
+    {
+        return $this->masters->idBySlug($this->definition($master), $slug);
+    }
+
     private function definition(string $master): MasterDefinition
     {
         return MasterCatalog::find($master) ?? throw new InvalidArgumentException("Unknown master {$master}.");
