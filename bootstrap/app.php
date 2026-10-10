@@ -11,7 +11,9 @@ use Src\Shared\Domain\Exceptions\DomainException;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
 use Src\Shared\Interface\Http\ApiRootController;
 use Src\Shared\Interface\Http\Middleware\ResolveRequestLanguage;
+use Src\Shared\Interface\Http\Middleware\SecurityHeaders;
 use Src\Shared\Interface\Http\Problem\ProblemDetailsRenderer;
+use Src\Shared\Interface\Http\RateLimit\ApiRateLimit;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,7 +25,12 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(append: [ResolveRequestLanguage::class, EnforceTermsAcceptance::class]);
+        $middleware->api(append: [
+            'throttle:'.ApiRateLimit::NAME,
+            SecurityHeaders::class,
+            ResolveRequestLanguage::class,
+            EnforceTermsAcceptance::class,
+        ]);
         $middleware->alias([RequireVerifiedEmail::ALIAS => RequireVerifiedEmail::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

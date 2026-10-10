@@ -119,6 +119,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(AnonymizeDueAccountsCommand::class)->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+            $schedule->command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('02:30')->withoutOverlapping()->onOneServer();
         });
     }
 

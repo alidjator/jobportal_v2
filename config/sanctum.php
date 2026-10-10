@@ -7,6 +7,9 @@ use Laravel\Sanctum\Sanctum;
 
 return [
 
+    // The API has no sessions or cookies: the package's `sanctum/csrf-cookie` route (a `web` route that starts one) is not registered.
+    'routes' => false,
+
     /*
     |--------------------------------------------------------------------------
     | Stateful Domains

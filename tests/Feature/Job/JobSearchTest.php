@@ -434,6 +434,8 @@ final class JobSearchTest extends FeatureTestCase
     public function test_the_detail_page_is_not_limited(): void
     {
         $id = $this->live('Job');
+        // Only the search limiter is under test here, not the baseline limit of the whole API.
+        config(['security.rate_limit.guest' => 1000]);
 
         for ($i = 0; $i < 70; $i++) {
             $this->search();

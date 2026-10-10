@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -21,6 +22,7 @@ use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
 use Src\Shared\Infrastructure\Storage\LaravelFileStorage;
 use Src\Shared\Infrastructure\Testing\MigrateTestDatabaseCommand;
 use Src\Shared\Infrastructure\Time\SystemClock;
+use Src\Shared\Interface\Http\RateLimit\ApiRateLimit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        ApiDocumentation::configure($this->app->isProduction());
+        ApiDocumentation::configure((bool) config('scramble.enabled'));
+        RateLimiter::for(ApiRateLimit::NAME, ApiRateLimit::limit(...));
     }
 }

@@ -11,7 +11,7 @@ user confirms. Every fix gets tests.
 - 2026-10-10: P5: CORS limited to the origins in `CORS_ALLOWED_ORIGINS` (`.env`) ([P5](#p5-cors)).
 - 2026-10-10: P1 numbers: 120 requests per minute per account, 60 per minute per IP without sign-in; in configuration, overridable from `.env` ([P1](#p1-baseline-rate-limit)).
 - 2026-10-10: P2: `sanctum:prune-expired --hours=24` scheduled nightly ([P2, P3, P6](#p2-p3-p6)).
-- 2026-10-10: P3: the `sanctum/csrf-cookie` route is switched off (`Sanctum::ignoreRoutes()`) ([P2, P3, P6](#p2-p3-p6)).
+- 2026-10-10: P3: the `sanctum/csrf-cookie` route is switched off (`sanctum.routes` = `false` in `config/sanctum.php`; corrected 2026-10-10, this Sanctum version has no `ignoreRoutes()`) ([P2, P3, P6](#p2-p3-p6)).
 - 2026-10-10: P6: security headers set by a middleware on the `api` group; HSTS stays in nginx ([P2, P3, P6](#p2-p3-p6)).
 - 2026-10-10: P7: add password change for users and admins and sign-out from every device; admin password reset stays on the console; a wrong current password counts in the sign-in throttle; both actions audited; 409 `password-not-set` for an account without password ([P7](#p7-password-change-and-sign-out-everywhere)).
 - 2026-10-10: A1: sign-in throttle gets two more layers, no lockout: 20 failures per hour per account from any IP, 30 failures per hour per IP over any account ([Identity](#identity-checked-2026-10-10)).
@@ -64,7 +64,7 @@ no cookies). Added to `.env.example`.
 ## P2, P3, P6
 
 - **P2 (decided 2026-10-10, user):** the Identity schedule runs `sanctum:prune-expired --hours=24` nightly, `withoutOverlapping` and `onOneServer` like every task.
-- **P3 (decided 2026-10-10, user):** `Sanctum::ignoreRoutes()` in the Identity provider; the route list then has no route in the `web` group except the docs (local only).
+- **P3 (decided 2026-10-10, user; mechanism corrected 2026-10-10):** `'routes' => false` in `config/sanctum.php` (the installed Sanctum has no `Sanctum::ignoreRoutes()`); the route list then has no route in the `web` group except the docs (local only).
 - **P6 (decided 2026-10-10, user):** a Shared middleware appended to the `api` group sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
   `Referrer-Policy: no-referrer` and, on JSON answers, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. File downloads keep their own headers.
   HSTS stays in nginx (it belongs to TLS). The three other nginx `add_header` lines are removed when the middleware is deployed: a header sent twice
@@ -186,7 +186,7 @@ user). If the frontend team needs the documentation on the dev site, the flag is
 
 One slice per line, each with its tests (written with the code; the user runs the checks):
 
-1. P1 baseline limiter; P2 token pruning; P3 `Sanctum::ignoreRoutes()`; P6 security headers middleware; P5 `config/cors.php`; A3 documentation flag.
+1. P1 baseline limiter; P2 token pruning; P3 `sanctum.routes` = `false`; P6 security headers middleware; P5 `config/cors.php`; A3 documentation flag.
 2. P4 password rule in one place, used by registration, invitation acceptance, reset and `CreateAdminCommand`.
 3. A1 sign-in throttle layers (per account, per IP).
 4. P7 password change and sign-out everywhere (users and admins), the `password-not-set` problem type, audit entries.

@@ -1,8 +1,12 @@
 <?php
 
-use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
-
 return [
+    /*
+     * The documentation pages (`/docs/api`, `/docs/api.json`) are served only when this is true, whatever `APP_ENV` is (`ApiDocumentation`).
+     * `scramble:export` works either way.
+     */
+    'enabled' => (bool) env('API_DOCS_ENABLED', false),
+
     /*
      * Which routes to document. String or array form; use Scramble::routes() for custom selection.
      *
@@ -155,10 +159,7 @@ return [
      */
     'flatten_deep_query_parameters' => true,
 
-    'middleware' => [
-        'web',
-        RestrictedDocsAccess::class,
-    ],
+    'middleware' => ['web'],
 
     'extensions' => [],
 

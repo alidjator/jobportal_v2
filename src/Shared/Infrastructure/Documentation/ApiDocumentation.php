@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 /**
  * The OpenAPI document of the API (Scramble). The two Sanctum guards are documented as two bearer schemes, an admin route lists the permission it needs, and the
- * pages of the document are not served in production (the exported `api.json` is what is handed to the client teams).
+ * pages of the document are served only when `API_DOCS_ENABLED` is on, whatever the environment is (the exported `api.json` is what is handed to the client teams).
  */
 final class ApiDocumentation
 {
@@ -21,11 +21,11 @@ final class ApiDocumentation
 
     public const string ADMIN_SCHEME = 'adminToken';
 
-    public static function configure(bool $production): void
+    public static function configure(bool $exposed): void
     {
         $config = Scramble::configure();
 
-        if ($production) {
+        if (! $exposed) {
             $config->expose(false);
         }
 
