@@ -28,6 +28,7 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Domain\SavedJobRepository;
 use Src\Job\Infrastructure\Analytics\JobMarketDailyRollup;
 use Src\Job\Infrastructure\Analytics\MarketReport;
 use Src\Job\Infrastructure\Dashboard\CompanyJobsCard;
@@ -36,6 +37,7 @@ use Src\Job\Infrastructure\Dashboard\JobPerformanceCard;
 use Src\Job\Infrastructure\Dashboard\PlatformJobsCard;
 use Src\Job\Infrastructure\Insight\CachedSalaryInsightReader;
 use Src\Job\Infrastructure\Listeners\EraseJobViewsWhenUserAnonymized;
+use Src\Job\Infrastructure\Listeners\EraseSavedJobsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
@@ -47,6 +49,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
+use Src\Job\Infrastructure\Persistence\DatabaseSavedJobRepository;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Job\Interface\Console\FoldJobViewsCommand;
 use Src\Shared\Application\Analytics\AnalyticsReports;
@@ -71,6 +74,11 @@ final class JobServiceProvider extends ContextServiceProvider
 
     private const int INSIGHTS_PER_MINUTE = 60;
 
+    /** The name of the route limiter of saving and removing a saved job: 60 requests per account per minute. */
+    public const string SAVED_LIMITER = 'saved-jobs';
+
+    private const int SAVES_PER_MINUTE = 60;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         JobRepository::class => DatabaseJobRepository::class,
@@ -85,6 +93,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSignalReader::class => DatabaseJobSignalReader::class,
         JobSignalSource::class => JobSignalProvider::class,
         JobViewLog::class => DatabaseJobViewLog::class,
+        SavedJobRepository::class => DatabaseSavedJobRepository::class,
         SalaryInsightReader::class => CachedSalaryInsightReader::class,
         JobViewRecorder::class => QueuedJobViewRecorder::class,
         VisitorKeys::class => HashedVisitorKeys::class,
@@ -132,11 +141,14 @@ final class JobServiceProvider extends ContextServiceProvider
 
         RateLimiter::for(self::INSIGHT_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::INSIGHTS_PER_MINUTE)->by('salary-insight|'.$request->ip()));
 
+        RateLimiter::for(self::SAVED_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::SAVES_PER_MINUTE)->by('saved-jobs|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(JobDecided::class, NotifyAssigneesOfDecision::class);
         Event::listen(CompanyMemberRemoved::class, ReassignJobsWhenMemberRemoved::class);
         Event::listen(UserAnonymized::class, EraseJobViewsWhenUserAnonymized::class);
+        Event::listen(UserAnonymized::class, EraseSavedJobsWhenUserAnonymized::class);
 
         parent::boot();
     }

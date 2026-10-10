@@ -6,6 +6,7 @@ use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 use Src\Job\Interface\Http\Controllers\RecommendationController;
+use Src\Job\Interface\Http\Controllers\SavedJobController;
 use Src\Job\Interface\Http\Controllers\SalaryInsightController;
 use Src\Shared\Interface\Http\Middleware\PublicCacheHeaders;
 
@@ -32,6 +33,13 @@ Route::get('me/job-alerts/{id}/jobs', [AlertJobController::class, 'index'])->whe
 
 // The live jobs that fit the job seeker best (J8).
 Route::get('me/recommendations', [RecommendationController::class, 'index'])->middleware('auth:user');
+
+// The jobs the job seeker saved: save and remove are idempotent, the list keeps a job that is no longer live (as an entry without a row).
+Route::middleware('auth:user')->group(function (): void {
+    Route::get('me/saved-jobs', [SavedJobController::class, 'index']);
+    Route::put('me/saved-jobs/{id}', [SavedJobController::class, 'save'])->whereNumber('id')->middleware('throttle:'.JobServiceProvider::SAVED_LIMITER);
+    Route::delete('me/saved-jobs/{id}', [SavedJobController::class, 'remove'])->whereNumber('id')->middleware('throttle:'.JobServiceProvider::SAVED_LIMITER);
+});
 
 // The jobs of the caller's own company; every use case checks that the caller is a member of an active company and may see the job.
 Route::middleware('auth:user')->group(function (): void {

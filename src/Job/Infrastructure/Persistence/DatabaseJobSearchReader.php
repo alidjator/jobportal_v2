@@ -39,9 +39,53 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         'companyIds' => 'company_id',
     ];
 
+    /** The columns of a hit. */
+    private const array COLUMNS = [
+        'job_jobs.id', 'job_jobs.slug', 'job_jobs.title', 'job_jobs.company_id', 'job_jobs.province_id', 'job_jobs.city_id', 'job_jobs.job_type_id',
+        'job_jobs.job_level_id', 'job_jobs.work_mode', 'job_jobs.salary_min', 'job_jobs.salary_max', 'job_jobs.salary_period_id', 'job_jobs.salary_visible',
+        'job_jobs.deadline', 'job_jobs.published_at',
+    ];
+
     public function __construct(private ConnectionInterface $connection) {}
 
     public function page(JobSearchQuery $query, PageRequest $request): Page
+    {
+        $filtered = $this->live($query);
+
+        $total = (clone $filtered)->count();
+
+        [$column, $direction] = match ($query->criteria->sort) {
+            JobSearchSort::PublishedAtDescending => ['job_jobs.published_at', 'desc'],
+            JobSearchSort::PublishedAtAscending => ['job_jobs.published_at', 'asc'],
+            JobSearchSort::DeadlineAscending => ['job_jobs.deadline', 'asc'],
+            JobSearchSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
+        };
+
+        $rows = $filtered
+            ->select(self::COLUMNS)
+            ->orderByRaw(NullOrder::sql($column, $direction))
+            ->orderBy('job_jobs.id', $direction)
+            ->offset($request->offset())
+            ->limit($request->perPage)
+            ->get()
+            ->all();
+
+        return new Page(array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows), $total, $request);
+    }
+
+    public function hitsOf(JobSearchQuery $query, array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        $rows = $this->live($query)->whereIn('job_jobs.id', $jobIds)->select(self::COLUMNS)->get()->all();
+
+        return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows);
+    }
+
+    /** The live jobs of companies the public may see that match the criteria and the window of the query. */
+    private function live(JobSearchQuery $query): Builder
     {
         $filtered = $this->connection->table('job_jobs')
             ->where('job_jobs.status', JobStatus::Active->value)
@@ -54,29 +98,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         $this->applyFilters($filtered, $query);
         $this->applyWindow($filtered, $query);
 
-        $total = (clone $filtered)->count();
-
-        [$column, $direction] = match ($query->criteria->sort) {
-            JobSearchSort::PublishedAtDescending => ['job_jobs.published_at', 'desc'],
-            JobSearchSort::PublishedAtAscending => ['job_jobs.published_at', 'asc'],
-            JobSearchSort::DeadlineAscending => ['job_jobs.deadline', 'asc'],
-            JobSearchSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
-        };
-
-        $rows = $filtered
-            ->select([
-                'job_jobs.id', 'job_jobs.slug', 'job_jobs.title', 'job_jobs.company_id', 'job_jobs.province_id', 'job_jobs.city_id', 'job_jobs.job_type_id',
-                'job_jobs.job_level_id', 'job_jobs.work_mode', 'job_jobs.salary_min', 'job_jobs.salary_max', 'job_jobs.salary_period_id', 'job_jobs.salary_visible',
-                'job_jobs.deadline', 'job_jobs.published_at',
-            ])
-            ->orderByRaw(NullOrder::sql($column, $direction))
-            ->orderBy('job_jobs.id', $direction)
-            ->offset($request->offset())
-            ->limit($request->perPage)
-            ->get()
-            ->all();
-
-        return new Page(array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows), $total, $request);
+        return $filtered;
     }
 
     /** What a job alert adds: a window on the first go-live (after the first time, up to and including the second) and one job. */
