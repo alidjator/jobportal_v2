@@ -27,7 +27,6 @@ final class JobQuestionResource extends JsonResource
             'archived' => $question->isArchived(),
             'required' => $this->resource->isRequired,
             'must_have' => $this->resource->isMustHave,
-            /** @var array{yes?: bool|null, option_ids?: list<int>, min?: int|null, max?: int|null}|null */
             'ideal' => $this->resource->ideal === null ? null : self::ideal($this->resource->ideal),
         ];
     }

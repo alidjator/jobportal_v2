@@ -32,14 +32,19 @@ final class ListMasterItemsRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $definition = $this->definition();
-        $allowedFilters = ['q', ...$definition->filterNames()];
+        // Without a `master` route parameter (the API documentation reads the rules this way) only the generic rules apply.
+        $definition = $this->route('master') === null ? null : $this->definition();
+        $allowedFilters = ['q', ...($definition?->filterNames() ?? [])];
 
         $rules = [
             'filter' => ['nullable', 'array:'.implode(',', $allowedFilters)],
             'filter.q' => ['nullable', 'string', 'max:'.self::MAX_SEARCH_LENGTH],
             'sort' => ['nullable', 'string', Rule::in(MasterQuery::SORTS)],
         ];
+
+        if ($definition === null) {
+            return $rules;
+        }
 
         foreach ($definition->extras as $field) {
             if (in_array($field->name, $definition->filterNames(), true)) {

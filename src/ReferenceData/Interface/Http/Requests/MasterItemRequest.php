@@ -31,6 +31,11 @@ final class MasterItemRequest extends FormRequest
             'is_active' => ['nullable', 'boolean'],
         ];
 
+        // Without a `master` route parameter (the API documentation reads the rules this way) only the generic rules apply.
+        if ($this->route('master') === null) {
+            return $rules;
+        }
+
         foreach ($this->definition()->extras as $field) {
             $presence = $field->required ? 'required' : 'nullable';
 

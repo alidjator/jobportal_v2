@@ -20,6 +20,11 @@ final class ListLocationsRequest extends FormRequest
     /** @return array<string, list<string>> */
     public function rules(): array
     {
+        // Without a `level` route parameter (the API documentation reads the rules this way) the filter is left open.
+        if ($this->route('level') === null) {
+            return ['filter' => ['nullable', 'array']];
+        }
+
         $parent = $this->level()->parentColumn;
 
         if ($parent === null) {

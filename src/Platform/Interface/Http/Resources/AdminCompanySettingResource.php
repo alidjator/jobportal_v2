@@ -28,7 +28,6 @@ final class AdminCompanySettingResource extends JsonResource
             'default' => $definition->default,
             /** @var bool|int|string|list<string>|null */
             'global_value' => $this->resource->globalValue,
-            /** @var bool|int|string|list<string>|null */
             'override' => $this->resource->override,
             'has_override' => $this->resource->hasOverride,
             /** @var bool|int|string|list<string>|null */
