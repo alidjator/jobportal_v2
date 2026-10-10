@@ -40,7 +40,7 @@ final class CompanyDocumentController extends ApiController
     {
         $remove->execute($actors->fromRequest($request), $typeId, $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function file(Request $request, int $typeId, ActorResolver $actors, GetCompanyDocumentFile $get): Response

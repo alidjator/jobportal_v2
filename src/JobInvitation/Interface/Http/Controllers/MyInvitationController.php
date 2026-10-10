@@ -19,7 +19,7 @@ final class MyInvitationController extends ApiController
 {
     public function index(ListInvitationsRequest $request, ActorResolver $actors, ListMyInvitations $list): AnonymousResourceCollection
     {
-        return PaginatedResources::of($list->execute($actors->fromRequest($request), $request->status(), $request->pageRequest()), MyInvitationResource::class, $request);
+        return MyInvitationResource::collection(PaginatedResources::paginator($list->execute($actors->fromRequest($request), $request->status(), $request->pageRequest()), $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetMyInvitation $get): MyInvitationResource

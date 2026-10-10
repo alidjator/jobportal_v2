@@ -13,6 +13,6 @@ final class ForgotPasswordController extends ApiController
     {
         $requestReset->execute($request->email(), $request->ip());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

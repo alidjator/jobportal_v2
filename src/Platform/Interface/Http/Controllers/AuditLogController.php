@@ -14,6 +14,8 @@ final class AuditLogController extends ApiController
 {
     public function index(ListAuditLogsRequest $request, ListAuditLogs $list): AnonymousResourceCollection
     {
-        return CursorResources::of($list->execute($request->toQuery(), $request->cursorRequest()), AuditLogResource::class, $request);
+        $page = $list->execute($request->toQuery(), $request->cursorRequest());
+
+        return AuditLogResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 }

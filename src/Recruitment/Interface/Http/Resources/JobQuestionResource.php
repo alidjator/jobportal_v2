@@ -22,10 +22,12 @@ final class JobQuestionResource extends JsonResource
             'question_id' => $question->id,
             'type' => $question->type->value,
             'text' => $question->text,
+            /** @var list<array{id: int, label: string}> */
             'options' => array_map(static fn (QuestionOption $option): array => ['id' => $option->id, 'label' => $option->label], $question->options),
             'archived' => $question->isArchived(),
             'required' => $this->resource->isRequired,
             'must_have' => $this->resource->isMustHave,
+            /** @var array{yes?: bool|null, option_ids?: list<int>, min?: int|null, max?: int|null}|null */
             'ideal' => $this->resource->ideal === null ? null : self::ideal($this->resource->ideal),
         ];
     }

@@ -25,13 +25,13 @@ final class TeamMemberController extends ApiController
     {
         $remove->execute($actors->fromRequest($request), $userId, $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function changeRole(ChangeMemberRoleRequest $request, int $userId, ActorResolver $actors, ChangeMemberRole $change): Response
     {
         $change->execute($actors->fromRequest($request), $userId, $request->role(), $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

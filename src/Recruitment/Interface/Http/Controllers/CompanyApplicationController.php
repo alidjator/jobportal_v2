@@ -30,7 +30,7 @@ final class CompanyApplicationController extends ApiController
     {
         $result = $list->execute($actors->fromRequest($request), $request->toQuery($id), $request->pageRequest());
 
-        return PaginatedResources::of($result->page, CompanyApplicationResource::class, $request)->additional([
+        return CompanyApplicationResource::collection(PaginatedResources::paginator($result->page, $request))->additional([
             'stages' => array_map(static fn (StageCount $stage): array => ['id' => $stage->stageId, 'type' => $stage->type->value, 'name' => $stage->name, 'count' => $stage->count], $result->stages),
         ]);
     }
@@ -54,13 +54,13 @@ final class CompanyApplicationController extends ApiController
     {
         $process->move($actors->fromRequest($request), $id, $request->stageId(), $request->interview(), $request->offer());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function reject(RejectApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
     {
         $process->reject($actors->fromRequest($request), $id, $request->reason(), $request->note());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

@@ -22,7 +22,7 @@ final class CompanyInvitationController extends ApiController
 {
     public function index(ListInvitationsRequest $request, int $id, ActorResolver $actors, ListJobInvitations $list): AnonymousResourceCollection
     {
-        return PaginatedResources::of($list->execute($actors->fromRequest($request), $id, $request->status(), $request->pageRequest()), CompanyInvitationResource::class, $request);
+        return CompanyInvitationResource::collection(PaginatedResources::paginator($list->execute($actors->fromRequest($request), $id, $request->status(), $request->pageRequest()), $request));
     }
 
     public function store(CreateInvitationRequest $request, int $id, ActorResolver $actors, CreateInvitation $create, InvitationViews $views): JsonResponse

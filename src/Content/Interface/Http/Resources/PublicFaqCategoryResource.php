@@ -19,6 +19,7 @@ final class PublicFaqCategoryResource extends JsonResource
         return [
             'id' => $this->resource->category->id,
             'name' => $this->resource->category->name()->resolve($language),
+            /** @var list<array{id: int, question: string, answer: string}> */
             'faqs' => array_map(fn (Faq $faq): array => [
                 'id' => $faq->id,
                 'question' => $faq->question()->resolve($language),

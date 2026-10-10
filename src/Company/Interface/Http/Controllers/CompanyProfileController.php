@@ -25,13 +25,13 @@ final class CompanyProfileController extends ApiController
     {
         $update->execute($actors->fromRequest($request), $request->changes());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function changeSlug(ChangeCompanySlugRequest $request, ActorResolver $actors, ChangeCompanySlug $change): Response
     {
         $change->execute($actors->fromRequest($request), $request->slug());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

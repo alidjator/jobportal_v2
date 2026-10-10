@@ -27,7 +27,7 @@ final class AdminCompanyDocumentController extends ApiController
     {
         $approve->execute($actors->fromRequest($request), $id, $typeId, $request->seenSubmittedAt(), $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function reject(RejectCompanyDocumentRequest $request, int $id, int $typeId, ActorResolver $actors, RejectCompanyDocument $reject): Response
@@ -37,7 +37,7 @@ final class AdminCompanyDocumentController extends ApiController
             $request->ip(), $request->userAgent(),
         );
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function file(Request $request, int $id, int $typeId, ActorResolver $actors, GetCompanyDocumentFileForAdmin $get): Response

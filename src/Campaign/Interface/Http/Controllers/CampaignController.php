@@ -31,7 +31,7 @@ final class CampaignController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->companyId(), $request->search(), $request->type(), $request->status(), $request->pageRequest());
 
-        return PaginatedResources::of($page, CampaignResource::class, $request);
+        return CampaignResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetCampaign $get): CampaignResource
@@ -59,7 +59,7 @@ final class CampaignController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id, $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function results(Request $request, int $id, ActorResolver $actors, GetCampaignResults $get): CampaignResultsResource

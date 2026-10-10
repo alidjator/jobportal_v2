@@ -20,6 +20,7 @@ final class AdminCompanyDocumentsResource extends JsonResource
     {
         return [
             'verified' => $this->resource->verified,
+            /** @var list<array{type: array{id: int, slug: string, name: array<string, string>, is_required: bool, is_active: bool}, document: array{status: string, original_name: string, mime_type: string, size_bytes: int, submitted_at: string, reviewed_at: string|null, reviewed_by_admin_id: int|null, rejection_reason: string|null, rejection_note: string|null}|null}> */
             'documents' => array_map(fn (AdminDocumentSlot $slot): array => $this->slot($slot), $this->resource->slots),
         ];
     }

@@ -18,6 +18,7 @@ final class ScreeningQuestionResource extends JsonResource
             'id' => $this->resource->id,
             'type' => $this->resource->type->value,
             'text' => $this->resource->text,
+            /** @var list<array{id: int, label: string}> */
             'options' => array_map(static fn (QuestionOption $option): array => ['id' => $option->id, 'label' => $option->label], $this->resource->options),
             'archived_at' => $this->resource->archivedAt?->format(DateTimeInterface::ATOM),
             'created_at' => $this->resource->createdAt->format(DateTimeInterface::ATOM),

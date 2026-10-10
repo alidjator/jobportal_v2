@@ -45,7 +45,7 @@ final class JobAlertController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function pause(Request $request, int $id, ActorResolver $actors, PauseJobAlert $pause): JobAlertResource

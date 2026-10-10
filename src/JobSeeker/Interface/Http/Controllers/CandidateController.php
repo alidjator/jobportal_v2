@@ -30,7 +30,7 @@ final class CandidateController extends ApiController
     {
         $page = $search->execute($actors->fromRequest($request), $request->toQuery(), $request->pageRequest(), $context->language);
 
-        return PaginatedResources::of($page, CandidateListResource::class, $request);
+        return CandidateListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function recommended(Request $request, int $id, RequestContext $context, ActorResolver $actors, RecommendCandidates $recommend): AnonymousResourceCollection
@@ -72,6 +72,6 @@ final class CandidateController extends ApiController
 
     public function views(ListProfileViewsRequest $request, ActorResolver $actors, ListMyProfileViews $list): AnonymousResourceCollection
     {
-        return PaginatedResources::of($list->execute($actors->fromRequest($request), $request->pageRequest()), ProfileViewResource::class, $request);
+        return ProfileViewResource::collection(PaginatedResources::paginator($list->execute($actors->fromRequest($request), $request->pageRequest()), $request));
     }
 }

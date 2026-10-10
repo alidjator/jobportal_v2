@@ -24,7 +24,7 @@ final class PublicMasterController extends ApiController
     private function respond(Request $request, Page|array $result): AnonymousResourceCollection
     {
         return $result instanceof Page
-            ? PaginatedResources::of($result, MasterItemResource::class, $request)
+            ? MasterItemResource::collection(PaginatedResources::paginator($result, $request))
             : MasterItemResource::collection($result);
     }
 }

@@ -29,6 +29,7 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
+            /** @var array{average: float|null, count: int, mine: int|null, members: list<array{user_id: int, name: string, stars: int}>} */
             'rating' => (new ApplicationRatingResource($view->rating))->resolve($request),
             'applicant' => $data->snapshot === null
                 ? ['is_deleted' => true, 'name' => null]
@@ -36,6 +37,7 @@ final class CompanyApplicationDetailResource extends JsonResource
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,
+            /** @var list<array{question: array{id: int, text: string, type: string}, text: string|null, number: int|null, bool: bool|null, options: list<array{id: int, label: string}>}> */
             'answers' => array_map(static fn (ApplicationAnswerView $answer): array => [
                 'question' => ['id' => $answer->questionId, 'text' => $answer->questionText, 'type' => $answer->type->value],
                 'text' => $answer->text,
@@ -43,6 +45,7 @@ final class CompanyApplicationDetailResource extends JsonResource
                 'bool' => $answer->bool,
                 'options' => $answer->options,
             ], $data->answers),
+            /** @var list<array{from: array{stage_id: int|null, type: string, name: string|null}|null, to: array{stage_id: int, type: string, name: string|null}, by: string, actor: array{id: int, name: string}|null, reason: string|null, note: string|null, at: string}> */
             'history' => array_map(fn (RecruiterHistoryEntry $entry): array => [
                 'from' => $entry->fromType === null ? null : ['stage_id' => $entry->fromStageId, 'type' => $entry->fromType->value, 'name' => $view->stageNames[(int) $entry->fromStageId] ?? null],
                 'to' => ['stage_id' => $entry->toStageId, 'type' => $entry->toType->value, 'name' => $view->stageNames[$entry->toStageId] ?? null],

@@ -37,6 +37,6 @@ final class ApplicationNoteController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id, $noteId);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

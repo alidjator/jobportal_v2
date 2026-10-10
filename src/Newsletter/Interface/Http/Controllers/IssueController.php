@@ -26,7 +26,7 @@ final class IssueController extends ApiController
 {
     public function index(ListIssuesRequest $request, ActorResolver $actors, ListIssues $list): AnonymousResourceCollection
     {
-        return PaginatedResources::of($list->execute($actors->fromRequest($request), $request->status(), $request->pageRequest()), IssueResource::class, $request);
+        return IssueResource::collection(PaginatedResources::paginator($list->execute($actors->fromRequest($request), $request->status(), $request->pageRequest()), $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetIssue $get): IssueResource

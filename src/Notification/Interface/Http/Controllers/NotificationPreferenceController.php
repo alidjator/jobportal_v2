@@ -31,6 +31,6 @@ final class NotificationPreferenceController extends ApiController
     {
         $update->execute($actors->fromRequest($request), $key, $channel, $request->enabled());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

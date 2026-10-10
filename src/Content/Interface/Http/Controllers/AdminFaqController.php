@@ -38,6 +38,6 @@ final class AdminFaqController extends ApiController
     {
         $delete->execute($id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

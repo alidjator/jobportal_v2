@@ -34,7 +34,9 @@ final class ApplicationController extends ApiController
 
     public function index(ListMyApplicationsRequest $request, ActorResolver $actors, ListMyApplications $list): AnonymousResourceCollection
     {
-        return CursorResources::of($list->execute($actors->fromRequest($request), $request->statusFilter(), $request->cursorRequest()), MyApplicationResource::class, $request);
+        $page = $list->execute($actors->fromRequest($request), $request->statusFilter(), $request->cursorRequest());
+
+        return MyApplicationResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetMyApplication $get): MyApplicationDetailResource
@@ -46,7 +48,7 @@ final class ApplicationController extends ApiController
     {
         $withdraw->execute($actors->fromRequest($request), $id, $request->note());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function resume(Request $request, int $id, ActorResolver $actors, GetMyApplicationResume $get): Response

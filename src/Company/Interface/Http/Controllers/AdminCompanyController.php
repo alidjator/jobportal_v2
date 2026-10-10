@@ -33,7 +33,7 @@ final class AdminCompanyController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->toQuery(), $request->pageRequest());
 
-        return PaginatedResources::of($page, AdminCompanyListResource::class, $request);
+        return AdminCompanyListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetAdminCompany $get): AdminCompanyDetailResource
@@ -52,14 +52,14 @@ final class AdminCompanyController extends ApiController
     {
         $suspend->execute($actors->fromRequest($request), $id, $request->reason(), $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function restore(RestoreCompanyRequest $request, int $id, ActorResolver $actors, RestoreCompany $restore): Response
     {
         $restore->execute($actors->fromRequest($request), $id, $request->note(), $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function inviteCompanyAdmin(InviteCompanyAdminRequest $request, int $id, RequestContext $context, ActorResolver $actors, InviteCompanyAdminAgain $invite): JsonResponse

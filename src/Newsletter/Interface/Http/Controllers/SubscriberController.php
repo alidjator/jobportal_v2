@@ -20,7 +20,7 @@ final class SubscriberController extends ApiController
     {
         $result = $list->execute($actors->fromRequest($request), $request->search(), $request->status(), $request->pageRequest());
 
-        return PaginatedResources::of($result->page, SubscriberResource::class, $request)->additional(['counts' => $result->counts]);
+        return SubscriberResource::collection(PaginatedResources::paginator($result->page, $request))->additional(['counts' => $result->counts]);
     }
 
     public function destroy(Request $request, int $id, ActorResolver $actors, DeleteSubscriber $delete): Response

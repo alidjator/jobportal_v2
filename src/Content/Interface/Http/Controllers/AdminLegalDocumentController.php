@@ -47,7 +47,7 @@ final class AdminLegalDocumentController extends ApiController
     {
         $delete->execute($id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function publish(int $id, Request $request, ActorResolver $actors, PublishLegalDocument $publish): AdminLegalDocumentResource

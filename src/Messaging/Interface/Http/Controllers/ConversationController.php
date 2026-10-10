@@ -28,7 +28,9 @@ final class ConversationController extends ApiController
 {
     public function index(ListMessagingPageRequest $request, ActorResolver $actors, ListConversations $list): AnonymousResourceCollection
     {
-        return CursorResources::of($list->execute($actors->fromRequest($request), $request->cursorRequest()), ConversationResource::class, $request);
+        $page = $list->execute($actors->fromRequest($request), $request->cursorRequest());
+
+        return ConversationResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetConversation $get): ConversationResource
@@ -55,7 +57,7 @@ final class ConversationController extends ApiController
     {
         $read->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function close(Request $request, int $id, ActorResolver $actors, CloseConversation $close): ConversationResource

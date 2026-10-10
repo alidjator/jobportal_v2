@@ -42,7 +42,7 @@ final class CompanyStageController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function reorder(ReorderStagesRequest $request, ActorResolver $actors, ReorderStages $reorder): AnonymousResourceCollection

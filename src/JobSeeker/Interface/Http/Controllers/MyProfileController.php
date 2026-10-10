@@ -111,7 +111,7 @@ final class MyProfileController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function educations(Request $request, ActorResolver $actors, ListMyEducations $list): AnonymousResourceCollection
@@ -139,7 +139,7 @@ final class MyProfileController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function resumes(Request $request, ActorResolver $actors, ListMyResumes $list): AnonymousResourceCollection
@@ -163,7 +163,7 @@ final class MyProfileController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     /** The download is named after the owner's display name, with `.pdf` added; the plain ASCII fallback is for clients that cannot read the encoded name. */

@@ -18,7 +18,7 @@ final class TrainingController extends ApiController
 {
     public function courses(ListCoursesRequest $request, ListCourses $list): AnonymousResourceCollection
     {
-        return PaginatedResources::of($list->execute($request->search(), $request->pageRequest()), CourseResource::class, $request);
+        return CourseResource::collection(PaginatedResources::paginator($list->execute($request->search(), $request->pageRequest()), $request));
     }
 
     public function mine(Request $request, ActorResolver $actors, ListMyCourses $list): AnonymousResourceCollection

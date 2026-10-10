@@ -43,6 +43,7 @@ final class EmailTemplateResource extends JsonResource
         return [
             'key' => $definition->key,
             'description' => $definition->description,
+            /** @var list<array{name: string, description: string, sample: string, required: bool}> */
             'variables' => array_map(fn (EmailVariable $variable): array => [
                 'name' => $variable->name,
                 'description' => $variable->description,

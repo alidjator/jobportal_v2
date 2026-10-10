@@ -37,12 +37,14 @@ final class MyProfileResource extends JsonResource
             'summary' => $profile->summary,
             'is_discoverable' => $profile->isDiscoverable,
             'resume_discoverable' => $profile->resumeDiscoverable,
-            'experiences' => ExperienceResource::collection($this->resource->experiences)->resolve($request),
-            'educations' => EducationResource::collection($this->resource->educations)->resolve($request),
+            'experiences' => ExperienceResource::collection($this->resource->experiences),
+            'educations' => EducationResource::collection($this->resource->educations),
             'skills' => $this->resource->skills,
+            /** @var list<array{id: int, name: string|null, proficiency: string}> */
             'languages' => array_map(static fn (array $language): array => [...$language, 'proficiency' => $language['proficiency']->value], $this->resource->languages),
+            /** @var list<array{type: string, url: string}> */
             'links' => array_map(static fn ($link): array => ['type' => $link->type->value, 'url' => $link->url], $this->resource->links),
-            'resumes' => ResumeResource::collection($this->resource->resumes)->resolve($request),
+            'resumes' => ResumeResource::collection($this->resource->resumes),
             'completeness' => ['complete' => $this->resource->completeness->isComplete(), 'missing' => $this->resource->completeness->missing],
         ];
     }

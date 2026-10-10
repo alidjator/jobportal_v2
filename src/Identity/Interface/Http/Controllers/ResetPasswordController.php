@@ -13,6 +13,6 @@ final class ResetPasswordController extends ApiController
     {
         $resetPassword->execute($request->email(), $request->code(), $request->newPassword(), $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

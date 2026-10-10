@@ -32,6 +32,7 @@ final class InterviewResource extends JsonResource
             'meeting_url' => $interview->meetingUrl,
             'interviewer' => ['id' => $interview->interviewerId, 'name' => $this->resource->interviewerName],
             'proposed_starts_at' => $interview->proposedStartsAt?->format(DATE_ATOM),
+            /** @var int */
             'proposals_left' => max(0, Interview::PROPOSALS_MAX - $interview->proposalsUsed),
             'created_at' => $interview->createdAt->format(DATE_ATOM),
         ];

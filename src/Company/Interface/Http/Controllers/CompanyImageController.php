@@ -23,14 +23,14 @@ final class CompanyImageController extends ApiController
     {
         $upload->execute($actors->fromRequest($request), CompanyImageKind::from($kind), $request->contents());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function destroy(Request $request, string $kind, ActorResolver $actors, RemoveCompanyImage $remove): Response
     {
         $remove->execute($actors->fromRequest($request), CompanyImageKind::from($kind));
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function showOwn(Request $request, string $kind, ActorResolver $actors, GetCompanyImage $get): Response

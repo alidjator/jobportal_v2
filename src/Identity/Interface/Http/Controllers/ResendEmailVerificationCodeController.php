@@ -14,6 +14,6 @@ final class ResendEmailVerificationCodeController extends ApiController
     {
         $resend->execute($actors->fromRequest($request));
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

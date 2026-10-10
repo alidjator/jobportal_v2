@@ -21,6 +21,7 @@ final class ApplicationRatingResource extends JsonResource
             'average' => $this->resource->average,
             'count' => $this->resource->count,
             'mine' => $this->resource->mine,
+            /** @var list<array{user_id: int, name: string, stars: int}> */
             'members' => array_map(static fn (MemberRating $rating): array => ['user_id' => $rating->userId, 'name' => $rating->name, 'stars' => $rating->stars], $this->resource->members),
         ];
     }

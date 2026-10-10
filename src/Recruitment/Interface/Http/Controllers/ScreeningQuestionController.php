@@ -27,7 +27,7 @@ final class ScreeningQuestionController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->archived(), $request->search(), $request->pageRequest());
 
-        return PaginatedResources::of($page, ScreeningQuestionResource::class, $request);
+        return ScreeningQuestionResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetScreeningQuestion $get): ScreeningQuestionResource
@@ -51,7 +51,7 @@ final class ScreeningQuestionController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function archive(Request $request, int $id, ActorResolver $actors, ChangeScreeningQuestionArchive $change): ScreeningQuestionResource

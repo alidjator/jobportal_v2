@@ -30,6 +30,6 @@ final class TermsAcceptanceController extends ApiController
     {
         $acceptTerms->execute($actors->fromRequest($request), $request->versions(), $context->language, $request->ip());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

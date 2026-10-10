@@ -25,6 +25,6 @@ final class SignOutController extends ApiController
 
         $signOut->execute($actors->fromRequest($request), (int) $token->getKey());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

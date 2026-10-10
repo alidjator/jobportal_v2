@@ -16,6 +16,7 @@ final class MessagePayload
             'sender' => ['side' => $message->side->value, 'user_id' => $message->senderUserId, 'name' => $view->senderName],
             'body' => $message->body,
             'deleted' => $message->deletedAt !== null,
+            /** @var list<array{id: int, name: string, mime: string, size_bytes: int}> */
             'attachments' => array_map(fn (AttachmentRow $file): array => [
                 'id' => $file->id,
                 'name' => $file->name,

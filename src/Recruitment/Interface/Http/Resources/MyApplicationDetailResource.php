@@ -34,11 +34,13 @@ final class MyApplicationDetailResource extends JsonResource
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,
+            /** @var list<array{status: string, at: string, by: string}> */
             'history' => array_map(static fn (ApplicationHistoryEntry $entry): array => [
                 'status' => $entry->status->value,
                 'at' => $entry->at->format(DATE_ATOM),
                 'by' => $entry->by->value,
             ], $data->history),
+            /** @var list<array{question: array{id: int, text: string, type: string}, text: string|null, number: int|null, bool: bool|null, options: list<array{id: int, label: string}>}> */
             'answers' => array_map(static fn (ApplicationAnswerView $answer): array => [
                 'question' => ['id' => $answer->questionId, 'text' => $answer->questionText, 'type' => $answer->type->value],
                 'text' => $answer->text,

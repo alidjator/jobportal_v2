@@ -14,6 +14,6 @@ final class VerifyEmailController extends ApiController
     {
         $verifyEmail->execute($actors->fromRequest($request), $request->code());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

@@ -18,6 +18,6 @@ final class AlertJobController extends ApiController
     {
         $page = $search->execute($actors->fromRequest($request), $id, $request->pageRequest(), $request->ip(), $context->language);
 
-        return PaginatedResources::of($page, PublicJobListResource::class, $request);
+        return PublicJobListResource::collection(PaginatedResources::paginator($page, $request));
     }
 }

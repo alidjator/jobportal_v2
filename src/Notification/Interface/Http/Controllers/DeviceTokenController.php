@@ -17,13 +17,13 @@ final class DeviceTokenController extends ApiController
     {
         $register->execute($actors->fromRequest($request), $request->token(), $request->platform());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function destroy(Request $request, string $token, ActorResolver $actors, UnregisterDeviceToken $unregister): Response
     {
         $unregister->execute($actors->fromRequest($request), $token);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

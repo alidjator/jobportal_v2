@@ -40,7 +40,7 @@ final class CompanyJobController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest());
 
-        return PaginatedResources::of($page, JobListResource::class, $request);
+        return JobListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJob $get): JobDetailResource
@@ -73,7 +73,7 @@ final class CompanyJobController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function publish(Request $request, int $id, RequestContext $context, ActorResolver $actors, PublishJob $publish, GetJob $get): JobDetailResource

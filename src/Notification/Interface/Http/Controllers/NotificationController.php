@@ -24,7 +24,9 @@ final class NotificationController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->readFilter(), $request->cursorRequest());
 
-        return CursorResources::of($page, NotificationResource::class, $request);
+        $page = $page;
+
+        return NotificationResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 
     public function unreadCount(Request $request, ActorResolver $actors, CountUnreadNotifications $count): JsonResponse
@@ -36,20 +38,20 @@ final class NotificationController extends ApiController
     {
         $markRead->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function markAllRead(Request $request, ActorResolver $actors, MarkAllNotificationsRead $markAllRead): Response
     {
         $markAllRead->execute($actors->fromRequest($request));
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function destroy(Request $request, string $id, ActorResolver $actors, DeleteNotification $delete): Response
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

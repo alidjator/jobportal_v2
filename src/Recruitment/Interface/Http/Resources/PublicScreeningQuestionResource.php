@@ -17,6 +17,7 @@ final class PublicScreeningQuestionResource extends JsonResource
             'id' => $this->resource->id,
             'type' => $this->resource->type->value,
             'text' => $this->resource->text,
+            /** @var list<array{id: int, label: string}> */
             'options' => array_map(static fn (QuestionOption $option): array => ['id' => $option->id, 'label' => $option->label], $this->resource->options),
             'required' => $this->resource->required,
             'position' => $this->resource->position,

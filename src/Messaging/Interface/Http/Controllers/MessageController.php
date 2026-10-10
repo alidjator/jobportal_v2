@@ -23,7 +23,9 @@ final class MessageController extends ApiController
 {
     public function index(ListMessagingPageRequest $request, int $id, ActorResolver $actors, ListMessages $list): AnonymousResourceCollection
     {
-        return CursorResources::of($list->execute($actors->fromRequest($request), $id, $request->cursorRequest()), MessageResource::class, $request);
+        $page = $list->execute($actors->fromRequest($request), $id, $request->cursorRequest());
+
+        return MessageResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 
     public function store(SendMessageRequest $request, int $id, ActorResolver $actors, SendMessage $send): JsonResponse
@@ -35,7 +37,7 @@ final class MessageController extends ApiController
     {
         $delete->execute($actors->fromRequest($request), $id);
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     /** The stored bytes with the type read from the content (never one the client sent), as a download that a browser cannot run as a page. */

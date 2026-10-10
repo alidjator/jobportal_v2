@@ -24,10 +24,13 @@ final class AdminSettingResource extends JsonResource
             'key' => $definition->key,
             'type' => $definition->type->value,
             'description' => $definition->description,
+            /** @var bool|int|string|list<string>|null */
             'default' => $definition->default,
+            /** @var bool|int|string|list<string>|null */
             'value' => $this->resource->value,
             'is_default' => $this->resource->isDefault,
             'overridable_per_company' => $definition->overridable,
+            /** @var array{min?: int|null, max?: int|null, max_length?: int|null, allowed_values?: list<string>, min_items?: int|null} */
             'constraints' => match ($definition->type) {
                 SettingType::Integer => ['min' => $definition->min, 'max' => $definition->max],
                 SettingType::Text => ['max_length' => $definition->max],

@@ -27,6 +27,7 @@ final class CandidateResource extends JsonResource
             'availability' => $profile->availability?->value,
             'available_from' => $profile->availableFrom?->format('Y-m-d'),
             'expected_salary' => $this->resource->expectedSalary,
+            /** @var list<array{job_title: string, company_name: string, job_type: string|null, location_text: string|null, start_date: string, end_date: string|null, is_current: bool, description: string|null}> */
             'experiences' => array_map(static fn (array $row): array => [
                 'job_title' => $row['entry']->jobTitle,
                 'company_name' => $row['entry']->companyName,
@@ -37,6 +38,7 @@ final class CandidateResource extends JsonResource
                 'is_current' => $row['entry']->isCurrent,
                 'description' => $row['entry']->description,
             ], $this->resource->experiences),
+            /** @var list<array{level: string|null, institution: string, field_of_study: string|null, start_year: int, end_year: int|null, is_current: bool, gpa: string|null, description: string|null}> */
             'educations' => array_map(static fn (array $row): array => [
                 'level' => $row['level'],
                 'institution' => $row['entry']->institution,
@@ -49,7 +51,7 @@ final class CandidateResource extends JsonResource
             ], $this->resource->educations),
             'skills' => $this->resource->skills,
             'languages' => $this->resource->languages,
-            'resumes' => ResumeResource::collection($this->resource->resumes)->resolve($request),
+            'resumes' => ResumeResource::collection($this->resource->resumes),
             'contact' => $this->resource->contact,
             'updated_at' => $this->resource->updatedAt->format(DateTimeInterface::ATOM),
         ];

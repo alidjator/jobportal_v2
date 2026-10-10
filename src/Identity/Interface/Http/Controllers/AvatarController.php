@@ -18,7 +18,7 @@ final class AvatarController extends ApiController
     {
         $upload->execute($actors->fromRequest($request), $request->contents());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 
     public function show(Request $request, ActorResolver $actors, GetMyAvatar $get): Response
@@ -38,6 +38,6 @@ final class AvatarController extends ApiController
     {
         $remove->execute($actors->fromRequest($request));
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }

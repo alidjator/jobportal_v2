@@ -26,7 +26,7 @@ final class AdminJobController extends ApiController
     {
         $page = $list->execute($actors->fromRequest($request), $request->status(), $request->companyId(), $request->search(), $request->sort(), $request->pageRequest());
 
-        return PaginatedResources::of($page, AdminJobListResource::class, $request);
+        return AdminJobListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJobForAdmin $get): AdminJobDetailResource

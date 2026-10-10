@@ -29,7 +29,7 @@ final class PublicJobController extends ApiController
     {
         $page = $search->execute($request->criteria(), $request->pageRequest(), $request->ip(), $context->language, $this->jobSeekerId($request));
 
-        return PaginatedResources::of($page, PublicJobListResource::class, $request);
+        return PublicJobListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function show(Request $request, string $job, RequestContext $context, GetPublicJob $get): PublicJobResource

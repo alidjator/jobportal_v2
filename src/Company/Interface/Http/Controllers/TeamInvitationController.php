@@ -35,6 +35,6 @@ final class TeamInvitationController extends ApiController
     {
         $revoke->execute($actors->fromRequest($request), $id, $request->ip(), $request->userAgent());
 
-        return new Response(status: Response::HTTP_NO_CONTENT);
+        return response()->noContent();
     }
 }
