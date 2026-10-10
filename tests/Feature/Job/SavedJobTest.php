@@ -26,6 +26,14 @@ final class SavedJobTest extends FeatureTestCase
         parent::tearDown();
     }
 
+    /** The test client with no token; the guards are reset so a user cached by an earlier request is not kept. */
+    private function guest(): static
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->flushHeaders();
+    }
+
     /** @return list<int> the job ids in the list, in order */
     private function listedJobIds(?string $token = null): array
     {
@@ -150,8 +158,8 @@ final class SavedJobTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->flushHeaders()->getJson('/api/v1/me/saved-jobs')->assertUnauthorized();
-        $this->flushHeaders()->putJson("/api/v1/me/saved-jobs/{$job}")->assertUnauthorized();
+        $this->guest()->getJson('/api/v1/me/saved-jobs')->assertUnauthorized();
+        $this->guest()->putJson("/api/v1/me/saved-jobs/{$job}")->assertUnauthorized();
 
         foreach ([['GET', '/me/saved-jobs'], ['PUT', "/me/saved-jobs/{$job}"], ['DELETE', "/me/saved-jobs/{$job}"]] as [$method, $uri]) {
             $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
@@ -208,8 +216,8 @@ final class SavedJobTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->assertArrayNotHasKey('saved', $this->flushHeaders()->getJson('/api/v1/jobs')->assertOk()->json('data.0'));
-        $this->assertArrayNotHasKey('saved', $this->flushHeaders()->getJson("/api/v1/jobs/{$job}")->assertOk()->json('data'));
+        $this->assertArrayNotHasKey('saved', $this->guest()->getJson('/api/v1/jobs')->assertOk()->json('data.0'));
+        $this->assertArrayNotHasKey('saved', $this->guest()->getJson("/api/v1/jobs/{$job}")->assertOk()->json('data'));
         $this->assertArrayNotHasKey('saved', $this->api('GET', '/jobs', token: $this->adminToken)->assertOk()->json('data.0'));
     }
 

@@ -36,6 +36,14 @@ final class TalentPoolTest extends FeatureTestCase
         parent::tearDown();
     }
 
+    /** The test client with no token; the guards are reset so a user cached by an earlier request is not kept. */
+    private function guest(): static
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->flushHeaders();
+    }
+
     /**
      * A job seeker who can be found: a complete profile that is switched on for search.
      *
@@ -272,7 +280,7 @@ final class TalentPoolTest extends FeatureTestCase
 
     public function test_only_a_member_of_an_active_company_has_a_talent_pool(): void
     {
-        $this->flushHeaders()->getJson('/api/v1/company/talent-pool')->assertUnauthorized();
+        $this->guest()->getJson('/api/v1/company/talent-pool')->assertUnauthorized();
 
         foreach ([['GET', '/company/talent-pool'], ['GET', '/company/talent-pool/categories']] as [$method, $uri]) {
             $this->api($method, $uri, token: $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
