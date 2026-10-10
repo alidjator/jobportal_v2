@@ -23,7 +23,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - **Phase 4, step 2 business intelligence (`docs/design/phase-4-business-intelligence.md`) is coded, checked and committed** (migrations `000097` to `000100`; permission `analytics.view`; setting `analytics.min_group_size`). Its real-database steps are not run on MySQL: they run once on the new PostgreSQL database.
 - **PostgreSQL 16 port (`docs/design/postgres-migration.md`) is coded, checked and committed (`5ad9e30`).** Cross-context foreign keys (`docs/design/cross-context-foreign-keys.md`, migration `000102`) are coded and checked too (1731 tests). The real and the test database are empty PostgreSQL databases (`jobportal_v2`, `jobportal_v2_test`, role `jobportal_v2`, port 5432; credentials only in `.env` and `.env.testing`).
   Waiting for the user on the real database: `php artisan migrate`, `identity:sync-permissions`, `db:seed`, `analytics:rollup --backfill` (ask before each). The live BI medians now run in SQL (`35427a4`). `GET /company/jobs/{id}/performance` is coded and committed (`b69ef0b`). Campaigns are designed and coded in `docs/design/phase-4-campaigns.md` (context `Campaign`, migration `000103`; full suite green (1746 tests); needs `php artisan migrate` and `identity:sync-permissions` on the real database, and `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register` in `.env`). Run artisan and tests as `jobportal`, never as root (root-owned `storage` breaks the tests).
-  Moodle is not designed. Do not start new work without asking the user.
+  Moodle is designed in `docs/design/phase-4-training.md` (context `Training`, no tables; not coded). Do not start coding without the user's go-ahead.
 
 ## Items waiting for the user
 
