@@ -31,7 +31,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   Infrastructure layer, one writer class per entity, because it must set values the application never writes (`verified_at`, historical stages and times, legacy timestamps); its tests check the result through the real API.
 - **English everywhere:** identifiers, comments, documentation, commit messages, API error messages. Map Indonesian terms to common job-portal English
   (lamaran = application, lowongan = job, pelamar = applicant, perusahaan = company). New table, column and route names are designed freely, not bound to legacy names.
-- Match the surrounding code (comment density, naming, idiom). Every new behaviour gets tests (written with the code); Pint and PHPStan must be clean before a commit, checked in the separate check step below.
+- Match the surrounding code (comment density, naming, idiom). Every new behaviour gets tests (written with the code); Pint and PHPStan must be clean before a commit, checked by the user in the separate check step below (never by you on your own).
 
 ## Database
 
@@ -41,7 +41,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   database is not `jobportal_v2_test`.
 - **Foreign keys** (decided by the user, 2026-10-05): a column that references `reference_*` or `company_companies` has a `RESTRICT` foreign key, also across contexts; columns that reference
   accounts or admins (`user_id`, `created_by_user_id`, `*_admin_id`) have none, and neither do polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
-- A new migration runs **twice**: `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, only with approval).
+- A new migration runs **twice**, both by the user (see the hard rule on checks): `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, only with approval). Tell the user when a migration is new.
 - The production karir.pkp database is reachable only through the read-only account (`KARIR_PKP_DB_*`): **schema only, never read data** without explicit approval.
 
 ## Commands
@@ -66,8 +66,10 @@ Everything read stays in the context for the rest of the session and is sent aga
 - **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
-- **Checks (decided 2026-10-08):** testing, debugging and linting are a separate step from coding. After writing code do not run tests, Pint or PHPStan on your own; run them only when the user asks. When asked,
-  run `composer check` once (not Pint, PHPStan and the suite as three separate steps), or only the tests of the folder or file the user names.
+- **Checks, a HARD RULE (decided 2026-10-08, made strict 2026-10-10):** testing, debugging and linting are a separate step from coding, and **only the user runs them**. After writing code
+  never run `php artisan test` (not even with `--filter`), `composer check`, Pint, PHPStan, `test:database:migrate` or any other check on your own, and never report a check as passed unless the
+  user's own run showed it. Run one only when the user asks, or pastes failures to fix. When asked, run `composer check` once (not Pint, PHPStan and the suite as three separate steps), or only
+  the tests of the folder or file the user names. This overrides every other line in this file that mentions running or passing a check; if a task seems to need one, stop and tell the user.
 - **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
   Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.
