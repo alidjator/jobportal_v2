@@ -1,4 +1,4 @@
-# Phase 5: API security review (designed 2026-10-10; route audit done; waiting for `composer audit`)
+# Phase 5: API security review (designed 2026-10-10; route audit and dependency audit done)
 
 First hardening item of Phase 5 (`phase-5-scope.md`). Goal: review the whole API against a fixed checklist, record each finding here, and fix only what the
 user confirms. Every fix gets tests.
@@ -17,7 +17,7 @@ user confirms. Every fix gets tests.
 - 2026-10-10: A1: sign-in throttle gets two more layers, no lockout: 20 failures per hour per account from any IP, 30 failures per hour per IP over any account ([Identity](#identity-checked-2026-10-10)).
 - 2026-10-10: A2: TOTP second factor, mandatory for admins, with one-time recovery codes; reset through the console; `pragmarx/google2fa`; two-step sign-in with a 5-minute challenge; forced enrolment at the next sign-in; 10 recovery codes, regenerable; schema: three columns on `identity_admins` and two new tables ([A2](#a2-admin-totp)).
 - 2026-10-10: A3: the API documentation is shown only when `API_DOCS_ENABLED=true` (default off), whatever `APP_ENV` is; the dev site moves to `APP_ENV=staging` (the user edits `.env`) ([Other contexts](#the-other-contexts-checked-2026-10-10)).
-- 2026-10-10: Dependency audit: the user runs `composer audit` and pastes the result ([Coding plan](#coding-plan)).
+- 2026-10-10: Dependency audit: `composer audit` run by the user: no advisories ([Coding plan](#coding-plan)).
 
 ## Inventory (2026-10-10)
 
@@ -191,7 +191,7 @@ One slice per line, each with its tests (written with the code; the user runs th
 3. A1 sign-in throttle layers (per account, per IP).
 4. P7 password change and sign-out everywhere (users and admins), the `password-not-set` problem type, audit entries.
 5. A2 admin TOTP: migration (three columns, two tables), `pragmarx/google2fa`, challenge, enrolment, recovery codes, nightly purge of expired challenges, console reset.
-6. `composer audit`: the user runs it; findings are recorded here before any upgrade.
+6. `composer audit`: run by the user on 2026-10-10, no security advisories; run it again after `pragmarx/google2fa` is added (slice 5).
 
 New migration in slice 5: the user runs it on the test database, then on the real one with approval. New `.env` keys: `API_RATE_LIMIT_USER`,
 `API_RATE_LIMIT_GUEST`, `CORS_ALLOWED_ORIGINS`, `API_DOCS_ENABLED` (added to `.env.example`). After slice 1 the user removes the three `add_header` lines from the
