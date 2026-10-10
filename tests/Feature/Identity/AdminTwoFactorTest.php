@@ -100,8 +100,8 @@ final class AdminTwoFactorTest extends FeatureTestCase
         $secret = $this->enrolTwoFactor($this->adminWithPassword(self::PASSWORD));
         $challenge = $this->login()->json('data.challenge_token');
 
-        $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, -1)])->assertOk();
-        $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 0)])
+        $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 0)])->assertOk();
+        $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 1)])
             ->assertUnauthorized()
             ->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
     }
@@ -235,11 +235,11 @@ final class AdminTwoFactorTest extends FeatureTestCase
     {
         $admin = $this->adminWithPassword(self::PASSWORD);
         $secret = $this->enrolTwoFactor($admin);
-        $token = $this->completeAdminLogin('root@example.test', self::PASSWORD, $secret, -1)->json('data.token');
+        $token = $this->completeAdminLogin('root@example.test', self::PASSWORD, $secret)->json('data.token');
         $old = DB::table('identity_admin_recovery_codes')->pluck('code_hash')->all();
 
         $this->app['auth']->forgetGuards();
-        $new = $this->withToken($token)->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => $this->totp($secret, 0)])
+        $new = $this->withToken($token)->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => $this->totp($secret, 1)])
             ->assertOk()->assertJsonCount(10, 'data.recovery_codes')->json('data.recovery_codes');
 
         $this->assertCount(10, $new);
@@ -250,7 +250,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
     public function test_regenerating_recovery_codes_needs_a_right_unused_code(): void
     {
         $secret = $this->enrolTwoFactor($this->adminWithPassword(self::PASSWORD));
-        $token = $this->completeAdminLogin('root@example.test', self::PASSWORD, $secret, -1)->json('data.token');
+        $token = $this->completeAdminLogin('root@example.test', self::PASSWORD, $secret)->json('data.token');
 
         $this->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => '123456'])->assertUnauthorized();
         $this->app['auth']->forgetGuards();

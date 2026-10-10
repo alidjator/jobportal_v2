@@ -92,12 +92,14 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         return $filtered;
     }
 
-    /** The ratings are summed per application in one grouped query, so a page needs no lookup per row. */
+    /** The ratings are summed per listed application in a lateral join, so only the ratings of the rows on the page are read. */
     private function withRatings(Builder $builder): Builder
     {
-        $ratings = $this->connection->table('recruitment_application_ratings')->groupBy('application_id')->selectRaw('application_id, AVG(stars) as rating_average, COUNT(*) as rating_count');
+        $ratings = $this->connection->table('recruitment_application_ratings')
+            ->whereColumn('application_id', 'a.id')
+            ->selectRaw('AVG(stars) as rating_average, COUNT(*) as rating_count');
 
-        return $builder->leftJoinSub($ratings, 'r', 'r.application_id', '=', 'a.id');
+        return $builder->leftJoinLateral($ratings, 'r');
     }
 
     public function countByStage(int $jobId): array

@@ -21,7 +21,7 @@ trait SignsInAdmins
 
     /**
      * The code of the time step `$stepOffset` steps from now. The server accepts one step either way and refuses a step that is
-     * not newer than the last accepted one, so a test that signs in several times uses -1, then 0, then 1.
+     * not newer than the last accepted one, so a test that signs in several times uses 0, then 1 (two steps stay valid when the 30-second boundary passes mid-test; a third sign-in needs -1, 0, 1 and can then fail at a boundary).
      */
     protected function totp(string $secret, int $stepOffset = 0): string
     {
