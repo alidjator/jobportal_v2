@@ -50,7 +50,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'REST API of the job portal. Errors are RFC 9457 problem documents; every administrator route lists the permission it needs.',
+        'description' => 'REST API of the job portal. Errors are RFC 9457 problem documents; every administrator route lists the permission it needs. Contact: jajat.sudrajat@pkp.co.id.',
     ],
 
     'ui' => [
