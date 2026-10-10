@@ -55,7 +55,7 @@ final class LegacySchema
     /** @return list<string> */
     public static function tables(): array
     {
-        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs'];
+        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs', 'campaigns'];
 
         foreach (self::TRANSLATED_MASTERS as [$master, $translations]) {
             $tables[] = $master;
@@ -297,6 +297,23 @@ final class LegacySchema
                     $table->unsignedBigInteger($column)->nullable();
                 });
             }
+        }
+
+        if (! $schema->hasTable('campaigns')) {
+            $schema->create('campaigns', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id')->nullable();
+                $table->string('title', 50)->nullable();
+                $table->string('slug', 50)->nullable();
+                $table->string('campaign_type')->default('job_fair');
+                $table->string('location', 50)->nullable();
+                $table->text('description')->nullable();
+                $table->date('start_date')->nullable();
+                $table->date('end_date')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+                $table->unsignedBigInteger('created_by')->nullable();
+            });
         }
 
         if (! $schema->hasTable('company_questions')) {

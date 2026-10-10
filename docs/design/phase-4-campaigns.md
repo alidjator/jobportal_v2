@@ -36,3 +36,14 @@ A campaign is a registration link with a code, a type and an active period, used
 - **Audit:** `CampaignChanged` (created, updated, deleted) is recorded by `RecordCampaignAuditEntries` (`campaign.created`, `campaign.updated`, `campaign.deleted`).
 - **Tests:** `tests/Feature/Campaign/CampaignTest.php`; the two registration tests that sent a campaign code now create the campaign first.
 - **Not done:** the importer of the 11 legacy campaigns (a separate step that runs on real data only with approval).
+
+## Legacy import coded (2026-10-10)
+
+`CampaignsImporter` (entity `campaigns`, id map `campaign`, depends on `accounts` and `companies`; writer `DatabaseCampaignWriter`; migration-free). Run it with `php artisan legacy:import campaigns` (a dry run until `--write` is given). The legacy table was checked by schema only (`SHOW COLUMNS`, no data): `id`, `company_id`, `title` (50), `slug` (50, not unique), `campaign_type`, `location`, `description`, `start_date`, `end_date`, `created_by`, `created_at`, `updated_at`; every column but `id` and `campaign_type` may be null.
+
+- **Code:** the legacy `slug` (it is the value `candidates.campaign_channel` holds, as the client route `/{slug}/register` shows), lower-cased; characters outside letters, digits, `_`, `.`, `-` become `-` (flagged `code-normalised`); the oldest row wins a duplicate (compared in lower case), later ones are skipped as `code-taken`. The registration codes of imported accounts are not touched and are matched in lower case.
+- **Type:** `job_fair`, `lembaga_pendidikan`, `lembaga_pemerintahan`, `lembaga_training`, `mitra`, `job_marketplace`, `sosial_media` map to the new seven; anything else is skipped as `type-unknown`.
+- **Creator:** the legacy `created_by` user, or the owner of the company when that user was not imported (same rule as the screening questions).
+- **Other fields:** `title` is the name; dates are kept (a missing one leaves that end open); every imported campaign is active; `location` and `description` are not carried; timestamps are kept.
+- **Skip reasons:** `company-missing`, `company-not-imported`, `creator-not-imported`, `type-unknown`, `name-missing`, `slug-missing`, `slug-unusable`, `date-invalid`, `period-invalid`, `code-taken`.
+- **Tests:** `tests/Feature/LegacyImport/CampaignsImporterTest.php` (9 tests, new synthetic table `campaigns` in `tests/Support/LegacySchema.php`). Nothing was run against production data.
