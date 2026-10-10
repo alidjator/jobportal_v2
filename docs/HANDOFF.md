@@ -12,12 +12,12 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 
 ## Current state (2026-10-10)
 
-- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1798 tests, all passing (2026-10-10).
+- Branch `phase-1-company`; `master` is at tag `v0.1.0`; local repo, no remote. Last suite run: 1886 tests, all passing (2026-10-10); the Scramble export has 0 warnings.
 - **Phases 0 to 4 are coded, checked and committed** (Phase 4: dashboards, business intelligence, campaigns, Moodle training, newsletter, salary insight `GET /salary-insight`, company reviews (`src/Review`), saved jobs (`job_saved_jobs`, Job context) and the talent pool (`src/TalentPool`); designs in `docs/design/phase-4-*.md`). Phase 5 is not defined: ask the user what to work on next, do not start new work unasked.
 - **The real PostgreSQL `jobportal_v2` holds only seeded reference data** (migrations to `000103`; 0 accounts, 0 companies, empty id map). The legacy import ran once on the former MySQL database, so the whole import must run again there: dry run `php artisan legacy:import --all` (it only reads and reports; the campaign and newsletter importers are included), ask before `--write`. The user is preparing the mapping files and the freeze date.
 - **Waiting for the user on the real database** (ask before each): `php artisan migrate` (adds `000104` to `000110`), `identity:sync-permissions` (`dashboard.view`, `analytics.view`, `campaigns.manage`, `newsletter.manage`, `reviews.moderate`), `db:seed`, `analytics:rollup --backfill`. `.env` needs `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register`, `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL`, `NEWSLETTER_CONFIRM_URL`, `NEWSLETTER_UNSUBSCRIBE_URL`.
-- Product points settled: applicants see the rejection reason code (not the note); push for `application_update` waits for a client that can receive it; applying needs a verified email; no menu table (clients build menus from `GET admin/me`, which returns `roles` and `permissions`).
-- Run artisan and tests as `jobportal`, never as root (root-owned `storage` breaks the tests).
+- Product points settled: applicants see the rejection reason code (not the note); applying needs a verified email; clients build menus from `GET admin/me` (`roles`, `permissions`); push for `application_update` waits for a capable client.
+- Run artisan as `jobportal`, never as root. The gap analysis is closed (only R8, excluded by the user, remains): ask what Phase 5 is.
 
 ## Items waiting for the user
 
@@ -26,7 +26,6 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Deployment: Reverb process, nginx WebSocket proxy, upload limits, queue worker for `critical,default,bulk` (see `docs/design/phase-2-chat.md`), the invitation page URL.
 - Legal review: the brief for the adviser is `docs/legal-review.md`. The candidate-search filters by religion, nationality, age and gender are switched off by default (`job_seeker.candidate_sensitive_filters_enabled`, coded and committed 2026-10-09); an admin switches them on after the answer. The account age limits and the CV personal details are in the brief too.
 - Deliver `docs/analysis/legacy-security-report.md` (S1 to S3 of the running karir.pkp, critical) to its maintainers. S4 to S13 are marked as not carried over.
-- If the weekly recommendation email grows past a few thousand job seekers, rework it into one queue job per batch (`docs/design/phase-3-matching.md`).
 
 ## Operational facts not in `CLAUDE.md`
 
@@ -50,7 +49,3 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 | `docs/design/phase-1-*.md`, `phase-2-*.md`, `phase-3-*.md`, `phase-4-*.md` | One per step, with the decisions and what was coded |
 | `docs/api/` | How the API document is kept complete, and the generated error catalog |
 | `docs/handoff-history.md` | Session log, including the status of every step of Phases 2 and 3 |
-
-## Suggested first message for the next session
-
-> Read `docs/HANDOFF.md`, then ask me what to work on next.
