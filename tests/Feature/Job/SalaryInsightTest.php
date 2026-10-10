@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\Job\Application\Insight\SalaryInsightReader;
 use Src\Job\Infrastructure\Insight\CachedSalaryInsightReader;
+use Src\Platform\Application\Settings\SettingsStore;
 use Tests\Concerns\BuildsJobFixtures;
 use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
@@ -219,7 +220,7 @@ final class SalaryInsightTest extends FeatureTestCase
 
         $this->insight("role_id={$this->role}")->assertJsonPath('data.available', false);
 
-        DB::table('platform_settings')->insert(['key' => 'analytics.min_group_size', 'value' => json_encode(3), 'created_at' => now(), 'updated_at' => now()]);
+        $this->app->make(SettingsStore::class)->setGlobal('analytics.min_group_size', 3, null);
         Cache::flush();
 
         $this->insight("role_id={$this->role}")->assertJsonPath('data.available', true)->assertJsonPath('data.jobs', 3);
@@ -227,7 +228,7 @@ final class SalaryInsightTest extends FeatureTestCase
 
     public function test_ids_that_do_not_exist_and_a_city_outside_its_province_are_refused(): void
     {
-        $this->insight('')->assertStatus(422)->assertJsonValidationErrors(['role_id'], null);
+        $this->insight('')->assertStatus(422)->assertJsonValidationErrors(['role_id']);
         $this->insight('role_id=999999')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-reference')->assertJsonPath('errors.role_id.0', 'This value does not exist or is not active.');
         $this->insight("role_id={$this->role}&experience_level_id=999999&category_id=999999")->assertStatus(422)->assertJsonStructure(['errors' => ['experience_level_id', 'category_id']]);
 
