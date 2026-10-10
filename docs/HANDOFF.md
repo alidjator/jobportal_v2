@@ -1,14 +1,11 @@
 # Handoff
 
-The short entry point for a new session. Working rules, code standard, database rules and commands are in `CLAUDE.md` and are not repeated here.
-Keep this file **under about 5 KB**: replace the status below instead of appending to it. Decisions belong in the design documents, not here. The full history
-(including the per-step status of Phases 2 and 3) is in `docs/handoff-history.md`; search it for a specific past event, do not read it whole.
+Entry point for a new session; rules, code standard and commands are in `CLAUDE.md`. Keep this file **under about 5 KB**: replace the status, do not append; decisions belong in `docs/design/`. History: `docs/handoff-history.md` (search it, do not read it whole).
 
 ## Read order
 
 1. This file.
-2. The design document of the step you work on (`docs/design/`, see the index below). Each records the user's decisions and what was coded.
-3. Only when needed: `docs/design/decisions.md` (cross-phase decisions), `architecture.md` (API contract, auth, persistence, queues, files), `phase-0-schema.md`.
+2. The design document of the step you work on (`docs/design/`: `decisions.md` cross-phase, `architecture.md` API/auth/persistence/queues/files, `phase-0-schema.md`, one `phase-N-*.md` per step). `docs/analysis/` holds the legacy flow map, benchmarks and gap analysis; `docs/api/` the API-document rules and error catalog.
 
 ## Current state (2026-10-10)
 
@@ -16,7 +13,6 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - **Phases 0 to 4 are coded, checked and committed** (Phase 4: dashboards, business intelligence, campaigns, Moodle training, newsletter, salary insight `GET /salary-insight`, company reviews (`src/Review`), saved jobs (`job_saved_jobs`, Job context) and the talent pool (`src/TalentPool`); designs in `docs/design/phase-4-*.md`). Phase 5 is not defined: ask the user what to work on next, do not start new work unasked.
 - **The real PostgreSQL `jobportal_v2` holds only seeded reference data** (migrations to `000103`; 0 accounts, 0 companies, empty id map). The legacy import ran once on the former MySQL database, so the whole import must run again there: dry run `php artisan legacy:import --all` (it only reads and reports; the campaign and newsletter importers are included), ask before `--write`. The user is preparing the mapping files and the freeze date.
 - **Waiting for the user on the real database** (ask before each): `php artisan migrate` (adds `000104` to `000110`), `identity:sync-permissions` (`dashboard.view`, `analytics.view`, `campaigns.manage`, `newsletter.manage`, `reviews.moderate`), `db:seed`, `analytics:rollup --backfill`. `.env` needs `CAMPAIGN_REGISTRATION_URL=https://<client site>/{code}/register`, `MOODLE_BASE_URL`, `MOODLE_TOKEN`, `MOODLE_COURSE_URL`, `NEWSLETTER_CONFIRM_URL`, `NEWSLETTER_UNSUBSCRIBE_URL`.
-- Product points settled: applicants see the rejection reason code (not the note); applying needs a verified email; clients build menus from `GET admin/me` (`roles`, `permissions`); push for `application_update` waits for a capable client.
 - Run artisan as `jobportal`, never as root. The gap analysis is closed (only R8, excluded by the user, remains): ask what Phase 5 is.
 
 ## Items waiting for the user
@@ -32,20 +28,7 @@ Keep this file **under about 5 KB**: replace the status below instead of appendi
 - Commit identity: `git -c user.name=jobportal -c user.email=<the user's email> commit` (the repo has no git identity configured).
 - Live dev site: `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `COMPANY_INVITATION_URL` empty. The scheduler runs from the `jobportal` user's crontab (`schedule:run` every minute);
   the nginx config is root-owned at `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (a copy is in `/home/jobportal/nginx/`). Neither is in git, nor are the POSIX ACLs on `storage/` and `bootstrap/cache`.
-- Production schema dump (read-only account, no data): `mariadb-dump --no-data --skip-comments --no-tablespaces --skip-triggers --skip-lock-tables` with the `KARIR_PKP_DB_*` values.
-- After a deployment that adds a permission, `identity:sync-permissions` must be run on the real database (ask first). `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added.
+- `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added.
 - The user runs `composer check`, real-database migrations and the legacy import (explicit approval each time). `KARIR_PKP_FILES_ROOT` is set in `.env`. Mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
 - A rehearsal database: create one (the role has `CREATEDB`). Use `DB_DATABASE=<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`. The legacy source (`legacy` connection) stays MariaDB.
-- API documentation (Scramble) and the error catalog: the rules for writing controllers and resources so the document stays complete are in `docs/api/README.md`. The pages `/docs/api` are not served in production; `php artisan scramble:export` writes `api.json`.
-
-## Document index
-
-| File | Content |
-|---|---|
-| `docs/analysis/` | Legacy flow map, legacy findings, benchmark notes, gap analysis |
-| `docs/design/decisions.md` | Cross-phase decisions |
-| `docs/design/architecture.md` | API contract, authentication, authorization, persistence, queues, files, account states |
-| `docs/design/phase-0-schema.md` | Column design of the Phase 0 tables |
-| `docs/design/phase-1-*.md`, `phase-2-*.md`, `phase-3-*.md`, `phase-4-*.md` | One per step, with the decisions and what was coded |
-| `docs/api/` | How the API document is kept complete, and the generated error catalog |
-| `docs/handoff-history.md` | Session log, including the status of every step of Phases 2 and 3 |
+- `/docs/api` is not served in production; `php artisan scramble:export` writes `api.json`.
