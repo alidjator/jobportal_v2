@@ -150,8 +150,8 @@ final class SavedJobTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->api('GET', '/me/saved-jobs')->assertUnauthorized();
-        $this->api('PUT', "/me/saved-jobs/{$job}")->assertUnauthorized();
+        $this->flushHeaders()->getJson('/api/v1/me/saved-jobs')->assertUnauthorized();
+        $this->flushHeaders()->putJson("/api/v1/me/saved-jobs/{$job}")->assertUnauthorized();
 
         foreach ([['GET', '/me/saved-jobs'], ['PUT', "/me/saved-jobs/{$job}"], ['DELETE', "/me/saved-jobs/{$job}"]] as [$method, $uri]) {
             $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
@@ -199,7 +199,7 @@ final class SavedJobTest extends FeatureTestCase
 
         $rows = collect($this->api('GET', '/jobs', token: $this->seekerToken)->assertOk()->json('data'))->mapWithKeys(fn (array $row): array => [$row['id'] => $row['saved']])->all();
 
-        $this->assertSame([$saved => true, $other => false], $rows);
+        $this->assertEquals([$saved => true, $other => false], $rows);
         $this->assertTrue($this->api('GET', "/jobs/{$saved}", token: $this->seekerToken)->assertOk()->json('data.saved'));
         $this->assertFalse($this->api('GET', "/jobs/{$other}", token: $this->seekerToken)->assertOk()->json('data.saved'));
     }
@@ -208,8 +208,8 @@ final class SavedJobTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->assertArrayNotHasKey('saved', $this->api('GET', '/jobs')->assertOk()->json('data.0'));
-        $this->assertArrayNotHasKey('saved', $this->api('GET', "/jobs/{$job}")->assertOk()->json('data'));
+        $this->assertArrayNotHasKey('saved', $this->flushHeaders()->getJson('/api/v1/jobs')->assertOk()->json('data.0'));
+        $this->assertArrayNotHasKey('saved', $this->flushHeaders()->getJson("/api/v1/jobs/{$job}")->assertOk()->json('data'));
         $this->assertArrayNotHasKey('saved', $this->api('GET', '/jobs', token: $this->adminToken)->assertOk()->json('data.0'));
     }
 

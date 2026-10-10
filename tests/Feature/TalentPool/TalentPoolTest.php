@@ -272,7 +272,7 @@ final class TalentPoolTest extends FeatureTestCase
 
     public function test_only_a_member_of_an_active_company_has_a_talent_pool(): void
     {
-        $this->api('GET', '/company/talent-pool')->assertUnauthorized();
+        $this->flushHeaders()->getJson('/api/v1/company/talent-pool')->assertUnauthorized();
 
         foreach ([['GET', '/company/talent-pool'], ['GET', '/company/talent-pool/categories']] as [$method, $uri]) {
             $this->api($method, $uri, token: $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');

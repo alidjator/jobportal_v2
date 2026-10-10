@@ -74,7 +74,11 @@ final readonly class GetPublicJob
 
         $scores = $this->scores->forJobs($viewerId, [$jobId]);
 
-        return $view->withMatch($scores[$jobId] ?? null)->withSaved($this->saved->savedAmong($viewerId, [$jobId]) !== []);
+        if ($scores !== null) {
+            $view = $view->withMatch($scores[$jobId] ?? null);
+        }
+
+        return $view->withSaved($this->saved->savedAmong($viewerId, [$jobId]) !== []);
     }
 
     /** @return array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null */
