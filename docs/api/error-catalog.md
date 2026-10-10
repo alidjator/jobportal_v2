@@ -11,6 +11,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `alert-limit` | 422 | JobAlert |  |
 | `already-applied` | 409, 422 | JobInvitation, Recruitment | This candidate already applied to the job. |
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
+| `already-in-talent-pool` | 409 | TalentPool | This candidate is already in your talent pool. |
 | `already-invited` | 409 | JobInvitation | This candidate was already invited to the job. |
 | `already-reported` | 409 | Review | You already reported this review. |
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
@@ -25,13 +26,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `campaign-link-unavailable` | 503 | Campaign | The registration link is not configured. |
 | `campaign-period-invalid` | 422 | Campaign | The campaign cannot end before it starts. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
+| `category-limit` | 422 | TalentPool |  |
+| `category-name-invalid` | 422 | TalentPool |  |
+| `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
-| `company-admin-required` | 403 | Campaign, Company, Job, Recruitment, Review | Only a company admin can manage campaigns. |
+| `company-admin-required` | 403 | Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can manage campaigns. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
-| `company-suspended` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review | This company is suspended. |
+| `company-suspended` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |
@@ -143,14 +147,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
-| `not-a-company-member` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review | Only a company member can manage campaigns. |
+| `not-a-company-member` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can manage campaigns. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
 | `not-in-offer-stage` | 409 | Recruitment | Move the application to an offer stage before sending an offer. |
 | `not-note-author` | 403 | Recruitment | Only the author or a company admin can delete a note. |
 | `not-your-message` | 403 | Messaging | Only the sender can delete a message. |
-| `note-too-long` | 422 | JobInvitation |  |
+| `note-too-long` | 422 | JobInvitation, TalentPool |  |
 | `offer-expired` | 409 | Recruitment | This offer has expired. |
 | `offer-not-pending` | 409 | Recruitment | This offer is no longer pending. |
 | `offer-required` | 422 | Recruitment |  |
@@ -174,6 +178,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `review-not-published` | 409 | Review |  |
 | `review-requires-application` | 403 | Review | Only a job seeker who applied to this company can review it. |
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
+| `saved-jobs-limit` | 422 | Job |  |
 | `schedule-required` | 422 | Recruitment |  |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
@@ -184,6 +189,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `stage-limit-reached` | 409 | Recruitment | The company has reached its limit of stages. |
 | `stage-name-taken` | 409 | Recruitment | Another stage of this company already has this name. |
 | `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, interview or offer. |
+| `talent-pool-limit` | 422 | TalentPool |  |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
 | `terms-not-accepted` | 409 | Identity | You must accept the current terms and privacy policy before continuing. |
 | `too-many-applications` | 422 | Recruitment |  |

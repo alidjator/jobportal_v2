@@ -6,8 +6,8 @@ use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 use Src\Job\Interface\Http\Controllers\RecommendationController;
-use Src\Job\Interface\Http\Controllers\SavedJobController;
 use Src\Job\Interface\Http\Controllers\SalaryInsightController;
+use Src\Job\Interface\Http\Controllers\SavedJobController;
 use Src\Shared\Interface\Http\Middleware\PublicCacheHeaders;
 
 // Public: the search over live jobs (limited per client address, cached like the page below). A job seeker who sends a token also gets the match with their

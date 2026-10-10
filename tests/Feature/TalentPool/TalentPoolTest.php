@@ -300,7 +300,7 @@ final class TalentPoolTest extends FeatureTestCase
 
     public function test_a_note_is_saved_trimmed_shown_to_every_member_and_cleared_with_null(): void
     {
-        $id = $this->entryId($this->ana, extra: ['note' => "  Strong on Laravel, call back in spring.  "]);
+        $id = $this->entryId($this->ana, extra: ['note' => '  Strong on Laravel, call back in spring.  ']);
 
         $this->assertSame('Strong on Laravel, call back in spring.', $this->listing()->json('data.0.note'));
         $this->assertSame('Strong on Laravel, call back in spring.', $this->listing(token: $this->adminToken)->json('data.0.note'));
