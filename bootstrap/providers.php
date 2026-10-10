@@ -18,6 +18,7 @@ use Src\Notification\Infrastructure\NotificationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
 use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
+use Src\Review\Infrastructure\ReviewServiceProvider;
 use Src\Training\Infrastructure\TrainingServiceProvider;
 
 return [
@@ -40,4 +41,5 @@ return [
     JobSeekerServiceProvider::class,
     LegacyImportServiceProvider::class,
     DashboardServiceProvider::class,
+    ReviewServiceProvider::class,
 ];

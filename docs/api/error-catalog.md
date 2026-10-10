@@ -7,11 +7,13 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `account-deactivated` | 403 | Identity | This account has been deactivated. |
 | `account-not-active` | 409 | Identity | Only an active account can be deleted. |
 | `account-suspended` | 403 | Identity | This account has been suspended. |
-| `admin-only` | 403 | Dashboard, JobSeeker, Newsletter | Only an admin has this dashboard. |
+| `admin-only` | 403 | Dashboard, JobSeeker, Newsletter, Review | Only an admin has this dashboard. |
 | `alert-limit` | 422 | JobAlert |  |
 | `already-applied` | 409, 422 | JobInvitation, Recruitment | This candidate already applied to the job. |
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
 | `already-invited` | 409 | JobInvitation | This candidate was already invited to the job. |
+| `already-reported` | 409 | Review | You already reported this review. |
+| `already-reviewed` | 409 | Review | You already reviewed this company. |
 | `application-final` | 409 | Recruitment | This application is final, so its ratings can no longer change. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
@@ -25,11 +27,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
-| `company-admin-required` | 403 | Campaign, Company, Job, Recruitment | Only a company admin can manage campaigns. |
+| `company-admin-required` | 403 | Campaign, Company, Job, Recruitment, Review | Only a company admin can manage campaigns. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
-| `company-suspended` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment | This company is suspended. |
+| `company-suspended` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review | This company is suspended. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |
@@ -123,7 +125,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-not-reopenable` | 409 | Job | Only a closed or an expired job can be reopened. |
 | `job-not-taken-down` | 409 | Job | Only a job that was taken down can be restored. |
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
-| `job-seeker-only` | 403 | Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Training | Only a job seeker has this dashboard. |
+| `job-seeker-only` | 403 | Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker has this dashboard. |
 | `job-taken-down` | 409 | Recruitment | This job was taken down, so its applications can no longer be processed. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
@@ -141,7 +143,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
-| `not-a-company-member` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment | Only a company member can manage campaigns. |
+| `not-a-company-member` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review | Only a company member can manage campaigns. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
@@ -152,6 +154,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `offer-expired` | 409 | Recruitment | This offer has expired. |
 | `offer-not-pending` | 409 | Recruitment | This offer is no longer pending. |
 | `offer-required` | 422 | Recruitment |  |
+| `own-review` | 403 | Review | You cannot report your own review. |
 | `page-out-of-range` | 422 | Job |  |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
@@ -163,7 +166,13 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `reference-value-taken` | 409 | ReferenceData |  |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
+| `reply-not-pending` | 409 | Review |  |
+| `report-not-open` | 409 | Review | This report was already handled. |
 | `resume-limit-reached` | 409 | JobSeeker |  |
+| `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
+| `review-not-pending` | 409 | Review |  |
+| `review-not-published` | 409 | Review |  |
+| `review-requires-application` | 403 | Review | Only a job seeker who applied to this company can review it. |
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
 | `schedule-required` | 422 | Recruitment |  |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |

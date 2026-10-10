@@ -8,6 +8,9 @@ interface PublicCompanies
     /** The company's public card, or null when it does not exist, is suspended or is hidden by its own admin (all three look the same to the public). */
     public function card(int $companyId): ?PublicCompanyCard;
 
+    /** Like `card`, found by the company's slug. */
+    public function cardBySlug(string $slug): ?PublicCompanyCard;
+
     /**
      * The public cards of these companies in one go, keyed by company id; a company that is missing, suspended or hidden is left out.
      *

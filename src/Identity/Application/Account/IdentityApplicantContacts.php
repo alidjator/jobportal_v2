@@ -25,4 +25,17 @@ final readonly class IdentityApplicantContacts implements ApplicantContacts
 
         return $user !== null && $user->anonymizedAt() === null && $user->type === UserType::JobSeeker;
     }
+
+    public function names(array $userIds): array
+    {
+        $names = [];
+
+        foreach ($this->users->findByIds($userIds) as $user) {
+            if ($user->anonymizedAt() === null && $user->id !== null) {
+                $names[$user->id] = $user->name();
+            }
+        }
+
+        return $names;
+    }
 }

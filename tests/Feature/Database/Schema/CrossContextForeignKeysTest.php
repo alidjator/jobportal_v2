@@ -40,6 +40,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'jobalert_alerts' => ['user_id'],
             'jobinvitation_invitations' => ['user_id', 'invited_by_user_id'],
             'campaign_campaigns' => ['created_by_user_id'],
+            'review_reviews' => ['user_id'],
+            'review_replies' => ['written_by_user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -51,8 +53,11 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'platform_setting_overrides' => ['updated_by_admin_id'],
             'campaign_campaigns' => ['created_by_admin_id'],
             'newsletter_issues' => ['created_by_admin_id', 'sent_by_admin_id'],
+            'review_reviews' => ['moderated_by_admin_id'],
+            'review_replies' => ['moderated_by_admin_id'],
+            'review_reports' => ['resolved_by_admin_id'],
         ],
-        'company_companies' => ['jobinvitation_invitations' => ['company_id'], 'campaign_campaigns' => ['company_id']],
+        'company_companies' => ['jobinvitation_invitations' => ['company_id'], 'campaign_campaigns' => ['company_id'], 'review_reviews' => ['company_id']],
         'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id']],
     ];
@@ -68,6 +73,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
         'platform_audit_logs' => ['actor_id', 'subject_id'],
         'legacyimport_id_map' => ['legacy_id', 'new_id'],
         'job_market_daily' => ['company_id', 'category_id', 'province_id'],
+        'review_reports' => ['reporter_id'],
     ];
 
     /** @return array<string, array{referenced: string, delete: string}> keyed by "table.column" */

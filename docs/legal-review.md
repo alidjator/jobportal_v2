@@ -15,6 +15,7 @@ It is a factual inventory, not legal advice, and the legal references in the que
 | Profile views | A company member opening a candidate profile or resume is logged (company, member, candidate, time); the candidate sees which companies looked. Contact data stays hidden until the candidate applies. |
 | Job views | Planned (dashboards): each view of a job is logged with the account id, or a daily-salted hash of IP and user agent for a visitor who is not logged in, for 90 days; afterwards only a daily count per job remains. Companies see the counts, never the viewers. |
 | Application source and match score | Each application records where the applicant came from (search, recommendation, alert, direct link or invitation) and the match percentage at the time of applying. Both are used only in aggregate analytics for the platform and the company admin (groups under 5 are hidden); no endpoint returns them for a person. |
+| Company reviews | A job seeker who applied to a company may review it; an admin approves it first, and the author's **name is always shown** with a published review. A company may reply and may report a review. When the account is erased, the text of a published review is deleted and the ratings stay. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
 
 ## 2. Questions
@@ -26,6 +27,7 @@ It is a factual inventory, not legal advice, and the legal references in the que
 5. **Protected attributes as search results.** Companies cannot see these values in the search, but they can infer them by filtering repeatedly. Is that a concern if the filters are later switched on?
 6. **Terms and privacy policy.** What must the documents say about the candidate search (opt-in, view log, what the company sees), the CV generator and the processing for matching? Is a data-processing agreement with companies needed?
 7. **Records and retention.** How long may the view log and the CV generation records be kept, and what may the platform keep after an account is anonymised?
+8. **Company reviews.** Who answers for a defamatory review (the author, the platform as the host)? What notice-and-takedown process should the terms promise, and is showing the author's real name lawful and wise? How long may a rejected review or a report be kept?
 
 ## 3. What we can change after the answers
 

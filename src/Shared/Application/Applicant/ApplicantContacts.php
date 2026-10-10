@@ -10,4 +10,12 @@ interface ApplicantContacts
 
     /** Whether the account exists, is a job seeker's and was not anonymised: the only accounts a company may start a conversation with. */
     public function isActiveJobSeeker(int $userId): bool;
+
+    /**
+     * The names of these accounts, keyed by account id; an account that does not exist or was anonymised is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, string>
+     */
+    public function names(array $userIds): array;
 }

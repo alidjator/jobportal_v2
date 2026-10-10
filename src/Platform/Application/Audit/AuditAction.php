@@ -88,4 +88,18 @@ final class AuditAction
     public const string NEWSLETTER_ISSUE_SENT = 'newsletter.issue_sent';
 
     public const string NEWSLETTER_SUBSCRIBER_DELETED = 'newsletter.subscriber_deleted';
+
+    public const string REVIEW_APPROVED = 'review.approved';
+
+    public const string REVIEW_REJECTED = 'review.rejected';
+
+    public const string REVIEW_REMOVED = 'review.removed';
+
+    public const string REVIEW_REPLY_APPROVED = 'review.reply_approved';
+
+    public const string REVIEW_REPLY_REJECTED = 'review.reply_rejected';
+
+    public const string REVIEW_REPLY_REMOVED = 'review.reply_removed';
+
+    public const string REVIEW_REPORT_DISMISSED = 'review.report_dismissed';
 }

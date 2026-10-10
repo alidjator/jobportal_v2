@@ -1,4 +1,4 @@
-# Company reviews (designed 2026-10-10)
+# Company reviews (designed and coded 2026-10-10)
 
 Gap J10b (`decisions.md`): "Company reviews by job seekers: admin-moderated; only job seekers who applied to that company may write; the company gets one public reply per review (also moderated); **the author's name is always shown** (the user's choice; risk reported: may suppress honesty and expose authors to conflict)". The legacy application has no reviews, so there is nothing to import.
 
@@ -73,3 +73,15 @@ Verified employment or interview-experience fields, review helpfulness votes, re
 ## Tests (to write with the code)
 
 Writing rights (no application, withdrawn application counts, hidden company, one per company); creating, editing (published goes back to pending, rejected resubmits, removed refuses) and deleting; the moderation queue and every transition including the reasons and notifications; public list (only published, sort, name shown, anonymised author, reply only when published); summary hidden below 3 and aspect averages; reply rules (company admin only, only on a published review, edit goes back to pending, admin moderation); reports (who, once, own review, resolve, taking down resolves them); anonymisation (text erased, ratings stay, unpublished deleted); limits (429); permission `reviews.moderate`; audit entries; cache invalidation.
+
+## What was coded (2026-10-10)
+
+- **Context `Review`** (`src/Review`), migration `000107` (`review_reviews`, `review_replies`, `review_reports`; the keys to accounts, admins and companies are RESTRICT and listed in `CrossContextForeignKeysTest`; `review_reports.reporter_id` has none on purpose; one open report per reporter per review is a partial unique index).
+- **Routes:** public `GET companies/{slug}/reviews` (60/min per address, `max_age=60;etag`); job seeker `POST companies/{slug}/reviews`, `GET|PUT|DELETE me/reviews[/{id}]`, `POST reviews/{id}/report` (10 writes per hour per account); company `GET company/reviews`, `PUT|DELETE company/reviews/{id}/reply`, `POST company/reviews/{id}/report` (30 per hour); admin (`reviews.moderate`) `admin/reviews` (list, show, `approve`, `reject`, `remove`), `admin/review-replies` (list, `approve`, `reject`, `remove`) and `admin/review-reports` (list, `dismiss`).
+- **Error codes:** `review-requires-application`, `already-reviewed`, `review-not-editable`, `review-not-pending`, `review-not-published`, `reply-not-pending`, `already-reported`, `own-review`, `report-not-open` (catalog regenerated).
+- **Shared ports extended:** `PublicCompanies::cardBySlug()` (Company) and `ApplicantContacts::names()` (Identity; an erased account is missing and reads `Deleted user`).
+- **Summary:** `CachedReviewSummaries` keeps it 10 minutes; publishing, editing a published review, taking down, deleting and erasing drop it. A report on a removed reply is not possible (a removed reply is deleted; only the audit entry remains).
+- **Audit:** `review.approved`, `review.rejected`, `review.removed`, `review.reply_approved`, `review.reply_rejected`, `review.reply_removed`, `review.report_dismissed` (`RecordReviewAuditEntries`, with the company id and the reason code).
+- **Notifications:** `review.published`, `review.rejected`, `review.removed`, `review.reply_published` (author) and `review.received` (company admins).
+- **Tests:** `tests/Feature/Review/ReviewTest.php` (32 tests).
+- **On the real server:** `php artisan migrate`, `identity:sync-permissions` (`reviews.moderate`).

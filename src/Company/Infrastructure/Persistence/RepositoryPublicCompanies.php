@@ -18,6 +18,13 @@ final readonly class RepositoryPublicCompanies implements PublicCompanies
         return $this->cards([$companyId])[$companyId] ?? null;
     }
 
+    public function cardBySlug(string $slug): ?PublicCompanyCard
+    {
+        $id = $this->connection->table('company_companies')->where('slug', $slug)->value('id');
+
+        return $id === null ? null : $this->card((int) $id);
+    }
+
     public function cards(array $companyIds): array
     {
         if ($companyIds === []) {
