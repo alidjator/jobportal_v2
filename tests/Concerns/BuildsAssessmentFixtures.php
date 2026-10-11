@@ -55,7 +55,7 @@ trait BuildsAssessmentFixtures
     /** @return array{0: int, 1: string} the provider id and the psychologist's token */
     protected function providerWithPsychologist(string $name, string $email): array
     {
-        $providerId = (int) DB::table('assessment_providers')->insertGetId(['name' => $name, 'legal_name' => 'PT '.$name, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        $providerId = (int) DB::table('assessment_providers')->insertGetId(['code' => strtoupper(substr((string) preg_replace('/[^A-Za-z]/', '', $name), 0, 4)), 'name' => $name, 'legal_name' => 'PT '.$name, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         $user = UserModel::query()->create(['type' => 'psychologist', 'name' => 'Psikolog '.$name, 'email' => $email, 'status' => 'active', 'locale' => 'id', 'email_verified_at' => '2026-10-01 00:00:00']);
         DB::table('assessment_psychologists')->insert([
             'user_id' => $user->id, 'provider_id' => $providerId, 'str_number' => 'STR-1', 'str_valid_until' => '2030-01-31',

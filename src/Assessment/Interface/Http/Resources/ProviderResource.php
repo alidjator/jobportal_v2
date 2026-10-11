@@ -15,6 +15,7 @@ final class ProviderResource extends JsonResource
     {
         return [
             'id' => $this->resource->id,
+            'code' => $this->resource->code(),
             'name' => $this->resource->name(),
             'legal_name' => $this->resource->legalName(),
             'status' => $this->resource->status()->value,

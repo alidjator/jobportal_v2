@@ -24,7 +24,7 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-11 10:00:00');
 
-        $providerId = (int) DB::table('assessment_providers')->insertGetId(['name' => 'Lembaga Psikologi Contoh', 'legal_name' => 'PT Lembaga', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        $providerId = (int) DB::table('assessment_providers')->insertGetId(['code' => 'LPC', 'name' => 'Lembaga Psikologi Contoh', 'legal_name' => 'PT Lembaga', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         $this->userId = $this->account('psychologist', 'dewi@example.test');
         DB::table('assessment_psychologists')->insert([
             'user_id' => $this->userId, 'provider_id' => $providerId, 'str_number' => 'STR-123', 'str_valid_until' => '2030-01-31',

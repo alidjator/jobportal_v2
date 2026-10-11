@@ -36,14 +36,14 @@ final class AdminProviderController extends ApiController
 
     public function store(ProviderRequest $request, ActorResolver $actors, RegisterProvider $register): JsonResponse
     {
-        $provider = $register->execute($actors->fromRequest($request), $request->name(), $request->legalName(), $request->ip(), $request->userAgent());
+        $provider = $register->execute($actors->fromRequest($request), $request->code(), $request->name(), $request->legalName(), $request->ip(), $request->userAgent());
 
         return (new ProviderResource($provider))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
     }
 
     public function update(ProviderRequest $request, int $id, ActorResolver $actors, UpdateProvider $update): ProviderResource
     {
-        return new ProviderResource($update->execute($actors->fromRequest($request), $id, $request->name(), $request->legalName()));
+        return new ProviderResource($update->execute($actors->fromRequest($request), $id, $request->code(), $request->name(), $request->legalName()));
     }
 
     public function suspend(Request $request, int $id, ActorResolver $actors, SuspendProvider $suspend): Response

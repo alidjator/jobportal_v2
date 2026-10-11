@@ -31,7 +31,7 @@ final class QuestionRules
     ];
 
     /**
-     * Checks the question and returns what is stored: the points (zero for a question no one scores by points), the scale key and the options
+     * Checks the question and returns what is stored: the points (zero for a question no one scores by points; for a drawing they are the highest score the psychologist can give), the scale key and the options
      * in their clean form.
      *
      * @param  list<QuestionOption>  $options
@@ -50,7 +50,7 @@ final class QuestionRules
             throw self::invalid('text', 'The question must have between '.self::TEXT_MIN.' and '.self::TEXT_MAX.' characters.');
         }
 
-        $scored = ! in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice, QuestionType::Drawing], true);
+        $scored = ! in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice], true);
 
         if ($scored && ($points < 1 || $points > self::POINTS_MAX)) {
             throw self::invalid('points', 'The points must be between 1 and '.self::POINTS_MAX.'.');

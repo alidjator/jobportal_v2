@@ -6,7 +6,6 @@ use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Navigation;
 use Src\Shared\Application\Actor;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /** The candidate opens another question of the open section, as far as the section's rules allow. */
@@ -21,7 +20,6 @@ final readonly class MoveToQuestion
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-navigation` or `invalid-answer` in a speed section
      * @throws StateConflict `attempt-not-started` or `attempt-closed`
      */
     public function execute(Actor $actor, int $invitationId, int $index, ?string $ip): AttemptView

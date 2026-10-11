@@ -38,6 +38,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
 
         if ($provider->id !== null) {
             $this->connection->table(self::TABLE)->where('id', $provider->id)->update([
+                'code' => $provider->code(),
                 'name' => $provider->name(),
                 'legal_name' => $provider->legalName(),
                 'status' => $provider->status()->value,
@@ -48,6 +49,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
         }
 
         $id = $this->connection->table(self::TABLE)->insertGetId([
+            'code' => $provider->code(),
             'name' => $provider->name(),
             'legal_name' => $provider->legalName(),
             'status' => $provider->status()->value,
@@ -55,12 +57,23 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
             'updated_at' => $now,
         ]);
 
-        return new Provider((int) $id, $provider->name(), $provider->legalName(), $provider->status(), $now);
+        return new Provider((int) $id, $provider->code(), $provider->name(), $provider->legalName(), $provider->status(), $now);
     }
 
     public function nameIsTaken(string $name, ?int $exceptId = null): bool
     {
         $query = $this->connection->table(self::TABLE)->whereRaw('lower(name) = lower(?)', [$name]);
+
+        if ($exceptId !== null) {
+            $query->where('id', '<>', $exceptId);
+        }
+
+        return $query->exists();
+    }
+
+    public function codeIsTaken(string $code, ?int $exceptId = null): bool
+    {
+        $query = $this->connection->table(self::TABLE)->where('code', $code);
 
         if ($exceptId !== null) {
             $query->where('id', '<>', $exceptId);
@@ -91,6 +104,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
     {
         return new Provider(
             (int) $row->id,
+            (string) $row->code,
             (string) $row->name,
             (string) $row->legal_name,
             ProviderStatus::from($row->status),

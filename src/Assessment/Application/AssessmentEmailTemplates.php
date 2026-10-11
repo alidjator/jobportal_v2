@@ -20,6 +20,8 @@ final class AssessmentEmailTemplates
 
     public const string TEST_CANCELLED = 'assessment.test_cancelled';
 
+    public const string EXPLANATION_READY = 'assessment.explanation_ready';
+
     /** The template that tells the candidate about a change to a test invitation. */
     public static function keyForChange(InvitationChange $change): string
     {
@@ -108,6 +110,16 @@ final class AssessmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\n{{company_name}} membatalkan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}}.\n\nBuka akun Anda untuk melihat statusnya.",
                     'en' => "Hello {{name}},\n\n{{company_name}} cancelled the test \"{{test_title}}\" for your application for {{job_title}}.\n\nOpen your account to see its status.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EXPLANATION_READY,
+                'Sent to a candidate when a psychologist signed the report of a psychological test they took, so they can read the explanation of the result.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penjelasan hasil tes Anda sudah siap', 'en' => 'The explanation of your test result is ready']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPsikolog telah menandatangani laporan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}}.\n\nBuka akun Anda untuk membaca penjelasan hasil tes Anda.",
+                    'en' => "Hello {{name}},\n\nA psychologist signed the report of the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nOpen your account to read the explanation of your result.",
                 ]),
             ),
         ];

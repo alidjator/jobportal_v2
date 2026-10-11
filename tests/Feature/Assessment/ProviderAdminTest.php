@@ -55,7 +55,7 @@ final class ProviderAdminTest extends FeatureTestCase
 
     private function provider(string $name = 'Lembaga Psikologi Contoh'): int
     {
-        return (int) $this->admin('POST', 'providers', ['name' => $name, 'legal_name' => 'PT '.$name])->assertCreated()->json('data.id');
+        return (int) $this->admin('POST', 'providers', ['code' => strtoupper(substr((string) preg_replace('/[^A-Za-z]/', '', $name), 0, 4)), 'name' => $name, 'legal_name' => 'PT '.$name])->assertCreated()->json('data.id');
     }
 
     /** @param  array<string, mixed>  $overrides */
@@ -102,13 +102,14 @@ final class ProviderAdminTest extends FeatureTestCase
 
     public function test_an_admin_registers_a_provider_and_the_action_is_audited(): void
     {
-        $this->admin('POST', 'providers', ['name' => 'Lembaga Psikologi Contoh', 'legal_name' => 'PT Lembaga Psikologi Contoh'])
+        $this->admin('POST', 'providers', ['code' => 'lpc', 'name' => 'Lembaga Psikologi Contoh', 'legal_name' => 'PT Lembaga Psikologi Contoh'])
             ->assertCreated()
+            ->assertJsonPath('data.code', 'LPC')
             ->assertJsonPath('data.name', 'Lembaga Psikologi Contoh')
             ->assertJsonPath('data.legal_name', 'PT Lembaga Psikologi Contoh')
             ->assertJsonPath('data.status', 'active');
 
-        $this->assertDatabaseHas('assessment_providers', ['name' => 'Lembaga Psikologi Contoh', 'status' => 'active']);
+        $this->assertDatabaseHas('assessment_providers', ['code' => 'LPC', 'name' => 'Lembaga Psikologi Contoh', 'status' => 'active']);
         $this->assertDatabaseHas('platform_audit_logs', ['action' => 'assessment.provider_registered', 'actor_type' => 'admin', 'subject_type' => 'assessment_provider']);
     }
 
@@ -116,14 +117,27 @@ final class ProviderAdminTest extends FeatureTestCase
     {
         $this->provider('Lembaga Psikologi Contoh');
 
-        $this->admin('POST', 'providers', ['name' => 'lembaga psikologi contoh', 'legal_name' => 'PT Lain'])
+        $this->admin('POST', 'providers', ['code' => 'LAIN', 'name' => 'lembaga psikologi contoh', 'legal_name' => 'PT Lain'])
             ->assertStatus(409)
             ->assertJsonPath('type', 'urn:jobportal:error:provider-name-taken');
     }
 
-    public function test_a_provider_needs_a_name_and_a_legal_name(): void
+    public function test_a_provider_code_is_unique_and_made_of_two_to_ten_letters_or_digits(): void
     {
-        $this->admin('POST', 'providers', ['name' => 'A'])->assertUnprocessable()->assertJsonValidationErrors(['name', 'legal_name']);
+        $this->provider('Lembaga Psikologi Contoh');
+
+        $this->admin('POST', 'providers', ['code' => 'lemb', 'name' => 'Biro Lain', 'legal_name' => 'PT Biro Lain'])
+            ->assertStatus(409)
+            ->assertJsonPath('type', 'urn:jobportal:error:provider-code-taken');
+
+        foreach (['A', 'TOOLONGCODE1', 'AB-C', 'AB C'] as $code) {
+            $this->admin('POST', 'providers', ['code' => $code, 'name' => 'Biro Lain', 'legal_name' => 'PT Biro Lain'])->assertUnprocessable()->assertJsonValidationErrors(['code']);
+        }
+    }
+
+    public function test_a_provider_needs_a_code_a_name_and_a_legal_name(): void
+    {
+        $this->admin('POST', 'providers', ['name' => 'A'])->assertUnprocessable()->assertJsonValidationErrors(['code', 'name', 'legal_name']);
     }
 
     public function test_an_admin_without_the_permission_is_refused(): void
@@ -131,7 +145,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $token = $this->adminToken([], 'weak@example.test');
 
         $this->admin('GET', 'providers', null, $token)->assertForbidden();
-        $this->admin('POST', 'providers', ['name' => 'Lembaga', 'legal_name' => 'PT Lembaga'], $token)->assertForbidden();
+        $this->admin('POST', 'providers', ['code' => 'LEM', 'name' => 'Lembaga', 'legal_name' => 'PT Lembaga'], $token)->assertForbidden();
     }
 
     public function test_the_provider_endpoints_need_a_signed_in_admin(): void
@@ -153,8 +167,9 @@ final class ProviderAdminTest extends FeatureTestCase
         $this->admin('GET', 'providers?filter[other]=1')->assertUnprocessable();
 
         $this->admin('GET', "providers/{$first}")->assertOk()->assertJsonPath('data.name', 'Alpha Psikologi');
-        $this->admin('PUT', "providers/{$first}", ['name' => 'Alpha Baru', 'legal_name' => 'PT Alpha Baru'])->assertOk()->assertJsonPath('data.name', 'Alpha Baru');
-        $this->admin('PUT', "providers/{$first}", ['name' => 'beta konsultan', 'legal_name' => 'PT X'])->assertStatus(409);
+        $this->admin('PUT', "providers/{$first}", ['code' => 'ALB', 'name' => 'Alpha Baru', 'legal_name' => 'PT Alpha Baru'])->assertOk()->assertJsonPath('data.name', 'Alpha Baru')->assertJsonPath('data.code', 'ALB');
+        $this->admin('PUT', "providers/{$first}", ['code' => 'ALB', 'name' => 'beta konsultan', 'legal_name' => 'PT X'])->assertStatus(409);
+        $this->admin('PUT', "providers/{$first}", ['code' => 'BETA', 'name' => 'Alpha Baru', 'legal_name' => 'PT X'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:provider-code-taken');
         $this->admin('GET', 'providers/999999')->assertNotFound();
 
         $this->admin('POST', "providers/{$second}/restore")->assertNoContent();

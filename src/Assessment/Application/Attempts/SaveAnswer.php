@@ -5,7 +5,6 @@ namespace Src\Assessment\Application\Attempts;
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AnswerRules;
 use Src\Shared\Application\Actor;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
@@ -22,7 +21,6 @@ final readonly class SaveAnswer
      * @param  list<int>|null  $optionPositions
      *
      * @throws EntityNotFound
-     * @throws BusinessRuleViolation `invalid-answer`
      * @throws StateConflict `attempt-not-started`, `attempt-closed` or `question-locked`
      */
     public function save(Actor $actor, int $invitationId, int $questionId, ?array $optionPositions, int|float|null $number, ?string $text, ?string $ip): void

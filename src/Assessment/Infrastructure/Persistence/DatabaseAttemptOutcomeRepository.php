@@ -35,6 +35,17 @@ final readonly class DatabaseAttemptOutcomeRepository implements AttemptOutcomeR
         return $this->eventCount($attemptId);
     }
 
+    public function eventsOf(int $attemptId): array
+    {
+        $events = [];
+
+        foreach ($this->connection->table(self::EVENTS)->where('attempt_id', $attemptId)->orderBy('occurred_at')->orderBy('id')->get() as $row) {
+            $events[] = ['type' => IntegrityEventType::from((string) $row->type), 'occurred_at' => new DateTimeImmutable((string) $row->occurred_at, new DateTimeZone('UTC'))];
+        }
+
+        return $events;
+    }
+
     public function eventCount(int $attemptId): int
     {
         return $this->connection->table(self::EVENTS)->where('attempt_id', $attemptId)->count();

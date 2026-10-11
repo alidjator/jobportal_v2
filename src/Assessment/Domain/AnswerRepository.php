@@ -15,6 +15,9 @@ interface AnswerRepository
     /** @param  array<int, float|null>  $scores  question id => score */
     public function saveScores(int $attemptId, array $scores): void;
 
+    /** Stores the score a person gave to an answer (a long-text answer, by its assessor). */
+    public function saveAssessorScore(int $attemptId, int $questionId, float $score, int $scoredByUserId): void;
+
     public function saveColumn(int $attemptId, SpeedColumnResult $result): void;
 
     /** @return list<SpeedColumnResult> by section and column */
@@ -25,4 +28,7 @@ interface AnswerRepository
 
     /** @return array<int, Drawing> question id => drawing */
     public function drawingsOf(int $attemptId): array;
+
+    /** Stores the psychologist's score and note for a drawing. */
+    public function scoreDrawing(int $attemptId, int $questionId, ?float $score, ?string $note): void;
 }

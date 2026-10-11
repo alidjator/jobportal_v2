@@ -15,6 +15,9 @@ interface ProviderRepository
     /** True when another provider already uses the name, compared case-insensitively. */
     public function nameIsTaken(string $name, ?int $exceptId = null): bool;
 
+    /** True when another provider already uses the code. */
+    public function codeIsTaken(string $code, ?int $exceptId = null): bool;
+
     /**
      * @return Page<Provider>
      */

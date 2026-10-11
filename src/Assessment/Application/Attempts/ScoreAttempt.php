@@ -44,7 +44,7 @@ final readonly class ScoreAttempt
     {
         $attemptId = (int) $attempt->id;
         $drawn = $this->attempts->drawnOf($attemptId);
-        $questions = $this->questions->manyById(array_values(array_map(static fn ($item): int => $item->questionId, $drawn)));
+        $questions = $this->questions->manyById(array_map(static fn ($item): int => $item->questionId, $drawn));
         $answers = $this->answers->answersOf($attemptId);
         $columns = $this->answers->columnsOf($attemptId);
         $drawings = $this->answers->drawingsOf($attemptId);
@@ -94,7 +94,7 @@ final readonly class ScoreAttempt
 
             foreach ($entries as [$question, $answer, $score]) {
                 $answered += $answer instanceof Answer || isset($drawings[(int) $question->id]) ? 1 : 0;
-                $sectionMax += $question->points;
+                $sectionMax += $question->type === QuestionType::Drawing ? 0 : $question->points;
                 $sectionEarned += $score ?? 0.0;
 
                 if ($question->type === QuestionType::LongText && $answer instanceof Answer && trim((string) $answer->textValue) !== '' && $answer->score === null) {

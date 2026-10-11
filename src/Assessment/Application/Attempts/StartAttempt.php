@@ -73,7 +73,7 @@ final readonly class StartAttempt
             $started = $invitation->start($now);
             $sections = $this->sections->ofTest($invitation->testId);
 
-            $attempt = Attempt::begin($invitationId, $now, array_values(array_map(static fn (Section $section): int => $section->durationSeconds, $sections)), random_int(1, 2_147_483_647), $ip);
+            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip);
             $this->invitations->update($started);
             $this->attempts->add($attempt, $this->draw($sections, $attempt->seed));
 

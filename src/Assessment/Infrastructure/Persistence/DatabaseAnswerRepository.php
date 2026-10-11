@@ -72,6 +72,11 @@ final readonly class DatabaseAnswerRepository implements AnswerRepository
         }
     }
 
+    public function saveAssessorScore(int $attemptId, int $questionId, float $score, int $scoredByUserId): void
+    {
+        $this->connection->table(self::ANSWERS)->where('attempt_id', $attemptId)->where('question_id', $questionId)->update(['score' => $score, 'scored_by_user_id' => $scoredByUserId]);
+    }
+
     public function saveColumn(int $attemptId, SpeedColumnResult $result): void
     {
         $this->connection->table(self::COLUMNS)->insert([
@@ -110,9 +115,17 @@ final readonly class DatabaseAnswerRepository implements AnswerRepository
         $drawings = [];
 
         foreach ($this->connection->table(self::DRAWINGS)->where('attempt_id', $attemptId)->get() as $row) {
-            $drawings[(int) $row->question_id] = new Drawing((int) $row->question_id, (string) $row->path, DrawingSource::from((string) $row->source), (string) $row->mime_type, (int) $row->size_bytes);
+            $drawings[(int) $row->question_id] = new Drawing(
+                (int) $row->question_id, (string) $row->path, DrawingSource::from((string) $row->source), (string) $row->mime_type, (int) $row->size_bytes,
+                $row->score === null ? null : (float) $row->score, $row->note,
+            );
         }
 
         return $drawings;
+    }
+
+    public function scoreDrawing(int $attemptId, int $questionId, ?float $score, ?string $note): void
+    {
+        $this->connection->table(self::DRAWINGS)->where('attempt_id', $attemptId)->where('question_id', $questionId)->update(['score' => $score, 'note' => $note]);
     }
 }

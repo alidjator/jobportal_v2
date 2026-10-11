@@ -28,7 +28,6 @@ final readonly class SaveColumn
     /**
      * @param  list<int|null>  $sums
      *
-     * @throws BusinessRuleViolation `invalid-column`
      * @throws StateConflict `attempt-not-started`, `attempt-closed` or `column-already-submitted`
      */
     public function execute(Actor $actor, int $invitationId, int $columnNo, array $sums, ?string $ip): void

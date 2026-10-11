@@ -11,7 +11,7 @@ use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
-/** A platform admin registers a partner provider. The name is unique, compared case-insensitively. */
+/** A platform admin registers a partner provider. The name is unique, compared case-insensitively; so is the code, which opens the numbers of its reports. */
 final readonly class RegisterProvider
 {
     public function __construct(
@@ -22,9 +22,9 @@ final readonly class RegisterProvider
 
     /**
      * @throws AccessDenied when the actor is not an admin
-     * @throws StateConflict `provider-name-taken`
+     * @throws StateConflict `provider-name-taken` or `provider-code-taken`
      */
-    public function execute(Actor $actor, string $name, string $legalName, ?string $ipAddress, ?string $userAgent): Provider
+    public function execute(Actor $actor, string $code, string $name, string $legalName, ?string $ipAddress, ?string $userAgent): Provider
     {
         AdminOnly::assert($actor, 'register a provider');
 
@@ -34,7 +34,11 @@ final readonly class RegisterProvider
             throw new StateConflict('A provider with this name already exists.', 'provider-name-taken');
         }
 
-        $provider = $this->providers->save(Provider::register($name, trim($legalName)));
+        if ($this->providers->codeIsTaken($code)) {
+            throw new StateConflict('A provider with this code already exists.', 'provider-code-taken');
+        }
+
+        $provider = $this->providers->save(Provider::register($code, $name, trim($legalName)));
         $this->events->dispatch([new ProviderRegistered((int) $provider->id, (int) $actor->id, $ipAddress, $userAgent, $this->clock->now())]);
 
         return $provider;

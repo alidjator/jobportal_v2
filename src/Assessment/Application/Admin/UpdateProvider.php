@@ -16,9 +16,9 @@ final readonly class UpdateProvider
     /**
      * @throws AccessDenied when the actor is not an admin
      * @throws EntityNotFound
-     * @throws StateConflict `provider-name-taken`
+     * @throws StateConflict `provider-name-taken` or `provider-code-taken`
      */
-    public function execute(Actor $actor, int $providerId, string $name, string $legalName): Provider
+    public function execute(Actor $actor, int $providerId, string $code, string $name, string $legalName): Provider
     {
         AdminOnly::assert($actor, 'change a provider');
 
@@ -29,7 +29,11 @@ final readonly class UpdateProvider
             throw new StateConflict('A provider with this name already exists.', 'provider-name-taken');
         }
 
-        $provider->rename($name, trim($legalName));
+        if ($this->providers->codeIsTaken($code, $providerId)) {
+            throw new StateConflict('A provider with this code already exists.', 'provider-code-taken');
+        }
+
+        $provider->rename($code, $name, trim($legalName));
 
         return $this->providers->save($provider);
     }

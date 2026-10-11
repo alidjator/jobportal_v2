@@ -25,8 +25,7 @@ final class AnswerGrader
             QuestionType::MultipleResponse => self::pointsWhen($question, self::chosenAreCorrect($question, $answer, single: false)),
             QuestionType::Number => self::pointsWhen($question, self::numberIsAccepted($question, $answer)),
             QuestionType::ShortText => self::pointsWhen($question, self::textIsAccepted($question, $answer)),
-            QuestionType::Likert, QuestionType::ForcedChoice => (float) (self::chosenOption($question, $answer)?->scoreValue ?? 0),
-            default => null,
+            default => (float) (self::chosenOption($question, $answer)->scoreValue ?? 0),
         };
     }
 

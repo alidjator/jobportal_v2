@@ -22,6 +22,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `assessment-required` | 422 | Recruitment |  |
 | `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
 | `attempt-not-started` | 409 | Assessment | This test was not started. |
+| `attempt-not-submitted` | 409 | Assessment | The candidate has not submitted this test yet. |
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `body-too-long` | 422 | Messaging |  |
@@ -30,6 +31,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `campaign-link-unavailable` | 503 | Campaign | The registration link is not configured. |
 | `campaign-period-invalid` | 422 | Campaign | The campaign cannot end before it starts. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
+| `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot sign reports. |
 | `category-limit` | 422 | TalentPool |  |
 | `category-name-invalid` | 422 | TalentPool |  |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
@@ -119,9 +121,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
+| `invalid-report` | 422 | Assessment | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-schedule` | 422 | Recruitment |  |
+| `invalid-score` | 422 | Assessment |  |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
 | `invalid-setting-value` | 422 | Shared |  |
@@ -176,6 +180,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
+| `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
+| `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
 | `not-an-author` | 403 | Assessment | Only a company admin, a psychologist or an administrator can write tests. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
@@ -194,6 +200,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
+| `provider-code-taken` | 409 | Assessment | A provider with this code already exists. |
 | `provider-name-taken` | 409 | Assessment | A provider with this name already exists. |
 | `provider-suspended` | 403 | Assessment | The provider of this psychologist is suspended. |
 | `psychological-disabled` | 403 | Assessment | Psychological tests are not enabled for this company. |
@@ -209,6 +216,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
 | `report-not-open` | 409 | Review | This report was already handled. |
+| `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
+| `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
 | `resume-limit-reached` | 409 | JobSeeker |  |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
@@ -217,6 +226,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
 | `saved-jobs-limit` | 422 | Job |  |
 | `schedule-required` | 422 | Recruitment |  |
+| `scoring-locked` | 409 | Assessment | The application has left the assessment stage, so its scores can no longer be changed. |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
 | `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |

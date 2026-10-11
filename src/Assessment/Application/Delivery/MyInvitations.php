@@ -70,7 +70,7 @@ final readonly class MyInvitations
             $invitation,
             $this->test($invitation),
             $this->jobs->titles([$invitation->jobId])[$invitation->jobId] ?? '',
-            ($this->companies->summaries([$invitation->companyId])[$invitation->companyId] ?? null)?->name ?? '',
+            $this->companyName($invitation->companyId),
             $this->sections->ofTest($invitation->testId),
         );
     }
@@ -78,6 +78,13 @@ final readonly class MyInvitations
     private function test(Invitation $invitation): Test
     {
         return $this->tests->find($invitation->testId) ?? throw EntityNotFound::of('Test', $invitation->testId);
+    }
+
+    private function companyName(int $companyId): string
+    {
+        $companies = $this->companies->summaries([$companyId]);
+
+        return isset($companies[$companyId]) ? $companies[$companyId]->name : '';
     }
 
     private function userId(Actor $actor): int

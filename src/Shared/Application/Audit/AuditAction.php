@@ -128,4 +128,6 @@ final class AuditAction
     public const string ASSESSMENT_PSYCHOLOGIST_RESTORED = 'assessment.psychologist_restored';
 
     public const string ASSESSMENT_PSYCHOLOGIST_TWO_FACTOR_RESET = 'assessment.psychologist_two_factor_reset';
+
+    public const string ASSESSMENT_REPORT_SIGNED = 'assessment.report_signed';
 }

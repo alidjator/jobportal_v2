@@ -9,15 +9,22 @@ final class Provider
 {
     public function __construct(
         public readonly ?int $id,
+        private string $code,
         private string $name,
         private string $legalName,
         private ProviderStatus $status,
         public readonly ?DateTimeImmutable $createdAt = null,
     ) {}
 
-    public static function register(string $name, string $legalName): self
+    public static function register(string $code, string $name, string $legalName): self
     {
-        return new self(null, $name, $legalName, ProviderStatus::Active);
+        return new self(null, $code, $name, $legalName, ProviderStatus::Active);
+    }
+
+    /** The short code that opens the report numbers: 2 to 10 uppercase letters or digits. */
+    public function code(): string
+    {
+        return $this->code;
     }
 
     public function name(): string
@@ -40,8 +47,9 @@ final class Provider
         return $this->status->isActive();
     }
 
-    public function rename(string $name, string $legalName): void
+    public function rename(string $code, string $name, string $legalName): void
     {
+        $this->code = $code;
         $this->name = $name;
         $this->legalName = $legalName;
     }

@@ -153,7 +153,9 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $drawing = (int) $this->provider('POST', "tests/{$id}/sections", ['title' => 'Draw a tree', 'format' => 'drawing', 'duration_seconds' => 900])->assertCreated()->assertJsonPath('data.format', 'drawing')->json('data.id');
         $questions = (int) $this->provider('POST', "tests/{$id}/sections", $this->section())->assertCreated()->json('data.id');
 
-        $this->provider('POST', "sections/{$drawing}/questions", ['type' => 'drawing', 'text' => 'Draw a tree as you see it.'])->assertCreated()->assertJsonPath('data.points', 0)->assertJsonPath('data.scale_key', null);
+        // The points of a drawing are the highest score the psychologist can give it.
+        $this->provider('POST', "sections/{$drawing}/questions", ['type' => 'drawing', 'text' => 'Draw a tree as you see it.', 'points' => 0])->assertStatus(422)->assertJsonStructure(['errors' => ['points']]);
+        $this->provider('POST', "sections/{$drawing}/questions", ['type' => 'drawing', 'text' => 'Draw a tree as you see it.', 'points' => 20])->assertCreated()->assertJsonPath('data.points', 20)->assertJsonPath('data.scale_key', null);
         $this->provider('POST', "sections/{$drawing}/questions", $this->choice())->assertStatus(422)->assertJsonStructure(['errors' => ['type']]);
         $this->provider('POST', "sections/{$questions}/questions", ['type' => 'drawing', 'text' => 'Draw a tree as you see it.'])->assertStatus(422)->assertJsonStructure(['errors' => ['type']]);
     }

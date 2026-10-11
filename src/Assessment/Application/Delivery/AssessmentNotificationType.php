@@ -18,6 +18,12 @@ final class AssessmentNotificationType
     /** To the team: the candidate handed in the test, or the time ran out and the server did. */
     public const string SUBMITTED = 'assessment.submitted';
 
+    /** To the team: a psychologist signed the report of a psychological test, so its scores can be read. */
+    public const string REPORT_SIGNED = 'assessment.report_signed';
+
+    /** To the candidate: the psychologist signed the report, so the explanation of the result can be read. */
+    public const string EXPLANATION_READY = 'assessment.explanation_ready';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

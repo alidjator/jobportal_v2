@@ -69,9 +69,9 @@ final class EmailTemplatesTest extends FeatureTestCase
     {
         $response = $this->asAdmin('GET', 'email-templates')->assertOk();
 
-        $this->assertSame(['assessment.psychologist_invitation', 'assessment.test_cancelled', 'assessment.test_expired', 'assessment.test_invited', 'assessment.test_reminder', 'company.invitation', 'identity.email_verification', 'identity.password_reset', 'invitation.received', 'jobalert.digest', 'matching.recommendations', 'messaging.unread_message', 'newsletter.confirm', 'recruitment.application_hired', 'recruitment.application_interview', 'recruitment.application_offer', 'recruitment.application_rejected', 'recruitment.interview_cancelled', 'recruitment.interview_reminder', 'recruitment.interview_rescheduled', 'recruitment.interview_scheduled', 'recruitment.offer_expiring', 'recruitment.offer_revised', 'recruitment.offer_sent', 'recruitment.offer_withdrawn'], array_column($response->json('data'), 'key'));
+        $this->assertSame(['assessment.explanation_ready', 'assessment.psychologist_invitation', 'assessment.test_cancelled', 'assessment.test_expired', 'assessment.test_invited', 'assessment.test_reminder', 'company.invitation', 'identity.email_verification', 'identity.password_reset', 'invitation.received', 'jobalert.digest', 'matching.recommendations', 'messaging.unread_message', 'newsletter.confirm', 'recruitment.application_hired', 'recruitment.application_interview', 'recruitment.application_offer', 'recruitment.application_rejected', 'recruitment.interview_cancelled', 'recruitment.interview_reminder', 'recruitment.interview_rescheduled', 'recruitment.interview_scheduled', 'recruitment.offer_expiring', 'recruitment.offer_revised', 'recruitment.offer_sent', 'recruitment.offer_withdrawn'], array_column($response->json('data'), 'key'));
 
-        $template = $response->json('data.6');
+        $template = $response->json('data.7');
         $this->assertSame(['name', 'code', 'minutes'], array_column($template['variables'], 'name'));
         $this->assertSame([false, true, false], array_column($template['variables'], 'required'));
         $this->assertSame('049213', $template['variables'][1]['sample']);

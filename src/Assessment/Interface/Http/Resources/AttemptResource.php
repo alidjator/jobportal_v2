@@ -102,6 +102,6 @@ final class AttemptResource extends JsonResource
             return [];
         }
 
-        return array_values(array_map(static fn (QuestionOption $option, int $index): array => ['position' => $index + 1, 'label' => $option->label], $question->options, array_keys($question->options)));
+        return array_map(static fn (QuestionOption $option, int $index): array => ['position' => $index + 1, 'label' => $option->label], $question->options, array_keys($question->options));
     }
 }

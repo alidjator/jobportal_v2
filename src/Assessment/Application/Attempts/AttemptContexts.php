@@ -27,7 +27,7 @@ final readonly class AttemptContexts
             $attempt,
             $this->tests->find($invitation->testId) ?? throw EntityNotFound::of('Test', $invitation->testId),
             $sections,
-            array_values(array_map(static fn (Section $section): int => $section->durationSeconds, $sections)),
+            array_map(static fn (Section $section): int => $section->durationSeconds, $sections),
             $now,
         );
     }

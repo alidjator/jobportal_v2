@@ -35,7 +35,7 @@ final class AssessmentInvitationFields
             (int) $data['test_id'],
             isset($data['starts_at']) ? self::time((string) $data['starts_at']) : null,
             self::time((string) $data['due_at']),
-            array_map(intval(...), array_values($assessors)),
+            array_map(intval(...), $assessors),
         );
     }
 

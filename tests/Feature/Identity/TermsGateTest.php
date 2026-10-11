@@ -237,16 +237,45 @@ final class TermsGateTest extends FeatureTestCase
             ->values()
             ->all();
 
+        // The provider routes are exempt on purpose: the consumer terms do not apply to psychologists (see the Assessment routes).
         $this->assertSame([
+            'DELETE api/v1/provider/questions/{questionId}',
+            'DELETE api/v1/provider/sections/{sectionId}',
+            'DELETE api/v1/provider/tests/{id}',
             'GET api/v1/me',
             'GET api/v1/me/terms-acceptance',
             'GET api/v1/provider/me',
+            'GET api/v1/provider/reviews',
+            'GET api/v1/provider/reviews/{id}',
+            'GET api/v1/provider/reviews/{id}/drawings/{questionId}',
+            'GET api/v1/provider/sections/{sectionId}/questions',
+            'GET api/v1/provider/tests',
+            'GET api/v1/provider/tests/{id}',
+            'GET api/v1/provider/tests/{id}/norms',
+            'GET api/v1/provider/tests/{id}/report-template',
             'POST api/v1/auth/logout',
             'POST api/v1/auth/logout-all',
             'POST api/v1/me/deletion',
             'POST api/v1/me/terms-acceptance',
             'POST api/v1/provider/auth/logout',
             'POST api/v1/provider/auth/logout-all',
+            'POST api/v1/provider/reviews/{id}/sign',
+            'POST api/v1/provider/sections/{sectionId}/questions',
+            'POST api/v1/provider/tests',
+            'POST api/v1/provider/tests/{id}/archive',
+            'POST api/v1/provider/tests/{id}/clone',
+            'POST api/v1/provider/tests/{id}/publish',
+            'POST api/v1/provider/tests/{id}/restore',
+            'POST api/v1/provider/tests/{id}/sections',
+            'PUT api/v1/provider/questions/{questionId}',
+            'PUT api/v1/provider/reviews/{id}',
+            'PUT api/v1/provider/reviews/{id}/drawings/{questionId}',
+            'PUT api/v1/provider/sections/{sectionId}',
+            'PUT api/v1/provider/sections/{sectionId}/questions/order',
+            'PUT api/v1/provider/tests/{id}',
+            'PUT api/v1/provider/tests/{id}/norms',
+            'PUT api/v1/provider/tests/{id}/report-template',
+            'PUT api/v1/provider/tests/{id}/sections/order',
         ], $exempt);
     }
 

@@ -9,6 +9,8 @@ use Src\Assessment\Interface\Http\Controllers\InvitationController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
+use Src\Assessment\Interface\Http\Controllers\ResultController;
+use Src\Assessment\Interface\Http\Controllers\ReviewController;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
 
 Route::prefix('provider')->group(function (): void {
@@ -26,6 +28,16 @@ Route::prefix('provider')->group(function (): void {
         Route::put('tests/{id}/norms', [BatteryController::class, 'replaceNorms'])->whereNumber('id');
         Route::get('tests/{id}/report-template', [BatteryController::class, 'reportTemplate'])->whereNumber('id');
         Route::put('tests/{id}/report-template', [BatteryController::class, 'saveReportTemplate'])->whereNumber('id');
+
+        // The review of the reports of the provider's batteries: the queue, the draft, the drawings, the edit and the signature.
+        Route::get('reviews', [ReviewController::class, 'index']);
+        Route::prefix('reviews/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
+            Route::get('', [ReviewController::class, 'show']);
+            Route::put('', [ReviewController::class, 'update']);
+            Route::get('drawings/{questionId}', [ReviewController::class, 'drawing']);
+            Route::put('drawings/{questionId}', [ReviewController::class, 'scoreDrawing']);
+            Route::post('sign', [ReviewController::class, 'sign']);
+        });
     });
 });
 
@@ -42,12 +54,22 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     Route::put('applications/{id}/invitation', [InvitationController::class, 'store'])->whereNumber('id');
     Route::get('invitations/{id}', [InvitationController::class, 'show'])->whereNumber('id');
     Route::post('invitations/{id}/cancel', [InvitationController::class, 'cancel'])->whereNumber('id');
+
+    // The result of a test, its integrity log, the scoring of the written answers by the assessors and the signed report as a PDF.
+    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
+        Route::get('result', [ResultController::class, 'show']);
+        Route::get('integrity-events', [ResultController::class, 'integrityEvents']);
+        Route::get('scoring', [ResultController::class, 'scoring']);
+        Route::put('scoring/questions/{questionId}', [ResultController::class, 'score']);
+        Route::get('report.pdf', [ResultController::class, 'report']);
+    });
 });
 
 // The tests a job seeker was asked to take.
 Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void {
     Route::get('invitations', [MyInvitationController::class, 'index']);
     Route::get('invitations/{id}', [MyInvitationController::class, 'show'])->whereNumber('id');
+    Route::get('invitations/{id}/explanation', [MyInvitationController::class, 'explanation'])->whereNumber('id');
 
     // Taking the test. The server keeps the time and the rules of every section.
     Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+'])->group(function (): void {
