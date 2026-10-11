@@ -11,7 +11,7 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 - **Model: hybrid.** Each company stage maps to one **system stage type**; companies freely name and order their stages,
   and the system still understands the meaning (notifications, funnel reports, job-seeker view).
 - **Seven stage types:** `applied`, `screening`, `interview`, `offer`, `hired`, `rejected`, `withdrawn`.
-  `assessment` (skill test) is not included now.
+  `assessment` (skill test) is not included now. **Superseded 2026-10-11 (user):** an eighth type `assessment` is added with the assessment engine (`phase-6-assessments.md`).
 - **Company stages:** every company automatically gets seven default stages, one per type. A company may rename and reorder them
   and add extra stages of the types `screening`, `interview` and `offer` only (see `phase-1-stages.md`). **Default stages cannot be deleted.** Extra stages can be deleted; their
   applications move to the default stage of the same type.
@@ -162,3 +162,5 @@ cannot complete a profile, even for a `remote` job. Decide whether that is inten
 under Indonesia). Nationality (`reference_nationalities`, a profile attribute) must not be reused as a country list.
 
 **Deferred (recorded 2026-10-11, user): FCM push and real-time in-app notifications; automatic tag popularity and company benefit proposals.** Device tokens are stored but nothing sends to them, in-app notifications are not broadcast, `reference_tags.popularity_override` is unused and there is no proposal flow for company benefits. Each needs its own design (push also needs an FCM account); revisit after the Phase 5 hardening (`phase-5-architecture-review.md` findings 7, 8 and 20; finding 20 is removing a device token on sign-out).
+
+**Decided (recorded 2026-10-11, user): assessments reopen R8.** We build our own test engine, like Mekari Talenta: company-built skill tests plus psychological tests (intelligence, personality, reasoning). Psychological test content, scoring norms and reports are owned and signed by a **licensed partner psychologist or institution** (UU 23/2022 Pasal 26 and 33), with candidate consent (Pasal 27) and a right to an explanation of the result (Pasal 44); the platform never interprets psychological results on its own. Benchmark: `docs/analysis/benchmark-teleinterview-assessment.md`. **Tele-interview (decided 2026-10-11, user):** all four forms, built in this order: (1) Zoom, Google Meet and Microsoft Teams integration (a unique meeting link per interview), (2) recorded one-way video, (3) live video inside the platform, (4) voice calls through Asterisk that also reach ordinary phone numbers through a **licensed SIP trunk provider**, with both numbers masked. Recording of calls and video is **optional per interview and needs the candidate's explicit consent** before it starts (UU PDP), with a retention period and permanent deletion.
