@@ -47,7 +47,7 @@ final readonly class MatchingReport implements AnalyticsReportProvider
 
         foreach ($this->summaries->transitions($scope)->groupBy('match_band')->get([
             'match_band',
-            $this->connection->raw("SUM(CASE WHEN from_type = 'applied' AND to_type IN ('screening', 'interview', 'offer', 'hired') THEN transitions ELSE 0 END) as advanced"),
+            $this->connection->raw("SUM(CASE WHEN from_type = 'applied' AND to_type IN ('screening', 'assessment', 'interview', 'offer', 'hired') THEN transitions ELSE 0 END) as advanced"),
             $this->connection->raw("SUM(CASE WHEN to_type = 'hired' THEN transitions ELSE 0 END) as hired"),
             $this->connection->raw("SUM(CASE WHEN to_type = 'rejected' THEN transitions ELSE 0 END) as rejected"),
         ]) as $row) {

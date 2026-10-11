@@ -44,6 +44,13 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'review_replies' => ['written_by_user_id'],
             'job_saved_jobs' => ['user_id'],
             'talentpool_entries' => ['candidate_user_id'],
+            'assessment_psychologists' => ['user_id'],
+            'assessment_tests' => ['created_by_user_id'],
+            'assessment_invitations' => ['applicant_user_id', 'invited_by_user_id'],
+            'assessment_invitation_assessors' => ['user_id'],
+            'identity_user_two_factor' => ['user_id'],
+            'identity_user_recovery_codes' => ['user_id'],
+            'identity_user_two_factor_challenges' => ['user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -58,6 +65,9 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'review_reviews' => ['moderated_by_admin_id'],
             'review_replies' => ['moderated_by_admin_id'],
             'review_reports' => ['resolved_by_admin_id'],
+            'assessment_psychologist_invitations' => ['invited_by_admin_id'],
+            'assessment_tests' => ['created_by_admin_id'],
+            'assessment_company_batteries' => ['granted_by_admin_id'],
         ],
         'company_companies' => [
             'jobinvitation_invitations' => ['company_id'],
@@ -65,9 +75,12 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'review_reviews' => ['company_id'],
             'talentpool_categories' => ['company_id'],
             'talentpool_entries' => ['company_id'],
+            'assessment_tests' => ['company_id'],
+            'assessment_invitations' => ['company_id'],
+            'assessment_company_batteries' => ['company_id'],
         ],
-        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'job_saved_jobs' => ['job_id']],
-        'recruitment_applications' => ['jobinvitation_invitations' => ['application_id']],
+        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id']],
+        'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],
     ];
 
     /** @var array<string, list<string>> logs, views, audit, notifications, deliveries and summaries keep plain columns */

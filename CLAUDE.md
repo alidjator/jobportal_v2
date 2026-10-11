@@ -17,8 +17,8 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
    **independent** routine decisions may be asked in one turn, numbered (relaxed 2026-10-08). Still one at a time: a decision that depends on an earlier
    answer, a best-practice finding from the decision gate, and an uncertain schema assumption. A decision the user's answer does not mention is not accepted;
    ask again.
-5. **Confirm before hard-to-reverse or outward-facing actions.** Commit only when asked. Running migrations or seeders against the **real** tables, and any
-   write to production or the live site, needs the user's explicit approval each time.
+5. **Confirm before hard-to-reverse or outward-facing actions.** Commit only when asked. Running seeders against the **real** tables, and any
+   write to production or the live site, needs the user's explicit approval each time. `php artisan migrate` on the real database is run by the user (decided 2026-10-11): never ask for approval, only say which migration is new.
 6. **Do not re-summarize changes.** Do not recap what was edited or repeat a change list the user can already see in the diff; report only the outcome
    and what needs a decision.
 7. **Out of scope for now:** plans, billing, payments, invoices, pay-per-job and featured promotion.
@@ -44,7 +44,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 - **Foreign keys** (decided by the user, 2026-10-05, widened 2026-10-10 in `docs/design/cross-context-foreign-keys.md`): a column that references `reference_*`, `company_companies`,
   `identity_users`, `identity_admins` or `job_jobs` has a `RESTRICT` foreign key, also across contexts (only `recruitment_job_questions.job_id` is `CASCADE`). Never on logs, audit,
   notifications, `*_daily` tables, the legacy id map, match deliveries or polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
-- A new migration runs **twice**, both by the user (see the hard rule on checks): `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, only with approval). Tell the user when a migration is new.
+- A new migration runs **twice**, both by the user (see the hard rule on checks): `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, run by the user, no approval is asked). Tell the user when a migration is new.
 - The production karir.pkp database is reachable only through the read-only account (`KARIR_PKP_DB_*`): **schema only, never read data** without explicit approval.
 
 ## Commands
@@ -74,6 +74,7 @@ Everything read stays in the context for the rest of the session and is sent aga
   never run `php artisan test` (not even with `--filter`), `composer check`, Pint, PHPStan, `test:database:migrate` or any other check on your own, and never report a check as passed unless the
   user's own run showed it. Run one only when the user asks, or pastes failures to fix. When asked, run `composer check` once (not Pint, PHPStan and the suite as three separate steps), or only
   the tests of the folder or file the user names. This overrides every other line in this file that mentions running or passing a check; if a task seems to need one, stop and tell the user.
+  **Two levels (decided 2026-10-11):** after each coding step or part the user checks only what the change touches (`php artisan test <changed and related tests>`, `vendor/bin/pint --test <changed files>`); `composer check` runs once, at the end of the whole coding stage (for phase 6: after part 6), not after each part. After coding, give the user the exact targeted commands; do not propose the full `composer check` before the last part.
 - **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
   Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.

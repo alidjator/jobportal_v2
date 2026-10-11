@@ -18,6 +18,9 @@ use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\AssessmentInvitationInput;
+use Src\Shared\Application\Assessment\AssessmentInvitations;
+use Src\Shared\Application\Assessment\InvitedApplication;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
@@ -35,6 +38,9 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * A move to an interview stage needs an interview schedule (the one in the request, or an active one the application already has) and saves it with the move;
  * a move to an offer stage needs an offer the same way. A rejection cancels the active interview and withdraws the pending offer, and so does a move out of
  * the offer stage (an offer only lives while the application is in an offer stage).
+ *
+ * A move to an assessment stage needs a test to send (the one in the request, or an active one the application already has); a move to any other stage, and a
+ * rejection, cancels the active test.
  */
 final readonly class ProcessApplication
 {
@@ -50,6 +56,7 @@ final readonly class ProcessApplication
         private InterviewScheduler $scheduler,
         private OfferRepository $offers,
         private OfferPlacer $offerPlacer,
+        private AssessmentInvitations $assessments,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -58,17 +65,19 @@ final readonly class ProcessApplication
     /**
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
-     * @throws StateConflict `application-final`, `already-in-stage` or `job-taken-down`
-     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input` or `invalid-offer`
+     * @throws StateConflict `application-final`, `already-in-stage`, `job-taken-down` or `invitation-in-progress`
+     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input`, `invalid-offer`, `assessment-required`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
      */
-    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null): void
+    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null): void
     {
-        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer): array {
+        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer, $assessment): array {
             $stage = $this->movableStage($application->companyId, $stageId);
 
             $moved = $application->moveTo($stageId, $stage->type);
 
-            return [$moved, null, null, [...$this->interviewFor($member, $moved, $stage->type, $interview), ...$this->offerFor($member, $moved, $stage->type, $offer)]];
+            $extra = [...$this->interviewFor($member, $moved, $stage->type, $interview), ...$this->offerFor($member, $moved, $stage->type, $offer), ...$this->assessmentFor($member, $moved, $stage->type, $assessment)];
+
+            return [$moved, null, null, $extra];
         });
     }
 
@@ -107,7 +116,7 @@ final readonly class ProcessApplication
             $cancelled = $this->interviews->cancelActive((int) $application->id);
             $extra = $cancelled instanceof Interview ? [InterviewChanged::of(InterviewChange::Cancelled, $application, $cancelled, $this->clock->now())] : [];
 
-            return [$application->reject((int) $rejected->id), $reason, $note, [...$extra, ...$this->withdrawOffer($application)]];
+            return [$application->reject((int) $rejected->id), $reason, $note, [...$extra, ...$this->withdrawOffer($application), ...$this->assessments->cancelActive($this->invited($application))]];
         });
     }
 
@@ -191,6 +200,38 @@ final readonly class ProcessApplication
         }
 
         return [];
+    }
+
+    /**
+     * The test of a move, like the interview: the one in the request is sent (it replaces an active one); a move to an assessment stage without one needs an
+     * active test already; a test for any other stage is refused, and a move out of an assessment stage cancels the active test.
+     *
+     * @return list<DomainEvent>
+     */
+    private function assessmentFor(RecruitmentMember $member, Application $application, StageType $target, ?AssessmentInvitationInput $input): array
+    {
+        if ($target !== StageType::Assessment) {
+            if ($input instanceof AssessmentInvitationInput) {
+                $this->refuse('invalid-assessment-input', 'A test can only be sent when moving to an assessment stage.', 'assessment');
+            }
+
+            return $this->assessments->cancelActive($this->invited($application));
+        }
+
+        if ($input instanceof AssessmentInvitationInput) {
+            return $this->assessments->invite($this->invited($application), $member->userId, $input);
+        }
+
+        if (! $this->assessments->hasActive((int) $application->id)) {
+            $this->refuse('assessment-required', 'Send a test when moving an application to an assessment stage.', 'assessment');
+        }
+
+        return [];
+    }
+
+    private function invited(Application $application): InvitedApplication
+    {
+        return new InvitedApplication((int) $application->id, $application->companyId, $application->jobId, $application->userId);
     }
 
     /** @return list<DomainEvent> */

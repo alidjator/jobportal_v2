@@ -24,8 +24,8 @@ final class RecruitmentSettings
     {
         return [
             SettingDefinition::integer(
-                self::MAX_STAGES, 10, 7, 20,
-                'The most application stages a company may have, the seven defaults included.',
+                self::MAX_STAGES, 11, 8, 20,
+                'The most application stages a company may have, the eight defaults included.',
                 overridable: true,
             ),
             SettingDefinition::boolean(

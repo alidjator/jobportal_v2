@@ -48,7 +48,7 @@ final class SanctumAccessTokenIssuer implements AccessTokenIssuer
     private function tokensOf(Actor $actor): Builder
     {
         $owner = match ($actor->kind) {
-            ActorKind::JobSeeker, ActorKind::CompanyMember => UserModel::class,
+            ActorKind::JobSeeker, ActorKind::CompanyMember, ActorKind::Psychologist => UserModel::class,
             ActorKind::Admin => AdminModel::class,
             ActorKind::System => throw new InvalidArgumentException('The system actor has no tokens.'),
         };

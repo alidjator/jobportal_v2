@@ -60,8 +60,8 @@ final class CompanyStageTest extends FeatureTestCase
         foreach ([$this->adminToken, $this->recruiterToken] as $token) {
             $response = $this->api('GET', '/company/stages', token: $token)->assertOk();
 
-            $this->assertSame(['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($response->json('data'), 'type'));
-            $this->assertSame([1, 2, 3, 4, 5, 6, 7], array_column($response->json('data'), 'position'));
+            $this->assertSame(['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($response->json('data'), 'type'));
+            $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], array_column($response->json('data'), 'position'));
             $this->assertSame('Applied', $response->json('data.0.name'));
             $this->assertTrue($response->json('data.0.is_default'));
         }
@@ -71,7 +71,7 @@ final class CompanyStageTest extends FeatureTestCase
     {
         $response = $this->api('GET', '/company/stages', token: $this->otherAdminToken)->assertOk();
 
-        $this->assertCount(7, $response->json('data'));
+        $this->assertCount(8, $response->json('data'));
         $this->assertNotContains($this->stageId('Applied'), array_column($response->json('data'), 'id'));
     }
 
@@ -96,7 +96,7 @@ final class CompanyStageTest extends FeatureTestCase
             $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
         }
 
-        $this->assertCount(7, $this->names());
+        $this->assertCount(8, $this->names());
     }
 
     public function test_an_extra_stage_goes_before_the_terminal_stages(): void
@@ -104,19 +104,19 @@ final class CompanyStageTest extends FeatureTestCase
         $response = $this->api('POST', '/company/stages', ['name' => 'Technical Interview', 'type' => 'interview'])->assertCreated();
 
         $response->assertJsonPath('data.name', 'Technical Interview')->assertJsonPath('data.type', 'interview')
-            ->assertJsonPath('data.position', 6)->assertJsonPath('data.is_default', false);
-        $this->assertSame(['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Technical Interview', 'Rejected', 'Withdrawn'], $this->names());
-        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], $this->positions());
+            ->assertJsonPath('data.position', 7)->assertJsonPath('data.is_default', false);
+        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Technical Interview', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9], $this->positions());
     }
 
-    public function test_only_screening_interview_and_offer_may_have_extra_stages(): void
+    public function test_only_screening_assessment_interview_and_offer_may_have_extra_stages(): void
     {
         foreach (['applied', 'hired', 'rejected', 'withdrawn'] as $type) {
             $this->api('POST', '/company/stages', ['name' => "Extra {$type}", 'type' => $type])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:stage-type-not-allowed');
         }
 
-        $this->api('POST', '/company/stages', ['name' => 'Extra', 'type' => 'assessment'])->assertStatus(422);
-        $this->assertCount(7, $this->names());
+        $this->api('POST', '/company/stages', ['name' => 'Extra', 'type' => 'assessment'])->assertCreated();
+        $this->assertCount(9, $this->names());
     }
 
     public function test_a_stage_name_is_required_and_at_most_sixty_characters(): void
@@ -131,7 +131,7 @@ final class CompanyStageTest extends FeatureTestCase
         $this->api('POST', '/company/stages', ['name' => 'interview', 'type' => 'interview'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:stage-name-taken');
         $this->api('POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview'])->assertCreated();
         $this->api('POST', '/company/stages', ['name' => 'PANEL', 'type' => 'offer'])->assertStatus(409);
-        $this->assertCount(8, $this->names());
+        $this->assertCount(9, $this->names());
 
         // Another company may use the same name.
         $this->api('POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview'], $this->otherAdminToken)->assertCreated();
@@ -144,12 +144,12 @@ final class CompanyStageTest extends FeatureTestCase
         }
 
         $this->api('POST', '/company/stages', ['name' => 'Four', 'type' => 'screening'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:stage-limit-reached');
-        $this->assertCount(10, $this->names());
+        $this->assertCount(11, $this->names());
     }
 
     public function test_a_company_override_of_the_limit_applies_to_that_company_only(): void
     {
-        $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::MAX_STAGES, $this->companyId, 8, null);
+        $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::MAX_STAGES, $this->companyId, 9, null);
 
         $this->api('POST', '/company/stages', ['name' => 'One', 'type' => 'screening'])->assertCreated();
         $this->api('POST', '/company/stages', ['name' => 'Two', 'type' => 'screening'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:stage-limit-reached');
@@ -164,9 +164,9 @@ final class CompanyStageTest extends FeatureTestCase
         $id = $this->stageId('Interview');
 
         $this->api('PATCH', "/company/stages/{$id}", ['name' => '  Wawancara  '])->assertOk()
-            ->assertJsonPath('data.name', 'Wawancara')->assertJsonPath('data.type', 'interview')->assertJsonPath('data.position', 3)->assertJsonPath('data.is_default', true);
+            ->assertJsonPath('data.name', 'Wawancara')->assertJsonPath('data.type', 'interview')->assertJsonPath('data.position', 4)->assertJsonPath('data.is_default', true);
 
-        $this->assertSame(['Applied', 'Screening', 'Wawancara', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Wawancara', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
     }
 
     public function test_a_rename_cannot_take_the_name_of_another_stage_but_may_change_only_the_case(): void
@@ -192,14 +192,14 @@ final class CompanyStageTest extends FeatureTestCase
 
         $this->api('DELETE', "/company/stages/{$id}")->assertNoContent();
 
-        $this->assertSame(['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
-        $this->assertSame([1, 2, 3, 4, 5, 6, 7], $this->positions());
+        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], $this->positions());
     }
 
     public function test_a_default_stage_cannot_be_deleted(): void
     {
         $this->api('DELETE', '/company/stages/'.$this->stageId('Offer'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:default-stage-cannot-be-deleted');
-        $this->assertCount(7, $this->names());
+        $this->assertCount(8, $this->names());
     }
 
     public function test_the_whole_order_can_be_replaced(): void
@@ -207,11 +207,11 @@ final class CompanyStageTest extends FeatureTestCase
         $panel = (int) $this->api('POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview'])->json('data.id');
         $ids = fn (array $names): array => array_map(fn (string $name): int => $name === 'Panel' ? $panel : $this->stageId($name), $names);
 
-        $wanted = ['Applied', 'Panel', 'Offer', 'Screening', 'Interview', 'Hired', 'Withdrawn', 'Rejected'];
+        $wanted = ['Applied', 'Panel', 'Offer', 'Screening', 'Assessment', 'Interview', 'Hired', 'Withdrawn', 'Rejected'];
         $response = $this->api('PUT', '/company/stages/order', ['stage_ids' => $ids($wanted)])->assertOk();
 
         $this->assertSame($wanted, array_column($response->json('data'), 'name'));
-        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], array_column($response->json('data'), 'position'));
+        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9], array_column($response->json('data'), 'position'));
         $this->assertSame($wanted, $this->names());
     }
 
@@ -224,19 +224,19 @@ final class CompanyStageTest extends FeatureTestCase
         $this->api('PUT', '/company/stages/order', ['stage_ids' => [...array_slice($ids, 0, 6), $foreign]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-stage-order');
         $this->api('PUT', '/company/stages/order', ['stage_ids' => [...$ids, $ids[0]]])->assertStatus(422);
         $this->api('PUT', '/company/stages/order', [])->assertStatus(422);
-        $this->assertSame(['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
     }
 
     public function test_applied_must_stay_first_and_the_terminal_stages_last(): void
     {
         $id = fn (string $name): int => $this->stageId($name);
 
-        $appliedNotFirst = [$id('Screening'), $id('Applied'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Rejected'), $id('Withdrawn')];
-        $terminalInTheMiddle = [$id('Applied'), $id('Screening'), $id('Rejected'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Withdrawn')];
+        $appliedNotFirst = [$id('Screening'), $id('Applied'), $id('Assessment'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Rejected'), $id('Withdrawn')];
+        $terminalInTheMiddle = [$id('Applied'), $id('Screening'), $id('Rejected'), $id('Assessment'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Withdrawn')];
 
         $this->api('PUT', '/company/stages/order', ['stage_ids' => $appliedNotFirst])->assertStatus(422)
             ->assertJsonPath('type', 'urn:jobportal:error:invalid-stage-order')->assertJsonStructure(['errors' => ['stage_ids']]);
         $this->api('PUT', '/company/stages/order', ['stage_ids' => $terminalInTheMiddle])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-stage-order');
-        $this->assertSame(['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
     }
 }

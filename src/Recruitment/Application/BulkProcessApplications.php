@@ -13,6 +13,8 @@ use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\AssessmentInvitationInput;
+use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -27,7 +29,8 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * transaction of the single action and one that cannot be processed is reported and skipped without touching the others.
  *
  * A bulk move to an interview stage hands out slots from the base schedule in the order of the selection, skipping the interviewer's other interviews; the
- * slots are planned for the applications that can still be moved, so a skipped one leaves no hole (one that fails later leaves its slot unused).
+ * slots are planned for the applications that can still be moved, so a skipped one leaves no hole (one that fails later leaves its slot unused). A bulk move
+ * to an assessment stage sends the same test, window and assessors to every application.
  */
 final readonly class BulkProcessApplications
 {
@@ -40,6 +43,7 @@ final readonly class BulkProcessApplications
         private InterviewRepository $interviews,
         private InterviewScheduler $scheduler,
         private InterviewSlotPlanner $planner,
+        private AssessmentInvitations $assessments,
         private JobDirectory $jobs,
         private Settings $settings,
         private Clock $clock,
@@ -51,9 +55,9 @@ final readonly class BulkProcessApplications
      *
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound the member may not see the job
-     * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input` or `invalid-offer`
+     * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input`, `invalid-offer`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
      */
-    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null): array
+    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null): array
     {
         $member = $this->access->member($actor);
         $this->access->job($member, $jobId);
@@ -61,7 +65,7 @@ final readonly class BulkProcessApplications
         $states = $this->selection($member, $jobId, $applicationIds);
         $stage = $this->process->movableStage($member->companyId, $stageId);
 
-        $this->assertInputFits($stage->type, $interview, $offer);
+        $this->assertInputFits($stage->type, $interview, $offer, $assessment);
 
         $movable = array_keys(array_filter($states, static fn (Application $state): bool => ! $state->stageType->isTerminal() && $state->stageId !== $stageId));
         $inputs = $interview instanceof BulkInterviewInput ? $this->interviewInputs($member, $jobId, $interview, $movable) : [];
@@ -70,8 +74,12 @@ final readonly class BulkProcessApplications
             $this->assertOffer($member, $jobId, $offer);
         }
 
+        if ($assessment instanceof AssessmentInvitationInput) {
+            $this->assessments->assertCanInvite($member->companyId, $jobId, $assessment);
+        }
+
         return array_map(
-            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null), $id),
+            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null, $assessment), $id),
             $applicationIds,
         );
     }
@@ -138,8 +146,8 @@ final readonly class BulkProcessApplications
         return $states;
     }
 
-    /** A schedule only goes with an interview stage and an offer with an offer stage, as in the single move. */
-    private function assertInputFits(StageType $target, ?BulkInterviewInput $interview, ?OfferInput $offer): void
+    /** A schedule only goes with an interview stage, an offer with an offer stage and a test with an assessment stage, as in the single move. */
+    private function assertInputFits(StageType $target, ?BulkInterviewInput $interview, ?OfferInput $offer, ?AssessmentInvitationInput $assessment): void
     {
         if ($interview instanceof BulkInterviewInput && $target !== StageType::Interview) {
             $this->refuse('invalid-schedule', 'An interview can only be scheduled when moving to an interview stage.', 'interview');
@@ -147,6 +155,10 @@ final readonly class BulkProcessApplications
 
         if ($offer instanceof OfferInput && $target !== StageType::Offer) {
             $this->refuse('invalid-offer-input', 'An offer can only be sent when moving to an offer stage.', 'offer');
+        }
+
+        if ($assessment instanceof AssessmentInvitationInput && $target !== StageType::Assessment) {
+            $this->refuse('invalid-assessment-input', 'A test can only be sent when moving to an assessment stage.', 'assessment');
         }
     }
 

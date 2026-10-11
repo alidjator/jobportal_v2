@@ -1,0 +1,90 @@
+<?php
+
+namespace Src\Assessment\Domain;
+
+use DateTimeImmutable;
+use Src\Shared\Domain\Exceptions\StateConflict;
+
+/**
+ * A test sent to a candidate for one application. It is invited until the candidate starts, then started until the attempt is submitted (part 5); the team
+ * can cancel an active one and an unstarted one expires at its due time. Cancelled, expired and submitted invitations are kept as history. The test never
+ * changes after the invitation is sent: a published test that has invitations is locked.
+ */
+final readonly class Invitation
+{
+    /** @param  list<int>  $assessorIds  the company members who score the long-text answers */
+    public function __construct(
+        public ?int $id,
+        public int $applicationId,
+        public int $companyId,
+        public int $jobId,
+        public int $applicantUserId,
+        public int $testId,
+        public DateTimeImmutable $startsAt,
+        public DateTimeImmutable $dueAt,
+        public InvitationStatus $status,
+        public int $invitedByUserId,
+        public array $assessorIds,
+        public ?DateTimeImmutable $remindedAt = null,
+        public ?DateTimeImmutable $closedAt = null,
+        public ?DateTimeImmutable $createdAt = null,
+    ) {}
+
+    /** @param  list<int>  $assessorIds */
+    public static function send(
+        int $applicationId,
+        int $companyId,
+        int $jobId,
+        int $applicantUserId,
+        int $testId,
+        DateTimeImmutable $startsAt,
+        DateTimeImmutable $dueAt,
+        int $invitedByUserId,
+        array $assessorIds,
+    ): self {
+        return new self(null, $applicationId, $companyId, $jobId, $applicantUserId, $testId, $startsAt, $dueAt, InvitationStatus::Invited, $invitedByUserId, $assessorIds);
+    }
+
+    /** The candidate may begin: the invitation is still unused, its start time has come and its due time has not passed. */
+    public function isOpenAt(DateTimeImmutable $now): bool
+    {
+        return $this->status === InvitationStatus::Invited && $this->startsAt <= $now && $this->dueAt > $now;
+    }
+
+    /**
+     * @throws StateConflict `invitation-not-active`
+     */
+    public function cancel(DateTimeImmutable $now): self
+    {
+        if (! $this->status->isActive()) {
+            throw new StateConflict('Only an active test invitation can be cancelled.', 'invitation-not-active');
+        }
+
+        return $this->with(InvitationStatus::Cancelled, $this->remindedAt, $now);
+    }
+
+    /**
+     * @throws StateConflict `invitation-not-invited`
+     */
+    public function expire(DateTimeImmutable $now): self
+    {
+        if ($this->status !== InvitationStatus::Invited) {
+            throw new StateConflict('Only a test that was not started can expire.', 'invitation-not-invited');
+        }
+
+        return $this->with(InvitationStatus::Expired, $this->remindedAt, $now);
+    }
+
+    public function reminded(DateTimeImmutable $now): self
+    {
+        return $this->with($this->status, $now, $this->closedAt);
+    }
+
+    private function with(InvitationStatus $status, ?DateTimeImmutable $remindedAt, ?DateTimeImmutable $closedAt): self
+    {
+        return new self(
+            $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
+            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt,
+        );
+    }
+}

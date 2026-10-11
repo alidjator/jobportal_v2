@@ -7,6 +7,7 @@ enum StageType: string
 {
     case Applied = 'applied';
     case Screening = 'screening';
+    case Assessment = 'assessment';
     case Interview = 'interview';
     case Offer = 'offer';
     case Hired = 'hired';
@@ -29,7 +30,7 @@ enum StageType: string
     public function allowsWithdrawal(): bool
     {
         return match ($this) {
-            self::Applied, self::Screening, self::Interview, self::Offer => true,
+            self::Applied, self::Screening, self::Assessment, self::Interview, self::Offer => true,
             self::Hired, self::Rejected, self::Withdrawn => false,
         };
     }
@@ -38,7 +39,7 @@ enum StageType: string
     public function allowsExtraStages(): bool
     {
         return match ($this) {
-            self::Screening, self::Interview, self::Offer => true,
+            self::Screening, self::Assessment, self::Interview, self::Offer => true,
             self::Applied, self::Hired, self::Rejected, self::Withdrawn => false,
         };
     }

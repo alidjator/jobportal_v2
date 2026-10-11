@@ -49,7 +49,7 @@ final readonly class CancelAccountDeletion
 
         $user = $this->users->findByEmail($email);
 
-        if (! $this->hasher->check($command->password, $user?->passwordHash()) || $user === null) {
+        if (! $this->hasher->check($command->password, $user?->passwordHash()) || $user === null || ! $user->usesPublicSignIn()) {
             $this->throttle->recordCredentialFailure(AccountScope::User, $email, $command->ipAddress);
             $this->events->dispatch([new SignInFailed(AccountScope::User, $user?->id, 'invalid-credentials', $command->ipAddress, $command->userAgent, $this->clock->now())]);
 

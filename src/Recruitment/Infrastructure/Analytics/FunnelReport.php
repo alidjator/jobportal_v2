@@ -17,7 +17,7 @@ use Src\Shared\Application\Job\JobDirectory;
 final readonly class FunnelReport implements AnalyticsReportProvider
 {
     /** The main line of the pipeline; an application can skip or revisit a stage, so a rate is a rate of moves in the range. */
-    private const array LINE = ['applied', 'screening', 'interview', 'offer', 'hired'];
+    private const array LINE = ['applied', 'screening', 'assessment', 'interview', 'offer', 'hired'];
 
     private const int JOB_ROWS = 50;
 
@@ -58,6 +58,11 @@ final readonly class FunnelReport implements AnalyticsReportProvider
 
         foreach (self::LINE as $index => $stage) {
             $next = self::LINE[$index + 1] ?? null;
+
+            // The assessment stage is optional: while no application entered it in the range, the stage before it is measured against the one after it.
+            if ($next === 'assessment' && ($entered['assessment'] ?? 0) === 0) {
+                $next = self::LINE[$index + 2] ?? null;
+            }
 
             $stages[] = [
                 'stage' => $stage,
@@ -151,7 +156,7 @@ final readonly class FunnelReport implements AnalyticsReportProvider
         foreach ($this->summaries->transitions($scope)->where('actor_id', '>', 0)->groupBy('actor_id')->get([
             'actor_id',
             $this->connection->raw('SUM(transitions) as moves'),
-            $this->connection->raw("SUM(CASE WHEN to_type IN ('screening', 'interview', 'offer', 'hired') THEN transitions ELSE 0 END) as advanced"),
+            $this->connection->raw("SUM(CASE WHEN to_type IN ('screening', 'assessment', 'interview', 'offer', 'hired') THEN transitions ELSE 0 END) as advanced"),
             $this->connection->raw("SUM(CASE WHEN to_type = 'rejected' THEN transitions ELSE 0 END) as rejected"),
             $this->connection->raw('SUM(seconds_in_stage) as seconds'),
         ]) as $row) {

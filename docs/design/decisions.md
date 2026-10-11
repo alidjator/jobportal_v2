@@ -10,10 +10,10 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 
 - **Model: hybrid.** Each company stage maps to one **system stage type**; companies freely name and order their stages,
   and the system still understands the meaning (notifications, funnel reports, job-seeker view).
-- **Seven stage types:** `applied`, `screening`, `interview`, `offer`, `hired`, `rejected`, `withdrawn`.
-  `assessment` (skill test) is not included now. **Superseded 2026-10-11 (user):** an eighth type `assessment` is added with the assessment engine (`phase-6-assessments.md`).
-- **Company stages:** every company automatically gets seven default stages, one per type. A company may rename and reorder them
-  and add extra stages of the types `screening`, `interview` and `offer` only (see `phase-1-stages.md`). **Default stages cannot be deleted.** Extra stages can be deleted; their
+- **Eight stage types:** `applied`, `screening`, `assessment`, `interview`, `offer`, `hired`, `rejected`, `withdrawn`.
+  `assessment` (skill and psychological tests) was added 2026-10-11 (user) with the assessment engine (`phase-6-assessments.md`); coded in part 1.
+- **Company stages:** every company automatically gets eight default stages, one per type (`assessment` sits after `screening`). A company may rename and reorder them
+  and add extra stages of the types `screening`, `assessment`, `interview` and `offer` only (see `phase-1-stages.md`). **Default stages cannot be deleted.** Extra stages can be deleted; their
   applications move to the default stage of the same type.
 - **Terminal stages:** `rejected` and `withdrawn` are final; a recruiter cannot move an application back to an active stage.
 - **Rejection reasons are mandatory** from a fixed list: `qualifications_mismatch`, `experience_insufficient`,

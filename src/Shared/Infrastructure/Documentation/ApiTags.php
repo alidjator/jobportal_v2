@@ -43,12 +43,15 @@ final class ApiTags
             ['name' => 'Newsletter', 'description' => 'Joining and leaving the public newsletter.', 'patterns' => ['^newsletter/']],
             ['name' => 'Training', 'description' => 'Training courses.', 'patterns' => ['training/']],
             ['name' => 'Legal and help', 'description' => 'Terms, privacy policy and the FAQ.', 'patterns' => ['^faq$', '^legal-documents/']],
+            ['name' => 'Assessments', 'description' => 'Skill tests of a company, the catalogue of ready-made tests and granted psychological batteries, the tests sent to candidates and the tests a job seeker was asked to take.', 'patterns' => ['^company/assessment/', '^me/assessment/']],
+            ['name' => 'Psychologist portal', 'description' => 'Psychologist accounts of a partner provider: invitation, sign-in with a second factor, and the batteries, norms and report templates they write.', 'patterns' => ['^provider/']],
             ['name' => 'Admin: Companies', 'description' => 'Company accounts, documents, document types, settings and invitations.', 'patterns' => ['^admin/(companies|company-document-types)']],
             ['name' => 'Admin: Jobs', 'description' => 'Reviewing, approving and taking down jobs.', 'patterns' => ['^admin/jobs']],
             ['name' => 'Admin: Reviews', 'description' => 'Moderating reviews, replies and reports.', 'patterns' => ['^admin/review']],
             ['name' => 'Admin: Campaigns and newsletter', 'description' => 'Every campaign of the platform and the newsletter issues and subscribers.', 'patterns' => ['^admin/(campaigns|newsletter)']],
             ['name' => 'Admin: Content', 'description' => 'FAQ, legal documents, email templates and CV templates.', 'patterns' => ['^admin/(faqs|faq-categories|legal-documents|email-templates|cv-templates)']],
             ['name' => 'Admin: Platform', 'description' => 'The dashboard, analytics, settings and the audit log.', 'patterns' => ['^admin/(dashboard|analytics|settings|audit-logs)']],
+            ['name' => 'Admin: Assessments', 'description' => 'Partner providers and their psychologists, the system test library and the batteries granted to companies.', 'patterns' => ['^admin/assessment/']],
             ['name' => 'Admin: Reference data', 'description' => 'The managed lists behind the public reference data.', 'patterns' => ['^admin/']],
         ];
     }

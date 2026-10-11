@@ -53,7 +53,7 @@ final readonly class ApplicantApplicationsCard implements DashboardCardProvider
 
         return [
             'by_stage' => $byStage,
-            'active' => array_sum(array_map(fn (StageType $type): int => $byStage[$type->value], [StageType::Applied, StageType::Screening, StageType::Interview, StageType::Offer])),
+            'active' => array_sum(array_map(fn (StageType $type): int => $byStage[$type->value], [StageType::Applied, StageType::Screening, StageType::Assessment, StageType::Interview, StageType::Offer])),
             'recent' => $rows->map(fn (object $row): array => [
                 'id' => (int) $row->id,
                 'job_id' => (int) $row->job_id,

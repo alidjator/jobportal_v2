@@ -100,6 +100,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Psychologist Invitation Link
+    |--------------------------------------------------------------------------
+    |
+    | The client page that accepts a psychologist's invitation, as a URL template
+    | where `{token}` stands for the invitation token, for example
+    | "https://careers.example.com/provider/invitations/{token}". When the template
+    | is empty, psychologists cannot be invited.
+    |
+    */
+
+    'psychologist_invitation_url' => env('PSYCHOLOGIST_INVITATION_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Campaign registration link
     |--------------------------------------------------------------------------
     |

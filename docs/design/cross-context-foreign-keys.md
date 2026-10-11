@@ -44,7 +44,7 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 
 **To `job_jobs`:** `recruitment_applications.job_id`, `recruitment_job_questions.job_id` (`CASCADE`, see Decided), `jobinvitation_invitations.job_id`.
 
-**To `recruitment_applications`:** `jobinvitation_invitations.application_id` (nullable).
+**To `recruitment_applications`:** `jobinvitation_invitations.application_id` (nullable), `assessment_invitations.application_id`.
 
 ## Deliberately without a key
 

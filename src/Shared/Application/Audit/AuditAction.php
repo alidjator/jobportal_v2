@@ -114,4 +114,18 @@ final class AuditAction
     public const string REVIEW_REPLY_REMOVED = 'review.reply_removed';
 
     public const string REVIEW_REPORT_DISMISSED = 'review.report_dismissed';
+
+    public const string ASSESSMENT_PROVIDER_REGISTERED = 'assessment.provider_registered';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_INVITED = 'assessment.psychologist_invited';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_JOINED = 'assessment.psychologist_joined';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_CREDENTIALS_CHANGED = 'assessment.psychologist_credentials_changed';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_SUSPENDED = 'assessment.psychologist_suspended';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_RESTORED = 'assessment.psychologist_restored';
+
+    public const string ASSESSMENT_PSYCHOLOGIST_TWO_FACTOR_RESET = 'assessment.psychologist_two_factor_reset';
 }

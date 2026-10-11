@@ -128,8 +128,8 @@ final class CompanyApplicationsTest extends FeatureTestCase
         foreach ([[], ['filter' => ['stage_type' => 'interview']], ['filter' => ['q' => 'nobody']]] as $query) {
             $stages = $this->list($query)->assertOk()->json('stages');
 
-            $this->assertSame(['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($stages, 'type'));
-            $this->assertSame([1, 0, 1, 0, 0, 0, 0], array_column($stages, 'count'));
+            $this->assertSame(['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($stages, 'type'));
+            $this->assertSame([1, 0, 0, 1, 0, 0, 0, 0], array_column($stages, 'count'));
         }
 
         // Another job's applications are not counted.

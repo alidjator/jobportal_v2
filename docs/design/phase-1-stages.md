@@ -38,3 +38,5 @@ The model itself (hybrid, seven stage types, defaults cannot be deleted, termina
   replacement stays simple).
 - **Order (2026-10-06):** active stages (types `applied`, `screening`, `interview`, `offer`, `hired`) can be reordered freely, except that the default `applied` stage is always first; stages of the
   terminal types (`rejected`, `withdrawn`) always stay at the end, in any order among themselves.
+
+**Update 2026-10-11 (phase 6, part 1):** an eighth type `assessment` sits after `screening`: eight default stages, `recruitment.max_stages` default 11 (range 8 to 20), extra `assessment` stages allowed, migration 000116 widens the four CHECK constraints. `recruitment:provision-default-stages` also gives the default `assessment` stage to a company that lacks it (named `Assessment (default)` when an extra stage already has that name). Details: `phase-6-assessments.md`.

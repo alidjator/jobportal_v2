@@ -8,6 +8,8 @@ use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\AssessmentInvitations;
+use Src\Shared\Application\Assessment\InvitedApplication;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -17,7 +19,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * The applicant withdraws an application from any active stage except `hired`, with an optional note. The application moves to the company's default
- * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again. An active interview is cancelled and a pending offer withdrawn.
+ * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again. An active interview and an active test are cancelled and a pending offer withdrawn.
  */
 final readonly class WithdrawMyApplication
 {
@@ -29,6 +31,7 @@ final readonly class WithdrawMyApplication
         private StageRepository $stages,
         private InterviewRepository $interviews,
         private OfferRepository $offers,
+        private AssessmentInvitations $assessments,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -60,6 +63,7 @@ final readonly class WithdrawMyApplication
             $this->applications->recordWithdrawal($application, $withdrawn, $this->clock->now());
             $this->interviews->cancelActive($id);
             $this->offers->withdrawActive($id);
+            $this->assessments->cancelActive(new InvitedApplication($id, $application->companyId, $application->jobId, $application->userId));
         });
     }
 

@@ -21,6 +21,7 @@ use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
+use Src\Recruitment\Application\TeamApplicationRefs;
 use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
@@ -83,6 +84,7 @@ use Src\Shared\Application\Recruitment\ApplicantRelations;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\JobApplications;
+use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -104,6 +106,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
         ApplicantRelations::class => DatabaseApplicantRelations::class,
+        TeamApplications::class => TeamApplicationRefs::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
@@ -161,7 +164,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         $this->callAfterResolving(NotificationPreferenceCatalog::class, function (NotificationPreferenceCatalog $catalog): void {
             $catalog->add(new NotificationPreferenceDefinition(
                 ApplicationNotificationType::UPDATE_PREFERENCE,
-                'Email when the stage of one of your applications changes (interview, offer, hired or rejected).',
+                'Email when the stage of one of your applications changes (interview, offer, hired or rejected), and when a test is sent, nearly due, expired or cancelled.',
                 [NotificationChannel::Email->value => true],
             ));
         });

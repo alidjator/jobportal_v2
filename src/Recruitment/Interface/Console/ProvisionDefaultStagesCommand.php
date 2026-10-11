@@ -9,7 +9,7 @@ final class ProvisionDefaultStagesCommand extends Command
 {
     protected $signature = 'recruitment:provision-default-stages';
 
-    protected $description = 'Give the seven default application stages to every company that has none';
+    protected $description = 'Give the eight default application stages to every company that has none, and the default assessment stage to every company that lacks it';
 
     public function handle(ProvisionStagesForExistingCompanies $provision): int
     {

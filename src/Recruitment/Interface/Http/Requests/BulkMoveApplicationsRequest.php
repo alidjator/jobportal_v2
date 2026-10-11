@@ -6,10 +6,12 @@ use Illuminate\Foundation\Http\FormRequest;
 use Src\Recruitment\Application\BulkInterviewInput;
 use Src\Recruitment\Application\OfferInput;
 use Src\Recruitment\Domain\InterviewFormat;
+use Src\Shared\Application\Assessment\AssessmentInvitationInput;
+use Src\Shared\Interface\Http\Requests\AssessmentInvitationFields;
 
 /**
  * The selection and the stage of a bulk move, with the base schedule for an interview stage (the daily window defaults to 09:00 to 17:00) and the one shared
- * offer for an offer stage. The cap on the selection, the stage and every range are use case rules.
+ * offer for an offer stage and the one shared test (`assessment`) for an assessment stage. The cap on the selection, the stage and every range are use case rules.
  */
 final class BulkMoveApplicationsRequest extends FormRequest
 {
@@ -26,6 +28,8 @@ final class BulkMoveApplicationsRequest extends FormRequest
             'interview.day_end' => ['nullable', 'date_format:H:i'],
             'offer' => ['nullable', 'array'],
             ...OfferFields::rules('offer.', 'required_with:offer'),
+            'assessment' => ['nullable', 'array'],
+            ...AssessmentInvitationFields::rules('assessment.', 'required_with:assessment'),
         ];
     }
 
@@ -66,5 +70,10 @@ final class BulkMoveApplicationsRequest extends FormRequest
         $data = $this->validated('offer');
 
         return is_array($data) && $data !== [] ? OfferFields::input($data) : null;
+    }
+
+    public function assessment(): ?AssessmentInvitationInput
+    {
+        return AssessmentInvitationFields::inputOrNull($this->validated('assessment'));
     }
 }

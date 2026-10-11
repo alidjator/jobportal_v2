@@ -6,7 +6,7 @@ use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\TransactionManager;
 
-/** Gives the default stages to every company that has none (companies created before this context existed). Safe to run again. */
+/** Gives the default stages to every company that lacks them: all of them to a company that has none, the `assessment` one to a company created before that type existed. Safe to run again. */
 final readonly class ProvisionStagesForExistingCompanies
 {
     private const int BATCH = 200;

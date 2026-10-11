@@ -38,6 +38,11 @@ final readonly class Actor
         return new self(ActorKind::CompanyMember, $id);
     }
 
+    public static function psychologist(int $id): self
+    {
+        return new self(ActorKind::Psychologist, $id);
+    }
+
     public static function admin(int $id): self
     {
         return new self(ActorKind::Admin, $id);

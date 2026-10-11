@@ -43,9 +43,11 @@ final class UserModel extends Authenticatable implements ActorProvider, HasApiTo
 
     public function toActor(): Actor
     {
-        return UserType::from($this->type) === UserType::CompanyMember
-            ? Actor::companyMember($this->id)
-            : Actor::jobSeeker($this->id);
+        return match (UserType::from($this->type)) {
+            UserType::CompanyMember => Actor::companyMember($this->id),
+            UserType::Psychologist => Actor::psychologist($this->id),
+            UserType::JobSeeker => Actor::jobSeeker($this->id),
+        };
     }
 
     protected $guarded = [];

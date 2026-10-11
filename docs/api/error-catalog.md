@@ -19,7 +19,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
+| `assessment-required` | 422 | Recruitment |  |
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
+| `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `body-too-long` | 422 | Messaging |  |
 | `campaign-code-taken` | 409 | Campaign | This campaign code is already used. |
 | `campaign-has-registrations` | 409 | Campaign | Someone registered with this campaign; switch it off instead. |
@@ -31,11 +33,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
-| `company-admin-required` | 403 | Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can manage campaigns. |
+| `company-admin-required` | 403 | Assessment, Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can do this. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
-| `company-suspended` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
+| `company-suspended` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |
@@ -51,7 +53,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `document-not-pending` | 409 | Company | Only a pending document can be reviewed. |
 | `document-type-inactive` | 422 | Company | This document type is not accepted at the moment. |
 | `education-limit-reached` | 409 | JobSeeker |  |
-| `email-already-registered` | 409 | Company, Identity | An account with this email already exists. |
+| `email-already-registered` | 409 | Assessment, Company, Identity | An account with this email already exists. |
 | `email-already-verified` | 409 | Identity | The email address is already verified. |
 | `email-not-verified` | 403, 409 | Identity, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
@@ -61,9 +63,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
 | `file-too-large` | 422 | Company, Identity, JobSeeker, Messaging |  |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
-| `forbidden` | 403 | Company, Job, Platform | You are not allowed to perform this action. |
+| `forbidden` | 403 | Assessment, Company, Job, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
-| `google-sign-in-unavailable` | 503 | Identity | Google sign-in is not available. |
+| `google-sign-in-unavailable` | 401, 503 | Identity | This account cannot sign in with Google. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
@@ -73,6 +75,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
 | `invalid-applications` | 422 | Recruitment |  |
+| `invalid-assessment-input` | 422 | Recruitment |  |
+| `invalid-assessment-schedule` | 422 | Assessment |  |
+| `invalid-assessment-test` | 422 | Assessment |  |
+| `invalid-assessor` | 422 | Assessment |  |
 | `invalid-assignees` | 422 | Job | A job needs at least one assignee. |
 | `invalid-attachment` | 422 | Messaging |  |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
@@ -94,31 +100,40 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-name` | 422 | JobAlert |  |
+| `invalid-norms` | 422 | Assessment |  |
 | `invalid-note` | 422 | Recruitment |  |
 | `invalid-offer` | 422 | Recruitment |  |
 | `invalid-offer-input` | 422 | Recruitment |  |
+| `invalid-order` | 422 | Assessment | The list must hold every question of the section exactly once. |
 | `invalid-password` | 422 | Identity | The password is incorrect. |
 | `invalid-profile` | 422 | JobSeeker |  |
+| `invalid-question` | 422 | Assessment |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
+| `invalid-report-template` | 422 | Assessment |  |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-schedule` | 422 | Recruitment |  |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
+| `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
 | `invalid-setting-value` | 422 | Shared |  |
 | `invalid-skills` | 422 | JobSeeker | The skills are not valid. |
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
 | `invalid-stage` | 422 | Recruitment | An application cannot be moved to this stage. |
 | `invalid-stage-order` | 422 | Recruitment |  |
+| `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
 | `invalid-withdrawal` | 422 | Recruitment |  |
 | `invitation-closed` | 409 | JobInvitation | This invitation expired because the job is not live. |
-| `invitation-cooldown` | 429 | Company | Wait a moment before sending another invitation to this email. |
+| `invitation-cooldown` | 429 | Assessment, Company | Wait a moment before sending another invitation to this email. |
+| `invitation-in-progress` | 409 | Assessment | The candidate already started the test. Cancel it before sending another. |
 | `invitation-limit` | 429 | JobInvitation | Your company reached its daily limit of job invitations. Try again tomorrow. |
-| `invitation-link-unavailable` | 503 | Company | Invitations cannot be sent because the invitation link is not configured. |
-| `invitation-not-found` | 404 | Company | Invitation not found. |
+| `invitation-link-unavailable` | 503 | Assessment, Company | Invitations cannot be sent because the invitation link is not configured. |
+| `invitation-not-active` | 409 | Assessment | Only an active test invitation can be cancelled. |
+| `invitation-not-found` | 404 | Assessment, Company | Invitation not found. |
+| `invitation-not-invited` | 409 | Assessment | Only a test that was not started can expire. |
 | `job-deadline-passed` | 409 | Job | The deadline of this job has passed. |
 | `job-incomplete` | 422 | Job | The job is not complete. |
 | `job-locked-after-applications` | 409 | Job |  |
@@ -131,8 +146,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-not-reopenable` | 409 | Job | Only a closed or an expired job can be reopened. |
 | `job-not-taken-down` | 409 | Job | Only a job that was taken down can be restored. |
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
-| `job-seeker-only` | 403 | Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker has this dashboard. |
-| `job-taken-down` | 409 | Recruitment | This job was taken down, so its applications can no longer be processed. |
+| `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
+| `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
 | `legal-document-missing` | 422 | Identity | Every document in force must be accepted together. |
@@ -149,9 +164,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
-| `not-a-company-member` | 403 | Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can manage campaigns. |
+| `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
+| `not-an-author` | 403 | Assessment | Only a company admin, a psychologist or an administrator can write tests. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
+| `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
 | `not-in-offer-stage` | 409 | Recruitment | Move the application to an offer stage before sending an offer. |
 | `not-note-author` | 403 | Recruitment | Only the author or a company admin can delete a note. |
@@ -167,8 +184,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
+| `provider-name-taken` | 409 | Assessment | A provider with this name already exists. |
+| `provider-suspended` | 403 | Assessment | The provider of this psychologist is suspended. |
+| `psychological-disabled` | 403 | Assessment | Psychological tests are not enabled for this company. |
+| `psychologist-account-managed` | 403 | Identity | A psychologist account is closed by an administrator. |
+| `psychologist-suspended` | 403 | Assessment | This psychologist account is suspended. |
 | `public-account-required` | 403 | Identity | Only a job seeker or a company member has a profile picture. |
 | `question-in-use` | 409 | Recruitment | This question is attached to a job or has answers, so it can only be archived. |
+| `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `reference-value-taken` | 409 | ReferenceData |  |
@@ -185,20 +208,27 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `schedule-required` | 422 | Recruitment |  |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
+| `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |
 | `setting-not-overridable` | 422 | Platform | This setting cannot be overridden per company. |
 | `slug-reserved` | 422 | Company | This slug is reserved. |
 | `slug-taken` | 409 | Company | This slug is already taken. |
 | `social-account-conflict` | 409 | Identity | A different Google account is already linked to this account. |
 | `stage-limit-reached` | 409 | Recruitment | The company has reached its limit of stages. |
 | `stage-name-taken` | 409 | Recruitment | Another stage of this company already has this name. |
-| `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, interview or offer. |
+| `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, assessment, interview or offer. |
 | `talent-pool-limit` | 422 | TalentPool |  |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
 | `terms-not-accepted` | 409 | Identity | You must accept the current terms and privacy policy before continuing. |
+| `test-archived` | 409 | Assessment | An archived test cannot be changed. Restore it first. |
+| `test-incomplete` | 422 | Assessment | The test is not complete. |
+| `test-limit-reached` | 409 | Assessment | The company has reached its limit of skill tests. Archive or delete one first. |
+| `test-locked` | 409 | Assessment | This test was already sent to candidates, so it can no longer be changed. Clone it to make a new version. |
+| `test-not-draft` | 409 | Assessment | Only a draft can be deleted. Archive the test instead. |
+| `test-not-psychological` | 422 | Assessment | Only a psychological battery has norms. |
 | `too-many-applications` | 422 | Recruitment |  |
 | `too-many-attachments` | 422 | Messaging |  |
 | `too-many-recipients` | 422 | Messaging |  |
-| `too-many-requests` | 429 | Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
+| `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
 | `two-factor-already-enabled` | 409 | Identity | This administrator already has a second factor. |
 | `two-factor-challenge-expired` | 401 | Identity | The sign-in has expired. Sign in again. |

@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Src\Assessment\Infrastructure\AssessmentServiceProvider;
 use Src\Campaign\Infrastructure\CampaignServiceProvider;
 use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Content\Infrastructure\ContentServiceProvider;
@@ -44,4 +45,5 @@ return [
     DashboardServiceProvider::class,
     ReviewServiceProvider::class,
     TalentPoolServiceProvider::class,
+    AssessmentServiceProvider::class,
 ];

@@ -40,7 +40,8 @@ final readonly class SignInUser
 
         $user = $this->users->findByEmail($email);
 
-        if (! $this->hasher->check($command->password, $user?->passwordHash()) || $user === null) {
+        // A psychologist gets the same answer as a wrong password: the public sign-in never reveals that the account exists.
+        if (! $this->hasher->check($command->password, $user?->passwordHash()) || $user === null || ! $user->usesPublicSignIn()) {
             $this->throttle->recordCredentialFailure(AccountScope::User, $email, $command->ipAddress);
             $this->events->dispatch([$this->failure($user?->id, 'invalid-credentials', $command)]);
 

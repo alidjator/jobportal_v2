@@ -46,13 +46,13 @@ final class PipelineJourneyTest extends FeatureTestCase
         $list = $this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->assertOk();
         $this->assertSame([$id], array_column($list->json('data'), 'id'));
         $this->assertTrue($list->json('data.0.meets_must_have'));
-        $this->assertSame([1, 0, 0, 0, 0, 0, 0], array_column($list->json('stages'), 'count'));
+        $this->assertSame([1, 0, 0, 0, 0, 0, 0, 0], array_column($list->json('stages'), 'count'));
 
         // 3. The recruiter moves it to the interview: the applicant is told and sees the status, not the company's stage names.
         $this->api('POST', "/company/applications/{$id}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertNoContent();
         $this->api('GET', "/me/applications/{$id}", token: $this->seekerToken)->assertOk()->assertJsonPath('data.status', 'interview');
         $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.moved_to_interview')->count());
-        $this->assertSame([0, 0, 1, 0, 0, 0, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
+        $this->assertSame([0, 0, 0, 1, 0, 0, 0, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
 
         // 4. The recruiter rejects it with a reason; the applicant sees the status and the reason code, not the note.
         $this->api('POST', "/company/applications/{$id}/reject", ['reason' => 'failed_screening', 'note' => 'Weak answers'], $this->recruiterToken)->assertNoContent();
@@ -80,7 +80,7 @@ final class PipelineJourneyTest extends FeatureTestCase
         $detail = $this->api('GET', "/company/applications/{$id}", token: $this->recruiterToken)->assertOk();
         $detail->assertJsonPath('data.applicant', ['is_deleted' => true, 'name' => null])->assertJsonPath('data.cover_letter', null)->assertJsonPath('data.resume', null)
             ->assertJsonPath('data.stage.type', 'rejected')->assertJsonPath('data.meets_must_have', true)->assertJsonCount(3, 'data.history');
-        $this->assertSame([0, 0, 0, 0, 0, 1, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
+        $this->assertSame([0, 0, 0, 0, 0, 0, 1, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
         $this->api('GET', "/company/applications/{$id}/resume", token: $this->recruiterToken)->assertStatus(404);
     }
 }

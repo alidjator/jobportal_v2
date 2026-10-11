@@ -14,7 +14,7 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
-/** A company admin adds an extra stage (screening, interview or offer). It goes after the other active stages, before the terminal ones. */
+/** A company admin adds an extra stage (screening, assessment, interview or offer). It goes after the other active stages, before the terminal ones. */
 final readonly class CreateStage
 {
     public function __construct(
@@ -35,7 +35,7 @@ final readonly class CreateStage
         $member = $this->access->companyAdmin($actor);
 
         if (! $type->allowsExtraStages()) {
-            throw new BusinessRuleViolation('Extra stages can only be of the type screening, interview or offer.', 'stage-type-not-allowed');
+            throw new BusinessRuleViolation('Extra stages can only be of the type screening, assessment, interview or offer.', 'stage-type-not-allowed');
         }
 
         $now = $this->clock->now();

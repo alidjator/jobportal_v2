@@ -71,7 +71,7 @@ final class RecruitmentEmailTemplates
             StageType::Offer => self::OFFER,
             StageType::Hired => self::HIRED,
             StageType::Rejected => self::REJECTED,
-            StageType::Applied, StageType::Screening, StageType::Withdrawn => null,
+            StageType::Applied, StageType::Screening, StageType::Assessment, StageType::Withdrawn => null,
         };
     }
 

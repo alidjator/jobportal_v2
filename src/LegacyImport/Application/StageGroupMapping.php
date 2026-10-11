@@ -64,7 +64,7 @@ final readonly class StageGroupMapping
             }
 
             if ($create && ! $type->allowsExtraStages()) {
-                throw new InvalidArgumentException($label.' cannot create a stage of the type "'.$type->value.'"; only screening, interview and offer allow extra stages.');
+                throw new InvalidArgumentException($label.' cannot create a stage of the type "'.$type->value.'"; only screening, assessment, interview and offer allow extra stages.');
             }
 
             $entries[(int) $key] = new StageGroupTarget($type, $create);

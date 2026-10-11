@@ -240,10 +240,13 @@ final class TermsGateTest extends FeatureTestCase
         $this->assertSame([
             'GET api/v1/me',
             'GET api/v1/me/terms-acceptance',
+            'GET api/v1/provider/me',
             'POST api/v1/auth/logout',
             'POST api/v1/auth/logout-all',
             'POST api/v1/me/deletion',
             'POST api/v1/me/terms-acceptance',
+            'POST api/v1/provider/auth/logout',
+            'POST api/v1/provider/auth/logout-all',
         ], $exempt);
     }
 

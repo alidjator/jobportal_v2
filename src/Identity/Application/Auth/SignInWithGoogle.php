@@ -67,6 +67,13 @@ final readonly class SignInWithGoogle
         $user = $linkedUserId !== null ? $this->users->findById($linkedUserId) : $this->users->findByEmail($email);
         $isNewUser = $user === null;
 
+        // A psychologist must pass the second factor, which Google sign-in cannot give.
+        if ($user !== null && ! $user->usesPublicSignIn()) {
+            $this->events->dispatch([$this->failure($user->id, 'google-sign-in-unavailable', $command)]);
+
+            throw new AuthenticationFailed('This account cannot sign in with Google.', 'google-sign-in-unavailable');
+        }
+
         if ($user !== null) {
             try {
                 $user->assertCanSignIn();

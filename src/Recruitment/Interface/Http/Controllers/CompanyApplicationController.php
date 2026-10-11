@@ -53,7 +53,7 @@ final class CompanyApplicationController extends ApiController
 
     public function move(MoveApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
     {
-        $process->move($actors->fromRequest($request), $id, $request->stageId(), $request->interview(), $request->offer());
+        $process->move($actors->fromRequest($request), $id, $request->stageId(), $request->interview(), $request->offer(), $request->assessment());
 
         return response()->noContent();
     }

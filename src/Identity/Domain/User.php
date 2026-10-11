@@ -7,7 +7,7 @@ use Src\Shared\Domain\AggregateRoot;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
-/** A public account: a job seeker or a company member. Administrators are a separate aggregate, see `Admin`. */
+/** A public account: a job seeker, a company member or a psychologist. Administrators are a separate aggregate, see `Admin`. */
 final class User extends AggregateRoot
 {
     public const int DELETION_GRACE_PERIOD_DAYS = 30;
@@ -61,6 +61,28 @@ final class User extends AggregateRoot
         DateTimeImmutable $now,
     ): self {
         return new self(null, UserType::CompanyMember, $name, $email, $passwordHash, $now, AccountStatus::Active, null, $locale, null, null, null, null);
+    }
+
+    /** A new psychologist account created from an accepted invitation: active, with a verified email. Its sign-in always asks for the TOTP second factor. */
+    public static function createPsychologist(
+        string $name,
+        string $email,
+        string $passwordHash,
+        string $locale,
+        DateTimeImmutable $now,
+    ): self {
+        return new self(null, UserType::Psychologist, $name, $email, $passwordHash, $now, AccountStatus::Active, null, $locale, null, null, null, null);
+    }
+
+    public function isPsychologist(): bool
+    {
+        return $this->type === UserType::Psychologist;
+    }
+
+    /** True for the accounts that sign in at the public endpoints. A psychologist signs in only at the provider endpoints, with a second factor. */
+    public function usesPublicSignIn(): bool
+    {
+        return ! $this->isPsychologist();
     }
 
     public function name(): string
@@ -194,6 +216,14 @@ final class User extends AggregateRoot
     {
         if ($this->status === AccountStatus::Active) {
             $this->status = AccountStatus::Deactivated;
+        }
+    }
+
+    /** Lets a deactivated account sign in again (an administrator lifts the suspension of a psychologist). An account waiting for its deletion is left as it is. */
+    public function reactivate(): void
+    {
+        if ($this->status === AccountStatus::Deactivated && ! $this->isPendingDeletion()) {
+            $this->status = AccountStatus::Active;
         }
     }
 

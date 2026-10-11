@@ -268,8 +268,9 @@ final class AnalyticsTest extends FeatureTestCase
         $this->assertEquals(1.67, $screening['average_days_in_stage']);
         $this->assertNull($screening['median_days_in_stage'], 'Three moves are too few for a median.');
         $this->assertEquals(0.4, $screening['conversion']);
+        $this->assertSame('interview', $screening['next_stage'], 'An unused assessment stage is skipped.');
 
-        foreach (['interview', 'offer', 'hired'] as $stage) {
+        foreach (['assessment', 'interview', 'offer', 'hired'] as $stage) {
             $row = $this->row($tables['stages']['rows'], 'stage', $stage);
             $this->assertTrue($row['suppressed'], $stage);
             $this->assertNull($row['entered'], $stage);

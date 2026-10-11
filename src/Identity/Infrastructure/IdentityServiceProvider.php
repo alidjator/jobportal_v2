@@ -12,6 +12,7 @@ use Src\Identity\Application\Account\AdminAccessReader;
 use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
+use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
 use Src\Identity\Application\Admin\AdminRbacWriter;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
@@ -30,6 +31,9 @@ use Src\Identity\Application\TwoFactor\RecoveryCodes;
 use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
 use Src\Identity\Application\TwoFactor\TwoFactorChallenges;
 use Src\Identity\Application\TwoFactor\TwoFactorTokens;
+use Src\Identity\Application\TwoFactor\UserRecoveryCodes;
+use Src\Identity\Application\TwoFactor\UserTwoFactorChallenges;
+use Src\Identity\Application\TwoFactor\UserTwoFactors;
 use Src\Identity\Domain\AdminRepository;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
@@ -66,6 +70,9 @@ use Src\Identity\Infrastructure\Persistence\DatabaseErasureLedger;
 use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
 use Src\Identity\Infrastructure\Persistence\DatabaseTwoFactorChallenges;
+use Src\Identity\Infrastructure\Persistence\DatabaseUserRecoveryCodes;
+use Src\Identity\Infrastructure\Persistence\DatabaseUserTwoFactorChallenges;
+use Src\Identity\Infrastructure\Persistence\DatabaseUserTwoFactors;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentAdminRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentUserRepository;
@@ -82,6 +89,7 @@ use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureReceipts;
+use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -123,6 +131,10 @@ final class IdentityServiceProvider extends ContextServiceProvider
         TwoFactorTokens::class => RandomTwoFactorTokens::class,
         TwoFactorChallenges::class => DatabaseTwoFactorChallenges::class,
         RecoveryCodes::class => DatabaseRecoveryCodes::class,
+        UserTwoFactors::class => DatabaseUserTwoFactors::class,
+        UserTwoFactorChallenges::class => DatabaseUserTwoFactorChallenges::class,
+        UserRecoveryCodes::class => DatabaseUserRecoveryCodes::class,
+        PsychologistAccounts::class => IdentityPsychologistAccounts::class,
         ErasureLedger::class => DatabaseErasureLedger::class,
         ErasureReceipts::class => DatabaseErasureLedger::class,
     ];

@@ -269,8 +269,8 @@ final class ApplicationsImporterTest extends FeatureTestCase
         $this->assertSame(1, $this->entity($report)['notes']['stage-created']);
 
         $order = DB::table('recruitment_stages')->orderBy('position')->pluck('type')->all();
-        $this->assertSame(['applied', 'screening', 'interview', 'offer', 'hired', 'interview', 'rejected', 'withdrawn'], $order);
-        $this->assertSame(range(1, 8), DB::table('recruitment_stages')->orderBy('position')->pluck('position')->map(fn ($position): int => (int) $position)->all());
+        $this->assertSame(['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'interview', 'rejected', 'withdrawn'], $order);
+        $this->assertSame(range(1, 9), DB::table('recruitment_stages')->orderBy('position')->pluck('position')->map(fn ($position): int => (int) $position)->all());
     }
 
     public function test_an_extra_stage_with_the_name_of_a_default_stage_of_the_same_type_is_reused(): void
@@ -279,7 +279,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
 
         $this->import(maps: ['groups' => [$this->groups['Interview'] => ['stage' => 'interview', 'create_stage' => true]]]);
 
-        $this->assertSame(7, DB::table('recruitment_stages')->count());
+        $this->assertSame(8, DB::table('recruitment_stages')->count());
         $this->assertSame('interview', DB::table('recruitment_applications')->value('stage_type'));
     }
 
@@ -318,12 +318,12 @@ final class ApplicationsImporterTest extends FeatureTestCase
             $runner->run($step, true);
         }
 
-        // The company is at its limit of seven stages, and "Screening" is the name of the default stage of another type.
-        $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::MAX_STAGES, (int) DB::table('company_companies')->value('id'), 7, null);
+        // The company is at its limit of eight stages, and "Screening" is the name of the default stage of another type.
+        $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::MAX_STAGES, (int) DB::table('company_companies')->value('id'), 8, null);
         $report = $this->import(maps: ['groups' => [$taken => ['stage' => 'offer', 'create_stage' => true], $limit => ['stage' => 'offer', 'create_stage' => true]]]);
 
         $this->assertSame(['offer', 'offer'], DB::table('recruitment_applications')->orderBy('id')->pluck('stage_type')->all());
-        $this->assertSame(7, DB::table('recruitment_stages')->count());
+        $this->assertSame(8, DB::table('recruitment_stages')->count());
         $this->assertSame(1, $this->entity($report)['notes']['stage-name-taken']);
         $this->assertSame(1, $this->entity($report)['notes']['stage-limit-reached']);
     }

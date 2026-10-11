@@ -15,7 +15,7 @@ final readonly class Stage
     ) {}
 
     /**
-     * The seven default stages in their starting order: the active types first, the terminal ones at the end.
+     * The eight default stages in their starting order: the active types first, the terminal ones at the end.
      *
      * @return list<self>
      */
