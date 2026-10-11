@@ -56,20 +56,34 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
         return new ApplicantSubmission($completeness->missing, $this->resume($userId, $resumeId), $this->snapshot($profile));
     }
 
-    public function forApplicationWithGeneratedCv(int $userId, GeneratedCvSpec $cv): ApplicantSubmission
+    public function generateCv(int $userId, GeneratedCvSpec $cv): ?ApplicantResume
     {
         $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
-        $counts = $this->profiles->counts($userId);
-        // The CV is made from the profile as it is now, and only when the application can go ahead: a profile that still lacks something needs no PDF.
-        $completeness = ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], 1);
 
-        if ($completeness->missing !== []) {
-            return new ApplicantSubmission($completeness->missing, null, $this->snapshot($profile));
+        // A profile that still lacks something needs no PDF: the application cannot go ahead.
+        if ($this->generatedCvCompleteness($profile)->missing !== []) {
+            return null;
         }
 
         $generated = $this->cvs->execute($userId, $cv);
 
-        return new ApplicantSubmission([], new ApplicantResume($generated->name, $generated->contents), $this->snapshot($profile));
+        return new ApplicantResume($generated->name, $generated->contents);
+    }
+
+    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume): ApplicantSubmission
+    {
+        $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
+        $missing = $this->generatedCvCompleteness($profile)->missing;
+
+        return new ApplicantSubmission($missing, $missing === [] ? $resume : null, $this->snapshot($profile));
+    }
+
+    /** The completeness for an application that attaches a generated CV: the CV stands for the resume, so one counts. */
+    private function generatedCvCompleteness(JobSeekerProfile $profile): ProfileCompleteness
+    {
+        $counts = $this->profiles->counts($profile->userId);
+
+        return ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], 1);
     }
 
     public function lock(int $userId): void

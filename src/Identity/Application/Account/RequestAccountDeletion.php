@@ -10,6 +10,7 @@ use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -20,7 +21,8 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
 /**
  * Starts the 30-day deletion grace period: the account is deactivated and every token is revoked, so the user is signed
  * out everywhere. The user can still cancel (see `CancelAccountDeletion`). Needs the current password, so a hijacked session
- * cannot do it; an account without a password must set one first (through the password reset flow).
+ * cannot do it; an account without a password must set one first (through the password reset flow). The only company admin of a company cannot
+ * delete the account (`last-company-admin`, the rule of `RemoveMember`); the company's own listener releases any other member once the account is anonymised.
  */
 final readonly class RequestAccountDeletion
 {
@@ -30,6 +32,7 @@ final readonly class RequestAccountDeletion
         private SignInThrottle $throttle,
         private AccessTokenIssuer $tokens,
         private TransactionManager $transactions,
+        private CompanyMemberDeletionGuard $companyGuard,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -39,7 +42,7 @@ final readonly class RequestAccountDeletion
      *
      * @throws EntityNotFound
      * @throws BusinessRuleViolation `password-required` for an account without a password, `invalid-password` for a wrong one
-     * @throws StateConflict when a deletion is already pending or the account is not active
+     * @throws StateConflict when a deletion is already pending or the account is not active, or `last-company-admin` for the only company admin of a company
      * @throws TooManyAttempts after too many wrong passwords
      */
     public function execute(Actor $actor, string $password, ?string $ipAddress, ?string $userAgent): DateTimeImmutable
@@ -66,6 +69,7 @@ final readonly class RequestAccountDeletion
         $scheduledFor = $user->deletionDueAt() ?? $now;
 
         $this->transactions->run(function () use ($user): void {
+            $this->companyGuard->assertCanRequestDeletion((int) $user->id);
             $this->users->save($user);
             $this->tokens->revokeAllForUser((int) $user->id);
         });

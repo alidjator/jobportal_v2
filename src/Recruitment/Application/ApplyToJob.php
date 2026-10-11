@@ -34,7 +34,7 @@ use Throwable;
 /**
  * A job seeker applies to a live public job. The application keeps its own copy of the chosen resume and a snapshot of the profile as it is now, so
  * what the recruiter sees never changes under them. The applicant is locked first, so two requests of the same person (and the daily count) run one
- * after the other; the unique key of the application is the last line of defence against a duplicate. It also records where the applicant came from (an invitation
+ * after the other, then the job, so a job that is closed meanwhile takes no application; the unique key of the application is the last line of defence against a duplicate. It also records where the applicant came from (an invitation
  * wins over the hint of the client) and how well they fitted the job, for the analytics.
  */
 final readonly class ApplyToJob
@@ -71,26 +71,34 @@ final readonly class ApplyToJob
     public function execute(Actor $actor, int $jobId, ApplyToJobInput $input): Application
     {
         $userId = $this->guard->userId($actor);
-        $companyId = $this->jobs->publicCompanyId($jobId) ?? throw EntityNotFound::of('Job', $jobId);
+        $companyId = $this->liveCompanyId($jobId);
         $coverLetter = $this->coverLetter($input->coverLetter);
         $storedPath = null;
 
+        if (($input->resumeId === null) === ($input->cv === null)) {
+            throw new BusinessRuleViolation('Choose one of your own resumes or a CV to generate.', 'invalid-application', extensions: ['errors' => ['resume_id' => ['Choose one of your own resumes or a CV to generate.']]]);
+        }
+
+        // The CV is rendered before the transaction, so the locks are not held while the PDF is built. The checks that would make the request fail run first,
+        // so it does not spend a PDF or one of the hourly CVs; they run again under the locks, where they decide.
+        $generated = null;
+
+        if ($input->cv !== null) {
+            $this->assertCanApply($userId, $jobId);
+            $generated = $this->applicants->generateCv($userId, $input->cv);
+        }
+
         try {
-            $application = $this->transactions->run(function () use ($userId, $jobId, $companyId, $input, $coverLetter, &$storedPath): Application {
+            $application = $this->transactions->run(function () use ($userId, $jobId, $input, $coverLetter, $generated, &$storedPath): Application {
                 $this->applicants->lock($userId);
+                // Closing, expiring or taking down a job locks it, so the job is checked again once nothing can change it under this application.
+                $this->jobs->lock($jobId);
+                $companyId = $this->liveCompanyId($jobId);
 
-                if ($this->applications->hasLiveApplication($userId, $jobId)) {
-                    throw new StateConflict('You have already applied to this job.', 'already-applied');
-                }
-
-                $this->assertBelowDailyLimit($userId);
-
-                if (($input->resumeId === null) === ($input->cv === null)) {
-                    throw new BusinessRuleViolation('Choose one of your own resumes or a CV to generate.', 'invalid-application', extensions: ['errors' => ['resume_id' => ['Choose one of your own resumes or a CV to generate.']]]);
-                }
+                $this->assertCanApply($userId, $jobId);
 
                 $submission = $input->cv !== null
-                    ? $this->applicants->forApplicationWithGeneratedCv($userId, $input->cv)
+                    ? $this->applicants->forApplicationWithResume($userId, $generated)
                     : $this->applicants->forApplication($userId, (int) $input->resumeId);
 
                 if ($submission->missing !== []) {
@@ -150,6 +158,25 @@ final readonly class ApplyToJob
         $this->events->dispatch([new ApplicationSubmitted((int) $application->id, $jobId, $companyId, $this->clock->now())]);
 
         return $application;
+    }
+
+    /** @throws EntityNotFound the job is not live */
+    private function liveCompanyId(int $jobId): int
+    {
+        return $this->jobs->publicCompanyId($jobId) ?? throw EntityNotFound::of('Job', $jobId);
+    }
+
+    /**
+     * @throws StateConflict `already-applied`
+     * @throws TooManyAttempts `application-limit-reached`
+     */
+    private function assertCanApply(int $userId, int $jobId): void
+    {
+        if ($this->applications->hasLiveApplication($userId, $jobId)) {
+            throw new StateConflict('You have already applied to this job.', 'already-applied');
+        }
+
+        $this->assertBelowDailyLimit($userId);
     }
 
     private function coverLetter(?string $text): ?string

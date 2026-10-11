@@ -96,7 +96,7 @@ final readonly class MessageComposer
                 throw new StateConflict('This job seeker no longer has an account that can receive messages.', 'recipient-unavailable');
             }
 
-            $this->quota->assertRoom($conversation->companyId);
+            $this->quota->lockAndAssertRoom($conversation->companyId);
 
             return;
         }

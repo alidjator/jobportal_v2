@@ -88,7 +88,7 @@ final class MyApplicationsTest extends FeatureTestCase
             ->assertJsonPath('data.0.status', 'applied')
             ->assertJsonPath('data.0.applied_at', '2026-10-05T10:00:00+00:00')
             ->assertJsonPath('links.next', null);
-        $this->assertSame(['id', 'job', 'company', 'status', 'applied_at'], array_keys($response->json('data.0')));
+        $this->assertSame(['id', 'job', 'company', 'status', 'applied_at', 'viewed_at'], array_keys($response->json('data.0')));
     }
 
     public function test_the_list_is_cursor_paginated_and_does_not_repeat_or_skip(): void

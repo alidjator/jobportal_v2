@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Company\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Company\Domain\Events\CompanyCreated;
@@ -18,10 +18,10 @@ use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
 use Src\Company\Domain\Events\DocumentTypeCreated;
 use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -37,7 +37,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -52,7 +52,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyCreated(CompanyCreated $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_CREATED,
             self::SUBJECT_TYPE, $event->companyId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -60,7 +60,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanySuspended(CompanySuspended $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_SUSPENDED,
             self::SUBJECT_TYPE, $event->companyId, ['reason' => $event->reason], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -68,7 +68,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyRestored(CompanyRestored $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_RESTORED,
             self::SUBJECT_TYPE, $event->companyId, $event->note === null ? [] : ['note' => $event->note],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -79,7 +79,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
     {
         $byAdmin = $event->invitedByAdminId !== null;
 
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $byAdmin ? AuditActorType::Admin : AuditActorType::User, $byAdmin ? $event->invitedByAdminId : $event->invitedByUserId,
             AuditAction::COMPANY_INVITATION_SENT, self::SUBJECT_TYPE, $event->companyId,
             ['invitation_id' => $event->invitationId, 'role' => $event->role], $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -88,7 +88,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyInvitationRevoked(CompanyInvitationRevoked $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->revokedByUserId, AuditAction::COMPANY_INVITATION_REVOKED,
             self::SUBJECT_TYPE, $event->companyId, ['invitation_id' => $event->invitationId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -96,7 +96,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyMemberRemoved(CompanyMemberRemoved $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->removedByUserId, AuditAction::COMPANY_MEMBER_REMOVED,
             self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'role' => $event->role],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -105,7 +105,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyMemberRoleChanged(CompanyMemberRoleChanged $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_ROLE_CHANGED,
             self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'old_role' => $event->oldRole, 'new_role' => $event->newRole],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -114,7 +114,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyDocumentSubmitted(CompanyDocumentSubmitted $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::COMPANY_DOCUMENT_SUBMITTED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'replaced' => $event->replaced],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -123,7 +123,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyDocumentDeleted(CompanyDocumentDeleted $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::COMPANY_DOCUMENT_DELETED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'status' => $event->status],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -132,7 +132,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyDocumentApproved(CompanyDocumentApproved $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_APPROVED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -140,7 +140,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyDocumentRejected(CompanyDocumentRejected $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_REJECTED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId, 'reason' => $event->reason, 'note' => $event->note],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -149,7 +149,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyDocumentViewed(CompanyDocumentViewed $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_VIEWED,
             self::SUBJECT_TYPE, $event->companyId, ['document_type_id' => $event->documentTypeId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -157,7 +157,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onDocumentTypeCreated(DocumentTypeCreated $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_TYPE_CREATED,
             self::DOCUMENT_TYPE_SUBJECT_TYPE, $event->typeId, ['slug' => $event->slug, 'is_required' => $event->isRequired, 'is_active' => $event->isActive],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -166,7 +166,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onDocumentTypeVerificationRulesChanged(DocumentTypeVerificationRulesChanged $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_DOCUMENT_TYPE_UPDATED,
             self::DOCUMENT_TYPE_SUBJECT_TYPE, $event->typeId,
             [
@@ -180,7 +180,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
 
     public function onCompanyMemberJoined(CompanyMemberJoined $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::COMPANY_MEMBER_JOINED,
             self::SUBJECT_TYPE, $event->companyId, ['role' => $event->role], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));

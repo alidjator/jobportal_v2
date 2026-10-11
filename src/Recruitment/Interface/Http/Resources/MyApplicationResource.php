@@ -24,6 +24,7 @@ final class MyApplicationResource extends JsonResource
             'company' => ['id' => $row->companyId, 'name' => $this->resource->companyName],
             'status' => $row->status->value,
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
+            'viewed_at' => $row->viewedAt?->format(DATE_ATOM),
         ];
     }
 }

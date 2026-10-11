@@ -26,6 +26,21 @@ final readonly class DatabaseApplicantRelations implements ApplicantRelations
             ->map(fn (mixed $id): int => (int) $id)->values()->all();
     }
 
+    public function appliedJobIdsOf(array $applicantUserIds, array $jobIds): array
+    {
+        if ($applicantUserIds === [] || $jobIds === []) {
+            return [];
+        }
+
+        $applied = [];
+
+        foreach ($this->connection->table('recruitment_applications')->whereIn('user_id', $applicantUserIds)->whereIn('job_id', $jobIds)->distinct()->get(['user_id', 'job_id']) as $row) {
+            $applied[(int) $row->user_id][] = (int) $row->job_id;
+        }
+
+        return $applied;
+    }
+
     public function appliedUserIds(int $jobId, array $userIds): array
     {
         if ($userIds === []) {

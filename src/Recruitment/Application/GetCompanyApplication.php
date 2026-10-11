@@ -2,10 +2,12 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -21,6 +23,8 @@ final readonly class GetCompanyApplication
         private JobDirectory $jobs,
         private CompanyMemberAccounts $accounts,
         private ApplicationRatings $ratings,
+        private ApplicationRepository $applications,
+        private Clock $clock,
     ) {}
 
     /**
@@ -32,6 +36,7 @@ final readonly class GetCompanyApplication
         $member = $this->access->member($actor);
         $data = $this->reader->find($id) ?? throw EntityNotFound::of('Application', $id);
         $this->applicationAccess->assertCanSee($member, $id, $data->companyId, $data->jobId);
+        $this->applications->markViewed($id, $this->clock->now());
 
         $stageNames = [];
 

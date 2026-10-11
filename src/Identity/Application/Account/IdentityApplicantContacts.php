@@ -19,6 +19,19 @@ final readonly class IdentityApplicantContacts implements ApplicantContacts
         return $user === null || $user->anonymizedAt() !== null ? null : new ApplicantContact($user->name(), $user->email(), $user->locale(), $user->status()->isActive(), $user->isEmailVerified());
     }
 
+    public function contacts(array $userIds): array
+    {
+        $contacts = [];
+
+        foreach ($this->users->findByIds($userIds) as $user) {
+            if ($user->anonymizedAt() === null && $user->id !== null) {
+                $contacts[$user->id] = new ApplicantContact($user->name(), $user->email(), $user->locale(), $user->status()->isActive(), $user->isEmailVerified());
+            }
+        }
+
+        return $contacts;
+    }
+
     public function isActiveJobSeeker(int $userId): bool
     {
         $user = $this->users->findById($userId);

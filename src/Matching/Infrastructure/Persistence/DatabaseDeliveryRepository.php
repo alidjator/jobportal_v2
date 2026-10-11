@@ -13,19 +13,29 @@ final readonly class DatabaseDeliveryRepository implements DeliveryRepository
 
     public function __construct(private ConnectionInterface $connection) {}
 
-    public function sentJobIds(int $userId, array $jobIds): array
+    public function sentJobIdsOf(array $userIds, array $jobIds): array
     {
-        if ($jobIds === []) {
+        if ($userIds === [] || $jobIds === []) {
             return [];
         }
 
-        return $this->connection->table('matching_deliveries')->where('user_id', $userId)->whereIn('job_id', $jobIds)->pluck('job_id')
-            ->map(fn (mixed $id): int => (int) $id)->values()->all();
+        $sent = [];
+
+        foreach ($this->connection->table('matching_deliveries')->whereIn('user_id', $userIds)->whereIn('job_id', $jobIds)->get(['user_id', 'job_id']) as $row) {
+            $sent[(int) $row->user_id][] = (int) $row->job_id;
+        }
+
+        return $sent;
     }
 
-    public function hasSentSince(int $userId, DateTimeImmutable $since): bool
+    public function userIdsSentSince(array $userIds, DateTimeImmutable $since): array
     {
-        return $this->connection->table('matching_deliveries')->where('user_id', $userId)->where('created_at', '>=', $this->format($since))->exists();
+        if ($userIds === []) {
+            return [];
+        }
+
+        return $this->connection->table('matching_deliveries')->whereIn('user_id', $userIds)->where('created_at', '>=', $this->format($since))->distinct()->pluck('user_id')
+            ->map(fn (mixed $id): int => (int) $id)->values()->all();
     }
 
     public function record(int $userId, array $jobIds, DateTimeImmutable $at): void

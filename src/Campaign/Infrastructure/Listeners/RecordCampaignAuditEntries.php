@@ -1,13 +1,13 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Campaign\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Campaign\Domain\Events\CampaignChanged;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -20,7 +20,7 @@ final class RecordCampaignAuditEntries implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -42,7 +42,7 @@ final class RecordCampaignAuditEntries implements ShouldQueue
             default => throw new \LogicException("Unknown campaign change {$event->change}."),
         };
 
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $event->actorKind === 'admin' ? AuditActorType::Admin : AuditActorType::User, $event->actorId, $action, self::SUBJECT_TYPE, $event->campaignId,
             $event->companyId === null ? [] : ['company_id' => $event->companyId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));

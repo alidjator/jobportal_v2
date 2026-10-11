@@ -10,7 +10,7 @@ Plan, billing and featured/highlight are out of scope.
 | # | Flow | Benchmarks | karir.pkp today | Status | Production schema |
 |---|---|---|---|---|---|
 | J1 | Apply | One-tap (Glints), 1-click (karir.com), quick apply (loker.id), Easy Apply (LinkedIn) | Apply modal: resume + cover letter, profile must be complete | Partial | `applied_jobs` has no unique (candidate, job), no status or withdrawn marker |
-| J2 | Application tracking | All | "Applied Jobs" shows stage name | Partial | `application_groups` exists; no history, no "viewed by recruiter" |
+| J2 | Application tracking | All | "Applied Jobs" shows stage name | Partial | `application_groups` exists; no history, no "viewed by recruiter" (viewed: coded 2026-10-11, `viewed_at`, finding 17) |
 | J3 | Notification on stage change | Glints, LinkedIn (viewed, resume downloaded) | None | No | `notifications` exists; no such type |
 | J4 | Standard stages | Glints and JobStreet have fixed stages | Free-form per company | Partial | Only `application_groups(name, order, is_deleteable)` |
 | J5 | Job alerts | Multi-criteria, daily/weekly, email/app (JobStreet, LinkedIn) | One criterion: role | Partial | `candidate_job_alerts` has only `job_role_id` |

@@ -9,6 +9,7 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\JobAlert\Application\AlertEmailSender;
 use Src\JobAlert\Application\AlertSavedSearches;
+use Src\JobAlert\Application\EraseJobAlerts;
 use Src\JobAlert\Application\JobAlertEmailTemplates;
 use Src\JobAlert\Application\JobAlertNotificationType;
 use Src\JobAlert\Application\JobAlertSettings;
@@ -20,6 +21,7 @@ use Src\JobAlert\Infrastructure\Mail\MailAlertSender;
 use Src\JobAlert\Infrastructure\Persistence\DatabaseAlertDeliveryRepository;
 use Src\JobAlert\Infrastructure\Persistence\DatabaseJobAlertRepository;
 use Src\JobAlert\Interface\Console\SendJobAlertDigestsCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\JobAlert\SavedSearches;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -71,6 +73,7 @@ final class JobAlertServiceProvider extends ContextServiceProvider
 
         Event::listen(JobStatusChanged::class, NotifyAlertsOfLiveJob::class);
         Event::listen(JobDecided::class, NotifyAlertsOfLiveJob::class);
+        $this->app->tag(EraseJobAlerts::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseJobAlertsWhenUserAnonymized::class);
     }
 }

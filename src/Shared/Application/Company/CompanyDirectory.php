@@ -11,6 +11,12 @@ interface CompanyDirectory
     public function isActive(int $companyId): bool;
 
     /**
+     * Locks the company's row until the surrounding transaction ends, so requests of one company that count and then insert (a daily quota) run one after the
+     * other. Call it inside a transaction; outside one the lock is released at once.
+     */
+    public function lock(int $companyId): void;
+
+    /**
      * Name, slug and status of these companies, keyed by company id; an id without a company is missing.
      *
      * @param  list<int>  $companyIds

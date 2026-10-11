@@ -6,8 +6,8 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Src\Platform\Application\Audit\AuditActorType;
 use Src\Platform\Application\Audit\AuditLogQuery;
+use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Interface\Http\Requests\CursorPaginatedRequest;
 
 /**

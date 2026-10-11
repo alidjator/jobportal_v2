@@ -52,12 +52,17 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         return new Page($rows, $total, $request);
     }
 
-    public function export(RecruiterApplicationQuery $query): iterable
+    public function count(RecruiterApplicationQuery $query): int
+    {
+        return $this->filtered($query)->count();
+    }
+
+    public function export(RecruiterApplicationQuery $query, int $limit): iterable
     {
         $direction = $query->newestFirst ? 'desc' : 'asc';
 
-        // The ids are read first and the rows in chunks, so the export stays consistent while applications arrive and memory stays flat.
-        $ids = $this->filtered($query)->orderBy('a.applied_at', $direction)->orderBy('a.id', $direction)->pluck('a.id')->map(static fn (mixed $id): int => (int) $id)->all();
+        // The ids are read first and the rows in chunks, so the export stays consistent while applications arrive; only the ids (at most `$limit`) are held, the rows live one chunk at a time.
+        $ids = $this->filtered($query)->orderBy('a.applied_at', $direction)->orderBy('a.id', $direction)->limit($limit)->pluck('a.id')->map(static fn (mixed $id): int => (int) $id)->all();
 
         foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
             $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))

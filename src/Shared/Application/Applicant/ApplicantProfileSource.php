@@ -12,13 +12,16 @@ interface ApplicantProfileSource
     public function forApplication(int $userId, int $resumeId): ApplicantSubmission;
 
     /**
-     * As `forApplication`, but the resume is a CV generated now from the profile instead of an uploaded file. It is only generated when the profile is complete
-     * (otherwise the submission has no resume and lists what is missing). A generation counts against the job seeker's hourly limit.
+     * Generates a CV from the profile as it is now, to attach to an application. Null when the profile still lacks something that an application needs
+     * (nothing is generated then). A generation counts against the job seeker's hourly limit. Slow, so call it outside a transaction.
      *
      * @throws BusinessRuleViolation `template-unavailable` or `invalid-cv`
      * @throws TooManyAttempts `cv-limit`
      */
-    public function forApplicationWithGeneratedCv(int $userId, GeneratedCvSpec $cv): ApplicantSubmission;
+    public function generateCv(int $userId, GeneratedCvSpec $cv): ?ApplicantResume;
+
+    /** As `forApplication`, with the resume made by `generateCv`; a null resume gives a submission without a resume. The completeness is checked now. */
+    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume): ApplicantSubmission;
 
     /** Locks the applicant until the transaction ends, so two applications of the same person (and their daily count) run one after the other. */
     public function lock(int $userId): void;

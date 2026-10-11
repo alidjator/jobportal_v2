@@ -9,7 +9,7 @@ Context: `Recruitment` (the export), `Platform` (the audit entry). Spec in `deci
 - **Scope:** the same filters as the pipeline list (`stage_id`, `stage_type`, `meets_must_have`, `search`); with no filter, every application of the job. The order is the list's `newest_first` default.
 - **Columns:** core plus the screening answers: application id, applied at, name, email, phone, city, age, headline, latest job (title and company), expected salary, stage, must-have result, average rating,
   rating count, and one column per screening question of the job (the question text as the header).
-- **Limits:** a rate limit of 10 exports per member per hour (throttle); no row cap and no new setting.
+- **Limits:** a rate limit of 10 exports per member per hour (throttle); row cap added 2026-10-11 (architecture review finding 16): setting `recruitment.max_export_rows` (default 50,000, 1 to 200,000, overridable per company); a larger selection is refused with 422 `export-too-large` (extension `max_rows`) before the audit, and the CSV is streamed (`StreamedResponse`), not built in memory.
 - **Who (R13):** company admins and recruiters assigned to the job, the same access as the pipeline list (404 for a job the member may not see; 403 for a non-member or a suspended company).
 
 ## Details (approved by the user, 2026-10-08)

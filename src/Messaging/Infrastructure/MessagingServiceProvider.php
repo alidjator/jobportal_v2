@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Messaging\Application\CompanyPresence;
 use Src\Messaging\Application\ConversationReader;
+use Src\Messaging\Application\EraseMessagingData;
 use Src\Messaging\Application\MessageReader;
 use Src\Messaging\Application\MessagingEmailTemplates;
 use Src\Messaging\Application\MessagingNotificationType;
@@ -39,6 +40,7 @@ use Src\Messaging\Infrastructure\Persistence\DatabaseReadStateRepository;
 use Src\Messaging\Infrastructure\Presence\ReverbCompanyPresence;
 use Src\Messaging\Interface\Broadcasting\MessagingChannels;
 use Src\Messaging\Interface\Console\SendUnreadMessageEmailsCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -113,6 +115,7 @@ final class MessagingServiceProvider extends ContextServiceProvider
         Event::listen(MessageSent::class, [BroadcastMessagingEvents::class, 'sent']);
         Event::listen(MessageDeleted::class, [BroadcastMessagingEvents::class, 'deleted']);
         Event::listen(MessagesRead::class, [BroadcastMessagingEvents::class, 'read']);
+        $this->app->tag(EraseMessagingData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseMessagingDataWhenUserAnonymized::class);
     }
 }

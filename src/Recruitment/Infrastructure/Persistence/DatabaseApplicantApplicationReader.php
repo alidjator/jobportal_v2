@@ -42,7 +42,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
                 ->orWhere(fn (Builder $tie) => $tie->where('applied_at', '=', $time)->where('id', '<', $id)));
         }
 
-        $rows = $builder->orderByDesc('applied_at')->orderByDesc('id')->limit($request->perPage + 1)->get(['id', 'job_id', 'company_id', 'stage_type', 'applied_at'])->all();
+        $rows = $builder->orderByDesc('applied_at')->orderByDesc('id')->limit($request->perPage + 1)->get(['id', 'job_id', 'company_id', 'stage_type', 'applied_at', 'viewed_at'])->all();
 
         $hasMore = count($rows) > $request->perPage;
         $rows = array_slice($rows, 0, $request->perPage);
@@ -113,6 +113,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
             (int) $row->company_id,
             StageType::from($row->stage_type),
             new DateTimeImmutable((string) $row->applied_at, new DateTimeZone('UTC')),
+            $row->viewed_at === null ? null : new DateTimeImmutable((string) $row->viewed_at, new DateTimeZone('UTC')),
         );
     }
 

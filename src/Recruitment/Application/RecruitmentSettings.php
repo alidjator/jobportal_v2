@@ -17,6 +17,8 @@ final class RecruitmentSettings
 
     public const string MAX_BULK_APPLICATIONS = 'recruitment.max_bulk_applications';
 
+    public const string MAX_EXPORT_ROWS = 'recruitment.max_export_rows';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -43,6 +45,11 @@ final class RecruitmentSettings
             SettingDefinition::integer(
                 self::MAX_BULK_APPLICATIONS, 100, 1, 500,
                 'The most applications one bulk move or bulk rejection may cover.',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::MAX_EXPORT_ROWS, 50000, 1, 200000,
+                'The most applications one applicant export (CSV) may hold; a larger selection is refused until the filters narrow it.',
                 overridable: true,
             ),
         ];

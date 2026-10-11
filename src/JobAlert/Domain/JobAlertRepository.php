@@ -2,6 +2,8 @@
 
 namespace Src\JobAlert\Domain;
 
+use Src\Shared\Application\Job\LiveJobProfile;
+
 interface JobAlertRepository
 {
     /** Stores a new alert and returns it with its id. */
@@ -30,6 +32,14 @@ interface JobAlertRepository
      * @return list<JobAlert>
      */
     public function activeAfter(AlertFrequency $frequency, int $afterId, int $limit): array;
+
+    /**
+     * The immediate alerts that are not paused, with an id after `$afterId`, in id order, that this live job fits: every filter of the alert holds for the job
+     * and the job first went live after the alert's cursor. One statement for all alerts, so a batch needs no search per alert.
+     *
+     * @return list<JobAlert>
+     */
+    public function immediateFitting(LiveJobProfile $job, int $afterId, int $limit): array;
 
     /**
      * Takes one of the emails an immediate alert may send on the Jakarta day `$day` (`Y-m-d`), as one atomic step; false when the day's cap is used up.

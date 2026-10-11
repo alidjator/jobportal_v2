@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Identity\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Identity\Domain\AccountScope;
@@ -16,10 +16,10 @@ use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\TwoFactorEnabled;
 use Src\Identity\Domain\Events\TwoFactorReset;
 use Src\Identity\Domain\Events\UserAnonymized;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -31,7 +31,7 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 {
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -46,7 +46,7 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 
     public function onSignedIn(SignedIn $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $this->actorType($event->scope), $event->accountId, AuditAction::LOGIN,
             $event->scope->value, $event->accountId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -54,7 +54,7 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 
     public function onSignInFailed(SignInFailed $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $this->actorType($event->scope), $event->accountId, AuditAction::LOGIN_FAILED,
             $event->accountId === null ? null : $event->scope->value, $event->accountId,
             ['reason' => $event->reason], $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -63,38 +63,38 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 
     public function onPasswordReset(PasswordReset $event): void
     {
-        $this->record->execute($this->userEntry(AuditAction::PASSWORD_RESET, $event->userId, [], $event->ipAddress, $event->userAgent, $event));
+        $this->trail->record($this->userEntry(AuditAction::PASSWORD_RESET, $event->userId, [], $event->ipAddress, $event->userAgent, $event));
     }
 
     public function onPasswordChanged(PasswordChanged $event): void
     {
-        $this->record->execute($this->accountEntry(AuditAction::PASSWORD_CHANGED, $event));
+        $this->trail->record($this->accountEntry(AuditAction::PASSWORD_CHANGED, $event));
     }
 
     public function onSignedOutEverywhere(SignedOutEverywhere $event): void
     {
-        $this->record->execute($this->accountEntry(AuditAction::SIGNED_OUT_EVERYWHERE, $event));
+        $this->trail->record($this->accountEntry(AuditAction::SIGNED_OUT_EVERYWHERE, $event));
     }
 
     public function onTwoFactorEnabled(TwoFactorEnabled $event): void
     {
-        $this->record->execute($this->adminEntry(AuditAction::TWO_FACTOR_ENABLED, $event));
+        $this->trail->record($this->adminEntry(AuditAction::TWO_FACTOR_ENABLED, $event));
     }
 
     public function onRecoveryCodeUsed(RecoveryCodeUsed $event): void
     {
-        $this->record->execute($this->adminEntry(AuditAction::RECOVERY_CODE_USED, $event));
+        $this->trail->record($this->adminEntry(AuditAction::RECOVERY_CODE_USED, $event));
     }
 
     public function onRecoveryCodesRegenerated(RecoveryCodesRegenerated $event): void
     {
-        $this->record->execute($this->adminEntry(AuditAction::RECOVERY_CODES_REGENERATED, $event));
+        $this->trail->record($this->adminEntry(AuditAction::RECOVERY_CODES_REGENERATED, $event));
     }
 
     /** Done by an operator on the console, so the actor is the system. */
     public function onTwoFactorReset(TwoFactorReset $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::System, null, AuditAction::TWO_FACTOR_RESET,
             AccountScope::Admin->value, $event->adminId, [], null, null, $event->occurredAt(),
         ));
@@ -102,7 +102,7 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 
     public function onAccountDeletionRequested(AccountDeletionRequested $event): void
     {
-        $this->record->execute($this->userEntry(
+        $this->trail->record($this->userEntry(
             AuditAction::ACCOUNT_DELETION_REQUESTED, $event->userId,
             ['scheduled_for' => $event->scheduledFor->format(DATE_ATOM)], $event->ipAddress, $event->userAgent, $event,
         ));
@@ -110,12 +110,12 @@ final class RecordIdentityAuditEntries implements ShouldQueue
 
     public function onAccountDeletionCancelled(AccountDeletionCancelled $event): void
     {
-        $this->record->execute($this->userEntry(AuditAction::ACCOUNT_DELETION_CANCELLED, $event->userId, [], $event->ipAddress, $event->userAgent, $event));
+        $this->trail->record($this->userEntry(AuditAction::ACCOUNT_DELETION_CANCELLED, $event->userId, [], $event->ipAddress, $event->userAgent, $event));
     }
 
     public function onUserAnonymized(UserAnonymized $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::System, null, AuditAction::ACCOUNT_ANONYMIZED,
             AccountScope::User->value, $event->userId, [], null, null, $event->occurredAt(),
         ));

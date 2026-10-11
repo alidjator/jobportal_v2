@@ -22,6 +22,7 @@ use Src\Recruitment\Interface\Http\Resources\CompanyApplicationResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\PaginatedResources;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** The applications of the caller's company, for the members who may see the job (a company admin: every job; a recruiter: the jobs assigned to them). */
 final class CompanyApplicationController extends ApiController
@@ -35,7 +36,7 @@ final class CompanyApplicationController extends ApiController
         ]);
     }
 
-    public function export(ExportJobApplicationsRequest $request, int $id, ActorResolver $actors, ExportJobApplications $export): Response
+    public function export(ExportJobApplicationsRequest $request, int $id, ActorResolver $actors, ExportJobApplications $export): StreamedResponse
     {
         return CsvDownload::of($export->execute($actors->fromRequest($request), $request->toQuery($id), $request->ip(), $request->userAgent()));
     }

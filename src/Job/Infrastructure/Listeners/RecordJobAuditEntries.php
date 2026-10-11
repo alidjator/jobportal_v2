@@ -1,15 +1,15 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Job\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -23,7 +23,7 @@ final class RecordJobAuditEntries implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -47,7 +47,7 @@ final class RecordJobAuditEntries implements ShouldQueue
             default => throw new \LogicException("Unknown job status change {$event->change}."),
         };
 
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $event->changedByUserId === null ? AuditActorType::System : AuditActorType::User, $event->changedByUserId, $action,
             self::SUBJECT_TYPE, $event->jobId, ['from' => $event->from, 'to' => $event->to], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -63,7 +63,7 @@ final class RecordJobAuditEntries implements ShouldQueue
             default => throw new \LogicException("Unknown job decision {$event->decision}."),
         };
 
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, $action, self::SUBJECT_TYPE, $event->jobId,
             ['from' => $event->from, 'to' => $event->to, ...($event->reason === null ? [] : ['reason' => $event->reason])],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
@@ -72,7 +72,7 @@ final class RecordJobAuditEntries implements ShouldQueue
 
     public function onJobAssigneesChanged(JobAssigneesChanged $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             $event->changedByUserId === null ? AuditActorType::System : AuditActorType::User, $event->changedByUserId, AuditAction::JOB_ASSIGNEES_CHANGED,
             self::SUBJECT_TYPE, $event->jobId, ['added' => $event->added, 'removed' => $event->removed],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),

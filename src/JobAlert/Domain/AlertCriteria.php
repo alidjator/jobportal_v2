@@ -111,6 +111,22 @@ final readonly class AlertCriteria
         return $this->filters;
     }
 
+    /**
+     * The words of the keyword in lower case, each once: the job search needs every one of them to match.
+     *
+     * @return list<string>
+     */
+    public function keywords(): array
+    {
+        $words = [];
+
+        foreach (preg_split('/\s+/u', is_string($this->filters['q'] ?? null) ? trim($this->filters['q']) : '', -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $words[mb_strtolower($word)] = true;
+        }
+
+        return array_map('strval', array_keys($words));
+    }
+
     /** @return list<mixed> */
     private static function list(mixed $value, string $name): array
     {

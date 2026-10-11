@@ -97,7 +97,8 @@ final readonly class BulkSendMessage
             } else {
                 $reached[$applicantId] = true;
                 $result = $this->sendOne($sender, $applicationId, $applicantId, $prepared);
-                $room -= $result->status === 'sent' ? 1 : 0;
+                // A refusal for the daily limit means another request used the room meanwhile: stop trying the rest.
+                $room = $result->reason === 'daily-limit' ? 0 : $room - ($result->status === 'sent' ? 1 : 0);
                 $results[] = $result;
             }
         }

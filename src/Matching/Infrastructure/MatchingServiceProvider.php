@@ -5,16 +5,19 @@ namespace Src\Matching\Infrastructure;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Matching\Application\EraseRecommendations;
 use Src\Matching\Application\MatchScorer;
 use Src\Matching\Application\RecommendationEmailSender;
 use Src\Matching\Application\RecommendationEmailTemplates;
 use Src\Matching\Application\RecommendationNotificationType;
+use Src\Matching\Application\RecommendationQueue;
 use Src\Matching\Application\ScoreApplicant;
 use Src\Matching\Domain\DeliveryRepository;
 use Src\Matching\Infrastructure\Listeners\EraseRecommendationsWhenUserAnonymized;
 use Src\Matching\Infrastructure\Mail\MailRecommendationSender;
 use Src\Matching\Infrastructure\Persistence\DatabaseDeliveryRepository;
 use Src\Matching\Interface\Console\SendRecommendationsCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Matching\ApplicantMatchScores;
 use Src\Shared\Application\Matching\MatchScoring;
@@ -29,6 +32,7 @@ final class MatchingServiceProvider extends ContextServiceProvider
     public array $bindings = [
         DeliveryRepository::class => DatabaseDeliveryRepository::class,
         RecommendationEmailSender::class => MailRecommendationSender::class,
+        RecommendationQueue::class => LaravelRecommendationQueue::class,
         MatchScoring::class => MatchScorer::class,
         ApplicantMatchScores::class => ScoreApplicant::class,
     ];
@@ -58,6 +62,8 @@ final class MatchingServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        $this->app->tag(EraseRecommendations::class, ErasureStep::class);
 
         Event::listen(UserAnonymized::class, EraseRecommendationsWhenUserAnonymized::class);
     }

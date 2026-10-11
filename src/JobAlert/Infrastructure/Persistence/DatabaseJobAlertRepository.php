@@ -9,6 +9,7 @@ use Src\JobAlert\Domain\AlertCriteria;
 use Src\JobAlert\Domain\AlertFrequency;
 use Src\JobAlert\Domain\JobAlert;
 use Src\JobAlert\Domain\JobAlertRepository;
+use Src\Shared\Application\Job\LiveJobProfile;
 use stdClass;
 
 final readonly class DatabaseJobAlertRepository implements JobAlertRepository
@@ -24,6 +25,7 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
             'name' => $alert->name,
             'frequency' => $alert->frequency->value,
             'criteria' => json_encode($alert->criteria->toArray(), JSON_THROW_ON_ERROR),
+            'keywords' => json_encode($alert->criteria->keywords(), JSON_THROW_ON_ERROR),
             'email' => $alert->email,
             'in_app' => $alert->inApp,
             'paused' => $alert->paused,
@@ -44,6 +46,7 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
             'name' => $alert->name,
             'frequency' => $alert->frequency->value,
             'criteria' => json_encode($alert->criteria->toArray(), JSON_THROW_ON_ERROR),
+            'keywords' => json_encode($alert->criteria->keywords(), JSON_THROW_ON_ERROR),
             'email' => $alert->email,
             'in_app' => $alert->inApp,
             'paused' => $alert->paused,
@@ -110,6 +113,62 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
                 ->limit($limit)
                 ->get()
                 ->all(),
+        );
+    }
+
+    public function immediateFitting(LiveJobProfile $job, int $afterId, int $limit): array
+    {
+        $query = $this->connection->table('jobalert_alerts')
+            ->where('frequency', AlertFrequency::Immediate->value)
+            ->where('paused', false)
+            ->where('id', '>', $afterId)
+            ->where('last_run_at', '<', $this->format($job->publishedAt));
+
+        // An id filter holds when it is absent or empty, or when its list holds the job's id (a job without that id fits no alert that asks for it).
+        // The criteria were validated as lists of ids, so the array functions never see a scalar.
+        foreach ($job->ids as $filter => $id) {
+            $column = "criteria->'{$filter}'";
+            $absent = "COALESCE(jsonb_array_length({$column}), 0) = 0";
+
+            if ($id === null) {
+                $query->whereRaw($absent);
+            } else {
+                $query->whereRaw("({$absent} OR {$column} @> ?::jsonb)", [json_encode($id, JSON_THROW_ON_ERROR)]);
+            }
+        }
+
+        $query->whereRaw(
+            "(COALESCE(jsonb_array_length(criteria->'skill_id'), 0) = 0 OR EXISTS ("
+            ."SELECT 1 FROM jsonb_array_elements_text(criteria->'skill_id') AS wanted(id) JOIN jsonb_array_elements_text(?::jsonb) AS offered(id) ON offered.id = wanted.id))",
+            [json_encode($job->skillIds, JSON_THROW_ON_ERROR)],
+        );
+
+        $query->whereRaw(
+            "(COALESCE(jsonb_array_length(criteria->'work_mode'), 0) = 0".($job->workMode === null ? ')' : " OR criteria->'work_mode' @> ?::jsonb)"),
+            $job->workMode === null ? [] : [json_encode($job->workMode, JSON_THROW_ON_ERROR)],
+        );
+
+        // A minimum salary needs a salary the company shows, in the same period, whose upper bound reaches it.
+        if ($job->salaryPeriodId === null || $job->salaryCeiling === null) {
+            $query->whereRaw("criteria->>'salary_min' IS NULL");
+        } else {
+            $query->whereRaw(
+                "(criteria->>'salary_min' IS NULL OR ((criteria->>'salary_period_id')::bigint = ? AND ?::bigint >= (criteria->>'salary_min')::bigint))",
+                [$job->salaryPeriodId, $job->salaryCeiling],
+            );
+        }
+
+        // Every word of the keyword must be contained in the title, the company name or a tag name, ignoring case and accents, as `TextSearch` does.
+        $query->whereRaw(
+            'NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(keywords) AS word(text) WHERE NOT EXISTS ('
+            .'SELECT 1 FROM jsonb_array_elements_text(?::jsonb) AS field(text) '
+            ."WHERE immutable_unaccent(field.text) ILIKE immutable_unaccent('%' || replace(replace(replace(word.text, '\\', '\\\\'), '%', '\\%'), '_', '\\_') || '%')))",
+            [json_encode($job->searchableTexts, JSON_THROW_ON_ERROR)],
+        );
+
+        return array_map(
+            fn (stdClass $row): JobAlert => $this->toAlert($row),
+            $query->orderBy('id')->limit($limit)->get()->all(),
         );
     }
 

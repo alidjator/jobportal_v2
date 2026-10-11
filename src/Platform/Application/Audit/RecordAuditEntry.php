@@ -2,12 +2,15 @@
 
 namespace Src\Platform\Application\Audit;
 
-/** The single way to write the audit log. Called by listeners of other contexts' events and, later, by use cases. */
-final readonly class RecordAuditEntry
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
+
+/** Writes the audit log: the Platform implementation of the Shared `AuditTrail` port. */
+final readonly class RecordAuditEntry implements AuditTrail
 {
     public function __construct(private AuditLogRepository $audit) {}
 
-    public function execute(AuditEntry $entry): void
+    public function record(AuditEntry $entry): void
     {
         $this->audit->append($entry);
     }

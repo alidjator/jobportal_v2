@@ -25,6 +25,12 @@ interface ApplicationRepository
      */
     public function findOfApplicant(int $userId, int $id, bool $forUpdate = false): ?Application;
 
+    /**
+     * Records that a recruiter opened the application, once: a single conditional update that keeps the first time and leaves `updated_at` alone, so two
+     * recruiters opening it together need no lock.
+     */
+    public function markViewed(int $id, DateTimeImmutable $at): void;
+
     /** Stores the withdrawal of an application: the new stage, the freed key, the note, and the history entry (from the stage it was in, by the applicant). */
     public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at): void;
 

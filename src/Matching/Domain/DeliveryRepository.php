@@ -8,15 +8,21 @@ use DateTimeImmutable;
 interface DeliveryRepository
 {
     /**
-     * Among these jobs, the ones already named to the job seeker.
+     * Among these jobs, the ones already named to each of these job seekers; a job seeker with none is missing. One read for the whole list.
      *
+     * @param  list<int>  $userIds
      * @param  list<int>  $jobIds
+     * @return array<int, list<int>> job seeker id => job ids
+     */
+    public function sentJobIdsOf(array $userIds, array $jobIds): array;
+
+    /**
+     * Among these job seekers, the ones sent a recommendation email at or after the moment.
+     *
+     * @param  list<int>  $userIds
      * @return list<int>
      */
-    public function sentJobIds(int $userId, array $jobIds): array;
-
-    /** Whether the job seeker was sent a recommendation email at or after the moment. */
-    public function hasSentSince(int $userId, DateTimeImmutable $since): bool;
+    public function userIdsSentSince(array $userIds, DateTimeImmutable $since): array;
 
     /** @param  list<int>  $jobIds */
     public function record(int $userId, array $jobIds, DateTimeImmutable $at): void;

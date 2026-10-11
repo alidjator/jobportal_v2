@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Platform\Application\Audit;
+namespace Src\Shared\Application\Audit;
 
 use DateTimeImmutable;
 

@@ -3,6 +3,7 @@
 namespace Src\Platform\Application\Audit;
 
 use DateTimeImmutable;
+use Src\Shared\Application\Audit\AuditEntry;
 
 /** Append-only: entries are never updated, and the only deletion is the retention purge (`PurgeExpiredAuditLogs`). */
 interface AuditLogRepository

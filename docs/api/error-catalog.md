@@ -56,6 +56,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `email-not-verified` | 403, 409 | Identity, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `experience-limit-reached` | 409 | JobSeeker |  |
+| `export-too-large` | 422 | Recruitment |  |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
 | `file-too-large` | 422 | Company, Identity, JobSeeker, Messaging |  |

@@ -24,6 +24,7 @@ final class WriteJobView implements ShouldQueue
         public readonly string $day,
     ) {
         $this->onQueue(QueueName::Bulk->value);
+        $this->onConnection(QueueName::Bulk->connection());
     }
 
     /** @return list<int> */

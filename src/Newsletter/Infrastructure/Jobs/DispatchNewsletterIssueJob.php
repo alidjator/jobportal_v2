@@ -18,9 +18,12 @@ final class DispatchNewsletterIssueJob implements ShouldQueue
 
     public int $tries = 3;
 
+    public int $timeout = 540;
+
     public function __construct(public readonly int $issueId)
     {
         $this->onQueue(QueueName::Bulk->value);
+        $this->onConnection(QueueName::Bulk->connection());
     }
 
     /** @return list<int> */

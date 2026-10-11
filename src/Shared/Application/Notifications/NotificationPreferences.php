@@ -10,4 +10,12 @@ namespace Src\Shared\Application\Notifications;
 interface NotificationPreferences
 {
     public function isEnabled(int $userId, string $key, NotificationChannel $channel): bool;
+
+    /**
+     * Among these users, the ones who have the notification on for the channel; the same rule as `isEnabled`, with one read for the whole list.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function enabledAmong(array $userIds, string $key, NotificationChannel $channel): array;
 }

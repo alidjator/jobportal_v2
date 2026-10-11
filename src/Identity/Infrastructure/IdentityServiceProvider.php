@@ -7,6 +7,7 @@ use Google\Auth\Cache\FileSystemCacheItemPool;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Event;
 use Src\Identity\Application\Account\AdminAccessReader;
 use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
@@ -22,6 +23,7 @@ use Src\Identity\Application\Auth\SignInThrottle;
 use Src\Identity\Application\Auth\VerificationCodeGenerator;
 use Src\Identity\Application\Auth\VerificationCodeHasher;
 use Src\Identity\Application\Auth\VerificationCodeSender;
+use Src\Identity\Application\Erasure\ErasureLedger;
 use Src\Identity\Application\IdentityEmailTemplates;
 use Src\Identity\Application\IdentitySettings;
 use Src\Identity\Application\TwoFactor\RecoveryCodes;
@@ -29,6 +31,18 @@ use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
 use Src\Identity\Application\TwoFactor\TwoFactorChallenges;
 use Src\Identity\Application\TwoFactor\TwoFactorTokens;
 use Src\Identity\Domain\AdminRepository;
+use Src\Identity\Domain\Events\AccountDeletionCancelled;
+use Src\Identity\Domain\Events\AccountDeletionRequested;
+use Src\Identity\Domain\Events\PasswordChanged;
+use Src\Identity\Domain\Events\PasswordReset;
+use Src\Identity\Domain\Events\RecoveryCodesRegenerated;
+use Src\Identity\Domain\Events\RecoveryCodeUsed;
+use Src\Identity\Domain\Events\SignedIn;
+use Src\Identity\Domain\Events\SignedOutEverywhere;
+use Src\Identity\Domain\Events\SignInFailed;
+use Src\Identity\Domain\Events\TwoFactorEnabled;
+use Src\Identity\Domain\Events\TwoFactorReset;
+use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Identity\Domain\SocialAccountRepository;
 use Src\Identity\Domain\TermsAcceptanceRepository;
 use Src\Identity\Domain\UserRepository;
@@ -46,7 +60,9 @@ use Src\Identity\Infrastructure\Auth\SanctumAccessTokenIssuer;
 use Src\Identity\Infrastructure\Auth\SpatieAdminAccessReader;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
+use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
+use Src\Identity\Infrastructure\Persistence\DatabaseErasureLedger;
 use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
 use Src\Identity\Infrastructure\Persistence\DatabaseTwoFactorChallenges;
@@ -60,10 +76,12 @@ use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\PurgeTwoFactorChallengesCommand;
+use Src\Identity\Interface\Console\ReconcileErasureCommand;
 use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Accounts\ErasureReceipts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -105,6 +123,8 @@ final class IdentityServiceProvider extends ContextServiceProvider
         TwoFactorTokens::class => RandomTwoFactorTokens::class,
         TwoFactorChallenges::class => DatabaseTwoFactorChallenges::class,
         RecoveryCodes::class => DatabaseRecoveryCodes::class,
+        ErasureLedger::class => DatabaseErasureLedger::class,
+        ErasureReceipts::class => DatabaseErasureLedger::class,
     ];
 
     public function register(): void
@@ -132,10 +152,11 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class]);
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(AnonymizeDueAccountsCommand::class)->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+            $schedule->command(ReconcileErasureCommand::class)->dailyAt('04:00')->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeTwoFactorChallengesCommand::class)->dailyAt('02:45')->withoutOverlapping()->onOneServer();
             $schedule->command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('02:30')->withoutOverlapping()->onOneServer();
         });
@@ -144,6 +165,23 @@ final class IdentityServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         Relation::morphMap(self::MORPH_MAP);
+
+        foreach ([
+            SignedIn::class => 'onSignedIn',
+            SignInFailed::class => 'onSignInFailed',
+            PasswordReset::class => 'onPasswordReset',
+            PasswordChanged::class => 'onPasswordChanged',
+            SignedOutEverywhere::class => 'onSignedOutEverywhere',
+            TwoFactorEnabled::class => 'onTwoFactorEnabled',
+            RecoveryCodeUsed::class => 'onRecoveryCodeUsed',
+            RecoveryCodesRegenerated::class => 'onRecoveryCodesRegenerated',
+            TwoFactorReset::class => 'onTwoFactorReset',
+            AccountDeletionRequested::class => 'onAccountDeletionRequested',
+            AccountDeletionCancelled::class => 'onAccountDeletionCancelled',
+            UserAnonymized::class => 'onUserAnonymized',
+        ] as $event => $method) {
+            Event::listen($event, [RecordIdentityAuditEntries::class, $method]);
+        }
 
         parent::boot();
     }

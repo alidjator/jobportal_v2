@@ -5,6 +5,7 @@ namespace Src\Newsletter\Infrastructure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Src\Newsletter\Application\ConfirmationSender;
 use Src\Newsletter\Application\NewsletterEmailTemplates;
@@ -14,8 +15,11 @@ use Src\Newsletter\Application\NewsletterPermissions;
 use Src\Newsletter\Application\NewsletterQueue;
 use Src\Newsletter\Application\UnsubscribeTokens;
 use Src\Newsletter\Domain\DeliveryRepository;
+use Src\Newsletter\Domain\Events\NewsletterIssueSent;
+use Src\Newsletter\Domain\Events\NewsletterSubscriberDeleted;
 use Src\Newsletter\Domain\IssueRepository;
 use Src\Newsletter\Domain\SubscriberRepository;
+use Src\Newsletter\Infrastructure\Listeners\RecordNewsletterAuditEntries;
 use Src\Newsletter\Infrastructure\Mail\MailConfirmationSender;
 use Src\Newsletter\Infrastructure\Mail\MailNewsletterMailer;
 use Src\Newsletter\Infrastructure\Persistence\DatabaseDeliveryRepository;
@@ -80,6 +84,9 @@ final class NewsletterServiceProvider extends ContextServiceProvider
             ];
         });
         RateLimiter::for(self::TOKEN_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::TOKEN_PER_MINUTE)->by('newsletter-token|'.$request->ip()));
+
+        Event::listen(NewsletterIssueSent::class, [RecordNewsletterAuditEntries::class, 'onNewsletterIssueSent']);
+        Event::listen(NewsletterSubscriberDeleted::class, [RecordNewsletterAuditEntries::class, 'onNewsletterSubscriberDeleted']);
 
         parent::boot();
     }

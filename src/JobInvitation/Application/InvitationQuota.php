@@ -6,22 +6,29 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Src\JobInvitation\Domain\InvitationRepository;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
 /**
- * The daily cap on the invitations a company sends (the calendar day in Jakarta time). The cap is read before the invitation is written, as the chat quota is,
- * so two requests at the very same moment may overshoot it by one.
+ * The daily cap on the invitations a company sends (the calendar day in Jakarta time). `assertRoom` runs inside the transaction that writes the invitation and
+ * locks the company's row first, so two requests of one company cannot both count the same room.
  */
 final readonly class InvitationQuota
 {
     private const string ZONE = 'Asia/Jakarta';
 
-    public function __construct(private InvitationRepository $invitations, private Settings $settings, private Clock $clock) {}
+    public function __construct(private InvitationRepository $invitations, private Settings $settings, private Clock $clock, private CompanyDirectory $companies) {}
 
-    /** @throws TooManyAttempts `invitation-limit` */
+    /**
+     * Call it inside the transaction that writes the invitation.
+     *
+     * @throws TooManyAttempts `invitation-limit`
+     */
     public function assertRoom(int $companyId): void
     {
+        $this->companies->lock($companyId);
+
         $cap = $this->settings->integer(InvitationSettings::MAX_PER_DAY, $companyId);
         $start = $this->dayStart();
 

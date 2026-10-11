@@ -114,6 +114,12 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
 - **Retries and failures (decided 2026-10-03):** each job is tried at most 3 times with a growing delay (for example 10 seconds, 1 minute, 5 minutes) set
   through `backoff`, then moves to `failed_jobs`. Jobs must be idempotent. Permanent failures are logged and failed jobs can be listed and retried with the
   artisan commands. `bulk` jobs send per recipient so one failure does not repeat the whole batch.
+- **Timeouts and `retry_after` (decided 2026-10-11, review findings 2 and 3):** `retry_after` belongs to a connection, so `bulk` is read through its own
+  connection `bulk` (a copy of the default connection with `queue` `bulk` and `retry_after` 600 s, `QUEUE_BULK_RETRY_AFTER`); `critical` and `default` keep
+  90 s. `QueueName::connection()` gives the connection of a queue (the default one under `sync`). Every long job sets `$timeout` below its `retry_after`: 540 s
+  for the alert fan-out and the newsletter dispatch on `bulk`, 60 s for the erasure listeners on `default`. Two workers run under Supervisor:
+  `queue:work --queue=critical,default` (2 processes) and `queue:work bulk --queue=bulk --timeout=540` (1 process), configured in `deploy/supervisor/jobportal-queue.ini`.
+- **Erasure of personal data (2026-10-11):** the contexts erase through queued listeners on `UserAnonymized`; each erasure use case implements `Shared/Application/Accounts/ErasureStep` (tagged in its provider) and the listener runs it through `ErasureRunner`, which leaves a receipt in `identity_erasure_receipts`. `identity:reconcile-erasure` (daily 04:00) runs again the steps without a receipt for accounts anonymised 1 hour to 90 days ago. A step must therefore be idempotent, and its name never changes once it has run in production.
 - **Scheduler (decided 2026-10-03):** each context registers its own schedule in its service provider, and each task calls one use case through a thin
   artisan command. The system cron runs `schedule:run` every minute. Every task uses `withoutOverlapping` and `onOneServer` and is idempotent. Tasks already
   implied by earlier decisions: anonymising accounts whose 30-day grace period ended, purging audit logs older than 12 months, purging notifications older
@@ -168,6 +174,35 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   Company overrides have storage and a reader now and an admin API with the Company context.
 - **Email templates:** each context registers its templates in the shared `EmailTemplateCatalog` and renders through the `EmailTemplates` port; admins override subject and body per language
   (`email_templates.manage`) in Markdown with `{{variable}}` placeholders, validated against the template's variables, previewed with samples, audited. Raw HTML in a body is never executed.
+
+### 2.11 Cross-context table reads (decided 2026-10-11, architecture review finding 10)
+
+The rule is no cross-context table reads (use a port in `src/Shared`). These are **all** the exceptions outside `src/LegacyImport` (which has its own, see `CLAUDE.md`); each is a read-only
+query inside the reader's own Infrastructure layer, kept because a port would cost a query per row or a second round trip for a list or a statistic.
+
+| Reader (under `src/`) | Reads | Columns | Why |
+|---|---|---|---|
+| `Campaign/.../DatabaseCampaignStatistics` | `identity_users`, `recruitment_applications` | `id`, `created_at`, `registration_campaign_code`; `id`, `user_id`, `company_id` | One reporting query per campaign (decided 2026-10-10). |
+| `Job/.../DatabaseJobSignalReader` | `reference_job_roles`, `reference_experience_levels`, `reference_education_levels` | `id`, `name`; `id`, `slug`, `min_years`, `max_years`; `id`, `rank` | Matching signals of many jobs in one query. |
+| `JobSeeker/.../CompleteProfiles` | `identity_users` | `id`, `type`, `status`, `anonymized_at` | Which profiles are complete, active and not anonymised. |
+| `JobSeeker/.../DatabaseAccountPictures` | `identity_users` | `id`, `avatar_path` | The picture path, as the candidate search reads it. |
+| `JobSeeker/.../DatabaseCandidateReader` | `identity_users`, `reference_education_levels` | `id`, `name`, `avatar_path`, `anonymized_at`; `id`, `rank` | Candidate search rows and the minimum education filter. |
+| `JobSeeker/.../DatabaseCandidateSignalSource` | `reference_education_levels` | `id`, `rank` | Education rank of many candidates in one query. |
+
+`tests/Feature/Database/Schema/CrossContextReadContractTest.php` keeps this list true: it checks that every listed table and column exists, and scans `src/` so that a read of another
+context's table that is not listed fails the suite. A new exception is added to the test and to this table in the same change; an Identity or Reference schema change that touches one of
+these columns fails the test first.
+
+### 2.12 Audit trail port (decided 2026-10-11, architecture review finding 11)
+
+- The audit log is written through the `AuditTrail` port (`Src\Shared\Application\Audit`, with `AuditEntry`, `AuditActorType` and `AuditAction`); Platform implements it (`RecordAuditEntry`, bound in `PlatformServiceProvider`) and stores the entries.
+- Each context records its own events with its own listener (`src/<Context>/Infrastructure/Listeners/Record<Context>AuditEntries.php`, registered in that context's provider). Platform no longer imports the events of any other context; a new context adds its own listener and, for a new action name, a constant in `AuditAction`.
+
+### 2.13 Real-time channels keep access until the connection drops (decided 2026-10-11, architecture review finding 19)
+
+- Verified in the code of Reverb v1.12.0 (not on a running server; Reverb is not deployed yet): a private or presence channel is authorised only when the client subscribes. Nothing re-checks it, Reverb has no call to remove one user from one channel, and Echo does not sign the user in, so `terminate_connections` by user id does not apply.
+- Consequence: a company member who is removed, a revoked token or a deleted account keeps receiving `MessageSent` (it carries the message body) on `private-conversations.{id}` until that WebSocket connection ends. REST access is unaffected: it checks access on every request.
+- **Accepted by the user, no code change.** Revisit with lighter events (ids only, the client fetches the message over REST) if the exposure becomes a concern. Re-test the behaviour once Reverb runs (`docs/deployment-checklist.md`, section 4).
 
 ## 3. Details left to the context that needs them
 

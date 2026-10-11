@@ -1,12 +1,12 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Recruitment\Infrastructure\Listeners;
 
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 
 /**
  * Writes the audit entries for the Recruitment context: the export of a job's applicants. Unlike the other audit listeners it runs in the request, not on a
@@ -14,11 +14,11 @@ use Src\Recruitment\Domain\Events\ApplicantsExported;
  */
 final readonly class RecordRecruitmentAuditEntries
 {
-    public function __construct(private RecordAuditEntry $record) {}
+    public function __construct(private AuditTrail $trail) {}
 
     public function onApplicantsExported(ApplicantsExported $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::EXPORT_APPLICANTS, 'job', $event->jobId,
             ['filters' => $event->filters, 'row_count' => $event->rowCount, 'company_id' => $event->companyId],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),

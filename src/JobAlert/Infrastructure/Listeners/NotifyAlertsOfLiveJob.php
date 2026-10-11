@@ -16,11 +16,18 @@ final class NotifyAlertsOfLiveJob implements ShouldQueue
 {
     public int $tries = 3;
 
+    public int $timeout = 540;
+
     public function __construct(private readonly NotifyOfLiveJob $notify) {}
 
     public function viaQueue(): string
     {
         return QueueName::Bulk->value;
+    }
+
+    public function viaConnection(): ?string
+    {
+        return QueueName::Bulk->connection();
     }
 
     /** @return list<int> */

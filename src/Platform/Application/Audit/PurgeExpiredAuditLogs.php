@@ -2,6 +2,9 @@
 
 namespace Src\Platform\Application\Audit;
 
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
 use Src\Shared\Application\Clock;
 
 /**

@@ -370,7 +370,37 @@ final class DashboardTest extends FeatureTestCase
         $this->assertSame(2, $cards['applications']['total']);
         $this->assertSame(2, $cards['applications']['daily'][29]['count']);
         $this->assertSame(['waiting_for_approval' => 1], $cards['jobs_queue']);
-        $this->assertSame(['waiting_for_review' => 1], $cards['companies_queue']);
+        $this->assertSame(['waiting_for_review' => 1, 'without_admin' => 0, 'without_admin_companies' => []], $cards['companies_queue']);
+    }
+
+    public function test_the_companies_card_lists_the_companies_without_a_company_admin(): void
+    {
+        $this->companyJobs();
+        $token = $this->adminAccountToken(['dashboard.view', 'companies.manage']);
+
+        DB::table('company_members')->where('user_id', $this->otherAdminId)->delete();
+        $queue = function () use ($token) {
+            $this->app->make('cache')->flush();
+
+            return $this->platform($token)->assertOk()->json('data.cards.companies_queue');
+        };
+
+        $this->assertSame(1, $queue()['without_admin']);
+        $this->assertSame([['id' => $this->otherCompanyId, 'name' => DB::table('company_companies')->where('id', $this->otherCompanyId)->value('name')]], $queue()['without_admin_companies']);
+
+        $invitation = ['company_id' => $this->otherCompanyId, 'email' => 'new@example.test', 'role' => 'company_admin', 'token_hash' => str_repeat('a', 64), 'sent_at' => now(), 'created_at' => now(), 'updated_at' => now()];
+        DB::table('company_invitations')->insert([...$invitation, 'expires_at' => now()->addDays(3)]);
+        $this->assertSame(0, $queue()['without_admin'], 'A company whose first admin can still accept is not counted.');
+
+        DB::table('company_invitations')->update(['expires_at' => now()->subMinute()]);
+        $this->assertSame(1, $queue()['without_admin'], 'An expired invitation does not count.');
+
+        DB::table('company_invitations')->update(['expires_at' => now()->addDays(3), 'revoked_at' => now()]);
+        $this->assertSame(1, $queue()['without_admin'], 'A revoked invitation does not count.');
+
+        DB::table('company_invitations')->delete();
+        DB::table('company_invitations')->insert([...$invitation, 'role' => 'recruiter', 'expires_at' => now()->addDays(3)]);
+        $this->assertSame(1, $queue()['without_admin'], 'An invitation for a recruiter does not count.');
     }
 
     public function test_the_operations_card_counts_failed_and_waiting_queue_jobs(): void

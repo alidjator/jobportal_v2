@@ -1,14 +1,14 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Newsletter\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Newsletter\Domain\Events\NewsletterIssueSent;
 use Src\Newsletter\Domain\Events\NewsletterSubscriberDeleted;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -19,7 +19,7 @@ final class RecordNewsletterAuditEntries implements ShouldQueue
 {
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -34,7 +34,7 @@ final class RecordNewsletterAuditEntries implements ShouldQueue
 
     public function onNewsletterIssueSent(NewsletterIssueSent $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::NEWSLETTER_ISSUE_SENT, 'newsletter_issue', $event->issueId,
             ['recipients' => $event->recipients], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
@@ -42,7 +42,7 @@ final class RecordNewsletterAuditEntries implements ShouldQueue
 
     public function onNewsletterSubscriberDeleted(NewsletterSubscriberDeleted $event): void
     {
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, AuditAction::NEWSLETTER_SUBSCRIBER_DELETED, 'newsletter_subscriber', $event->subscriberId,
             [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));

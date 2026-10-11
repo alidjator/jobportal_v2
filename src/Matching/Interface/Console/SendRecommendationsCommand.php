@@ -3,17 +3,19 @@
 namespace Src\Matching\Interface\Console;
 
 use Illuminate\Console\Command;
-use Src\Matching\Application\SendRecommendations;
+use Src\Matching\Application\RecommendationQueue;
 
 final class SendRecommendationsCommand extends Command
 {
     protected $signature = 'matching:send-recommendations';
 
-    protected $description = 'Email each job seeker the best new jobs that fit their profile (scheduled Monday 08:00 Jakarta time); nobody gets two emails within six days';
+    protected $description = 'Queue the weekly recommendation emails in batches on the bulk queue (scheduled Monday 08:00 Jakarta time); nobody gets two emails within six days';
 
-    public function handle(SendRecommendations $send): int
+    public function handle(RecommendationQueue $queue): int
     {
-        $this->info('Recommendation emails sent: '.$send->execute());
+        $queue->dispatchBatch(0);
+
+        $this->info('Recommendation emails queued.');
 
         return self::SUCCESS;
     }

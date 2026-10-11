@@ -11,19 +11,35 @@ use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
+use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\DocumentTypeRepository;
+use Src\Company\Domain\Events\CompanyCreated;
 use Src\Company\Domain\Events\CompanyDocumentApproved;
+use Src\Company\Domain\Events\CompanyDocumentDeleted;
 use Src\Company\Domain\Events\CompanyDocumentRejected;
+use Src\Company\Domain\Events\CompanyDocumentSubmitted;
+use Src\Company\Domain\Events\CompanyDocumentViewed;
+use Src\Company\Domain\Events\CompanyInvitationRevoked;
+use Src\Company\Domain\Events\CompanyInvitationSent;
+use Src\Company\Domain\Events\CompanyMemberJoined;
+use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Company\Domain\Events\CompanyMemberRoleChanged;
+use Src\Company\Domain\Events\CompanyRestored;
+use Src\Company\Domain\Events\CompanySuspended;
 use Src\Company\Domain\Events\CompanyVerificationGranted;
 use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
+use Src\Company\Domain\Events\DocumentTypeCreated;
+use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
+use Src\Company\Infrastructure\Listeners\RecordCompanyAuditEntries;
+use Src\Company\Infrastructure\Listeners\ReleaseMembershipWhenUserAnonymized;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyDocumentRepository;
@@ -36,7 +52,9 @@ use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
+use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\PublicCompanies;
@@ -55,6 +73,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         AdminCompanyReader::class => DatabaseAdminCompanyReader::class,
         CompanyDirectory::class => RepositoryCompanyDirectory::class,
         CompanyTeam::class => RepositoryCompanyTeam::class,
+        CompanyMemberDeletionGuard::class => LastCompanyAdminDeletionGuard::class,
         PublicCompanies::class => RepositoryPublicCompanies::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
@@ -95,6 +114,24 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyDocumentRejected::class, [NotifyCompanyAdminsOfVerification::class, 'onDocumentRejected']);
         Event::listen(CompanyVerificationGranted::class, [NotifyCompanyAdminsOfVerification::class, 'onVerificationGranted']);
         Event::listen(CompanyVerificationWithdrawn::class, [NotifyCompanyAdminsOfVerification::class, 'onVerificationWithdrawn']);
+
+        Event::listen(UserAnonymized::class, ReleaseMembershipWhenUserAnonymized::class);
+
+        Event::listen(CompanyCreated::class, [RecordCompanyAuditEntries::class, 'onCompanyCreated']);
+        Event::listen(CompanySuspended::class, [RecordCompanyAuditEntries::class, 'onCompanySuspended']);
+        Event::listen(CompanyRestored::class, [RecordCompanyAuditEntries::class, 'onCompanyRestored']);
+        Event::listen(CompanyInvitationSent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationSent']);
+        Event::listen(CompanyInvitationRevoked::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationRevoked']);
+        Event::listen(CompanyMemberJoined::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberJoined']);
+        Event::listen(CompanyMemberRemoved::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRemoved']);
+        Event::listen(CompanyMemberRoleChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRoleChanged']);
+        Event::listen(CompanyDocumentSubmitted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentSubmitted']);
+        Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
+        Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
+        Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);
+        Event::listen(CompanyDocumentViewed::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentViewed']);
+        Event::listen(DocumentTypeCreated::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeCreated']);
+        Event::listen(DocumentTypeVerificationRulesChanged::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeVerificationRulesChanged']);
 
         parent::boot();
     }

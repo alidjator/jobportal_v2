@@ -2,11 +2,11 @@
 
 namespace Src\Platform\Application\Settings;
 
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -22,7 +22,7 @@ final readonly class ResetCompanySetting
         private SettingsCatalog $catalog,
         private SettingsStore $store,
         private CompanySettingViews $views,
-        private RecordAuditEntry $audit,
+        private AuditTrail $audit,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -51,7 +51,7 @@ final readonly class ResetCompanySetting
 
         $this->transactions->run(function () use ($actor, $companyId, $key, $current, $ipAddress, $userAgent): void {
             $this->store->removeCompanyOverride($key, $companyId);
-            $this->audit->execute(new AuditEntry(
+            $this->audit->record(new AuditEntry(
                 AuditActorType::Admin, $actor->id, AuditAction::SETTING_RESET, 'company', $companyId,
                 ['key' => $key, 'old' => $current->override], $ipAddress, $userAgent, $this->clock->now(),
             ));

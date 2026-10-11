@@ -310,6 +310,28 @@ final class ChatTest extends FeatureTestCase
         $this->assertFalse($authorizer->mayJoinCompanyPresence(Actor::jobSeeker($this->seekerId), $this->companyId));
     }
 
+    public function test_the_company_row_is_locked_before_a_company_message_is_counted_and_written(): void
+    {
+        $id = $this->seekerStarts();
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $this->say($id, 'hello', $this->recruiterToken)->assertCreated();
+
+        $lock = $insert = null;
+
+        foreach ($queries as $index => $sql) {
+            $lock ??= str_contains($sql, 'company_companies') && str_contains($sql, 'for update') ? $index : null;
+            $insert ??= str_contains($sql, 'insert into "messaging_messages"') ? $index : null;
+        }
+
+        $this->assertNotNull($lock, 'The company row was not locked.');
+        $this->assertNotNull($insert);
+        $this->assertLessThan($insert, $lock);
+    }
+
     public function test_the_company_has_a_daily_cap_on_messages(): void
     {
         $this->app->make(SettingsStore::class)->setGlobal('messaging.max_daily_company_messages', 2, null);

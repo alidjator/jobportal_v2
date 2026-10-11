@@ -8,7 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Infrastructure\ContextServiceProvider;
+use Src\TalentPool\Application\EraseTalentEntries;
 use Src\TalentPool\Domain\CategoryRepository;
 use Src\TalentPool\Domain\EntryRepository;
 use Src\TalentPool\Infrastructure\Listeners\EraseTalentEntriesWhenUserAnonymized;
@@ -44,6 +46,8 @@ final class TalentPoolServiceProvider extends ContextServiceProvider
         parent::boot();
 
         RateLimiter::for(self::WRITE_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::WRITES_PER_MINUTE)->by('talent-pool-write|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        $this->app->tag(EraseTalentEntries::class, ErasureStep::class);
 
         Event::listen(UserAnonymized::class, EraseTalentEntriesWhenUserAnonymized::class);
     }

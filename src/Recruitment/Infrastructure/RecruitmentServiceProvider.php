@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
+use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\JobApplicationCheck;
 use Src\Recruitment\Application\OfferEmailSender;
@@ -24,6 +25,7 @@ use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\Events\ApplicantsExported;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\InterviewChanged;
@@ -48,6 +50,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListene
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
+use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
 use Src\Recruitment\Infrastructure\Mail\MailOfferSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
@@ -68,6 +71,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
@@ -165,6 +169,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        Event::listen(ApplicantsExported::class, [RecordRecruitmentAuditEntries::class, 'onApplicantsExported']);
+
         parent::boot();
 
         RateLimiter::for(self::EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::EXPORTS_PER_HOUR)->by('applicant-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
@@ -176,6 +182,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
+        $this->app->tag(EraseApplicantData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseApplicantDataWhenUserAnonymized::class);
     }
 }

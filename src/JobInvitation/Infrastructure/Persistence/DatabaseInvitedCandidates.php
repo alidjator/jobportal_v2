@@ -19,6 +19,21 @@ final readonly class DatabaseInvitedCandidates implements InvitedCandidates
             ->map(fn (mixed $id): int => (int) $id)->values()->all();
     }
 
+    public function jobIdsOfUsers(array $userIds, array $jobIds): array
+    {
+        if ($userIds === [] || $jobIds === []) {
+            return [];
+        }
+
+        $invited = [];
+
+        foreach ($this->connection->table('jobinvitation_invitations')->whereIn('user_id', $userIds)->whereIn('job_id', $jobIds)->distinct()->get(['user_id', 'job_id']) as $row) {
+            $invited[(int) $row->user_id][] = (int) $row->job_id;
+        }
+
+        return $invited;
+    }
+
     public function userIdsOf(int $jobId, array $userIds): array
     {
         if ($userIds === []) {

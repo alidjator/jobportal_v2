@@ -8,9 +8,15 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
+use Mockery;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Matching\Application\RecommendationQueue;
+use Src\Matching\Application\SendRecommendationBatch;
+use Src\Matching\Infrastructure\Jobs\SendRecommendationBatchJob;
 use Src\Matching\Infrastructure\Mail\RecommendationMail;
+use Src\Shared\Application\Matching\CandidateSignalSource;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\FeatureTestCase;
 
@@ -142,9 +148,22 @@ final class RecommendationsTest extends FeatureTestCase
 
     private function runEmails(): int
     {
+        $before = Mail::queued(RecommendationMail::class)->count();
+
         $this->assertSame(0, Artisan::call('matching:send-recommendations'));
 
-        return (int) preg_replace('/\D/', '', Artisan::output());
+        return Mail::queued(RecommendationMail::class)->count() - $before;
+    }
+
+    private function queriesOfRun(): int
+    {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->assertSame(0, Artisan::call('matching:send-recommendations'));
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
     }
 
     // ----- recommended jobs (J8) -----
@@ -458,6 +477,56 @@ final class RecommendationsTest extends FeatureTestCase
         $this->assertCount(1, $events);
         $zone = $events->first()->timezone;
         $this->assertSame(['0 8 * * 1', 'Asia/Jakarta'], [$events->first()->expression, is_string($zone) ? $zone : $zone?->getName()]);
+    }
+
+    public function test_the_command_only_queues_the_first_batch_on_the_bulk_queue(): void
+    {
+        Queue::fake();
+
+        $this->assertSame(0, Artisan::call('matching:send-recommendations'));
+
+        Queue::assertPushed(SendRecommendationBatchJob::class, 1);
+        Queue::assertPushed(SendRecommendationBatchJob::class, fn (SendRecommendationBatchJob $job): bool => $job->afterId === 0 && $job->queue === 'bulk');
+    }
+
+    public function test_a_full_batch_queues_the_next_one_and_a_short_one_ends_the_run(): void
+    {
+        $this->app->instance(CandidateSignalSource::class, new class implements CandidateSignalSource
+        {
+            public function forUsers(array $userIds): array
+            {
+                return [];
+            }
+
+            public function userIdsAfter(int $afterId, int $limit): array
+            {
+                return $afterId === 0 ? range(1, $limit) : [$afterId + 1];
+            }
+        });
+        $queue = Mockery::mock(RecommendationQueue::class);
+        $queue->shouldReceive('dispatchBatch')->once()->with(SendRecommendationBatch::BATCH);
+
+        $this->app->call((new SendRecommendationBatchJob(0))->handle(...), ['queue' => $queue]);
+        $this->app->call((new SendRecommendationBatchJob(SendRecommendationBatch::BATCH))->handle(...), ['queue' => $queue]);
+    }
+
+    public function test_the_queries_of_a_batch_do_not_grow_with_the_number_of_job_seekers(): void
+    {
+        Mail::fake();
+        $this->remoteJob();
+
+        $alone = $this->queriesOfRun();
+        $this->assertSame(1, DB::table('matching_deliveries')->distinct()->count('user_id'));
+        DB::table('matching_deliveries')->delete();
+
+        foreach (range(1, 4) as $n) {
+            $this->candidate("extra{$n}@example.test", "Extra {$n}", [$this->php]);
+        }
+
+        $together = $this->queriesOfRun();
+
+        $this->assertSame(5, DB::table('matching_deliveries')->distinct()->count('user_id'));
+        $this->assertLessThanOrEqual($alone + 4, $together, 'Only one insert per extra email may be added.');
     }
 
     // ----- erasure -----

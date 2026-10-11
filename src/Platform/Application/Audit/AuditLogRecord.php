@@ -3,6 +3,7 @@
 namespace Src\Platform\Application\Audit;
 
 use DateTimeImmutable;
+use Src\Shared\Application\Audit\AuditActorType;
 
 /** One stored audit entry as read back, with its id. */
 final readonly class AuditLogRecord

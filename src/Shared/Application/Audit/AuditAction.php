@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Platform\Application\Audit;
+namespace Src\Shared\Application\Audit;
 
 /** The audit action names recorded so far. Names are `area.event` in lower snake case. */
 final class AuditAction

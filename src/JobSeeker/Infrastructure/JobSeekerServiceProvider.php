@@ -12,6 +12,7 @@ use Src\JobSeeker\Application\Candidates\CandidateReader;
 use Src\JobSeeker\Application\Candidates\JobSeekerCandidateDirectory;
 use Src\JobSeeker\Application\Cv\AccountPictures;
 use Src\JobSeeker\Application\Cv\CvRenderer;
+use Src\JobSeeker\Application\EraseJobSeekerData;
 use Src\JobSeeker\Application\JobSeekerPermissions;
 use Src\JobSeeker\Application\JobSeekerSettings;
 use Src\JobSeeker\Domain\CvGenerationRepository;
@@ -38,6 +39,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileListRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileViewRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseResumeRepository;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\Candidate\CandidateDirectory;
 use Src\Shared\Application\Dashboard\DashboardCards;
@@ -92,6 +94,8 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         RateLimiter::for(self::CANDIDATE_SEARCH_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::CANDIDATE_REQUESTS_PER_MINUTE)->by('candidate-search|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        $this->app->tag(EraseJobSeekerData::class, ErasureStep::class);
 
         Event::listen(UserAnonymized::class, EraseJobSeekerDataWhenUserAnonymized::class);
 

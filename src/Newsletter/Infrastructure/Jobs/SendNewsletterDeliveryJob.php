@@ -22,6 +22,7 @@ final class SendNewsletterDeliveryJob implements ShouldQueue
     public function __construct(public readonly int $deliveryId)
     {
         $this->onQueue(QueueName::Bulk->value);
+        $this->onConnection(QueueName::Bulk->connection());
     }
 
     /** @return list<int> */

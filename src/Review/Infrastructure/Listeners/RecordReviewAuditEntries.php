@@ -1,13 +1,13 @@
 <?php
 
-namespace Src\Platform\Infrastructure\Listeners;
+namespace Src\Review\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Review\Domain\Events\ReviewModerated;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -18,7 +18,7 @@ final class RecordReviewAuditEntries implements ShouldQueue
 {
     public int $tries = 3;
 
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly AuditTrail $trail) {}
 
     public function viaQueue(): string
     {
@@ -50,7 +50,7 @@ final class RecordReviewAuditEntries implements ShouldQueue
             $metadata['reason'] = $event->reason;
         }
 
-        $this->record->execute(new AuditEntry(
+        $this->trail->record(new AuditEntry(
             AuditActorType::Admin, $event->adminId, $action, $subject, $event->subjectId, $metadata, $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

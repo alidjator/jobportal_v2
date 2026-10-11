@@ -4,8 +4,8 @@ namespace Src\Platform\Infrastructure\Persistence;
 
 use DateTimeImmutable;
 use Illuminate\Database\ConnectionInterface;
-use Src\Platform\Application\Audit\AuditEntry;
 use Src\Platform\Application\Audit\AuditLogRepository;
+use Src\Shared\Application\Audit\AuditEntry;
 
 final readonly class DatabaseAuditLogRepository implements AuditLogRepository
 {

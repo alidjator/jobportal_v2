@@ -8,11 +8,13 @@ use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
+use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
- * The applicants of one job as text cells, for the members who may see the job (the access of the pipeline list). The export is audited before it is handed
+ * The applicants of one job as text cells, for the members who may see the job (the access of the pipeline list), at most `recruitment.max_export_rows` of them: a larger selection is refused. The rows are streamed, not collected. The export is audited before it is handed
  * out: the audit listener is not queued, so when the entry cannot be written the export fails and nothing is sent.
  */
 final readonly class ExportJobApplications
@@ -28,29 +30,43 @@ final readonly class ExportJobApplications
         private JobQuestionRepository $questions,
         private EventDispatcher $events,
         private Clock $clock,
+        private Settings $settings,
     ) {}
 
     /**
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
+     * @throws BusinessRuleViolation `export-too-large`
      */
     public function execute(Actor $actor, RecruiterApplicationQuery $query, ?string $ipAddress, ?string $userAgent): ApplicantExport
     {
         $member = $this->access->member($actor);
         $this->access->job($member, $query->jobId);
 
-        $questions = $this->questions->forJob($query->jobId);
-        $rows = [];
+        $cap = $this->settings->integer(RecruitmentSettings::MAX_EXPORT_ROWS, $member->companyId);
+        $total = $this->reader->count($query);
 
-        foreach ($this->reader->export($query) as $applicant) {
-            $rows[] = $this->cells($applicant, $questions);
+        if ($total > $cap) {
+            throw new BusinessRuleViolation("An export can hold at most {$cap} applications; narrow the filters.", 'export-too-large', extensions: ['max_rows' => $cap]);
         }
 
+        $questions = $this->questions->forJob($query->jobId);
         $now = $this->clock->now();
 
-        $this->events->dispatch([new ApplicantsExported($query->jobId, $member->companyId, $member->userId, $this->filters($query), count($rows), $ipAddress, $userAgent, $now)]);
+        $this->events->dispatch([new ApplicantsExported($query->jobId, $member->companyId, $member->userId, $this->filters($query), $total, $ipAddress, $userAgent, $now)]);
 
-        return new ApplicantExport($query->jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $rows);
+        return new ApplicantExport($query->jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions));
+    }
+
+    /**
+     * @param  list<JobQuestion>  $questions
+     * @return iterable<list<string>>
+     */
+    private function rows(RecruiterApplicationQuery $query, int $limit, array $questions): iterable
+    {
+        foreach ($this->reader->export($query, $limit) as $applicant) {
+            yield $this->cells($applicant, $questions);
+        }
     }
 
     /**

@@ -19,6 +19,11 @@ final class NotifyOfMessageListener implements ShouldQueue
         return $event?->bulk === true ? QueueName::Bulk->value : QueueName::Default->value;
     }
 
+    public function viaConnection(?MessageSent $event = null): ?string
+    {
+        return $event?->bulk === true ? QueueName::Bulk->connection() : null;
+    }
+
     /** @return list<int> */
     public function backoff(): array
     {

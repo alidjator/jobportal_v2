@@ -3,6 +3,7 @@
 namespace Src\Platform\Application\Audit;
 
 use DateTimeImmutable;
+use Src\Shared\Application\Audit\AuditActorType;
 
 /** The filters of the audit log list; every one is optional and they combine with AND. `from` and `to` bound the time of the event, both inclusive. */
 final readonly class AuditLogQuery

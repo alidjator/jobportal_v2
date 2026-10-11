@@ -2,11 +2,11 @@
 
 namespace Src\Platform\Application\Settings;
 
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
@@ -19,7 +19,7 @@ final readonly class ResetSetting
         private SettingsCatalog $catalog,
         private SettingsStore $store,
         private SettingViews $views,
-        private RecordAuditEntry $audit,
+        private AuditTrail $audit,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -36,7 +36,7 @@ final readonly class ResetSetting
 
         $this->transactions->run(function () use ($actor, $key, $current, $ipAddress, $userAgent): void {
             $this->store->resetGlobal($key);
-            $this->audit->execute(new AuditEntry(
+            $this->audit->record(new AuditEntry(
                 AuditActorType::Admin, $actor->id, AuditAction::SETTING_RESET, 'setting', null,
                 ['key' => $key, 'old' => $current->value], $ipAddress, $userAgent, $this->clock->now(),
             ));

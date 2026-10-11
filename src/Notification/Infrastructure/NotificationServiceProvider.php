@@ -10,6 +10,7 @@ use Src\Notification\Application\InApp\InAppNotificationReader;
 use Src\Notification\Application\InApp\InAppNotificationRepository;
 use Src\Notification\Application\Preferences\NotificationPreferenceStore;
 use Src\Notification\Application\Preferences\StoredNotificationPreferences;
+use Src\Notification\Application\PurgeUserNotificationData;
 use Src\Notification\Application\UserNotificationDataPurger;
 use Src\Notification\Infrastructure\Dashboard\UnreadNotificationsCard;
 use Src\Notification\Infrastructure\Listeners\PurgeNotificationDataWhenUserAnonymized;
@@ -20,6 +21,7 @@ use Src\Notification\Infrastructure\Persistence\DatabaseInAppNotifier;
 use Src\Notification\Infrastructure\Persistence\DatabaseNotificationPreferenceStore;
 use Src\Notification\Infrastructure\Persistence\DatabaseUserNotificationDataPurger;
 use Src\Notification\Interface\Console\PurgeNotificationsCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Application\Notifications\NotificationPreferences;
@@ -55,6 +57,7 @@ final class NotificationServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        $this->app->tag(PurgeUserNotificationData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, PurgeNotificationDataWhenUserAnonymized::class);
 
         parent::boot();

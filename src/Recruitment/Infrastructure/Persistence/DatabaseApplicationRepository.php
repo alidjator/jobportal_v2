@@ -86,6 +86,11 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at);
     }
 
+    public function markViewed(int $id, DateTimeImmutable $at): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $id)->whereNull('viewed_at')->update(['viewed_at' => $this->utc($at)]);
+    }
+
     public function recordHire(Application $before, Application $after, DateTimeImmutable $at): void
     {
         $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at);

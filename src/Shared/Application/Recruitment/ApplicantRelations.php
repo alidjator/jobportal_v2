@@ -20,6 +20,15 @@ interface ApplicantRelations
     public function appliedJobIds(int $applicantUserId, array $jobIds): array;
 
     /**
+     * Among these jobs, the ones each of these job seekers has an application on, whatever its status; a job seeker with none is missing. One read for the whole list.
+     *
+     * @param  list<int>  $applicantUserIds
+     * @param  list<int>  $jobIds
+     * @return array<int, list<int>> job seeker id => job ids
+     */
+    public function appliedJobIdsOf(array $applicantUserIds, array $jobIds): array;
+
+    /**
      * Among these job seekers, the ones with an application on the job, whatever its status.
      *
      * @param  list<int>  $userIds

@@ -26,6 +26,7 @@ final class RecommendationMail extends Mailable implements ShouldQueue
     public function __construct(private readonly array $variables, private readonly string $language)
     {
         $this->onQueue(QueueName::Bulk->value);
+        $this->onConnection(QueueName::Bulk->connection());
     }
 
     /** @return list<int> */

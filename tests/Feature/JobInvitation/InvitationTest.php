@@ -198,6 +198,35 @@ final class InvitationTest extends FeatureTestCase
         $this->assertSame(1, DB::table('jobinvitation_invitations')->count());
     }
 
+    public function test_the_company_row_is_locked_before_the_invitation_is_counted_and_written(): void
+    {
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $this->invitationId($this->ana);
+
+        $lock = $this->firstQueryIndex($queries, 'company_companies', 'for update');
+        $insert = $this->firstQueryIndex($queries, 'insert into "jobinvitation_invitations"');
+
+        $this->assertNotNull($lock, 'The company row was not locked.');
+        $this->assertNotNull($insert);
+        $this->assertLessThan($insert, $lock);
+    }
+
+    /** @param list<string> $queries */
+    private function firstQueryIndex(array $queries, string ...$needles): ?int
+    {
+        foreach ($queries as $index => $sql) {
+            if (count(array_filter($needles, fn (string $needle): bool => str_contains($sql, $needle))) === count($needles)) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
     public function test_the_company_has_a_daily_cap_that_a_refused_invitation_does_not_use(): void
     {
         $store = $this->app->make(SettingsStore::class);

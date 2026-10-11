@@ -4,6 +4,7 @@ namespace Src\JobInvitation\Infrastructure;
 
 use Illuminate\Support\Facades\Event;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\JobInvitation\Application\EraseInvitations;
 use Src\JobInvitation\Application\InvitationEmailSender;
 use Src\JobInvitation\Application\InvitationEmailTemplates;
 use Src\JobInvitation\Application\InvitationNotificationType;
@@ -16,6 +17,7 @@ use Src\JobInvitation\Infrastructure\Mail\MailInvitationSender;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitedCandidates;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\JobInvitation\InvitedCandidates;
@@ -65,6 +67,7 @@ final class JobInvitationServiceProvider extends ContextServiceProvider
         parent::boot();
 
         Event::listen(ApplicationSubmitted::class, MarkInvitationAppliedWhenApplicationSubmitted::class);
+        $this->app->tag(EraseInvitations::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseInvitationsWhenUserAnonymized::class);
     }
 }

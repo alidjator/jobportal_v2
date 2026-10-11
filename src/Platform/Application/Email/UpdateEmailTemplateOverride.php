@@ -2,11 +2,11 @@
 
 namespace Src\Platform\Application\Email;
 
-use Src\Platform\Application\Audit\AuditAction;
-use Src\Platform\Application\Audit\AuditActorType;
-use Src\Platform\Application\Audit\AuditEntry;
-use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\TransactionManager;
@@ -24,7 +24,7 @@ final readonly class UpdateEmailTemplateOverride
         private EmailTemplateCatalog $catalog,
         private EmailTemplateOverrideRepository $overrides,
         private EmailTemplateViews $views,
-        private RecordAuditEntry $audit,
+        private AuditTrail $audit,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -45,7 +45,7 @@ final readonly class UpdateEmailTemplateOverride
 
         $this->transactions->run(function () use ($actor, $key, $locale, $subject, $body, $ipAddress, $userAgent): void {
             $this->overrides->save($key, $locale, trim($subject), trim($body), $actor->id);
-            $this->audit->execute(new AuditEntry(
+            $this->audit->record(new AuditEntry(
                 AuditActorType::Admin, $actor->id, AuditAction::EMAIL_TEMPLATE_UPDATED, 'email_template', null,
                 ['template' => $key, 'locale' => $locale], $ipAddress, $userAgent, $this->clock->now(),
             ));

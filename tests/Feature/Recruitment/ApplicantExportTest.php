@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use RuntimeException;
 use Src\Platform\Application\Audit\AuditLogRepository;
+use Src\Platform\Application\Settings\SettingsStore;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\FeatureTestCase;
 
@@ -61,7 +62,7 @@ final class ApplicantExportTest extends FeatureTestCase
     /** @return list<list<string|null>> the lines of the file, the header first */
     private function lines(TestResponse $response): array
     {
-        $content = $response->getContent();
+        $content = $response->streamedContent();
         $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
 
         $stream = fopen('php://temp', 'r+');
@@ -194,5 +195,17 @@ final class ApplicantExportTest extends FeatureTestCase
 
         $this->export()->assertStatus(429);
         $this->export(token: $this->recruiterToken)->assertOk();
+    }
+
+    public function test_a_selection_over_the_row_cap_is_refused_before_anything_is_sent_or_audited(): void
+    {
+        $this->app->make(SettingsStore::class)->setGlobal('recruitment.max_export_rows', 1, null);
+
+        $this->export()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:export-too-large')->assertJsonPath('max_rows', 1);
+        $this->assertCount(0, $this->audit());
+
+        $lines = $this->lines($this->export(['filter' => ['stage_type' => 'applied', 'q' => 'budi']])->assertOk());
+        $this->assertCount(2, $lines);
+        $this->assertCount(1, $this->audit());
     }
 }

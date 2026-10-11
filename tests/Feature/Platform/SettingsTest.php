@@ -182,7 +182,7 @@ final class SettingsTest extends FeatureTestCase
             'jobs.max_deadline_days', 'jobs.require_approval',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
-            'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',
+            'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',
         ], $keys);
 
         $limit = collect($response->json('data'))->firstWhere('key', 'probe.limit');

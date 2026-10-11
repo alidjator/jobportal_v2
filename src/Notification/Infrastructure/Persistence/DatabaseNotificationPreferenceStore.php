@@ -23,6 +23,21 @@ final readonly class DatabaseNotificationPreferenceStore implements Notification
         return $values;
     }
 
+    public function storedFor(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach ($this->connection->table('notification_preferences')->whereIn('user_id', $userIds)->get(['user_id', 'key', 'channel', 'enabled']) as $row) {
+            $values[(int) $row->user_id]["{$row->key}.{$row->channel}"] = (bool) $row->enabled;
+        }
+
+        return $values;
+    }
+
     public function set(int $userId, string $key, string $channel, bool $enabled, DateTimeImmutable $at): void
     {
         $time = $at->format(self::TIME_FORMAT);

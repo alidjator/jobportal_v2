@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\JobSeeker;
 
+use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -57,9 +58,19 @@ final class CvGeneratorTest extends FeatureTestCase
             /** @var list<CvDocument> */
             public array $documents = [];
 
+            /** @var list<int> the transaction level at each render */
+            public array $levels = [];
+
+            public ?Closure $onRender = null;
+
             public function render(CvDocument $document): string
             {
                 $this->documents[] = $document;
+                $this->levels[] = DB::connection()->transactionLevel();
+
+                if ($this->onRender !== null) {
+                    ($this->onRender)();
+                }
 
                 return '%PDF-1.4 fake';
             }
@@ -517,6 +528,27 @@ final class CvGeneratorTest extends FeatureTestCase
 
         $this->assertSame([], $this->renderer->documents);
         $this->assertSame(0, DB::table('jobseeker_cv_generations')->count());
+    }
+
+    public function test_the_cv_is_rendered_before_the_transaction_of_the_application(): void
+    {
+        $this->recordDocuments();
+        $level = DB::connection()->transactionLevel();
+
+        $this->apply($this->liveJob(), ['resume_id' => null, 'cv' => []])->assertCreated();
+
+        $this->assertSame([$level], $this->renderer->levels);
+    }
+
+    public function test_a_job_closed_while_the_cv_is_made_takes_no_application(): void
+    {
+        $this->recordDocuments();
+        $job = $this->liveJob();
+        $this->renderer->onRender = static fn () => DB::table('job_jobs')->where('id', $job)->update(['status' => 'closed']);
+
+        $this->apply($job, ['resume_id' => null, 'cv' => []])->assertStatus(404);
+
+        $this->assertSame(0, DB::table('recruitment_applications')->count());
     }
 
     // ----- real PDFs -----

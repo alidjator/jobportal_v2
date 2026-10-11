@@ -11,7 +11,9 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Application\Admin\AdminJobReader;
 use Src\Job\Application\Browse\AlertJobMatcher;
+use Src\Job\Application\Browse\JobProfileReader;
 use Src\Job\Application\Browse\JobSearchReader;
+use Src\Job\Application\Browse\LiveJobProfileProvider;
 use Src\Job\Application\Browse\SearchThrottle;
 use Src\Job\Application\Insight\SalaryInsightReader;
 use Src\Job\Application\JobPermissions;
@@ -20,6 +22,8 @@ use Src\Job\Application\JobSettings;
 use Src\Job\Application\JobSlugGenerator;
 use Src\Job\Application\Matching\JobSignalProvider;
 use Src\Job\Application\Matching\JobSignalReader;
+use Src\Job\Application\Saved\EraseSavedJobs;
+use Src\Job\Application\Views\EraseJobViews;
 use Src\Job\Application\Views\JobViewLog;
 use Src\Job\Application\Views\JobViewRecorder;
 use Src\Job\Application\Views\VisitorKeys;
@@ -42,8 +46,10 @@ use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
 use Src\Job\Infrastructure\Listeners\ReassignJobsWhenMemberRemoved;
+use Src\Job\Infrastructure\Listeners\RecordJobAuditEntries;
 use Src\Job\Infrastructure\Persistence\DatabaseAdminJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
+use Src\Job\Infrastructure\Persistence\DatabaseJobProfileReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
@@ -52,11 +58,13 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
 use Src\Job\Infrastructure\Persistence\DatabaseSavedJobRepository;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Job\Interface\Console\FoldJobViewsCommand;
+use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
+use Src\Shared\Application\Job\LiveJobProfiles;
 use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -90,6 +98,8 @@ final class JobServiceProvider extends ContextServiceProvider
         SearchThrottle::class => RateLimiterSearchThrottle::class,
         JobDirectory::class => RepositoryJobDirectory::class,
         JobMatcher::class => AlertJobMatcher::class,
+        LiveJobProfiles::class => LiveJobProfileProvider::class,
+        JobProfileReader::class => DatabaseJobProfileReader::class,
         JobSignalReader::class => DatabaseJobSignalReader::class,
         JobSignalSource::class => JobSignalProvider::class,
         JobViewLog::class => DatabaseJobViewLog::class,
@@ -147,8 +157,14 @@ final class JobServiceProvider extends ContextServiceProvider
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(JobDecided::class, NotifyAssigneesOfDecision::class);
         Event::listen(CompanyMemberRemoved::class, ReassignJobsWhenMemberRemoved::class);
+        $this->app->tag(EraseJobViews::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseJobViewsWhenUserAnonymized::class);
+        $this->app->tag(EraseSavedJobs::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseSavedJobsWhenUserAnonymized::class);
+
+        Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);
+        Event::listen(JobStatusChanged::class, [RecordJobAuditEntries::class, 'onJobStatusChanged']);
+        Event::listen(JobDecided::class, [RecordJobAuditEntries::class, 'onJobDecided']);
 
         parent::boot();
     }

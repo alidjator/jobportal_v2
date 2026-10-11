@@ -30,6 +30,7 @@ final class MyApplicationDetailResource extends JsonResource
             'company' => ['id' => $row->companyId, 'name' => $this->resource->companyName],
             'status' => $row->status->value,
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
+            'viewed_at' => $row->viewedAt?->format(DATE_ATOM),
             'rejection_reason' => $rejection?->value,
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],

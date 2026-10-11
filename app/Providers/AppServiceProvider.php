@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
 use Src\Identity\Infrastructure\Auth\ThrottledPersonalAccessToken;
+use Src\Shared\Application\Accounts\ErasureSteps;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\EventDispatcher;
@@ -16,6 +17,7 @@ use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Infrastructure\ContainerErasureSteps;
 use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
 use Src\Shared\Infrastructure\Documentation\ErrorCatalogCommand;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
@@ -44,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
         Clock::class => SystemClock::class,
         FileStorage::class => LaravelFileStorage::class,
         ImageProcessor::class => GdImageProcessor::class,
+        ErasureSteps::class => ContainerErasureSteps::class,
     ];
 
     public function register(): void

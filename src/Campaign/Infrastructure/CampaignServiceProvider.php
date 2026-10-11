@@ -4,6 +4,7 @@ namespace Src\Campaign\Infrastructure;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Src\Campaign\Application\CampaignLinks;
 use Src\Campaign\Application\CampaignPermissions;
@@ -11,6 +12,8 @@ use Src\Campaign\Application\CampaignStatistics;
 use Src\Campaign\Application\QrCodes;
 use Src\Campaign\Application\RunningCampaignCodes;
 use Src\Campaign\Domain\CampaignRepository;
+use Src\Campaign\Domain\Events\CampaignChanged;
+use Src\Campaign\Infrastructure\Listeners\RecordCampaignAuditEntries;
 use Src\Campaign\Infrastructure\Persistence\DatabaseCampaignRepository;
 use Src\Campaign\Infrastructure\Persistence\DatabaseCampaignStatistics;
 use Src\Shared\Application\Campaign\CampaignCodes;
@@ -43,6 +46,8 @@ final class CampaignServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         RateLimiter::for(self::PUBLIC_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::PUBLIC_PER_MINUTE)->by('campaign-public|'.$request->ip()));
+
+        Event::listen(CampaignChanged::class, [RecordCampaignAuditEntries::class, 'onCampaignChanged']);
 
         parent::boot();
     }

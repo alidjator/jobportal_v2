@@ -14,5 +14,6 @@ final readonly class ApplicationRow
         public int $companyId,
         public StageType $status,
         public DateTimeImmutable $appliedAt,
+        public ?DateTimeImmutable $viewedAt = null,
     ) {}
 }
