@@ -48,6 +48,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_tests' => ['created_by_user_id'],
             'assessment_invitations' => ['applicant_user_id', 'invited_by_user_id'],
             'assessment_invitation_assessors' => ['user_id'],
+            'assessment_answers' => ['scored_by_user_id'],
             'identity_user_two_factor' => ['user_id'],
             'identity_user_recovery_codes' => ['user_id'],
             'identity_user_two_factor_challenges' => ['user_id'],

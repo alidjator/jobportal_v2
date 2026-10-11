@@ -15,6 +15,9 @@ final class AssessmentNotificationType
 
     public const string CANCELLED = 'assessment.cancelled';
 
+    /** To the team: the candidate handed in the test, or the time ran out and the server did. */
+    public const string SUBMITTED = 'assessment.submitted';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

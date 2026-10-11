@@ -6,7 +6,7 @@ use DateTimeImmutable;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A test sent to a candidate for one application. It is invited until the candidate starts, then started until the attempt is submitted (part 5); the team
+ * A test sent to a candidate for one application. It is invited until the candidate starts, then started until the attempt is submitted; the team
  * can cancel an active one and an unstarted one expires at its due time. Cancelled, expired and submitted invitations are kept as history. The test never
  * changes after the invitation is sent: a published test that has invitations is locked.
  */
@@ -49,6 +49,32 @@ final readonly class Invitation
     public function isOpenAt(DateTimeImmutable $now): bool
     {
         return $this->status === InvitationStatus::Invited && $this->startsAt <= $now && $this->dueAt > $now;
+    }
+
+    /**
+     * The candidate begins the test. A test that was started stays open until its attempt ends, even past the due time.
+     *
+     * @throws StateConflict `invitation-not-open`
+     */
+    public function start(DateTimeImmutable $now): self
+    {
+        if (! $this->isOpenAt($now)) {
+            throw new StateConflict('This test cannot be started now: it is cancelled, expired, already started, or not open yet.', 'invitation-not-open');
+        }
+
+        return $this->with(InvitationStatus::Started, $this->remindedAt, $this->closedAt);
+    }
+
+    /**
+     * @throws StateConflict `invitation-not-started`
+     */
+    public function submit(DateTimeImmutable $at): self
+    {
+        if ($this->status !== InvitationStatus::Started) {
+            throw new StateConflict('Only a test that was started can be submitted.', 'invitation-not-started');
+        }
+
+        return $this->with(InvitationStatus::Submitted, $this->remindedAt, $at);
     }
 
     /**

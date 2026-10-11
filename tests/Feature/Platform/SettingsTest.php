@@ -174,7 +174,7 @@ final class SettingsTest extends FeatureTestCase
         $keys = array_column($response->json('data'), 'key');
         $this->assertSame([
             'analytics.min_group_size',
-            'assessment.max_company_tests', 'assessment.max_drawing_megabytes', 'assessment.max_due_days', 'assessment.max_questions_per_section', 'assessment.max_section_minutes', 'assessment.max_sections_per_test', 'assessment.min_due_hours', 'assessment.psychological_enabled',
+            'assessment.band_excellent_from', 'assessment.band_fair_from', 'assessment.band_good_from', 'assessment.max_company_tests', 'assessment.max_drawing_megabytes', 'assessment.max_due_days', 'assessment.max_questions_per_section', 'assessment.max_section_minutes', 'assessment.max_sections_per_test', 'assessment.min_due_hours', 'assessment.psychological_enabled',
             'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb',
             'identity.avatar_max_size_kb',
             'invitations.max_per_day',

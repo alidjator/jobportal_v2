@@ -9,6 +9,7 @@ One line per decision; the detail sections below win if they disagree.
 - 2026-10-11: psychologists are a third `UserType` with required TOTP, own endpoints under `/provider`, created by an admin invitation (Part 2).
 - 2026-10-11: one set of authoring use cases serves company admins, psychologists and the library admin; batteries are granted per company (Part 3).
 - 2026-10-11: a test is sent by moving an application to an `assessment` stage (test required, one active invitation per application, replaced by a new test, cancelled on a move out, a rejection or a withdrawal); a published test that was sent is locked (Part 4).
+- 2026-10-11: a candidate consents and starts; sections run in order, each on its own server timer; the server scores on submit and submits when time runs out; skill bands are admin settings; five browser signals are a major integrity tier (Part 5).
 - 2026-10-11: results live in one application only, proctoring is browser signals shown as tiers, retention follows the application anonymisation (Decided).
 
 Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `decisions.md` ("assessments reopen R8"). Billing, credits and packages are out of scope (`decisions.md`).
@@ -96,6 +97,8 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `d
 
 - **Part 4 decisions (2026-10-11, user):** (a) a rejection, a withdrawal by the applicant and a move out of an assessment stage cancel the active invitation when it is **invited or started**; a submitted one stays; (b) a move to an assessment stage **needs a test** (`assessment-required`) unless the application already has an active one; (c) a new test **replaces** the active invitation (the old one is cancelled) unless the candidate already started it (`invitation-in-progress`); (d) assessors are members who work on the job, **at most 5**.
 
+- **Part 5 decisions (2026-10-11, user):** (a) a candidate may **start until the due time** and finish after it (the attempt has its own deadline); (b) **sections run in order, each with its own timer** that starts when the section opens, and unused time is not carried over; (c) the **bands of a skill test are admin settings** (`assessment.band_fair_from`, `band_good_from`, `band_excellent_from`, overridable per company); (d) the integrity tier is **none at 0 signals, some at 1 to 4, major from 5**.
+
 ## Part 2 as coded (2026-10-11)
 
 - **Confirmed by the user (2026-10-11):** (a) the `/provider/*` routes are exempt from the job-seeker terms gate; (b) only an admin closes a psychologist account, never the psychologist; (c) public sign-in, Google sign-in and account restore stay refused for psychologists.
@@ -130,6 +133,19 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `d
 - **Notifications:** `assessment.invited`, `.reminder`, `.expired`, `.cancelled` in-app to the candidate (always) and email by the preference `application_update` (templates `assessment.test_invited`, `test_reminder`, `test_expired`, `test_cancelled`). The team gets none in this part (submissions and signed reports come in parts 5 and 6). A replaced invitation sends one `invited`, no `cancelled`.
 - **Lock:** `AuthoringAccess::editableTest` refuses every content change of a test that has an invitation (`test-locked`, 409): update, sections, questions, norms and report template. Archive, restore and clone stay open.
 - **Ports:** `Shared\Application\Assessment\AssessmentInvitations` (Assessment provides; Recruitment sends, checks and cancels through it) and `Shared\Application\Recruitment\TeamApplications` (Recruitment provides; Assessment finds an application for a member through it).
+
+## Part 5 as coded (2026-10-11)
+
+- **Tables (migration 000121):** `assessment_attempts` (one per invitation: consent, start, open section and when it opened, question cursor, `ends_at`, `submitted_at`, `auto_submitted`, `seed`, last IP), `assessment_attempt_questions` (the drawn questions), `assessment_answers` (option positions, number or text, `score`, `scored_by_user_id` for part 6), `assessment_speed_column_results`, `assessment_drawings`, `assessment_integrity_events`, `assessment_results`.
+- **Candidate endpoints (`/me/assessment/invitations/{id}/`):** `POST start` (body `consent: true`; 201, or 200 when already started), `GET attempt`, `PUT attempt/questions/{q}/answer` and `DELETE` the same, `POST attempt/questions/{q}/drawing` (multipart `file`, `source` canvas or upload), `PUT attempt/cursor` (`index`), `POST attempt/next-section`, `PUT attempt/columns/{n}` (`answers`), `POST attempt/integrity-events` (`type`), `POST attempt/submit`. The state (`GET attempt`) holds the server time, the open section with its deadline, the questions the section lets the candidate see and the saved answers; never a correct answer, a score or the accepted answers of a number or short-text question.
+- **Clock:** starting needs consent (`consent-required`) and an open invitation (`invitation-not-open`). A section closes at its deadline and the next opens at that moment, whether or not the candidate is there; finishing a section early opens the next at once, so `ends_at` only moves earlier; the last section ends with a submit (`last-section`). When the last section has closed the server submits the attempt (stamped with `ends_at`) the next time the candidate calls, or within a minute by `assessment:auto-submit-attempts`. A write to a submitted, timed-out or cancelled attempt is `attempt-closed` (409); a read still answers (`status` `in_progress`, `submitted` or `closed`). A cancelled attempt is never submitted.
+- **Navigation, enforced on the server:** `allow_jump` lets the candidate see and answer any question; without it the candidate moves one question forward at a time and `allow_back` also allows going back (earlier questions are locked otherwise, `question-locked`); `allow_skip` off needs the open question answered before the next one opens (`invalid-navigation`).
+- **Answers:** choices are named by the 1-based position of the option; one field per type (`option_positions`, `number`, `text`), else `invalid-answer` with the field in `errors`. Questions are drawn at the start from the attempt's seed (the draw never changes). A multiple-response question scores only when the chosen set is exactly the correct set.
+- **Kraepelin columns:** the digits come from the seed (nothing stored); the candidate sends, for each pair of neighbouring digits, the last digit of the sum; the server counts `attempted` and `correct` per column. A column is open during its slice and 3 seconds after, accepted once (`column-already-submitted`, `invalid-column`). The last column shares the deadline of the section, so the browser must send it before the section closes.
+- **Drawings:** one file per drawing question, replaced on a new upload; it is decoded and encoded again (JPEG, PNG or WebP), limited by `assessment.max_drawing_megabytes`, kept on the private disk under `assessment/drawings/{attempt}/`. Part 6 erases them with the application.
+- **Integrity:** the browser reports `tab_switch`, `fullscreen_exit` and `paste` (at most 500 per attempt); the server records `ip_change` itself when a request comes from another address than the last one. The tier is stored in the result at submit.
+- **Scoring (at submit, `ScoreAttempt`, runs again in part 6 after an assessor):** a skill test gives points, a percentage and a band (`low`, `fair`, `good`, `excellent`); an answered long-text question without a score makes the result `pending_scoring` with no percentage and no band; an unanswered one counts 0. A battery gives the raw score of each scale (`scale_scores`); norms, drawings and the report are part 6.
+- **Team:** `assessment.submitted` in-app to the member who sent the test and its assessors; nothing for the candidate. The team's endpoints for results are part 6.
 
 ## Open questions
 
@@ -305,7 +321,7 @@ These are admin settings, overridable per company.
    - Cancelling.
    - Expiry and the 24-hour reminder.
    - Notifications.
-5. **Candidate attempt:**
+5. **Candidate attempt** (**coded 2026-10-11**, migration 000121 is new; see "Part 5 as coded"):
    - Consent and start, with the server timer.
    - Drawing questions at random.
    - Saving answers.

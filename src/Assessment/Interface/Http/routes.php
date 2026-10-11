@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Src\Assessment\Interface\Http\AuthoringRoutes;
+use Src\Assessment\Interface\Http\Controllers\AttemptController;
 use Src\Assessment\Interface\Http\Controllers\BatteryController;
 use Src\Assessment\Interface\Http\Controllers\CatalogController;
 use Src\Assessment\Interface\Http\Controllers\InvitationController;
@@ -47,4 +48,18 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
 Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void {
     Route::get('invitations', [MyInvitationController::class, 'index']);
     Route::get('invitations/{id}', [MyInvitationController::class, 'show'])->whereNumber('id');
+
+    // Taking the test. The server keeps the time and the rules of every section.
+    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+'])->group(function (): void {
+        Route::post('start', [AttemptController::class, 'start']);
+        Route::get('attempt', [AttemptController::class, 'show']);
+        Route::put('attempt/questions/{questionId}/answer', [AttemptController::class, 'saveAnswer']);
+        Route::delete('attempt/questions/{questionId}/answer', [AttemptController::class, 'clearAnswer']);
+        Route::post('attempt/questions/{questionId}/drawing', [AttemptController::class, 'uploadDrawing']);
+        Route::put('attempt/cursor', [AttemptController::class, 'move']);
+        Route::post('attempt/next-section', [AttemptController::class, 'finishSection']);
+        Route::put('attempt/columns/{column}', [AttemptController::class, 'saveColumn']);
+        Route::post('attempt/integrity-events', [AttemptController::class, 'reportEvent']);
+        Route::post('attempt/submit', [AttemptController::class, 'submit']);
+    });
 });

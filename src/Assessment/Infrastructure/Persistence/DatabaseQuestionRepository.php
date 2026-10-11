@@ -35,6 +35,21 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
         return $row === null ? null : $this->hydrate([$row])[0];
     }
 
+    public function manyById(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $questions = [];
+
+        foreach ($this->hydrate($this->connection->table(self::TABLE)->whereIn('id', $ids)->get()->all()) as $question) {
+            $questions[(int) $question->id] = $question;
+        }
+
+        return $questions;
+    }
+
     public function add(Question $question): Question
     {
         $now = $this->clock->now();

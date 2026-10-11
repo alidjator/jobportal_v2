@@ -20,6 +20,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
 | `assessment-required` | 422 | Recruitment |  |
+| `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
+| `attempt-not-started` | 409 | Assessment | This test was not started. |
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `body-too-long` | 422 | Messaging |  |
@@ -32,12 +34,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `category-name-invalid` | 422 | TalentPool |  |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
+| `column-already-submitted` | 409 | Assessment | This column was already handed in. |
 | `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
 | `company-admin-required` | 403 | Assessment, Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can do this. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
 | `company-suspended` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
+| `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |
@@ -61,7 +65,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `export-too-large` | 422 | Recruitment |  |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
-| `file-too-large` | 422 | Company, Identity, JobSeeker, Messaging |  |
+| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging |  |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
 | `forbidden` | 403 | Assessment, Company, Job, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
@@ -71,7 +75,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
 | `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be marked as completed. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
-| `invalid-answer` | 422 | Recruitment |  |
+| `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
 | `invalid-applications` | 422 | Recruitment |  |
@@ -81,6 +85,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-assessor` | 422 | Assessment |  |
 | `invalid-assignees` | 422 | Job | A job needs at least one assignee. |
 | `invalid-attachment` | 422 | Messaging |  |
+| `invalid-column` | 422 | Assessment |  |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
 | `invalid-cursor` | 422 | Messaging, Notification, Platform, Recruitment | The cursor is not valid. Start again without a cursor. |
@@ -92,6 +97,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
 | `invalid-ideal-answer` | 422 | Recruitment |  |
 | `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
+| `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
 | `invalid-interview` | 422 | Recruitment | The proposed time must be in the future. |
 | `invalid-interviewer` | 422 | Recruitment |  |
 | `invalid-job` | 422 | Job | The job is not valid. |
@@ -100,6 +106,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-name` | 422 | JobAlert |  |
+| `invalid-navigation` | 422 | Assessment |  |
 | `invalid-norms` | 422 | Assessment |  |
 | `invalid-note` | 422 | Recruitment |  |
 | `invalid-offer` | 422 | Recruitment |  |
@@ -134,6 +141,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invitation-not-active` | 409 | Assessment | Only an active test invitation can be cancelled. |
 | `invitation-not-found` | 404 | Assessment, Company | Invitation not found. |
 | `invitation-not-invited` | 409 | Assessment | Only a test that was not started can expire. |
+| `invitation-not-open` | 409 | Assessment | This test cannot be started now: it is cancelled, expired, already started, or not open yet. |
+| `invitation-not-started` | 409 | Assessment | Only a test that was started can be submitted. |
 | `job-deadline-passed` | 409 | Job | The deadline of this job has passed. |
 | `job-incomplete` | 422 | Job | The job is not complete. |
 | `job-locked-after-applications` | 409 | Job |  |
@@ -149,6 +158,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
 | `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
+| `last-section` | 409 | Assessment | This is the last section: submit the test to finish it. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
 | `legal-document-missing` | 422 | Identity | Every document in force must be accepted together. |
 | `legal-document-not-active` | 422 | Identity | A document that is not in force was sent. |
@@ -192,6 +202,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `public-account-required` | 403 | Identity | Only a job seeker or a company member has a profile picture. |
 | `question-in-use` | 409 | Recruitment | This question is attached to a job or has answers, so it can only be archived. |
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
+| `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `reference-value-taken` | 409 | ReferenceData |  |

@@ -23,6 +23,12 @@ final class AssessmentSettings
 
     public const string MAX_DRAWING_MEGABYTES = 'assessment.max_drawing_megabytes';
 
+    public const string BAND_FAIR_FROM = 'assessment.band_fair_from';
+
+    public const string BAND_GOOD_FROM = 'assessment.band_good_from';
+
+    public const string BAND_EXCELLENT_FROM = 'assessment.band_excellent_from';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -65,6 +71,21 @@ final class AssessmentSettings
             SettingDefinition::integer(
                 self::MAX_DRAWING_MEGABYTES, 5, 1, 20,
                 'The largest drawing a candidate may upload (JPG or PNG), in megabytes.',
+            ),
+            SettingDefinition::integer(
+                self::BAND_FAIR_FROM, 50, 1, 99,
+                'The percentage of the points from which a skill test result is "fair" (below it, "low").',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::BAND_GOOD_FROM, 75, 1, 99,
+                'The percentage of the points from which a skill test result is "good".',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::BAND_EXCELLENT_FROM, 90, 1, 100,
+                'The percentage of the points from which a skill test result is "excellent".',
+                overridable: true,
             ),
         ];
     }

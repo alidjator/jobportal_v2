@@ -9,6 +9,12 @@ interface QuestionRepository
 
     public function find(int $id): ?Question;
 
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, Question> id => question, with options
+     */
+    public function manyById(array $ids): array;
+
     /** Adds the question after the last one of its section and returns it with its id, position and options. */
     public function add(Question $question): Question;
 
