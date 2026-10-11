@@ -8,7 +8,7 @@ One line per decision; the detail sections below win if they disagree.
 - 2026-10-11: recording is optional per interview and starts only after the candidate's explicit consent, with a retention period and permanent deletion (Decided).
 - 2026-10-11: the one-way video is a new question type in the assessment engine (Answers, 1).
 - 2026-10-11: **Zoom, Google Meet and Microsoft Teams integration is dropped**; live video runs on a self-hosted Janus WebRTC server and becomes the first form. New order: (1) live video on Janus, (2) one-way video, (3) voice through Asterisk (Answers, 2). This replaces the first line above; answers 3 and 4 lapse.
-- 2026-10-11: a video interview has a panel: the main interviewer plus other members who may see the job, at most 4 from the company in all, and the candidate (Form 1 answers, 1).
+- 2026-10-11: a video interview has a panel: the main interviewer plus other members who may see the job, at most 4 from the company in all, and the candidate (Form 1 answers, 1). Widened 2026-10-12: the panel applies to every interview format and its table comes with interview kits part 1 (`phase-7-interview-kits.md`).
 - 2026-10-11: join tokens are valid from 10 minutes before the start to 30 minutes after the scheduled end, for confirmed interviews only; the candidate waits in a lobby until a team member admits them (Form 1 answers, 2).
 - 2026-10-11: the recruiter marks an interview as recorded; the candidate consents or refuses when confirming and may withdraw until recording starts; a team member starts recording by hand with an indicator for everyone; refusing does not cancel the interview (Form 1 answers, 3).
 - 2026-10-11: recordings are kept 90 days after the interview (admin setting), then deleted permanently by a scheduled task; also deleted by application anonymisation or by hand by the team (Form 1 answers, 4).
@@ -95,7 +95,7 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 2, practi
 **Schema** (migrations in `Recruitment`):
 
 - `recruitment_interviews` gains `recorded` (boolean, default false), `recording_consent` (`granted`, `refused`, `withdrawn`, null until the candidate answers) with `recording_consent_at`, `video_room_id` (Janus room number, null until the first join), `admitted_at` and `admitted_by`. The CHECK on `format` adds `video`; a `video` interview needs neither `location` nor `meeting_url`.
-- `recruitment_interview_participants`: `interview_id`, `user_id` (FK `identity_users`, RESTRICT), unique pair. Holds the extra panel members only (at most 3; the main interviewer stays in `interviewer_id`).
+- `recruitment_interview_participants`: `interview_id`, `user_id` (FK `identity_users`, RESTRICT), unique pair. Holds the extra panel members only (at most 3; the main interviewer stays in `interviewer_id`). Created by interview kits part 1 for every format; form 1 reuses it.
 - `recruitment_interview_attendances`: `interview_id`, `user_id`, `role` (`company` or `candidate`), `joined_at`, `left_at`, `janus_session_id`. A log table: no foreign key on `user_id`.
 - `recruitment_interview_recordings`: `interview_id`, `status` (`recording`, `processing`, `ready`, `failed`), `started_by`, `started_at`, `stopped_at`, `path` (random name on the private disk), `size_bytes`, `duration_seconds`, `expires_at`. Several per interview (start and stop more than once). Deleting a recording deletes the row and the file.
 
@@ -125,7 +125,7 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 2, practi
 
 **Coding parts** (one fresh session each):
 
-1. Scheduling: format `video`, panel participants, `recorded` and consent (confirm, withdraw), settings, notifications.
+1. Scheduling: format `video`, panel participants (already there from interview kits part 1), `recorded` and consent (confirm, withdraw), settings, notifications.
 2. Janus gateway (an Infrastructure HTTP client behind a port), lazy rooms, join tokens, ICE credentials, the lobby with Reverb events, the capacity cap, room cleanup.
 3. Webhooks: attendance, recording start and stop, the conversion webhook and the storing job, recording endpoints, retention, erasure.
 4. Deployment files in `deploy/janus/`: Dockerfile or compose with resource limits, Janus configuration (VideoRoom, `token_auth`, HTTP event handler), the conversion script, coturn configuration, the nginx WSS proxy, and the deployment checklist.
