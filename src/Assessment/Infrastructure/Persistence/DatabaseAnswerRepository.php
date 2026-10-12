@@ -60,6 +60,17 @@ final readonly class DatabaseAnswerRepository implements AnswerRepository
         );
     }
 
+    public function saveVideoAnswer(int $attemptId, int $questionId, int $videoTakeId): void
+    {
+        $values = ['option_positions' => null, 'number_value' => null, 'text_value' => null, 'score' => null, 'video_take_id' => $videoTakeId, 'answered_at' => $this->clock->now()];
+
+        $this->connection->table(self::ANSWERS)->upsert(
+            [['attempt_id' => $attemptId, 'question_id' => $questionId] + $values],
+            ['attempt_id', 'question_id'],
+            array_keys($values),
+        );
+    }
+
     public function deleteAnswer(int $attemptId, int $questionId): void
     {
         $this->connection->table(self::ANSWERS)->where('attempt_id', $attemptId)->where('question_id', $questionId)->delete();

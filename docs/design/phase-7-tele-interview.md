@@ -6,6 +6,7 @@ One line per decision; the detail sections below win if they disagree.
 
 - 2026-10-11: all four forms, built in this order: (1) Zoom, Google Meet and Microsoft Teams integration, (2) recorded one-way video, (3) live video inside the platform, (4) voice calls through Asterisk with a licensed SIP trunk and masked numbers (Decided).
 - 2026-10-12: form 2 part 1 (authoring, recording consent, decline) coded (see "Form 2 part 1 coded").
+- 2026-10-12: form 2 part 2 (recording: takes, chunked upload, retakes) coded (see "Form 2 part 2 coded").
 - 2026-10-12: form 1 part 4 (deployment files in `deploy/janus/`) coded: one container on the host network, internal webhooks on a loopback-only nginx server (see "Form 1 part 4 coded").
 - 2026-10-11: recording is optional per interview and starts only after the candidate's explicit consent, with a retention period and permanent deletion (Decided).
 - 2026-10-11: the one-way video is a new question type in the assessment engine (Answers, 1).
@@ -250,6 +251,18 @@ Migration `000128`: question columns `think_seconds`, `answer_seconds`, `max_ret
 5. **Scoring placeholder until part 3:** a video answer is graded by a person, so the grader gives null; the attempt still scores (a video question counts 0 points, no `pending_scoring`) because no take can be recorded until part 2. Do not enable video tests for real candidates before parts 2 and 3.
 6. **The candidate sees** `video_consent_required` on the invitation and `video: {think_seconds, answer_seconds, max_retakes}` on each video question of the attempt.
 7. **Notice to the team:** `assessment.declined` (in-app only, to the member who sent the test and its assessors) through the new event `InvitationDeclined` and a queued listener.
+
+### Form 2 part 2 coded (2026-10-12)
+
+Migration `000129`: `assessment_video_takes` (`status` recording, complete or rejected; CHECK: a file path exists exactly when the take is complete; `deadline_at`, `expires_at`) and `assessment_answers.video_take_id` (nullable FK, null on delete). New code: `Src/Assessment/Application/Video/` (`StartVideoTake`, `UploadVideoChunk`, `CompleteVideoTake`, `GetVideoState`), `VideoTake`, `VideoContent` (type read from the first bytes), `VideoTakeController`. Routes under `/me/assessment/invitations/{id}/attempt/questions/{q}/video`: `GET` (state), `POST takes`, `PUT takes/{take}/chunks/{n}` (raw body, at most 5 MB), `POST takes/{take}/complete`. Tests: `tests/Feature/Assessment/VideoTakesTest.php`. The default `client_max_body_size 12m` already covers a chunk.
+
+Interpretations (differences from the sketch above):
+
+1. **No clock per question, no `opened_at`:** the server enforces the take count, the section and attempt deadlines (already server side) and a per-take upload deadline (`started_at` + `answer_seconds` + 120 s); the think time and the 30 to 300 s recording length are enforced by the browser (a recorder that overruns is cut by the deadline and the size cap). Publishing already guarantees the section is long enough for every take. `question-time-over` is therefore not used.
+2. **Completing a take makes it the answer** (no separate `submit`, no `DELETE`): the last complete take is the answer, so the "choose the final take at the end of the question" step is not needed. A retake replaces the answer only when it completes; the take it replaces is rejected and its file is deleted at once. The candidate who dislikes a take starts another one (if retakes remain); there is no way to remove the answer, and clearing a video answer is refused (`invalid-answer`).
+3. **A take given up half way counts:** starting a new take while one is still `recording` rejects it (its chunks are deleted) and uses one of the allowed takes. The limit is `max_retakes + 1` takes per question, counting rejected ones (`retake-limit` 409).
+4. **Error codes:** `chunk-out-of-order` (409, with `expected_index`; a chunk already received is accepted again without effect so a retry is safe), `video-take-closed` (409), `upload-deadline-passed` (409), `file-too-large` (422, a chunk over 5 MB), `video-too-large` (422, total over `assessment.max_video_megabytes`), `invalid-video` (422: neither WebM nor MP4, an empty chunk, no chunk, a missing chunk). After the attempt is submitted or ran out of time every write is `attempt-closed` (409): a take still uploading at that moment is lost.
+5. **Not yet done (part 3):** `expires_at` is never set and nothing purges chunks or files, account erasure does not yet delete the files, and a video answer still counts 0 points with no `pending_scoring`. Do not enable video tests for real candidates before part 3.
 
 ### Form 3: voice calls through Asterisk (design started 2026-10-12)
 

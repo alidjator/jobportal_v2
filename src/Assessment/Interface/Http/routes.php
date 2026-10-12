@@ -11,6 +11,7 @@ use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ResultController;
 use Src\Assessment\Interface\Http\Controllers\ReviewController;
+use Src\Assessment\Interface\Http\Controllers\VideoTakeController;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
 
 Route::prefix('provider')->group(function (): void {
@@ -73,12 +74,16 @@ Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void
     Route::post('invitations/{id}/decline', [MyInvitationController::class, 'decline'])->whereNumber('id');
 
     // Taking the test. The server keeps the time and the rules of every section.
-    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+'])->group(function (): void {
+    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+', 'takeId' => '[0-9]+', 'index' => '[0-9]+'])->group(function (): void {
         Route::post('start', [AttemptController::class, 'start']);
         Route::get('attempt', [AttemptController::class, 'show']);
         Route::put('attempt/questions/{questionId}/answer', [AttemptController::class, 'saveAnswer']);
         Route::delete('attempt/questions/{questionId}/answer', [AttemptController::class, 'clearAnswer']);
         Route::post('attempt/questions/{questionId}/drawing', [AttemptController::class, 'uploadDrawing']);
+        Route::get('attempt/questions/{questionId}/video', [VideoTakeController::class, 'show']);
+        Route::post('attempt/questions/{questionId}/video/takes', [VideoTakeController::class, 'start']);
+        Route::put('attempt/questions/{questionId}/video/takes/{takeId}/chunks/{index}', [VideoTakeController::class, 'chunk']);
+        Route::post('attempt/questions/{questionId}/video/takes/{takeId}/complete', [VideoTakeController::class, 'complete']);
         Route::put('attempt/cursor', [AttemptController::class, 'move']);
         Route::post('attempt/next-section', [AttemptController::class, 'finishSection']);
         Route::put('attempt/columns/{column}', [AttemptController::class, 'saveColumn']);

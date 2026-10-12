@@ -4,7 +4,9 @@ namespace Src\Assessment\Application\Attempts;
 
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AnswerRules;
+use Src\Assessment\Domain\QuestionType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
@@ -39,7 +41,9 @@ final readonly class SaveAnswer
     public function clear(Actor $actor, int $invitationId, int $questionId, ?string $ip): void
     {
         $this->gate->run($actor, $invitationId, $ip, function (AttemptContext $context) use ($questionId): void {
-            $this->reach->reachable($context, $questionId);
+            if ($this->reach->reachable($context, $questionId)->type === QuestionType::VideoAnswer) {
+                throw new BusinessRuleViolation('A video answer is replaced by a new recording, not cleared.', 'invalid-answer', extensions: ['errors' => ['question' => ['A video answer is replaced by a new recording, not cleared.']]]);
+            }
 
             $this->answers->deleteAnswer((int) $context->attempt->id, $questionId);
         });

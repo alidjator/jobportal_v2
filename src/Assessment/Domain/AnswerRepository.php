@@ -10,6 +10,9 @@ interface AnswerRepository
     /** Stores the answer, replacing the one of the same question. */
     public function saveAnswer(int $attemptId, Answer $answer): void;
 
+    /** Stores a video take as the answer of the question, replacing the one before. */
+    public function saveVideoAnswer(int $attemptId, int $questionId, int $videoTakeId): void;
+
     public function deleteAnswer(int $attemptId, int $questionId): void;
 
     /** @param  array<int, float|null>  $scores  question id => score */

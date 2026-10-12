@@ -37,6 +37,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `category-name-invalid` | 422 | TalentPool |  |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
+| `chunk-out-of-order` | 409 | Assessment | Send the chunks in order. |
 | `column-already-submitted` | 409 | Assessment | This column was already handed in. |
 | `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
 | `company-admin-required` | 403 | Assessment, Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can do this. |
@@ -68,7 +69,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `export-too-large` | 422 | Recruitment |  |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
-| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging |  |
+| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging | A chunk is larger than the allowed 5 MB. |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
 | `forbidden` | 403 | Assessment, Company, Job, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
@@ -140,6 +141,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
+| `invalid-video` | 422 | Assessment | No part of the recording was sent. |
 | `invalid-webhook-credentials` | 401 | Recruitment | The webhook credentials are wrong. |
 | `invalid-withdrawal` | 422 | Recruitment |  |
 | `invitation-closed` | 409 | JobInvitation | This invitation expired because the job is not live. |
@@ -238,6 +240,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
 | `resume-limit-reached` | 409 | JobSeeker |  |
+| `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
 | `review-not-published` | 409 | Review |  |
@@ -283,6 +286,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
 | `unknown-team-size` | 422 | Company |  |
 | `unsupported-language` | 422 | Platform |  |
+| `upload-deadline-passed` | 409 | Assessment | The time to send this recording has passed. |
 | `validation-failed` | 422 | Platform | The request data is invalid. The `errors` member maps each field to its messages. |
 | `verification-code-cooldown` | 429 | Identity | Wait a moment before requesting another code. |
 | `verification-code-expired` | 422 | Identity | The verification code has expired or is no longer valid. Request a new one. |
@@ -294,4 +298,6 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `video-not-enabled` | 422 | Recruitment |  |
 | `video-room-not-open` | 409 | Recruitment | The video room is not open yet. |
 | `video-server-unavailable` | 503 | Recruitment | The recording converter is not configured. |
+| `video-take-closed` | 409 | Assessment | This recording is closed. |
+| `video-too-large` | 422 | Assessment |  |
 | `video-window-closed` | 409 | Recruitment |  |

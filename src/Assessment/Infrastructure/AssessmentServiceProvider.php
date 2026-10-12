@@ -37,6 +37,7 @@ use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\TestRepository;
+use Src\Assessment\Domain\VideoTakeRepository;
 use Src\Assessment\Infrastructure\Listeners\EraseAssessmentDataWhenUserAnonymized;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfAttemptSubmissionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationChangeListener;
@@ -61,6 +62,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportTemplateRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
@@ -93,6 +95,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         TestEmailSender::class => MailTestSender::class,
         AttemptRepository::class => DatabaseAttemptRepository::class,
         AnswerRepository::class => DatabaseAnswerRepository::class,
+        VideoTakeRepository::class => DatabaseVideoTakeRepository::class,
         AttemptOutcomeRepository::class => DatabaseAttemptOutcomeRepository::class,
         ReportRepository::class => DatabaseReportRepository::class,
         ReportPdfRenderer::class => DompdfReportRenderer::class,
