@@ -10,6 +10,9 @@ use Src\Recruitment\Interface\Http\Controllers\BulkApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewKitController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\JobInterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
@@ -61,6 +64,19 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/cancel', [InterviewController::class, 'cancel'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/complete', [InterviewController::class, 'complete'])->whereNumber('id');
+
+    Route::get('company/interview-kits', [InterviewKitController::class, 'index']);
+    Route::post('company/interview-kits', [InterviewKitController::class, 'store']);
+    Route::get('company/interview-kits/{id}', [InterviewKitController::class, 'show'])->whereNumber('id');
+    Route::put('company/interview-kits/{id}', [InterviewKitController::class, 'update'])->whereNumber('id');
+    Route::delete('company/interview-kits/{id}', [InterviewKitController::class, 'destroy'])->whereNumber('id');
+
+    Route::get('company/jobs/{id}/interview-kits', [JobInterviewKitController::class, 'index'])->whereNumber('id');
+    Route::put('company/jobs/{id}/interview-kits/{stageId}', [JobInterviewKitController::class, 'update'])->whereNumber(['id', 'stageId']);
+    Route::delete('company/jobs/{id}/interview-kits/{stageId}', [JobInterviewKitController::class, 'destroy'])->whereNumber(['id', 'stageId']);
+
+    Route::get('company/interviews/{id}/questions', [InterviewQuestionController::class, 'show'])->whereNumber('id');
+    Route::put('company/interviews/{id}/questions', [InterviewQuestionController::class, 'update'])->whereNumber('id');
 
     Route::get('company/applications/{id}/offers', [OfferController::class, 'index'])->whereNumber('id');
     Route::put('company/applications/{id}/offer', [OfferController::class, 'store'])->whereNumber('id');

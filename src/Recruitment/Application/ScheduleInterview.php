@@ -56,7 +56,7 @@ final readonly class ScheduleInterview
         $this->events->dispatch([$event]);
 
         return [
-            'view' => $this->views->one($this->interviews->findById($interviewId) ?? throw EntityNotFound::of('Interview', $interviewId)),
+            'view' => $this->views->one($this->interviews->findById($interviewId) ?? throw EntityNotFound::of('Interview', $interviewId), withPanel: true),
             'replaced' => $event->change === InterviewChange::Rescheduled,
         ];
     }

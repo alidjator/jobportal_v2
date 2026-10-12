@@ -31,7 +31,11 @@ use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\OfferChanged;
+use Src\Recruitment\Domain\InterviewKitRepository;
+use Src\Recruitment\Domain\InterviewPanel;
+use Src\Recruitment\Domain\InterviewQuestionRepository;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
@@ -62,7 +66,11 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewKitRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewPanel;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseJobKitDefaults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
@@ -111,6 +119,10 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
         InterviewRepository::class => DatabaseInterviewRepository::class,
+        InterviewKitRepository::class => DatabaseInterviewKitRepository::class,
+        JobKitDefaults::class => DatabaseJobKitDefaults::class,
+        InterviewQuestionRepository::class => DatabaseInterviewQuestionRepository::class,
+        InterviewPanel::class => DatabaseInterviewPanel::class,
         InterviewEmailSender::class => MailInterviewSender::class,
         OfferRepository::class => DatabaseOfferRepository::class,
         OfferEmailSender::class => MailOfferSender::class,

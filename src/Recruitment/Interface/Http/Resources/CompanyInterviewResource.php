@@ -1,0 +1,28 @@
+<?php
+
+namespace Src\Recruitment\Interface\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Src\Recruitment\Application\InterviewView;
+
+/**
+ * An interview as the team sees it: the interview itself plus the kit its questions came from (`kit.id` is null once the kit was deleted) and the extra
+ * panel members. The job seeker never gets these fields.
+ *
+ * @property InterviewView $resource
+ */
+final class CompanyInterviewResource extends JsonResource
+{
+    /** @return array<string, mixed> */
+    public function toArray(Request $request): array
+    {
+        $interview = $this->resource->interview;
+
+        return [
+            ...(new InterviewResource($this->resource))->toArray($request),
+            'kit' => $interview->kitName === null ? null : ['id' => $interview->kitId, 'name' => $interview->kitName],
+            'participants' => $this->resource->participants,
+        ];
+    }
+}

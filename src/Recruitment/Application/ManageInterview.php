@@ -76,6 +76,6 @@ final readonly class ManageInterview
             $this->events->dispatch([$event]);
         }
 
-        return $this->views->one($saved);
+        return $this->views->one($saved, withPanel: true);
     }
 }

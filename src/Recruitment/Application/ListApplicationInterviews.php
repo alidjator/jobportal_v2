@@ -22,6 +22,6 @@ final readonly class ListApplicationInterviews
     {
         $this->lookup->find($actor, $applicationId);
 
-        return $this->views->of($this->interviews->forApplication($applicationId));
+        return $this->views->of($this->interviews->forApplication($applicationId), withPanel: true);
     }
 }

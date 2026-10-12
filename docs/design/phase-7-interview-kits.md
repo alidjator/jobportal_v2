@@ -19,6 +19,8 @@ Until now an interview had no questions: the team scores an application only wit
 - 2026-10-12: a kit is **optional**; without one the scorecard holds only the recommendation and the note. A job's default kit for the target stage is preselected (Answers, 12).
 - 2026-10-12: the proposed details below are **approved**, and kits and scorecards are coded **before** tele-interview form 1; part 1 brings the panel table that form 1 reuses (Answers, 14).
 - 2026-10-12: results show in the application detail and on the applicants list card, apart from the star ratings; the job seeker never sees kits or scorecards (Answers, 13).
+- 2026-10-12: **part 1 coded** (kits, job defaults, panel, copy; migration 000123, setting `recruitment.max_interview_kits`); five interpretations are recorded in section "Part 1 coded" and wait for the user's review.
+- 2026-10-12: part 1 interpretations 1, 2 and 5 **confirmed by the user** as coded (a new time carries the kit, edited questions and panel over; the scheduler, the main interviewer and a company admin edit the copy; bulk move uses the job default kit and no panel). Interpretation 3 **confirmed too**: `recruitment_job_stage_kits.job_id` is `CASCADE` (the Schema line above that says RESTRICT is overridden). 4 is only a note for part 2.
 
 ## Answers
 
@@ -77,3 +79,15 @@ The application detail gains `interviews[].result {score, scorecards_sent, panel
 
 1. Kits: library, job defaults, `kit_id` and the panel when scheduling, the copy and its editing, the setting.
 2. Scorecards: draft, send, edits with revisions, the lock rule, results in the detail and the list, the reminder, erasure.
+
+## Part 1 coded (2026-10-12)
+
+Migration `000123_create_interview_kit_tables`: the kit tables, `recruitment_job_stage_kits`, `recruitment_interview_participants`, `recruitment_interview_questions` and `kit_id`/`kit_name` on `recruitment_interviews`. The scorecard tables are part 2. Endpoints as in the table above except the scorecard ones. Interpretations where the approved text left a gap (change them on request):
+
+1. **A new time without `kit_id` or `participant_ids`:** keeps the kit, the (possibly edited) questions and the panel of the interview it replaces (the "Rescheduling copies" rule). The job's default kit applies only to the first interview of an application; `kit_id: null` means no kit, a kit id replaces the copy, `participant_ids: []` clears the panel.
+2. **Who edits the copy** (`PUT company/interviews/{id}/questions`): the member who scheduled it (`created_by`), its main interviewer or a company admin; anyone else who may see the application only reads (403 `interview-edit-denied`).
+3. **Job default foreign keys:** `recruitment_job_stage_kits.job_id` is `CASCADE` (an attachment that goes with the job, like `recruitment_job_questions`), so a draft job with a default kit can still be deleted; `stage_id` and `kit_id` cascade as well. `CrossContextForeignKeysTest` lists both cascading tables.
+4. **`scoring-started` (409):** `InterviewQuestionRepository::scoringStarted` returns false until part 2 adds the scorecard tables; part 2 must make it check for a draft.
+5. **Bulk move to an interview stage** uses the job's default kit and no extra panel (the bulk request has no kit or panel fields). The panel and kit fields are on the schedule request and on the `interview` object of the move request.
+
+The panel is validated like the interviewer (a member who may see the job; 422 `invalid-interviewer` on `participant_ids`); at most 3 extra members, never the main interviewer. The team sees `kit {id, name}` (id null once the kit was deleted) and `participants` on every interview; the job seeker's responses have neither.

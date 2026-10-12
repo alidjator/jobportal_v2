@@ -74,6 +74,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `google-sign-in-unavailable` | 401, 503 | Identity | This account cannot sign in with Google. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
+| `interview-edit-denied` | 403 | Recruitment | Only the member who scheduled the interview, its interviewer or a company admin can change its questions. |
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
 | `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be marked as completed. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
@@ -104,6 +105,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-interviewer` | 422 | Recruitment |  |
 | `invalid-job` | 422 | Job | The job is not valid. |
 | `invalid-job-questions` | 422 | Recruitment | The questions of the job are not valid. |
+| `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
@@ -161,6 +163,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
 | `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
 | `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
+| `kit-limit-reached` | 409 | Recruitment | The company has reached its limit of interview kits. |
+| `kit-name-taken` | 409 | Recruitment | Another kit of this company already has this name. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
 | `last-section` | 409 | Assessment | This is the last section: submit the test to finish it. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
@@ -227,6 +231,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `saved-jobs-limit` | 422 | Job |  |
 | `schedule-required` | 422 | Recruitment |  |
 | `scoring-locked` | 409 | Assessment | The application has left the assessment stage, so its scores can no longer be changed. |
+| `scoring-started` | 409 | Recruitment | A panel member already started a scorecard, so the questions can no longer change. |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
 | `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |
@@ -236,6 +241,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `social-account-conflict` | 409 | Identity | A different Google account is already linked to this account. |
 | `stage-limit-reached` | 409 | Recruitment | The company has reached its limit of stages. |
 | `stage-name-taken` | 409 | Recruitment | Another stage of this company already has this name. |
+| `stage-not-interview` | 422 | Recruitment |  |
 | `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, assessment, interview or offer. |
 | `talent-pool-limit` | 422 | TalentPool |  |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |

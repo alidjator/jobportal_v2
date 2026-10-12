@@ -37,6 +37,8 @@ final readonly class Interview
         public ?DateTimeImmutable $proposedStartsAt,
         public DateTimeImmutable $createdAt,
         public ?DateTimeImmutable $remindedAt = null,
+        public ?int $kitId = null,
+        public ?string $kitName = null,
         public ?int $id = null,
     ) {}
 
@@ -55,6 +57,8 @@ final readonly class Interview
         int $interviewerId,
         int $createdBy,
         DateTimeImmutable $now,
+        ?int $kitId = null,
+        ?string $kitName = null,
     ): self {
         $location = self::text($location);
         $meetingUrl = self::text($meetingUrl);
@@ -88,6 +92,9 @@ final readonly class Interview
             0,
             null,
             $now,
+            null,
+            $kitId,
+            $kitName,
         );
     }
 
@@ -232,6 +239,8 @@ final readonly class Interview
             $proposedStartsAt === false ? $this->proposedStartsAt : $proposedStartsAt,
             $this->createdAt,
             $remindedAt === false ? $this->remindedAt : $remindedAt,
+            $this->kitId,
+            $this->kitName,
             $this->id,
         );
     }

@@ -65,6 +65,8 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'proposals_used' => $interview->proposalsUsed,
             'proposed_starts_at' => $interview->proposedStartsAt === null ? null : $this->format($interview->proposedStartsAt),
             'active_key' => $interview->status->isActive() ? $interview->applicationId : null,
+            'kit_id' => $interview->kitId,
+            'kit_name' => $interview->kitName,
             'created_at' => $at,
             'updated_at' => $at,
         ]);
@@ -83,6 +85,8 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $interview->proposedStartsAt,
             $interview->createdAt,
             null,
+            $interview->kitId,
+            $interview->kitName,
             $id,
         );
     }
@@ -157,6 +161,8 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $row->proposed_starts_at === null ? null : $this->time((string) $row->proposed_starts_at),
             $this->time((string) $row->created_at),
             $row->reminded_at === null ? null : $this->time((string) $row->reminded_at),
+            $row->kit_id === null ? null : (int) $row->kit_id,
+            $row->kit_name === null ? null : (string) $row->kit_name,
             (int) $row->id,
         );
     }

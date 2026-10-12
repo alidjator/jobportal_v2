@@ -7,6 +7,7 @@ use Illuminate\Validation\Rule;
 use Src\Recruitment\Application\InterviewInput;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
+use Src\Recruitment\Domain\InterviewPanel;
 
 /**
  * The interview fields shared by the schedule request and the move request (where they sit under `interview`). Times are ISO 8601 with an offset or `Z`;
@@ -26,6 +27,10 @@ final class InterviewFields
             $prefix.'location' => ['nullable', 'string', 'max:'.Interview::LOCATION_MAX],
             $prefix.'meeting_url' => ['nullable', 'string', 'url:http,https', 'max:'.Interview::URL_MAX],
             $prefix.'interviewer_id' => [$presence, 'integer', 'min:1'],
+            // Omitted: the job's default kit (or the kit of the interview this one replaces); null: no kit.
+            $prefix.'kit_id' => ['nullable', 'integer', 'min:1'],
+            $prefix.'participant_ids' => ['nullable', 'array', 'max:'.InterviewPanel::EXTRA_MAX],
+            $prefix.'participant_ids.*' => ['integer', 'min:1', 'distinct'],
         ];
     }
 
@@ -44,6 +49,9 @@ final class InterviewFields
             isset($data['location']) ? (string) $data['location'] : null,
             isset($data['meeting_url']) ? (string) $data['meeting_url'] : null,
             (int) $data['interviewer_id'],
+            isset($data['kit_id']) ? (int) $data['kit_id'] : null,
+            array_key_exists('kit_id', $data),
+            isset($data['participant_ids']) ? array_map('intval', array_values($data['participant_ids'])) : null,
         );
     }
 }
