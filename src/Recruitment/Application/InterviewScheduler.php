@@ -112,22 +112,32 @@ final readonly class InterviewScheduler
      */
     private function participants(Application $application, InterviewInput $input): ?array
     {
-        if ($input->participantIds === null) {
-            return null;
-        }
+        return $input->participantIds === null ? null : $this->checkedParticipants($application->companyId, $application->jobId, $input->interviewerId, $input->participantIds);
+    }
 
-        $ids = array_values(array_unique($input->participantIds));
+    /**
+     * The extra members of a panel without duplicates, checked: at most {@see InterviewPanel::EXTRA_MAX}, each a member who may see the job, none of them the
+     * main interviewer.
+     *
+     * @param  list<int>  $participantIds
+     * @return list<int>
+     *
+     * @throws BusinessRuleViolation `invalid-interviewer`
+     */
+    public function checkedParticipants(int $companyId, int $jobId, int $interviewerId, array $participantIds): array
+    {
+        $ids = array_values(array_unique($participantIds));
 
         if (count($ids) > InterviewPanel::EXTRA_MAX) {
             $this->refuse('participant_ids', 'The panel can have at most '.InterviewPanel::EXTRA_MAX.' members besides the main interviewer.');
         }
 
         foreach ($ids as $userId) {
-            if ($userId === $input->interviewerId) {
+            if ($userId === $interviewerId) {
                 $this->refuse('participant_ids', 'The main interviewer is already on the panel.');
             }
 
-            $this->assertWorksOnJob($application->companyId, $application->jobId, $userId, 'participant_ids');
+            $this->assertWorksOnJob($companyId, $jobId, $userId, 'participant_ids');
         }
 
         return $ids;

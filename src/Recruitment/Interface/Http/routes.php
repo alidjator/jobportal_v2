@@ -11,12 +11,14 @@ use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewKitController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewPanelController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\JobInterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
 use Src\Recruitment\Interface\Http\Controllers\OfferController;
+use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 
 // Public: what an applicant answers for a live job. A job that is not live (or whose company is hidden) is the same 404 as on the job page; clients revalidate with the ETag.
@@ -77,6 +79,14 @@ Route::middleware('auth:user')->group(function (): void {
 
     Route::get('company/interviews/{id}/questions', [InterviewQuestionController::class, 'show'])->whereNumber('id');
     Route::put('company/interviews/{id}/questions', [InterviewQuestionController::class, 'update'])->whereNumber('id');
+
+    Route::put('company/interviews/{id}/participants', [InterviewPanelController::class, 'update'])->whereNumber('id');
+
+    Route::get('company/interviews/{id}/scorecard', [ScorecardController::class, 'show'])->whereNumber('id');
+    Route::put('company/interviews/{id}/scorecard', [ScorecardController::class, 'update'])->whereNumber('id');
+    Route::post('company/interviews/{id}/scorecard/submit', [ScorecardController::class, 'submit'])->whereNumber('id');
+    Route::get('company/interviews/{id}/scorecards', [ScorecardController::class, 'index'])->whereNumber('id');
+    Route::get('company/interviews/{id}/scorecards/{scorecardId}/revisions', [ScorecardController::class, 'revisions'])->whereNumber(['id', 'scorecardId']);
 
     Route::get('company/applications/{id}/offers', [OfferController::class, 'index'])->whereNumber('id');
     Route::put('company/applications/{id}/offer', [OfferController::class, 'store'])->whereNumber('id');

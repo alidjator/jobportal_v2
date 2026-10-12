@@ -5,6 +5,7 @@ namespace Src\Recruitment\Interface\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationAnswerView;
+use Src\Recruitment\Application\ApplicationInterviewResult;
 use Src\Recruitment\Application\CompanyApplicationView;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
 
@@ -31,6 +32,19 @@ final class CompanyApplicationDetailResource extends JsonResource
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
             /** @var array{average: float|null, count: int, mine: int|null, members: list<array{user_id: int, name: string, stars: int}>} */
             'rating' => (new ApplicationRatingResource($view->rating))->resolve($request),
+            /** @var list<array{id: int, status: string, starts_at: string, format: string, result: array{score: float|null, scorecards_sent: int, panel_size: int, recommendations: array<string, int>}|null}> */
+            'interviews' => array_map(static fn (ApplicationInterviewResult $item): array => [
+                'id' => $item->interview->id,
+                'status' => $item->interview->status->value,
+                'starts_at' => $item->interview->startsAt->format(DATE_ATOM),
+                'format' => $item->interview->format->value,
+                'result' => $item->result === null ? null : [
+                    'score' => $item->result->score,
+                    'scorecards_sent' => $item->result->scorecardsSent,
+                    'panel_size' => $item->panelSize,
+                    'recommendations' => $item->result->recommendations,
+                ],
+            ], $view->interviews),
             'applicant' => $data->snapshot === null
                 ? ['is_deleted' => true, 'name' => null]
                 : ['is_deleted' => false, ...array_diff_key($data->snapshot, ['version' => true])],

@@ -31,5 +31,15 @@ final readonly class RecruiterApplicationRow
         public DateTimeImmutable $appliedAt,
         public ?float $ratingAverage = null,
         public int $ratingCount = 0,
+        public ?InterviewResult $interviewResult = null,
     ) {}
+
+    /** The row with the result of its latest scored interview (what the viewer may see of it). */
+    public function withInterviewResult(?InterviewResult $result): self
+    {
+        return new self(
+            $this->id, $this->isDeleted, $this->name, $this->headline, $this->latestExperience, $this->city, $this->expectedSalary, $this->age,
+            $this->meetsMustHave, $this->stageId, $this->stageType, $this->stageName, $this->appliedAt, $this->ratingAverage, $this->ratingCount, $result,
+        );
+    }
 }

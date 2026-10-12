@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -17,6 +18,7 @@ final readonly class ListJobApplications
     public function __construct(
         private RecruitmentAccess $access,
         private RecruiterApplicationReader $reader,
+        private InterviewResults $results,
         private StageRepository $stages,
     ) {}
 
@@ -31,8 +33,11 @@ final readonly class ListJobApplications
 
         $counts = $this->reader->countByStage($query->jobId);
 
+        $page = $this->reader->page($query, $request);
+        $results = $this->results->latestForApplications(array_map(static fn (RecruiterApplicationRow $row): int => $row->id, $page->items), $member->userId);
+
         return new JobApplicationList(
-            $this->reader->page($query, $request),
+            new Page(array_map(static fn (RecruiterApplicationRow $row): RecruiterApplicationRow => $row->withInterviewResult($results[$row->id] ?? null), $page->items), $page->total, $page->request),
             array_map(
                 static fn ($stage): StageCount => new StageCount((int) $stage->id, $stage->type, $stage->name, $counts[(int) $stage->id] ?? 0),
                 $this->stages->forCompany($member->companyId),

@@ -23,6 +23,7 @@ final readonly class GetCompanyApplication
         private JobDirectory $jobs,
         private CompanyMemberAccounts $accounts,
         private ApplicationRatings $ratings,
+        private ApplicationInterviewResults $interviewResults,
         private ApplicationRepository $applications,
         private Clock $clock,
     ) {}
@@ -65,6 +66,7 @@ final readonly class GetCompanyApplication
             $stageNames,
             $actorNames,
             $this->ratings->view($id, $member->userId),
+            $this->interviewResults->forApplication($id, $member->userId),
         );
     }
 }

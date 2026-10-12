@@ -34,16 +34,17 @@ final readonly class ReplaceInterviewQuestions
      */
     public function execute(Actor $actor, int $interviewId, array $questions): InterviewQuestionList
     {
-        $team = $this->lookup->find($actor, $interviewId);
-        $interview = $team->interview;
+        // The application row stays locked, so a scorecard cannot be started between the check below and the replacement.
+        $this->transactions->run(function () use ($actor, $interviewId, $questions): void {
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true);
+            $interview = $team->interview;
 
-        if (! $team->member->isCompanyAdmin && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
-            throw new AccessDenied('Only the member who scheduled the interview, its interviewer or a company admin can change its questions.', 'interview-edit-denied');
-        }
+            if (! $team->member->isCompanyAdmin && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
+                throw new AccessDenied('Only the member who scheduled the interview, its interviewer or a company admin can change its questions.', 'interview-edit-denied');
+            }
 
-        $checked = KitQuestion::many($questions, 0);
+            $checked = KitQuestion::many($questions, 0);
 
-        $this->transactions->run(function () use ($interview, $checked): void {
             if ($this->questions->scoringStarted((int) $interview->id)) {
                 throw new StateConflict('A panel member already started a scorecard, so the questions can no longer change.', 'scoring-started');
             }

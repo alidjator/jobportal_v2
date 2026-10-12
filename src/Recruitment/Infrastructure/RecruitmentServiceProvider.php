@@ -11,7 +11,9 @@ use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
 use Src\Recruitment\Application\EraseApplicantData;
+use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\InterviewEmailSender;
+use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\JobApplicationCheck;
 use Src\Recruitment\Application\OfferEmailSender;
 use Src\Recruitment\Application\ProvisionDefaultStages;
@@ -38,6 +40,8 @@ use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
+use Src\Recruitment\Domain\ScorecardEraser;
+use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Infrastructure\Analytics\ApplicationsDailyRollup;
@@ -51,6 +55,7 @@ use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyScheduleCard;
 use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
+use Src\Recruitment\Infrastructure\Listeners\EraseScorecardDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
@@ -70,10 +75,13 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewKitRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewPanel;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewResults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobKitDefaults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardEraser;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
@@ -123,6 +131,9 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobKitDefaults::class => DatabaseJobKitDefaults::class,
         InterviewQuestionRepository::class => DatabaseInterviewQuestionRepository::class,
         InterviewPanel::class => DatabaseInterviewPanel::class,
+        ScorecardRepository::class => DatabaseScorecardRepository::class,
+        ScorecardEraser::class => DatabaseScorecardEraser::class,
+        InterviewResults::class => DatabaseInterviewResults::class,
         InterviewEmailSender::class => MailInterviewSender::class,
         OfferRepository::class => DatabaseOfferRepository::class,
         OfferEmailSender::class => MailOfferSender::class,
@@ -199,5 +210,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
         $this->app->tag(EraseApplicantData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseApplicantDataWhenUserAnonymized::class);
+        $this->app->tag(EraseScorecardData::class, ErasureStep::class);
+        Event::listen(UserAnonymized::class, EraseScorecardDataWhenUserAnonymized::class);
     }
 }

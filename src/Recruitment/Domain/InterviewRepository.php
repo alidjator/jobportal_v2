@@ -36,4 +36,14 @@ interface InterviewRepository
      * @return list<Interview>
      */
     public function dueForReminder(DateTimeImmutable $from, DateTimeImmutable $until): array;
+
+    /**
+     * Confirmed or completed interviews that ended after `$endedAfter` and no later than `$endedBefore` and whose panel was not reminded of the scorecards yet.
+     *
+     * @return list<Interview>
+     */
+    public function dueForScorecardReminder(DateTimeImmutable $endedBefore, DateTimeImmutable $endedAfter): array;
+
+    /** Marks the interview's panel as reminded; false when another run did it first. */
+    public function claimScorecardReminder(int $interviewId, DateTimeImmutable $at): bool;
 }

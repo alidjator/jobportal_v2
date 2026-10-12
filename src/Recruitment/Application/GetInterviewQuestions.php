@@ -24,7 +24,7 @@ final readonly class GetInterviewQuestions
             (int) $interview->id,
             $interview->kitId,
             $interview->kitName,
-            $this->questions->forInterview((int) $interview->id),
+            $this->questions->withIds((int) $interview->id),
             $this->questions->scoringStarted((int) $interview->id),
         );
     }

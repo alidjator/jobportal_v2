@@ -32,10 +32,12 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();
 
-        // Interviews hold the applicant's meeting details, so they go too.
-        $this->connection->table('recruitment_interviews')
-            ->whereIn('application_id', (clone $applications)->select('id'))
-            ->delete();
+        // Interviews hold the applicant's meeting details, so they go too. An interview with a scorecard stays with its scores and recommendations (they hold no
+        // personal data, like ratings) and loses only the meeting details; the scorecard notes are cleared by their own step (`EraseScorecardData`).
+        $interviews = $this->connection->table('recruitment_interviews')->whereIn('application_id', (clone $applications)->select('id'));
+
+        (clone $interviews)->whereNotIn('id', $this->connection->table('recruitment_interview_scorecards')->select('interview_id'))->delete();
+        $interviews->update(['location' => null, 'meeting_url' => null]);
 
         // Offers carry the applicant's answer note, so they go too.
         $this->connection->table('recruitment_offers')

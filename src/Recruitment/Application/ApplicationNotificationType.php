@@ -35,6 +35,8 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_REMINDER = 'interview.reminder';
 
+    public const string INTERVIEW_SCORECARD_REMINDER = 'interview.scorecard_reminder';
+
     public const string OFFER_SENT = 'offer.sent';
 
     public const string OFFER_REVISED = 'offer.revised';

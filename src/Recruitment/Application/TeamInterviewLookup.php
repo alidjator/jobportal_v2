@@ -17,7 +17,7 @@ final readonly class TeamInterviewLookup
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound
      */
-    public function find(Actor $actor, int $interviewId): TeamInterview
+    public function find(Actor $actor, int $interviewId, bool $forUpdate = false): TeamInterview
     {
         $interview = $this->interviews->findById($interviewId);
 
@@ -28,6 +28,8 @@ final readonly class TeamInterviewLookup
             throw EntityNotFound::of('Interview', $interviewId);
         }
 
-        return new TeamInterview($this->applications->find($actor, $interview->applicationId)->member, $interview);
+        $team = $this->applications->find($actor, $interview->applicationId, $forUpdate);
+
+        return new TeamInterview($team->member, $interview, $team->application);
     }
 }

@@ -8,6 +8,9 @@ interface InterviewQuestionRepository
     /** @return list<KitQuestion> in order */
     public function forInterview(int $interviewId): array;
 
+    /** @return list<InterviewQuestion> in order, with the ids scorecard answers refer to */
+    public function withIds(int $interviewId): array;
+
     /** @param  list<KitQuestion>  $questions */
     public function replace(int $interviewId, array $questions): void;
 

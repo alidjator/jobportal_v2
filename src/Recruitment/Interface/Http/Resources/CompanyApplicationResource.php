@@ -32,6 +32,8 @@ final class CompanyApplicationResource extends JsonResource
             ],
             'meets_must_have' => $row->meetsMustHave,
             'rating' => ['average' => $row->ratingAverage, 'count' => $row->ratingCount],
+            /** @var array{score: float|null, yes: int, no: int}|null */
+            'interview_result' => $row->interviewResult === null ? null : ['score' => $row->interviewResult->score, 'yes' => $row->interviewResult->yes(), 'no' => $row->interviewResult->no()],
             'stage' => ['id' => $row->stageId, 'type' => $row->stageType->value, 'name' => $row->stageName],
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
         ];

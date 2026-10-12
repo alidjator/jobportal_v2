@@ -128,6 +128,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-schedule` | 422 | Recruitment |  |
 | `invalid-score` | 422 | Assessment |  |
+| `invalid-scorecard` | 422 | Recruitment |  |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
 | `invalid-setting-value` | 422 | Shared |  |
@@ -192,6 +193,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
 | `not-in-offer-stage` | 409 | Recruitment | Move the application to an offer stage before sending an offer. |
 | `not-note-author` | 403 | Recruitment | Only the author or a company admin can delete a note. |
+| `not-on-panel` | 403 | Recruitment | Only the members of the interview panel can fill a scorecard. |
 | `not-your-message` | 403 | Messaging | Only the sender can delete a message. |
 | `note-too-long` | 422 | JobInvitation, TalentPool |  |
 | `offer-expired` | 409 | Recruitment | This offer has expired. |
@@ -216,6 +218,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
+| `recommendation-required` | 422 | Recruitment |  |
 | `reference-value-taken` | 409 | ReferenceData |  |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
@@ -230,7 +233,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
 | `saved-jobs-limit` | 422 | Job |  |
 | `schedule-required` | 422 | Recruitment |  |
+| `scorecards-locked` | 403 | Recruitment | Send your own scorecard first: the other scorecards stay hidden until then. |
 | `scoring-locked` | 409 | Assessment | The application has left the assessment stage, so its scores can no longer be changed. |
+| `scoring-not-open` | 409 | Recruitment | A scorecard can be filled from the start of a confirmed interview. |
 | `scoring-started` | 409 | Recruitment | A panel member already started a scorecard, so the questions can no longer change. |
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |

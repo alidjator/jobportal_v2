@@ -21,6 +21,7 @@ Until now an interview had no questions: the team scores an application only wit
 - 2026-10-12: results show in the application detail and on the applicants list card, apart from the star ratings; the job seeker never sees kits or scorecards (Answers, 13).
 - 2026-10-12: **part 1 coded** (kits, job defaults, panel, copy; migration 000123, setting `recruitment.max_interview_kits`); five interpretations are recorded in section "Part 1 coded" and wait for the user's review.
 - 2026-10-12: part 1 interpretations 1, 2 and 5 **confirmed by the user** as coded (a new time carries the kit, edited questions and panel over; the scheduler, the main interviewer and a company admin edit the copy; bulk move uses the job default kit and no panel). Interpretation 3 **confirmed too**: `recruitment_job_stage_kits.job_id` is `CASCADE` (the Schema line above that says RESTRICT is overridden). 4 is only a note for part 2.
+- 2026-10-12: **part 2 coded** (scorecards, visibility lock, edits with revisions, results, reminder, erasure; migration 000124). Erasure decided by the user: an interview with a scorecard survives the applicant's erasure (see "Part 2 coded"). The other interpretations there wait for the user's review.
 
 ## Answers
 
@@ -91,3 +92,21 @@ Migration `000123_create_interview_kit_tables`: the kit tables, `recruitment_job
 5. **Bulk move to an interview stage** uses the job's default kit and no extra panel (the bulk request has no kit or panel fields). The panel and kit fields are on the schedule request and on the `interview` object of the move request.
 
 The panel is validated like the interviewer (a member who may see the job; 422 `invalid-interviewer` on `participant_ids`); at most 3 extra members, never the main interviewer. The team sees `kit {id, name}` (id null once the kit was deleted) and `participants` on every interview; the job seeker's responses have neither.
+
+## Part 2 coded (2026-10-12)
+
+Migration `000124_create_interview_scorecard_tables`: the three scorecard tables and `recruitment_interviews.scorecard_reminded_at`. Endpoints as in the table above; `scoringStarted` now checks for a scorecard row. `GET company/interviews/{id}/questions` gained the question `id` (the answers refer to it).
+
+**Decided by the user (2026-10-12): erasure.** The existing applicant eraser deleted every interview of the applicant, which would have deleted the scorecards through the foreign key. Now an interview with a scorecard stays (scores and recommendations stay, like ratings) and only loses `location` and `meeting_url`; an interview without one is deleted as before. The new erasure step `interview-scorecards` (`EraseScorecardData`, 13 steps now) clears the scorecard notes, the answer notes and the revisions.
+
+Interpretations where the approved text left a gap (change them on request):
+
+1. **Rules of scoring:** open on a `confirmed` or `completed` interview from `starts_at` (409 `scoring-not-open`), closed once the application is rejected, withdrawn or hired (409 `application-final`, the rule of star ratings). A `PUT` on a draft saves it; a `PUT` on a sent scorecard is an edit and still needs a recommendation (422 `recommendation-required`); sending twice changes nothing; an edit that changes nothing leaves no revision; an answer with neither score nor note counts as skipped.
+2. **`GET .../scorecard`** of a panel member who has none answers 200 with `status: null` (nothing is saved).
+3. **Results:** `interviews[]` is new in the application detail (every interview, newest first: `id`, `status`, `starts_at`, `format`, `result`). `result` and the list's `interview_result` are null for a panel member of that interview who has not sent their scorecard. In the list, `yes` counts `yes` plus `strong_yes` and `no` counts `no` plus `strong_no`; the interview's score is the average of the sent scorecards that hold a score.
+4. **Reminder:** the hourly `recruitment:send-interview-reminders` also runs `SendScorecardReminders`: one in-app notification `interview.scorecard_reminder` per interview, 24 hours after `ends_at`, to the panel members without a sent scorecard; only interviews that ended in the 7 days after that mark are looked at (so a first run does not reach old interviews); none for a final application. The command prints a second line only when a panel was reminded.
+5. **Panel removal:** see "Decided by the user" below.
+
+**Decided by the user (2026-10-12), part 2 interpretations 1 to 4 confirmed as coded** (scoring rules, `status: null` for an empty own scorecard, `yes`/`no` counts in the list, the 7-day reminder window).
+
+**Decided by the user (2026-10-12): change the panel of an existing interview.** `PUT company/interviews/{id}/participants` with `participant_ids` (the whole list of extra members, at most 3, checked like when scheduling, the main interviewer cannot be in it or be replaced here). Allowed to the member who scheduled the interview, its main interviewer or a company admin, on an interview that is not declined or cancelled (409 `interview-not-active`), until the application is final (409 `application-final`). A member who leaves loses their draft scorecard; a sent scorecard stays and counts in the result; the member is then off the panel and may read the sent scorecards. A member who joins must send their own scorecard before seeing the others. The answer is the interview as the team sees it. When both apply (a rejection cancels the active interview) the answer is `application-final`, the same order as scoring (decided by the user). Existing code: `UpdateInterviewPanel`, `ScorecardRepository::deleteDrafts`.

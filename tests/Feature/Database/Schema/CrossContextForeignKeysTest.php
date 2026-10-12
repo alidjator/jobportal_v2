@@ -27,6 +27,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'recruitment_interviews' => ['interviewer_id', 'created_by'],
             'recruitment_interview_kits' => ['created_by', 'updated_by'],
             'recruitment_interview_participants' => ['user_id'],
+            'recruitment_interview_scorecards' => ['member_id'],
             'recruitment_offers' => ['created_by'],
             'jobseeker_profiles' => ['user_id'],
             'jobseeker_experiences' => ['user_id'],
