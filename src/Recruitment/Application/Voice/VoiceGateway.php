@@ -58,6 +58,43 @@ interface VoiceGateway
      */
     public function limitDuration(string $channelId, int $seconds): void;
 
+    /**
+     * Starts recording what is said in the bridge, mixed into one mono file named `$name` on the voice server, ending by itself after `$maxSeconds`.
+     *
+     * @throws ExternalServiceUnavailable
+     */
+    public function startRecording(string $bridgeId, string $name, int $maxSeconds): void;
+
+    /**
+     * Plays the announcement that the call is recorded to everyone in the bridge.
+     *
+     * @throws ExternalServiceUnavailable
+     */
+    public function announceRecording(string $bridgeId): void;
+
+    /**
+     * Ends the recording; one that already ended counts as ended.
+     *
+     * @throws ExternalServiceUnavailable
+     */
+    public function stopRecording(string $name): void;
+
+    /**
+     * The finished recording as a readable stream positioned at its start (the caller closes it), or null when the voice server has no such file (yet).
+     *
+     * @return resource|null
+     *
+     * @throws ExternalServiceUnavailable
+     */
+    public function fetchRecording(string $name);
+
+    /**
+     * Deletes the finished recording from the voice server; one that is gone counts as deleted.
+     *
+     * @throws ExternalServiceUnavailable
+     */
+    public function deleteRecording(string $name): void;
+
     /** The domain browsers register with (the host of the SIP URI). */
     public function sipDomain(): string;
 

@@ -9,12 +9,15 @@ use Src\Recruitment\Application\Voice\HangUpInterviewCall;
 use Src\Recruitment\Application\Voice\JoinVoiceInterview;
 use Src\Recruitment\Application\Voice\ListInterviewCalls;
 use Src\Recruitment\Application\Voice\PlaceInterviewCall;
+use Src\Recruitment\Application\Voice\StartVoiceRecording;
+use Src\Recruitment\Application\Voice\StopVoiceRecording;
 use Src\Recruitment\Interface\Http\Resources\InterviewCallResource;
+use Src\Recruitment\Interface\Http\Resources\RecordingResource;
 use Src\Recruitment\Interface\Http\Resources\VoiceJoinResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 
-/** The phone interview of an application, for its panel: join the call from the browser, dial the candidate, hang up and read the call log. */
+/** The phone interview of an application, for its panel: join the call from the browser, dial the candidate, hang up, record the call and read the call log. */
 final class VoiceInterviewController extends ApiController
 {
     public function join(Request $request, int $id, ActorResolver $actors, JoinVoiceInterview $join): VoiceJoinResource
@@ -35,5 +38,15 @@ final class VoiceInterviewController extends ApiController
     public function calls(Request $request, int $id, ActorResolver $actors, ListInterviewCalls $list): AnonymousResourceCollection
     {
         return InterviewCallResource::collection($list->execute($actors->fromRequest($request), $id));
+    }
+
+    public function startRecording(Request $request, int $id, ActorResolver $actors, StartVoiceRecording $start): JsonResponse
+    {
+        return (new RecordingResource($start->execute($actors->fromRequest($request), $id)))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
+    }
+
+    public function stopRecording(Request $request, int $id, ActorResolver $actors, StopVoiceRecording $stop): RecordingResource
+    {
+        return new RecordingResource($stop->execute($actors->fromRequest($request), $id));
     }
 }

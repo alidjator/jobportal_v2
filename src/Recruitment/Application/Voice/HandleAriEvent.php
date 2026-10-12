@@ -20,7 +20,7 @@ use Throwable;
 
 /**
  * Turns one event of the voice server (ARI) into what the platform records: a candidate's phone ringing, answering and hanging up (the call log, the candidate's
- * missed-call notice and the time cap), and the team's browsers entering and leaving the bridge (attendance). A team channel is let into a bridge only when its
+ * missed-call notice, the time cap and the end of a recording), and the team's browsers entering and leaving the bridge (attendance). A team channel is let into a bridge only when its
  * account was handed out by this application for that interview; anything else is hung up. An event that matches nothing is ignored, and the same event twice does
  * no harm.
  */
@@ -34,6 +34,7 @@ final readonly class HandleAriEvent
         private AttendanceRepository $attendance,
         private VoiceGateway $gateway,
         private VoiceLimits $limits,
+        private VoiceRecordingStopper $recordings,
         private InAppNotifier $notifier,
         private TransactionManager $transactions,
         private Clock $clock,
@@ -148,7 +149,7 @@ final readonly class HandleAriEvent
     {
         $now = $this->clock->now();
 
-        $missed = $this->transactions->run(function () use ($channelId, $cause, $now): ?InterviewCall {
+        $ended = $this->transactions->run(function () use ($channelId, $cause, $now): ?InterviewCall {
             $this->attendance->leftOnChannel($channelId, $now);
             $call = $this->calls->findByChannel($channelId, forUpdate: true);
 
@@ -159,11 +160,27 @@ final readonly class HandleAriEvent
             $ended = $call->ended($now, $cause);
             $this->calls->update($ended);
 
-            return $ended->status->isMissed() ? $ended : null;
+            return $ended;
         });
 
-        if ($missed instanceof InterviewCall) {
-            $this->tellCandidate($missed, $now);
+        if (! $ended instanceof InterviewCall) {
+            return;
+        }
+
+        if ($ended->status->isMissed()) {
+            $this->tellCandidate($ended, $now);
+        } else {
+            $this->stopRecording($ended->interviewId);
+        }
+    }
+
+    /** The recording ends with the call. When the voice server cannot be told now, the sweep of {@see CloseVoiceSessions} does it on its next run. */
+    private function stopRecording(int $interviewId): void
+    {
+        try {
+            $this->recordings->stopAndAnnounce($interviewId);
+        } catch (ExternalServiceUnavailable $e) {
+            $this->logger->warning('A call recording could not be stopped; the sweep will retry.', ['interview_id' => $interviewId, 'exception' => $e]);
         }
     }
 

@@ -6,6 +6,7 @@ One line per decision; the detail sections below win if they disagree.
 
 - 2026-10-11: all four forms, built in this order: (1) Zoom, Google Meet and Microsoft Teams integration, (2) recorded one-way video, (3) live video inside the platform, (4) voice calls through Asterisk with a licensed SIP trunk and masked numbers (Decided).
 - 2026-10-12: form 2 part 1 (authoring, recording consent, decline) coded (see "Form 2 part 1 coded").
+- 2026-10-12: form 3 part 3 (recording of the voice bridge) coded: the audio is fetched through ARI, recording starts only with the candidate on the line and ends with the call (see "Form 3 part 3 coded").
 - 2026-10-12: form 2 part 2 (recording: takes, chunked upload, retakes) coded (see "Form 2 part 2 coded").
 - 2026-10-12: form 1 part 4 (deployment files in `deploy/janus/`) coded: one container on the host network, internal webhooks on a loopback-only nginx server (see "Form 1 part 4 coded").
 - 2026-10-11: recording is optional per interview and starts only after the candidate's explicit consent, with a retention period and permanent deletion (Decided).
@@ -407,4 +408,13 @@ Form 3 (voice through Asterisk):
 
 All three forms are designed. Coding order: form 1 parts 1 to 4, form 2 parts 1 to 3, form 3 parts 1 to 4. Waiting for the user: a licensed SIP trunk contract and one number (DID), and root setup of the Janus and Asterisk containers.
 
+### Form 3 part 3 coded (2026-10-12)
+
+Decided by the user (2026-10-12): the audio file is **fetched through ARI** (`GET /recordings/stored/{name}/file`, then `DELETE`), with no shared volume and no converter; a recording **starts only while the candidate is on the line** (409 `no-live-call`) and **ends with the call**. Migration `000133`: `recruitment_interview_recordings.media` (`video` or `audio`, CHECK, default `video`). New endpoints: company `POST .../interview/voice/recording/start|stop`; the list, stream and delete endpoints of form 1 serve audio too (`media` in the resource, `audio/wav` for the file). New code: `RecordingMedia`, `StartVoiceRecording`, `StopVoiceRecording`, `VoiceRecordingStopper`, `VoiceRecordingPipeline`, event `VoiceRecordingStopped` and its queued listener `StoreVoiceRecordingWhenStopped` (`bulk` queue, 6 tries, backoff 5 s to 15 min). Tests: `VoiceRecordingsTest.php`; the helpers of `VoiceCallsTest` moved to `tests/Concerns/DrivesVoiceInterviews.php`. Interpretations to confirm:
+
+1. **The announcement is recorded too.** Asterisk records the mixing bridge and plays the sound `jobportal/recording-announcement` ("this call is recorded", Indonesian, shipped with part 4) into the same bridge at the same moment, so the team hears it as well and the file proves the notice was given.
+2. **One recording per call.** A call that ends (hangup event, or the minute sweep of `recruitment:close-voice-sessions` when the event was lost or Asterisk was down) stops its recording. A second call needs a new start and a new announcement. The consent stays locked once any recording row exists (409 `recording-started`).
+3. **Format and length.** One mono `wav` file, at most the maximum call length (`interview.voice_max_call_minutes`, so Asterisk ends it by itself); about 1 MB per minute (8 kHz). The duration stored is the time between start and stop, not read from the file.
+4. **Fetching is retried.** Asterisk finishes the file a moment after the stop, so a missing file is retried by the queue; after the last retry the recording is `failed` with no file. A start whose announcement fails is stopped and deleted again and nothing is stored.
+5. **Not done:** a file that stays on the Asterisk server after a failure (or after a start that failed half way) is cleaned there, not by the API: part 4 adds a daily cleanup of the recording folder. Erasure and retention need no change: they work on the path of the stored file whatever its media. The panel is not told in real time (`RecordingChanged` stays video only); the answer of start and stop and the call log are enough for a UI that polls.
 

@@ -313,5 +313,5 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `voice-disabled` | 409 | Recruitment | Phone interviews are switched off. |
 | `voice-not-enabled` | 422 | Recruitment |  |
 | `voice-quota-used` | 409 | Recruitment | Your company used all its phone interview minutes of this month. |
-| `voice-server-unavailable` | 503 | Recruitment | The voice server is unavailable. |
+| `voice-server-unavailable` | 503 | Recruitment | The recording cannot be fetched. |
 | `voice-window-closed` | 409 | Recruitment |  |

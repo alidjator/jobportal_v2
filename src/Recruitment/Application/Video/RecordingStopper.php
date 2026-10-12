@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application\Video;
 
 use Src\Recruitment\Domain\Events\RecordingStopped;
 use Src\Recruitment\Domain\Video\InterviewRecording;
+use Src\Recruitment\Domain\Video\RecordingMedia;
 use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\VideoRoom;
 use Src\Shared\Application\Clock;
@@ -28,7 +29,7 @@ final readonly class RecordingStopper
      */
     public function stop(int $interviewId, VideoRoom $room): ?InterviewRecording
     {
-        $running = $this->recordings->active($interviewId, forUpdate: true);
+        $running = $this->recordings->active($interviewId, forUpdate: true, media: RecordingMedia::Video);
 
         if (! $running instanceof InterviewRecording) {
             return null;

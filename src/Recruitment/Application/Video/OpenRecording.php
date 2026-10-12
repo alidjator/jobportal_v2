@@ -38,7 +38,12 @@ final readonly class OpenRecording
 
         $stream = $this->streams->readStream($recording->path) ?? throw EntityNotFound::of('Recording', $recordingId);
         $extension = pathinfo($recording->path, PATHINFO_EXTENSION);
+        $mime = match ($extension) {
+            'mp4' => 'video/mp4',
+            'wav' => 'audio/wav',
+            default => 'video/webm',
+        };
 
-        return new StreamedFile($stream, (int) $recording->sizeBytes, $extension === 'mp4' ? 'video/mp4' : 'video/webm', "interview-{$interviewId}-recording-{$recordingId}.{$extension}");
+        return new StreamedFile($stream, (int) $recording->sizeBytes, $mime, "interview-{$interviewId}-recording-{$recordingId}.{$extension}");
     }
 }

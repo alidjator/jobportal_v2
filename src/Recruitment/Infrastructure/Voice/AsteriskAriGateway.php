@@ -22,8 +22,15 @@ final readonly class AsteriskAriGateway implements VoiceGateway
 
     private const int TIMEOUT_SECONDS = 5;
 
+    private const int DOWNLOAD_TIMEOUT_SECONDS = 300;
+
     /** Seconds the phone may ring before the voice server gives up. */
     private const int RING_SECONDS = 45;
+
+    /** The file format of a call recording and the sound (a file of the voice server's sound library, set up with it) that announces it. */
+    public const string RECORDING_FORMAT = 'wav';
+
+    public const string RECORDING_ANNOUNCEMENT = 'jobportal/recording-announcement';
 
     /** The dialplan context a browser account may only reach (the interview extension); it is set up with the voice server (`deploy/asterisk/`). */
     private const string TEAM_CONTEXT = 'jobportal-team';
@@ -111,6 +118,54 @@ final readonly class AsteriskAriGateway implements VoiceGateway
         $this->send('post', '/channels/'.rawurlencode($channelId).'/variable', ['variable' => 'TIMEOUT(absolute)', 'value' => (string) $seconds], 'limit duration');
     }
 
+    public function startRecording(string $bridgeId, string $name, int $maxSeconds): void
+    {
+        // `ifExists=fail` so a repeated start can never overwrite a recording; a wav file plays in every browser.
+        $this->send('post', '/bridges/'.rawurlencode($bridgeId).'/record', [
+            'name' => $name,
+            'format' => self::RECORDING_FORMAT,
+            'maxDurationSeconds' => max(1, $maxSeconds),
+            'ifExists' => 'fail',
+            'beep' => 'false',
+        ], 'start recording');
+    }
+
+    public function announceRecording(string $bridgeId): void
+    {
+        $this->send('post', '/bridges/'.rawurlencode($bridgeId).'/play', ['media' => 'sound:'.self::RECORDING_ANNOUNCEMENT], 'announce recording');
+    }
+
+    public function stopRecording(string $name): void
+    {
+        $this->send('post', '/recordings/live/'.rawurlencode($name).'/stop', [], 'stop recording', allowed: [404]);
+    }
+
+    public function fetchRecording(string $name)
+    {
+        $file = tmpfile();
+
+        if ($file === false) {
+            throw new ExternalServiceUnavailable('The recording cannot be fetched.', self::VOICE_UNAVAILABLE);
+        }
+
+        $response = $this->send('get', '/recordings/stored/'.rawurlencode($name).'/file', [], 'fetch recording', allowed: [404], sink: $file);
+
+        if ($response->status() === 404) {
+            fclose($file);
+
+            return null;
+        }
+
+        rewind($file);
+
+        return $file;
+    }
+
+    public function deleteRecording(string $name): void
+    {
+        $this->send('delete', '/recordings/stored/'.rawurlencode($name), [], 'delete recording', allowed: [404]);
+    }
+
     public function sipDomain(): string
     {
         return (string) ($this->sipDomain ?: parse_url($this->required($this->wssUrl), PHP_URL_HOST));
@@ -136,12 +191,18 @@ final readonly class AsteriskAriGateway implements VoiceGateway
     /**
      * @param  array<string, mixed>  $data  the query string, or the JSON body when `$json` is set
      * @param  list<int>  $allowed  statuses that are not a failure for this request
+     * @param  resource|null  $sink  where the body of the response is written instead of being held in memory
      *
      * @throws ExternalServiceUnavailable
      */
-    private function send(string $method, string $path, array $data, string $step, array $allowed = [], bool $json = false): Response
+    private function send(string $method, string $path, array $data, string $step, array $allowed = [], bool $json = false, $sink = null): Response
     {
         $request = $this->request();
+
+        if ($sink !== null) {
+            // A finished call can be tens of megabytes, far more than the few seconds a control request gets.
+            $request = $request->sink($sink)->timeout(self::DOWNLOAD_TIMEOUT_SECONDS);
+        }
 
         try {
             // ARI takes its parameters in the query string and rejects an empty JSON body, so only the configuration calls carry a body.

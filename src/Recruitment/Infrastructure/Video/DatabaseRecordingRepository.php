@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Src\Recruitment\Domain\Video\InterviewRecording;
+use Src\Recruitment\Domain\Video\RecordingMedia;
 use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\RecordingStatus;
 use stdClass;
@@ -22,6 +23,7 @@ final readonly class DatabaseRecordingRepository implements RecordingRepository
     {
         $id = (int) $this->connection->table(self::TABLE)->insertGetId([
             'interview_id' => $recording->interviewId,
+            'media' => $recording->media->value,
             'status' => $recording->status->value,
             'started_by' => $recording->startedBy,
             'started_at' => $this->format($recording->startedAt),
@@ -29,7 +31,7 @@ final readonly class DatabaseRecordingRepository implements RecordingRepository
             'updated_at' => $this->format($recording->startedAt),
         ]);
 
-        return new InterviewRecording($recording->interviewId, $recording->status, $recording->startedBy, $recording->startedAt, null, null, null, null, null, null, $id);
+        return new InterviewRecording($recording->interviewId, $recording->status, $recording->startedBy, $recording->startedAt, null, null, null, null, null, null, $id, $recording->media);
     }
 
     public function find(int $id, bool $forUpdate = false): ?InterviewRecording
@@ -59,9 +61,13 @@ final readonly class DatabaseRecordingRepository implements RecordingRepository
         ]);
     }
 
-    public function active(int $interviewId, bool $forUpdate = false): ?InterviewRecording
+    public function active(int $interviewId, bool $forUpdate = false, ?RecordingMedia $media = null): ?InterviewRecording
     {
         $query = $this->connection->table(self::TABLE)->where('interview_id', $interviewId)->where('status', RecordingStatus::Recording->value);
+
+        if ($media instanceof RecordingMedia) {
+            $query->where('media', $media->value);
+        }
 
         if ($forUpdate) {
             $query->lockForUpdate();
@@ -70,6 +76,17 @@ final readonly class DatabaseRecordingRepository implements RecordingRepository
         $row = $query->first();
 
         return $row === null ? null : $this->toRecording($row);
+    }
+
+    public function running(RecordingMedia $media): array
+    {
+        return $this->connection->table(self::TABLE)
+            ->where('status', RecordingStatus::Recording->value)
+            ->where('media', $media->value)
+            ->orderBy('id')
+            ->get()
+            ->map(fn (stdClass $row): InterviewRecording => $this->toRecording($row))
+            ->all();
     }
 
     public function exists(int $interviewId): bool
@@ -129,6 +146,7 @@ final readonly class DatabaseRecordingRepository implements RecordingRepository
             $row->duration_seconds === null ? null : (int) $row->duration_seconds,
             $this->time($row->expires_at),
             (int) $row->id,
+            RecordingMedia::from((string) $row->media),
         );
     }
 

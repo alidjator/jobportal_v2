@@ -7,7 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Domain\Video\InterviewRecording;
 
 /**
- * A recording of an interview. `status` is `recording`, `processing` (being converted and stored), `ready` (the file can be streamed) or `failed` (no file).
+ * A recording of an interview. `media` is `video` (a video room) or `audio` (a phone call). `status` is `recording`, `processing` (being converted and stored), `ready` (the file can be streamed) or `failed` (no file).
  * `expires_at` is when it is deleted by itself.
  *
  * @property InterviewRecording $resource
@@ -22,6 +22,8 @@ final class RecordingResource extends JsonResource
         return [
             'id' => $recording->id,
             'interview_id' => $recording->interviewId,
+            /** @var 'video'|'audio' */
+            'media' => $recording->media->value,
             /** @var 'recording'|'processing'|'ready'|'failed' */
             'status' => $recording->status->value,
             'started_by' => $recording->startedBy,

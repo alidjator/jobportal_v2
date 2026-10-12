@@ -12,8 +12,11 @@ interface RecordingRepository
 
     public function update(InterviewRecording $recording): void;
 
-    /** The recording that is running now, if any. */
-    public function active(int $interviewId, bool $forUpdate = false): ?InterviewRecording;
+    /** The recording that is running now, if any; with `$media` only one of that kind. */
+    public function active(int $interviewId, bool $forUpdate = false, ?RecordingMedia $media = null): ?InterviewRecording;
+
+    /** @return list<InterviewRecording> every recording of that kind that is running now, on any interview */
+    public function running(RecordingMedia $media): array;
 
     /** Whether recording ever started for the interview (the consent is then locked). */
     public function exists(int $interviewId): bool;

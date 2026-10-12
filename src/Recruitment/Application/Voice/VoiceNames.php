@@ -12,6 +12,12 @@ final class VoiceNames
         return 'interview-'.$interviewId;
     }
 
+    /** The name of the recording on the voice server. */
+    public static function recording(int $recordingId): string
+    {
+        return 'interview-recording-'.$recordingId;
+    }
+
     /** The interview of a bridge name, or null for any other name. */
     public static function interviewOfBridge(string $bridgeId): ?int
     {

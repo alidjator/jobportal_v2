@@ -79,6 +79,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/interview/voice/join', [VoiceInterviewController::class, 'join'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/voice/call', [VoiceInterviewController::class, 'call'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/voice/hangup', [VoiceInterviewController::class, 'hangup'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/voice/recording/start', [VoiceInterviewController::class, 'startRecording'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/voice/recording/stop', [VoiceInterviewController::class, 'stopRecording'])->whereNumber('id');
     Route::get('company/interviews/{id}/calls', [VoiceInterviewController::class, 'calls'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/recording/start', [InterviewRecordingController::class, 'start'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/recording/stop', [InterviewRecordingController::class, 'stop'])->whereNumber('id');
