@@ -25,7 +25,7 @@ use Src\Assessment\Domain\TestKind;
 use Src\Shared\Application\Settings\Settings;
 
 /**
- * Scores an attempt from its answers and keeps the result. A skill test gives points, a percentage and a band (the band waits while a long-text answer has no
+ * Scores an attempt from its answers and keeps the result. A skill test gives points, a percentage and a band (the band waits while a long-text or video answer has no
  * score yet). A psychological battery gives the raw score of each scale; norms and the report come later. It can run again after an assessor scored an
  * answer: it only reads the stored answers, so the result follows them.
  */
@@ -63,7 +63,7 @@ final readonly class ScoreAttempt
             $answer = $answers[$item->questionId] ?? null;
             $score = AnswerGrader::grade($question, $answer) ?? $answer?->score;
 
-            if ($answer instanceof Answer && $question->type !== QuestionType::LongText) {
+            if ($answer instanceof Answer && ! in_array($question->type, [QuestionType::LongText, QuestionType::VideoAnswer], true)) {
                 $scores[$item->questionId] = $score;
             }
 
@@ -98,6 +98,10 @@ final readonly class ScoreAttempt
                 $sectionEarned += $score ?? 0.0;
 
                 if ($question->type === QuestionType::LongText && $answer instanceof Answer && trim((string) $answer->textValue) !== '' && $answer->score === null) {
+                    $pending = true;
+                }
+
+                if ($question->type === QuestionType::VideoAnswer && $answer instanceof Answer && $answer->score === null) {
                     $pending = true;
                 }
 

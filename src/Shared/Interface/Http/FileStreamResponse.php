@@ -1,18 +1,18 @@
 <?php
 
-namespace Src\Recruitment\Interface\Http;
+namespace Src\Shared\Interface\Http;
 
 use Illuminate\Http\Request;
-use Src\Recruitment\Application\Video\RecordedFile;
+use Src\Shared\Application\StreamedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/** Streams a recording the way a video player asks for it: the whole file, or one byte range of it (so a player can seek). It is never cached and never a download. */
-final class RecordingStreamResponse
+/** Streams a stored video the way a video player asks for it: the whole file, or one byte range of it (so a player can seek). It is never cached and never a download. */
+final class FileStreamResponse
 {
     private const int CHUNK_BYTES = 262_144;
 
-    public static function make(Request $request, RecordedFile $file): Response
+    public static function make(Request $request, StreamedFile $file): Response
     {
         $headers = [
             'Content-Type' => $file->mimeType,

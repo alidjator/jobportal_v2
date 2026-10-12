@@ -70,7 +70,7 @@ final readonly class ScoringAccess
     }
 
     /**
-     * The long-text questions of the attempt that have a written answer, in the order they were asked.
+     * The questions of the attempt a person scores that have an answer (a written long-text answer or a video), in the order they were asked.
      *
      * @return list<array{question: Question, answer: Answer}>
      */
@@ -86,7 +86,7 @@ final readonly class ScoringAccess
             $question = $questions[$item->questionId] ?? null;
             $answer = $answers[$item->questionId] ?? null;
 
-            if ($question instanceof Question && $answer instanceof Answer && $question->type === QuestionType::LongText && trim((string) $answer->textValue) !== '') {
+            if ($question instanceof Question && $answer instanceof Answer && ($question->type === QuestionType::VideoAnswer || ($question->type === QuestionType::LongText && trim((string) $answer->textValue) !== ''))) {
                 $items[] = ['question' => $question, 'answer' => $answer];
             }
         }

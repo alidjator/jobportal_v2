@@ -42,10 +42,34 @@ final readonly class DatabaseVideoTakeRepository implements VideoTakeRepository
         $this->connection->table(self::TABLE)->where('id', $take->id)->update($this->values($take) + ['updated_at' => $this->clock->now()]);
     }
 
+    public function scheduleExpiry(int $attemptId, DateTimeImmutable $expiresAt): void
+    {
+        $this->connection->table(self::TABLE)->where('attempt_id', $attemptId)->where('status', VideoTakeStatus::Complete->value)->update(['expires_at' => $expiresAt, 'updated_at' => $this->clock->now()]);
+    }
+
+    public function expired(DateTimeImmutable $now, int $limit): array
+    {
+        return $this->hydrateAll($this->connection->table(self::TABLE)->where('status', VideoTakeStatus::Complete->value)->where('expires_at', '<=', $now)->orderBy('id')->limit($limit)->get()->all());
+    }
+
+    public function stale(DateTimeImmutable $startedBefore, int $limit): array
+    {
+        return $this->hydrateAll($this->connection->table(self::TABLE)->where('status', VideoTakeStatus::Recording->value)->where('started_at', '<', $startedBefore)->orderBy('id')->limit($limit)->get()->all());
+    }
+
     public function ofQuestion(int $attemptId, int $questionId): array
     {
         return array_values(array_map(fn (stdClass $row): VideoTake => $this->hydrate($row), $this->connection->table(self::TABLE)
             ->where('attempt_id', $attemptId)->where('question_id', $questionId)->orderBy('number')->get()->all()));
+    }
+
+    /**
+     * @param  list<stdClass>  $rows
+     * @return list<VideoTake>
+     */
+    private function hydrateAll(array $rows): array
+    {
+        return array_values(array_map(fn (stdClass $row): VideoTake => $this->hydrate($row), $rows));
     }
 
     /** @return array<string, mixed> */

@@ -5,6 +5,7 @@ namespace Src\Assessment\Application\Results;
 use Src\Assessment\Application\Attempts\AttemptContexts;
 use Src\Assessment\Application\Attempts\ScoreAttempt;
 use Src\Assessment\Domain\AnswerRepository;
+use Src\Assessment\Domain\QuestionType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\TransactionManager;
@@ -14,7 +15,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * An assessor scores one written answer with a whole number from 0 to the points of the question; scoring again corrects the earlier score, until the application leaves its assessment stage (moved on or rejected). The result is worked
+ * An assessor scores one written or video answer with a whole number from 0 to the points of the question; scoring again corrects the earlier score, until the application leaves its assessment stage (moved on or rejected). The result is worked
  * out again at once, so when the last written answer gets its score the result becomes final with its percentage and band.
  */
 final readonly class ScoreAnswer
@@ -66,7 +67,7 @@ final readonly class ScoreAnswer
             $context = $this->contexts->load($invitation, $attempt, $this->clock->now());
             $this->scoring->execute($attempt, $invitation, $context->test, $context->sections);
 
-            return new ScoringItem($questionId, $entry['question']->text, $points, (string) $entry['answer']->textValue, (float) $score);
+            return new ScoringItem($questionId, $entry['question']->text, $points, $entry['question']->type === QuestionType::LongText ? (string) $entry['answer']->textValue : null, (float) $score, $entry['question']->type);
         });
     }
 }

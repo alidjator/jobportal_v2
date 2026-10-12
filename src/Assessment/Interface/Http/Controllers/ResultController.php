@@ -9,6 +9,7 @@ use Src\Assessment\Application\Results\DownloadReport;
 use Src\Assessment\Application\Results\GetInvitationResult;
 use Src\Assessment\Application\Results\ListIntegrityEvents;
 use Src\Assessment\Application\Results\ListScoringAnswers;
+use Src\Assessment\Application\Results\OpenCandidateVideo;
 use Src\Assessment\Application\Results\ScoreAnswer;
 use Src\Assessment\Interface\Http\Requests\ScoreAnswerRequest;
 use Src\Assessment\Interface\Http\Resources\IntegrityLogResource;
@@ -16,7 +17,9 @@ use Src\Assessment\Interface\Http\Resources\InvitationResultResource;
 use Src\Assessment\Interface\Http\Resources\ScoringItemResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
+use Src\Shared\Interface\Http\FileStreamResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /** The results of the tests sent for an application: scores, the integrity log, the assessors' scoring and the signed report as a PDF. */
 final class ResultController extends ApiController
@@ -39,6 +42,11 @@ final class ResultController extends ApiController
     public function score(ScoreAnswerRequest $request, int $id, int $questionId, ActorResolver $actors, ScoreAnswer $score): ScoringItemResource
     {
         return new ScoringItemResource($score->execute($actors->fromRequest($request), $id, $questionId, $request->score()));
+    }
+
+    public function video(Request $request, int $id, int $questionId, ActorResolver $actors, OpenCandidateVideo $open): SymfonyResponse
+    {
+        return FileStreamResponse::make($request, $open->execute($actors->fromRequest($request), $id, $questionId));
     }
 
     public function report(Request $request, int $id, ActorResolver $actors, DownloadReport $download): Response

@@ -72,6 +72,17 @@ final readonly class VideoTake
             $this->chunkCount, $this->startedAt, $this->deadlineAt, $this->completedAt, $now, $this->expiresAt);
     }
 
+    /** The retention period is over: the file is gone, the take stays as the record of what was answered. */
+    public function purge(): self
+    {
+        if ($this->status !== VideoTakeStatus::Complete) {
+            throw new LogicException('Only a complete take is purged.');
+        }
+
+        return new self($this->id, $this->attemptId, $this->questionId, $this->number, VideoTakeStatus::Purged, $this->mimeType, null, $this->sizeBytes,
+            $this->chunkCount, $this->startedAt, $this->deadlineAt, $this->completedAt, null, $this->expiresAt);
+    }
+
     private function assertRecording(): void
     {
         if (! $this->isRecording()) {

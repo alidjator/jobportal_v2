@@ -4,6 +4,7 @@ namespace Src\Assessment\Infrastructure\Persistence;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
+use Src\Assessment\Application\Video\VideoTakes;
 use Src\Assessment\Domain\AssessmentDataEraser;
 
 final readonly class DatabaseAssessmentDataEraser implements AssessmentDataEraser
@@ -18,11 +19,28 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
             ->all());
     }
 
+    public function videoPaths(int $userId): array
+    {
+        $paths = [];
+
+        foreach ($this->connection->table('assessment_video_takes')->whereIn('attempt_id', $this->attemptIds($userId))->whereIn('status', ['complete', 'recording'])->get() as $take) {
+            if ($take->path !== null) {
+                $paths[] = (string) $take->path;
+            }
+
+            for ($index = 0; $index < (int) $take->chunk_count; $index++) {
+                $paths[] = VideoTakes::chunkPath((int) $take->id, $index);
+            }
+        }
+
+        return $paths;
+    }
+
     public function clearPersonalData(int $userId): void
     {
         $attempts = $this->attemptIds($userId);
 
-        foreach (['assessment_answers', 'assessment_drawings', 'assessment_speed_column_results', 'assessment_integrity_events'] as $table) {
+        foreach (['assessment_answers', 'assessment_drawings', 'assessment_video_takes', 'assessment_speed_column_results', 'assessment_integrity_events'] as $table) {
             $this->connection->table($table)->whereIn('attempt_id', $attempts)->delete();
         }
 

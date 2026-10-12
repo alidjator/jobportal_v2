@@ -294,6 +294,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `video-capacity-full` | 409 | Recruitment | Too many video interviews are running right now. Try again in a few minutes. |
 | `video-consent-required` | 422 | Assessment |  |
 | `video-disabled` | 409 | Recruitment | Interviews in the platform are switched off. |
+| `video-expired` | 409 | Assessment | The retention period of this video is over and the file was deleted. |
 | `video-not-allowed` | 422 | Assessment |  |
 | `video-not-enabled` | 422 | Recruitment |  |
 | `video-room-not-open` | 409 | Recruitment | The video room is not open yet. |

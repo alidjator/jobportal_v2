@@ -264,6 +264,17 @@ Interpretations (differences from the sketch above):
 4. **Error codes:** `chunk-out-of-order` (409, with `expected_index`; a chunk already received is accepted again without effect so a retry is safe), `video-take-closed` (409), `upload-deadline-passed` (409), `file-too-large` (422, a chunk over 5 MB), `video-too-large` (422, total over `assessment.max_video_megabytes`), `invalid-video` (422: neither WebM nor MP4, an empty chunk, no chunk, a missing chunk). After the attempt is submitted or ran out of time every write is `attempt-closed` (409): a take still uploading at that moment is lost.
 5. **Not yet done (part 3):** `expires_at` is never set and nothing purges chunks or files, account erasure does not yet delete the files, and a video answer still counts 0 points with no `pending_scoring`. Do not enable video tests for real candidates before part 3.
 
+### Form 2 part 3 coded (2026-10-12)
+
+Migration `000130`: the take status gains `purged`. New: `OpenCandidateVideo` and the route `GET /company/assessment/invitations/{id}/videos/{questionId}`, scoring of video answers in the existing `scoring` endpoints, `PurgeExpiredVideos` (`assessment:purge-expired-videos`, daily 03:45), `PurgeStaleVideoChunks` (`assessment:purge-stale-video-chunks`, hourly), video files in `EraseAssessmentData`. The range streaming moved from Recruitment to Shared (`Shared\Interface\Http\FileStreamResponse`, `Shared\Application\StreamedFile`) so both contexts use it. Tests: `VideoReviewTest.php`; the recording helpers moved to `tests/Concerns/RecordsVideoAnswers.php`.
+
+1. **Who streams:** every member who may see the application (as for the result), not only the assessors; the attempt must be submitted (404 before). A candidate gets 403. Never a download header, `no-store`.
+2. **Scoring as long text:** `GET scoring` lists the video answer with `type: video_answer` and `answer: null`; `PUT scoring/questions/{q}` takes a whole score from 0 to the points. A video answer without a score makes the result `pending_scoring`; a video question without a take counts 0 and waits for nobody (the candidate did not answer). The `type` key is new on every scoring item (`long_text` or `video_answer`).
+3. **Retention:** `expires_at` of the complete takes is set when the attempt is submitted (by the candidate or by the server) to submission + `assessment.video_retention_days` (global value). The daily task deletes the file and marks the take `purged`; the answer, the score and the row stay, and streaming answers `video-expired` (409).
+4. **Unfinished takes:** a take still `recording` a day after it started is rejected and its chunks deleted (hourly).
+5. **Erasure:** the files (complete takes and chunks of unfinished ones) are deleted before the rows, like the drawings; the takes are deleted with the answers.
+6. Part 1 point 5 (a video counts 0 points until scoring exists) no longer applies: video tests can be enabled.
+
 ### Form 3: voice calls through Asterisk (design started 2026-10-12)
 
 Decided earlier: Asterisk; calls reach ordinary phone numbers only through a licensed SIP trunk provider; both numbers masked; recording optional with consent (Decided).

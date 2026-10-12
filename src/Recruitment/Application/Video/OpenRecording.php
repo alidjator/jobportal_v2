@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\RecordingStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\FileStreams;
+use Src\Shared\Application\StreamedFile;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -22,7 +23,7 @@ final readonly class OpenRecording
      * @throws EntityNotFound
      * @throws StateConflict `recording-not-ready`
      */
-    public function execute(Actor $actor, int $interviewId, int $recordingId): RecordedFile
+    public function execute(Actor $actor, int $interviewId, int $recordingId): StreamedFile
     {
         $this->lookup->find($actor, $interviewId);
         $recording = $this->recordings->find($recordingId);
@@ -38,6 +39,6 @@ final readonly class OpenRecording
         $stream = $this->streams->readStream($recording->path) ?? throw EntityNotFound::of('Recording', $recordingId);
         $extension = pathinfo($recording->path, PATHINFO_EXTENSION);
 
-        return new RecordedFile($stream, (int) $recording->sizeBytes, $extension === 'mp4' ? 'video/mp4' : 'video/webm', "interview-{$interviewId}-recording-{$recordingId}.{$extension}");
+        return new StreamedFile($stream, (int) $recording->sizeBytes, $extension === 'mp4' ? 'video/mp4' : 'video/webm', "interview-{$interviewId}-recording-{$recordingId}.{$extension}");
     }
 }

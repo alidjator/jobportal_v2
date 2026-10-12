@@ -12,11 +12,11 @@ use Src\Recruitment\Application\Video\ListInterviewRecordings;
 use Src\Recruitment\Application\Video\OpenRecording;
 use Src\Recruitment\Application\Video\StartRecording;
 use Src\Recruitment\Application\Video\StopRecording;
-use Src\Recruitment\Interface\Http\RecordingStreamResponse;
 use Src\Recruitment\Interface\Http\Resources\AttendanceResource;
 use Src\Recruitment\Interface\Http\Resources\RecordingResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
+use Src\Shared\Interface\Http\FileStreamResponse;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /** Recording of a video interview and what it left behind (the recordings and who attended), for the members who may see the application. */
@@ -39,7 +39,7 @@ final class InterviewRecordingController extends ApiController
 
     public function file(Request $request, int $id, int $recordingId, ActorResolver $actors, OpenRecording $open): SymfonyResponse
     {
-        return RecordingStreamResponse::make($request, $open->execute($actors->fromRequest($request), $id, $recordingId));
+        return FileStreamResponse::make($request, $open->execute($actors->fromRequest($request), $id, $recordingId));
     }
 
     public function destroy(Request $request, int $id, int $recordingId, ActorResolver $actors, DeleteRecording $delete): Response

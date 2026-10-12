@@ -65,6 +65,8 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
+use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
+use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Accounts\ErasureStep;
@@ -104,12 +106,14 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
-        $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class]);
+        $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInvitationRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ExpireInvitationsCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(AutoSubmitAttemptsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeStaleVideoChunksCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeExpiredVideosCommand::class)->dailyAt('03:45')->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {

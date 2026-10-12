@@ -56,12 +56,13 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     Route::get('invitations/{id}', [InvitationController::class, 'show'])->whereNumber('id');
     Route::post('invitations/{id}/cancel', [InvitationController::class, 'cancel'])->whereNumber('id');
 
-    // The result of a test, its integrity log, the scoring of the written answers by the assessors and the signed report as a PDF.
+    // The result of a test, its integrity log, the scoring of the written and video answers by the assessors, the video streams and the signed report as a PDF.
     Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
         Route::get('result', [ResultController::class, 'show']);
         Route::get('integrity-events', [ResultController::class, 'integrityEvents']);
         Route::get('scoring', [ResultController::class, 'scoring']);
         Route::put('scoring/questions/{questionId}', [ResultController::class, 'score']);
+        Route::get('videos/{questionId}', [ResultController::class, 'video']);
         Route::get('report.pdf', [ResultController::class, 'report']);
     });
 });
