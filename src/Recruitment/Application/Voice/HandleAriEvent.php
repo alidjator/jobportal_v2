@@ -60,7 +60,7 @@ final readonly class HandleAriEvent
             };
         } catch (ExternalServiceUnavailable $e) {
             // The channel cannot be put where it belongs; leaving it alone would leave a caller in silence.
-            $this->logger->warning('The voice server refused a request while handling an event.', ['type' => $event['type'] ?? null, 'channel' => $channelId, 'exception' => $e]);
+            $this->logger->warning('The voice server refused a request while handling an event.', ['type' => $event['type'], 'channel' => $channelId, 'exception' => $e]);
             $this->hangUpQuietly($channelId);
         }
     }

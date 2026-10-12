@@ -13,7 +13,6 @@ use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\RecordingStatus;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\FileStreams;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
@@ -34,7 +33,6 @@ final readonly class RecordingPipeline
         private RecordingConverter $converter,
         private RecordingVolume $volume,
         private FileStreams $streams,
-        private FileStorage $files,
         private Settings $settings,
         private TransactionManager $transactions,
         private EventDispatcher $events,

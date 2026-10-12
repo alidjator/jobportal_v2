@@ -15,6 +15,7 @@ final class JanusWebhookController extends ApiController
     /** The event handler posts one event or a list of them. */
     public function events(Request $request, RecordJanusEvents $record): Response
     {
+        /** @var array<mixed> $payload */
         $payload = $request->json()->all();
         $record->execute(array_is_list($payload) ? $payload : [$payload]);
 

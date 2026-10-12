@@ -1,0 +1,45 @@
+# Run from this directory: `docker compose up -d --build` (`setup.sh` creates asterisk.env and the `.env` symlink Compose reads; asterisk.env holds secrets, never commit it).
+# Needs a user in the docker group; the application user has no access to the Docker socket, so a sysadmin runs it.
+#
+# Host networking, like Janus: the trunk and the browsers need a wide UDP range and the real public address. ARI and the browsers' WebSocket share one HTTP
+# server on 127.0.0.1:8088; only the host nginx can reach it, and it passes `/voice-ws` to `/ws` only.
+services:
+  asterisk:
+    build: .
+    image: jobportal-asterisk:1
+    restart: unless-stopped
+    network_mode: host
+    # Run as the application's user so the recordings can be deleted by the queue worker and by the cleanup (`id -u jobportal`).
+    user: "${APP_UID}:${APP_GID}"
+    env_file: asterisk.env
+    volumes:
+      - ${RECORDINGS_HOST_DIR}:/var/spool/asterisk/recording
+      # Recorded prompts (`recording-announcement.wav`, `call-back-info.wav`, 8 kHz mono) replace the generated ones when they exist.
+      - ./sounds/custom:/opt/sounds-custom:ro
+    # The server had about 1 GB of free memory when this was written, shared with Janus (900 MB): a few simultaneous calls need far less than this limit.
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 2
+    pids_limit: 512
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+      - /etc/asterisk:size=2m,uid=${APP_UID},gid=${APP_GID},mode=0700
+      - /run/asterisk:size=16m,uid=${APP_UID},gid=${APP_GID},mode=0700
+      - /var/log/asterisk:size=8m,uid=${APP_UID},gid=${APP_GID}
+      - /var/spool/asterisk:size=16m,uid=${APP_UID},gid=${APP_GID}
+      - /var/lib/asterisk/sounds/jobportal:size=8m,uid=${APP_UID},gid=${APP_GID}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u \"$$ARI_USER:$$ARI_PASSWORD\" http://127.0.0.1:8088/ari/asterisk/info >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

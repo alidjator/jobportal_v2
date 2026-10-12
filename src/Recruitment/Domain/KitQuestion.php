@@ -37,7 +37,7 @@ final readonly class KitQuestion
             $errors['questions'] = [$min > 0 ? "Give between {$min} and ".self::MAX_PER_LIST.' questions.' : 'Give at most '.self::MAX_PER_LIST.' questions.'];
         }
 
-        foreach (array_values($raw) as $index => $item) {
+        foreach ($raw as $index => $item) {
             $text = trim($item['text']);
             $guidance = isset($item['guidance']) ? trim($item['guidance']) : '';
 

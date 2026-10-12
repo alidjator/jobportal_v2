@@ -69,7 +69,7 @@ final readonly class DatabaseVideoTakeRepository implements VideoTakeRepository
      */
     private function hydrateAll(array $rows): array
     {
-        return array_values(array_map(fn (stdClass $row): VideoTake => $this->hydrate($row), $rows));
+        return array_map(fn (stdClass $row): VideoTake => $this->hydrate($row), $rows);
     }
 
     /** @return array<string, mixed> */

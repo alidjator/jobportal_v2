@@ -27,7 +27,8 @@ final class ListenToVoiceServerCommand extends Command
             return self::FAILURE;
         }
 
-        while (true) {
+        // Runs until Supervisor stops it.
+        while (true) { // @phpstan-ignore while.alwaysTrue
             try {
                 $listener->listen();
             } catch (Throwable $e) {

@@ -1,0 +1,16 @@
+# Add inside the TLS `server` block of api-karir.satu.solutions (the file in /home/jobportal/nginx/ and the live one), before `location /`.
+
+# The team's browsers register with Asterisk over WebSocket here; the path must equal the application's ASTERISK_WSS_URL (wss://api-karir.satu.solutions/voice-ws).
+# Only the `/ws` endpoint of Asterisk's HTTP server is passed on: ARI (`/ari`) stays reachable from this machine only. Every account is still checked with a
+# password the application issued for one interview.
+location = /voice-ws {
+    proxy_pass http://127.0.0.1:8088/ws;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    proxy_buffering off;
+    # Browsers ask for the "sip" subprotocol; nginx passes it through.
+}

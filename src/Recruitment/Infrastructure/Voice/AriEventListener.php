@@ -8,7 +8,6 @@ use Src\Recruitment\Application\Voice\VoiceNames;
 use Throwable;
 use WebSocket\Client;
 use WebSocket\Connection;
-use WebSocket\Message\Message;
 use WebSocket\Message\Text;
 
 /**
@@ -37,10 +36,8 @@ final readonly class AriEventListener
     {
         $client = new Client($this->streamUrl());
         $client->setTimeout(30);
-        $client->onText(function (Client $client, Connection $connection, Message $message): void {
-            if ($message instanceof Text) {
-                $this->handleMessage($message->getContent());
-            }
+        $client->onText(function (Client $client, Connection $connection, Text $message): void {
+            $this->handleMessage($message->getContent());
         });
         $client->start();
     }

@@ -64,8 +64,10 @@ final readonly class AsteriskAriGateway implements VoiceGateway
             'transport' => 'transport-wss',
             'context' => self::TEAM_CONTEXT,
             'disallow' => 'all',
-            'allow' => 'opus,ulaw',
+            // The open-source Asterisk has no Opus; G.711 is what browsers and the phone line both speak, so a call is never transcoded.
+            'allow' => 'ulaw,alaw',
             'webrtc' => 'yes',
+            'dtls_auto_generate_cert' => 'yes',
             'direct_media' => 'no',
             'auth' => $username,
             'aors' => $username,

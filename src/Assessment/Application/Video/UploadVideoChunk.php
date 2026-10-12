@@ -33,7 +33,6 @@ final readonly class UploadVideoChunk
 
     /**
      * @throws EntityNotFound
-     * @throws BusinessRuleViolation `file-too-large`, `invalid-video` or `video-too-large`
      * @throws StateConflict `attempt-not-started`, `attempt-closed`, `question-locked`, `video-take-closed`, `upload-deadline-passed` or `chunk-out-of-order`
      */
     public function execute(Actor $actor, int $invitationId, int $questionId, int $takeId, int $index, string $contents, ?string $ip): VideoTake
