@@ -10,6 +10,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Psr\Log\LoggerInterface;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationNotificationType;
@@ -35,6 +36,8 @@ use Src\Recruitment\Application\Video\RecordingConverter;
 use Src\Recruitment\Application\Video\RecordingSignal;
 use Src\Recruitment\Application\Video\RecordingVolume;
 use Src\Recruitment\Application\Video\VideoRoomGateway;
+use Src\Recruitment\Application\Voice\HandleAriEvent;
+use Src\Recruitment\Application\Voice\VoiceGateway;
 use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
@@ -60,6 +63,8 @@ use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\Video\AttendanceRepository;
 use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\VideoRoomRepository;
+use Src\Recruitment\Domain\Voice\CallRepository;
+use Src\Recruitment\Domain\Voice\VoiceSessionRepository;
 use Src\Recruitment\Infrastructure\Analytics\ApplicationsDailyRollup;
 use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
 use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
@@ -113,8 +118,14 @@ use Src\Recruitment\Infrastructure\Video\HmacJoinTokenFactory;
 use Src\Recruitment\Infrastructure\Video\HttpRecordingConverter;
 use Src\Recruitment\Infrastructure\Video\JanusVideoRoomGateway;
 use Src\Recruitment\Infrastructure\Video\LocalRecordingVolume;
+use Src\Recruitment\Infrastructure\Voice\AriEventListener;
+use Src\Recruitment\Infrastructure\Voice\AsteriskAriGateway;
+use Src\Recruitment\Infrastructure\Voice\DatabaseCallRepository;
+use Src\Recruitment\Infrastructure\Voice\DatabaseVoiceSessionRepository;
 use Src\Recruitment\Interface\Broadcasting\RecruitmentChannels;
 use Src\Recruitment\Interface\Console\CloseVideoRoomsCommand;
+use Src\Recruitment\Interface\Console\CloseVoiceSessionsCommand;
+use Src\Recruitment\Interface\Console\ListenToVoiceServerCommand;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
@@ -178,6 +189,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         RecordingSignal::class => BroadcastRecordingSignal::class,
         RecordingRepository::class => DatabaseRecordingRepository::class,
         AttendanceRepository::class => DatabaseAttendanceRepository::class,
+        CallRepository::class => DatabaseCallRepository::class,
+        VoiceSessionRepository::class => DatabaseVoiceSessionRepository::class,
     ];
 
     public function register(): void
@@ -189,6 +202,23 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'janus.admin_secret'),
             $this->service($app, 'janus.api_token'),
             $this->service($app, 'janus.ws_url'),
+        ));
+        $this->app->bind(VoiceGateway::class, fn ($app): VoiceGateway => new AsteriskAriGateway(
+            $app->make(HttpFactory::class),
+            $this->service($app, 'asterisk.ari_url'),
+            $this->service($app, 'asterisk.ari_user'),
+            $this->service($app, 'asterisk.ari_password'),
+            $this->service($app, 'asterisk.wss_url'),
+            $this->service($app, 'asterisk.sip_domain'),
+            $this->service($app, 'asterisk.caller_id'),
+            $this->service($app, 'asterisk.trunk_endpoint') ?? 'trunk',
+        ));
+        $this->app->bind(AriEventListener::class, fn ($app): AriEventListener => new AriEventListener(
+            $app->make(HandleAriEvent::class),
+            $app->make(LoggerInterface::class),
+            $this->service($app, 'asterisk.ari_url'),
+            $this->service($app, 'asterisk.ari_user'),
+            $this->service($app, 'asterisk.ari_password'),
         ));
         $this->app->bind(JoinTokenFactory::class, fn ($app): JoinTokenFactory => new HmacJoinTokenFactory((string) $app->make(Repository::class)->get('app.key')));
         $this->app->bind(RecordingVolume::class, fn ($app): RecordingVolume => new LocalRecordingVolume(
@@ -227,12 +257,13 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             );
         });
 
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command(CloseVoiceSessionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeExpiredRecordingsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
         });
 

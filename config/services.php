@@ -60,9 +60,17 @@ return [
     ],
 
     'asterisk' => [
-        // The voice server for phone interviews (`docs/design/phase-7-tele-interview.md`, form 3). `caller_id` is the platform number (a number of the SIP trunk)
-        // every candidate sees when called; the connection settings of the voice server are added with its gateway.
+        // The voice server for phone interviews (`docs/design/phase-7-tele-interview.md`, form 3). `ari_url` is its REST interface (private, on the Docker
+        // network, for example `http://asterisk:8088/ari`) with the account `ari_user`/`ari_password`; `wss_url` the public WSS address team browsers connect
+        // to and `sip_domain` the domain they register with (the host of `wss_url` when empty). `caller_id` is the platform number (a number of the SIP trunk)
+        // every candidate sees when called, and `trunk_endpoint` the name of the trunk's PJSIP endpoint calls leave through. Any of the first four empty means phone calls answer 503.
+        'ari_url' => env('ASTERISK_ARI_URL'),
+        'ari_user' => env('ASTERISK_ARI_USER'),
+        'ari_password' => env('ASTERISK_ARI_PASSWORD'),
+        'wss_url' => env('ASTERISK_WSS_URL'),
+        'sip_domain' => env('ASTERISK_SIP_DOMAIN'),
         'caller_id' => env('VOICE_CALLER_ID'),
+        'trunk_endpoint' => env('ASTERISK_TRUNK_ENDPOINT', 'trunk'),
     ],
 
     'turn' => [

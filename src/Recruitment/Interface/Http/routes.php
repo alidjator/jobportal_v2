@@ -24,6 +24,7 @@ use Src\Recruitment\Interface\Http\Controllers\OfferController;
 use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\VideoInterviewController;
+use Src\Recruitment\Interface\Http\Controllers\VoiceInterviewController;
 use Src\Recruitment\Interface\Http\Middleware\VerifyJanusWebhook;
 use Src\Shared\Interface\Http\RateLimit\ApiRateLimit;
 
@@ -75,6 +76,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/interview/video/join', [VideoInterviewController::class, 'join'])->whereNumber('id');
     Route::get('company/applications/{id}/interview/video/lobby', [VideoInterviewController::class, 'lobby'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/admit', [VideoInterviewController::class, 'admit'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/voice/join', [VoiceInterviewController::class, 'join'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/voice/call', [VoiceInterviewController::class, 'call'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/voice/hangup', [VoiceInterviewController::class, 'hangup'])->whereNumber('id');
+    Route::get('company/interviews/{id}/calls', [VoiceInterviewController::class, 'calls'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/recording/start', [InterviewRecordingController::class, 'start'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/recording/stop', [InterviewRecordingController::class, 'stop'])->whereNumber('id');
     Route::get('company/interviews/{id}/recordings', [InterviewRecordingController::class, 'index'])->whereNumber('id');

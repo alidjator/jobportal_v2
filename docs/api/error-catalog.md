@@ -26,6 +26,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `body-too-long` | 422 | Messaging |  |
+| `call-attempts-used` | 409 | Recruitment |  |
+| `call-in-progress` | 409 | Recruitment | The candidate is already being called. |
 | `campaign-code-taken` | 409 | Campaign | This campaign code is already used. |
 | `campaign-has-registrations` | 409 | Campaign | Someone registered with this campaign; switch it off instead. |
 | `campaign-link-unavailable` | 503 | Campaign | The registration link is not configured. |
@@ -188,12 +190,15 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-active-recording` | 409 | Recruitment | No recording is running. |
+| `no-live-call` | 409 | Recruitment | There is no call in progress. |
+| `no-phone-number` | 409 | Recruitment |  |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
 | `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
 | `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |
+| `not-a-voice-interview` | 409 | Recruitment | This interview is not held by phone. |
 | `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
 | `not-an-author` | 403 | Assessment | Only a company admin, a psychologist or an administrator can write tests. |
 | `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
@@ -265,6 +270,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `stage-not-interview` | 422 | Recruitment |  |
 | `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, assessment, interview or offer. |
 | `talent-pool-limit` | 422 | TalentPool |  |
+| `team-not-connected` | 409 | Recruitment | Join the call from your browser before you dial the candidate. |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
 | `terms-not-accepted` | 409 | Identity | You must accept the current terms and privacy policy before continuing. |
 | `test-archived` | 409 | Assessment | An archived test cannot be changed. Restore it first. |
@@ -303,4 +309,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `video-take-closed` | 409 | Assessment | This recording is closed. |
 | `video-too-large` | 422 | Assessment |  |
 | `video-window-closed` | 409 | Recruitment |  |
+| `voice-capacity-full` | 409 | Recruitment | Too many phone interviews are running right now. Try again in a few minutes. |
+| `voice-disabled` | 409 | Recruitment | Phone interviews are switched off. |
 | `voice-not-enabled` | 422 | Recruitment |  |
+| `voice-quota-used` | 409 | Recruitment | Your company used all its phone interview minutes of this month. |
+| `voice-server-unavailable` | 503 | Recruitment | The voice server is unavailable. |
+| `voice-window-closed` | 409 | Recruitment |  |

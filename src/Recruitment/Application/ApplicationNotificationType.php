@@ -35,6 +35,9 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_REMINDER = 'interview.reminder';
 
+    /** The team called the candidate of a phone interview and nobody answered (the candidate is the one told). */
+    public const string INTERVIEW_CALL_MISSED = 'interview.call_missed';
+
     public const string INTERVIEW_RECORDING_WITHDRAWN = 'interview.recording_withdrawn';
 
     public const string INTERVIEW_SCORECARD_REMINDER = 'interview.scorecard_reminder';

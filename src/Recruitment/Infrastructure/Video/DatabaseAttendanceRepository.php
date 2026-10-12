@@ -42,6 +42,26 @@ final readonly class DatabaseAttendanceRepository implements AttendanceRepositor
             ->update(['left_at' => $this->format($at)]);
     }
 
+    public function joinedOnChannel(int $interviewId, InterviewAttendance $attendance, string $channelId): void
+    {
+        if ($this->connection->table(self::TABLE)->where('channel_id', $channelId)->whereNull('left_at')->exists()) {
+            return;
+        }
+
+        $this->connection->table(self::TABLE)->insert([
+            'interview_id' => $interviewId,
+            'user_id' => $attendance->userId,
+            'role' => $attendance->role,
+            'joined_at' => $this->format($attendance->joinedAt),
+            'channel_id' => $channelId,
+        ]);
+    }
+
+    public function leftOnChannel(string $channelId, DateTimeImmutable $at): void
+    {
+        $this->connection->table(self::TABLE)->where('channel_id', $channelId)->whereNull('left_at')->update(['left_at' => $this->format($at)]);
+    }
+
     public function forInterview(int $interviewId): array
     {
         return $this->connection->table(self::TABLE)
