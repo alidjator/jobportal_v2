@@ -70,6 +70,7 @@ Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void
     Route::get('invitations', [MyInvitationController::class, 'index']);
     Route::get('invitations/{id}', [MyInvitationController::class, 'show'])->whereNumber('id');
     Route::get('invitations/{id}/explanation', [MyInvitationController::class, 'explanation'])->whereNumber('id');
+    Route::post('invitations/{id}/decline', [MyInvitationController::class, 'decline'])->whereNumber('id');
 
     // Taking the test. The server keeps the time and the rules of every section.
     Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+'])->group(function (): void {

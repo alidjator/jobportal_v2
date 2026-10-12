@@ -10,6 +10,8 @@ enum InvitationStatus: string
     case Submitted = 'submitted';
     case Expired = 'expired';
     case Cancelled = 'cancelled';
+    /** The candidate turned the test down (a test with video questions needs a separate consent to be recorded). */
+    case Declined = 'declined';
 
     /** An application has at most one active invitation: the candidate can still take the test, or is taking it. */
     public function isActive(): bool

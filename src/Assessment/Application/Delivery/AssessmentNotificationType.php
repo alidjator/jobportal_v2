@@ -15,6 +15,9 @@ final class AssessmentNotificationType
 
     public const string CANCELLED = 'assessment.cancelled';
 
+    /** To the team: the candidate turned the test down (for example because it records video), so another way to assess them can be planned. */
+    public const string DECLINED = 'assessment.declined';
+
     /** To the team: the candidate handed in the test, or the time ran out and the server did. */
     public const string SUBMITTED = 'assessment.submitted';
 

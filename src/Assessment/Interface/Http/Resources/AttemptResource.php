@@ -10,6 +10,7 @@ use Src\Assessment\Application\Attempts\DeliveredQuestion;
 use Src\Assessment\Domain\Answer;
 use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionOption;
+use Src\Assessment\Domain\QuestionType;
 
 /**
  * An attempt as the candidate sees it. The server's clock is part of it (`server_time`), so the browser can draw the time left. The questions show the
@@ -91,6 +92,7 @@ final class AttemptResource extends JsonResource
                 'number' => $delivered->answer->numberValue,
                 'text' => $delivered->answer->textValue,
             ] : null,
+            'video' => $question->type === QuestionType::VideoAnswer ? ['think_seconds' => $question->thinkSeconds, 'answer_seconds' => $question->answerSeconds, 'max_retakes' => $question->maxRetakes] : null,
             'drawing' => $delivered->drawing === null ? null : ['source' => $delivered->drawing->source->value, 'size_bytes' => $delivered->drawing->sizeBytes],
         ];
     }

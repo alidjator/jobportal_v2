@@ -26,12 +26,13 @@ final readonly class Attempt
         public bool $autoSubmitted,
         public int $seed,
         public ?string $lastIp,
+        public ?DateTimeImmutable $videoConsentedAt = null,
     ) {}
 
     /** @param  list<int>  $durations  the seconds of each section, in order */
-    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip): self
+    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip, bool $videoConsent = false): self
     {
-        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip);
+        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip, $videoConsent ? $now : null);
     }
 
     public function isSubmitted(): bool
@@ -125,6 +126,7 @@ final readonly class Attempt
             $autoSubmitted ?? $this->autoSubmitted,
             $this->seed,
             $lastIp ?? $this->lastIp,
+            $this->videoConsentedAt,
         );
     }
 }

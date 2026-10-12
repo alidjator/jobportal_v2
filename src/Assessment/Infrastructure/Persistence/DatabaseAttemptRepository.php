@@ -51,6 +51,7 @@ final readonly class DatabaseAttemptRepository implements AttemptRepository
             'ends_at' => $this->format($attempt->endsAt),
             'seed' => $attempt->seed,
             'last_ip' => $attempt->lastIp,
+            'video_consented_at' => $attempt->videoConsentedAt === null ? null : $this->format($attempt->videoConsentedAt),
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -119,6 +120,7 @@ final readonly class DatabaseAttemptRepository implements AttemptRepository
             (bool) $row->auto_submitted,
             (int) $row->seed,
             $row->last_ip,
+            $row->video_consented_at === null ? null : $this->time((string) $row->video_consented_at),
         );
     }
 

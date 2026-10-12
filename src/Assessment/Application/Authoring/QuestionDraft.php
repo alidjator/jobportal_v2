@@ -18,5 +18,8 @@ final readonly class QuestionDraft
         public ?string $scaleKey,
         public bool $isSample,
         public array $options,
+        public ?int $thinkSeconds = null,
+        public ?int $answerSeconds = null,
+        public ?int $maxRetakes = null,
     ) {}
 }

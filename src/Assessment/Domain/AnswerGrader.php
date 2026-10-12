@@ -4,7 +4,7 @@ namespace Src\Assessment\Domain;
 
 /**
  * The score of an answer, worked out from the question alone. Choice, number and short-text questions of a skill test give their points when right and 0
- * when wrong; a Likert or forced-choice answer gives the score of the option chosen. A long-text answer and a drawing need a person, so they give null.
+ * when wrong; a Likert or forced-choice answer gives the score of the option chosen. A long-text answer, a drawing and a video answer need a person, so they give null.
  */
 final class AnswerGrader
 {
@@ -12,7 +12,7 @@ final class AnswerGrader
 
     public static function grade(Question $question, ?Answer $answer): ?float
     {
-        if ($question->type === QuestionType::LongText || $question->type === QuestionType::Drawing) {
+        if (in_array($question->type, [QuestionType::LongText, QuestionType::Drawing, QuestionType::VideoAnswer], true)) {
             return null;
         }
 

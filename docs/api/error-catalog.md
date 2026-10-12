@@ -288,7 +288,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `verification-code-expired` | 422 | Identity | The verification code has expired or is no longer valid. Request a new one. |
 | `verification-code-limit-reached` | 429 | Identity | Too many codes were requested. Try again later. |
 | `video-capacity-full` | 409 | Recruitment | Too many video interviews are running right now. Try again in a few minutes. |
+| `video-consent-required` | 422 | Assessment |  |
 | `video-disabled` | 409 | Recruitment | Interviews in the platform are switched off. |
+| `video-not-allowed` | 422 | Assessment |  |
 | `video-not-enabled` | 422 | Recruitment |  |
 | `video-room-not-open` | 409 | Recruitment | The video room is not open yet. |
 | `video-server-unavailable` | 503 | Recruitment | The recording converter is not configured. |

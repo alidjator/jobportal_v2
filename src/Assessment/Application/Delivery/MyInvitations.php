@@ -5,6 +5,8 @@ namespace Src\Assessment\Application\Delivery;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\InvitationStatus;
+use Src\Assessment\Domain\QuestionRepository;
+use Src\Assessment\Domain\QuestionType;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestRepository;
@@ -27,6 +29,7 @@ final readonly class MyInvitations
         private InvitationRepository $invitations,
         private TestRepository $tests,
         private SectionRepository $sections,
+        private QuestionRepository $questions,
         private JobDirectory $jobs,
         private CompanyDirectory $companies,
     ) {}
@@ -72,6 +75,7 @@ final readonly class MyInvitations
             $this->jobs->titles([$invitation->jobId])[$invitation->jobId] ?? '',
             $this->companyName($invitation->companyId),
             $this->sections->ofTest($invitation->testId),
+            $this->questions->testHasType($invitation->testId, QuestionType::VideoAnswer),
         );
     }
 

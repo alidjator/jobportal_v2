@@ -4,6 +4,8 @@ namespace Src\Assessment\Interface\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Src\Assessment\Application\Delivery\DeclineInvitation;
 use Src\Assessment\Application\Delivery\MyInvitations;
 use Src\Assessment\Application\Reports\GetMyExplanation;
 use Src\Assessment\Interface\Http\Requests\ListMyInvitationsRequest;
@@ -26,6 +28,14 @@ final class MyInvitationController extends ApiController
     public function show(Request $request, int $id, ActorResolver $actors, MyInvitations $invitations): MyInvitationResource
     {
         return new MyInvitationResource($invitations->get($actors->fromRequest($request), $id));
+    }
+
+    /** The candidate turns the test down before starting it. */
+    public function decline(Request $request, int $id, ActorResolver $actors, DeclineInvitation $decline): Response
+    {
+        $decline->execute($actors->fromRequest($request), $id);
+
+        return response()->noContent();
     }
 
     /** The explanation of a signed psychological result. */

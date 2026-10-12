@@ -104,7 +104,7 @@ final readonly class InvitationChecks
     }
 
     /**
-     * A skill test with long-text answers needs at least one assessor; a battery is scored by its psychologist, so it has none.
+     * A skill test with long-text or video answers needs at least one assessor; a battery is scored by its psychologist, so it has none.
      *
      * @param  list<int>  $assessors
      */
@@ -124,6 +124,10 @@ final readonly class InvitationChecks
 
         if ($assessors === [] && $this->questions->testHasType((int) $test->id, QuestionType::LongText)) {
             $this->refuse('invalid-assessor', 'assessor_ids', 'Choose at least one assessor: this test has long-text answers to score.');
+        }
+
+        if ($assessors === [] && $this->questions->testHasType((int) $test->id, QuestionType::VideoAnswer)) {
+            $this->refuse('invalid-assessor', 'assessor_ids', 'Choose at least one assessor: this test has video answers to score.');
         }
 
         $roles = $assessors === [] ? [] : $this->team->roles($companyId);

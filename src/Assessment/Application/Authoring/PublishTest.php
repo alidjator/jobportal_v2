@@ -3,6 +3,7 @@
 namespace Src\Assessment\Application\Authoring;
 
 use Src\Assessment\Domain\NormRepository;
+use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionFormat;
@@ -81,6 +82,14 @@ final readonly class PublishTest
 
             if ($section->format !== SectionFormat::SpeedColumns && $count === 0) {
                 $problems[] = "The section \"{$section->title}\" needs at least one question.";
+            }
+
+            if ($section->format === SectionFormat::Video) {
+                $needed = array_sum(array_map(static fn (Question $question): int => $question->minimumSeconds(), $this->questions->ofSection((int) $section->id)));
+
+                if ($section->durationSeconds < $needed) {
+                    $problems[] = "The section \"{$section->title}\" needs at least {$needed} seconds for its video questions (the limited think times plus every take at full length) but lasts {$section->durationSeconds}.";
+                }
             }
 
             if ($section->drawCount !== null && $section->drawCount > $count) {

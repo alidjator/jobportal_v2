@@ -31,7 +31,7 @@ final class AttemptController extends ApiController
     /** Starts the test: 201 when it begins now, 200 when it was already started. */
     public function start(StartAttemptRequest $request, int $id, ActorResolver $actors, StartAttempt $start): JsonResponse
     {
-        $result = $start->execute($actors->fromRequest($request), $id, $request->consent(), $request->ip());
+        $result = $start->execute($actors->fromRequest($request), $id, $request->consent(), $request->ip(), $request->videoConsent());
 
         return (new AttemptResource($result['view']))->response()->setStatusCode($result['created'] ? JsonResponse::HTTP_CREATED : JsonResponse::HTTP_OK);
     }

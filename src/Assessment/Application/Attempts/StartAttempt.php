@@ -9,6 +9,7 @@ use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\QuestionDraw;
 use Src\Assessment\Domain\QuestionRepository;
+use Src\Assessment\Domain\QuestionType;
 use Src\Assessment\Domain\Section;
 use Src\Assessment\Domain\SectionFormat;
 use Src\Assessment\Domain\SectionRepository;
@@ -22,7 +23,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * The candidate agrees to the terms of the test and starts it. The attempt begins at once: the first section opens, the server timer starts and the questions
+ * The candidate agrees to the terms of the test (and, when it has video questions, to be recorded) and starts it. The attempt begins at once: the first section opens, the server timer starts and the questions
  * of every section are drawn. Starting a test that was already started changes nothing and gives the attempt as it is, so a reload after a lost response is safe.
  */
 final readonly class StartAttempt
@@ -43,10 +44,10 @@ final readonly class StartAttempt
      *
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
-     * @throws BusinessRuleViolation `consent-required`
+     * @throws BusinessRuleViolation `consent-required`, or `video-consent-required` when the test has video questions and the recording consent is missing
      * @throws StateConflict `invitation-not-open`
      */
-    public function execute(Actor $actor, int $invitationId, bool $consent, ?string $ip): array
+    public function execute(Actor $actor, int $invitationId, bool $consent, ?string $ip, bool $videoConsent = false): array
     {
         if ($actor->kind !== ActorKind::JobSeeker || $actor->id === null) {
             throw new AccessDenied('Only a job seeker can take a test.', 'job-seeker-only');
@@ -58,7 +59,7 @@ final readonly class StartAttempt
 
         $userId = $actor->id;
 
-        $created = $this->transactions->run(function () use ($userId, $invitationId, $ip): bool {
+        $created = $this->transactions->run(function () use ($userId, $invitationId, $ip, $videoConsent): bool {
             $invitation = $this->invitations->find($invitationId, forUpdate: true);
 
             if (! $invitation instanceof Invitation || $invitation->applicantUserId !== $userId) {
@@ -73,7 +74,13 @@ final readonly class StartAttempt
             $started = $invitation->start($now);
             $sections = $this->sections->ofTest($invitation->testId);
 
-            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip);
+            if (! $videoConsent && $this->questions->testHasType($invitation->testId, QuestionType::VideoAnswer)) {
+                $message = 'This test records video answers: agree to be recorded to start it, or decline the test.';
+
+                throw new BusinessRuleViolation($message, 'video-consent-required', extensions: ['errors' => ['video_consent' => [$message]]]);
+            }
+
+            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip, $videoConsent);
             $this->invitations->update($started);
             $this->attempts->add($attempt, $this->draw($sections, $attempt->seed));
 

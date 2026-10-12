@@ -32,12 +32,16 @@ final class SectionRules
     }
 
     /**
-     * @throws BusinessRuleViolation `invalid-section` with `errors` on `format`
+     * @throws BusinessRuleViolation `invalid-section` or `video-not-allowed`, with `errors` on `format`
      */
     public static function assertFormatAllowed(TestKind $kind, SectionFormat $format): void
     {
         if ($kind === TestKind::Skill && $format->isPsychologicalOnly()) {
             throw self::invalid('format', 'Only a psychological battery can use this section format.');
+        }
+
+        if ($kind === TestKind::Psychological && $format->isSkillOnly()) {
+            throw self::invalid('format', 'Only a skill test can have video sections.', 'video-not-allowed');
         }
     }
 
@@ -131,8 +135,8 @@ final class SectionRules
         }
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string $message, string $code = 'invalid-section'): BusinessRuleViolation
     {
-        return new BusinessRuleViolation($message, 'invalid-section', extensions: ['errors' => [$field => [$message]]]);
+        return new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }
 }

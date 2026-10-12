@@ -5,6 +5,7 @@
 One line per decision; the detail sections below win if they disagree.
 
 - 2026-10-11: all four forms, built in this order: (1) Zoom, Google Meet and Microsoft Teams integration, (2) recorded one-way video, (3) live video inside the platform, (4) voice calls through Asterisk with a licensed SIP trunk and masked numbers (Decided).
+- 2026-10-12: form 2 part 1 (authoring, recording consent, decline) coded (see "Form 2 part 1 coded").
 - 2026-10-12: form 1 part 4 (deployment files in `deploy/janus/`) coded: one container on the host network, internal webhooks on a loopback-only nginx server (see "Form 1 part 4 coded").
 - 2026-10-11: recording is optional per interview and starts only after the candidate's explicit consent, with a retention period and permanent deletion (Decided).
 - 2026-10-11: the one-way video is a new question type in the assessment engine (Answers, 1).
@@ -237,6 +238,18 @@ When the question's time ends or the attempt is submitted, the last complete tak
 1. Authoring and invitation: the section format and question type with their rules, the separate video consent, `decline` with its notice, the settings.
 2. Recording: the clock per question, takes, chunked upload, joining and type check, retakes, choosing the final take at the end of the question or the submit.
 3. Team and retention: streaming, scoring, the purge tasks and erasure.
+
+### Form 2 part 1 coded (2026-10-12)
+
+Migration `000128`: question columns `think_seconds`, `answer_seconds`, `max_retakes` (CHECK: set and in range for `video_answer`, empty for every other type), `assessment_attempts.video_consented_at`, and the check constraints of `assessment_questions.type` (`video_answer`), `assessment_sections.format` (`video`) and `assessment_invitations.status` (`declined`). Settings `assessment.video_retention_days` (90) and `assessment.max_video_megabytes` (100). Tests: `tests/Feature/Assessment/VideoAssessmentTest.php`.
+
+1. **Declining reuses `closed_at`** (interpretation): the design listed a `declined_at` column, but cancelled and expired invitations already stamp `closed_at`, so a declined one does too and no extra column exists.
+2. **A video section is forward only by force:** `allow_back` and `allow_jump` are stored false whatever the author sends; `allow_skip` is kept (a question without a take counts as unanswered). A video section takes no `draw_count` (every question is asked).
+3. **Error codes:** `video-not-allowed` (422) for a video section in a battery, a video question in a battery or outside a video section, and any other question in a video section; `video-consent-required` (422) when a test with video questions is started without `video_consent: true` (the general `consent` is checked first); declining or starting a declined invitation answers `invitation-not-open` (409). Declining is refused when the due time has passed.
+4. **Assessors:** a test with video questions needs at least one assessor to be sent, as long text does (`invalid-assessor`).
+5. **Scoring placeholder until part 3:** a video answer is graded by a person, so the grader gives null; the attempt still scores (a video question counts 0 points, no `pending_scoring`) because no take can be recorded until part 2. Do not enable video tests for real candidates before parts 2 and 3.
+6. **The candidate sees** `video_consent_required` on the invitation and `video: {think_seconds, answer_seconds, max_retakes}` on each video question of the attempt.
+7. **Notice to the team:** `assessment.declined` (in-app only, to the member who sent the test and its assessors) through the new event `InvitationDeclined` and a queued listener.
 
 ### Form 3: voice calls through Asterisk (design started 2026-10-12)
 

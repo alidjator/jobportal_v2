@@ -38,6 +38,7 @@ final class MyInvitationResource extends JsonResource
         }
 
         $data['test']['instructions'] = $test->instructions();
+        $data['video_consent_required'] = $this->resource->hasVideo;
         $data['sections'] = array_map(static fn (Section $section): array => [
             'title' => $section->title,
             'format' => $section->format->value,

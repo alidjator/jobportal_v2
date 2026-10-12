@@ -17,6 +17,13 @@ final class QuestionRules
 
     public const int SCORE_MAX = 100;
 
+    /** The limits of a video answer question, in seconds (the think time, when it is limited, and the answer time) and in retakes. */
+    public const int VIDEO_SECONDS_MIN = 30;
+
+    public const int VIDEO_SECONDS_MAX = 300;
+
+    public const int VIDEO_RETAKES_MAX = 5;
+
     public const string SCALE_KEY_PATTERN = '/^[a-z][a-z0-9_]{0,59}$/';
 
     /** @var array<string, array{0: int, 1: int}> the number of options of each type that has them */
@@ -32,15 +39,25 @@ final class QuestionRules
 
     /**
      * Checks the question and returns what is stored: the points (zero for a question no one scores by points; for a drawing they are the highest score the psychologist can give), the scale key and the options
-     * in their clean form.
+     * in their clean form. A video answer question also has its think time (null: not limited), answer time and retakes; every other type has none of them.
      *
      * @param  list<QuestionOption>  $options
-     * @return array{text: string, points: int, scaleKey: ?string, options: list<QuestionOption>}
+     * @return array{text: string, points: int, scaleKey: ?string, options: list<QuestionOption>, thinkSeconds: ?int, answerSeconds: ?int, maxRetakes: ?int}
      *
-     * @throws BusinessRuleViolation `invalid-question` with `errors` on the field
+     * @throws BusinessRuleViolation `invalid-question` or `video-not-allowed`, with `errors` on the field
      */
-    public static function check(TestKind $kind, SectionFormat $format, QuestionType $type, string $text, int $points, ?string $scaleKey, array $options): array
-    {
+    public static function check(
+        TestKind $kind,
+        SectionFormat $format,
+        QuestionType $type,
+        string $text,
+        int $points,
+        ?string $scaleKey,
+        array $options,
+        ?int $thinkSeconds = null,
+        ?int $answerSeconds = null,
+        ?int $maxRetakes = null,
+    ): array {
         self::assertTypeFits($kind, $format, $type);
 
         $text = trim($text);
@@ -61,7 +78,40 @@ final class QuestionRules
             'points' => $scored ? $points : 0,
             'scaleKey' => self::scaleKey($kind, $type, $scaleKey),
             'options' => self::options($type, $options),
+            ...self::video($type, $thinkSeconds, $answerSeconds, $maxRetakes),
         ];
+    }
+
+    /**
+     * @return array{thinkSeconds: ?int, answerSeconds: ?int, maxRetakes: ?int}
+     */
+    private static function video(QuestionType $type, ?int $thinkSeconds, ?int $answerSeconds, ?int $maxRetakes): array
+    {
+        if ($type !== QuestionType::VideoAnswer) {
+            foreach (['think_seconds' => $thinkSeconds, 'answer_seconds' => $answerSeconds, 'max_retakes' => $maxRetakes] as $field => $value) {
+                if ($value !== null) {
+                    throw self::invalid($field, 'Only a video answer question has this setting.');
+                }
+            }
+
+            return ['thinkSeconds' => null, 'answerSeconds' => null, 'maxRetakes' => null];
+        }
+
+        $range = 'between '.self::VIDEO_SECONDS_MIN.' and '.self::VIDEO_SECONDS_MAX.' seconds';
+
+        if ($thinkSeconds !== null && ($thinkSeconds < self::VIDEO_SECONDS_MIN || $thinkSeconds > self::VIDEO_SECONDS_MAX)) {
+            throw self::invalid('think_seconds', "The think time must be {$range}, or empty when it is not limited.");
+        }
+
+        if ($answerSeconds === null || $answerSeconds < self::VIDEO_SECONDS_MIN || $answerSeconds > self::VIDEO_SECONDS_MAX) {
+            throw self::invalid('answer_seconds', "The answer time must be {$range}.");
+        }
+
+        if ($maxRetakes === null || $maxRetakes < 0 || $maxRetakes > self::VIDEO_RETAKES_MAX) {
+            throw self::invalid('max_retakes', 'The number of retakes must be between 0 and '.self::VIDEO_RETAKES_MAX.'.');
+        }
+
+        return ['thinkSeconds' => $thinkSeconds, 'answerSeconds' => $answerSeconds, 'maxRetakes' => $maxRetakes];
     }
 
     private static function assertTypeFits(TestKind $kind, SectionFormat $format, QuestionType $type): void
@@ -70,12 +120,20 @@ final class QuestionRules
             throw self::invalid('type', 'Only a psychological battery can use this question type.');
         }
 
+        if ($kind === TestKind::Psychological && $type->isSkillOnly()) {
+            throw self::invalid('type', 'Only a skill test can have video answer questions.', 'video-not-allowed');
+        }
+
         if ($format === SectionFormat::SpeedColumns) {
             throw self::invalid('type', 'A speed columns section has no questions.');
         }
 
         if (($format === SectionFormat::Drawing) !== ($type === QuestionType::Drawing)) {
             throw self::invalid('type', $format === SectionFormat::Drawing ? 'A drawing section holds drawing questions only.' : 'A drawing question belongs to a drawing section.');
+        }
+
+        if (($format === SectionFormat::Video) !== ($type === QuestionType::VideoAnswer)) {
+            throw self::invalid('type', $format === SectionFormat::Video ? 'A video section holds video answer questions only.' : 'A video answer question belongs to a video section.', 'video-not-allowed');
         }
     }
 
@@ -208,8 +266,8 @@ final class QuestionRules
         }
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string $message, string $code = 'invalid-question'): BusinessRuleViolation
     {
-        return new BusinessRuleViolation($message, 'invalid-question', extensions: ['errors' => [$field => [$message]]]);
+        return new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }
 }

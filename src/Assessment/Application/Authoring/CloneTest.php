@@ -69,7 +69,7 @@ final readonly class CloneTest
 
                 foreach ($this->questions->ofSection((int) $section->id) as $question) {
                     $this->questions->add(new Question(
-                        null, (int) $newSection->id, 0, $question->type, $question->text, $question->points, $question->scaleKey, $question->isSample, $question->options,
+                        null, (int) $newSection->id, 0, $question->type, $question->text, $question->points, $question->scaleKey, $question->isSample, $question->options, $question->thinkSeconds, $question->answerSeconds, $question->maxRetakes,
                     ));
                 }
             }

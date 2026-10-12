@@ -4,6 +4,7 @@ namespace Src\Assessment\Application\Authoring;
 
 use Src\Assessment\Application\AssessmentSettings;
 use Src\Assessment\Domain\Section;
+use Src\Assessment\Domain\SectionFormat;
 use Src\Assessment\Domain\SectionRules;
 use Src\Assessment\Domain\TestKind;
 use Src\Shared\Application\Settings\Settings;
@@ -24,6 +25,9 @@ final readonly class SectionFactory
         $settings = SectionRules::settings($draft->format, $draft->settings);
         $maxSeconds = $this->settings->integer(AssessmentSettings::MAX_SECTION_MINUTES, $author->companyId()) * 60;
 
+        // A video section is forward only: the candidate cannot go back to a question or jump ahead, because a take must be recorded in order.
+        $video = $draft->format === SectionFormat::Video;
+
         return new Section(
             $id,
             $testId,
@@ -33,8 +37,8 @@ final readonly class SectionFactory
             $draft->format,
             SectionRules::duration($draft->format, $draft->durationSeconds, $settings, $maxSeconds),
             $draft->allowSkip,
-            $draft->allowBack,
-            $draft->allowJump,
+            $draft->allowBack && ! $video,
+            $draft->allowJump && ! $video,
             SectionRules::drawCount($draft->format, $draft->drawCount),
             $settings,
         );

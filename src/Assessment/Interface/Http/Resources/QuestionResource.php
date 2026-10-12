@@ -26,6 +26,9 @@ final class QuestionResource extends JsonResource
             'points' => $this->resource->points,
             'scale_key' => $this->resource->scaleKey,
             'is_sample' => $this->resource->isSample,
+            'think_seconds' => $this->resource->thinkSeconds,
+            'answer_seconds' => $this->resource->answerSeconds,
+            'max_retakes' => $this->resource->maxRetakes,
             'options' => array_map(static fn (QuestionOption $option): array => [
                 'label' => $option->label,
                 'is_correct' => $option->isCorrect,

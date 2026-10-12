@@ -23,6 +23,10 @@ final class AssessmentSettings
 
     public const string MAX_DRAWING_MEGABYTES = 'assessment.max_drawing_megabytes';
 
+    public const string VIDEO_RETENTION_DAYS = 'assessment.video_retention_days';
+
+    public const string MAX_VIDEO_MEGABYTES = 'assessment.max_video_megabytes';
+
     public const string BAND_FAIR_FROM = 'assessment.band_fair_from';
 
     public const string BAND_GOOD_FROM = 'assessment.band_good_from';
@@ -71,6 +75,14 @@ final class AssessmentSettings
             SettingDefinition::integer(
                 self::MAX_DRAWING_MEGABYTES, 5, 1, 20,
                 'The largest drawing a candidate may upload (JPG or PNG), in megabytes.',
+            ),
+            SettingDefinition::integer(
+                self::VIDEO_RETENTION_DAYS, 90, 1, 365,
+                'How many days after a test is submitted its video answers are kept before they are deleted permanently (the scores stay).',
+            ),
+            SettingDefinition::integer(
+                self::MAX_VIDEO_MEGABYTES, 100, 5, 500,
+                'The largest video take a candidate may upload, in megabytes.',
             ),
             SettingDefinition::integer(
                 self::BAND_FAIR_FROM, 50, 1, 99,

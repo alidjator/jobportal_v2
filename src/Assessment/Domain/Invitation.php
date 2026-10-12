@@ -6,8 +6,8 @@ use DateTimeImmutable;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A test sent to a candidate for one application. It is invited until the candidate starts, then started until the attempt is submitted; the team
- * can cancel an active one and an unstarted one expires at its due time. Cancelled, expired and submitted invitations are kept as history. The test never
+ * A test sent to a candidate for one application. It is invited until the candidate starts (or declines it), then started until the attempt is submitted; the team
+ * can cancel an active one and an unstarted one expires at its due time. Cancelled, expired, declined and submitted invitations are kept as history. The test never
  * changes after the invitation is sent: a published test that has invitations is locked.
  */
 final readonly class Invitation
@@ -87,6 +87,20 @@ final readonly class Invitation
         }
 
         return $this->with(InvitationStatus::Cancelled, $this->remindedAt, $now);
+    }
+
+    /**
+     * The candidate turns the test down before starting it, whether or not its start time has come.
+     *
+     * @throws StateConflict `invitation-not-open`
+     */
+    public function decline(DateTimeImmutable $now): self
+    {
+        if ($this->status !== InvitationStatus::Invited || $this->dueAt <= $now) {
+            throw new StateConflict('This test cannot be declined now: it is already started, cancelled, expired or declined.', 'invitation-not-open');
+        }
+
+        return $this->with(InvitationStatus::Declined, $this->remindedAt, $now);
     }
 
     /**

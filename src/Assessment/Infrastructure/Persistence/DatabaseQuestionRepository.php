@@ -181,6 +181,9 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
             'points' => $question->points,
             'scale_key' => $question->scaleKey,
             'is_sample' => $question->isSample,
+            'think_seconds' => $question->thinkSeconds,
+            'answer_seconds' => $question->answerSeconds,
+            'max_retakes' => $question->maxRetakes,
         ];
     }
 
@@ -236,6 +239,9 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
             $row->scale_key,
             (bool) $row->is_sample,
             $options[(int) $row->id] ?? [],
+            $row->think_seconds === null ? null : (int) $row->think_seconds,
+            $row->answer_seconds === null ? null : (int) $row->answer_seconds,
+            $row->max_retakes === null ? null : (int) $row->max_retakes,
         ), $rows);
     }
 }

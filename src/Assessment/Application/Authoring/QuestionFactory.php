@@ -19,7 +19,7 @@ final readonly class QuestionFactory
      */
     public function build(Test $test, Section $section, QuestionDraft $draft, ?int $id = null, int $position = 0): Question
     {
-        $checked = QuestionRules::check($test->kind(), $section->format, $draft->type, $draft->text, $draft->points, $draft->scaleKey, $draft->options);
+        $checked = QuestionRules::check($test->kind(), $section->format, $draft->type, $draft->text, $draft->points, $draft->scaleKey, $draft->options, $draft->thinkSeconds, $draft->answerSeconds, $draft->maxRetakes);
 
         if ($draft->isSample && $this->questions->sampleTaken((int) $test->id, $draft->type, $id)) {
             $message = 'Another question of this type is already the sample of the test.';
@@ -27,6 +27,6 @@ final readonly class QuestionFactory
             throw new BusinessRuleViolation($message, 'invalid-question', extensions: ['errors' => ['is_sample' => [$message]]]);
         }
 
-        return new Question($id, (int) $section->id, $position, $draft->type, $checked['text'], $checked['points'], $checked['scaleKey'], $draft->isSample, $checked['options']);
+        return new Question($id, (int) $section->id, $position, $draft->type, $checked['text'], $checked['points'], $checked['scaleKey'], $draft->isSample, $checked['options'], $checked['thinkSeconds'], $checked['answerSeconds'], $checked['maxRetakes']);
     }
 }

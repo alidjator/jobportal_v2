@@ -27,6 +27,7 @@ final class AnswerRules
             QuestionType::ShortText => new Answer($id, textValue: self::text($id, $optionPositions, $number, $text, self::MAX_SHORT_TEXT)),
             QuestionType::LongText => new Answer($id, textValue: self::text($id, $optionPositions, $number, $text, self::MAX_LONG_TEXT)),
             QuestionType::Drawing => throw self::invalid('text', 'A drawing is sent as a file, not as an answer.'),
+            QuestionType::VideoAnswer => throw self::invalid('text', 'A video answer is recorded, not typed.'),
         };
     }
 

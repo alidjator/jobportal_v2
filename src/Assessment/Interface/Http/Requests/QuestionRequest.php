@@ -8,7 +8,7 @@ use Src\Assessment\Application\Authoring\QuestionDraft;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionType;
 
-/** The body of adding and of changing a question. What each type allows is checked by the use case. */
+/** The body of adding and of changing a question. What each type allows is checked by the use case; an empty `think_seconds` means the think time of a video answer is not limited. */
 final class QuestionRequest extends FormRequest
 {
     /** @return array<string, mixed> */
@@ -20,6 +20,9 @@ final class QuestionRequest extends FormRequest
             'points' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'scale_key' => ['nullable', 'string', 'max:100'],
             'is_sample' => ['nullable', 'boolean'],
+            'think_seconds' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'answer_seconds' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'max_retakes' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'options' => ['nullable', 'array', 'max:20'],
             'options.*' => ['array:label,is_correct,score_value,scale_key'],
             'options.*.label' => ['required', 'string', 'max:1000'],
@@ -49,6 +52,9 @@ final class QuestionRequest extends FormRequest
             $this->filled('scale_key') ? $this->string('scale_key')->toString() : null,
             $this->boolean('is_sample'),
             $options,
+            $this->filled('think_seconds') ? $this->integer('think_seconds') : null,
+            $this->filled('answer_seconds') ? $this->integer('answer_seconds') : null,
+            $this->filled('max_retakes') ? $this->integer('max_retakes') : null,
         );
     }
 }
