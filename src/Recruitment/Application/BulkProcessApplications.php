@@ -171,8 +171,9 @@ final readonly class BulkProcessApplications
     private function interviewInputs(RecruitmentMember $member, int $jobId, BulkInterviewInput $base, array $movable): array
     {
         $this->scheduler->assertInterviewer($member->companyId, $jobId, $base->interviewerId);
+        $this->scheduler->assertFormatAvailable($member->companyId, $base->format);
 
-        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now());
+        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded);
 
         if ($this->minutes($base->dayEnd) <= $this->minutes($base->dayStart)) {
             $this->refuse('invalid-interview', 'The working day must end after it starts.', 'day_end');
@@ -190,7 +191,7 @@ final readonly class BulkProcessApplications
         $inputs = [];
 
         foreach ($movable as $index => $id) {
-            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId);
+            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, recorded: $base->recorded);
         }
 
         return $inputs;

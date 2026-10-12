@@ -30,6 +30,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `campaign-has-registrations` | 409 | Campaign | Someone registered with this campaign; switch it off instead. |
 | `campaign-link-unavailable` | 503 | Campaign | The registration link is not configured. |
 | `campaign-period-invalid` | 422 | Campaign | The campaign cannot end before it starts. |
+| `candidate-not-waiting` | 409 | Recruitment | The candidate is not waiting in the lobby. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot sign reports. |
 | `category-limit` | 422 | TalentPool |  |
@@ -76,7 +77,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
 | `interview-edit-denied` | 403 | Recruitment | Only the member who scheduled the interview, its interviewer or a company admin can change its questions. |
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
-| `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be marked as completed. |
+| `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be joined. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
 | `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
@@ -139,6 +140,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
+| `invalid-webhook-credentials` | 401 | Recruitment | The webhook credentials are wrong. |
 | `invalid-withdrawal` | 422 | Recruitment |  |
 | `invitation-closed` | 409 | JobInvitation | This invitation expired because the job is not live. |
 | `invitation-cooldown` | 429 | Assessment, Company | Wait a moment before sending another invitation to this email. |
@@ -182,12 +184,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `newsletter-unavailable` | 503 | Newsletter | The newsletter is not available. |
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
+| `no-active-recording` | 409 | Recruitment | No recording is running. |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
+| `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
 | `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
+| `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |
 | `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
 | `not-an-author` | 403 | Assessment | Only a company admin, a psychologist or an administrator can write tests. |
+| `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
@@ -219,6 +225,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
+| `recording-consent-required` | 422 | Recruitment |  |
+| `recording-in-progress` | 409 | Recruitment | This interview is already being recorded. |
+| `recording-not-allowed` | 409 | Recruitment | This interview may not be recorded: the job seeker has not given their consent. |
+| `recording-not-finished` | 409 | Recruitment | This recording is not finished yet. |
+| `recording-not-ready` | 409 | Recruitment | This recording has no file. |
+| `recording-started` | 409 | Recruitment | The interview was already recorded, so the consent can no longer be withdrawn. Ask the company to delete the recording. |
 | `reference-value-taken` | 409 | ReferenceData |  |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
@@ -275,3 +287,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `verification-code-cooldown` | 429 | Identity | Wait a moment before requesting another code. |
 | `verification-code-expired` | 422 | Identity | The verification code has expired or is no longer valid. Request a new one. |
 | `verification-code-limit-reached` | 429 | Identity | Too many codes were requested. Try again later. |
+| `video-capacity-full` | 409 | Recruitment | Too many video interviews are running right now. Try again in a few minutes. |
+| `video-disabled` | 409 | Recruitment | Interviews in the platform are switched off. |
+| `video-not-enabled` | 422 | Recruitment |  |
+| `video-room-not-open` | 409 | Recruitment | The video room is not open yet. |
+| `video-server-unavailable` | 503 | Recruitment | The recording converter is not configured. |
+| `video-window-closed` | 409 | Recruitment |  |

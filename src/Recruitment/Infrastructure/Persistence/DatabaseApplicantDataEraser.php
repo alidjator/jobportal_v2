@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Infrastructure\Persistence;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Src\Recruitment\Domain\ApplicantDataEraser;
 
 final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
@@ -15,6 +16,15 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->where('user_id', $userId)
             ->whereNotNull('resume_path')
             ->pluck('resume_path')
+            ->all());
+    }
+
+    public function recordingPaths(int $userId): array
+    {
+        return array_map('strval', $this->connection->table('recruitment_interview_recordings')
+            ->whereIn('interview_id', $this->interviewIds($userId))
+            ->whereNotNull('path')
+            ->pluck('path')
             ->all());
     }
 
@@ -31,6 +41,10 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
         $this->connection->table('recruitment_application_notes')
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();
+
+        // Recordings and attendance go with the applicant even when the interview stays for its scorecard (the files were deleted before).
+        $this->connection->table('recruitment_interview_recordings')->whereIn('interview_id', $this->interviewIds($userId))->delete();
+        $this->connection->table('recruitment_interview_attendances')->whereIn('interview_id', $this->interviewIds($userId))->delete();
 
         // Interviews hold the applicant's meeting details, so they go too. An interview with a scorecard stays with its scores and recommendations (they hold no
         // personal data, like ratings) and loses only the meeting details; the scorecard notes are cleared by their own step (`EraseScorecardData`).
@@ -52,5 +66,12 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             'resume_size_bytes' => null,
             'profile_snapshot' => null,
         ]);
+    }
+
+    private function interviewIds(int $userId): Builder
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->select('id')
+            ->whereIn('application_id', $this->connection->table('recruitment_applications')->select('id')->where('user_id', $userId));
     }
 }

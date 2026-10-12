@@ -1,0 +1,29 @@
+<?php
+
+namespace Src\Recruitment\Application\Video;
+
+use Src\Recruitment\Application\TeamInterviewLookup;
+use Src\Recruitment\Domain\Video\AttendanceRepository;
+use Src\Recruitment\Domain\Video\InterviewAttendance;
+use Src\Shared\Application\Actor;
+use Src\Shared\Domain\Exceptions\AccessDenied;
+use Src\Shared\Domain\Exceptions\EntityNotFound;
+
+/** Who was in the video room and when, for the members who may see the application. */
+final readonly class ListAttendance
+{
+    public function __construct(private TeamInterviewLookup $lookup, private AttendanceRepository $attendance) {}
+
+    /**
+     * @return list<InterviewAttendance>
+     *
+     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws EntityNotFound
+     */
+    public function execute(Actor $actor, int $interviewId): array
+    {
+        $this->lookup->find($actor, $interviewId);
+
+        return $this->attendance->forInterview($interviewId);
+    }
+}

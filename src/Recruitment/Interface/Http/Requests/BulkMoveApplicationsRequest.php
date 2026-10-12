@@ -62,6 +62,7 @@ final class BulkMoveApplicationsRequest extends FormRequest
             isset($data['location']) ? (string) $data['location'] : null,
             isset($data['meeting_url']) ? (string) $data['meeting_url'] : null,
             (int) $data['interviewer_id'],
+            (bool) ($data['recorded'] ?? false),
         );
     }
 

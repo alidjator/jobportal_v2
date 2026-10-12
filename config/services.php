@@ -41,6 +41,30 @@ return [
         'course_url' => env('MOODLE_COURSE_URL'),
     ],
 
+    'janus' => [
+        // The self-hosted video server (`docs/design/phase-7-tele-interview.md`, form 1). `http_url` is its HTTP API and `admin_url` its Admin API (both private,
+        // on the Docker network), `api_token` the token this application sends to the HTTP API (which runs with `token_auth`), `ws_url` the public WSS address
+        // browsers connect to, and `webhook_secret` the secret its event handler sends to the internal webhooks. Any of the first four empty means video joins answer 503.
+        'http_url' => env('JANUS_HTTP_URL'),
+        'admin_url' => env('JANUS_ADMIN_URL'),
+        'admin_secret' => env('JANUS_ADMIN_SECRET'),
+        'api_token' => env('JANUS_API_TOKEN'),
+        'ws_url' => env('JANUS_WS_URL'),
+        'webhook_secret' => env('JANUS_WEBHOOK_SECRET'),
+        // Recordings: the video server writes the raw tracks to a volume it shares with this application (`recordings_dir` is that volume as the video container
+        // sees it, `recordings_path` as this application sees it), and `converter_url` is the small converter service next to it. The converter and the event
+        // handler authenticate with `webhook_secret` in both directions. Recording needs all three.
+        'converter_url' => env('JANUS_CONVERTER_URL'),
+        'recordings_dir' => env('JANUS_RECORDINGS_DIR'),
+        'recordings_path' => env('JANUS_RECORDINGS_PATH'),
+    ],
+
+    'turn' => [
+        // The coturn server (`use-auth-secret`): its URLs, comma separated (`turn:host:3478?transport=udp,turns:host:5349`), and the shared secret.
+        'urls' => env('TURN_URLS'),
+        'secret' => env('TURN_SECRET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

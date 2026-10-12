@@ -12,4 +12,5 @@ enum InterviewChange: string
     case Proposed = 'proposed';
     case Declined = 'declined';
     case Reminder = 'reminder';
+    case RecordingWithdrawn = 'recording_withdrawn';
 }

@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewStatus;
+use Src\Recruitment\Domain\RecordingConsent;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
@@ -47,6 +48,80 @@ final class InterviewTest extends TestCase
         $this->assertSame(45, $online->durationMinutes());
     }
 
+    private function video(bool $recorded): Interview
+    {
+        return Interview::schedule(7, $this->now->modify('+2 days'), 45, InterviewFormat::Video, 'Somewhere', 'https://a.test', 3, 2, $this->now, recorded: $recorded);
+    }
+
+    public function test_a_video_interview_needs_neither_a_place_nor_a_link(): void
+    {
+        $video = $this->video(false);
+
+        $this->assertSame(InterviewFormat::Video, $video->format);
+        $this->assertNull($video->location);
+        $this->assertNull($video->meetingUrl);
+        $this->assertFalse($video->recorded);
+        $this->assertNull($video->recordingConsent);
+    }
+
+    public function test_only_a_video_interview_can_be_recorded(): void
+    {
+        $this->assertTrue($this->video(true)->recorded);
+
+        try {
+            Interview::schedule(7, $this->now->modify('+1 day'), 30, InterviewFormat::Online, null, 'https://a.test', 3, 2, $this->now, recorded: true);
+            $this->fail('Expected the recording to be refused.');
+        } catch (BusinessRuleViolation $violation) {
+            $this->assertSame('invalid-interview', $violation->errorCode());
+            $this->assertArrayHasKey('recorded', $violation->extensions()['errors']);
+        }
+    }
+
+    public function test_the_job_seeker_answers_the_recording_when_confirming_a_recorded_interview(): void
+    {
+        $granted = $this->video(true)->confirm(RecordingConsent::Granted, $this->now);
+
+        $this->assertSame(InterviewStatus::Confirmed, $granted->status);
+        $this->assertSame(RecordingConsent::Granted, $granted->recordingConsent);
+        $this->assertEquals($this->now, $granted->recordingConsentAt);
+        $this->assertSame(RecordingConsent::Refused, $this->video(true)->confirm(RecordingConsent::Refused, $this->now)->recordingConsent);
+
+        foreach ([null, RecordingConsent::Withdrawn] as $answer) {
+            try {
+                $this->video(true)->confirm($answer, $this->now);
+                $this->fail('Expected an answer to the recording.');
+            } catch (BusinessRuleViolation $violation) {
+                $this->assertSame('recording-consent-required', $violation->errorCode());
+            }
+        }
+
+        // Not recorded: the answer is ignored.
+        $this->assertNull($this->video(false)->confirm(RecordingConsent::Granted, $this->now)->recordingConsent);
+    }
+
+    public function test_proposing_another_time_also_answers_the_recording(): void
+    {
+        $proposed = $this->video(true)->propose($this->now->modify('+3 days'), RecordingConsent::Granted, $this->now);
+
+        $this->assertSame(RecordingConsent::Granted, $proposed->recordingConsent);
+        $this->assertSame(RecordingConsent::Granted, $proposed->acceptProposal()->recordingConsent);
+        $this->expectException(BusinessRuleViolation::class);
+        $this->video(true)->propose($this->now->modify('+3 days'), null, $this->now);
+    }
+
+    public function test_a_given_consent_can_be_withdrawn_once(): void
+    {
+        $granted = $this->video(true)->confirm(RecordingConsent::Granted, $this->now);
+        $withdrawn = $granted->withdrawRecordingConsent($this->now->modify('+1 hour'));
+
+        $this->assertSame(RecordingConsent::Withdrawn, $withdrawn->recordingConsent);
+        $this->assertSame(InterviewStatus::Confirmed, $withdrawn->status);
+        $this->conflict(fn () => $withdrawn->withdrawRecordingConsent($this->now), 'no-recording-consent');
+        $this->conflict(fn () => $this->video(true)->confirm(RecordingConsent::Refused, $this->now)->withdrawRecordingConsent($this->now), 'no-recording-consent');
+        $this->conflict(fn () => $this->video(false)->withdrawRecordingConsent($this->now), 'no-recording-consent');
+        $this->conflict(fn () => $granted->cancel()->withdrawRecordingConsent($this->now), 'interview-not-active');
+    }
+
     public function test_the_rules_of_a_new_interview(): void
     {
         $cases = [
@@ -70,22 +145,22 @@ final class InterviewTest extends TestCase
 
     public function test_confirm_then_complete(): void
     {
-        $confirmed = $this->interview()->confirm();
+        $confirmed = $this->interview()->confirm(null, $this->now);
 
         $this->assertSame(InterviewStatus::Confirmed, $confirmed->status);
-        $this->conflict(fn () => $confirmed->confirm(), 'interview-not-pending');
+        $this->conflict(fn () => $confirmed->confirm(null, $this->now), 'interview-not-pending');
         $this->assertSame(InterviewStatus::Completed, $confirmed->complete()->status);
         $this->conflict(fn () => $this->interview()->complete(), 'interview-not-confirmed');
     }
 
     public function test_the_job_seeker_proposes_at_most_twice_and_one_at_a_time(): void
     {
-        $first = $this->interview()->propose($this->now->modify('+3 days'), $this->now);
+        $first = $this->interview()->propose($this->now->modify('+3 days'), null, $this->now);
 
         $this->assertTrue($first->hasProposal());
         $this->assertSame(1, $first->proposalsUsed);
-        $this->conflict(fn () => $first->propose($this->now->modify('+4 days'), $this->now), 'proposal-pending');
-        $this->conflict(fn () => $first->confirm(), 'proposal-pending');
+        $this->conflict(fn () => $first->propose($this->now->modify('+4 days'), null, $this->now), 'proposal-pending');
+        $this->conflict(fn () => $first->confirm(null, $this->now), 'proposal-pending');
 
         $accepted = $first->acceptProposal();
         $this->assertSame(InterviewStatus::Confirmed, $accepted->status);
@@ -93,18 +168,18 @@ final class InterviewTest extends TestCase
         $this->assertSame(45, $accepted->durationMinutes());
         $this->assertFalse($accepted->hasProposal());
 
-        $second = $this->interview()->propose($this->now->modify('+3 days'), $this->now)->acceptProposal();
+        $second = $this->interview()->propose($this->now->modify('+3 days'), null, $this->now)->acceptProposal();
         $this->assertSame(InterviewStatus::Confirmed, $second->status);
 
         $pending = new Interview(7, $this->now->modify('+2 days'), $this->now->modify('+2 days 45 minutes'), InterviewFormat::Online, null, 'https://a.test', 3, 2, InterviewStatus::Pending, 2, null, $this->now);
-        $this->conflict(fn () => $pending->propose($this->now->modify('+5 days'), $this->now), 'proposal-limit');
+        $this->conflict(fn () => $pending->propose($this->now->modify('+5 days'), null, $this->now), 'proposal-limit');
     }
 
     public function test_a_proposal_must_be_in_the_future(): void
     {
         $this->expectException(BusinessRuleViolation::class);
 
-        $this->interview()->propose($this->now->modify('-1 hour'), $this->now);
+        $this->interview()->propose($this->now->modify('-1 hour'), null, $this->now);
     }
 
     public function test_accepting_needs_a_proposal(): void
@@ -115,7 +190,7 @@ final class InterviewTest extends TestCase
     public function test_decline_and_cancel_end_an_active_interview_only(): void
     {
         $this->assertSame(InterviewStatus::Declined, $this->interview()->decline()->status);
-        $this->assertSame(InterviewStatus::Declined, $this->interview()->confirm()->decline()->status);
+        $this->assertSame(InterviewStatus::Declined, $this->interview()->confirm(null, $this->now)->decline()->status);
         $this->assertSame(InterviewStatus::Cancelled, $this->interview()->cancel()->status);
 
         $cancelled = $this->interview()->cancel();

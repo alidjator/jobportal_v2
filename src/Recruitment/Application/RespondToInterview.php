@@ -9,6 +9,8 @@ use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\RecordingConsent;
+use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
@@ -19,8 +21,8 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * What the job seeker does with the active interview of their own application: confirm it, decline it, or propose another start (at most twice). The
- * team (the interviewer and who scheduled it) is told.
+ * What the job seeker does with the active interview of their own application: confirm it, decline it, propose another start (at most twice), or take back
+ * a recording consent they gave. The team (the interviewer and who scheduled it) is told.
  */
 final readonly class RespondToInterview
 {
@@ -29,6 +31,7 @@ final readonly class RespondToInterview
         private ApplicationRepository $applications,
         private InterviewRepository $interviews,
         private InterviewViews $views,
+        private RecordingRepository $recordings,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -38,10 +41,11 @@ final readonly class RespondToInterview
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview`, `interview-not-pending` or `proposal-pending`
+     * @throws BusinessRuleViolation `recording-consent-required`
      */
-    public function confirm(Actor $actor, int $applicationId): InterviewView
+    public function confirm(Actor $actor, int $applicationId, ?RecordingConsent $consent): InterviewView
     {
-        return $this->apply($actor, $applicationId, InterviewChange::Confirmed, static fn (Interview $interview): Interview => $interview->confirm());
+        return $this->apply($actor, $applicationId, InterviewChange::Confirmed, fn (Interview $interview): Interview => $interview->confirm($consent, $this->clock->now()));
     }
 
     /**
@@ -58,11 +62,30 @@ final readonly class RespondToInterview
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview`, `interview-not-pending`, `proposal-pending` or `proposal-limit`
-     * @throws BusinessRuleViolation `invalid-interview`
+     * @throws BusinessRuleViolation `invalid-interview` or `recording-consent-required`
      */
-    public function propose(Actor $actor, int $applicationId, DateTimeImmutable $startsAt): InterviewView
+    public function propose(Actor $actor, int $applicationId, DateTimeImmutable $startsAt, ?RecordingConsent $consent): InterviewView
     {
-        return $this->apply($actor, $applicationId, InterviewChange::Proposed, fn (Interview $interview): Interview => $interview->propose($startsAt, $this->clock->now()));
+        return $this->apply($actor, $applicationId, InterviewChange::Proposed, fn (Interview $interview): Interview => $interview->propose($startsAt, $consent, $this->clock->now()));
+    }
+
+    /**
+     * @throws AccessDenied `job-seeker-only`
+     * @throws EntityNotFound
+     * @throws StateConflict `no-active-interview`, `interview-not-active`, `no-recording-consent` or `recording-started`
+     */
+    public function withdrawRecordingConsent(Actor $actor, int $applicationId): InterviewView
+    {
+        return $this->apply($actor, $applicationId, InterviewChange::RecordingWithdrawn, function (Interview $interview): Interview {
+            $withdrawn = $interview->withdrawRecordingConsent($this->clock->now());
+
+            // Once a recording exists the consent was used; the job seeker asks the company to delete it instead.
+            if ($this->recordings->exists((int) $interview->id)) {
+                throw new StateConflict('The interview was already recorded, so the consent can no longer be withdrawn. Ask the company to delete the recording.', 'recording-started');
+            }
+
+            return $withdrawn;
+        });
     }
 
     /** @param  Closure(Interview): Interview  $change */

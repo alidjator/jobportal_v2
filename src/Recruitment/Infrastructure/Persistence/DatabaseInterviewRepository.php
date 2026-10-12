@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\InterviewStatus;
+use Src\Recruitment\Domain\RecordingConsent;
 use stdClass;
 
 final readonly class DatabaseInterviewRepository implements InterviewRepository
@@ -67,6 +68,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'active_key' => $interview->status->isActive() ? $interview->applicationId : null,
             'kit_id' => $interview->kitId,
             'kit_name' => $interview->kitName,
+            'recorded' => $interview->recorded,
             'created_at' => $at,
             'updated_at' => $at,
         ]);
@@ -87,6 +89,9 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             null,
             $interview->kitId,
             $interview->kitName,
+            $interview->recorded,
+            $interview->recordingConsent,
+            $interview->recordingConsentAt,
             $id,
         );
     }
@@ -101,6 +106,8 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'proposed_starts_at' => $interview->proposedStartsAt === null ? null : $this->format($interview->proposedStartsAt),
             'active_key' => $interview->status->isActive() ? $interview->applicationId : null,
             'reminded_at' => $interview->remindedAt === null ? null : $this->format($interview->remindedAt),
+            'recording_consent' => $interview->recordingConsent?->value,
+            'recording_consent_at' => $interview->recordingConsentAt === null ? null : $this->format($interview->recordingConsentAt),
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
     }
@@ -181,6 +188,9 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $row->reminded_at === null ? null : $this->time((string) $row->reminded_at),
             $row->kit_id === null ? null : (int) $row->kit_id,
             $row->kit_name === null ? null : (string) $row->kit_name,
+            (bool) $row->recorded,
+            $row->recording_consent === null ? null : RecordingConsent::from((string) $row->recording_consent),
+            $row->recording_consent_at === null ? null : $this->time((string) $row->recording_consent_at),
             (int) $row->id,
         );
     }

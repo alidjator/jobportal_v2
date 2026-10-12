@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Interview;
+use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewKit;
 use Src\Recruitment\Domain\InterviewKitRepository;
 use Src\Recruitment\Domain\InterviewPanel;
@@ -15,6 +16,7 @@ use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
@@ -33,11 +35,12 @@ final readonly class InterviewScheduler
         private InterviewPanel $panel,
         private CompanyTeam $team,
         private JobDirectory $jobs,
+        private Settings $settings,
         private Clock $clock,
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-interview` or `invalid-interviewer`
+     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer` or `video-not-enabled`
      * @throws EntityNotFound the named kit is not one of the company's
      */
     public function schedule(RecruitmentMember $member, Application $application, InterviewInput $input): InterviewChanged
@@ -45,6 +48,7 @@ final readonly class InterviewScheduler
         $now = $this->clock->now();
         $applicationId = (int) $application->id;
         $this->assertInterviewer($application->companyId, $application->jobId, $input->interviewerId);
+        $this->assertFormatAvailable($application->companyId, $input->format);
         $participants = $this->participants($application, $input);
         $kit = $input->kitGiven ? $this->chosenKit($application->companyId, $input->kitId) : null;
 
@@ -55,6 +59,9 @@ final readonly class InterviewScheduler
         if (! $input->kitGiven && ! $source instanceof Interview) {
             $kit = $this->defaultKit($application);
         }
+
+        // Without a flag in the request, a new video time keeps the flag of the interview it replaces.
+        $recorded = $input->recorded ?? ($input->format === InterviewFormat::Video && $previous instanceof Interview && $previous->recorded);
 
         $interview = Interview::schedule(
             $applicationId,
@@ -68,6 +75,7 @@ final readonly class InterviewScheduler
             $now,
             $source instanceof Interview ? $source->kitId : $kit?->id,
             $source instanceof Interview ? $source->kitName : $kit?->name,
+            $recorded,
         );
 
         if ($previous instanceof Interview) {
@@ -90,6 +98,20 @@ final readonly class InterviewScheduler
         }
 
         return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now);
+    }
+
+    /**
+     * A video interview can be scheduled only while an admin has switched video interviews on.
+     *
+     * @throws BusinessRuleViolation `video-not-enabled`
+     */
+    public function assertFormatAvailable(int $companyId, InterviewFormat $format): void
+    {
+        if ($format === InterviewFormat::Video && ! $this->settings->boolean(InterviewSettings::VIDEO_ENABLED, $companyId)) {
+            $message = 'Interviews in the platform are not available yet.';
+
+            throw new BusinessRuleViolation($message, 'video-not-enabled', extensions: ['errors' => ['format' => [$message]]]);
+        }
     }
 
     /**

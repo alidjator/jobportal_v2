@@ -59,7 +59,7 @@ final class RecruitmentEmailTemplates
             InterviewChange::Rescheduled => self::INTERVIEW_RESCHEDULED,
             InterviewChange::Cancelled => self::INTERVIEW_CANCELLED,
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
-            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined => null,
+            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined, InterviewChange::RecordingWithdrawn => null,
         };
     }
 
@@ -142,8 +142,9 @@ final class RecruitmentEmailTemplates
             new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
             new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
             new EmailVariable('starts_at', 'When the interview starts (Jakarta time)', '2026-10-12 09:00 WIB'),
-            new EmailVariable('format', 'Online or Onsite', 'Online'),
-            new EmailVariable('place', 'The meeting link or the place of the interview', 'https://meet.example.com/abc'),
+            new EmailVariable('format', 'Online, Onsite or Video in the platform', 'Online'),
+            new EmailVariable('place', 'The meeting link, the place of the interview, or where to join a video interview', 'https://meet.example.com/abc'),
+            new EmailVariable('recording', 'Whether the interview is recorded (only with the applicant\'s consent)', 'No'),
         ];
 
         return [
@@ -153,8 +154,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}}', 'en' => 'Interview scheduled for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} menjadwalkan wawancara untuk posisi {{job_title}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} scheduled an interview for {{job_title}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nOpen your account to confirm it or propose another time.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} menjadwalkan wawancara untuk posisi {{job_title}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} scheduled an interview for {{job_title}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nOpen your account to confirm it or propose another time.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -163,8 +164,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}} berubah', 'en' => 'Your interview for {{job_title}} was rescheduled']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal wawancara untuk posisi {{job_title}}.\n\nWaktu baru: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} changed the interview for {{job_title}}.\n\nNew time: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nOpen your account to confirm it or propose another time.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal wawancara untuk posisi {{job_title}}.\n\nWaktu baru: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} changed the interview for {{job_title}}.\n\nNew time: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nOpen your account to confirm it or propose another time.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -183,8 +184,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Pengingat: wawancara untuk {{job_title}}', 'en' => 'Reminder: your interview for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\n\nSemoga sukses!",
-                    'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\n\nGood luck!",
+                    'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nSemoga sukses!",
+                    'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nGood luck!",
                 ]),
             ),
         ];

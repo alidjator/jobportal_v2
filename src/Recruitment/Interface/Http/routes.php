@@ -13,13 +13,19 @@ use Src\Recruitment\Interface\Http\Controllers\InterviewController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewPanelController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewRecordingController;
+use Src\Recruitment\Interface\Http\Controllers\JanusWebhookController;
 use Src\Recruitment\Interface\Http\Controllers\JobInterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
+use Src\Recruitment\Interface\Http\Controllers\MyVideoInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\OfferController;
 use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\VideoInterviewController;
+use Src\Recruitment\Interface\Http\Middleware\VerifyJanusWebhook;
+use Src\Shared\Interface\Http\RateLimit\ApiRateLimit;
 
 // Public: what an applicant answers for a live job. A job that is not live (or whose company is hidden) is the same 404 as on the job page; clients revalidate with the ETag.
 Route::get('jobs/{job}/screening-questions', [JobScreeningQuestionController::class, 'publicIndex'])
@@ -66,6 +72,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/cancel', [InterviewController::class, 'cancel'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/complete', [InterviewController::class, 'complete'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/video/join', [VideoInterviewController::class, 'join'])->whereNumber('id');
+    Route::get('company/applications/{id}/interview/video/lobby', [VideoInterviewController::class, 'lobby'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/video/admit', [VideoInterviewController::class, 'admit'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/video/recording/start', [InterviewRecordingController::class, 'start'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/video/recording/stop', [InterviewRecordingController::class, 'stop'])->whereNumber('id');
+    Route::get('company/interviews/{id}/recordings', [InterviewRecordingController::class, 'index'])->whereNumber('id');
+    Route::get('company/interviews/{id}/recordings/{recordingId}/file', [InterviewRecordingController::class, 'file'])->whereNumber(['id', 'recordingId']);
+    Route::delete('company/interviews/{id}/recordings/{recordingId}', [InterviewRecordingController::class, 'destroy'])->whereNumber(['id', 'recordingId']);
+    Route::get('company/interviews/{id}/attendance', [InterviewRecordingController::class, 'attendance'])->whereNumber('id');
 
     Route::get('company/interview-kits', [InterviewKitController::class, 'index']);
     Route::post('company/interview-kits', [InterviewKitController::class, 'store']);
@@ -109,8 +124,18 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('me/applications/{id}/interview/confirm', [MyInterviewController::class, 'confirm'])->whereNumber('id');
     Route::post('me/applications/{id}/interview/decline', [MyInterviewController::class, 'decline'])->whereNumber('id');
     Route::post('me/applications/{id}/interview/propose', [MyInterviewController::class, 'propose'])->whereNumber('id');
+    Route::post('me/applications/{id}/interview/video/join', [MyVideoInterviewController::class, 'join'])->whereNumber('id');
+    Route::get('me/applications/{id}/interview/video/lobby', [MyVideoInterviewController::class, 'lobby'])->whereNumber('id');
+    Route::post('me/applications/{id}/interview/recording-consent/withdraw', [MyInterviewController::class, 'withdrawRecordingConsent'])->whereNumber('id');
 
     Route::get('me/applications/{id}/offer', [MyOfferController::class, 'show'])->whereNumber('id');
     Route::post('me/applications/{id}/offer/accept', [MyOfferController::class, 'accept'])->whereNumber('id');
     Route::post('me/applications/{id}/offer/decline', [MyOfferController::class, 'decline'])->whereNumber('id');
+});
+
+// Internal webhooks of the video server (attendance events) and of its converter (finished recordings). They authenticate with a shared secret, come from one
+// address on the Docker network (so the per-IP limit of the `api` group is lifted), and are not reachable from outside (`deploy/janus/`).
+Route::middleware(VerifyJanusWebhook::class)->withoutMiddleware('throttle:'.ApiRateLimit::NAME)->prefix('internal/janus')->group(function (): void {
+    Route::post('events', [JanusWebhookController::class, 'events']);
+    Route::post('recordings', [JanusWebhookController::class, 'recordings']);
 });

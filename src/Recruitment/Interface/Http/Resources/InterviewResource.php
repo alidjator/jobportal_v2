@@ -9,7 +9,8 @@ use Src\Recruitment\Domain\Interview;
 
 /**
  * An interview, for the team and for the job seeker alike. `proposals_left` counts how many more times the job seeker may propose another time, and
- * `proposed_starts_at` is the time waiting for the team's answer (null when none).
+ * `proposed_starts_at` is the time waiting for the team's answer (null when none). `recorded` tells that the team will record the interview and
+ * `recording_consent` is the job seeker's answer (null until they answer).
  *
  * @property InterviewView $resource
  */
@@ -30,6 +31,9 @@ final class InterviewResource extends JsonResource
             'format' => $interview->format->value,
             'location' => $interview->location,
             'meeting_url' => $interview->meetingUrl,
+            'recorded' => $interview->recorded,
+            /** @var 'granted'|'refused'|'withdrawn'|null */
+            'recording_consent' => $interview->recordingConsent?->value,
             'interviewer' => ['id' => $interview->interviewerId, 'name' => $this->resource->interviewerName],
             'proposed_starts_at' => $interview->proposedStartsAt?->format(DATE_ATOM),
             /** @var int */

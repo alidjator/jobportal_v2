@@ -6,7 +6,10 @@ use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
+use Src\Platform\Application\Settings\SettingsStore;
 use Src\Recruitment\Application\EraseApplicantData;
+use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\SendInterviewReminders;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
@@ -351,6 +354,147 @@ final class InterviewsTest extends FeatureTestCase
     public function test_the_reminder_command_runs(): void
     {
         $this->artisan('recruitment:send-interview-reminders')->expectsOutput('Reminded 0 interviews.')->assertSuccessful();
+    }
+
+    // ----- video interviews -----
+
+    private function enableVideo(): void
+    {
+        $this->app->make(SettingsStore::class)->setGlobal(InterviewSettings::VIDEO_ENABLED, true, null);
+    }
+
+    private function videoSchedule(array $overrides = []): array
+    {
+        return $this->interviewSchedule([...['format' => 'video', 'meeting_url' => null], ...$overrides]);
+    }
+
+    public function test_a_video_interview_is_refused_until_an_admin_switches_it_on(): void
+    {
+        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+        $this->assertSame('applied', DB::table('recruitment_applications')->where('id', $this->applicationId)->value('stage_type'));
+
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule())->assertNoContent();
+
+        $row = DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->first();
+        $this->assertSame(['video', null, null, 0], [$row->format, $row->location, $row->meeting_url, (int) $row->recorded]);
+    }
+
+    public function test_an_admin_can_switch_video_on_for_one_company_only(): void
+    {
+        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+
+        $platformAdmin = AdminModel::query()->create(['name' => 'Ops', 'email' => 'ops@example.test', 'password' => 'hash', 'status' => 'active']);
+        $this->app->make(SettingsStore::class)->setCompanyOverride(InterviewSettings::VIDEO_ENABLED, $this->companyId, true, (int) $platformAdmin->id);
+        $this->toInterviewStage($this->videoSchedule())->assertNoContent();
+    }
+
+    public function test_only_a_video_interview_can_be_marked_recorded(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->interviewSchedule(['recorded' => true]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview')->assertJsonPath('errors.recorded.0', 'Only an interview held in the platform can be recorded.');
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+
+        $this->team('cancel')->assertOk();
+        $this->schedule(['recorded' => 'maybe'])->assertStatus(422)->assertJsonValidationErrors(['recorded']);
+    }
+
+    public function test_a_recorded_interview_needs_the_answer_to_the_recording_when_confirming(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+
+        $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.format', 'video')->assertJsonPath('data.recorded', true)->assertJsonPath('data.recording_consent', null);
+        $this->mine('confirm')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recording-consent-required');
+        $this->mine('confirm', ['recording_consent' => 'withdrawn'])->assertStatus(422)->assertJsonValidationErrors(['recording_consent']);
+        $this->assertSame('pending', DB::table('recruitment_interviews')->value('status'));
+
+        $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.recording_consent', 'granted');
+        $this->assertNotNull(DB::table('recruitment_interviews')->value('recording_consent_at'));
+    }
+
+    public function test_refusing_the_recording_keeps_the_interview(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+
+        $this->mine('confirm', ['recording_consent' => 'refused'])->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.recording_consent', 'refused');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+    }
+
+    public function test_an_interview_that_is_not_recorded_ignores_the_answer(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule())->assertNoContent();
+
+        $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk()->assertJsonPath('data.recorded', false)->assertJsonPath('data.recording_consent', null);
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+    }
+
+    public function test_a_proposal_for_a_recorded_interview_carries_the_answer(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+
+        $this->mine('propose', ['starts_at' => $this->inTheFuture(6)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recording-consent-required');
+        $this->mine('propose', ['starts_at' => $this->inTheFuture(6), 'recording_consent' => 'granted'])->assertOk()->assertJsonPath('data.recording_consent', 'granted');
+
+        $this->team('accept-proposal')->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.recording_consent', 'granted');
+    }
+
+    public function test_the_job_seeker_withdraws_a_given_consent_once(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+        $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk();
+
+        $this->mine('recording-consent/withdraw')->assertOk()->assertJsonPath('data.recording_consent', 'withdrawn')->assertJsonPath('data.status', 'confirmed');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+        $this->assertSame(['interview.confirmed', 'interview.recording_withdrawn'], $this->notificationTypes($this->recruiterId));
+        $this->assertSame([], $this->notificationTypes($this->adminId));
+    }
+
+    public function test_withdrawing_needs_an_active_interview_and_the_applicant(): void
+    {
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-interview');
+        $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", token: $this->recruiterToken)->assertForbidden();
+    }
+
+    public function test_a_new_video_time_keeps_the_flag_unless_the_request_says_otherwise(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+        $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk();
+
+        $this->schedule($this->videoSchedule(['starts_at' => $this->inTheFuture(5)]))->assertOk()->assertJsonPath('data.recorded', true)->assertJsonPath('data.recording_consent', null)->assertJsonPath('data.status', 'pending');
+        $this->schedule($this->videoSchedule(['starts_at' => $this->inTheFuture(6), 'recorded' => false]))->assertOk()->assertJsonPath('data.recorded', false);
+        $this->schedule(['starts_at' => $this->inTheFuture(7)])->assertOk()->assertJsonPath('data.format', 'online')->assertJsonPath('data.recorded', false);
+    }
+
+    public function test_a_bulk_move_can_schedule_recorded_video_interviews(): void
+    {
+        $body = ['stage_id' => $this->stage('interview'), 'application_ids' => [$this->applicationId], 'interview' => $this->videoSchedule(['recorded' => true])];
+
+        $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", $body, $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+
+        $this->enableVideo();
+        $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", $body, $this->recruiterToken)->assertSuccessful();
+
+        $row = DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->first();
+        $this->assertSame(['video', 1], [$row->format, (int) $row->recorded]);
+    }
+
+    public function test_the_email_for_a_video_interview_says_where_it_is_held_and_whether_it_is_recorded(): void
+    {
+        $this->enableVideo();
+        $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
+
+        $scheduled = collect($this->sentEmails())->first(fn ($email): bool => str_contains($email->getSubject() ?? '', 'Interview scheduled'));
+        $this->assertNotNull($scheduled);
+        $body = (string) $scheduled->getTextBody();
+        $this->assertStringContainsString('Video in the platform', $body);
+        $this->assertStringContainsString('open your application to join', $body);
+        $this->assertStringContainsString('Recorded: Yes, only if you agree', $body);
     }
 
     // ----- erasure -----

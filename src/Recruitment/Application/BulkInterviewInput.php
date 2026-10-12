@@ -21,5 +21,6 @@ final readonly class BulkInterviewInput
         public ?string $location,
         public ?string $meetingUrl,
         public int $interviewerId,
+        public bool $recorded = false,
     ) {}
 }

@@ -4,6 +4,9 @@ namespace Src\Recruitment\Infrastructure;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Foundation\Application as FoundationApplication;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,6 +17,7 @@ use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\InterviewResults;
+use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\JobApplicationCheck;
 use Src\Recruitment\Application\OfferEmailSender;
 use Src\Recruitment\Application\ProvisionDefaultStages;
@@ -24,6 +28,13 @@ use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
 use Src\Recruitment\Application\TeamApplicationRefs;
+use Src\Recruitment\Application\Video\IceServerProvider;
+use Src\Recruitment\Application\Video\JoinTokenFactory;
+use Src\Recruitment\Application\Video\LobbySignal;
+use Src\Recruitment\Application\Video\RecordingConverter;
+use Src\Recruitment\Application\Video\RecordingSignal;
+use Src\Recruitment\Application\Video\RecordingVolume;
+use Src\Recruitment\Application\Video\VideoRoomGateway;
 use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
@@ -33,6 +44,8 @@ use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\OfferChanged;
+use Src\Recruitment\Domain\Events\RecordingConverted;
+use Src\Recruitment\Domain\Events\RecordingStopped;
 use Src\Recruitment\Domain\InterviewKitRepository;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewQuestionRepository;
@@ -44,6 +57,9 @@ use Src\Recruitment\Domain\ScorecardEraser;
 use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
+use Src\Recruitment\Domain\Video\AttendanceRepository;
+use Src\Recruitment\Domain\Video\RecordingRepository;
+use Src\Recruitment\Domain\Video\VideoRoomRepository;
 use Src\Recruitment\Infrastructure\Analytics\ApplicationsDailyRollup;
 use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
 use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
@@ -54,6 +70,7 @@ use Src\Recruitment\Infrastructure\Dashboard\ApplicantInterviewsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyScheduleCard;
 use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
+use Src\Recruitment\Infrastructure\Listeners\ConvertRecordingWhenStopped;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\EraseScorecardDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
@@ -61,6 +78,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
+use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
 use Src\Recruitment\Infrastructure\Mail\MailOfferSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
@@ -85,8 +103,21 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Infrastructure\Video\BroadcastLobbySignal;
+use Src\Recruitment\Infrastructure\Video\BroadcastRecordingSignal;
+use Src\Recruitment\Infrastructure\Video\CoturnIceServers;
+use Src\Recruitment\Infrastructure\Video\DatabaseAttendanceRepository;
+use Src\Recruitment\Infrastructure\Video\DatabaseRecordingRepository;
+use Src\Recruitment\Infrastructure\Video\DatabaseVideoRoomRepository;
+use Src\Recruitment\Infrastructure\Video\HmacJoinTokenFactory;
+use Src\Recruitment\Infrastructure\Video\HttpRecordingConverter;
+use Src\Recruitment\Infrastructure\Video\JanusVideoRoomGateway;
+use Src\Recruitment\Infrastructure\Video\LocalRecordingVolume;
+use Src\Recruitment\Interface\Broadcasting\RecruitmentChannels;
+use Src\Recruitment\Interface\Console\CloseVideoRoomsCommand;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
+use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
@@ -142,10 +173,38 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,
         RecruiterApplicationReader::class => DatabaseRecruiterApplicationReader::class,
         JobQuestionRepository::class => DatabaseJobQuestionRepository::class,
+        VideoRoomRepository::class => DatabaseVideoRoomRepository::class,
+        LobbySignal::class => BroadcastLobbySignal::class,
+        RecordingSignal::class => BroadcastRecordingSignal::class,
+        RecordingRepository::class => DatabaseRecordingRepository::class,
+        AttendanceRepository::class => DatabaseAttendanceRepository::class,
     ];
 
     public function register(): void
     {
+        $this->app->bind(VideoRoomGateway::class, fn ($app): VideoRoomGateway => new JanusVideoRoomGateway(
+            $app->make(HttpFactory::class),
+            $this->service($app, 'janus.http_url'),
+            $this->service($app, 'janus.admin_url'),
+            $this->service($app, 'janus.admin_secret'),
+            $this->service($app, 'janus.api_token'),
+            $this->service($app, 'janus.ws_url'),
+        ));
+        $this->app->bind(JoinTokenFactory::class, fn ($app): JoinTokenFactory => new HmacJoinTokenFactory((string) $app->make(Repository::class)->get('app.key')));
+        $this->app->bind(RecordingVolume::class, fn ($app): RecordingVolume => new LocalRecordingVolume(
+            $this->service($app, 'janus.recordings_dir'),
+            $this->service($app, 'janus.recordings_path'),
+        ));
+        $this->app->bind(RecordingConverter::class, fn ($app): RecordingConverter => new HttpRecordingConverter(
+            $app->make(HttpFactory::class),
+            $this->service($app, 'janus.converter_url'),
+            $this->service($app, 'janus.webhook_secret'),
+        ));
+        $this->app->bind(IceServerProvider::class, fn ($app): IceServerProvider => new CoturnIceServers(
+            array_values(array_filter(array_map('trim', explode(',', (string) $this->service($app, 'turn.urls'))))),
+            $this->service($app, 'turn.secret'),
+        ));
+
         $this->callAfterResolving(AnalyticsReports::class, function (AnalyticsReports $reports): void {
             $reports->add(
                 $this->app->make(FunnelReport::class),
@@ -168,15 +227,17 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             );
         });
 
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeExpiredRecordingsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
-            $catalog->add(...RecruitmentSettings::definitions());
+            $catalog->add(...RecruitmentSettings::definitions(), ...InterviewSettings::definitions());
         });
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
@@ -196,6 +257,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         Event::listen(ApplicantsExported::class, [RecordRecruitmentAuditEntries::class, 'onApplicantsExported']);
+        RecruitmentChannels::register();
 
         parent::boot();
 
@@ -208,9 +270,19 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
+        Event::listen(RecordingStopped::class, ConvertRecordingWhenStopped::class);
+        Event::listen(RecordingConverted::class, StoreRecordingWhenConverted::class);
         $this->app->tag(EraseApplicantData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseApplicantDataWhenUserAnonymized::class);
         $this->app->tag(EraseScorecardData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseScorecardDataWhenUserAnonymized::class);
+    }
+
+    /** A `services.*` value as a string, or null when it is unset or empty. */
+    private function service(FoundationApplication $app, string $key): ?string
+    {
+        $value = $app->make(Repository::class)->get('services.'.$key);
+
+        return is_string($value) && $value !== '' ? $value : null;
     }
 }

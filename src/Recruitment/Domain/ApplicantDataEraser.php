@@ -16,6 +16,13 @@ interface ApplicantDataEraser
      */
     public function resumePaths(int $userId): array;
 
+    /**
+     * The paths of the interview recordings stored for the user's applications: they show the applicant's face and voice.
+     *
+     * @return list<string>
+     */
+    public function recordingPaths(int $userId): array;
+
     /** Clears the personal content of every application of the user. Running it again changes nothing. */
     public function clearPersonalData(int $userId): void;
 }

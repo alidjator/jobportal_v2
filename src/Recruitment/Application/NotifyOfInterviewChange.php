@@ -18,7 +18,7 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
 
 /**
  * Tells the people involved that an interview changed. The job seeker hears what the team did (scheduled, rescheduled, cancelled, proposal accepted) and the
- * reminder; the team (the interviewer and who scheduled it) hears what the job seeker did (confirmed, proposed another time, declined) and the reminder.
+ * reminder; the team (the interviewer and who scheduled it) hears what the job seeker did (confirmed, proposed another time, declined, withdrew the recording consent) and the reminder.
  * In-app notifications are always written (ids and the start time only); the job seeker's email follows the preference `application_update`, and is sent for
  * scheduled, rescheduled, cancelled and the reminder. The team gets no email. In-app and email are separate steps, so a retry of one never repeats the other.
  */
@@ -82,8 +82,17 @@ final readonly class NotifyOfInterviewChange
             'job_title' => $this->jobTitle($event),
             'company_name' => $this->companyName($event),
             'starts_at' => $interview->startsAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
-            'format' => $interview->format === InterviewFormat::Online ? 'Online' : 'Onsite',
-            'place' => (string) ($interview->format === InterviewFormat::Online ? $interview->meetingUrl : $interview->location),
+            'format' => match ($interview->format) {
+                InterviewFormat::Online => 'Online',
+                InterviewFormat::Onsite => 'Onsite',
+                InterviewFormat::Video => 'Video in the platform',
+            },
+            'place' => match ($interview->format) {
+                InterviewFormat::Online => (string) $interview->meetingUrl,
+                InterviewFormat::Onsite => (string) $interview->location,
+                InterviewFormat::Video => 'In the platform: open your application to join',
+            },
+            'recording' => $interview->recorded ? 'Yes, only if you agree' : 'No',
         ]);
     }
 
@@ -94,7 +103,7 @@ final readonly class NotifyOfInterviewChange
 
     private function toTeam(InterviewChange $change): bool
     {
-        return in_array($change, [InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined, InterviewChange::Reminder], true);
+        return in_array($change, [InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined, InterviewChange::Reminder, InterviewChange::RecordingWithdrawn], true);
     }
 
     private function jobTitle(InterviewChanged $event): string

@@ -35,6 +35,8 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_REMINDER = 'interview.reminder';
 
+    public const string INTERVIEW_RECORDING_WITHDRAWN = 'interview.recording_withdrawn';
+
     public const string INTERVIEW_SCORECARD_REMINDER = 'interview.scorecard_reminder';
 
     public const string OFFER_SENT = 'offer.sent';
@@ -74,6 +76,7 @@ final class ApplicationNotificationType
             InterviewChange::Proposed => self::INTERVIEW_PROPOSED,
             InterviewChange::Declined => self::INTERVIEW_DECLINED,
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
+            InterviewChange::RecordingWithdrawn => self::INTERVIEW_RECORDING_WITHDRAWN,
         };
     }
 

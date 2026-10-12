@@ -10,6 +10,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * An interview of one application. The team schedules it (`pending`), the job seeker confirms it, declines it or proposes another time (at most
  * {@see self::PROPOSALS_MAX} times), and the team accepts a proposal, cancels it or marks it completed. An application has at most one active interview.
+ * A video interview may be marked `recorded`: the job seeker then consents or refuses when they answer the schedule, and may withdraw a given consent.
  */
 final readonly class Interview
 {
@@ -39,11 +40,15 @@ final readonly class Interview
         public ?DateTimeImmutable $remindedAt = null,
         public ?int $kitId = null,
         public ?string $kitName = null,
+        public bool $recorded = false,
+        public ?RecordingConsent $recordingConsent = null,
+        public ?DateTimeImmutable $recordingConsentAt = null,
         public ?int $id = null,
     ) {}
 
     /**
-     * A new pending interview. An online interview needs a meeting link and an onsite one a location; the other is dropped.
+     * A new pending interview. An online interview needs a meeting link and an onsite one a location; the other is dropped, and a video interview has neither.
+     * Only a video interview can be recorded.
      *
      * @throws BusinessRuleViolation `invalid-interview`
      */
@@ -59,6 +64,7 @@ final readonly class Interview
         DateTimeImmutable $now,
         ?int $kitId = null,
         ?string $kitName = null,
+        bool $recorded = false,
     ): self {
         $location = self::text($location);
         $meetingUrl = self::text($meetingUrl);
@@ -70,6 +76,7 @@ final readonly class Interview
             $format === InterviewFormat::Online && $meetingUrl === null => ['meeting_url' => 'Give the meeting link.'],
             $location !== null && mb_strlen($location) > self::LOCATION_MAX => ['location' => 'The location can have at most '.self::LOCATION_MAX.' characters.'],
             $meetingUrl !== null && mb_strlen($meetingUrl) > self::URL_MAX => ['meeting_url' => 'The link can have at most '.self::URL_MAX.' characters.'],
+            $recorded && $format !== InterviewFormat::Video => ['recorded' => 'Only an interview held in the platform can be recorded.'],
             default => [],
         };
 
@@ -95,6 +102,7 @@ final readonly class Interview
             null,
             $kitId,
             $kitName,
+            $recorded,
         );
     }
 
@@ -108,12 +116,17 @@ final readonly class Interview
         return $this->proposedStartsAt !== null;
     }
 
-    /** @throws StateConflict `interview-not-pending` or `proposal-pending` */
-    public function confirm(): self
+    /**
+     * The job seeker confirms. For a recorded interview they also answer the recording (granted or refused); the answer is ignored otherwise.
+     *
+     * @throws StateConflict `interview-not-pending` or `proposal-pending`
+     * @throws BusinessRuleViolation `recording-consent-required`
+     */
+    public function confirm(?RecordingConsent $consent, DateTimeImmutable $now): self
     {
         $this->assertAwaitingJobSeeker();
 
-        return $this->changed(status: InterviewStatus::Confirmed);
+        return $this->consented($consent, $now)->changed(status: InterviewStatus::Confirmed);
     }
 
     /**
@@ -132,9 +145,9 @@ final readonly class Interview
      * The job seeker proposes another start (the duration stays). It stays pending until the team answers.
      *
      * @throws StateConflict `interview-not-pending`, `proposal-pending` or `proposal-limit`
-     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future
+     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future, or `recording-consent-required`
      */
-    public function propose(DateTimeImmutable $startsAt, DateTimeImmutable $now): self
+    public function propose(DateTimeImmutable $startsAt, ?RecordingConsent $consent, DateTimeImmutable $now): self
     {
         $this->assertAwaitingJobSeeker();
 
@@ -146,7 +159,24 @@ final readonly class Interview
             throw new BusinessRuleViolation('The proposed time must be in the future.', 'invalid-interview', extensions: ['errors' => ['starts_at' => ['The proposed time must be in the future.']]]);
         }
 
-        return $this->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt);
+        // A recorded interview takes the answer now: the team accepting the proposal confirms it without the job seeker answering again.
+        return $this->consented($consent, $now)->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt);
+    }
+
+    /**
+     * The job seeker takes back a consent they gave. Recording that already started cannot be undone by this (the application layer checks that).
+     *
+     * @throws StateConflict `interview-not-active` or `no-recording-consent`
+     */
+    public function withdrawRecordingConsent(DateTimeImmutable $now): self
+    {
+        $this->assertActive();
+
+        if (! $this->recorded || $this->recordingConsent !== RecordingConsent::Granted) {
+            throw new StateConflict('You have not given consent to record this interview.', 'no-recording-consent');
+        }
+
+        return $this->changed(recordingConsent: RecordingConsent::Withdrawn, recordingConsentAt: $now);
     }
 
     /**
@@ -210,6 +240,22 @@ final readonly class Interview
         }
     }
 
+    /** @throws BusinessRuleViolation `recording-consent-required` */
+    private function consented(?RecordingConsent $consent, DateTimeImmutable $now): self
+    {
+        if (! $this->recorded) {
+            return $this;
+        }
+
+        if (! in_array($consent, [RecordingConsent::Granted, RecordingConsent::Refused], true)) {
+            $message = 'Say whether you agree to the recording of this interview.';
+
+            throw new BusinessRuleViolation($message, 'recording-consent-required', extensions: ['errors' => ['recording_consent' => [$message]]]);
+        }
+
+        return $this->changed(recordingConsent: $consent, recordingConsentAt: $now);
+    }
+
     private static function text(?string $value): ?string
     {
         $value = $value === null ? null : trim($value);
@@ -224,6 +270,8 @@ final readonly class Interview
         ?int $proposalsUsed = null,
         mixed $proposedStartsAt = false,
         mixed $remindedAt = false,
+        ?RecordingConsent $recordingConsent = null,
+        ?DateTimeImmutable $recordingConsentAt = null,
     ): self {
         return new self(
             $this->applicationId,
@@ -241,6 +289,9 @@ final readonly class Interview
             $remindedAt === false ? $this->remindedAt : $remindedAt,
             $this->kitId,
             $this->kitName,
+            $this->recorded,
+            $recordingConsent ?? $this->recordingConsent,
+            $recordingConsentAt ?? $this->recordingConsentAt,
             $this->id,
         );
     }

@@ -24,9 +24,11 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'recruitment_applications' => ['user_id'],
             'recruitment_application_notes' => ['author_id'],
             'recruitment_application_ratings' => ['member_id'],
-            'recruitment_interviews' => ['interviewer_id', 'created_by'],
+            'recruitment_interviews' => ['interviewer_id', 'created_by', 'admitted_by'],
             'recruitment_interview_kits' => ['created_by', 'updated_by'],
             'recruitment_interview_participants' => ['user_id'],
+            'recruitment_interview_video_tokens' => ['user_id'],
+            'recruitment_interview_recordings' => ['started_by'],
             'recruitment_interview_scorecards' => ['member_id'],
             'recruitment_offers' => ['created_by'],
             'jobseeker_profiles' => ['user_id'],
@@ -94,6 +96,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
     /** @var array<string, list<string>> logs, views, audit, notifications, deliveries and summaries keep plain columns */
     private const array WITHOUT = [
         'recruitment_application_stage_history' => ['actor_id', 'from_stage_id', 'to_stage_id'],
+        'recruitment_interview_attendances' => ['user_id'],
         'jobseeker_profile_views' => ['user_id', 'company_id', 'member_id'],
         'job_views' => ['job_id'],
         'job_view_daily' => ['job_id'],

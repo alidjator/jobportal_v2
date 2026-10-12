@@ -31,6 +31,8 @@ final class InterviewFields
             $prefix.'kit_id' => ['nullable', 'integer', 'min:1'],
             $prefix.'participant_ids' => ['nullable', 'array', 'max:'.InterviewPanel::EXTRA_MAX],
             $prefix.'participant_ids.*' => ['integer', 'min:1', 'distinct'],
+            // Omitted: a new video time keeps the flag of the interview it replaces (a first interview is not recorded). Only a video interview can be recorded.
+            $prefix.'recorded' => ['nullable', 'boolean'],
         ];
     }
 
@@ -52,6 +54,7 @@ final class InterviewFields
             isset($data['kit_id']) ? (int) $data['kit_id'] : null,
             array_key_exists('kit_id', $data),
             isset($data['participant_ids']) ? array_map('intval', array_values($data['participant_ids'])) : null,
+            isset($data['recorded']) ? (bool) $data['recorded'] : null,
         );
     }
 }
