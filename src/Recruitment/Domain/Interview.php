@@ -10,7 +10,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * An interview of one application. The team schedules it (`pending`), the job seeker confirms it, declines it or proposes another time (at most
  * {@see self::PROPOSALS_MAX} times), and the team accepts a proposal, cancels it or marks it completed. An application has at most one active interview.
- * A video interview may be marked `recorded`: the job seeker then consents or refuses when they answer the schedule, and may withdraw a given consent.
+ * A video or voice interview may be marked `recorded`: the job seeker then consents or refuses when they answer the schedule, and may withdraw a given consent.
  */
 final readonly class Interview
 {
@@ -43,12 +43,13 @@ final readonly class Interview
         public bool $recorded = false,
         public ?RecordingConsent $recordingConsent = null,
         public ?DateTimeImmutable $recordingConsentAt = null,
+        public ?string $candidatePhone = null,
         public ?int $id = null,
     ) {}
 
     /**
-     * A new pending interview. An online interview needs a meeting link and an onsite one a location; the other is dropped, and a video interview has neither.
-     * Only a video interview can be recorded.
+     * A new pending interview. An online interview needs a meeting link and an onsite one a location; the other is dropped, and a video or voice interview has neither.
+     * Only an interview held in the platform (video or voice) can be recorded.
      *
      * @throws BusinessRuleViolation `invalid-interview`
      */
@@ -76,7 +77,7 @@ final readonly class Interview
             $format === InterviewFormat::Online && $meetingUrl === null => ['meeting_url' => 'Give the meeting link.'],
             $location !== null && mb_strlen($location) > self::LOCATION_MAX => ['location' => 'The location can have at most '.self::LOCATION_MAX.' characters.'],
             $meetingUrl !== null && mb_strlen($meetingUrl) > self::URL_MAX => ['meeting_url' => 'The link can have at most '.self::URL_MAX.' characters.'],
-            $recorded && $format !== InterviewFormat::Video => ['recorded' => 'Only an interview held in the platform can be recorded.'],
+            $recorded && ! $format->isHeldInPlatform() => ['recorded' => 'Only an interview held in the platform can be recorded.'],
             default => [],
         };
 
@@ -117,16 +118,17 @@ final readonly class Interview
     }
 
     /**
-     * The job seeker confirms. For a recorded interview they also answer the recording (granted or refused); the answer is ignored otherwise.
+     * The job seeker confirms. For a recorded interview they also answer the recording (granted or refused); the answer is ignored otherwise. For a voice
+     * interview they give the number to call (`$phone`, required); for a video interview they may give a fallback number (`$fallbackPhone`); other formats ignore both.
      *
      * @throws StateConflict `interview-not-pending` or `proposal-pending`
-     * @throws BusinessRuleViolation `recording-consent-required`
+     * @throws BusinessRuleViolation `recording-consent-required` or `invalid-phone`
      */
-    public function confirm(?RecordingConsent $consent, DateTimeImmutable $now): self
+    public function confirm(?RecordingConsent $consent, DateTimeImmutable $now, ?string $phone = null, ?string $fallbackPhone = null): self
     {
         $this->assertAwaitingJobSeeker();
 
-        return $this->consented($consent, $now)->changed(status: InterviewStatus::Confirmed);
+        return $this->consented($consent, $now)->changed(status: InterviewStatus::Confirmed, candidatePhone: $this->confirmedPhone($phone, $fallbackPhone));
     }
 
     /**
@@ -145,9 +147,9 @@ final readonly class Interview
      * The job seeker proposes another start (the duration stays). It stays pending until the team answers.
      *
      * @throws StateConflict `interview-not-pending`, `proposal-pending` or `proposal-limit`
-     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future, or `recording-consent-required`
+     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future, or `recording-consent-required` or `invalid-phone`
      */
-    public function propose(DateTimeImmutable $startsAt, ?RecordingConsent $consent, DateTimeImmutable $now): self
+    public function propose(DateTimeImmutable $startsAt, ?RecordingConsent $consent, DateTimeImmutable $now, ?string $phone = null, ?string $fallbackPhone = null): self
     {
         $this->assertAwaitingJobSeeker();
 
@@ -159,8 +161,9 @@ final readonly class Interview
             throw new BusinessRuleViolation('The proposed time must be in the future.', 'invalid-interview', extensions: ['errors' => ['starts_at' => ['The proposed time must be in the future.']]]);
         }
 
-        // A recorded interview takes the answer now: the team accepting the proposal confirms it without the job seeker answering again.
-        return $this->consented($consent, $now)->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt);
+        // A recorded interview takes the answer now, and a voice interview the number to call: the team accepting the proposal confirms it without the job
+        // seeker answering again.
+        return $this->consented($consent, $now)->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt, candidatePhone: $this->confirmedPhone($phone, $fallbackPhone));
     }
 
     /**
@@ -256,6 +259,34 @@ final readonly class Interview
         return $this->changed(recordingConsent: $consent, recordingConsentAt: $now);
     }
 
+    /**
+     * The number kept for the interview: the one to call for a voice interview (required), the optional fallback for a video interview, none otherwise.
+     *
+     * @throws BusinessRuleViolation `invalid-phone`
+     */
+    private function confirmedPhone(?string $phone, ?string $fallbackPhone): ?string
+    {
+        [$given, $field] = match ($this->format) {
+            InterviewFormat::Voice => [$phone, 'phone'],
+            InterviewFormat::Video => [$fallbackPhone, 'fallback_phone'],
+            default => [null, null],
+        };
+
+        if ($field === null || (($given === null || trim($given) === '') && $this->format === InterviewFormat::Video)) {
+            return null;
+        }
+
+        $number = $given === null ? null : PhoneNumber::normalise($given);
+
+        if ($number === null) {
+            $message = $given === null || trim($given) === '' ? 'Give the number to call.' : 'Give an Indonesian phone number, for example 0812 3456 7890.';
+
+            throw new BusinessRuleViolation($message, 'invalid-phone', extensions: ['errors' => [$field => [$message]]]);
+        }
+
+        return $number;
+    }
+
     private static function text(?string $value): ?string
     {
         $value = $value === null ? null : trim($value);
@@ -272,6 +303,7 @@ final readonly class Interview
         mixed $remindedAt = false,
         ?RecordingConsent $recordingConsent = null,
         ?DateTimeImmutable $recordingConsentAt = null,
+        ?string $candidatePhone = null,
     ): self {
         return new self(
             $this->applicationId,
@@ -292,6 +324,7 @@ final readonly class Interview
             $this->recorded,
             $recordingConsent ?? $this->recordingConsent,
             $recordingConsentAt ?? $this->recordingConsentAt,
+            $candidatePhone ?? $this->candidatePhone,
             $this->id,
         );
     }

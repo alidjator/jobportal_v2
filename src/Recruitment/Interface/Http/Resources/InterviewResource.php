@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\InterviewView;
 use Src\Recruitment\Domain\Interview;
+use Src\Recruitment\Domain\InterviewFormat;
 
 /**
  * An interview, for the team and for the job seeker alike. `proposals_left` counts how many more times the job seeker may propose another time, and
@@ -34,6 +35,10 @@ final class InterviewResource extends JsonResource
             'recorded' => $interview->recorded,
             /** @var 'granted'|'refused'|'withdrawn'|null */
             'recording_consent' => $interview->recordingConsent?->value,
+            /** The number the job seeker confirmed: the one a voice interview is dialled on, or the fallback of a video interview. */
+            'candidate_phone' => $interview->candidatePhone,
+            /** The platform number a voice interview calls from (the same for every candidate). */
+            'caller_number' => $interview->format === InterviewFormat::Voice ? config('services.asterisk.caller_id') : null,
             'interviewer' => ['id' => $interview->interviewerId, 'name' => $this->resource->interviewerName],
             'proposed_starts_at' => $interview->proposedStartsAt?->format(DATE_ATOM),
             /** @var int */

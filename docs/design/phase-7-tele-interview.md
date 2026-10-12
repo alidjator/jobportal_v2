@@ -335,6 +335,17 @@ Decided earlier: Asterisk; calls reach ordinary phone numbers only through a lic
 3. Recording: the announcement, bridge recording, storing, streaming, retention and erasure.
 4. Deployment files in `deploy/asterisk/`: container with limits, PJSIP (trunk template, WSS transport), dialplan (the inbound message), the Indonesian prompts, the Supervisor program for the listener, firewall ports and the checklist. The trunk contract and the number come from the user.
 
+### Form 3 part 1 coded (2026-10-12)
+
+Migration `000131`: `recruitment_interviews.candidate_phone` (E.164, 16 characters). Settings `interview.voice_enabled` (false, company override), `voice_max_call_minutes` (60, 5 to 240), `voice_monthly_minutes` (600, company override), `voice_max_attempts` (3, company override, 1 to 10), `voice_max_concurrent_calls` (5). `.env`/`config/services.php`: `VOICE_CALLER_ID` (`services.asterisk.caller_id`); the Asterisk connection values come with the gateway in part 2. Tests: `tests/Feature/Recruitment/VoiceInterviewsTest.php`, `tests/Unit/Recruitment/Domain/PhoneNumberTest.php`.
+
+1. **One column for both numbers:** `candidate_phone` holds the number to call for a voice interview (request field `phone`, required) and the optional fallback of a video interview (request field `fallback_phone`); a field that does not belong to the format is ignored, so the front end can send both.
+2. **The number is taken with the proposal too:** `propose` accepts the same two fields, because the team accepting a proposal confirms the interview without the job seeker answering again (as for the recording consent). The front end pre-fills `phone` from the profile; the API does not read the profile number by itself (it is unverified, see "Facts checked").
+3. **Normalisation (`PhoneNumber`):** Indonesian numbers only. `0812...`, `62812...`, `+62 812-...` and `0062 812...` are the same number; separators are dropped; 8 to 12 digits follow `+62`, the first not 0. A number without `0`, `62` or `+` (`812...`) is refused as ambiguous, and so is any other country code. Refusal is 422 `invalid-phone` with `errors.phone` or `errors.fallback_phone`. Landline numbers are accepted.
+4. **Voice is held in the platform:** like video it takes neither a place nor a link, can be marked `recorded` (consent as for video) and keeps the `recorded` flag when the team picks a new time. Scheduling needs `interview.voice_enabled` (422 `voice-not-enabled`, `errors.format`).
+5. **Candidate and team views** gain `candidate_phone` and `caller_number` (the platform number, only for a voice interview, null otherwise). The team already sees the candidate's profile number, so showing the confirmed number reveals nothing new. The reminder and schedule emails name the format ("Phone call", "We will call you on the number you confirmed").
+6. **Not in this part:** dialling, hangup, call log, attempt and quota checks (part 2); audio recording (part 3); the Asterisk container (part 4).
+
 ## Open questions
 
 Form 1 (live video on Janus):

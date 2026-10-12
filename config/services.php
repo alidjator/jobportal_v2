@@ -59,6 +59,12 @@ return [
         'recordings_path' => env('JANUS_RECORDINGS_PATH'),
     ],
 
+    'asterisk' => [
+        // The voice server for phone interviews (`docs/design/phase-7-tele-interview.md`, form 3). `caller_id` is the platform number (a number of the SIP trunk)
+        // every candidate sees when called; the connection settings of the voice server are added with its gateway.
+        'caller_id' => env('VOICE_CALLER_ID'),
+    ],
+
     'turn' => [
         // The coturn server (`use-auth-secret`): its URLs, comma separated (`turn:host:3478?transport=udp,turns:host:5349`), and the shared secret.
         'urls' => env('TURN_URLS'),

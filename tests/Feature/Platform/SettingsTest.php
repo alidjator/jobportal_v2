@@ -178,6 +178,7 @@ final class SettingsTest extends FeatureTestCase
             'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb',
             'identity.avatar_max_size_kb',
             'interview.recording_retention_days', 'interview.video_enabled', 'interview.video_max_concurrent_rooms',
+            'interview.voice_enabled', 'interview.voice_max_attempts', 'interview.voice_max_call_minutes', 'interview.voice_max_concurrent_calls', 'interview.voice_monthly_minutes',
             'invitations.max_per_day',
             'job_seeker.available_from_max_days', 'job_seeker.candidate_sensitive_filters_enabled', 'job_seeker.candidate_views_per_day', 'job_seeker.cv_generations_per_hour', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
             'jobalert.max_alerts_per_user',

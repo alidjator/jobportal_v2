@@ -41,11 +41,11 @@ final readonly class RespondToInterview
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview`, `interview-not-pending` or `proposal-pending`
-     * @throws BusinessRuleViolation `recording-consent-required`
+     * @throws BusinessRuleViolation `recording-consent-required` or `invalid-phone`
      */
-    public function confirm(Actor $actor, int $applicationId, ?RecordingConsent $consent): InterviewView
+    public function confirm(Actor $actor, int $applicationId, ?RecordingConsent $consent, ?string $phone = null, ?string $fallbackPhone = null): InterviewView
     {
-        return $this->apply($actor, $applicationId, InterviewChange::Confirmed, fn (Interview $interview): Interview => $interview->confirm($consent, $this->clock->now()));
+        return $this->apply($actor, $applicationId, InterviewChange::Confirmed, fn (Interview $interview): Interview => $interview->confirm($consent, $this->clock->now(), $phone, $fallbackPhone));
     }
 
     /**
@@ -62,11 +62,11 @@ final readonly class RespondToInterview
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview`, `interview-not-pending`, `proposal-pending` or `proposal-limit`
-     * @throws BusinessRuleViolation `invalid-interview` or `recording-consent-required`
+     * @throws BusinessRuleViolation `invalid-interview`, `recording-consent-required` or `invalid-phone`
      */
-    public function propose(Actor $actor, int $applicationId, DateTimeImmutable $startsAt, ?RecordingConsent $consent): InterviewView
+    public function propose(Actor $actor, int $applicationId, DateTimeImmutable $startsAt, ?RecordingConsent $consent, ?string $phone = null, ?string $fallbackPhone = null): InterviewView
     {
-        return $this->apply($actor, $applicationId, InterviewChange::Proposed, fn (Interview $interview): Interview => $interview->propose($startsAt, $consent, $this->clock->now()));
+        return $this->apply($actor, $applicationId, InterviewChange::Proposed, fn (Interview $interview): Interview => $interview->propose($startsAt, $consent, $this->clock->now(), $phone, $fallbackPhone));
     }
 
     /**

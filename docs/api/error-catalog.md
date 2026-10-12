@@ -119,6 +119,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-offer-input` | 422 | Recruitment |  |
 | `invalid-order` | 422 | Assessment | The list must hold every question of the section exactly once. |
 | `invalid-password` | 422 | Identity | The password is incorrect. |
+| `invalid-phone` | 422 | Recruitment |  |
 | `invalid-profile` | 422 | JobSeeker |  |
 | `invalid-question` | 422 | Assessment |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
@@ -302,3 +303,4 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `video-take-closed` | 409 | Assessment | This recording is closed. |
 | `video-too-large` | 422 | Assessment |  |
 | `video-window-closed` | 409 | Recruitment |  |
+| `voice-not-enabled` | 422 | Recruitment |  |

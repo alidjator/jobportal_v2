@@ -24,7 +24,7 @@ final class MyInterviewController extends ApiController
 
     public function confirm(ConfirmInterviewRequest $request, int $id, ActorResolver $actors, RespondToInterview $respond): InterviewResource
     {
-        return new InterviewResource($respond->confirm($actors->fromRequest($request), $id, $request->recordingConsent()));
+        return new InterviewResource($respond->confirm($actors->fromRequest($request), $id, $request->recordingConsent(), $request->phone(), $request->fallbackPhone()));
     }
 
     public function decline(Request $request, int $id, ActorResolver $actors, RespondToInterview $respond): InterviewResource
@@ -34,7 +34,7 @@ final class MyInterviewController extends ApiController
 
     public function propose(ProposeInterviewTimeRequest $request, int $id, ActorResolver $actors, RespondToInterview $respond): InterviewResource
     {
-        return new InterviewResource($respond->propose($actors->fromRequest($request), $id, $request->startsAt(), $request->recordingConsent()));
+        return new InterviewResource($respond->propose($actors->fromRequest($request), $id, $request->startsAt(), $request->recordingConsent(), $request->phone(), $request->fallbackPhone()));
     }
 
     public function withdrawRecordingConsent(Request $request, int $id, ActorResolver $actors, RespondToInterview $respond): InterviewResource

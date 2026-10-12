@@ -12,12 +12,22 @@ final class ProposeInterviewTimeRequest extends FormRequest
     /** @return array<string, list<mixed>> */
     public function rules(): array
     {
-        return ['starts_at' => InterviewFields::rules()['starts_at'], 'recording_consent' => RecordingConsentField::rules()];
+        return ['starts_at' => InterviewFields::rules()['starts_at'], 'recording_consent' => RecordingConsentField::rules()] + PhoneFields::rules();
     }
 
     public function startsAt(): DateTimeImmutable
     {
         return InterviewFields::time($this->string('starts_at')->toString());
+    }
+
+    public function phone(): ?string
+    {
+        return $this->validated('phone');
+    }
+
+    public function fallbackPhone(): ?string
+    {
+        return $this->validated('fallback_phone');
     }
 
     public function recordingConsent(): ?RecordingConsent

@@ -40,7 +40,7 @@ final readonly class InterviewScheduler
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer` or `video-not-enabled`
+     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer`, `video-not-enabled` or `voice-not-enabled`
      * @throws EntityNotFound the named kit is not one of the company's
      */
     public function schedule(RecruitmentMember $member, Application $application, InterviewInput $input): InterviewChanged
@@ -60,8 +60,8 @@ final readonly class InterviewScheduler
             $kit = $this->defaultKit($application);
         }
 
-        // Without a flag in the request, a new video time keeps the flag of the interview it replaces.
-        $recorded = $input->recorded ?? ($input->format === InterviewFormat::Video && $previous instanceof Interview && $previous->recorded);
+        // Without a flag in the request, a new video or voice time keeps the flag of the interview it replaces.
+        $recorded = $input->recorded ?? ($input->format->isHeldInPlatform() && $previous instanceof Interview && $previous->recorded);
 
         $interview = Interview::schedule(
             $applicationId,
@@ -101,9 +101,9 @@ final readonly class InterviewScheduler
     }
 
     /**
-     * A video interview can be scheduled only while an admin has switched video interviews on.
+     * A video interview can be scheduled only while an admin has switched video interviews on, and a voice interview while voice interviews are on.
      *
-     * @throws BusinessRuleViolation `video-not-enabled`
+     * @throws BusinessRuleViolation `video-not-enabled` or `voice-not-enabled`
      */
     public function assertFormatAvailable(int $companyId, InterviewFormat $format): void
     {
@@ -111,6 +111,12 @@ final readonly class InterviewScheduler
             $message = 'Interviews in the platform are not available yet.';
 
             throw new BusinessRuleViolation($message, 'video-not-enabled', extensions: ['errors' => ['format' => [$message]]]);
+        }
+
+        if ($format === InterviewFormat::Voice && ! $this->settings->boolean(InterviewSettings::VOICE_ENABLED, $companyId)) {
+            $message = 'Phone interviews are not available yet.';
+
+            throw new BusinessRuleViolation($message, 'voice-not-enabled', extensions: ['errors' => ['format' => [$message]]]);
         }
     }
 

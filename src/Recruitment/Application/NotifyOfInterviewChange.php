@@ -86,11 +86,13 @@ final readonly class NotifyOfInterviewChange
                 InterviewFormat::Online => 'Online',
                 InterviewFormat::Onsite => 'Onsite',
                 InterviewFormat::Video => 'Video in the platform',
+                InterviewFormat::Voice => 'Phone call',
             },
             'place' => match ($interview->format) {
                 InterviewFormat::Online => (string) $interview->meetingUrl,
                 InterviewFormat::Onsite => (string) $interview->location,
                 InterviewFormat::Video => 'In the platform: open your application to join',
+                InterviewFormat::Voice => 'We will call you on the number you confirmed',
             },
             'recording' => $interview->recorded ? 'Yes, only if you agree' : 'No',
         ]);

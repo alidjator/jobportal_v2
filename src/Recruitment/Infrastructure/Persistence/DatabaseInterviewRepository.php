@@ -69,6 +69,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'kit_id' => $interview->kitId,
             'kit_name' => $interview->kitName,
             'recorded' => $interview->recorded,
+            'candidate_phone' => $interview->candidatePhone,
             'created_at' => $at,
             'updated_at' => $at,
         ]);
@@ -92,6 +93,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $interview->recorded,
             $interview->recordingConsent,
             $interview->recordingConsentAt,
+            $interview->candidatePhone,
             $id,
         );
     }
@@ -108,6 +110,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'reminded_at' => $interview->remindedAt === null ? null : $this->format($interview->remindedAt),
             'recording_consent' => $interview->recordingConsent?->value,
             'recording_consent_at' => $interview->recordingConsentAt === null ? null : $this->format($interview->recordingConsentAt),
+            'candidate_phone' => $interview->candidatePhone,
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
     }
@@ -191,6 +194,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             (bool) $row->recorded,
             $row->recording_consent === null ? null : RecordingConsent::from((string) $row->recording_consent),
             $row->recording_consent_at === null ? null : $this->time((string) $row->recording_consent_at),
+            $row->candidate_phone === null ? null : (string) $row->candidate_phone,
             (int) $row->id,
         );
     }
