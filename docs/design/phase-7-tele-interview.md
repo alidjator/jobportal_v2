@@ -5,6 +5,7 @@
 One line per decision; the detail sections below win if they disagree.
 
 - 2026-10-11: all four forms, built in this order: (1) Zoom, Google Meet and Microsoft Teams integration, (2) recorded one-way video, (3) live video inside the platform, (4) voice calls through Asterisk with a licensed SIP trunk and masked numbers (Decided).
+- 2026-10-12: form 1 part 4 (deployment files in `deploy/janus/`) coded: one container on the host network, internal webhooks on a loopback-only nginx server (see "Form 1 part 4 coded").
 - 2026-10-11: recording is optional per interview and starts only after the candidate's explicit consent, with a retention period and permanent deletion (Decided).
 - 2026-10-11: the one-way video is a new question type in the assessment engine (Answers, 1).
 - 2026-10-11: **Zoom, Google Meet and Microsoft Teams integration is dropped**; live video runs on a self-hosted Janus WebRTC server and becomes the first form. New order: (1) live video on Janus, (2) one-way video, (3) voice through Asterisk (Answers, 2). This replaces the first line above; answers 3 and 4 lapse.
@@ -164,6 +165,17 @@ Migration `000127`: tables `recruitment_interview_attendances` (no foreign key o
 4. **Attendance.** `joined` and `leaving` events of the VideoRoom plugin are read; only a `joined` whose display name was signed by the API (`{userId}.{16 hex}`, returned as `display` in the join credentials, which the browser must pass as its display name) counts, so nobody can add themselves. The role is `candidate` when the user owns the application, else `company`. The shape of the Janus event (`session_id`, `timestamp` in microseconds, `event.data.{event,room,display}`) cannot be tested here and is checked against the real server in part 4.
 5. **Erasure.** Anonymising the applicant deletes the recording files first (`EraseApplicantData`), then every recording and attendance row of their interviews (also when the interview stays for its scorecard). Not done: a Janus room of such an interview is left to Janus's restart.
 6. **Deleting.** Only a finished recording (`ready` or `failed`) can be deleted (409 `recording-not-finished`); the file goes before the row, so a failed deletion can be repeated. A recording of another interview is 404.
+
+### Form 1 part 4 coded (2026-10-12)
+
+Janus is not installed on the server yet, so everything is new, in `deploy/janus/` (read its `README.md` for the install steps): `Dockerfile` (Debian 12 `janus`, `janus-tools`, `ffmpeg`, Python), `docker-compose.yml`, `entrypoint.sh`, `config/*.jcfg`, `converter/converter.py`, `nginx/*`, `setup.sh`; coturn is a second service in the same compose file (UDP and TCP, no TLS: the certificate key is root-only; `turns:` can be added later). Nothing here could be run in development (no Docker access), so the first start is a checklist in the README.
+
+1. **Host network** (interpretation, the design said "Docker bridge"): WebRTC needs a wide UDP range and the public address, so the container uses `network_mode: host`; Janus HTTP, Admin and WebSocket and the converter bind to `127.0.0.1`. The internal webhooks are served by a separate nginx `server` on `127.0.0.1:18089` that exposes only `/api/v1/internal/janus/`; the public server answers 404 for `/api/v1/internal/`. This replaces the bridge-address rule.
+2. **One container** for Janus and the converter (decision 8 of the design), limited to 900 MB and 3 CPUs; only 1 GB was free on 2026-10-11, so a conversion competes with the API for memory (one conversion at a time).
+3. **Tokens:** `entrypoint.sh` registers `JANUS_API_TOKEN` for the VideoRoom plugin through the Admin API at every start (tokens are in memory).
+4. **Conversion layout:** one WebM (VP8/Opus): video tiles side by side (640x360, 15 fps), audio mixed, late joiners delayed by the creation time in the `.mjr` file name. If the name carries no timestamp, tracks start together. Output goes to `ready/{id}.webm`; the working files in `work/{id}` are removed afterwards.
+5. **Files are owned by the application user** (the container runs as its uid) so the queue worker can delete them.
+6. **Unverified against a real server:** the Janus event shape, the `.mjr` file name pattern, `libjanus_*` plugin and transport file names to disable, and the package names on Debian 12.
 
 ### Form 2: one-way video (design started 2026-10-12)
 

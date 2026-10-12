@@ -1,0 +1,12 @@
+# Browsers connect here through nginx (wss://<host>/janus-ws); the port is bound to the loopback address only.
+general: {
+	ws = true
+	ws_ip = "127.0.0.1"
+	ws_port = 8188
+	ws_logging = "err"
+	wss = false
+}
+
+admin: {
+	admin_ws = false
+}

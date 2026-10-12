@@ -1,0 +1,20 @@
+general: {
+	http = true
+	ip = "127.0.0.1"
+	port = 18088
+	base_path = "/janus"
+	http_max_body = 65536
+	https = false
+	json = "indented"
+}
+
+admin: {
+	admin_http = true
+	admin_ip = "127.0.0.1"
+	admin_port = 7088
+	admin_base_path = "/admin"
+	admin_https = false
+}
+
+cors: {
+}

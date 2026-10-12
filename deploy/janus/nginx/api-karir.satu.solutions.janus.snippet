@@ -1,0 +1,20 @@
+# Add inside the TLS `server` block of api-karir.satu.solutions (the file in /home/jobportal/nginx/ and the live one), before `location /`.
+
+# The internal webhooks are never public: Janus reaches them on 127.0.0.1:18089 (janus-internal.conf).
+location ^~ /api/v1/internal/ {
+    return 404;
+}
+
+# Browsers talk to Janus over WebSocket here; the janus.transport.websockets port is bound to the loopback address.
+# The path must equal the application's JANUS_WS_URL (wss://api-karir.satu.solutions/janus-ws). Every request still needs a join token (token_auth).
+location = /janus-ws {
+    proxy_pass http://127.0.0.1:8188;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    proxy_buffering off;
+    # Janus expects the "janus-protocol" subprotocol; nginx passes it through.
+}

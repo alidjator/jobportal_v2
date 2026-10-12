@@ -1,0 +1,5 @@
+# Rooms are created by the application at run time (non-permanent, with a pin and a secret); nothing is defined here.
+general: {
+	events = true
+	string_ids = false
+}

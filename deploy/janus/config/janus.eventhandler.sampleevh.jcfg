@@ -1,0 +1,13 @@
+# Posts every event to the application's webhook with the shared secret. The application reads only the VideoRoom joined and leaving events.
+general: {
+	enabled = true
+	events = "plugins"
+	grouping = false
+	json = "compact"
+	backend = "${APP_WEBHOOK_BASE}/events"
+	backend_user = "janus"
+	backend_pwd = "${JANUS_WEBHOOK_SECRET}"
+	max_retransmissions = 5
+	retransmissions_backoff = 100
+	timeout = 5000
+}
