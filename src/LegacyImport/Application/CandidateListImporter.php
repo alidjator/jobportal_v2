@@ -8,7 +8,7 @@ use stdClass;
 /**
  * The shared part of the importers of what hangs on a job seeker profile (experience, education, skills, languages): it reads a legacy table that points at a
  * `candidates` row, finds the account and the profile the candidate became (a row of a candidate whose profile was not imported is skipped), counts the rows
- * the user already has against the limit of the new rules, and writes each mapped row through the writer. A subclass only says how one row is mapped.
+ * the user already has (for the position), with no limit (the import keeps the legacy data as it is), and writes each mapped row through the writer. A subclass only says how one row is mapped.
  */
 abstract class CandidateListImporter implements Importer
 {
@@ -33,9 +33,6 @@ abstract class CandidateListImporter implements Importer
 
     /** The kind of row the writer writes. */
     abstract protected function kind(): string;
-
-    /** The most rows a user may have of this kind. */
-    abstract protected function limit(): int;
 
     /**
      * Anything a whole batch of rows needs to be mapped (for example master maps), looked up once.
@@ -133,12 +130,6 @@ abstract class CandidateListImporter implements Importer
         }
 
         $this->counts[$userId] ??= $this->writer->count($this->kind(), $userId);
-
-        if ($this->counts[$userId] >= $this->limit()) {
-            $report->skipped($entity, $legacyId, 'over-limit');
-
-            return;
-        }
 
         $mapped = $this->map($row, $userId, $context, $state['lookups']);
 

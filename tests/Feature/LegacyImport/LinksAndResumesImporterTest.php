@@ -106,18 +106,18 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
         $shortener = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'other', 'url' => 'https://bit.ly/abc']);
         $unknown = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'myspace', 'url' => 'https://myspace.com/siti']);
         $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'https://github.com/siti']);
-        $secondGithub = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'https://github.com/siti2']);
+        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'https://github.com/siti2']);
 
         $report = $this->entity($this->import('links'), 'links');
 
         $this->assertSame(
-            [$http => 'link-invalid', $wrongDomain => 'link-invalid', $shortener => 'link-invalid', $unknown => 'link-type-unknown', $secondGithub => 'over-limit-type'],
+            [$http => 'link-invalid', $wrongDomain => 'link-invalid', $shortener => 'link-invalid', $unknown => 'link-type-unknown'],
             collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all(),
         );
-        $this->assertSame(1, DB::table('jobseeker_links')->count());
+        $this->assertSame(2, DB::table('jobseeker_links')->count());
     }
 
-    public function test_at_most_three_other_links_and_eight_in_all(): void
+    public function test_every_link_is_kept_without_a_limit_per_kind_or_in_all(): void
     {
         foreach (['facebook', 'youtube', 'pinterest', 'reddit'] as $kind) {
             $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => $kind, 'url' => "https://{$kind}.com/siti"]);
@@ -125,7 +125,7 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
 
         $this->import('links');
 
-        $this->assertSame(3, DB::table('jobseeker_links')->where('type', 'other')->count());
+        $this->assertSame(4, DB::table('jobseeker_links')->where('type', 'other')->count());
     }
 
     public function test_links_of_a_company_owner_are_not_a_job_seekers_links(): void
@@ -195,7 +195,7 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
         $this->assertSame([['legacy_id' => $id, 'reason' => 'file-missing']], $report['skipped_rows']);
     }
 
-    public function test_only_the_newest_five_valid_resumes_stay(): void
+    public function test_every_valid_resume_is_kept_without_a_limit(): void
     {
         $ids = [];
 
@@ -203,13 +203,13 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
             $ids[$i] = $this->resume("cv{$i}.pdf", $this->pdf((string) $i), created: sprintf('2024-03-0%d 08:00:00', $i));
         }
 
-        // The newest one is broken: the five newest that pass are numbers 6 down to 2.
+        // The newest one is broken; the six others pass.
         file_put_contents($this->root.'/storage/app/'.DB::connection('legacy')->table('candidate_resumes')->where('id', $ids[7])->value('file'), 'not a pdf');
 
         $report = $this->entity($this->import('resumes'), 'resumes');
 
-        $this->assertSame(['cv2.pdf', 'cv3.pdf', 'cv4.pdf', 'cv5.pdf', 'cv6.pdf'], DB::table('jobseeker_resumes')->orderBy('name')->pluck('name')->all());
-        $this->assertSame([$ids[7] => 'not-a-pdf', $ids[1] => 'over-limit'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
+        $this->assertSame(['cv1.pdf', 'cv2.pdf', 'cv3.pdf', 'cv4.pdf', 'cv5.pdf', 'cv6.pdf'], DB::table('jobseeker_resumes')->orderBy('name')->pluck('name')->all());
+        $this->assertSame([$ids[7] => 'not-a-pdf'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
     }
 
     public function test_without_a_legacy_folder_every_resume_is_skipped(): void

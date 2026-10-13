@@ -4,12 +4,10 @@ namespace Src\LegacyImport\Application;
 
 use stdClass;
 
-/** Imports `candidate_skill` through the skill master map, in the legacy order, one row per skill, at most 30 per user. */
+/** Imports `candidate_skill` through the skill master map, in the legacy order, one row per skill, **no limit per user** (decided 2026-10-13: the import keeps what the legacy data has). */
 final class SkillsImporter extends CandidateListImporter
 {
     public const string ENTITY = 'skills';
-
-    private const int LIMIT = 30;
 
     /** @var array<int, array<int, true>> the skills each user got during this run */
     private array $seen = [];
@@ -32,11 +30,6 @@ final class SkillsImporter extends CandidateListImporter
     protected function kind(): string
     {
         return 'skill';
-    }
-
-    protected function limit(): int
-    {
-        return self::LIMIT;
     }
 
     public function entity(): string

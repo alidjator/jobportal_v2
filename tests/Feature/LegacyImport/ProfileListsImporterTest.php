@@ -126,7 +126,7 @@ final class ProfileListsImporterTest extends FeatureTestCase
         $this->assertSame(0, DB::table('jobseeker_experiences')->count());
     }
 
-    public function test_at_most_thirty_experiences_per_user_are_kept(): void
+    public function test_a_user_keeps_every_experience_without_a_limit(): void
     {
         for ($i = 0; $i < 32; $i++) {
             $this->experience(['company' => 'PT '.$i]);
@@ -134,9 +134,8 @@ final class ProfileListsImporterTest extends FeatureTestCase
 
         $report = $this->entity($this->import('experiences'), 'experiences');
 
-        $this->assertSame(30, DB::table('jobseeker_experiences')->count());
-        $this->assertSame(['over-limit'], collect($report['skipped_rows'])->pluck('reason')->unique()->values()->all());
-        $this->assertSame(2, $report['skipped']);
+        $this->assertSame(32, DB::table('jobseeker_experiences')->count());
+        $this->assertSame(0, $report['skipped']);
     }
 
     // ----- educations -----
@@ -194,6 +193,19 @@ final class ProfileListsImporterTest extends FeatureTestCase
         $created = (int) DB::table('reference_skills')->where('slug', 'underwater-welding')->value('id');
         $this->assertSame([[$this->php, 1], [$created, 2]], DB::table('jobseeker_skills')->orderBy('position')->get(['skill_id', 'position'])->map(fn ($r): array => [(int) $r->skill_id, (int) $r->position])->all());
         $this->assertSame([$duplicate => 'duplicate', $nothing => 'skill-unmatched'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
+    }
+
+    public function test_a_user_keeps_every_skill_without_a_limit(): void
+    {
+        for ($id = 10; $id < 50; $id++) {
+            $this->legacyMasterItem('skills', $id, ['en' => 'Skill '.$id]);
+            $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => $id]);
+        }
+
+        $report = $this->entity($this->import('skills'), 'skills');
+
+        $this->assertSame(40, DB::table('jobseeker_skills')->count());
+        $this->assertSame(0, $report['skipped']);
     }
 
     public function test_languages_are_imported_as_conversational_and_unmatched_names_are_skipped(): void

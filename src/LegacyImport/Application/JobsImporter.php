@@ -32,8 +32,6 @@ final class JobsImporter implements Importer
 
     private const int DESCRIPTION_MIN = 50;
 
-    private const int LIST_MAX = 15;
-
     /** The legacy column of each master the job points at => the master key. */
     private const array MASTER_COLUMNS = [
         'category_id' => 'job_categories',
@@ -401,7 +399,7 @@ final class JobsImporter implements Importer
             $report->note(self::ENTITY, 'skill-text-ambiguous', $found['ambiguous']);
         }
 
-        return $this->capped(array_values(array_unique($ids)), 'skills-over-limit', $report);
+        return array_values(array_unique($ids));
     }
 
     /**
@@ -424,20 +422,7 @@ final class JobsImporter implements Importer
             $ids[] = $new;
         }
 
-        return $this->capped(array_values(array_unique($ids)), 'benefits-over-limit', $report);
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return list<int>
-     */
-    private function capped(array $ids, string $note, ImportReport $report): array
-    {
-        if (count($ids) > self::LIST_MAX) {
-            $report->note(self::ENTITY, $note, count($ids) - self::LIST_MAX);
-        }
-
-        return array_slice($ids, 0, self::LIST_MAX);
+        return array_values(array_unique($ids));
     }
 
     private function status(string $legacyStatus, bool $appliesOutside, ?string $deadline, string $today): string

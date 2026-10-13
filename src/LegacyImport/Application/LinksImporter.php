@@ -11,7 +11,7 @@ use stdClass;
 /**
  * Imports the links of a job seeker: the candidate's `website` (kind `website`) and the `social_links` of the account, mapped to the new kinds (twitter to `x`;
  * facebook, youtube, pinterest and reddit to `other`). Every address must pass the new link rules (https, a domain name, no shortener, the own domain for
- * the named kinds); one per kind except `other` (up to three), at most eight per user. Only for job seekers whose profile was imported.
+ * the named kinds); no limit on their number (the import keeps the legacy data as it is). Only for job seekers whose profile was imported.
  */
 final readonly class LinksImporter implements Importer
 {
@@ -76,11 +76,8 @@ final readonly class LinksImporter implements Importer
             foreach ($byUser as $legacyUser => $links) {
                 $candidate = $candidateOfUser[$legacyUser] ?? null;
                 $userId = $candidate === null ? null : ($users[$legacyUser] ?? null);
-                $perType = [];
-                $total = $userId === null ? 0 : $this->writer->count('link', $userId);
-
                 foreach ($links as $link) {
-                    $this->importLink($link, $candidate, $userId, isset($profiles[(int) $candidate]), $link['entity'] === self::WEBSITE ? isset($doneWebsite[$link['legacyId']]) : isset($doneSocial[$link['legacyId']]), $perType, $total, $context);
+                    $this->importLink($link, $candidate, $userId, isset($profiles[(int) $candidate]), $link['entity'] === self::WEBSITE ? isset($doneWebsite[$link['legacyId']]) : isset($doneSocial[$link['legacyId']]), $context);
                 }
             }
         });
@@ -90,7 +87,7 @@ final readonly class LinksImporter implements Importer
      * @param  array{entity: string, legacyId: int, type: LinkType|null, url: string}  $link
      * @param  array<string, int>  $perType
      */
-    private function importLink(array $link, ?int $candidate, ?int $userId, bool $hasProfile, bool $alreadyImported, array &$perType, int &$total, ImportContext $context): void
+    private function importLink(array $link, ?int $candidate, ?int $userId, bool $hasProfile, bool $alreadyImported, ImportContext $context): void
     {
         $report = $context->report;
         $report->read(self::ENTITY);
@@ -123,21 +120,6 @@ final readonly class LinksImporter implements Importer
 
             return;
         }
-
-        $reason = match (true) {
-            ($perType[$type->value] ?? 0) >= $type->maximum() => 'over-limit-type',
-            $total >= LinkRules::LINKS_MAX => 'over-limit',
-            default => null,
-        };
-
-        if ($reason !== null) {
-            $report->skipped(self::ENTITY, $link['legacyId'], $reason);
-
-            return;
-        }
-
-        $perType[$type->value] = ($perType[$type->value] ?? 0) + 1;
-        $total++;
 
         if ($context->write) {
             $newId = $this->writer->insert('link', ['user_id' => $userId, 'type' => $type->value, 'url' => $checked->url]);

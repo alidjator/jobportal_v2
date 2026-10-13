@@ -333,7 +333,7 @@ final class JobsImporterTest extends FeatureTestCase
         $this->assertSame(0, DB::table('job_job_skills')->count());
     }
 
-    public function test_more_than_fifteen_skills_are_cut_and_counted(): void
+    public function test_every_skill_of_a_job_is_kept_without_a_limit(): void
     {
         $job = $this->legacyJob(['hard_skill' => null]);
 
@@ -345,8 +345,8 @@ final class JobsImporterTest extends FeatureTestCase
 
         $report = $this->import();
 
-        $this->assertSame(15, DB::table('job_job_skills')->count());
-        $this->assertSame(2, $this->entity($report)['notes']['skills-over-limit']);
+        $this->assertSame(17, DB::table('job_job_skills')->count());
+        $this->assertArrayNotHasKey('skills-over-limit', $this->entity($report)['notes']);
     }
 
     public function test_benefits_with_no_counterpart_are_noted_and_duplicates_are_joined(): void

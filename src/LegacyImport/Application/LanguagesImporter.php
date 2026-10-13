@@ -14,8 +14,6 @@ final class LanguagesImporter extends CandidateListImporter
 
     public const string PROFICIENCY = 'conversational';
 
-    private const int LIMIT = 10;
-
     /** @var array<int, array<int, true>> the languages each user got during this run */
     private array $seen = [];
 
@@ -37,11 +35,6 @@ final class LanguagesImporter extends CandidateListImporter
     protected function kind(): string
     {
         return 'language';
-    }
-
-    protected function limit(): int
-    {
-        return self::LIMIT;
     }
 
     public function entity(): string

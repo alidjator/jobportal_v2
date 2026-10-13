@@ -29,6 +29,7 @@ One line per decision; the detail is in the section named. If they disagree, the
 - 2026-10-13 Import source: the `legacy` connection reads `jobportal_v2_production`, a MySQL copy of the karir.pkp database made by the user on 2026-10-13 (same server, schema identical: 125 tables, 1,043 columns), not the live database. The files come from the user's copy of the karir.pkp folder of the same day, `KARIR_PKP_FILES_ROOT=/usr/local/src/karir.pkp-20261013/karir.pkp` (`public/uploads` 1.1 GB). This copy is for the rehearsal only; the final run uses a new copy taken at the freeze.
 - 2026-10-13 Skills: every legacy skill that matches no master is **created as a new skill master** at import (replaces "unmatched are reported, never created" for skills only; details in "Legacy skills as masters").
 - 2026-10-13 Job roles and job categories: an unmatched legacy item is created as a new master too, like the skills ("Legacy skills as masters", last item).
+- 2026-10-13 No count limits at import: the legacy data is migrated as it is, limits apply to new API data only ("Import as it is", last bullet).
 - 2026-10-13 Tests write import reports to a fake disk, never to the real `storage/app/private/legacy-import/` ("Legacy skills as masters", test storage).
 - 2026-10-13 Rehearsal masters map `/home/jobportal/import/masters.draft.json` approved as it is: "Kristen" → `protestant`, roles 26 and 27 → `developer`; the other unmatched roles (DevOps, IT, IT Support, Internship, ...) become new roles.
 - Open: the user's approval is needed before any run against production data (the copy included).
@@ -183,7 +184,7 @@ and experience level through the master map; availability `available` and `avail
 else dropped; the legacy timestamps are kept; notes count each emptied value. **Experiences:** the title is `job_title` else `designation`; dates are read from free text (`LegacyDates`: `2020-03`, `03/2020`,
 `15/03/2020`, `March 2020`, `Maret 2020`); the new `HistoryRules` decide, and the first failing field is the skip reason (`invalid-start_date`, ...); the employment type is matched to a job type by name; at most
 30. **Educations:** the level through the master map (`education-level-unmatched` otherwise), the institution from `name`, the year as both start and end, the GPA kept only from 0 to 4 with two decimals (note
-`gpa-invalid`), `HistoryRules` for the rest; at most 15. **Skills:** through the master map, one per skill, in order, at most 30. **Languages:** through the master map, `conversational`, at most 10. **Links:** the
+`gpa-invalid`), `HistoryRules` for the rest; at most 15. **Skills:** through the master map, one per skill, in order, **no limit per user** (user, 2026-10-13: the rehearsal showed 826 rows cut by the old limit of 30; the import keeps the legacy data as it is). **Languages:** through the master map, `conversational`, at most 10. **Links:** the
 website and the social links under the new `LinkRules` (https, domain, no shortener, own domain for the named kinds), one per kind except `other` (three), eight in all; links of a company owner are
 `not-a-job-seeker`. **Resumes:** read from the legacy project folder, a PDF by content, the scan of `ResumePdf`, the admin size limit, the **newest five that pass** per user, a random name under
 `jobseeker/resumes/`; reasons `files-root-not-configured`, `file-missing`, `too-large`, `not-a-pdf`, `unsafe-pdf`, `over-limit`, `user-not-imported`. All only add rows that are not in the id map and never
@@ -330,3 +331,9 @@ letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and fla
 - Limitation: a name that normalises to nothing (for example only symbols) cannot match by name, so a second `--write` run would create it again; rehearse once per scratch database.
 - Tests: `MastersImporterTest`, `SkillKindGuesserTest`; `UsesLegacyDatabase::setUpLegacyDatabase()` now fakes the local disk, so no import test writes into the real report folder.
 - Leftover test reports in `storage/app/private/legacy-import/` (about 770 `*-accounts-*.json`) are for the user to delete; the real rehearsal report is `20261013-053747-all-dry-run.json`.
+
+- **Import as it is, no count limits (user, 2026-10-13):** one goal of the project is to migrate the legacy data as it is and to limit only after go live; data entered through the new API keeps following the rules, the migrated data
+  does not. So the importers have **no limit on the number of rows**: skills (rehearsal cut 826 rows, one candidate has 108), experiences (30), educations (15), languages (10), links (per kind and eight in all),
+  resumes (newest five), job skills and benefits (15). This replaces every "at most N" and "over-limit" above (reason codes `over-limit`, `over-limit-type`, notes `skills-over-limit`, `benefits-over-limit` are gone).
+  **Not changed (waits for the user):** rows skipped because a value is invalid (invalid email, date, GPA, link, PDF), text cut to a column length, and the cap on stages created for a company (`stage-limit-reached`).
+  The new API may refuse an edit of a migrated user who is over a limit until they are under it: to check before go live.

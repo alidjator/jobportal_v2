@@ -13,8 +13,8 @@ use Throwable;
 
 /**
  * Imports `candidate_resumes`: the file is read from the legacy project folder and copied to the private disk under a random name only when it passes the new
- * rules: a PDF checked by content, the simple scan for encryption, scripts, launch actions and embedded files, the admin size limit, and at most five per user
- * (the newest five that pass; older ones are skipped). Every other one is skipped with its reason so the owner can upload it again. A dry run reads and checks
+ * rules: a PDF checked by content, the simple scan for encryption, scripts, launch actions and embedded files, the admin size limit, with no limit on their number (the import keeps
+ * the legacy data as it is). Every other one is skipped with its reason so the owner can upload it again. A dry run reads and checks
  * the files but stores nothing.
  */
 final readonly class ResumesImporter implements Importer
@@ -58,19 +58,17 @@ final readonly class ResumesImporter implements Importer
         $users = $context->idMap->findMany(AccountsImporter::USER, array_values($owners));
         $done = $context->idMap->findMany(self::RESUME, array_map(static fn (stdClass $row): int => (int) $row->id, $rows));
 
-        // The newest first, so that the five that stay are the newest five that pass.
-        usort($rows, static fn (stdClass $a, stdClass $b): int => [(int) $a->candidate_id, (int) $b->id] <=> [(int) $b->candidate_id, (int) $a->id]);
+        // The oldest first, so that the resumes of a user get their ids in the order they were uploaded.
+        usort($rows, static fn (stdClass $a, stdClass $b): int => [(int) $a->candidate_id, (int) $a->id] <=> [(int) $b->candidate_id, (int) $b->id]);
 
-        $counts = [];
         $maxBytes = $this->settings->integer(JobSeekerSettings::RESUME_MAX_SIZE_KB) * 1024;
 
         foreach ($rows as $row) {
-            $this->importRow($row, $users[$owners[(int) $row->candidate_id] ?? 0] ?? null, isset($done[(int) $row->id]), $maxBytes, $counts, $context);
+            $this->importRow($row, $users[$owners[(int) $row->candidate_id] ?? 0] ?? null, isset($done[(int) $row->id]), $maxBytes, $context);
         }
     }
 
-    /** @param  array<int, int>  $counts */
-    private function importRow(stdClass $row, ?int $userId, bool $alreadyImported, int $maxBytes, array &$counts, ImportContext $context): void
+    private function importRow(stdClass $row, ?int $userId, bool $alreadyImported, int $maxBytes, ImportContext $context): void
     {
         $legacyId = (int) $row->id;
         $report = $context->report;
@@ -84,14 +82,6 @@ final readonly class ResumesImporter implements Importer
 
         if ($userId === null) {
             $report->skipped(self::ENTITY, $legacyId, 'user-not-imported');
-
-            return;
-        }
-
-        $counts[$userId] ??= $this->writer->count('resume', $userId);
-
-        if ($counts[$userId] >= ResumePdf::RESUMES_MAX) {
-            $report->skipped(self::ENTITY, $legacyId, 'over-limit');
 
             return;
         }
@@ -111,8 +101,6 @@ final readonly class ResumesImporter implements Importer
 
             return;
         }
-
-        $counts[$userId]++;
 
         if ($context->write) {
             $this->store($row, $userId, (string) $contents, $context);

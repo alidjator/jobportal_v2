@@ -11,7 +11,7 @@ use stdClass;
 /**
  * Imports `candidate_education`. The level comes through the master map (required), the institution from `name`, and the single legacy `year` is read as the
  * graduation year: the entry is imported with start and end both that year (no invented range). The GPA (`grade`) is kept when it is a number from 0 to 4
- * with at most two decimals, else emptied with a note. A row that fails the new rules (`HistoryRules`) is skipped with the first field that failed. At most 15 per user.
+ * with at most two decimals, else emptied with a note. A row that fails the new rules (`HistoryRules`) is skipped with the first field that failed.
  */
 final class EducationsImporter extends CandidateListImporter
 {
@@ -35,11 +35,6 @@ final class EducationsImporter extends CandidateListImporter
     protected function kind(): string
     {
         return 'education';
-    }
-
-    protected function limit(): int
-    {
-        return HistoryRules::EDUCATIONS_MAX;
     }
 
     public function entity(): string

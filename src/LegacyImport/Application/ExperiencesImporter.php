@@ -39,11 +39,6 @@ final class ExperiencesImporter extends CandidateListImporter
         return 'experience';
     }
 
-    protected function limit(): int
-    {
-        return HistoryRules::EXPERIENCES_MAX;
-    }
-
     public function entity(): string
     {
         return self::ENTITY;
