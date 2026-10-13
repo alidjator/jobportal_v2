@@ -14,7 +14,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: the rest of the public flow agreed: CSRF by `SameSite=Lax` plus an `Origin` check, central handling of 401/409/403, area chosen from `GET /me`, Google Identity Services, sign-out, Reverb authorisation through the proxy ([detail](#52-public-application)).
 - 2026-10-13: the token is kept inside a sealed cookie with `nuxt-auth-utils` (no server-side session store); the Nuxt server runs on the same host as the API behind nginx ([detail](#52-public-application)).
 - Postponed to front-end coding: client IP behind the Nuxt proxy (trusted proxy or not; the rate-limiter rules stay unchanged) ([detail](#52-public-application)).
-- 2026-10-13: page map of the public site, account pages and job seeker area agreed (findings in 7.4 still open) ([detail](#7-page-map-public-site-and-job-seekers)).
+- 2026-10-13: page map of the public site, account pages and job seeker area agreed; its findings were decided the same day ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: public URLs in Indonesian; English under the `/en` prefix with `hreflang`, Indonesian unprefixed by default ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: a public company list is added to the API (`GET /companies`, new endpoint, coded after the import rehearsal together with the front end) for a company directory page ([detail](#74-findings-while-mapping)).
 - 2026-10-13: a training course detail endpoint is added to the API (`GET /training/courses/{id}`, coded with the front end) for an indexed course page ([detail](#74-findings-while-mapping)).
@@ -22,7 +22,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: the job seeker area (`/me/**`) renders in the browser only (`ssr: false`); data still goes through the Nuxt proxy ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: company dashboard page map agreed (C1 to C25), under the `/rekruter` prefix, browser-rendered ([detail](#8-page-map-company-dashboard)).
 - 2026-10-13: entry for employers: a static `/untuk-perusahaan` page with contact details **and** a company application form backed by a new API endpoint and an admin review queue (new feature, designed separately, coded after the import rehearsal) ([detail](#81-findings-while-mapping)).
-- 2026-10-13: admin panel (D1 to D20) and psychologist area (M1 to M6) page maps agreed; the psychologist area lives under `/mitra` on the admin domain (findings in 9.3 still open) ([detail](#9-page-map-admin-panel-and-psychologist-area)).
+- 2026-10-13: admin panel (D1 to D20) and psychologist area (M1 to M6) page maps agreed; the psychologist area lives under `/mitra` on the admin domain; its findings were decided the same day ([detail](#9-page-map-admin-panel-and-psychologist-area)).
 - 2026-10-13: admin endpoints for public user accounts are added (list, search, detail, suspend, reactivate, audited, new permission), new API work after the import rehearsal; adds page D21 ([detail](#93-findings-while-mapping)).
 - 2026-10-13: admin accounts and roles stay console-only; no admin-management pages ([detail](#93-findings-while-mapping)).
 - 2026-10-13: one front-end repository as a pnpm workspace (`apps/public`, `apps/admin`, `packages/ui`, `packages/api`, `packages/i18n`), Node 24 LTS ([detail](#10-technical-foundation)).
@@ -248,10 +248,10 @@ them, and gets 403 `company-admin-required` elsewhere. The menu hides what the r
 | C12 | Invitations to apply | `GET`/`POST company/jobs/{id}/invitations` | both |
 | C13 | Talent pool | `GET`/`POST company/talent-pool`, `PATCH`/`DELETE .../{id}`, categories (CRUD) | both |
 | C14 | Messages | `company/conversations` (list, create, detail, messages, send, read, close, reopen, unread count), `DELETE company/messages/{id}`, attachments | both |
-| C15 | Assessments: tests | `company/assessment/tests` (CRUD, `publish`, `archive`, `restore`, `clone`), sections and questions (CRUD, order), `GET library`, `GET catalog/{id}`, `GET batteries` | both |
-| C16 | Assessments: results | `GET company/assessment/invitations/{id}`, `result`, `report.pdf`, `integrity-events`, `videos/{questionId}`, `scoring` and `PUT scoring/questions/{questionId}`, `cancel` | both |
+| C15 | Assessments: tests | `company/assessment/tests` (CRUD, `publish`, `archive`, `restore`, `clone`), sections and questions (CRUD, order), `GET library`, `GET catalog/{id}`, `GET batteries` | company admin (writing tests, `AuthoringAccess`) |
+| C16 | Assessments: results | `GET company/assessment/invitations/{id}`, `result`, `report.pdf`, `integrity-events`, `videos/{questionId}`, `scoring` and `PUT scoring/questions/{questionId}`, `cancel` | both (scoring: assessors of the job only, `not-an-assessor`) |
 | C17 | Interview kits | `company/interview-kits` (CRUD) | both |
-| C18 | Screening question bank | `company/screening-questions` (CRUD, `archive`, `restore`) | both |
+| C18 | Screening question bank | `company/screening-questions` (CRUD, `archive`, `restore`) | both read; company admin writes |
 | C19 | Pipeline stages | `company/stages` (CRUD, `PUT order`) | company admin |
 | C20 | Company profile | `GET`/`PATCH company/profile`, `PUT company/slug`, logo and banner (`GET`/`POST`/`DELETE`) | company admin |
 | C21 | Verification documents | `GET company/documents`, `POST`/`DELETE .../{typeId}`, `GET .../{typeId}/file` | company admin |
@@ -267,8 +267,8 @@ them, and gets 403 `company-admin-required` elsewhere. The menu hides what the r
   contact details) **with a company application form** posted to a new API endpoint; applications wait in an admin review queue, and an approved one
   leads to the existing flow (admin creates the company, the first company admin is invited). This is a new API feature (endpoint, storage, admin
   queue, notification, anti-spam); its fields and rules are designed in their own document and coded after the import rehearsal.
-- **Role per page** comes from the API rules above; the exact recruiter rights on C15 to C18 should be confirmed against the API when coding (403s
-  are handled as "not allowed", section 5.2).
+- **Role per page** comes from the API rules above; the recruiter rights on C15 to C18 were checked against the use cases on 2026-10-13 and are in the
+  table (403s are handled as "not allowed", section 5.2).
 
 ## 9. Page map: admin panel and psychologist area
 
@@ -298,7 +298,7 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D12 | Legal documents | `admin/legal-documents` (CRUD, `publish`) | `legal_documents.manage` |
 | D13 | Email templates | `GET admin/email-templates[/{key}]`, `PUT`/`DELETE .../{key}/{locale}`, `POST .../{key}/preview` | `email_templates.manage` |
 | D14 | CV templates | `GET admin/cv-templates`, `PATCH .../{key}` | `cv_templates.manage` |
-| D15 | Reference data (one generic page per master) | benefits, education and experience levels, industries, job categories, levels, roles and types, languages, nationalities, organization types, religions, salary periods, skills, team sizes, work times, company document types (`GET`/`POST`/`PUT`) | `reference_data.manage` (document types: `companies.manage`, to be checked) |
+| D15 | Reference data (one generic page per master) | benefits, education and experience levels, industries, job categories, levels, roles and types, languages, nationalities, organization types, religions, salary periods, skills, team sizes, work times, company document types (`GET`/`POST`/`PUT`) | `reference_data.manage`; company document types `companies.manage` (`admin/company-document-types`, checked 2026-10-13) |
 | D16 | Settings | `GET admin/settings`, `PUT`/`DELETE .../{key}` | `settings.manage` |
 | D17 | Audit log | `GET admin/audit-logs` | `audit_logs.view` |
 | D18 | Assessment library | `admin/assessment/library/tests` (CRUD, `publish`, `archive`, `restore`, `clone`), sections and questions (CRUD, order); `GET admin/assessment/batteries`; per company `admin/assessment/companies/{id}/batteries` | `assessment_library.manage` |
