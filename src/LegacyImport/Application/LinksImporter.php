@@ -85,7 +85,6 @@ final readonly class LinksImporter implements Importer
 
     /**
      * @param  array{entity: string, legacyId: int, type: LinkType|null, url: string}  $link
-     * @param  array<string, int>  $perType
      */
     private function importLink(array $link, ?int $candidate, ?int $userId, bool $hasProfile, bool $alreadyImported, ImportContext $context): void
     {

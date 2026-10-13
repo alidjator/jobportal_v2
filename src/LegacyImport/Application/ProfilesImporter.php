@@ -103,7 +103,7 @@ final readonly class ProfilesImporter implements Importer
         $seenUsers[$userId] = true;
         $location = $this->locations->resolve($this->text($row->region), $this->text($row->district), $this->text($row->subdistrict), $this->text($row->kelurahan), $this->text($row->postcode));
         [$salary, $period] = $this->salary($row->expected_salary, $monthly, $report);
-        [$availability, $availableFrom] = $this->availability($row, $report);
+        [$availability, $availableFrom] = $this->availability($row);
         $createdAt = $this->time($row->created_at, $context);
 
         $columns = [

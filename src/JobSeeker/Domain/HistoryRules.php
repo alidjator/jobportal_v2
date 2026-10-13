@@ -79,12 +79,12 @@ final class HistoryRules
         self::fail($errors, 'invalid-education', 'The education entry is not valid.');
     }
 
-    /** @param  array<string, list<string>>  $errors */
     private static function sameNumber(string $value, ?string $stored): bool
     {
         return $stored !== null && is_numeric($value) && is_numeric($stored) && (float) $value === (float) $stored;
     }
 
+    /** @param  array<string, list<string>>  $errors */
     private static function length(array &$errors, string $field, ?string $value, int $min, int $max, ?string $unchanged = null): void
     {
         if ($value === null || ($unchanged !== null && trim($value) === trim($unchanged))) {
