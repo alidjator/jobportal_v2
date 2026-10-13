@@ -29,6 +29,7 @@ One line per decision; the detail is in the section named. If they disagree, the
 - 2026-10-13 Import source: the `legacy` connection reads `jobportal_v2_production`, a MySQL copy of the karir.pkp database made by the user on 2026-10-13 (same server, schema identical: 125 tables, 1,043 columns), not the live database. The files come from the user's copy of the karir.pkp folder of the same day, `KARIR_PKP_FILES_ROOT=/usr/local/src/karir.pkp-20261013/karir.pkp` (`public/uploads` 1.1 GB). This copy is for the rehearsal only; the final run uses a new copy taken at the freeze.
 - 2026-10-13 Skills: every legacy skill that matches no master is **created as a new skill master** at import (replaces "unmatched are reported, never created" for skills only; details in "Legacy skills as masters").
 - 2026-10-13 Job roles and job categories: an unmatched legacy item is created as a new master too, like the skills ("Legacy skills as masters", last item).
+- 2026-10-13 Tests write import reports to a fake disk, never to the real `storage/app/private/legacy-import/` ("Legacy skills as masters", test storage).
 - Open: the user's approval is needed before any run against production data (the copy included).
 
 ## Confirmed decisions
@@ -315,4 +316,6 @@ letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and fla
   used by 7 jobs): each becomes a new active master, merged through the normalised name, `name.en` = `name.id` (the legacy translations have only `en`). A created category has
   no image (`image_path` empty). The mapping file still wins: the user's draft maps roles 26 "web developer" and 27 "Fullstack Developer" to `developer`; removing those
   entries makes them new roles instead.
+- **Test storage (user, 2026-10-13):** the test suite wrote report files (`20261007-090000-*`, `20261010-090000-*`) into the real
+  `storage/app/private/legacy-import/`. Fixed in the same coding step: the import tests fake the report disk (`Storage::fake`), and the leftover fixture reports are deleted.
 
