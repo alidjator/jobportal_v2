@@ -9,26 +9,26 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 
 ## Current state (2026-10-13)
 
-- Remote `origin`: private GitHub `alidjator/jobportal_v2` over the deploy key `~/.ssh/jobportal_deploy` (SSH host alias `github-jobportal`); **the user pushes**, a session only gives the commands (first push 2026-10-13). Tags: `v0.1.0` phase 0 + Company; `v0.2.0` phases 1 to 7 (`composer check` green, 2430 tests, 2026-10-13).
-- **Phases 0 to 7 are coded and committed**: 0-4 product; 5 security review, performance audit steps 1-3 and 5, architecture review; 6 assessments; 7 interview kits and tele-interview forms 1-3 (Janus video, one-way video answers, Asterisk voice).
-- Real PostgreSQL `jobportal_v2`: migrations up to `000135` all ran (checked 2026-10-13); only seeded reference data (0 accounts, 0 companies). The test database needs `php artisan test:database:migrate --env=testing` if it is behind.
-- **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
-- Front end (decided 2026-10-13): design only, in `docs/design/frontend.md` (page maps of all roles and the technical foundation agreed); coding starts after the import rehearsal, together with the five new API pieces it needs, designed in `docs/design/phase-8-*.md` (company directory, training course detail, Indonesian API text, admin user management, company registration requests).
+- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key `~/.ssh/jobportal_deploy`, host alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
+- **Phases 0 to 7 coded and committed** (5: security, performance and architecture reviews; 6 assessments; 7 interview kits and tele-interview).
+- Real PostgreSQL `jobportal_v2`: migrated to `000135`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
+- **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
+- Front end: designed (`docs/design/frontend.md`), not coded; coding goes with the five API pieces of `docs/design/phase-8-*.md`. Its open point before go-live: client IP behind the Nuxt proxy (`frontend.md` 5.2).
 
 ## Open work (not started)
 
-- Performance audit step 4 (measure) and step 6 (query-count tests). `jobportal_v2_perf` exists, migrated to `000112`, not filled (`db:seed` first); drop it when done.
+- Performance audit steps 4 (measure) and 6 (query-count tests); `jobportal_v2_perf` (at `000112`, empty) is dropped when done.
 - Architecture review findings deferred: 7, 8, 20 (`decisions.md` section 6), 9, 21 (refactor after the import).
-- Benchmark round 2 gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`) await the user's scope decision; **G20** (renamed verified company keeps its badge) should be decided before go-live. R8 was reopened by the tele-interview benchmark.
+- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`) await scope; **G20** before go-live. R8 reopened by the tele-interview benchmark.
 - `phase-7-interview-kits.md` "Part 2 coded": the interpretations other than erasure wait for the user's review.
 - Immediate (not nightly) clearing of talent pool notes needs a JobSeeker trigger.
 
 ## Items waiting for the user
 
-- **Legacy import rehearsal: done 2026-10-13** on `jobportal_v2_rehearsal` (full `--write`, as it is, no count limits; masters created for skills, roles, categories and languages; details `phase-1-migration.md`, checklist section 3). Migrated profiles over the new limits may be edited without growing (coded, tests green). Migrations `000134` and `000135` already ran on the real DB. Freeze date for the final run: not set. Source copy: `KARIR_PKP_DB_DATABASE=jobportal_v2_production`, files `/usr/local/src/karir.pkp-20261013/karir.pkp`; masters map `/home/jobportal/import/masters.draft.json` approved.
+- Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`, checklist section 3); the **freeze date** for the final run is not set.
 - SMTP; then reset emails to the imported accounts without a usable password (761 in the 2026-10-13 copy): dry run first, ask before sending.
 - `CORS_ALLOWED_ORIGINS` (front-end origin); consider nginx `limit_req` for unknown paths.
-- `.env` values per phase are in `.env.example` and the design "coded" sections (campaign, Moodle, newsletter, psychologist invitation, `JANUS_*`, `TURN_*`, `ASTERISK_*`, `VOICE_CALLER_ID`); production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
+- `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); grant `cv_templates.manage`.
 - Legal review brief `docs/legal-review.md` (sensitive candidate-search filters stay off until answered).
@@ -37,7 +37,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 ## Operational facts not in `CLAUDE.md`
 
 - Commit identity: `git -c user.name=jobportal -c user.email=<the user's email> commit` (no git identity configured).
-- Live dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`, `COMPANY_INVITATION_URL` empty. Served by nginx directly, no proxy or CDN, so no `trustProxies`. Scheduler from the `jobportal` crontab (`schedule:run` every minute). The nginx config is root-owned at `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (copy in `/home/jobportal/nginx/`); neither it, the crontab nor the POSIX ACLs are in git.
+- Live dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`, `COMPANY_INVITATION_URL` empty; nginx directly (no `trustProxies`); scheduler from the `jobportal` crontab. nginx config root-owned at `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (copy in `/home/jobportal/nginx/`); it, the crontab and the ACLs are not in git.
 - `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added. Parallel tests need `php artisan test:database:parallel --env=testing` after every migration.
 - `KARIR_PKP_FILES_ROOT` is set in `.env`. Import mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
 - Rehearsal database: create one (the role has `CREATEDB`), use `DB_DATABASE=<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`. The legacy source (`legacy` connection) stays MariaDB.
