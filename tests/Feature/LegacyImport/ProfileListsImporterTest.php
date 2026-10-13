@@ -182,17 +182,18 @@ final class ProfileListsImporterTest extends FeatureTestCase
 
     // ----- skills and languages -----
 
-    public function test_skills_are_imported_in_order_without_duplicates_and_unmatched_ones_are_skipped(): void
+    public function test_skills_are_imported_in_order_without_duplicates_and_a_legacy_only_skill_is_created_as_a_master(): void
     {
         $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => 1]);
         $duplicate = $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => 1]);
-        $unmatched = $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => 2]);
+        $legacyOnly = $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => 2]);
         $nothing = $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => null]);
 
         $report = $this->entity($this->import('skills'), 'skills');
 
-        $this->assertSame([[$this->php, 1]], DB::table('jobseeker_skills')->get(['skill_id', 'position'])->map(fn ($r): array => [(int) $r->skill_id, (int) $r->position])->all());
-        $this->assertSame([$duplicate => 'duplicate', $unmatched => 'skill-unmatched', $nothing => 'skill-unmatched'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
+        $created = (int) DB::table('reference_skills')->where('slug', 'underwater-welding')->value('id');
+        $this->assertSame([[$this->php, 1], [$created, 2]], DB::table('jobseeker_skills')->orderBy('position')->get(['skill_id', 'position'])->map(fn ($r): array => [(int) $r->skill_id, (int) $r->position])->all());
+        $this->assertSame([$duplicate => 'duplicate', $nothing => 'skill-unmatched'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
     }
 
     public function test_languages_are_imported_as_conversational_and_unmatched_names_are_skipped(): void

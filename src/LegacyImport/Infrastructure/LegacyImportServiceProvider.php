@@ -26,6 +26,7 @@ use Src\LegacyImport\Application\LegacySource;
 use Src\LegacyImport\Application\LinksImporter;
 use Src\LegacyImport\Application\LocationLookup;
 use Src\LegacyImport\Application\MastersImporter;
+use Src\LegacyImport\Application\MasterWriter;
 use Src\LegacyImport\Application\NewMasterReader;
 use Src\LegacyImport\Application\NewsletterSubscribersImporter;
 use Src\LegacyImport\Application\NewsletterSubscriberWriter;
@@ -72,6 +73,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         IdMap::class => DatabaseIdMap::class,
         LegacySource::class => DatabaseLegacySource::class,
         NewMasterReader::class => DatabaseNewMasterReader::class,
+        MasterWriter::class => DatabaseMasterWriter::class,
         AccountWriter::class => DatabaseAccountWriter::class,
         CompanyWriter::class => DatabaseCompanyWriter::class,
         JobSeekerWriter::class => DatabaseJobSeekerWriter::class,

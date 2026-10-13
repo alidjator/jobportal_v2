@@ -3,13 +3,18 @@
 namespace Tests\Concerns;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\LegacySchema;
 
-/** Gives a test the synthetic legacy tables (empty) behind the `legacy` connection, and helpers to fill them. */
+/**
+ * Gives a test the synthetic legacy tables (empty) behind the `legacy` connection, and helpers to fill them. The local disk is faked as well, so the
+ * reports of the runs in a test never land in the real `storage/app/private/legacy-import/`.
+ */
 trait UsesLegacyDatabase
 {
     protected function setUpLegacyDatabase(): void
     {
+        Storage::fake('local');
         LegacySchema::prepare();
     }
 

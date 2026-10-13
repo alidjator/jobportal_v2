@@ -9,8 +9,8 @@ final class MasterCatalog
     public static function all(): array
     {
         return [
-            new MasterSpec('job_categories', 'job_categories', 'job_category_translations', 'job_category_id', 'reference_job_categories'),
-            new MasterSpec('job_roles', 'job_roles', 'job_role_translations', 'job_role_id', 'reference_job_roles'),
+            new MasterSpec('job_categories', 'job_categories', 'job_category_translations', 'job_category_id', 'reference_job_categories', createsMissing: true),
+            new MasterSpec('job_roles', 'job_roles', 'job_role_translations', 'job_role_id', 'reference_job_roles', createsMissing: true),
             new MasterSpec('job_types', 'job_types', 'job_type_translations', 'job_type_id', 'reference_job_types'),
             new MasterSpec('job_levels', 'job_levels', 'job_level_translations', 'job_level_id', 'reference_job_levels'),
             new MasterSpec('work_times', 'job_work_times', 'job_work_time_translations', 'job_work_time_id', 'reference_work_times'),
@@ -21,7 +21,7 @@ final class MasterCatalog
             new MasterSpec('organization_types', 'organization_types', 'organization_type_translations', 'organization_type_id', 'reference_organization_types'),
             new MasterSpec('team_sizes', 'team_sizes', 'team_size_translations', 'team_size_id', 'reference_team_sizes'),
             new MasterSpec('religions', 'religions', 'religion_translations', 'religion_id', 'reference_religions'),
-            new MasterSpec('skills', 'skills', 'skill_translations', 'skill_id', 'reference_skills'),
+            new MasterSpec('skills', 'skills', 'skill_translations', 'skill_id', 'reference_skills', createsMissing: true),
             new MasterSpec('benefits', 'benefits', 'benefit_translations', 'benefit_id', 'reference_benefits'),
             new MasterSpec('languages', 'candidate_languages', null, null, 'reference_languages'),
         ];

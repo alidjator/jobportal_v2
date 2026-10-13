@@ -320,3 +320,13 @@ letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and fla
 - **Test storage (user, 2026-10-13):** the test suite wrote report files (`20261007-090000-*`, `20261010-090000-*`) into the real
   `storage/app/private/legacy-import/`. Fixed in the same coding step: the import tests fake the report disk (`Storage::fake`), and the leftover fixture reports are deleted.
 
+
+### Legacy skills as masters: coded (2026-10-13)
+
+- `MasterSpec::$createsMissing` is true for `skills`, `job_roles` and `job_categories` (`MasterCatalog`). `MastersImporter` creates, at a real run, each legacy item that found **no** counterpart
+  (reason `no-match`) through the new port `MasterWriter` (`DatabaseMasterWriter`: name `{id, en}` the same text, slug from the name and numbered when taken, active, `sort_order` 0, `kind` for skills from
+  `SkillKindGuesser`). Items with the same normalised name become one master. An `ambiguous` item or an unknown mapped slug is still only reported. Created items are matched by name on the next run, so a re-run adds nothing.
+- Report: `master.<key>` counts the created items as imported; note `created` = number of new masters (a dry run reports it and writes nothing).
+- Limitation: a name that normalises to nothing (for example only symbols) cannot match by name, so a second `--write` run would create it again; rehearse once per scratch database.
+- Tests: `MastersImporterTest`, `SkillKindGuesserTest`; `UsesLegacyDatabase::setUpLegacyDatabase()` now fakes the local disk, so no import test writes into the real report folder.
+- Leftover test reports in `storage/app/private/legacy-import/` (about 770 `*-accounts-*.json`) are for the user to delete; the real rehearsal report is `20261013-053747-all-dry-run.json`.
