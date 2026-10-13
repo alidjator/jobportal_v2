@@ -18,6 +18,13 @@ interface JobDirectory
      */
     public function assignedJobIds(int $companyId, int $userId): array;
 
+    /**
+     * The jobs of the company that the account is assigned to, whatever their status, newest first.
+     *
+     * @return list<AssignedJob>
+     */
+    public function assignedJobs(int $companyId, int $userId): array;
+
     /** The id of the company of a live public job (as the public job page shows it), or null when there is no such job for the public. */
     public function publicCompanyId(int $jobId): ?int;
 

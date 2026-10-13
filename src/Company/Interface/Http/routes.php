@@ -53,6 +53,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/invitations', [TeamInvitationController::class, 'store']);
     Route::delete('company/invitations/{id}', [TeamInvitationController::class, 'destroy'])->whereNumber('id');
     Route::get('company/members', [TeamMemberController::class, 'index']);
+    Route::get('company/members/{userId}/jobs', [TeamMemberController::class, 'jobs'])->whereNumber('userId');
     Route::delete('company/members/{userId}', [TeamMemberController::class, 'destroy'])->whereNumber('userId');
     Route::put('company/members/{userId}/role', [TeamMemberController::class, 'changeRole'])->whereNumber('userId');
 });

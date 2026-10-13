@@ -75,6 +75,24 @@ final class CompanyTeamTest extends FeatureTestCase
         return $user;
     }
 
+    /**
+     * @param  list<int>  $assignees
+     * @param  array<string, mixed>  $attributes
+     */
+    private function insertAssignedJob(string $title, string $status, array $assignees, string $createdAt, array $attributes = [], ?int $companyId = null): int
+    {
+        $id = (int) DB::table('job_jobs')->insertGetId([
+            'company_id' => $companyId ?? $this->companyId, 'title' => $title, 'slug' => strtolower(str_replace(' ', '-', $title)), 'status' => $status,
+            'created_by_user_id' => $this->admin->id, 'created_at' => $createdAt, 'updated_at' => $createdAt, ...$attributes,
+        ]);
+
+        foreach ($assignees as $userId) {
+            DB::table('job_assignments')->insert(['job_id' => $id, 'user_id' => $userId, 'created_at' => $createdAt]);
+        }
+
+        return $id;
+    }
+
     private function tokenOf(UserModel $user): string
     {
         return $user->createToken('phone', ['*'], now()->addDay())->plainTextToken;
@@ -125,7 +143,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_every_team_route_needs_a_signed_in_user(): void
     {
-        foreach ([['GET', '/invitations'], ['POST', '/invitations'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['DELETE', '/members/1'], ['PUT', '/members/1/role']] as [$method, $uri]) {
+        foreach ([['GET', '/invitations'], ['POST', '/invitations'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['GET', '/members/1/jobs'], ['DELETE', '/members/1'], ['PUT', '/members/1/role']] as [$method, $uri]) {
             $this->json($method, '/api/v1/company'.$uri)->assertStatus(401);
         }
     }
@@ -134,7 +152,7 @@ final class CompanyTeamTest extends FeatureTestCase
     {
         foreach ([
             ['GET', '/invitations', []], ['POST', '/invitations', ['email' => 'x@example.test', 'role' => 'recruiter']], ['DELETE', '/invitations/1', []],
-            ['GET', '/members', []], ['DELETE', "/members/{$this->admin->id}", []], ['PUT', "/members/{$this->recruiter->id}/role", ['role' => 'company_admin']],
+            ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}/jobs", []], ['DELETE', "/members/{$this->admin->id}", []], ['PUT', "/members/{$this->recruiter->id}/role", ['role' => 'company_admin']],
         ] as [$method, $uri, $body]) {
             $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
         }
@@ -332,6 +350,42 @@ final class CompanyTeamTest extends FeatureTestCase
             'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.3.last_login_at'));
+    }
+
+    // ----- jobs of a member -----
+
+    public function test_the_jobs_of_a_member_are_every_assigned_job_of_the_own_company_newest_first_whatever_the_status(): void
+    {
+        $closed = $this->insertAssignedJob('Data Analyst', 'closed', [$this->recruiter->id], '2026-09-01 08:00:00', ['deadline' => '2026-09-30']);
+        $active = $this->insertAssignedJob('Backend Developer', 'active', [$this->recruiter->id, $this->admin->id], '2026-10-01 08:00:00');
+        $draft = $this->insertAssignedJob('Product Designer', 'draft', [$this->recruiter->id], '2026-10-03 08:00:00');
+        $this->insertAssignedJob('Not Hers', 'active', [$this->admin->id], '2026-10-04 08:00:00');
+        $otherCompany = $this->makeCompany('PT Lain', 'pt-lain');
+        $this->insertAssignedJob('Foreign Job', 'active', [$this->recruiter->id], '2026-10-04 08:00:00', [], $otherCompany);
+
+        $response = $this->api('GET', "/members/{$this->recruiter->id}/jobs")->assertOk();
+
+        $this->assertSame([$draft, $active, $closed], array_column($response->json('data'), 'id'));
+        $this->assertSame(['id' => $closed, 'title' => 'Data Analyst', 'status' => 'closed', 'deadline' => '2026-09-30'], $response->json('data.2'));
+        $this->assertNull($response->json('data.0.deadline'));
+    }
+
+    public function test_a_company_admin_has_only_the_jobs_they_are_assigned_to_and_a_member_without_jobs_has_none(): void
+    {
+        $assigned = $this->insertAssignedJob('Backend Developer', 'active', [$this->admin->id], '2026-10-01 08:00:00');
+        $this->insertAssignedJob('Data Analyst', 'active', [$this->recruiter->id], '2026-10-02 08:00:00');
+        $idle = $this->makeMember($this->companyId, 'Bambang Rekruter', 'bambang@example.test', 'recruiter');
+
+        $this->assertSame([$assigned], array_column($this->api('GET', "/members/{$this->admin->id}/jobs")->assertOk()->json('data'), 'id'));
+        $this->api('GET', "/members/{$idle->id}/jobs")->assertOk()->assertExactJson(['data' => []]);
+    }
+
+    public function test_only_the_jobs_of_a_member_of_the_own_company_are_listed(): void
+    {
+        $outsider = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'recruiter');
+
+        $this->api('GET', "/members/{$outsider->id}/jobs")->assertNotFound();
+        $this->api('GET', '/members/999999/jobs')->assertNotFound();
     }
 
     // ----- removing -----

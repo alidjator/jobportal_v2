@@ -40,6 +40,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: shared screens are not recorded (the Janus converter leaves out screen tracks, new work done with the front end); every participant may share, one screen at a time ([detail](#115-complex-screens)).
 - 2026-10-13: texts agreed: a notification catalog from the API with a front-end coverage test, static pages as Markdown in the front-end repository, the session drafts and the user reviews ([detail](#116-texts)).
 - 2026-10-13: four legacy admin features stay out: candidate export, a cross-company application list, job bulk import and clone by an admin, platform-wide interview question templates ([detail](#93-findings-while-mapping)).
+- 2026-10-13: the team page shows the jobs each member is assigned to: new `GET company/members/{userId}/jobs` (company admin; every status with its status, newest first; company admins too, only their own assignments), coded the same day.
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); the admin panel starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 
 ## 1. Timing
@@ -263,7 +264,7 @@ them, and gets 403 `company-admin-required` elsewhere. The menu hides what the r
 | C19 | Pipeline stages | `company/stages` (CRUD, `PUT order`) | company admin |
 | C20 | Company profile | `GET`/`PATCH company/profile`, `PUT company/slug`, logo and banner (`GET`/`POST`/`DELETE`) | company admin |
 | C21 | Verification documents | `GET company/documents`, `POST`/`DELETE .../{typeId}`, `GET .../{typeId}/file` | company admin |
-| C22 | Team | `GET company/members`, `PUT .../{userId}/role`, `DELETE .../{userId}`; `GET`/`POST`/`DELETE company/invitations` | company admin |
+| C22 | Team | `GET company/members`, `GET .../{userId}/jobs` (the jobs a member is assigned to), `PUT .../{userId}/role`, `DELETE .../{userId}`; `GET`/`POST`/`DELETE company/invitations` | company admin |
 | C23 | Campaigns | `company/campaigns` (CRUD), `GET .../qr`, `GET .../results` | company admin |
 | C24 | Reviews of the company | `GET company/reviews`, `PUT`/`DELETE .../reply`, `POST .../report` | company admin |
 | C25 | Notifications and account | shared with the job seeker pages J12 and J15 (`/me/notifications`, `/me/password`, `logout-all`); the avatar is `me/avatar` | both |

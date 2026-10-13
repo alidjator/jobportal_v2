@@ -28,10 +28,6 @@ final readonly class DatabaseJobReader implements JobReader
 
         $total = (clone $filtered)->count();
 
-        $assignees = $this->connection->table('job_assignments')
-            ->selectRaw('count(*)')
-            ->whereColumn('job_assignments.job_id', 'job_jobs.id');
-
         [$column, $direction] = match ($query->sort) {
             JobListSort::UpdatedAtAscending => ['job_jobs.updated_at', 'asc'],
             JobListSort::UpdatedAtDescending => ['job_jobs.updated_at', 'desc'],
@@ -43,9 +39,7 @@ final readonly class DatabaseJobReader implements JobReader
             JobListSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
         };
 
-        $rows = $filtered
-            ->select(['job_jobs.id', 'job_jobs.title', 'job_jobs.status', 'job_jobs.deadline', 'job_jobs.vacancies', 'job_jobs.published_at', 'job_jobs.created_at', 'job_jobs.updated_at'])
-            ->selectSub($assignees, 'assignees_count')
+        $rows = $this->withListColumns($filtered)
             ->orderByRaw(NullOrder::sql($column, $direction))
             ->orderBy('job_jobs.id', $direction)
             ->offset($request->offset())
@@ -54,6 +48,32 @@ final readonly class DatabaseJobReader implements JobReader
             ->all();
 
         return new Page(array_map(fn (stdClass $row): JobListItem => $this->toItem($row), $rows), $total, $request);
+    }
+
+    public function assignedTo(int $companyId, int $userId): array
+    {
+        $assigned = $this->connection->table('job_jobs')->where('job_jobs.company_id', $companyId);
+        $this->applyFilters($assigned, new JobListQuery($companyId, assignedToUserId: $userId));
+
+        $rows = $this->withListColumns($assigned)
+            ->orderByDesc('job_jobs.created_at')
+            ->orderByDesc('job_jobs.id')
+            ->get()
+            ->all();
+
+        return array_map(fn (stdClass $row): JobListItem => $this->toItem($row), $rows);
+    }
+
+    /** The columns of a list item, with the number of assignees. */
+    private function withListColumns(Builder $builder): Builder
+    {
+        $assignees = $this->connection->table('job_assignments')
+            ->selectRaw('count(*)')
+            ->whereColumn('job_assignments.job_id', 'job_jobs.id');
+
+        return $builder
+            ->select(['job_jobs.id', 'job_jobs.title', 'job_jobs.status', 'job_jobs.deadline', 'job_jobs.vacancies', 'job_jobs.published_at', 'job_jobs.created_at', 'job_jobs.updated_at'])
+            ->selectSub($assignees, 'assignees_count');
     }
 
     private function applyFilters(Builder $builder, JobListQuery $query): void

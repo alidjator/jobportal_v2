@@ -2,11 +2,14 @@
 
 namespace Src\Job\Infrastructure;
 
+use Src\Job\Application\JobListItem;
+use Src\Job\Application\JobReader;
 use Src\Job\Application\JobVisibility;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Company\PublicCompanies;
+use Src\Shared\Application\Job\AssignedJob;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobSummary;
 
@@ -17,6 +20,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         private JobAssignmentRepository $assignments,
         private JobVisibility $visibility,
         private PublicCompanies $companies,
+        private JobReader $reader,
     ) {}
 
     public function visibleToMember(int $jobId, int $companyId, int $userId, bool $isCompanyAdmin): ?JobSummary
@@ -40,6 +44,14 @@ final readonly class RepositoryJobDirectory implements JobDirectory
             $this->assignments->jobIdsOf($userId),
             fn (int $jobId): bool => $this->jobs->find($jobId)?->companyId === $companyId,
         ));
+    }
+
+    public function assignedJobs(int $companyId, int $userId): array
+    {
+        return array_map(
+            fn (JobListItem $job): AssignedJob => new AssignedJob($job->id, $job->title, $job->status->value, $job->deadline),
+            $this->reader->assignedTo($companyId, $userId),
+        );
     }
 
     public function publicCompanyId(int $jobId): ?int
