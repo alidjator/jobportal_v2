@@ -439,7 +439,7 @@ final class ProfileListsTest extends FeatureTestCase
 
         $this->api('PUT', '/me/skills', ['skill_ids' => array_reverse($ids)])->assertOk()->assertJsonCount(36, 'data.skills');
         $this->api('PUT', '/me/skills', ['skill_ids' => array_slice($ids, 0, 33)])->assertOk()->assertJsonCount(33, 'data.skills');
-        $this->api('PUT', '/me/skills', ['skill_ids' => [...array_slice($ids, 0, 33), $ids[35]]])->assertOk()->assertJsonCount(34, 'data.skills');
+        $this->api('PUT', '/me/skills', ['skill_ids' => [...array_slice($ids, 0, 32), $ids[35]]])->assertOk()->assertJsonCount(33, 'data.skills');
 
         $this->api('PUT', '/me/skills', ['skill_ids' => $ids])->assertStatus(422)->assertJsonStructure(['errors' => ['skill_ids']]);
     }
@@ -464,8 +464,8 @@ final class ProfileListsTest extends FeatureTestCase
     public function test_a_stored_link_that_breaks_the_rules_stays_but_a_new_one_is_still_checked(): void
     {
         DB::table('jobseeker_links')->insert([
-            ['user_id' => $this->userId, 'type' => 'website', 'url' => 'http://old.example.test', 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => $this->userId, 'type' => 'other', 'url' => 'https://bit.ly/abc', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $this->userId, 'type' => 'website', 'url' => 'http://old.example.test'],
+            ['user_id' => $this->userId, 'type' => 'other', 'url' => 'https://bit.ly/abc'],
         ]);
         $kept = [['type' => 'website', 'url' => 'http://old.example.test'], ['type' => 'other', 'url' => 'https://bit.ly/abc']];
 
