@@ -13,6 +13,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 - **Phases 0 to 7 are coded and committed**: 0-4 product; 5 security review, performance audit steps 1-3 and 5, architecture review; 6 assessments; 7 interview kits and tele-interview forms 1-3 (Janus video, one-way video answers, Asterisk voice).
 - Real PostgreSQL `jobportal_v2`: migrations up to `000135` all ran (checked 2026-10-13); only seeded reference data (0 accounts, 0 companies). The test database needs `php artisan test:database:migrate --env=testing` if it is behind.
 - **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
+- Front end (decided 2026-10-13): design only, in `docs/design/frontend.md` (page maps of all roles and the technical foundation agreed); coding starts after the import rehearsal, together with the five new API pieces it needs, designed in `docs/design/phase-8-*.md` (company directory, training course detail, Indonesian API text, admin user management, company registration requests).
 
 ## Open work (not started)
 

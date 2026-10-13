@@ -76,3 +76,4 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] Legal review answer (`docs/legal-review.md`); an admin then decides the setting `job_seeker.candidate_sensitive_filters_enabled` (off by default).
 - [ ] `docs/analysis/legacy-security-report.md` (S1 to S3, critical) delivered to the maintainers of the running karir.pkp.
 - [ ] Front-end origin and the invitation page URL given by the user.
+- [ ] Client IP behind the Nuxt proxy decided (`docs/design/frontend.md`, section 5.2, open points): without a trusted proxy every visitor shares the Nuxt server's IP in rate limits, audit and consent records.
