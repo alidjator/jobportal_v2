@@ -9,10 +9,10 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 
 ## Current state (2026-10-13)
 
-- Local repo, **no remote** (the only copy is this disk). Tags: `v0.1.0` phase 0 + Company; `v0.2.0` phases 1 to 7 (`composer check` green, 2430 tests, 2026-10-13).
+- Remote `origin`: private GitHub `alidjator/jobportal_v2` over the deploy key `~/.ssh/jobportal_deploy` (SSH host alias `github-jobportal`); **the user pushes**, a session only gives the commands (first push 2026-10-13). Tags: `v0.1.0` phase 0 + Company; `v0.2.0` phases 1 to 7 (`composer check` green, 2430 tests, 2026-10-13).
 - **Phases 0 to 7 are coded and committed**: 0-4 product; 5 security review, performance audit steps 1-3 and 5, architecture review; 6 assessments; 7 interview kits and tele-interview forms 1-3 (Janus video, one-way video answers, Asterisk voice).
 - Real PostgreSQL `jobportal_v2`: migrations up to `000133` all ran (checked 2026-10-13); only seeded reference data (0 accounts, 0 companies). The test database needs `php artisan test:database:migrate --env=testing` if it is behind.
-- **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: remote or backup of the repo, legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
+- **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
 
 ## Open work (not started)
 
