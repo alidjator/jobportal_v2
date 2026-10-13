@@ -23,7 +23,7 @@ final class MasterCatalog
             new MasterSpec('religions', 'religions', 'religion_translations', 'religion_id', 'reference_religions'),
             new MasterSpec('skills', 'skills', 'skill_translations', 'skill_id', 'reference_skills', createsMissing: true),
             new MasterSpec('benefits', 'benefits', 'benefit_translations', 'benefit_id', 'reference_benefits'),
-            new MasterSpec('languages', 'candidate_languages', null, null, 'reference_languages'),
+            new MasterSpec('languages', 'candidate_languages', null, null, 'reference_languages', createsMissing: true, needsCode: true),
         ];
     }
 

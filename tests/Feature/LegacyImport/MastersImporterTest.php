@@ -196,4 +196,18 @@ final class MastersImporterTest extends FeatureTestCase
         $long = $created->first(fn ($row): bool => str_starts_with($row->slug, 'long'));
         $this->assertLessThanOrEqual(150, strlen($long->slug));
     }
+
+    public function test_an_unmatched_language_is_created_with_a_code_made_from_its_name(): void
+    {
+        $this->newItem('reference_languages', 'english', 'English', ['code' => 'en']);
+        $this->legacyLanguage(1, 'English');
+        $this->legacyLanguage(2, 'Afrikaans');
+        $this->legacyLanguage(3, 'Afrikaner Creole');
+
+        $this->runImport();
+
+        $this->assertSame(['en', 'afrikaans', 'afrikaner'], DB::table('reference_languages')->orderBy('id')->pluck('code')->all());
+        $this->assertSame([1, 2, 3], array_keys($this->mapped('languages')));
+        $this->assertSame(['created' => 2], $this->report('languages')['notes']);
+    }
 }

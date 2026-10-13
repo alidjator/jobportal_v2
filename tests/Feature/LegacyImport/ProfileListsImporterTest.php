@@ -210,8 +210,9 @@ final class ProfileListsImporterTest extends FeatureTestCase
         $this->assertSame(0, $report['skipped']);
     }
 
-    public function test_languages_are_imported_as_conversational_and_unmatched_names_are_skipped(): void
+    public function test_languages_are_imported_as_conversational_and_a_nameless_language_is_skipped(): void
     {
+        DB::connection('legacy')->table('candidate_languages')->where('id', 2)->update(['name' => '']);
         $this->legacyRow('candidate_language', ['candidate_id' => $this->candidate, 'candidate_language_id' => 1]);
         $unmatched = $this->legacyRow('candidate_language', ['candidate_id' => $this->candidate, 'candidate_language_id' => 2]);
 
