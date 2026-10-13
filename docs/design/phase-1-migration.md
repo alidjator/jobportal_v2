@@ -26,7 +26,10 @@ One line per decision; the detail is in the section named. If they disagree, the
 - 2026-10-07 `LegacyImport` may write other contexts' tables in its Infrastructure layer (documented exception, "Writing other contexts' tables").
 - 2026-10-08 Pipeline group mapping file is JSON, keyed by legacy group id, e.g. `{"142": {"stage": "interview", "create_stage": true}}`; invalid entries are rejected with a clear message ("Part 5 design").
 - 2026-10-08 Part 5 coded; the six choices made while coding were confirmed by the user the same day ("Part 5 coded").
-- Open: the user's approval is needed before any run against production data.
+- 2026-10-13 Import source: the `legacy` connection reads `jobportal_v2_production`, a MySQL copy of the karir.pkp database made by the user on 2026-10-13 (same server, schema identical: 125 tables, 1,043 columns), not the live database. The files come from the user's copy of the karir.pkp folder of the same day, `KARIR_PKP_FILES_ROOT=/usr/local/src/karir.pkp-20261013/karir.pkp` (`public/uploads` 1.1 GB). This copy is for the rehearsal only; the final run uses a new copy taken at the freeze.
+- 2026-10-13 Skills: every legacy skill that matches no master is **created as a new skill master** at import (replaces "unmatched are reported, never created" for skills only; details in "Legacy skills as masters").
+- 2026-10-13 Job roles and job categories: an unmatched legacy item is created as a new master too, like the skills ("Legacy skills as masters", last item).
+- Open: the user's approval is needed before any run against production data (the copy included).
 
 ## Confirmed decisions
 
@@ -291,3 +294,25 @@ letter over **60,000 bytes** is cut (the column is `text`, 65,535 bytes) and fla
 - Result: 887 id map rows; accounts 179, profiles 173, companies 3, jobs 149 (notes: 116 incomplete description, 26 incomplete skills, 3 expired by deadline), applications 30.
 - Skipped: 17 avatars and 9 resumes missing on disk, 2 resumes over the size limit, 12 applications whose resume was not migrated, 71 candidate skills, 9 languages, 13 experiences,
   11 screening questions. Masters with no match: industries 18, languages 159, skills 7, religions 2, organization type 1. 10 accounts have non-bcrypt passwords.
+
+## Legacy skills as masters (decided 2026-10-13)
+
+- Why: the 2026-10-13 copy has 668 legacy skills (users added them after the 29-value seed of 2026-10-03); 641 of them match no master and are used in 14,960 of the 17,434
+  candidate skill rows (86%). Top 200 skills cover 80% of the rows; 144 are used by one or two candidates. No job uses a legacy skill (`job_skills` is empty).
+- Decision (user): every unmatched legacy skill becomes a new `reference_skills` row at import, so no candidate skill is lost. Duplicates are merged through the normalised name.
+  The mapping file still wins over this (an id mapped to an existing slug is not created).
+- Details (user, 2026-10-13):
+  - **Kind** guessed from a word list: a name containing one of `communication`, `komunikasi`, `leadership`, `kepemimpinan`, `teamwork`, `team work`, `kerjasama`,
+    `kerja sama`, `problem solv`, `critical thinking`, `analytical thinking`, `time management`, `manajemen waktu`, `public speaking`, `presentation`, `presentasi`,
+    `negotiation`, `negosiasi`, `adaptab`, `creativ`, `kreatif`, `collaboration`, `kolaborasi`, `interpersonal`, `attention to detail`, `decision making`,
+    `self motivat`, `integrity`, `integritas`, `discipline`, `disiplin`, `customer service`, `pelayanan` (case-insensitive) is `soft`; every other one is `hard`.
+    The list may be extended during coding; an admin corrects the kind afterwards.
+  - **Active:** created skills are active (offered in pickers and used by matching); an admin tidies them later.
+  - **Duplicates:** merged only through the normalised name (case, spaces, punctuation), no manual merge list; "MySQL Database" stays apart from "MySQL".
+  - **Odd names:** imported as they are (spaces collapsed, cut at 255 characters), none skipped.
+  - **Names:** `skill_translations` has only the `en` locale (667 rows, checked 2026-10-13), so the same text fills `name.en` and `name.id`.
+- **Job roles and categories (user, 2026-10-13):** the same rule applies to `job_roles` (10 unmatched, used by 24 jobs and 239 job alerts) and `job_categories` (4 unmatched,
+  used by 7 jobs): each becomes a new active master, merged through the normalised name, `name.en` = `name.id` (the legacy translations have only `en`). A created category has
+  no image (`image_path` empty). The mapping file still wins: the user's draft maps roles 26 "web developer" and 27 "Fullstack Developer" to `developer`; removing those
+  entries makes them new roles instead.
+
