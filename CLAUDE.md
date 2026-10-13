@@ -50,7 +50,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 ## Git (decided 2026-10-13)
 
 - One branch per piece of work, named after it (`go-live-readiness`, `phase-8-...`), created from the tip of `master`. When the user's check is green and they ask,
-  move `master` forward without a merge commit and delete the branch; tag each release (`v0.2.0` after the phase 7 `composer check`).
+  move `master` forward without a merge commit and delete the branch; tag each release after a green `composer check`.
 - The live dev site is this working folder, so a checkout changes the served code at once: never check out an older commit or a `master` that is behind.
   Move `master` from the work branch with `git push . HEAD:master` (fast-forward only), then `git checkout master` once both point at the same commit.
 
@@ -58,7 +58,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 
 ```bash
 composer check 2>&1 | tail -n 40 | cut -c1-4000  # Pint, PHPStan and the whole suite in one step; stops at the first failure
-php artisan test                          # whole suite (about 7.5 minutes, serial)
+php artisan test                          # whole suite (about 13 minutes, serial)
 composer test:parallel                    # whole suite in 8 processes; first `php artisan test:database:parallel --env=testing` (again after each new migration)
 php artisan test tests/Feature/Company    # a folder or file
 vendor/bin/pint --test                    # style check (drop --test to fix)

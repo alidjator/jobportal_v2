@@ -9,10 +9,10 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 
 ## Current state (2026-10-13)
 
-- Local repo, **no remote** (the only copy is this disk). `master` is at the end of phase 7; tag `v0.1.0` is phase 0 + Company.
-- **Phases 0 to 7 are coded and committed**: 0-4 product; 5 security review, performance audit steps 1-3 and 5, architecture review; 6 assessments; 7 interview kits and tele-interview forms 1-3 (Janus video, one-way video answers, Asterisk voice). **`composer check` after phase 7 is not yet confirmed green**: the user runs it; when green, tag `v0.2.0`.
+- Local repo, **no remote** (the only copy is this disk). Tags: `v0.1.0` phase 0 + Company; `v0.2.0` phases 1 to 7 (`composer check` green, 2430 tests, 2026-10-13).
+- **Phases 0 to 7 are coded and committed**: 0-4 product; 5 security review, performance audit steps 1-3 and 5, architecture review; 6 assessments; 7 interview kits and tele-interview forms 1-3 (Janus video, one-way video answers, Asterisk voice).
 - Real PostgreSQL `jobportal_v2`: migrations up to `000133` all ran (checked 2026-10-13); only seeded reference data (0 accounts, 0 companies). The test database needs `php artisan test:database:migrate --env=testing` if it is behind.
-- **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: remote or backup of the repo, `composer check` + tag, legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
+- **Direction (evaluation 2026-10-13, agreed by the user): no new features, go-live readiness first**: remote or backup of the repo, legacy import rehearsal on PostgreSQL, `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails whenever code that needs a new migration is live before `migrate`, as on 2026-10-12).
 
 ## Open work (not started)
 
