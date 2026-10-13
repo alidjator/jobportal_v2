@@ -111,7 +111,7 @@ final class ProfilesImporterTest extends FeatureTestCase
         $this->assertSame(1, $this->entity($report)['imported']);
     }
 
-    public function test_invalid_optional_values_are_emptied_with_a_note_and_the_profile_is_kept(): void
+    public function test_values_the_columns_can_hold_are_kept_as_they_are_and_the_others_emptied_with_a_note(): void
     {
         $this->seeker([
             'phone' => '12345', 'whatsapp_number' => 'call me', 'birth_date' => '2020-01-01', 'marital_status' => 'it is complicated', 'expected_salary' => 500,
@@ -121,26 +121,26 @@ final class ProfilesImporterTest extends FeatureTestCase
         $report = $this->entity($this->import());
 
         $profile = $this->profile();
-        $this->assertSame([null, null, null, null, null, null, null], [$profile->phone, $profile->whatsapp, $profile->birth_date, $profile->marital_status, $profile->expected_salary, $profile->gender, $profile->available_from]);
+        $this->assertSame([null, null, '2020-01-01', null, 500, null, '2026-01-01'], [$profile->phone, $profile->whatsapp, $profile->birth_date, $profile->marital_status, (int) $profile->expected_salary, $profile->gender, $profile->available_from]);
         $this->assertSame('open_to_work', $profile->availability);
         $this->assertSame(
-            ['available-from-dropped' => 1, 'birth-date-out-of-range' => 1, 'expected-salary-dropped' => 1, 'marital-status-unknown' => 1, 'phone-invalid' => 2],
+            ['marital-status-unknown' => 1, 'phone-invalid' => 2],
             collect($report['notes'])->sortKeys()->all(),
         );
         $this->assertSame(1, $report['imported']);
     }
 
-    public function test_the_age_range_follows_the_admin_settings(): void
+    public function test_a_birth_date_is_kept_whatever_the_age(): void
     {
         $this->seeker(['birth_date' => '1950-01-01'], ['email' => 'old@example.test']);
         $this->seeker(['birth_date' => '1990-01-01'], ['email' => 'ok@example.test']);
 
         $this->import();
 
-        $this->assertSame([null, '1990-01-01'], DB::table('jobseeker_profiles')->orderBy('id')->pluck('birth_date')->all());
+        $this->assertSame(['1950-01-01', '1990-01-01'], DB::table('jobseeker_profiles')->orderBy('id')->pluck('birth_date')->all());
     }
 
-    public function test_availability_is_mapped_and_a_future_date_inside_the_window_is_kept(): void
+    public function test_availability_is_mapped_and_a_future_date_is_kept_whatever_the_window(): void
     {
         $this->seeker(['status' => 'available'], ['email' => 'a@example.test']);
         $this->seeker(['status' => 'not_available'], ['email' => 'b@example.test']);
@@ -151,7 +151,7 @@ final class ProfilesImporterTest extends FeatureTestCase
         $this->import();
 
         $rows = DB::table('jobseeker_profiles')->orderBy('id')->get(['availability', 'available_from'])->map(fn ($r): array => [$r->availability, $r->available_from])->all();
-        $this->assertSame([['open_to_work', null], ['not_looking', null], ['open_to_work', '2026-10-20'], ['open_to_work', null], [null, null]], $rows);
+        $this->assertSame([['open_to_work', null], ['not_looking', null], ['open_to_work', '2026-10-20'], ['open_to_work', '2026-12-31'], [null, null]], $rows);
     }
 
     public function test_the_location_is_cut_where_the_chain_stops_being_valid(): void

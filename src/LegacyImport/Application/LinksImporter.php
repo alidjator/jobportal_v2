@@ -2,16 +2,14 @@
 
 namespace Src\LegacyImport\Application;
 
-use Src\JobSeeker\Domain\LinkRules;
 use Src\JobSeeker\Domain\LinkType;
 use Src\Shared\Application\TransactionManager;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
 
 /**
  * Imports the links of a job seeker: the candidate's `website` (kind `website`) and the `social_links` of the account, mapped to the new kinds (twitter to `x`;
- * facebook, youtube, pinterest and reddit to `other`). Every address must pass the new link rules (https, a domain name, no shortener, the own domain for
- * the named kinds); no limit on their number (the import keeps the legacy data as it is). Only for job seekers whose profile was imported.
+ * facebook, youtube, pinterest and reddit to `other`). The addresses are kept as they are, with no check of the new link rules (https, own domain, no shortener); a kind that is not known becomes `other`;
+ * only an empty address or one longer than the column is skipped. No limit on their number. Only for job seekers whose profile was imported.
  */
 final readonly class LinksImporter implements Importer
 {
@@ -21,6 +19,8 @@ final readonly class LinksImporter implements Importer
     public const string SOCIAL = 'link';
 
     public const string WEBSITE = 'link.website';
+
+    private const int URL_MAX = 255;
 
     private const array TYPES = [
         'facebook' => LinkType::Other, 'twitter' => LinkType::X, 'instagram' => LinkType::Instagram, 'youtube' => LinkType::Other, 'linkedin' => LinkType::LinkedIn,
@@ -98,12 +98,11 @@ final readonly class LinksImporter implements Importer
             return;
         }
 
-        $type = $link['type'];
+        $type = $link['type'] ?? LinkType::Other;
 
         $reason = match (true) {
             $candidate === null => 'not-a-job-seeker',
             $userId === null || ! $hasProfile => 'profile-not-imported',
-            $type === null => 'link-type-unknown',
             default => null,
         };
 
@@ -113,16 +112,16 @@ final readonly class LinksImporter implements Importer
             return;
         }
 
-        try {
-            $checked = LinkRules::check($type, $link['url']);
-        } catch (BusinessRuleViolation) {
+        $url = trim($link['url']);
+
+        if ($url === '' || mb_strlen($url) > self::URL_MAX) {
             $report->skipped(self::ENTITY, $link['legacyId'], 'link-invalid');
 
             return;
         }
 
         if ($context->write) {
-            $newId = $this->writer->insert('link', ['user_id' => $userId, 'type' => $type->value, 'url' => $checked->url]);
+            $newId = $this->writer->insert('link', ['user_id' => $userId, 'type' => $type->value, 'url' => $url]);
             $context->idMap->remember($link['entity'], $link['legacyId'], $newId, $context->clock->now());
         }
 

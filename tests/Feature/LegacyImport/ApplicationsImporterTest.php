@@ -12,8 +12,6 @@ use Src\LegacyImport\Application\ApplicationWriter;
 use Src\LegacyImport\Application\ImportReport;
 use Src\LegacyImport\Application\ImportRunner;
 use Src\LegacyImport\Application\StageGroupMapping;
-use Src\Platform\Application\Settings\SettingsStore;
-use Src\Recruitment\Application\RecruitmentSettings;
 use Tests\Concerns\CreatesReferenceRows;
 use Tests\Concerns\UsesLegacyDatabase;
 use Tests\FeatureTestCase;
@@ -305,7 +303,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
         $this->assertSame(1, $this->entity($report)['notes']['group-missing']);
     }
 
-    public function test_an_extra_stage_that_cannot_be_created_falls_back_to_the_default_stage_of_the_type(): void
+    public function test_an_extra_stage_is_created_beyond_the_default_count_but_a_taken_name_falls_back_to_the_default_stage(): void
     {
         $taken = $this->group('Screening');
         $limit = $this->group('Extra');
@@ -318,14 +316,13 @@ final class ApplicationsImporterTest extends FeatureTestCase
             $runner->run($step, true);
         }
 
-        // The company is at its limit of eight stages, and "Screening" is the name of the default stage of another type.
-        $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::MAX_STAGES, (int) DB::table('company_companies')->value('id'), 8, null);
+        // The company already has its eight default stages (no limit applies to migrated data), and "Screening" is the name of the default stage of another type.
         $report = $this->import(maps: ['groups' => [$taken => ['stage' => 'offer', 'create_stage' => true], $limit => ['stage' => 'offer', 'create_stage' => true]]]);
 
         $this->assertSame(['offer', 'offer'], DB::table('recruitment_applications')->orderBy('id')->pluck('stage_type')->all());
-        $this->assertSame(8, DB::table('recruitment_stages')->count());
+        $this->assertSame(9, DB::table('recruitment_stages')->count());
         $this->assertSame(1, $this->entity($report)['notes']['stage-name-taken']);
-        $this->assertSame(1, $this->entity($report)['notes']['stage-limit-reached']);
+        $this->assertArrayNotHasKey('stage-limit-reached', $this->entity($report)['notes']);
     }
 
     // ----- duplicates -----
@@ -445,11 +442,6 @@ final class ApplicationsImporterTest extends FeatureTestCase
             public function stageByName(int $companyId, string $name): ?array
             {
                 return $this->real->stageByName($companyId, $name);
-            }
-
-            public function stageCount(int $companyId): int
-            {
-                return $this->real->stageCount($companyId);
             }
 
             public function insertStage(int $companyId, string $type, string $name, string $createdAt): int

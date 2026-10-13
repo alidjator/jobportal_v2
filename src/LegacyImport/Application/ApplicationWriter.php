@@ -11,8 +11,6 @@ interface ApplicationWriter
     /** @return array{id: int, type: string}|null the company's stage with this name (letter case ignored) */
     public function stageByName(int $companyId, string $name): ?array;
 
-    public function stageCount(int $companyId): int;
-
     /** An extra stage, placed after the other active stages and before the terminal ones. @return int the id of the new stage */
     public function insertStage(int $companyId, string $type, string $name, string $createdAt): int;
 

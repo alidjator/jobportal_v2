@@ -2,16 +2,13 @@
 
 namespace Src\LegacyImport\Application;
 
-use DateTimeZone;
-use Src\JobSeeker\Domain\Education;
-use Src\JobSeeker\Domain\HistoryRules;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
 
 /**
  * Imports `candidate_education`. The level comes through the master map (required), the institution from `name`, and the single legacy `year` is read as the
- * graduation year: the entry is imported with start and end both that year (no invented range). The GPA (`grade`) is kept when it is a number from 0 to 4
- * with at most two decimals, else emptied with a note. A row that fails the new rules (`HistoryRules`) is skipped with the first field that failed.
+ * graduation year: the entry is imported with start and end both that year (no invented range). The GPA (`grade`) is kept when it is a number (a comma
+ * is read as the decimal point) below 1,000 (the column holds 999.99), whatever its value, else emptied with a note. The values are not checked against the new rules (`HistoryRules` apply to new data only);
+ * a row without a level, an institution or a readable year is skipped (the columns cannot be empty). No limit per user.
  */
 final class EducationsImporter extends CandidateListImporter
 {
@@ -62,7 +59,7 @@ final class EducationsImporter extends CandidateListImporter
 
         $reason = match (true) {
             $level === null => 'education-level-unmatched',
-            $institution === null || mb_strlen($institution) < 2 => 'institution-missing',
+            $institution === null => 'institution-missing',
             $year === null => 'year-unreadable',
             default => null,
         };
@@ -73,14 +70,7 @@ final class EducationsImporter extends CandidateListImporter
 
         $gpa = $this->gpa($row->grade, $context);
         $field = LegacyText::limit(LegacyText::clean($row->field), 100);
-        $description = LegacyText::limit(LegacyText::plain($row->notes), 1000);
-        $thisYear = (int) $context->clock->now()->setTimezone(new DateTimeZone('Asia/Jakarta'))->format('Y');
-
-        try {
-            HistoryRules::education(new Education($userId, (int) $level, $institution, $field, $year, $year, false, $gpa, $description), $thisYear);
-        } catch (BusinessRuleViolation $e) {
-            return 'invalid-'.array_key_first($e->extensions()['errors'] ?? ['education' => []]);
-        }
+        $description = LegacyText::plain($row->notes);
 
         return [
             'education_level_id' => $level,
@@ -106,7 +96,7 @@ final class EducationsImporter extends CandidateListImporter
 
         $number = str_replace(',', '.', $text);
 
-        if (preg_match('/^[0-4](\.[0-9]{1,2})?$/', $number) === 1 && (float) $number <= 4.0) {
+        if (is_numeric($number) && abs((float) $number) < 1000) {
             return $number;
         }
 

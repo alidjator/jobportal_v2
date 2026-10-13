@@ -4,12 +4,10 @@ namespace Src\LegacyImport\Application;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\FileStorage;
-use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use stdClass;
 use Throwable;
@@ -51,7 +49,6 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
         private readonly ApplicantProfileSource $profiles,
         private readonly ApplicantContacts $contacts,
         private readonly FileStorage $storage,
-        private readonly Settings $settings,
         private readonly TransactionManager $transactions,
     ) {}
 
@@ -348,12 +345,6 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             }
 
             $report->note(self::ENTITY, 'stage-name-taken');
-
-            return $fallback;
-        }
-
-        if ($this->writer->stageCount($companyId) >= $this->settings->integer(RecruitmentSettings::MAX_STAGES, $companyId)) {
-            $report->note(self::ENTITY, 'stage-limit-reached');
 
             return $fallback;
         }

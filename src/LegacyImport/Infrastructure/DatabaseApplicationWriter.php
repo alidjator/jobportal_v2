@@ -29,11 +29,6 @@ final readonly class DatabaseApplicationWriter implements ApplicationWriter
         return $row === null ? null : ['id' => (int) $row->id, 'type' => (string) $row->type];
     }
 
-    public function stageCount(int $companyId): int
-    {
-        return $this->connection->table('recruitment_stages')->where('company_id', $companyId)->count();
-    }
-
     public function insertStage(int $companyId, string $type, string $name, string $createdAt): int
     {
         $stages = $this->connection->table('recruitment_stages')->where('company_id', $companyId)->orderBy('position')->get(['id', 'type', 'position']);

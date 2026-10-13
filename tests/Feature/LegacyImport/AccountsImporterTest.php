@@ -117,7 +117,7 @@ final class AccountsImporterTest extends FeatureTestCase
 
     // ----- what is skipped -----
 
-    public function test_rows_that_cannot_be_imported_are_skipped_with_their_reason(): void
+    public function test_rows_that_cannot_be_imported_are_skipped_with_their_reason_and_an_odd_email_is_kept_as_it_is(): void
     {
         $demo = $this->legacyUser(['email' => 'demo@example.test', 'is_demo_field' => 1]);
         $unknown = $this->legacyUser(['email' => 'unknown@example.test', 'role' => 'robot']);
@@ -136,13 +136,13 @@ final class AccountsImporterTest extends FeatureTestCase
             $demo => 'demo-account',
             $unknown => 'unknown-role',
             $orphanOwner => 'company-owner-without-company',
-            $badEmail => 'email-invalid',
             $noName => 'name-missing',
             $second => 'email-taken',
             $taken => 'email-taken',
         ], $reasons);
         $this->assertSame(8, $report['read']);
-        $this->assertSame(1, $report['imported']);
+        $this->assertSame(2, $report['imported']);
+        $this->assertSame(['not-an-email'], DB::table('identity_users')->where('email', 'not-an-email')->pluck('email')->all());
         $this->assertSame(['same@example.test'], DB::table('identity_users')->where('email', 'same@example.test')->pluck('email')->all());
         $this->assertNotNull(DB::table('legacyimport_id_map')->where('entity', 'user')->where('legacy_id', $first)->first());
     }

@@ -99,22 +99,22 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
         $this->assertSame(5, $this->entity($report, 'links')['imported']);
     }
 
-    public function test_links_that_break_the_new_rules_are_skipped_with_their_reason(): void
+    public function test_links_are_kept_as_they_are_and_only_an_empty_one_is_skipped(): void
     {
-        $http = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'http://github.com/siti']);
-        $wrongDomain = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'linkedin', 'url' => 'https://evil.example.test/in/siti']);
-        $shortener = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'other', 'url' => 'https://bit.ly/abc']);
-        $unknown = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'myspace', 'url' => 'https://myspace.com/siti']);
+        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'http://github.com/siti']);
+        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'linkedin', 'url' => 'https://evil.example.test/in/siti']);
+        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'other', 'url' => 'https://bit.ly/abc']);
+        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'myspace', 'url' => 'https://myspace.com/siti']);
         $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'https://github.com/siti']);
-        $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => 'https://github.com/siti2']);
+        $empty = $this->legacyRow('social_links', ['user_id' => $this->user, 'social_media' => 'github', 'url' => '  ']);
 
         $report = $this->entity($this->import('links'), 'links');
 
+        $this->assertSame([['legacy_id' => $empty, 'reason' => 'link-invalid']], $report['skipped_rows']);
         $this->assertSame(
-            [$http => 'link-invalid', $wrongDomain => 'link-invalid', $shortener => 'link-invalid', $unknown => 'link-type-unknown'],
-            collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all(),
+            [['github', 'http://github.com/siti'], ['linkedin', 'https://evil.example.test/in/siti'], ['other', 'https://bit.ly/abc'], ['other', 'https://myspace.com/siti'], ['github', 'https://github.com/siti']],
+            DB::table('jobseeker_links')->orderBy('id')->get(['type', 'url'])->map(fn ($r): array => [$r->type, $r->url])->all(),
         );
-        $this->assertSame(2, DB::table('jobseeker_links')->count());
     }
 
     public function test_every_link_is_kept_without_a_limit_per_kind_or_in_all(): void
@@ -167,11 +167,11 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
         $this->assertSame(1, $this->entity($report, 'resumes')['imported']);
     }
 
-    public function test_a_file_that_fails_the_new_rules_is_skipped_with_its_reason(): void
+    public function test_a_file_that_is_not_a_pdf_or_too_large_or_missing_is_skipped_but_a_scanned_unsafe_pdf_is_kept(): void
     {
         $word = $this->resume('cv.docx', 'PK this is a docx');
-        $encrypted = $this->resume('enc.pdf', $this->pdf('/Encrypt 5 0 R'));
-        $script = $this->resume('js.pdf', $this->pdf('/JavaScript (app.alert(1))'));
+        $this->resume('enc.pdf', $this->pdf('/Encrypt 5 0 R'));
+        $this->resume('js.pdf', $this->pdf('/JavaScript (app.alert(1))'));
         $missing = $this->resume('gone.pdf', null);
         $large = $this->resume('big.pdf', $this->pdf(str_repeat('x', 600 * 1024)));
         $this->app->make(SettingsStore::class)->setGlobal(JobSeekerSettings::RESUME_MAX_SIZE_KB, 512, null);
@@ -179,11 +179,11 @@ final class LinksAndResumesImporterTest extends FeatureTestCase
         $report = $this->entity($this->import('resumes'), 'resumes');
 
         $this->assertEquals(
-            [$word => 'not-a-pdf', $encrypted => 'unsafe-pdf', $script => 'unsafe-pdf', $missing => 'file-missing', $large => 'too-large'],
+            [$word => 'not-a-pdf', $missing => 'file-missing', $large => 'too-large'],
             collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all(),
         );
-        $this->assertSame(0, DB::table('jobseeker_resumes')->count());
-        $this->assertSame([], Storage::allFiles('jobseeker'));
+        $this->assertSame(2, DB::table('jobseeker_resumes')->count());
+        $this->assertCount(2, Storage::allFiles('jobseeker'));
     }
 
     public function test_a_path_that_leaves_the_legacy_folder_is_refused(): void

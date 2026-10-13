@@ -7,14 +7,13 @@ use Src\JobSeeker\Domain\ResumePdf;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
 use Throwable;
 
 /**
- * Imports `candidate_resumes`: the file is read from the legacy project folder and copied to the private disk under a random name only when it passes the new
- * rules: a PDF checked by content, the simple scan for encryption, scripts, launch actions and embedded files, the admin size limit, with no limit on their number (the import keeps
- * the legacy data as it is). Every other one is skipped with its reason so the owner can upload it again. A dry run reads and checks
+ * Imports `candidate_resumes`: the file is read from the legacy project folder and copied to the private disk under a random name only when it is a PDF
+ * by content and within the admin size limit. The safety scan (encryption, scripts, launch actions, embedded files) is **not** applied: the user accepted that the legacy files
+ * are migrated as they are (2026-10-13). No limit on their number. Every other one is skipped with its reason so the owner can upload it again. A dry run reads and checks
  * the files but stores nothing.
  */
 final readonly class ResumesImporter implements Importer
@@ -93,7 +92,7 @@ final readonly class ResumesImporter implements Importer
             $contents === null => 'file-missing',
             strlen($contents) > $maxBytes => 'too-large',
             ! str_starts_with($contents, '%PDF-') => 'not-a-pdf',
-            default => $this->unsafe($contents) ? 'unsafe-pdf' : null,
+            default => null,
         };
 
         if ($reason !== null) {
@@ -132,16 +131,5 @@ final readonly class ResumesImporter implements Importer
 
             throw $e;
         }
-    }
-
-    private function unsafe(string $contents): bool
-    {
-        try {
-            ResumePdf::check($contents);
-        } catch (BusinessRuleViolation) {
-            return true;
-        }
-
-        return false;
     }
 }

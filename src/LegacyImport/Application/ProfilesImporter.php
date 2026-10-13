@@ -4,18 +4,16 @@ namespace Src\LegacyImport\Application;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Src\JobSeeker\Application\JobSeekerSettings;
-use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use stdClass;
 
 /**
  * Imports the legacy `candidates` as job seeker profiles, for the job seeker accounts that were imported (the name stays on the account). Every value is
  * tidied to the rules of the new profile or emptied with a note, never the whole profile dropped for an optional field. The two visibility switches start off
- * (the legacy ones say nothing about a choice). Phone and WhatsApp: an optional `+` and 8 to 15 digits. A birth date outside the age range of the settings is
- * emptied. Gender from `gender`; marital status from the known texts; religion and experience level through the master map; availability from `status`
- * (`available_in` keeps its date only inside the allowed window); the location through BPS codes; `title` is the headline (100) and `bio` the plain-text summary
- * (2,000); the expected salary is monthly when it is plausible as one.
+ * (the legacy ones say nothing about a choice). Phone and WhatsApp: an optional `+` and 8 to 15 digits. A birth date, the date a job seeker is available from and the expected
+ * salary are kept as they are, with no age, window or range check (the legacy data is migrated as it is). Gender from `gender`; marital status from the known texts; religion and experience level through the master map; availability from `status`
+ * (`available_in` keeps its date); the location through BPS codes; `title` is the headline (100) and `bio` the plain-text summary
+ * (2,000); the expected salary is monthly.
  */
 final readonly class ProfilesImporter implements Importer
 {
@@ -25,10 +23,6 @@ final readonly class ProfilesImporter implements Importer
     public const string PROFILE = 'profile';
 
     private const int BATCH = 100;
-
-    private const int SALARY_MIN = 100_000;
-
-    private const int SALARY_MAX = 1_000_000_000;
 
     private const array MARITAL = [
         'single' => 'single', 'belum menikah' => 'single', 'belum kawin' => 'single', 'lajang' => 'single',
@@ -42,7 +36,6 @@ final readonly class ProfilesImporter implements Importer
         private JobSeekerWriter $writer,
         private LocationLookup $locations,
         private NewMasterReader $masters,
-        private Settings $settings,
         private TransactionManager $transactions,
     ) {}
 
@@ -59,10 +52,9 @@ final readonly class ProfilesImporter implements Importer
     public function run(ImportContext $context): void
     {
         $monthly = $this->masters->idBySlug('reference_salary_periods', 'monthly');
-        $today = $this->today($context);
         $seenUsers = [];
 
-        $this->legacy->chunk('candidates', self::BATCH, function (array $rows) use ($context, $monthly, $today, &$seenUsers): void {
+        $this->legacy->chunk('candidates', self::BATCH, function (array $rows) use ($context, $monthly, &$seenUsers): void {
             $maps = [
                 'already' => $context->idMap->findMany(self::PROFILE, array_map(static fn (stdClass $row): int => (int) $row->id, $rows)),
                 'users' => $context->idMap->findMany(AccountsImporter::USER, array_map(static fn (stdClass $row): int => (int) $row->user_id, $rows)),
@@ -70,9 +62,9 @@ final readonly class ProfilesImporter implements Importer
                 'experienceLevels' => $this->master($context, 'experience_levels', $rows, 'experience_id'),
             ];
 
-            $this->transactions->run(function () use ($rows, $context, $maps, $monthly, $today, &$seenUsers): void {
+            $this->transactions->run(function () use ($rows, $context, $maps, $monthly, &$seenUsers): void {
                 foreach ($rows as $row) {
-                    $this->importRow($row, $context, $maps, $monthly, $today, $seenUsers);
+                    $this->importRow($row, $context, $maps, $monthly, $seenUsers);
                 }
             });
         });
@@ -82,7 +74,7 @@ final readonly class ProfilesImporter implements Importer
      * @param  array<string, array<int, int>>  $maps
      * @param  array<int, true>  $seenUsers
      */
-    private function importRow(stdClass $row, ImportContext $context, array $maps, ?int $monthly, DateTimeImmutable $today, array &$seenUsers): void
+    private function importRow(stdClass $row, ImportContext $context, array $maps, ?int $monthly, array &$seenUsers): void
     {
         $legacyId = (int) $row->id;
         $report = $context->report;
@@ -111,14 +103,14 @@ final readonly class ProfilesImporter implements Importer
         $seenUsers[$userId] = true;
         $location = $this->locations->resolve($this->text($row->region), $this->text($row->district), $this->text($row->subdistrict), $this->text($row->kelurahan), $this->text($row->postcode));
         [$salary, $period] = $this->salary($row->expected_salary, $monthly, $report);
-        [$availability, $availableFrom] = $this->availability($row, $today, $report);
+        [$availability, $availableFrom] = $this->availability($row, $report);
         $createdAt = $this->time($row->created_at, $context);
 
         $columns = [
             'user_id' => $userId,
             'phone' => $this->phone($row->phone, $report),
             'whatsapp' => $this->phone($row->whatsapp_number, $report),
-            'birth_date' => $this->birthDate($row->birth_date, $today, $report),
+            'birth_date' => $this->birthDate($row->birth_date),
             'gender' => in_array($row->gender, ['male', 'female'], true) ? $row->gender : null,
             'marital_status' => $this->marital($row->marital_status, $report),
             'religion_id' => $row->religion_id === null ? null : ($maps['religions'][(int) $row->religion_id] ?? null),
@@ -168,23 +160,9 @@ final readonly class ProfilesImporter implements Importer
         return null;
     }
 
-    private function birthDate(mixed $value, DateTimeImmutable $today, ImportReport $report): ?string
+    private function birthDate(mixed $value): ?string
     {
-        $date = LegacyDates::day($value === null ? null : (string) $value);
-
-        if ($date === null) {
-            return null;
-        }
-
-        $age = $date->diff($today)->invert === 1 ? -1 : $date->diff($today)->y;
-
-        if ($age >= $this->settings->integer(JobSeekerSettings::MIN_AGE) && $age <= $this->settings->integer(JobSeekerSettings::MAX_AGE) && (int) $date->format('Y') >= 1900) {
-            return $date->format('Y-m-d');
-        }
-
-        $report->note(self::ENTITY, 'birth-date-out-of-range');
-
-        return null;
+        return LegacyDates::day($value === null ? null : (string) $value)?->format('Y-m-d');
     }
 
     private function marital(mixed $value, ImportReport $report): ?string
@@ -204,7 +182,7 @@ final readonly class ProfilesImporter implements Importer
         return $mapped;
     }
 
-    /** @return array{0: int|null, 1: int|null} the amount and the monthly period, or nothing when it is not plausible as a monthly salary */
+    /** @return array{0: int|null, 1: int|null} the amount and the monthly period, or nothing when there is no amount or no monthly period to go with it */
     private function salary(mixed $value, ?int $monthly, ImportReport $report): array
     {
         if ($value === null || (int) $value === 0) {
@@ -213,7 +191,7 @@ final readonly class ProfilesImporter implements Importer
 
         $amount = (int) $value;
 
-        if ($monthly === null || $amount < self::SALARY_MIN || $amount > self::SALARY_MAX) {
+        if ($monthly === null || $amount < 0) {
             $report->note(self::ENTITY, 'expected-salary-dropped');
 
             return [null, null];
@@ -223,7 +201,7 @@ final readonly class ProfilesImporter implements Importer
     }
 
     /** @return array{0: string|null, 1: string|null} */
-    private function availability(stdClass $row, DateTimeImmutable $today, ImportReport $report): array
+    private function availability(stdClass $row): array
     {
         $availability = match ($row->status) {
             'available', 'available_in' => 'open_to_work',
@@ -236,15 +214,8 @@ final readonly class ProfilesImporter implements Importer
         }
 
         $from = LegacyDates::day($row->available_in === null ? null : (string) $row->available_in);
-        $latest = $today->modify('+'.$this->settings->integer(JobSeekerSettings::AVAILABLE_FROM_MAX_DAYS).' days');
 
-        if ($from !== null && $from >= $today && $from <= $latest) {
-            return [$availability, $from->format('Y-m-d')];
-        }
-
-        $report->note(self::ENTITY, 'available-from-dropped');
-
-        return [$availability, null];
+        return [$availability, $from?->format('Y-m-d')];
     }
 
     /**
@@ -256,11 +227,6 @@ final readonly class ProfilesImporter implements Importer
         $ids = array_values(array_unique(array_filter(array_map(static fn (stdClass $row): ?int => $row->{$column} === null ? null : (int) $row->{$column}, $rows))));
 
         return $context->idMap->findMany(MasterCatalog::entityFor($master), $ids);
-    }
-
-    private function today(ImportContext $context): DateTimeImmutable
-    {
-        return new DateTimeImmutable($context->clock->now()->setTimezone(new DateTimeZone('Asia/Jakarta'))->format('Y-m-d'), new DateTimeZone('UTC'));
     }
 
     private function text(mixed $value): ?string

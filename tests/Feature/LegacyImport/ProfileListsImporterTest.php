@@ -108,22 +108,23 @@ final class ProfileListsImporterTest extends FeatureTestCase
         $this->assertSame(3, $this->entity($report, 'experiences')['imported']);
     }
 
-    public function test_an_experience_that_breaks_the_new_rules_is_skipped_with_its_reason(): void
+    public function test_an_experience_is_kept_as_it_is_unless_a_required_value_is_missing(): void
     {
         $noCompany = $this->experience(['company' => ' ']);
         $shortTitle = $this->experience(['job_title' => 'QA', 'designation' => null]);
         $badStart = $this->experience(['start' => 'sometime']);
-        $noEnd = $this->experience(['end' => null]);
-        $endBeforeStart = $this->experience(['start' => '2022-06', 'end' => '2020-03']);
-        $future = $this->experience(['start' => '2030-01', 'end' => '2031-01']);
+        $noTitle = $this->experience(['job_title' => null, 'designation' => null]);
+        $this->experience(['end' => null]);
+        $this->experience(['start' => '2022-06', 'end' => '2020-03']);
+        $this->experience(['start' => '2030-01', 'end' => '2031-01']);
 
         $report = $this->entity($this->import('experiences'), 'experiences');
 
-        $this->assertSame([
-            $noCompany => 'company-invalid', $shortTitle => 'job-title-invalid', $badStart => 'start-date-unreadable', $noEnd => 'end-date-unreadable',
-            $endBeforeStart => 'invalid-end_date', $future => 'invalid-start_date',
-        ], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
-        $this->assertSame(0, DB::table('jobseeker_experiences')->count());
+        $this->assertSame([$noCompany => 'company-invalid', $badStart => 'start-date-unreadable', $noTitle => 'job-title-invalid'], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
+        $rows = DB::table('jobseeker_experiences')->orderBy('id')->get();
+        $this->assertSame(['QA', null, '2022-06-01', '2030-01-01'], [$rows[0]->job_title, $rows[1]->end_date, $rows[2]->start_date, $rows[3]->start_date]);
+        $this->assertSame('2020-03-01', $rows[2]->end_date);
+        $this->assertSame(4, $report['imported']);
     }
 
     public function test_a_user_keeps_every_experience_without_a_limit(): void
@@ -150,33 +151,34 @@ final class ProfileListsImporterTest extends FeatureTestCase
         $this->assertSame([$this->bachelor, 'ITB', 'Informatics', 2019, 2019, 0, '3.75', 'Cum laude'], [(int) $row->education_level_id, $row->institution, $row->field_of_study, (int) $row->start_year, (int) $row->end_year, (int) $row->is_current, $row->gpa, $row->description]);
     }
 
-    public function test_an_invalid_gpa_is_emptied_but_the_entry_is_kept(): void
+    public function test_a_gpa_is_kept_whatever_its_value_and_emptied_only_when_it_is_not_a_number(): void
     {
         $this->education(['grade' => '85']);
         $this->education(['grade' => 'A', 'name' => 'UI']);
+        $this->education(['grade' => '1500', 'name' => 'UGM']);
 
         $report = $this->entity($this->import('educations'), 'educations');
 
-        $this->assertSame([null, null], DB::table('jobseeker_educations')->orderBy('id')->pluck('gpa')->all());
+        $this->assertSame(['85.00', null, null], DB::table('jobseeker_educations')->orderBy('id')->pluck('gpa')->all());
         $this->assertSame(2, $report['notes']['gpa-invalid']);
-        $this->assertSame(2, $report['imported']);
+        $this->assertSame(3, $report['imported']);
     }
 
-    public function test_an_education_that_cannot_be_imported_is_skipped_with_its_reason(): void
+    public function test_an_education_is_kept_as_it_is_unless_a_required_value_is_missing(): void
     {
         $noLevel = $this->education(['level' => null]);
         $unknownLevel = $this->education(['level' => 2]);
         $noName = $this->education(['name' => '']);
         $noYear = $this->education(['year' => 'last year']);
-        $oldYear = $this->education(['year' => '1900']);
-        $future = $this->education(['year' => '2099']);
+        $this->education(['year' => '1900']);
+        $this->education(['year' => '2099']);
 
         $report = $this->entity($this->import('educations'), 'educations');
 
         $this->assertSame([
             $noLevel => 'education-level-unmatched', $unknownLevel => 'education-level-unmatched', $noName => 'institution-missing', $noYear => 'year-unreadable',
-            $oldYear => 'invalid-start_year', $future => 'invalid-start_year',
         ], collect($report['skipped_rows'])->pluck('reason', 'legacy_id')->all());
+        $this->assertSame([1900, 2099], DB::table('jobseeker_educations')->orderBy('id')->pluck('start_year')->map(fn ($year): int => (int) $year)->all());
     }
 
     // ----- skills and languages -----

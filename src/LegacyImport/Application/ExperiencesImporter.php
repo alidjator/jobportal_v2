@@ -2,18 +2,14 @@
 
 namespace Src\LegacyImport\Application;
 
-use DateTimeImmutable;
-use DateTimeZone;
-use Src\JobSeeker\Domain\HistoryRules;
-use Src\JobSeeker\Domain\WorkExperience;
 use Src\Shared\Application\TransactionManager;
-use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
 
 /**
- * Imports `candidate_experiences`. The job title is `job_title`, else `designation`; the company, start and end are required and must pass the new rules
- * (`HistoryRules`): a row that does not is skipped with the first field that failed. Dates are read from the legacy free text; a job that is current has no end.
- * The description is plain text cut to its limit; the employment type is matched to a job type by name, else left empty. At most 30 per user.
+ * Imports `candidate_experiences`. The job title is `job_title`, else `designation`; the company and the start are required (the columns cannot be empty): a row without one is skipped.
+ * Every other value is kept as it is, with no check of the new rules (`HistoryRules` apply to new data only): a short title, a start in the future, an end before the start,
+ * an end that cannot be read (left empty). Dates are read from the legacy free text; a job that is current has no end. The description is plain text; the employment type
+ * is matched to a job type by name, else left empty. No limit per user.
  */
 final class ExperiencesImporter extends CandidateListImporter
 {
@@ -68,17 +64,16 @@ final class ExperiencesImporter extends CandidateListImporter
 
     protected function map(stdClass $row, int $userId, ImportContext $context, array $lookups): array|string
     {
-        $company = LegacyText::limit(LegacyText::clean((string) $row->company), 100);
+        $company = LegacyText::limit(LegacyText::clean((string) $row->company), 255);
         $title = LegacyText::limit(LegacyText::clean($row->job_title) ?? LegacyText::clean($row->designation), 100);
         $start = LegacyDates::month($row->start);
         $current = (int) $row->currently_working === 1;
         $end = $current ? null : LegacyDates::month($row->end);
 
         $reason = match (true) {
-            $company === null || mb_strlen($company) < 2 => 'company-invalid',
-            $title === null || mb_strlen($title) < 3 => 'job-title-invalid',
+            $company === null => 'company-invalid',
+            $title === null => 'job-title-invalid',
             $start === null => 'start-date-unreadable',
-            ! $current && $end === null => 'end-date-unreadable',
             default => null,
         };
 
@@ -86,14 +81,7 @@ final class ExperiencesImporter extends CandidateListImporter
             return $reason;
         }
 
-        $description = LegacyText::limit(LegacyText::plain($row->responsibilities), 2000);
-        $thisMonth = new DateTimeImmutable($context->clock->now()->setTimezone(new DateTimeZone('Asia/Jakarta'))->format('Y-m-01'), new DateTimeZone('UTC'));
-
-        try {
-            HistoryRules::experience(new WorkExperience($userId, $title, $company, null, null, $start, $end, $current, $description), $thisMonth);
-        } catch (BusinessRuleViolation $e) {
-            return 'invalid-'.array_key_first($e->extensions()['errors'] ?? ['experience' => []]);
-        }
+        $description = LegacyText::plain($row->responsibilities);
 
         $jobType = null;
 

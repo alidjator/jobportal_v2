@@ -92,7 +92,7 @@ final readonly class AccountsImporter implements Importer
 
         $reason ??= match (true) {
             $name === null || mb_strlen($name) > 255 => 'name-missing',
-            filter_var($email, FILTER_VALIDATE_EMAIL) === false || mb_strlen($email) > 255 => 'email-invalid',
+            $email === '' || mb_strlen($email) > 255 => 'email-invalid',
             isset($seenEmails[$email]) || $this->accounts->emailTaken($email) => 'email-taken',
             default => null,
         };
