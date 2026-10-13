@@ -267,7 +267,7 @@ shows today's rule, the permission of each page is in that document's catalog.
 | C19 | Pipeline stages | `company/stages` (CRUD, `PUT order`) | company admin |
 | C20 | Company profile | `GET`/`PATCH company/profile`, `PUT company/slug`, logo and banner (`GET`/`POST`/`DELETE`) | company admin |
 | C21 | Verification documents | `GET company/documents`, `POST`/`DELETE .../{typeId}`, `GET .../{typeId}/file` | company admin |
-| C22 | Team | `GET company/members`, `GET .../{userId}/jobs` (the jobs a member is assigned to), `PUT .../{userId}/role`, `DELETE .../{userId}`; `GET`/`POST`/`DELETE company/invitations` | company admin |
+| C22 | Team | `GET company/members`, `GET .../{userId}/jobs` (the jobs a member is assigned to); designed: detail, activity, suspend, reactivate, make owner, resend invitation (`phase-8-company-permissions.md`); `PUT .../{userId}/role`, `DELETE .../{userId}`; `GET`/`POST`/`DELETE company/invitations` | company admin |
 | C23 | Campaigns | `company/campaigns` (CRUD), `GET .../qr`, `GET .../results` | company admin |
 | C24 | Reviews of the company | `GET company/reviews`, `PUT`/`DELETE .../reply`, `POST .../report` | company admin |
 | C25 | Notifications and account | shared with the job seeker pages J12 and J15 (`/me/notifications`, `/me/password`, `logout-all`); the avatar is `me/avatar` | both |
@@ -299,7 +299,7 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D1 | Sign in and two-factor | `POST admin/auth/login`, `POST admin/auth/two-factor` | none |
 | D2 | Dashboard | `GET admin/dashboard` | `dashboard.view` |
 | D3 | Analytics | `GET admin/analytics/{report}` | `analytics.view` |
-| D4 | Companies: list, create, detail | `GET`/`POST admin/companies`, `GET .../{id}`, `suspend`, `restore`, `POST .../{id}/invitations` (first company admin) | `companies.manage` |
+| D4 | Companies: list, create, detail | `GET`/`POST admin/companies`, `GET .../{id}`, `suspend`, `restore`, `POST .../{id}/invitations` (first company admin), `PUT .../{id}/owner` (designed, `phase-8-company-permissions.md`) | `companies.manage` |
 | D5 | Company verification documents | `GET .../{id}/documents`, `GET .../{typeId}/file`, `approve`, `reject` | `companies.manage` |
 | D6 | Company setting overrides | `GET .../{id}/settings`, `PUT`/`DELETE .../settings/{key}` | `companies.manage` |
 | D7 | Job moderation | `GET admin/jobs[/{id}]`, `approve`, `reject`, `take-down`, `restore` | `jobs.manage` |

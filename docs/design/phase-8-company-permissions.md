@@ -22,6 +22,67 @@ permissions" and "change a member's role and permissions so access always matche
 - 2026-10-13: the five interpretations decided by the user ([detail](#interpretations-decided)): role value `member`; **no base access**, reading
   needs the new permission `applications.view` (catalog now 21), which every job and applicant action requires; interviewers must be assigned to the
   job; category edits follow `talent_pool.manage`; "the person concerned or a company admin" overrides stay on the role.
+- 2026-10-13: the story "extra team actions" (resend, revoke, suspend, reactivate, detail and activity, make primary account) adds **one owner per
+  company**, **temporary suspension of a membership**, **expired invitations with resend** and **member detail with activity from the audit log**
+  (decided by the user, [detail](#team-actions)); its five interpretations decided the same day, the activity shows IP address and user agent.
+
+## Team actions
+
+Story (company admin, 2026-10-13): extra actions per row of the team page.
+
+| Action | Shown when | Endpoint |
+|---|---|---|
+| Resend invitation | pending or expired | `POST company/invitations/{id}/resend` (new) |
+| Revoke invitation | pending | `DELETE company/invitations/{id}` (exists) |
+| Suspend | member active | `POST company/members/{userId}/suspend` (new) |
+| Reactivate | member suspended | `POST company/members/{userId}/reactivate` (new) |
+| Detail and activity | always | `GET company/members/{userId}`, `GET .../activity` (new); `GET .../jobs` (exists) |
+| Make primary account | only for the current owner | `POST company/members/{userId}/make-owner` (new) |
+
+### Owner (primary account)
+
+- **Exactly one owner per company**, a company admin flagged `company_members.is_owner` (partial unique index per company).
+- **Protected:** nobody can suspend, remove or demote the owner (409 `member-is-owner`); the owner leaves or is demoted only after handing the
+  ownership over.
+- **Transfer:** only the owner (403 `owner-required`), to an **active company admin** of the same company (409 `owner-target-not-company-admin`
+  otherwise), with the owner's current password in the request (422 `invalid-password`). The former owner stays a company admin. Audited
+  (`company.owner_transferred`); both get an in-app notification and an email.
+- **Platform admin:** `PUT admin/companies/{id}/owner {user_id}` (D4, `companies.manage`) when the owner is gone; same target rule, audited.
+- **First owner:** the first company admin who joins a new company (the admin-created invitation). Migration and legacy import: the oldest company
+  admin of each company.
+- `GET company/members` and `GET company/me` show `is_owner`.
+
+### Temporary suspension
+
+- `company_members.status`: `active` or `suspended` (plus `suspended_at`, `suspended_by_user_id`); separate from the account status a platform admin
+  sets (D21), and both block.
+- **Suspend:** a company admin, not on themselves (409 `cannot-suspend-self`) or the owner; every token of the member is revoked; sign-in answers 403
+  `membership-suspended`; an email tells the member (optional `message` in the request, at most 500 characters). Audited
+  (`company.member_suspended`).
+- **Kept while suspended:** job assignments, interview panels, permissions, notes and conversations, so reactivation restores everything.
+- **Not sent while suspended:** notifications and emails to the member. A job whose assignees are all suspended sends its assignee notifications to
+  the company admins instead.
+- **Last company admin:** a suspended company admin does not count, so the last active company admin cannot be suspended (`last-company-admin`).
+- **Reactivate:** a company admin; status back to `active`; email to the member; audited (`company.member_reactivated`). The member signs in again.
+- The member list shows the status; suspended members stay in the list and in the member jobs list.
+
+### Invitations: expired and resend
+
+- `GET company/invitations` lists `pending` and `expired` invitations (each with `status`); an expired one is listed for 30 days after it expired.
+- **Resend** (pending or expired): a new token and 7 more days, same email, role and permissions; the old link stops working; the one-minute cooldown of
+  inviting applies (429). Audited as `company.invitation_resent`.
+- An accepted or revoked invitation is not listed. Rows are deleted 30 days after expiry, revocation or acceptance (daily purge; they hold an email).
+
+### Member detail and activity
+
+- `GET company/members/{userId}`: name, email, role, owner flag, permissions with the preset name, membership status (with suspension time and who),
+  joined, last sign-in, number of assigned jobs.
+- `GET company/members/{userId}/activity`: the audit entries whose actor is the member (one account belongs to one company), newest first, cursor
+  paginated, 12 months (the audit retention); `filter[action]` and a date range. Each entry: time, action, subject type and id with a readable title
+  when the subject still exists, **IP address and user agent** (shown, decided by the user, for spotting suspicious sign-ins; the privacy notice must
+  say that company admins see them, `docs/legal-review.md`).
+- The audit log belongs to Platform: Company reads it through a new `Shared` port (`MemberActivity`), provided by Platform.
+- Team management rule: all six actions need role `company_admin` (`company-admin-required`), the owner transfer needs the owner.
 
 ## Catalog
 
@@ -124,6 +185,16 @@ everywhere except team management.
 - C22: invitation dialog with a preset picker and the grouped checkboxes; the member list shows the preset name when the set matches one, else
   "Kustom"; an edit dialog per member.
 - The company dashboard menu (section 8 of `frontend.md`) follows `GET company/me` permissions instead of the role.
+
+## Team actions: interpretations decided
+
+Proposed while designing and decided by the user on 2026-10-13:
+
+1. **Owner transfer asks for the owner's current password** (agreed): it stops a transfer from a session left open.
+2. **Jobs whose assignees are all suspended** (agreed): their assignee notifications go to the company admins until an assignee is active again.
+3. **Activity shows IP address and user agent** (changed by the user): the proposal hid them; they are shown, and the privacy notice must say so.
+4. **Invitation rows are deleted 30 days** after they expire, are revoked or accepted (agreed); the audit entries keep no email address.
+5. **Notices** (agreed): suspension and reactivation email the member; an owner transfer sends an in-app notification and an email to both owners.
 
 ## Interpretations decided
 
