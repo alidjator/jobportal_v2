@@ -33,9 +33,27 @@ final readonly class SpatieAdminRbacWriter implements AdminRbacWriter
 
     public function assignRole(int $adminId, string $role): void
     {
-        $roleModel = Role::query()->where('name', $role)->where('guard_name', AdminModel::GUARD)->first()
-            ?? throw EntityNotFound::of('Role', $role);
+        AdminModel::query()->findOrFail($adminId)->assignRole($this->role($role));
+    }
 
-        AdminModel::query()->findOrFail($adminId)->assignRole($roleModel);
+    public function replaceRole(int $adminId, string $role): void
+    {
+        AdminModel::query()->findOrFail($adminId)->syncRoles([$this->role($role)]);
+
+        $this->registrar->forgetCachedPermissions();
+    }
+
+    public function deleteRole(string $role): void
+    {
+        $this->role($role)->delete();
+
+        $this->registrar->forgetCachedPermissions();
+    }
+
+    /** @throws EntityNotFound */
+    private function role(string $role): Role
+    {
+        return Role::query()->where('name', $role)->where('guard_name', AdminModel::GUARD)->first()
+            ?? throw EntityNotFound::of('Role', $role);
     }
 }

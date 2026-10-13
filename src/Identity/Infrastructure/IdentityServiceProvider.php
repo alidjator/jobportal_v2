@@ -14,6 +14,7 @@ use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
 use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
+use Src\Identity\Application\Admin\AdminDirectory;
 use Src\Identity\Application\Admin\AdminRbacWriter;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
 use Src\Identity\Application\Auth\GoogleIdentityVerifier;
@@ -37,6 +38,13 @@ use Src\Identity\Application\TwoFactor\UserTwoFactors;
 use Src\Identity\Domain\AdminRepository;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
+use Src\Identity\Domain\Events\AdminPasswordReset;
+use Src\Identity\Domain\Events\AdminReactivated;
+use Src\Identity\Domain\Events\AdminRoleChanged;
+use Src\Identity\Domain\Events\AdminRoleCreated;
+use Src\Identity\Domain\Events\AdminRoleDeleted;
+use Src\Identity\Domain\Events\AdminRolePermissionsChanged;
+use Src\Identity\Domain\Events\AdminSuspended;
 use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
 use Src\Identity\Domain\Events\RecoveryCodesRegenerated;
@@ -62,6 +70,7 @@ use Src\Identity\Infrastructure\Auth\RateLimiterRegistrationThrottle;
 use Src\Identity\Infrastructure\Auth\RateLimiterSignInThrottle;
 use Src\Identity\Infrastructure\Auth\SanctumAccessTokenIssuer;
 use Src\Identity\Infrastructure\Auth\SpatieAdminAccessReader;
+use Src\Identity\Infrastructure\Auth\SpatieAdminDirectory;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
@@ -82,9 +91,19 @@ use Src\Identity\Infrastructure\Persistence\EloquentSocialAccountRepository;
 use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
+use Src\Identity\Interface\Console\CreateAdminRoleCommand;
+use Src\Identity\Interface\Console\DeleteAdminRoleCommand;
+use Src\Identity\Interface\Console\ListAdminPermissionsCommand;
+use Src\Identity\Interface\Console\ListAdminRolesCommand;
+use Src\Identity\Interface\Console\ListAdminsCommand;
 use Src\Identity\Interface\Console\PurgeTwoFactorChallengesCommand;
+use Src\Identity\Interface\Console\ReactivateAdminCommand;
 use Src\Identity\Interface\Console\ReconcileErasureCommand;
+use Src\Identity\Interface\Console\ResetAdminPasswordCommand;
 use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
+use Src\Identity\Interface\Console\SetAdminRoleCommand;
+use Src\Identity\Interface\Console\SetAdminRolePermissionsCommand;
+use Src\Identity\Interface\Console\SuspendAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
@@ -126,6 +145,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         AdminContacts::class => IdentityAdminContacts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
+        AdminDirectory::class => SpatieAdminDirectory::class,
         TermsAcceptanceRepository::class => DatabaseTermsAcceptanceRepository::class,
         CompanyMemberAccounts::class => IdentityCompanyMemberAccounts::class,
         TwoFactorTokens::class => RandomTwoFactorTokens::class,
@@ -164,7 +184,9 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class]);
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
+            ListAdminPermissionsCommand::class, ListAdminRolesCommand::class, ListAdminsCommand::class, CreateAdminRoleCommand::class, SetAdminRolePermissionsCommand::class,
+            DeleteAdminRoleCommand::class, SetAdminRoleCommand::class, SuspendAdminCommand::class, ReactivateAdminCommand::class, ResetAdminPasswordCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(AnonymizeDueAccountsCommand::class)->dailyAt('02:00')->withoutOverlapping()->onOneServer();
@@ -191,6 +213,13 @@ final class IdentityServiceProvider extends ContextServiceProvider
             AccountDeletionRequested::class => 'onAccountDeletionRequested',
             AccountDeletionCancelled::class => 'onAccountDeletionCancelled',
             UserAnonymized::class => 'onUserAnonymized',
+            AdminRoleCreated::class => 'onAdminRoleCreated',
+            AdminRolePermissionsChanged::class => 'onAdminRolePermissionsChanged',
+            AdminRoleDeleted::class => 'onAdminRoleDeleted',
+            AdminRoleChanged::class => 'onAdminRoleChanged',
+            AdminSuspended::class => 'onAdminSuspended',
+            AdminReactivated::class => 'onAdminReactivated',
+            AdminPasswordReset::class => 'onAdminPasswordReset',
         ] as $event => $method) {
             Event::listen($event, [RecordIdentityAuditEntries::class, $method]);
         }

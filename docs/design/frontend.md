@@ -39,6 +39,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: complex screens agreed: test runner on every device, video room on Janus with screen sharing, voice through JsSIP, interview panel inside the room ([detail](#115-complex-screens)).
 - 2026-10-13: shared screens are not recorded (the Janus converter leaves out screen tracks, new work done with the front end); every participant may share, one screen at a time ([detail](#115-complex-screens)).
 - 2026-10-13: texts agreed: a notification catalog from the API with a front-end coverage test, static pages as Markdown in the front-end repository, the session drafts and the user reviews ([detail](#116-texts)).
+- 2026-10-13: four legacy admin features stay out: candidate export, a cross-company application list, job bulk import and clone by an admin, platform-wide interview question templates ([detail](#93-findings-while-mapping)).
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); the admin panel starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 
 ## 1. Timing
@@ -335,8 +336,16 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 - **No admin endpoints for admin accounts and roles.** Admins are created with `identity:create-admin` and permissions synced with
   `identity:sync-permissions` (console only); there is no page to invite admins, assign roles or reset another admin's two-factor (only the console
   command `identity:reset-admin-two-factor`). **Decided by the user on 2026-10-13: it stays console-only**: granting admin rights is the most
-  sensitive action and is limited to people with server access; the panel has no admin-management pages.
+  sensitive action and is limited to people with server access; the panel has no admin-management pages. The console commands that make this workable (roles, role permissions, an admin's role, suspension, password reset) were
+  added on 2026-10-13 (`phase-8-admin-console.md`).
 - **Training (Moodle):** no admin route; courses come from Moodle, so nothing to manage in the panel.
+- **Legacy admin features without an endpoint** (checked against `legacy-flow-map.md` on 2026-10-13; every `admin/*` route is mapped above).
+  **Decided by the user on 2026-10-13: not built**:
+  - Candidate export (CSV, Excel): personal data of every job seeker would leave the platform; D21 (search, profile summary) and the D3 CSV
+    aggregates stay the only admin views. The applicant export stays per job for the company (R13).
+  - A cross-company list of applications: applications stay between the company and the applicant; the admin sees counts in D2 and D3.
+  - Job bulk import and clone by an admin: jobs are created by companies, which already clone (`POST company/jobs/{id}/clone`).
+  - Platform-wide interview question templates: interview kits stay company templates (`phase-7-interview-kits.md`).
 
 ## 10. Technical foundation
 

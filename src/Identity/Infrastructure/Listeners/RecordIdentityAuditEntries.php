@@ -6,6 +6,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
+use Src\Identity\Domain\Events\AdminPasswordReset;
+use Src\Identity\Domain\Events\AdminReactivated;
+use Src\Identity\Domain\Events\AdminRoleChanged;
+use Src\Identity\Domain\Events\AdminRoleCreated;
+use Src\Identity\Domain\Events\AdminRoleDeleted;
+use Src\Identity\Domain\Events\AdminRolePermissionsChanged;
+use Src\Identity\Domain\Events\AdminSuspended;
 use Src\Identity\Domain\Events\PasswordChanged;
 use Src\Identity\Domain\Events\PasswordReset;
 use Src\Identity\Domain\Events\RecoveryCodesRegenerated;
@@ -20,16 +27,20 @@ use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
 use Src\Shared\Application\Audit\AuditTrail;
+use Src\Shared\Domain\DomainEvent;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
  * Writes the audit entries for Identity's security events: sign-in (success and failure), password reset and change, sign-out from every device, the admin second factor and the account
- * deletion lifecycle. Runs on the `default` queue, retried 3 times with a growing delay. The entries hold no sensitive values:
+ * deletion lifecycle, and the operator's console changes to admin roles and administrators. Runs on the `default` queue, retried 3 times with a growing delay. The entries hold no sensitive values:
  * never the email address that was typed, a password or a code.
  */
 final class RecordIdentityAuditEntries implements ShouldQueue
 {
     public int $tries = 3;
+
+    /** The subject type of an audit entry about an admin role. */
+    private const string ROLE_SUBJECT = 'admin_role';
 
     public function __construct(private readonly AuditTrail $trail) {}
 
@@ -121,6 +132,45 @@ final class RecordIdentityAuditEntries implements ShouldQueue
         ));
     }
 
+    public function onAdminRoleCreated(AdminRoleCreated $event): void
+    {
+        $this->trail->record($this->roleEntry(AuditAction::ADMIN_ROLE_CREATED, $event->role, ['permissions' => $event->permissions], $event->operator, $event));
+    }
+
+    public function onAdminRolePermissionsChanged(AdminRolePermissionsChanged $event): void
+    {
+        $this->trail->record($this->roleEntry(
+            AuditAction::ADMIN_ROLE_PERMISSIONS_CHANGED, $event->role, ['added' => $event->added, 'removed' => $event->removed], $event->operator, $event,
+        ));
+    }
+
+    public function onAdminRoleDeleted(AdminRoleDeleted $event): void
+    {
+        $this->trail->record($this->roleEntry(AuditAction::ADMIN_ROLE_DELETED, $event->role, [], $event->operator, $event));
+    }
+
+    public function onAdminRoleChanged(AdminRoleChanged $event): void
+    {
+        $this->trail->record($this->operatorEntry(
+            AuditAction::ADMIN_ROLE_CHANGED, $event->adminId, ['from' => $event->previousRole, 'to' => $event->role], $event->operator, $event,
+        ));
+    }
+
+    public function onAdminSuspended(AdminSuspended $event): void
+    {
+        $this->trail->record($this->operatorEntry(AuditAction::ADMIN_SUSPENDED, $event->adminId, [], $event->operator, $event));
+    }
+
+    public function onAdminReactivated(AdminReactivated $event): void
+    {
+        $this->trail->record($this->operatorEntry(AuditAction::ADMIN_REACTIVATED, $event->adminId, [], $event->operator, $event));
+    }
+
+    public function onAdminPasswordReset(AdminPasswordReset $event): void
+    {
+        $this->trail->record($this->operatorEntry(AuditAction::ADMIN_PASSWORD_RESET, $event->adminId, [], $event->operator, $event));
+    }
+
     private function actorType(AccountScope $scope): AuditActorType
     {
         return $scope === AccountScope::Admin ? AuditActorType::Admin : AuditActorType::User;
@@ -146,5 +196,31 @@ final class RecordIdentityAuditEntries implements ShouldQueue
     private function userEntry(string $action, int $userId, array $metadata, ?string $ip, ?string $userAgent, PasswordReset|AccountDeletionRequested|AccountDeletionCancelled $event): AuditEntry
     {
         return new AuditEntry(AuditActorType::User, $userId, $action, AccountScope::User->value, $userId, $metadata, $ip, $userAgent, $event->occurredAt());
+    }
+
+    /**
+     * An operator's console change to an administrator: the system acts, the operating-system user is kept in the metadata.
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    private function operatorEntry(string $action, int $adminId, array $metadata, string $operator, DomainEvent $event): AuditEntry
+    {
+        return new AuditEntry(
+            AuditActorType::System, null, $action,
+            AccountScope::Admin->value, $adminId, [...$metadata, 'operator' => $operator], null, null, $event->occurredAt(),
+        );
+    }
+
+    /**
+     * An operator's console change to a role; the role has no id worth keeping, so its name is in the metadata.
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    private function roleEntry(string $action, string $role, array $metadata, string $operator, DomainEvent $event): AuditEntry
+    {
+        return new AuditEntry(
+            AuditActorType::System, null, $action,
+            self::ROLE_SUBJECT, null, ['role' => $role, ...$metadata, 'operator' => $operator], null, null, $event->occurredAt(),
+        );
     }
 }

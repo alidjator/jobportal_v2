@@ -125,6 +125,26 @@ final class Admin extends AggregateRoot
         $this->twoFactorLastStep = $step;
     }
 
+    /** @throws StateConflict `admin-not-active` when the administrator is not active */
+    public function suspend(): void
+    {
+        if (! $this->status->isActive()) {
+            throw new StateConflict('Only an active administrator can be suspended.', 'admin-not-active');
+        }
+
+        $this->status = AccountStatus::Suspended;
+    }
+
+    /** @throws StateConflict `admin-not-suspended` when the administrator is not suspended */
+    public function reactivate(): void
+    {
+        if ($this->status !== AccountStatus::Suspended) {
+            throw new StateConflict('Only a suspended administrator can be reactivated.', 'admin-not-suspended');
+        }
+
+        $this->status = AccountStatus::Active;
+    }
+
     /** Removes the second factor (a lost device); the admin enrols again at the next sign-in. */
     public function resetTwoFactor(): void
     {

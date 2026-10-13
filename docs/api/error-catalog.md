@@ -7,6 +7,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `account-deactivated` | 403 | Identity | This account has been deactivated. |
 | `account-not-active` | 409 | Identity | Only an active account can be deleted. |
 | `account-suspended` | 403 | Identity | This account has been suspended. |
+| `admin-not-active` | 409 | Identity | Only an active administrator can be suspended. |
+| `admin-not-suspended` | 409 | Identity | Only a suspended administrator can be reactivated. |
 | `admin-only` | 403 | Dashboard, JobSeeker, Newsletter, Review | Only an admin has this dashboard. |
 | `alert-limit` | 422 | JobAlert |  |
 | `already-applied` | 409, 422 | JobInvitation, Recruitment | This candidate already applied to the job. |
@@ -131,6 +133,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-report` | 422 | Assessment | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
 | `invalid-resume` | 422 | JobSeeker |  |
+| `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
 | `invalid-schedule` | 422 | Recruitment |  |
 | `invalid-score` | 422 | Assessment |  |
 | `invalid-scorecard` | 422 | Recruitment |  |
@@ -175,6 +178,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `kit-name-taken` | 409 | Recruitment | Another kit of this company already has this name. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
 | `last-section` | 409 | Assessment | This is the last section: submit the test to finish it. |
+| `last-super-admin` | 409 | Identity | This is the only active super_admin; give another administrator that role first. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
 | `legal-document-missing` | 422 | Identity | Every document in force must be accepted together. |
 | `legal-document-not-active` | 422 | Identity | A document that is not in force was sent. |
@@ -217,6 +221,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `page-out-of-range` | 422 | Job |  |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
+| `permissions-required` | 422 | Identity | Give the role at least one permission. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
@@ -251,6 +256,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `review-not-pending` | 409 | Review |  |
 | `review-not-published` | 409 | Review |  |
 | `review-requires-application` | 403 | Review | Only a job seeker who applied to this company can review it. |
+| `role-already-exists` | 409 | Identity |  |
+| `role-in-use` | 409 | Identity |  |
+| `role-protected` | 409 | Identity | The super_admin role holds every permission and cannot be edited. |
+| `role-unchanged` | 409 | Identity |  |
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
 | `saved-jobs-limit` | 422 | Job |  |
 | `schedule-required` | 422 | Recruitment |  |
@@ -291,6 +300,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
+| `unknown-permission` | 422 | Identity |  |
 | `unknown-team-size` | 422 | Company |  |
 | `unsupported-language` | 422 | Platform |  |
 | `upload-deadline-passed` | 409 | Assessment | The time to send this recording has passed. |

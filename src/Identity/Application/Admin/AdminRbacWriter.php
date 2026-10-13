@@ -22,4 +22,9 @@ interface AdminRbacWriter
     public function syncRole(string $role, array $permissionNames): void;
 
     public function assignRole(int $adminId, string $role): void;
+
+    /** Gives the administrator this role in place of the one they hold. */
+    public function replaceRole(int $adminId, string $role): void;
+
+    public function deleteRole(string $role): void;
 }

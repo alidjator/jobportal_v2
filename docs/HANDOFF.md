@@ -30,7 +30,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 - `CORS_ALLOWED_ORIGINS` (front-end origin); consider nginx `limit_req` for unknown paths.
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
-- First admin: `identity:create-admin` (enrols TOTP at the first sign-in); grant `cv_templates.manage`.
+- First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins with limited roles through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
 - Legal review brief `docs/legal-review.md` (sensitive candidate-search filters stay off until answered).
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 

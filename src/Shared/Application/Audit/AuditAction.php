@@ -23,6 +23,20 @@ final class AuditAction
 
     public const string TWO_FACTOR_RESET = 'auth.two_factor_reset';
 
+    public const string ADMIN_ROLE_CREATED = 'admin.role_created';
+
+    public const string ADMIN_ROLE_PERMISSIONS_CHANGED = 'admin.role_permissions_changed';
+
+    public const string ADMIN_ROLE_DELETED = 'admin.role_deleted';
+
+    public const string ADMIN_ROLE_CHANGED = 'admin.role_changed';
+
+    public const string ADMIN_SUSPENDED = 'admin.suspended';
+
+    public const string ADMIN_REACTIVATED = 'admin.reactivated';
+
+    public const string ADMIN_PASSWORD_RESET = 'admin.password_reset';
+
     public const string ACCOUNT_DELETION_REQUESTED = 'account.deletion_requested';
 
     public const string ACCOUNT_DELETION_CANCELLED = 'account.deletion_cancelled';
