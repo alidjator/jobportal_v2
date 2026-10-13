@@ -425,4 +425,78 @@ final class ProfileListsTest extends FeatureTestCase
         $this->api('PUT', '/me/skills', ['skill_ids' => []], $other)->assertOk();
         $this->assertSame(1, DB::table('jobseeker_skills')->count());
     }
+
+    // ----- a profile migrated over the limits -----
+
+    public function test_a_profile_over_the_skill_limit_can_keep_or_shorten_its_list_but_not_lengthen_it(): void
+    {
+        $ids = [];
+
+        for ($i = 1; $i <= 36; $i++) {
+            $ids[] = $this->referenceId('reference_skills', "skill-{$i}", ['kind' => 'hard']);
+            DB::table('jobseeker_skills')->insert(['user_id' => $this->userId, 'skill_id' => $ids[$i - 1], 'position' => $i]);
+        }
+
+        $this->api('PUT', '/me/skills', ['skill_ids' => array_reverse($ids)])->assertOk()->assertJsonCount(36, 'data.skills');
+        $this->api('PUT', '/me/skills', ['skill_ids' => array_slice($ids, 0, 33)])->assertOk()->assertJsonCount(33, 'data.skills');
+        $this->api('PUT', '/me/skills', ['skill_ids' => [...array_slice($ids, 0, 33), $ids[35]]])->assertOk()->assertJsonCount(34, 'data.skills');
+
+        $this->api('PUT', '/me/skills', ['skill_ids' => $ids])->assertStatus(422)->assertJsonStructure(['errors' => ['skill_ids']]);
+    }
+
+    public function test_a_profile_over_the_language_limit_can_keep_its_list_but_not_lengthen_it(): void
+    {
+        $ids = [];
+
+        for ($i = 1; $i <= 12; $i++) {
+            $ids[] = $this->referenceId('reference_languages', "language-{$i}", ['code' => "l{$i}"]);
+            DB::table('jobseeker_languages')->insert(['user_id' => $this->userId, 'language_id' => $ids[$i - 1], 'proficiency' => 'conversational']);
+        }
+
+        $entries = fn (array $languageIds): array => array_map(fn (int $id): array => ['language_id' => $id, 'proficiency' => 'fluent'], $languageIds);
+
+        $this->api('PUT', '/me/languages', ['languages' => $entries($ids)])->assertOk();
+        $this->api('PUT', '/me/languages', ['languages' => $entries(array_slice($ids, 0, 11))])->assertOk();
+        $this->api('PUT', '/me/languages', ['languages' => $entries([...array_slice($ids, 0, 11), $ids[11], $this->referenceId('reference_languages', 'language-13', ['code' => 'l13'])])])
+            ->assertStatus(422)->assertJsonStructure(['errors' => ['languages']]);
+    }
+
+    public function test_a_stored_link_that_breaks_the_rules_stays_but_a_new_one_is_still_checked(): void
+    {
+        DB::table('jobseeker_links')->insert([
+            ['user_id' => $this->userId, 'type' => 'website', 'url' => 'http://old.example.test', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $this->userId, 'type' => 'other', 'url' => 'https://bit.ly/abc', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $kept = [['type' => 'website', 'url' => 'http://old.example.test'], ['type' => 'other', 'url' => 'https://bit.ly/abc']];
+
+        $this->api('PUT', '/me/links', ['links' => $kept])->assertOk();
+        $this->api('PUT', '/me/links', ['links' => [...$kept, ['type' => 'other', 'url' => 'http://new.example.test']]])->assertStatus(422)->assertJsonStructure(['errors' => ['links.2.url']]);
+        $this->api('PUT', '/me/links', ['links' => [['type' => 'website', 'url' => 'http://other.example.test']]])->assertStatus(422)->assertJsonStructure(['errors' => ['links.0.url']]);
+    }
+
+    public function test_an_experience_over_the_text_limits_can_change_another_field_but_a_changed_text_is_checked(): void
+    {
+        $long = str_repeat('a', 2500);
+        $id = (int) DB::table('jobseeker_experiences')->insertGetId([
+            'user_id' => $this->userId, 'job_title' => 'Backend Developer', 'company_name' => str_repeat('c', 120), 'start_date' => '2022-03-01', 'end_date' => '2024-06-01',
+            'is_current' => false, 'description' => $long, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->api('PATCH', "/me/experiences/{$id}", ['job_title' => 'Senior Backend Developer', 'description' => $long])->assertOk();
+        $this->api('PATCH', "/me/experiences/{$id}", ['description' => $long.'b'])->assertStatus(422)->assertJsonStructure(['errors' => ['description']]);
+        $this->api('PATCH', "/me/experiences/{$id}", ['company_name' => str_repeat('d', 121)])->assertStatus(422)->assertJsonStructure(['errors' => ['company_name']]);
+    }
+
+    public function test_an_education_with_a_gpa_over_four_can_change_another_field_but_a_changed_gpa_is_checked(): void
+    {
+        $id = (int) DB::table('jobseeker_educations')->insertGetId([
+            'user_id' => $this->userId, 'education_level_id' => $this->referenceId('reference_education_levels', 'bachelor', ['rank' => 5]), 'institution' => 'Institut Teknologi Bandung',
+            'start_year' => 2014, 'end_year' => 2018, 'gpa' => '85.00', 'description' => str_repeat('n', 1200), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->api('PATCH', "/me/educations/{$id}", ['institution' => 'ITB', 'gpa' => '85', 'description' => str_repeat('n', 1200)])->assertOk();
+        $this->api('PATCH', "/me/educations/{$id}", ['gpa' => '86'])->assertStatus(422)->assertJsonStructure(['errors' => ['gpa']]);
+        $this->api('PATCH', "/me/educations/{$id}", ['gpa' => '3.50'])->assertOk()->assertJsonPath('data.gpa', '3.50');
+        $this->api('PATCH', "/me/educations/{$id}", ['description' => str_repeat('n', 1201)])->assertStatus(422)->assertJsonStructure(['errors' => ['description']]);
+    }
 }

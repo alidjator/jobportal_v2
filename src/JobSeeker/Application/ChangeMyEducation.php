@@ -40,7 +40,7 @@ final readonly class ChangeMyEducation
             throw new BusinessRuleViolation('The education level does not exist or is not active.', 'invalid-education', extensions: ['errors' => ['education_level_id' => ['This value does not exist or is not active.']]]);
         }
 
-        HistoryRules::education($education, $this->today->year());
+        HistoryRules::education($education, $this->today->year(), $current);
         $this->educations->save($education, $this->clock->now());
 
         return $this->educations->find($userId, $id) ?? throw EntityNotFound::of('Education', $id);

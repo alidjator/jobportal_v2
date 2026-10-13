@@ -67,18 +67,26 @@ final class LinkRules
     }
 
     /**
-     * The links of a profile when the list is acceptable: at most 8, one per kind except `other` (up to 3), and every address checked.
+     * The links of a profile when the list is acceptable: at most 8, one per kind except `other` (up to 3), and every address checked. A profile that
+     * already holds more than that (migrated as it was) may keep what it has: a list no longer than the `$stored` one, and a link that is still in it, pass.
      *
      * @param  list<array{type: LinkType, url: string}>  $links
+     * @param  list<ProfileLink>  $stored
      * @return list<ProfileLink>
      *
      * @throws BusinessRuleViolation `invalid-links` with `errors` per `links.<n>.<field>` or `links`
      */
-    public static function checkAll(array $links): array
+    public static function checkAll(array $links, array $stored = []): array
     {
         $errors = [];
 
-        if (count($links) > self::LINKS_MAX) {
+        $storedPerType = [];
+
+        foreach ($stored as $link) {
+            $storedPerType[$link->type->value] = ($storedPerType[$link->type->value] ?? 0) + 1;
+        }
+
+        if (count($links) > self::LINKS_MAX && count($links) > count($stored)) {
             $errors['links'][] = 'A profile can have at most '.self::LINKS_MAX.' links.';
         }
 
@@ -88,10 +96,16 @@ final class LinkRules
         foreach ($links as $index => $link) {
             $perType[$link['type']->value] = ($perType[$link['type']->value] ?? 0) + 1;
 
-            if ($perType[$link['type']->value] > $link['type']->maximum()) {
+            if ($perType[$link['type']->value] > $link['type']->maximum() && $perType[$link['type']->value] > ($storedPerType[$link['type']->value] ?? 0)) {
                 $errors["links.{$index}.type"][] = $link['type']->maximum() === 1
                     ? 'Only one link of this kind is allowed.'
                     : 'At most '.$link['type']->maximum().' links of this kind are allowed.';
+            }
+
+            if (self::isStored($stored, $link['type'], $link['url'])) {
+                $checked[] = new ProfileLink($link['type'], trim($link['url']));
+
+                continue;
             }
 
             try {
@@ -109,6 +123,18 @@ final class LinkRules
     }
 
     /** @param  list<string>  $domains */
+    /** @param  list<ProfileLink>  $stored */
+    private static function isStored(array $stored, LinkType $type, string $url): bool
+    {
+        foreach ($stored as $link) {
+            if ($link->type === $type && $link->url === trim($url)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static function isOneOf(string $host, array $domains): bool
     {
         foreach ($domains as $domain) {

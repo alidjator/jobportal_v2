@@ -11,7 +11,7 @@ final class ReplaceMySkillsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'skill_ids' => ['present', 'array', 'max:100'],
+            'skill_ids' => ['present', 'array', 'max:255'],
             'skill_ids.*' => ['integer', 'min:1'],
         ];
     }

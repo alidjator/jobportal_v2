@@ -32,7 +32,7 @@ final readonly class ReplaceMySkills
         $userId = $this->guard->userId($actor);
         $errors = [];
 
-        if (count($skillIds) > self::MAX) {
+        if (count($skillIds) > self::MAX && count($skillIds) > count($this->lists->skillIds($userId))) {
             $errors['skill_ids'][] = 'A profile can have at most '.self::MAX.' skills.';
         }
 

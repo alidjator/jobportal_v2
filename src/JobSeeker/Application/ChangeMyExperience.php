@@ -40,7 +40,7 @@ final readonly class ChangeMyExperience
             throw new BusinessRuleViolation('The job type does not exist or is not active.', 'invalid-experience', extensions: ['errors' => ['job_type_id' => ['This value does not exist or is not active.']]]);
         }
 
-        HistoryRules::experience($experience, $this->today->month());
+        HistoryRules::experience($experience, $this->today->month(), $current);
         $this->experiences->save($experience, $this->clock->now());
 
         return $this->experiences->find($userId, $id) ?? throw EntityNotFound::of('Work experience', $id);

@@ -25,7 +25,7 @@ final class ExperienceRequest extends FormRequest
             'start_date' => [...$presence, 'date_format:Y-m'],
             'end_date' => ['sometimes', 'nullable', 'date_format:Y-m'],
             'is_current' => ['sometimes', 'boolean'],
-            'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:20000'],
         ];
     }
 

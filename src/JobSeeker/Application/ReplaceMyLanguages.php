@@ -34,7 +34,7 @@ final readonly class ReplaceMyLanguages
         $errors = [];
         $ids = array_map(static fn (LanguageEntry $entry): int => $entry->languageId, $languages);
 
-        if (count($languages) > self::MAX) {
+        if (count($languages) > self::MAX && count($languages) > count($this->lists->languages($userId))) {
             $errors['languages'][] = 'A profile can have at most '.self::MAX.' languages.';
         }
 

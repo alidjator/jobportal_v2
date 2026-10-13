@@ -24,7 +24,7 @@ final readonly class ReplaceMyLinks
     public function execute(Actor $actor, array $links): void
     {
         $userId = $this->guard->userId($actor);
-        $checked = LinkRules::checkAll($links);
+        $checked = LinkRules::checkAll($links, $this->lists->links($userId));
 
         $this->transactions->run(fn () => $this->lists->replaceLinks($userId, $checked));
     }
