@@ -30,6 +30,7 @@ One line per decision; the detail is in the section named. If they disagree, the
 - 2026-10-13 Skills: every legacy skill that matches no master is **created as a new skill master** at import (replaces "unmatched are reported, never created" for skills only; details in "Legacy skills as masters").
 - 2026-10-13 Job roles and job categories: an unmatched legacy item is created as a new master too, like the skills ("Legacy skills as masters", last item).
 - 2026-10-13 Tests write import reports to a fake disk, never to the real `storage/app/private/legacy-import/` ("Legacy skills as masters", test storage).
+- 2026-10-13 Rehearsal masters map `/home/jobportal/import/masters.draft.json` approved as it is: "Kristen" → `protestant`, roles 26 and 27 → `developer`; the other unmatched roles (DevOps, IT, IT Support, Internship, ...) become new roles.
 - Open: the user's approval is needed before any run against production data (the copy included).
 
 ## Confirmed decisions
