@@ -11,6 +11,7 @@ rehearsal together with the front end. Code is not started.
   ([detail](#design)).
 - 2026-10-13: the rest of the design agreed as proposed: message templates with parameters translated by the renderer, the coverage check, an
   Indonesian name for every validated field, the session drafts and the user reviews ([detail](#design)).
+- 2026-10-13: a notification catalog is generated for the front end, which words in-app notifications itself ([detail](#notification-catalog)).
 
 ## Current state (read from the code, 2026-10-13)
 
@@ -45,3 +46,12 @@ Agreed by the user on 2026-10-13.
 4. **`title`:** translated with the status texts (a short list in `lang/id.json`).
 5. **Wording:** a session drafts the Indonesian text with one glossary (lowongan, pelamar, perusahaan, rekruter, tahap, penilaian), consistent with the
    front end's `packages/i18n`; the user reviews it before it is merged.
+
+## Notification catalog
+
+Decided by the user on 2026-10-13 (`frontend.md` 11.6). In-app notifications carry a `type` and `data` and are worded by the client, but the OpenAPI
+document types `data` as a string, so the client has no list of types. A command (`api:notification-catalog`, name settled when coding) reads the
+notification types of every context (the `*NotificationType` classes and the assessment and interview types) with their recipients and `data` keys and
+writes `docs/api/notification-catalog.md` plus a JSON copy the front end reads; `--check` fails when the file is stale, run by a unit test as for the
+error catalog. Each type's `data` keys are declared next to the type so the catalog does not guess them.
+

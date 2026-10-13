@@ -77,3 +77,5 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] `docs/analysis/legacy-security-report.md` (S1 to S3, critical) delivered to the maintainers of the running karir.pkp.
 - [ ] Front-end origin and the invitation page URL given by the user.
 - [ ] Client IP behind the Nuxt proxy decided (`docs/design/frontend.md`, section 5.2, open points): without a trusted proxy every visitor shares the Nuxt server's IP in rate limits, audit and consent records.
+- [ ] Brand name decided (`APP_NAME`, front-end `{brand}`, `docs/design/frontend.md` 11.4): it appears in page titles, emails and structured data.
+- [ ] Contact details for the public site (email, phone, address, WhatsApp if any) given by the user (`docs/design/frontend.md` 11.6).

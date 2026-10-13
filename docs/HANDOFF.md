@@ -13,7 +13,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 - **Phases 0 to 7 coded and committed** (5: security, performance and architecture reviews; 6 assessments; 7 interview kits and tele-interview).
 - Real PostgreSQL `jobportal_v2`: migrated to `000135`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- Front end: designed (`docs/design/frontend.md`), not coded; coding goes with the five API pieces of `docs/design/phase-8-*.md`. Its open point before go-live: client IP behind the Nuxt proxy (`frontend.md` 5.2).
+- Front end: designed (`docs/design/frontend.md`), not coded; coding goes with the five API pieces of `docs/design/phase-8-*.md` plus a notification catalog and leaving shared screens out of video recordings (`frontend.md` 11.5, 11.6). Its open point before go-live: client IP behind the Nuxt proxy (`frontend.md` 5.2).
 
 ## Open work (not started)
 

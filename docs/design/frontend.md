@@ -32,6 +32,13 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: API error text is translated in the API (`lang/id`: validation messages, attribute names, problem `detail`); the front end shows the API text and decides by `code` only. New API work, done with front-end coding ([detail](#10-technical-foundation)).
 - 2026-10-13: rest of the technical foundation agreed: central problem+json handling, Pinia with `useFetch` and TanStack Vue Query, ESLint/Prettier/`vue-tsc`/Vitest/Playwright, release folders with a `current` symlink, Nuxt as a systemd service, admin as static files with a strict CSP ([detail](#10-technical-foundation)).
 - 2026-10-13: the five new API pieces are designed in `phase-8-company-directory.md`, `phase-8-training-course-detail.md`, `phase-8-api-translations.md`, `phase-8-user-management.md` and `phase-8-company-registrations.md` (adds admin page D22).
+- 2026-10-13: layouts and navigation agreed: four layouts, menus per area, no customizer (light/dark only), vertical sidebar, bottom navigation for job seekers on phones ([detail](#111-layouts-and-navigation)).
+- 2026-10-13: common states agreed; public lists scroll on with crawlable `?page=N` links, times in the device's zone with a label, WCAG 2.1 AA ([detail](#112-common-states)).
+- 2026-10-13: key page layouts agreed; the applicant pipeline opens as a table, kanban one click away ([detail](#113-key-page-layouts)).
+- 2026-10-13: search-engine design agreed: structured data, sitemaps, only category and location filter pages indexed, brand name later, Google Indexing API after go-live ([detail](#114-search-engines)).
+- 2026-10-13: complex screens agreed: test runner on every device, video room on Janus with screen sharing, voice through JsSIP, interview panel inside the room ([detail](#115-complex-screens)).
+- 2026-10-13: shared screens are not recorded (the Janus converter leaves out screen tracks, new work done with the front end); every participant may share, one screen at a time ([detail](#115-complex-screens)).
+- 2026-10-13: texts agreed: a notification catalog from the API with a front-end coverage test, static pages as Markdown in the front-end repository, the session drafts and the user reviews ([detail](#116-texts)).
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); the admin panel starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 
 ## 1. Timing
@@ -142,8 +149,8 @@ Decided by the user on 2026-10-13, after both templates the user owns were read 
   - Locales: the template ships `en`, `fr`, `ro`, `zhHans`; the applications need `id` and `en` (the API language follows `Accept-Language`).
   - Overlapping dependencies (`moment` and `date-fns`, two table libraries) are reduced to one each.
 - **Same look under server rendering (agreed by the user on 2026-10-13):** the Nuxt application renders the same Vuetify components and SCSS, so it looks
-  the same as the SPA; only the first paint can differ. To avoid a flash, the theme choice (light, dark, system) and the layout settings of the customizer
-  are kept in a cookie the server reads; Vuetify's `ssr.clientWidth` is set so the first paint on a phone uses the mobile layout; ApexCharts and
+  the same as the SPA; only the first paint can differ. To avoid a flash, the theme choice (light, dark, system; the customizer is removed, 11.1) is kept
+  in a cookie the server reads; Vuetify's `ssr.clientWidth` is set so the first paint on a phone uses the mobile layout; ApexCharts and
   perfect-scrollbar render inside `<ClientOnly>`.
 
 ## 7. Page map: public site and job seekers
@@ -363,3 +370,204 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   is off for `jobportal`). The admin application is static files served by nginx with a strict CSP: `script-src 'self'`; `style-src` needs
   `'unsafe-inline'` because Vuetify injects its theme as an inline style and a static site cannot give it a nonce.
 
+
+## 11. Interface design
+
+Worked out with the user from 2026-10-13, after the page maps and the technical foundation. Order: layouts and navigation (11.1), common states
+(11.2), then page layouts, SEO, the complex screens, and texts.
+
+### 11.1 Layouts and navigation
+
+Agreed by the user on 2026-10-13.
+
+Built from the Able Pro parts (`full-version/src/layouts`, `views/pages/landingpage`, `views/authentication/auth1`, `views/pages/maintenance`).
+
+| Layout | Used by | From Able Pro |
+|---|---|---|
+| `public` | P1 to P13 | landing page `AppBarMenu` and `FooterSection` |
+| `blank` | A1 to A7, D1, M1, M2, error pages | `BlankLayout`, `auth1` pages, `maintenance/error` |
+| `dashboard` | `/me`, `/rekruter`, admin, `/mitra` | `DashboardLayout` with the vertical sidebar and header (`NotificationDD`, `LanguageDD`, `ProfileDD`) |
+| `focus` | J4 apply, J6 and C9 video rooms, J7 test runner, C10 voice call | new: no sidebar, a top bar with the title and an exit; full screen where the page needs it |
+
+**Public header:** logo; Lowongan, Perusahaan, Gaji, Pelatihan; Untuk Perusahaan; language switch (ID/EN); Masuk and Daftar. Signed in: notification bell and
+the avatar menu (job seeker: Dasbor, Profil, Lamaran, Keluar; company member: Dasbor rekruter, Keluar). On a phone the links fold into a drawer.
+**Public footer:** about and contact, legal documents (P8), FAQ, the newsletter form (P1 `POST newsletter/subscribers`), language switch.
+
+**Job seeker sidebar (`/me`):** Dasbor · *Cari kerja:* Cari lowongan (to `/lowongan`), Lowongan tersimpan, Notifikasi lowongan, Undangan melamar ·
+*Lamaran:* Lamaran saya, Asesmen · *Profil:* Profil, CV dan resume · *Komunikasi:* Pesan (unread count), Notifikasi (unread count) · *Lainnya:* Ulasan
+saya, Pelatihan saya · Pengaturan akun.
+
+**Recruiter sidebar (`/rekruter`):** Dasbor, Analitik · *Rekrutmen:* Lowongan, Cari kandidat, Talent pool, Pesan (unread count) · *Alat:* Tes asesmen
+(company admin), Interview kit, Pertanyaan screening · *Perusahaan* (company admin only): Profil perusahaan, Dokumen verifikasi, Tim, Tahapan, Kampanye,
+Ulasan · Notifikasi, Pengaturan akun. The pipeline (C6), application detail (C7), interview workspace (C8) and results (C16) are reached from a job, not
+from the menu.
+
+**Admin sidebar:** each item shown only with its permission (9.1): *Ringkasan:* Dasbor, Analitik · *Perusahaan:* Perusahaan, Pengajuan perusahaan
+(D22), Jenis dokumen · Pengguna (D21) · *Moderasi:* Lowongan, Ulasan · *Pemasaran:* Kampanye, Newsletter · *Konten:* FAQ, Dokumen legal, Template
+email, Template CV · *Asesmen:* Pustaka tes, Penyedia psikolog · *Sistem:* Data referensi, Pengaturan, Log audit · Akun saya. A group with no visible
+item is hidden.
+
+**Psychologist sidebar (`/mitra`):** Tes, Tinjauan hasil (count waiting), Akun saya.
+
+**Decided by the user on 2026-10-13:**
+
+- **No customizer for users:** the Able Pro customizer is removed; the avatar menu offers light, dark or system theme, kept in a cookie (section 6). The
+  layout, colours and menu direction are fixed by the application.
+- **Vertical sidebar** in every dashboard; on a phone it becomes the drawer.
+- **Bottom navigation on phones for `/me`:** Dasbor, Cari (to `/lowongan`), Lamaran, Pesan (unread count), Profil; the drawer keeps the full menu. A new
+  component (Vuetify `v-bottom-navigation`), not in the template. The recruiter, admin and psychologist areas use the drawer only.
+
+### 11.2 Common states
+
+Agreed by the user on 2026-10-13.
+
+One pattern per situation, used by every page of both applications.
+
+- **Loading:** a skeleton (`v-skeleton-loader`) shaped like the content on a first load in the browser; server-rendered public pages arrive filled. A
+  button that sends shows a spinner and is disabled until the answer, so a form cannot be sent twice.
+- **Empty:** an icon, one sentence and the next step ("Belum ada lamaran" with "Cari lowongan"). An empty result of a filter says so and offers to reset
+  the filters.
+- **Errors** (from the problem parser, section 10):
+  - 422 with `errors`: the message under each field, focus on the first one; a 422 or 409 without fields: an alert above the form.
+  - 403: a "not allowed" panel inside the layout (no sign-out).
+  - 404: the not-found page (public pages answer a real 404 status for search engines).
+  - 429: a snackbar with the wait from `Retry-After`; the button stays disabled until then.
+  - 503 (for example `training-unavailable`): a card in place of the content with "Coba lagi"; the API in maintenance mode shows the maintenance page.
+  - No connection or 500: a snackbar with "Coba lagi"; the form keeps what was typed.
+- **Success:** a short snackbar; a new item opens or is highlighted.
+- **Confirmation:** a dialog naming the thing for every destructive action (withdraw an application, reject, delete); account deletion asks the user
+  to type a word.
+- **Unsaved changes:** long forms (profile, job editor, test editor, email templates, company profile) warn before leaving.
+- **Session end:** public 401 goes to sign-in and back to the page (5.2); the admin's 12-hour token ends with a dialog that leads to sign-in and then to
+  the same page.
+- **Updates:** small toggles (save a job, mark as read) change at once and roll back on error; everything else waits for the API.
+
+**Decided by the user on 2026-10-13:**
+
+- **Public lists scroll on** (jobs, companies, training): the next page loads as the visitor reaches the end. So that search engines still reach every
+  page (P2 and P12 are indexed), it follows the crawlable pattern: the server renders `?page=N` on its own, the end of the list carries a real link to
+  `?page=N+1`, and the address bar follows the page in view (`history.replaceState`), so a shared link opens where the visitor was. Dashboard tables
+  keep page numbers (`v-data-table-server`); messages and notifications load older items at the end (cursor lists).
+- **Time zone:** times come from the API in UTC and are shown in the device's zone with its label (WIB, WITA, WIT; other zones by their offset). An
+  interview time also shows the zone in the invitation and the confirmation.
+- **Accessibility:** WCAG 2.1 AA: keyboard use, visible focus, labels on every field, errors announced to screen readers, and the Able Pro colours
+  checked for contrast (adjusted in the theme where they fail).
+
+### 11.3 Key page layouts
+
+Agreed by the user on 2026-10-13.
+
+Wireframes were shown to the user for P2, P3, J1 and C6; the other pages follow the closest Able Pro page.
+
+- **P1 Home:** search box (keyword, location) over the banner; job categories; latest jobs; verified companies (from P12); salary insight and training
+  teasers; newsletter in the footer. Signed-in job seekers see their recommendations first.
+- **P2 Job search:** search bar with sort (relevant, newest, salary); filters in a left column (a bottom sheet on a phone) with "save as job alert";
+  job cards (logo, title, company with badge, location, salary when shown, tags, match percentage and save when signed in); scroll-on with crawlable
+  page links (11.2).
+- **P3 Job detail:** main column (header facts, description, qualifications, benefits, skills, salary insight, about the company, other jobs of the
+  company); a side card that stays in view with salary, Apply, save and share (a fixed bar at the bottom on a phone).
+- **P4 Company profile:** banner and logo, name, badge, facts; tabs About, Open jobs, Reviews (rating summary, list, write a review).
+- **J1 Dashboard:** profile completeness with the next step, active applications with status, upcoming interviews and assessments, recommendations; on
+  a phone the bottom navigation (11.1).
+- **J2 Profile:** one page of sections (basics, experience, education, skills, languages, links, avatar), each edited in a dialog; completeness shown
+  at the top.
+- **C6 Pipeline:** job header with the switch between table and kanban; **the table is the default (decided by the user on 2026-10-13)**:
+  `v-data-table-server` with selection for bulk move, reject and message; kanban (Able Pro kanban, one column per stage with counts, cards dragged to
+  move) one click away, and the last choice is remembered per user in the browser. Filters and export on both.
+- **C7 Application detail:** candidate column (profile, resume viewer, screening answers) and a work column with tabs: notes, rating, interviews,
+  assessments, offer, history; stage actions at the top.
+- **Admin lists** (D4, D7, D8, D21, D22): the same server table with filters on top and the detail in a page, actions in the detail header.
+
+
+### 11.4 Search engines
+
+Agreed by the user on 2026-10-13.
+
+- **Titles and descriptions** per page in both languages, from templates, for example P3 "{title} di {company}, {city} | {brand}" and a description
+  from the first sentences of the job; P4 "{company}: lowongan dan ulasan | {brand}". Open Graph and Twitter cards with the company logo or a default
+  image.
+- **Structured data (JSON-LD):** `JobPosting` on P3 (`datePosted`, `validThrough` from the deadline, `employmentType` from the job type,
+  `hiringOrganization`, `jobLocation` or `applicantLocationRequirements` for remote work, `baseSalary` only when the company shows it, `directApply`
+  true); `Organization` on P4; `Course` on P6b; `FAQPage` on P9; `BreadcrumbList` on detail pages; `WebSite` with `SearchAction` on P1.
+- **Closed jobs:** the API answers 404 for a job that is no longer live (`GetPublicJob`), so the page answers 404 too, with similar jobs to continue;
+  search engines then drop it, as Google asks for expired job postings.
+- **Sitemaps:** an index served by Nuxt (`@nuxtjs/sitemap`) with live jobs, companies (P12 endpoint), courses, legal documents and the static pages, in
+  both languages with `hreflang` alternates; rebuilt from the API on request and cached for an hour.
+- **`robots.txt`:** public application disallows `/me`, `/rekruter`, `/api`, the account pages and their `/en` versions; the admin domain disallows
+  everything and sends `noindex` on every response.
+- **`hreflang`:** `id`, `en` and `x-default` (Indonesian) on every indexed page.
+
+**Decided by the user on 2026-10-13:**
+
+- **Brand name:** decided later; titles, emails and structured data read it from configuration (`{brand}`; the API's `APP_NAME` is `JobPortal` today).
+  It must be set before go-live (deployment checklist).
+- **Indexed filter pages:** only `/lowongan` with a category, a location (province or city), or both. Those pages carry a canonical URL with the
+  parameters in a fixed order and their own title ("Lowongan IT di Bandung"); every other combination (keyword, salary, level, sort, more than one value)
+  answers `noindex, follow`. The sitemap lists the indexable combinations that have live jobs.
+- **Google Indexing API:** not at go-live; the sitemap first, the Indexing API considered after go-live as separate API work.
+
+### 11.5 Complex screens
+
+Agreed by the user on 2026-10-13.
+
+Built on `phase-6-assessments.md` and `phase-7-tele-interview.md`; all run in the `focus` layout (11.1) in the browser only.
+
+**J7 test runner:**
+
+- **Before the start:** instructions per section, what is recorded (tab switch, full-screen exit, paste and IP changes; never a webcam image), the
+  consent box (and the separate recording consent when the test has video questions), a camera and microphone check for video questions, then
+  "Mulai", which asks for full screen.
+- **During:** a top bar with the section, a countdown from the server time in `GET attempt` (corrected on every answer, since the timer runs on the
+  server and keeps running when the window closes), the question navigator (`PUT attempt/cursor`) and the progress. Answers are saved as they change
+  (short debounce) with a "saved" mark; when the connection drops, unsent answers wait in memory and are sent again, with a warning that time keeps
+  running.
+- **Integrity signals:** `visibilitychange` sends `tab_switch`, leaving full screen sends `fullscreen_exit` (with a prompt to return), `paste` sends
+  `paste`; the candidate is not shown a tally.
+- **Kraepelin columns:** a screen of its own with the column, the digits typed by keyboard or an on-screen number pad, a column timer, and each column
+  sent when its slice ends (within the 3-second grace).
+- **Drawing:** a canvas with pen, eraser, undo and clear (pointer events, so a finger or stylus works), or a photo upload; sent as PNG.
+- **Video answer:** think time, then recording with `MediaRecorder` (WebM, or MP4 on Safari), upload in 5 MB chunks with progress, retakes up to the
+  limit (a rejected take is deleted at once); the practice question stays in the browser.
+- **Section end and submit:** "next section" and "submit" ask for confirmation with the number of unanswered questions; when time runs out the server
+  closes the section and the runner loads the next state.
+
+**J6 and C9 video room (Janus):**
+
+- **Before joining:** device check (camera and microphone choice, preview, microphone level, a connection test through TURN) and the recording consent
+  state.
+- **Candidate:** a waiting screen in the lobby (Reverb event, REST polling as fallback) until admitted, then the room.
+- **Room:** up to five tiles (four company participants and the candidate), microphone and camera toggles, a recording indicator for everyone, leave.
+  Company participants also get admit, start and stop recording, and end. After a dropped connection the page rejoins inside the window.
+- **Library:** the official `janus.js` with `webrtc-adapter`.
+
+**C10 voice call (Asterisk):** the team member's browser registers over WebSocket (JsSIP) with the credentials the API returns; the screen shows the
+candidate, call attempts left, call, ringing and connected states, mute, hang up, start and stop recording (Asterisk announces it to the candidate), and
+the call time.
+
+**Decided by the user on 2026-10-13:**
+
+- **Assessments on every device:** the runner is responsive, phones included: Kraepelin with the on-screen number pad, drawing with a finger or stylus,
+  video answers with the front camera. No test is refused on a phone.
+- **Interview panel inside the room:** company participants in C9 and C10 get a side panel with the kit questions and their scorecard (C8 endpoints:
+  draft and submit), hidden behind a button on small screens. The candidate never sees it.
+- **Screen sharing in video interviews: yes.** Janus 1.1 (the Debian 12 package in `deploy/janus/Dockerfile`) is multistream, so the shared screen is a
+  second video stream of the same publisher (`getDisplayMedia`): the room's limit of five publishers (`VideoSessions::MAX_PARTICIPANTS`) does not change.
+  **Shared screens are not recorded (decision gate, decided by the user on 2026-10-13):** a recording holds the cameras and the sound only, because a
+  shared screen may show personal data outside what the candidate agreed to, and the converter's 640x360 columns would make it unreadable anyway. The
+  browser publishes the screen as a stream with the description `screen`, and the converter (`deploy/janus/converter/converter.py`) leaves out the
+  tracks of those streams; how the converter learns which track is a screen is settled when coding. This is new work on the Janus deployment, done
+  with the front end; the recording consent text stays as it is. **Every participant may share** (candidate and company participants), one screen at
+  a time: a new share replaces the one in progress, and everyone sees who is sharing.
+
+### 11.6 Texts
+
+Agreed by the user on 2026-10-13 as proposed.
+
+- **In-app notifications:** the API stores a `type` and its `data` and leaves the wording to the client (`*NotificationType` classes in eight contexts
+  plus the assessment and interview types, about 60 in all). The OpenAPI document types `data` as a plain string, so the front end cannot learn the
+  list from it. An artisan command writes a notification catalog (type, recipients, `data` keys) like `api:error-catalog`, with `--check` (new API work, `phase-8-api-translations.md`);
+  `packages/i18n` holds an `id` and `en` sentence per type, and a front-end test fails when a type of the catalog has no sentence.
+- **Static pages** (P13 "Untuk perusahaan", about, contact, the home banner and footer texts): Markdown files per language in the front-end repository,
+  changed through a deployment. Legal documents and the FAQ already come from the API (P8, P9).
+- **Wording:** a session drafts the interface texts, the notification sentences and the static pages with the glossary of `phase-8-api-translations.md`;
+  the user reviews them. Contact details (email, phone, address, the WhatsApp number if any) come from the user.
