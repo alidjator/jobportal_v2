@@ -41,6 +41,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: texts agreed: a notification catalog from the API with a front-end coverage test, static pages as Markdown in the front-end repository, the session drafts and the user reviews ([detail](#116-texts)).
 - 2026-10-13: four legacy admin features stay out: candidate export, a cross-company application list, job bulk import and clone by an admin, platform-wide interview question templates ([detail](#93-findings-while-mapping)).
 - 2026-10-13: the team page shows the jobs each member is assigned to: new `GET company/members/{userId}/jobs` (company admin; every status with its status, newest first; company admins too, only their own assignments), coded the same day.
+- 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-company-dashboard)).
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); the admin panel starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 
 ## 1. Timing
@@ -240,6 +241,8 @@ browser only like `/me/**`, with the Able Pro dashboard layout. **Prefix `/rekru
 **Roles shape the menu** (from `phase-1-company.md` and `phase-1-jobs.md`): one company per member account (no company switcher). A **company admin**
 sees every job and manages the profile, documents, team, stages, campaigns and settings; a **recruiter** creates jobs and sees only the jobs assigned to
 them, and gets 403 `company-admin-required` elsewhere. The menu hides what the role cannot open; the API stays the authority.
+**Changing (2026-10-13):** per-feature permissions replace the recruiter role (`phase-8-company-permissions.md`, not coded); the Role column below
+shows today's rule, the permission of each page is in that document's catalog.
 
 | # | Page | API | Role |
 |---|------|-----|------|
