@@ -55,6 +55,9 @@ It is a factual inventory, not legal advice, and the legal references in the que
     anonymised on the company's side after a period the company chooses, 6 to 60 months, default 24 (`phase-8-company-admin.md`); hires and
     applications held in the talent pool are left out, and the stage dates, reason codes and counts stay. Is 24 months a sound default under UU
     27/2022 (purpose limitation and retention), may the company choose the period, and is a shorter maximum required?
+16. **Reported chat messages read by platform admins (added 2026-10-15).** When a job seeker or a company reports a conversation, the report keeps
+    the reported message and up to 10 earlier messages (`phase-8-platform-admin.md`), which platform admins read to decide; the excerpt is
+    deleted 180 days after the decision. Is this covered by the terms and privacy notice as written, and is 180 days a sound period?
 
 ## 3. What we can change after the answers
 

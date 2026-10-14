@@ -319,6 +319,10 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D19 | Psychologist providers | `admin/assessment/providers` (CRUD, `suspend`, `restore`), invitations, psychologists (`PUT`, `suspend`, `restore`, `reset-two-factor`) | `assessment_providers.manage` |
 | D21 | Users (job seekers and company members) | `admin/users` (`phase-8-user-management.md`) | `users.manage` |
 | D22 | Company registrations (queue, detail, correct, approve, reject) | `admin/company-registrations` (`phase-8-company-registrations.md`) | `companies.manage` |
+| D23 | Reports: jobs and messages | `admin/job-reports`, `admin/jobs/{id}/reports[/dismiss]`, `admin/message-reports` (`phase-8-platform-admin.md`) | `jobs.manage`, `messages.moderate` |
+| D24 | Company name changes | `admin/company-name-changes` (`phase-8-platform-admin.md`) | `companies.manage` |
+| D25 | Undelivered email | `admin/email-suppressions` (`phase-8-platform-admin.md`) | `settings.manage` |
+| D26 | Announcements | `admin/announcements` (`phase-8-platform-admin.md`) | `announcements.manage` |
 | D20 | My account | `GET admin/me`, `PUT admin/me/password`, `POST admin/me/two-factor/recovery-codes`, `logout`, `logout-all` | none |
 
 ### 9.2 Psychologist area

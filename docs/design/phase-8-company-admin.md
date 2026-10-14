@@ -39,7 +39,8 @@ overrides) and the account erasure. Coded in a coding session.
 - **Reset:** `POST company/members/{userId}/reset-two-factor` (company admin; another company admin's factor only by the owner; never one's own,
   409 `cannot-reset-self`): removes the factor and the recovery codes and revokes the tokens; audit `company.member_two_factor_reset`, in-app notice
   to the member. A platform admin resets any user under `users.manage` (`POST admin/users/{id}/reset-two-factor`, `phase-8-user-management.md`).
-  A lone company admin who lost the device asks the platform.
+  A lone company admin who lost the device asks the platform; until that endpoint exists the console `identity:reset-user-two-factor`
+  (`phase-8-platform-admin.md` section 4, coded with this section) does it.
 - **Team list:** each member row gains `two_factor: on | off | pending` (`pending`: required, not enrolled yet); the member detail shows the same.
 - **Audit:** the existing `auth.two_factor_enabled`, `auth.recovery_code_used`, `auth.recovery_codes_regenerated`, `auth.two_factor_reset`, plus
   `auth.two_factor_disabled`.

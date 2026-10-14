@@ -13,14 +13,14 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - **Phases 0 to 7 coded and committed.**
 - Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 and #2 are before go-live, #2 changes the login answer for company members).
+- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 to #3 are before go-live, #2 changes the login answer for company members).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 
 - Performance audit steps 4 (measure) and 6 (query-count tests); `jobportal_v2_perf` (at `000112`, empty) is dropped when done.
 - Architecture review findings deferred: 7, 8, 20 (`decisions.md` section 6), 9, 21 (refactor after the import).
-- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`) await scope; **G20** before go-live. R8 reopened by the tele-interview benchmark.
+- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 designed in `phase-8-platform-admin.md` (G20 before go-live); the rest await scope or are designed elsewhere. R8 reopened by the tele-interview benchmark.
 - `phase-7-interview-kits.md` "Part 2 coded": the interpretations other than erasure wait for the user's review.
 - Immediate (not nightly) clearing of talent pool notes needs a JobSeeker trigger.
 
