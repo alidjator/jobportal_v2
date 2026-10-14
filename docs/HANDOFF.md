@@ -13,7 +13,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - **Phases 0 to 7 coded and committed.**
 - Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`); Part 7 auto reports: `legal-review.md` question 11. **Next coding** (`docs/design/phase-8-*`): `interview-calendar`, `offer-letters` (evidence: question 12), `hiring`, `rejections` (restrictions: question 13), `withdrawals`, `talent-pool`, `applicant-search`, `job-posting`, `interview-results`, `assessment-automation`, `provider-tools` (before the first partner).
+- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
