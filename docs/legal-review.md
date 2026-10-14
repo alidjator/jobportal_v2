@@ -35,7 +35,9 @@ It is a factual inventory, not legal advice, and the legal references in the que
     its norms at the moment the candidate submits, under the name, STR and SILP of a responsible psychologist who reviews it afterwards and may
     revise it (`phase-6-assessments.md`, Part 7). Does this meet Law 23/2022 (Articles 26 and 33: psychological measurement by a psychologist; Article 44:
     explanation to the client), or must a psychologist review every report before the company sees it? Does the answer differ by test (intelligence,
-    personality, work attitude)?
+    personality, work attitude)? Added 2026-10-14 (`phase-8-provider-tools.md`): may an automatically issued report carry a hiring recommendation
+    (recommended, consider, not yet) derived from rules set by the psychologist, and is it right to leave that recommendation out of the
+    candidate's explanation? May the norm group use the candidate's age and education (shown to the psychologist, never to the company)?
 12. **Accepting a job offer online (added 2026-10-14).** A job seeker accepts an offer letter on the platform with a checkbox and their account
     password; the time, IP address, browser and the SHA-256 of the letter are kept in a separate evidence document (`phase-8-offer-letters.md`).
     Is this enough as an electronic signature under UU ITE and PP 71/2019 for an offer letter, or should a certified e-signature (PSrE) or e-meterai
