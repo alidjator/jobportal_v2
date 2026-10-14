@@ -4,6 +4,7 @@ namespace Src\Assessment\Application\Delivery;
 
 use DateTimeImmutable;
 use Src\Assessment\Application\AssessmentSettings;
+use Src\Assessment\Domain\InvitationMode;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
 use Src\Assessment\Domain\SectionRepository;
@@ -39,7 +40,7 @@ final readonly class InvitationChecks
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
+     * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor` or `invalid-assessment-input`
      */
     public function check(int $companyId, int $jobId, AssessmentInvitationInput $input): CheckedInvitation
     {
@@ -51,7 +52,13 @@ final readonly class InvitationChecks
         $assessors = array_values(array_unique($input->assessorIds));
         $this->assertAssessors($companyId, $jobId, $test, $assessors);
 
-        return new CheckedInvitation($test, $startsAt, $input->dueAt, $assessors);
+        $mode = InvitationMode::tryFrom($input->mode) ?? InvitationMode::Online;
+
+        if ($mode === InvitationMode::Onsite && $input->location === null) {
+            $this->refuse('invalid-assessment-input', 'location', 'Name the place where the test is taken: an onsite test needs a location.');
+        }
+
+        return new CheckedInvitation($test, $startsAt, $input->dueAt, $assessors, $mode, $mode === InvitationMode::Onsite ? $input->location : null);
     }
 
     /** A published test of the company, of the library, or a granted battery of an active provider when the company may use batteries. */

@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Attempts;
 
+use Src\Assessment\Domain\Attempt;
 use Src\Assessment\Domain\AttemptOutcomeRepository;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\IntegrityEventType;
@@ -20,7 +21,9 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * Every use case of the candidate that works on an attempt goes through here. It locks the invitation and the attempt, finds out what the clock did to them
  * (a section that closed, an attempt that ran out of time, which the server then submits) and runs the use case on the result. Another candidate's
- * invitation is a 404. A use case that writes gets `attempt-closed` (409) when the attempt is over; a read gets the closed attempt back.
+ * invitation is a 404. A use case that writes gets `attempt-closed` (409) when the attempt is over; a read gets the closed attempt back. While the attempt is open only the
+ * device that holds it is served: a request without its token gets `attempt-session-required`, and one with the token of a device that was replaced gets `attempt-moved`
+ * (both 409). Starting is the one call that does not carry a token (`$checkSession` false), because it issues one.
  */
 final readonly class AttemptGate
 {
@@ -30,6 +33,7 @@ final readonly class AttemptGate
         private AttemptOutcomeRepository $outcomes,
         private AttemptContexts $contexts,
         private AttemptSubmitter $submitter,
+        private AttemptSessionToken $session,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -43,15 +47,15 @@ final readonly class AttemptGate
      *
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
-     * @throws StateConflict `attempt-not-started` or `attempt-closed`
+     * @throws StateConflict `attempt-not-started`, `attempt-closed`, `attempt-session-required` or `attempt-moved`
      */
-    public function run(Actor $actor, int $invitationId, ?string $ip, callable $work, bool $readOnly = false): mixed
+    public function run(Actor $actor, int $invitationId, ?string $ip, callable $work, bool $readOnly = false, bool $checkSession = true): mixed
     {
         $userId = $this->userId($actor);
         /** @var SubmittedAttempt|null $submitted */
         $submitted = null;
 
-        $outcome = $this->transactions->run(function () use ($userId, $invitationId, $ip, $work, $readOnly, &$submitted): array {
+        $outcome = $this->transactions->run(function () use ($userId, $invitationId, $ip, $work, $readOnly, $checkSession, &$submitted): array {
             $invitation = $this->invitations->find($invitationId, forUpdate: true);
 
             if (! $invitation instanceof Invitation || $invitation->applicantUserId !== $userId) {
@@ -66,6 +70,10 @@ final readonly class AttemptGate
 
             if ($attempt->isSubmitted() || $invitation->status !== InvitationStatus::Started) {
                 return [$readOnly ? $work($context) : null, ! $readOnly];
+            }
+
+            if ($checkSession) {
+                $this->assertHeld($attempt);
             }
 
             $rolled = $attempt->rolledTo($now, $durations);
@@ -91,7 +99,7 @@ final readonly class AttemptGate
         });
 
         if ($submitted !== null) {
-            $this->events->dispatch([$submitted->event]);
+            $this->events->dispatch($submitted->events());
         }
 
         if ($outcome[1]) {
@@ -99,6 +107,20 @@ final readonly class AttemptGate
         }
 
         return $outcome[0];
+    }
+
+    /** @throws StateConflict `attempt-session-required` or `attempt-moved` */
+    private function assertHeld(Attempt $attempt): void
+    {
+        if ($attempt->isHeldBy($this->session->hash())) {
+            return;
+        }
+
+        if ($this->session->hash() === null) {
+            throw new StateConflict('Send the attempt session you got when the test started in the header X-Attempt-Session.', 'attempt-session-required');
+        }
+
+        throw new StateConflict('This test is open on another device now. Start it again here to take it back.', 'attempt-moved');
     }
 
     private function userId(Actor $actor): int

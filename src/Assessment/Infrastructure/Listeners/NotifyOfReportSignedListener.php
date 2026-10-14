@@ -4,6 +4,7 @@ namespace Src\Assessment\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Assessment\Application\Reports\NotifyOfReportSigned;
+use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
@@ -38,5 +39,20 @@ final class NotifyOfReportSignedListener implements ShouldQueue
     public function candidateEmail(ReportSigned $event): void
     {
         $this->notify->candidateEmail($event);
+    }
+
+    public function revisedInApp(ReportRevised $event): void
+    {
+        $this->notify->revisedInApp($event);
+    }
+
+    public function revisedCandidateInApp(ReportRevised $event): void
+    {
+        $this->notify->revisedCandidateInApp($event);
+    }
+
+    public function revisedCandidateEmail(ReportRevised $event): void
+    {
+        $this->notify->revisedCandidateEmail($event);
     }
 }

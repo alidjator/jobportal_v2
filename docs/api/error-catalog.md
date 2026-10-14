@@ -23,8 +23,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
 | `assessment-required` | 422 | Recruitment |  |
 | `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
+| `attempt-moved` | 409 | Assessment | This test is open on another device now. Start it again here to take it back. |
 | `attempt-not-started` | 409 | Assessment | This test was not started. |
 | `attempt-not-submitted` | 409 | Assessment | The candidate has not submitted this test yet. |
+| `attempt-session-required` | 409 | Assessment | Send the attempt session you got when the test started in the header X-Attempt-Session. |
+| `auto-issue-not-allowed` | 422 | Assessment | The provider is not allowed to issue reports automatically. A platform admin allows it after review. |
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `body-too-long` | 422 | Messaging |  |
@@ -37,7 +40,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `candidate-not-waiting` | 409 | Recruitment | The candidate is not waiting in the lobby. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
 | `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
-| `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot sign reports. |
+| `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
 | `cannot-suspend-self` | 409 | Company | You cannot suspend yourself. |
 | `category-limit` | 422 | TalentPool |  |
 | `category-name-invalid` | 422 | TalentPool |  |
@@ -73,6 +76,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `email-not-verified` | 403, 409 | Identity, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `experience-limit-reached` | 409 | JobSeeker |  |
+| `explanation-required` | 422 | Assessment | Write the explanation for the candidate. |
 | `export-too-large` | 422 | Recruitment |  |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
@@ -91,12 +95,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
 | `invalid-applications` | 422 | Recruitment |  |
-| `invalid-assessment-input` | 422 | Recruitment |  |
+| `invalid-assessment-input` | 422 | Assessment, Recruitment |  |
 | `invalid-assessment-schedule` | 422 | Assessment |  |
 | `invalid-assessment-test` | 422 | Assessment |  |
 | `invalid-assessor` | 422 | Assessment |  |
 | `invalid-assignees` | 422 | Job | A job needs at least one assignee. |
-| `invalid-attachment` | 422 | Messaging |  |
+| `invalid-attachment` | 422 | Assessment, Messaging | The file must be a PDF, a JPEG or a PNG. |
 | `invalid-column` | 422 | Assessment |  |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
@@ -129,6 +133,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-password` | 422 | Company, Identity | The password is not correct. |
 | `invalid-phone` | 422 | Recruitment |  |
 | `invalid-profile` | 422 | JobSeeker |  |
+| `invalid-psychologist` | 422 | Assessment |  |
 | `invalid-question` | 422 | Assessment |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
@@ -257,6 +262,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reference-value-taken` | 409 | ReferenceData |  |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
+| `report-not-auto-issued` | 409 | Assessment | Only a report that was issued automatically can be marked reviewed or revised. |
 | `report-not-open` | 409 | Review | This report was already handled. |
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
@@ -293,11 +299,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
 | `terms-not-accepted` | 409 | Identity | You must accept the current terms and privacy policy before continuing. |
 | `test-archived` | 409 | Assessment | An archived test cannot be changed. Restore it first. |
-| `test-incomplete` | 422 | Assessment | The test is not complete. |
+| `test-incomplete` | 422 | Assessment | The battery cannot issue reports automatically yet. |
 | `test-limit-reached` | 409 | Assessment | The company has reached its limit of skill tests. Archive or delete one first. |
 | `test-locked` | 409 | Assessment | This test was already sent to candidates, so it can no longer be changed. Clone it to make a new version. |
 | `test-not-draft` | 409 | Assessment | Only a draft can be deleted. Archive the test instead. |
-| `test-not-psychological` | 422 | Assessment | Only a psychological battery has norms. |
+| `test-not-psychological` | 422 | Assessment | Only a psychological battery issues reports. |
 | `too-many-applications` | 422 | Recruitment |  |
 | `too-many-attachments` | 422 | Messaging |  |
 | `too-many-recipients` | 422 | Messaging |  |

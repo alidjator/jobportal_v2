@@ -14,6 +14,7 @@ final class Provider
         private string $legalName,
         private ProviderStatus $status,
         public readonly ?DateTimeImmutable $createdAt = null,
+        private bool $autoIssueAllowed = false,
     ) {}
 
     public static function register(string $code, string $name, string $legalName): self
@@ -45,6 +46,17 @@ final class Provider
     public function isActive(): bool
     {
         return $this->status->isActive();
+    }
+
+    /** Whether the provider's batteries may issue their reports automatically; only a platform admin allows it. */
+    public function autoIssueAllowed(): bool
+    {
+        return $this->autoIssueAllowed;
+    }
+
+    public function allowAutoIssue(bool $allowed): void
+    {
+        $this->autoIssueAllowed = $allowed;
     }
 
     public function rename(string $code, string $name, string $legalName): void

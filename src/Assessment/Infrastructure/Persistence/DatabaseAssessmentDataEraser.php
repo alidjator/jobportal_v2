@@ -19,6 +19,15 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
             ->all());
     }
 
+    public function attachmentPaths(int $userId): array
+    {
+        return array_map('strval', $this->connection->table('assessment_invitations')
+            ->where('applicant_user_id', $userId)
+            ->whereNotNull('attachment_path')
+            ->pluck('attachment_path')
+            ->all());
+    }
+
     public function videoPaths(int $userId): array
     {
         $paths = [];
@@ -44,11 +53,13 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
             $this->connection->table($table)->whereIn('attempt_id', $attempts)->delete();
         }
 
-        $this->connection->table('assessment_attempts')->whereIn('id', $attempts)->update(['last_ip' => null]);
+        $this->connection->table('assessment_attempts')->whereIn('id', $attempts)->update(['last_ip' => null, 'session_hash' => null]);
+        $this->connection->table('assessment_invitations')->where('applicant_user_id', $userId)->update(['attachment_path' => null, 'attachment_name' => null, 'attachment_mime' => null, 'attachment_size_bytes' => null]);
         $this->connection->table('assessment_results')->whereIn('attempt_id', $attempts)->update(['scale_scores' => null]);
 
         // The text, the explanation and the notes describe the person; the number, the signer and the time stay as the provider's register.
         $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->update(['body' => '', 'explanation' => null, 'review_notes' => null]);
+        $this->connection->table('assessment_report_revisions')->whereIn('report_id', $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->select('id'))->update(['body' => '', 'explanation' => null]);
     }
 
     /** @return Builder the ids of the attempts of the user's invitations, for use in a sub-select */

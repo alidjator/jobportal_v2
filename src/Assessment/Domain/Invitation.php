@@ -28,6 +28,9 @@ final readonly class Invitation
         public ?DateTimeImmutable $remindedAt = null,
         public ?DateTimeImmutable $closedAt = null,
         public ?DateTimeImmutable $createdAt = null,
+        public InvitationMode $mode = InvitationMode::Online,
+        public ?string $location = null,
+        public ?InvitationAttachment $attachment = null,
     ) {}
 
     /** @param  list<int>  $assessorIds */
@@ -41,8 +44,13 @@ final readonly class Invitation
         DateTimeImmutable $dueAt,
         int $invitedByUserId,
         array $assessorIds,
+        InvitationMode $mode = InvitationMode::Online,
+        ?string $location = null,
     ): self {
-        return new self(null, $applicationId, $companyId, $jobId, $applicantUserId, $testId, $startsAt, $dueAt, InvitationStatus::Invited, $invitedByUserId, $assessorIds);
+        return new self(
+            null, $applicationId, $companyId, $jobId, $applicantUserId, $testId, $startsAt, $dueAt, InvitationStatus::Invited, $invitedByUserId, $assessorIds,
+            mode: $mode, location: $mode === InvitationMode::Onsite ? $location : null,
+        );
     }
 
     /** The candidate may begin: the invitation is still unused, its start time has come and its due time has not passed. */
@@ -115,6 +123,23 @@ final readonly class Invitation
         return $this->with(InvitationStatus::Expired, $this->remindedAt, $now);
     }
 
+    /**
+     * Puts the file on the invitation, or takes it off (null). Only while the candidate has not started: after that the invitation is history.
+     *
+     * @throws StateConflict `invitation-not-active`
+     */
+    public function withAttachment(?InvitationAttachment $attachment): self
+    {
+        if ($this->status !== InvitationStatus::Invited) {
+            throw new StateConflict('The file of a test invitation can change only while the test has not been started.', 'invitation-not-active');
+        }
+
+        return new self(
+            $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
+            $this->status, $this->invitedByUserId, $this->assessorIds, $this->remindedAt, $this->closedAt, $this->createdAt, $this->mode, $this->location, $attachment,
+        );
+    }
+
     public function reminded(DateTimeImmutable $now): self
     {
         return $this->with($this->status, $now, $this->closedAt);
@@ -124,7 +149,7 @@ final readonly class Invitation
     {
         return new self(
             $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
-            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt,
+            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt, $this->mode, $this->location, $this->attachment,
         );
     }
 }

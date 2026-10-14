@@ -13,12 +13,13 @@ final class NormsRequest extends FormRequest
     {
         return [
             'norms' => ['present', 'array', 'max:500'],
-            'norms.*' => ['array:scale_key,raw_min,raw_max,standard_score,band'],
+            'norms.*' => ['array:scale_key,raw_min,raw_max,standard_score,band,explanation'],
             'norms.*.scale_key' => ['required', 'string', 'max:100'],
             'norms.*.raw_min' => ['required', 'integer', 'min:-100000', 'max:100000'],
             'norms.*.raw_max' => ['required', 'integer', 'min:-100000', 'max:100000'],
             'norms.*.standard_score' => ['required', 'numeric', 'min:-99999', 'max:99999'],
             'norms.*.band' => ['required', 'string', 'max:100'],
+            'norms.*.explanation' => ['nullable', 'string', 'max:2000'],
         ];
     }
 
@@ -26,7 +27,7 @@ final class NormsRequest extends FormRequest
     public function norms(): array
     {
         return array_values(array_map(
-            static fn (array $row): Norm => new Norm((string) $row['scale_key'], (int) $row['raw_min'], (int) $row['raw_max'], (float) $row['standard_score'], (string) $row['band']),
+            static fn (array $row): Norm => new Norm((string) $row['scale_key'], (int) $row['raw_min'], (int) $row['raw_max'], (float) $row['standard_score'], (string) $row['band'], isset($row['explanation']) ? (string) $row['explanation'] : null),
             $this->array('norms'),
         ));
     }

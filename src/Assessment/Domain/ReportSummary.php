@@ -16,5 +16,7 @@ final readonly class ReportSummary
         public ?string $number,
         public DateTimeImmutable $submittedAt,
         public ?DateTimeImmutable $signedAt,
+        public bool $autoIssued = false,
+        public ?DateTimeImmutable $reviewedAt = null,
     ) {}
 }

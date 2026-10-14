@@ -16,6 +16,8 @@ trait RecordsVideoAnswers
 
     private int $questionId = 0;
 
+    private ?string $attemptSession = null;
+
     private function freeze(int $seconds): void
     {
         Carbon::setTestNow(Carbon::parse('2026-10-05 09:00:00')->addSeconds($seconds));
@@ -44,7 +46,13 @@ trait RecordsVideoAnswers
     /** @param  array<string, mixed>  $body */
     private function take(string $method, string $uri, array $body = [], ?string $token = null): TestResponse
     {
-        return $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken);
+        $response = $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken, $this->attemptSession === null ? [] : ['X-Attempt-Session' => $this->attemptSession]);
+
+        if ($uri === 'start' && is_string($session = $response->json('data.attempt_session'))) {
+            $this->attemptSession = $session;
+        }
+
+        return $response;
     }
 
     private function videoUri(string $suffix = ''): string
@@ -93,7 +101,7 @@ trait RecordsVideoAnswers
             'PUT',
             "/api/v1/me/assessment/invitations/{$this->invitationId}/".$this->videoUri("/takes/{$takeId}/chunks/{$index}"),
             [], [], [],
-            ['HTTP_AUTHORIZATION' => 'Bearer '.($token ?? $this->seekerToken), 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/octet-stream'],
+            ['HTTP_AUTHORIZATION' => 'Bearer '.($token ?? $this->seekerToken), 'HTTP_X_ATTEMPT_SESSION' => (string) $this->attemptSession, 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/octet-stream'],
             $contents,
         );
     }

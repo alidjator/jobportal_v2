@@ -7,6 +7,8 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use LogicException;
 use Src\Assessment\Domain\Invitation;
+use Src\Assessment\Domain\InvitationAttachment;
+use Src\Assessment\Domain\InvitationMode;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\InvitationStatus;
 use Src\Shared\Application\Clock;
@@ -57,6 +59,8 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             'starts_at' => $this->format($invitation->startsAt),
             'due_at' => $this->format($invitation->dueAt),
             'status' => $invitation->status->value,
+            'mode' => $invitation->mode->value,
+            'location' => $invitation->location,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -74,6 +78,10 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             'status' => $invitation->status->value,
             'reminded_at' => $invitation->remindedAt === null ? null : $this->format($invitation->remindedAt),
             'closed_at' => $invitation->closedAt === null ? null : $this->format($invitation->closedAt),
+            'attachment_path' => $invitation->attachment?->path,
+            'attachment_name' => $invitation->attachment?->name,
+            'attachment_mime' => $invitation->attachment?->mimeType,
+            'attachment_size_bytes' => $invitation->attachment?->sizeBytes,
             'updated_at' => $this->clock->now(),
         ]);
     }
@@ -167,6 +175,9 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             $row->reminded_at === null ? null : $this->time((string) $row->reminded_at),
             $row->closed_at === null ? null : $this->time((string) $row->closed_at),
             $this->time((string) $row->created_at),
+            InvitationMode::from((string) $row->mode),
+            $row->location,
+            $row->attachment_path === null ? null : new InvitationAttachment((string) $row->attachment_path, (string) $row->attachment_name, (string) $row->attachment_mime, (int) $row->attachment_size_bytes),
         ), $rows));
     }
 

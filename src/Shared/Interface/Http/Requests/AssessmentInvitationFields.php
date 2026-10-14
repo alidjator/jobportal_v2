@@ -22,6 +22,8 @@ final class AssessmentInvitationFields
             $prefix.'due_at' => [$presence, 'date_format:'.self::TIME_FORMAT],
             $prefix.'assessor_ids' => ['nullable', 'array', 'max:50'],
             $prefix.'assessor_ids.*' => ['integer', 'min:1'],
+            $prefix.'mode' => ['nullable', 'string', 'in:online,onsite'],
+            $prefix.'location' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -36,6 +38,8 @@ final class AssessmentInvitationFields
             isset($data['starts_at']) ? self::time((string) $data['starts_at']) : null,
             self::time((string) $data['due_at']),
             array_map(intval(...), $assessors),
+            isset($data['mode']) ? (string) $data['mode'] : 'online',
+            isset($data['location']) && trim((string) $data['location']) !== '' ? trim((string) $data['location']) : null,
         );
     }
 

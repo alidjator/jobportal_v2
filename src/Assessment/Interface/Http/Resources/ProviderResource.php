@@ -19,6 +19,7 @@ final class ProviderResource extends JsonResource
             'name' => $this->resource->name(),
             'legal_name' => $this->resource->legalName(),
             'status' => $this->resource->status()->value,
+            'auto_issue_allowed' => $this->resource->autoIssueAllowed(),
             'created_at' => $this->resource->createdAt?->format(DateTimeInterface::ATOM),
         ];
     }

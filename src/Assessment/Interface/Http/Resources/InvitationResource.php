@@ -24,6 +24,9 @@ final class InvitationResource extends JsonResource
             'due_at' => $invitation->dueAt->format(DateTimeInterface::ATOM),
             'invited_by_id' => $invitation->invitedByUserId,
             'assessors' => $this->resource->assessors,
+            'mode' => $invitation->mode->value,
+            'location' => $invitation->location,
+            'attachment' => $invitation->attachment === null ? null : ['name' => $invitation->attachment->name, 'size_bytes' => $invitation->attachment->sizeBytes],
             'closed_at' => $invitation->closedAt?->format(DateTimeInterface::ATOM),
             'created_at' => $invitation->createdAt?->format(DateTimeInterface::ATOM),
         ];

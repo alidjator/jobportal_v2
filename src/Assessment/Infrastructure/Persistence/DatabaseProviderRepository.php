@@ -42,6 +42,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
                 'name' => $provider->name(),
                 'legal_name' => $provider->legalName(),
                 'status' => $provider->status()->value,
+                'auto_issue_allowed' => $provider->autoIssueAllowed(),
                 'updated_at' => $now,
             ]);
 
@@ -109,6 +110,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
             (string) $row->legal_name,
             ProviderStatus::from($row->status),
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
+            (bool) $row->auto_issue_allowed,
         );
     }
 }

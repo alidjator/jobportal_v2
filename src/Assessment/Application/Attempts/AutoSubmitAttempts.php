@@ -3,7 +3,6 @@
 namespace Src\Assessment\Application\Attempts;
 
 use Src\Assessment\Domain\AttemptRepository;
-use Src\Assessment\Domain\Events\AttemptSubmitted;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\InvitationStatus;
@@ -30,7 +29,7 @@ final readonly class AutoSubmitAttempts
         $count = 0;
 
         foreach ($this->attempts->idsOutOfTime($this->clock->now()) as $id) {
-            $event = $this->transactions->run(function () use ($id): ?AttemptSubmitted {
+            $events = $this->transactions->run(function () use ($id): ?array {
                 $found = $this->attempts->find($id);
                 $invitation = $found === null ? null : $this->invitations->find($found->invitationId, forUpdate: true);
                 $attempt = $found === null ? null : $this->attempts->find($id, forUpdate: true);
@@ -47,11 +46,11 @@ final readonly class AutoSubmitAttempts
                     return null;
                 }
 
-                return $this->submitter->submit($context, auto: true)->event;
+                return $this->submitter->submit($context, auto: true)->events();
             });
 
-            if ($event instanceof AttemptSubmitted) {
-                $this->events->dispatch([$event]);
+            if ($events !== null) {
+                $this->events->dispatch($events);
                 $count++;
             }
         }

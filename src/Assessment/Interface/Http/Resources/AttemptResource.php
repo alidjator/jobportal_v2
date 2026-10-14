@@ -36,9 +36,15 @@ final class AttemptResource extends JsonResource
             'auto_submitted' => $attempt->autoSubmitted,
         ];
 
+        if ($this->resource->session !== null) {
+            $data['attempt_session'] = $this->resource->session;
+        }
+
         if ($this->resource->status() !== 'in_progress') {
             return $data;
         }
+
+        $data['idle_minutes'] = $this->resource->idleMinutes;
 
         $section = $context->section();
 

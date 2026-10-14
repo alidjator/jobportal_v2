@@ -70,6 +70,7 @@ final readonly class DownloadReport
             (string) $report->signerStrNumber,
             (string) $report->signerSilpNumber,
             $report->signedAt ?? throw EntityNotFound::of('Report', (int) $invitation->id),
+            $report->autoIssued && $report->revision === 0,
         );
     }
 

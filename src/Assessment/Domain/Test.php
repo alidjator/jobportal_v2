@@ -30,6 +30,8 @@ final class Test
         public readonly ?int $createdByAdminId,
         private ?DateTimeImmutable $publishedAt = null,
         public readonly ?DateTimeImmutable $createdAt = null,
+        private bool $autoIssue = false,
+        private ?int $responsiblePsychologistId = null,
     ) {}
 
     /**
@@ -69,6 +71,28 @@ final class Test
     public function status(): TestStatus
     {
         return $this->status;
+    }
+
+    /** Whether the reports of this battery are issued at once when an attempt is submitted (when nothing stands in the way), under the responsible psychologist. */
+    public function autoIssue(): bool
+    {
+        return $this->autoIssue;
+    }
+
+    public function responsiblePsychologistId(): ?int
+    {
+        return $this->responsiblePsychologistId;
+    }
+
+    /**
+     * @throws StateConflict `test-archived`
+     */
+    public function configureAutoIssue(bool $enabled, ?int $responsiblePsychologistId): void
+    {
+        $this->assertEditable();
+
+        $this->autoIssue = $enabled;
+        $this->responsiblePsychologistId = $enabled ? $responsiblePsychologistId : null;
     }
 
     public function publishedAt(): ?DateTimeImmutable

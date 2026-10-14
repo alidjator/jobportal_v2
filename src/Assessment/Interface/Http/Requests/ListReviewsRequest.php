@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
-/** Allowed: `filter[status]` (`pending_review` or `signed`), `page` and `per_page`. Any other filter is refused with 422. */
+/** Allowed: `filter[status]` (`pending_review` or `signed`), `filter[reviewed]` (boolean), `page` and `per_page`. Any other filter is refused with 422. */
 final class ListReviewsRequest extends FormRequest
 {
     use PaginatedRequest;
@@ -17,9 +17,16 @@ final class ListReviewsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:status'],
+            'filter' => ['nullable', 'array:status,reviewed'],
             'filter.status' => ['nullable', 'string', Rule::enum(ReportStatus::class)],
+            'filter.reviewed' => ['nullable', 'boolean'],
         ];
+    }
+
+    /** `filter[reviewed]=0` is the automatically issued reports that wait for a psychologist; `1` the others. */
+    public function reviewed(): ?bool
+    {
+        return $this->filled('filter.reviewed') ? $this->boolean('filter.reviewed') : null;
     }
 
     public function status(): ?ReportStatus

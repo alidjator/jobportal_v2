@@ -21,10 +21,10 @@ final readonly class ListReviews
      *
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended` or `provider-suspended`
      */
-    public function execute(Actor $actor, ?ReportStatus $status, PageRequest $request): Page
+    public function execute(Actor $actor, ?ReportStatus $status, ?bool $reviewed, PageRequest $request): Page
     {
         $psychologist = $this->access->psychologist($actor);
-        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $request);
+        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $reviewed, $request);
         $names = $this->accounts->names(array_values(array_unique(array_map(static fn (ReportSummary $summary): int => $summary->applicantUserId, $page->items))));
 
         return new Page(

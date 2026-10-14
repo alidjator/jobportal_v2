@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Src\Assessment\Domain\ColumnDigits;
+use Src\Platform\Application\Settings\SettingsStore;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\Concerns\BuildsAssessmentFixtures;
 use Tests\FeatureTestCase;
@@ -108,10 +109,19 @@ final class AttemptTest extends FeatureTestCase
         return ['type' => 'long_text', 'text' => 'Explain a recent project.', 'points' => 5];
     }
 
+    /** The token of the device that started the attempt, sent with every later call. */
+    private ?string $attemptSession = null;
+
     /** @param  array<string, mixed>  $body */
     private function take(string $method, string $uri, array $body = [], ?string $token = null): TestResponse
     {
-        return $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken);
+        $response = $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken, $this->attemptSession === null ? [] : ['X-Attempt-Session' => $this->attemptSession]);
+
+        if ($uri === 'start' && is_string($session = $response->json('data.attempt_session'))) {
+            $this->attemptSession = $session;
+        }
+
+        return $response;
     }
 
     private function start(?string $token = null): TestResponse
@@ -178,7 +188,7 @@ final class AttemptTest extends FeatureTestCase
         return $this->withToken($this->seekerToken)->post(
             "/api/v1/me/assessment/invitations/{$this->invitationId}/{$uri}",
             ['file' => UploadedFile::fake()->createWithContent('drawing.png', $contents), 'source' => 'canvas', ...$fields],
-            ['Accept' => 'application/json'],
+            ['Accept' => 'application/json', ...($this->attemptSession === null ? [] : ['X-Attempt-Session' => $this->attemptSession])],
         );
     }
 
@@ -646,6 +656,65 @@ final class AttemptTest extends FeatureTestCase
 
         $this->assertSame(['ip_change'], DB::table('assessment_integrity_events')->pluck('type')->all());
         $this->assertSame('203.0.113.9', DB::table('assessment_attempts')->value('last_ip'));
+    }
+
+    public function test_the_browser_reports_an_idle_spell_and_gets_the_idle_limit(): void
+    {
+        $this->invite($this->skillTest([$this->choice()]));
+        $this->start()->assertCreated()->assertJsonPath('data.idle_minutes', 3);
+
+        $this->take('POST', 'attempt/integrity-events', ['type' => 'idle'])->assertNoContent();
+        $this->take('POST', 'attempt/integrity-events', ['type' => 'device_switch'])->assertStatus(422);
+
+        $this->assertSame(['idle'], DB::table('assessment_integrity_events')->pluck('type')->all());
+        $this->attempt()->assertOk()->assertJsonPath('data.idle_minutes', 3);
+
+        $this->app->make(SettingsStore::class)->setGlobal('assessment.idle_minutes', 10, null);
+        $this->app->make('cache')->flush();
+        $this->attempt()->assertOk()->assertJsonPath('data.idle_minutes', 10);
+    }
+
+    public function test_every_call_after_the_start_carries_the_attempt_session(): void
+    {
+        $this->invite($this->skillTest([$this->choice()]));
+        $token = (string) $this->start()->assertCreated()->json('data.attempt_session');
+        $this->assertNotSame('', $token);
+        $this->assertSame(hash('sha256', $token), DB::table('assessment_attempts')->value('session_hash'));
+
+        $this->attemptSession = null;
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-session-required');
+        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-session-required');
+
+        $this->attemptSession = 'not-the-token';
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
+
+        $this->attemptSession = $token;
+        $this->attempt()->assertOk()->assertJsonMissingPath('data.attempt_session');
+    }
+
+    public function test_starting_again_from_another_device_takes_the_attempt_over(): void
+    {
+        $this->invite($this->skillTest([$this->choice()]));
+        $first = (string) $this->start()->assertCreated()->json('data.attempt_session');
+        $choice = $this->questionIds()[0];
+        $this->answer($choice, ['option_positions' => [1]])->assertNoContent();
+
+        $this->moveClock(120);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9']);
+        $second = (string) $this->start()->assertOk()->assertJsonPath('data.status', 'in_progress')->assertJsonPath('data.questions.0.answer.option_positions', [1])->json('data.attempt_session');
+        $this->assertNotSame($first, $second);
+        $this->assertSame(1, DB::table('assessment_attempts')->count());
+        $this->assertSame('2026-10-05T09:10:00+00:00', $this->attempt()->json('data.ends_at'), 'The clock never stops.');
+
+        $this->attemptSession = $first;
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
+        $this->answer($choice, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
+
+        $this->assertEqualsCanonicalizing(['device_switch', 'ip_change'], DB::table('assessment_integrity_events')->pluck('type')->all());
+
+        $this->attemptSession = $second;
+        $this->take('POST', 'attempt/submit')->assertOk();
+        $this->start()->assertOk()->assertJsonPath('data.status', 'submitted')->assertJsonMissingPath('data.attempt_session');
     }
 
     // ----- a psychological battery -----

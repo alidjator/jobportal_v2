@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Assessment\Application\Delivery\DeclineInvitation;
+use Src\Assessment\Application\Delivery\GetInvitationAttachment;
 use Src\Assessment\Application\Delivery\MyInvitations;
 use Src\Assessment\Application\Reports\GetMyExplanation;
+use Src\Assessment\Interface\Http\AttachmentResponse;
 use Src\Assessment\Interface\Http\Requests\ListMyInvitationsRequest;
 use Src\Assessment\Interface\Http\Resources\MyExplanationResource;
 use Src\Assessment\Interface\Http\Resources\MyInvitationResource;
@@ -42,5 +44,11 @@ final class MyInvitationController extends ApiController
     public function explanation(Request $request, int $id, ActorResolver $actors, GetMyExplanation $explanation): MyExplanationResource
     {
         return new MyExplanationResource($explanation->execute($actors->fromRequest($request), $id));
+    }
+
+    /** The file the company put on the invitation, as a download. */
+    public function attachment(Request $request, int $id, ActorResolver $actors, GetInvitationAttachment $get): Response
+    {
+        return AttachmentResponse::of($get->forCandidate($actors->fromRequest($request), $id));
     }
 }

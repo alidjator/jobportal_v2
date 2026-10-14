@@ -24,6 +24,8 @@ final class ReviewListItemResource extends JsonResource
             'report_number' => $summary->number,
             'submitted_at' => $summary->submittedAt->format(DateTimeInterface::ATOM),
             'signed_at' => $summary->signedAt?->format(DateTimeInterface::ATOM),
+            'auto_issued' => $summary->autoIssued,
+            'reviewed' => ! $summary->autoIssued || $summary->reviewedAt !== null,
         ];
     }
 }

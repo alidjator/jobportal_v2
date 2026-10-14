@@ -43,6 +43,8 @@ final readonly class DatabaseTestRepository implements TestRepository
             'measured_capabilities' => json_encode($test->capabilities(), JSON_THROW_ON_ERROR),
             'status' => $test->status()->value,
             'published_at' => $test->publishedAt(),
+            'auto_issue' => $test->autoIssue(),
+            'responsible_psychologist_id' => $test->responsiblePsychologistId(),
             'updated_at' => $now,
         ];
 
@@ -171,6 +173,8 @@ final readonly class DatabaseTestRepository implements TestRepository
             $row->created_by_admin_id === null ? null : (int) $row->created_by_admin_id,
             $row->published_at === null ? null : new DateTimeImmutable((string) $row->published_at, new DateTimeZone('UTC')),
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
+            (bool) $row->auto_issue,
+            $row->responsible_psychologist_id === null ? null : (int) $row->responsible_psychologist_id,
         );
     }
 }

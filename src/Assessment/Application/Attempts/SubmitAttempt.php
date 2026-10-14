@@ -2,7 +2,6 @@
 
 namespace Src\Assessment\Application\Attempts;
 
-use Src\Assessment\Domain\Events\AttemptSubmitted;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -22,17 +21,17 @@ final readonly class SubmitAttempt
      */
     public function execute(Actor $actor, int $invitationId, ?string $ip): AttemptView
     {
-        $event = null;
+        $events = [];
 
-        $view = $this->gate->run($actor, $invitationId, $ip, function (AttemptContext $context) use (&$event): AttemptView {
+        $view = $this->gate->run($actor, $invitationId, $ip, function (AttemptContext $context) use (&$events): AttemptView {
             $submitted = $this->submitter->submit($context, auto: false);
-            $event = $submitted->event;
+            $events = $submitted->events();
 
             return $this->views->build($context->withAttempt($submitted->attempt));
         });
 
-        if ($event instanceof AttemptSubmitted) {
-            $this->events->dispatch([$event]);
+        if ($events !== []) {
+            $this->events->dispatch($events);
         }
 
         return $view;

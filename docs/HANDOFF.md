@@ -7,13 +7,13 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 1. This file.
 2. The design document of the step you work on (`docs/design/`: `decisions.md` cross-phase, `architecture.md` API/auth/persistence/queues/files, `phase-0-schema.md`, one `phase-N-*.md` per step; each phase's "coded" sections hold its interpretations, migrations and `.env` values). `docs/analysis/` holds the legacy flow map, benchmarks and gap analysis; `docs/api/` the API-document rules and error catalog; `docs/deployment-checklist.md` the go-live list.
 
-## Current state (2026-10-13)
+## Current state (2026-10-14)
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
 - **Phases 0 to 7 coded and committed** (5: security, performance and architecture reviews; 6 assessments; 7 interview kits and tele-interview).
-- Real PostgreSQL `jobportal_v2`: migrated to `000135` (`000136` and `000137` to run), reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
+- Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- **Branch `phase-8-company-permissions`:** permissions part 1 (`a256e46`, migration `000136`, tested), part 2 (`47491ec`, `000137`) and time-to-fill (`f6e7ac2`) committed, the last two untested. **Next coding:** Part 7 of `phase-6-assessments.md` (auto reports wait for `legal-review.md` question 11).
+- **Branch `phase-8-company-permissions`:** permissions part 1 (`a256e46`, migration `000136`, tested), part 2 (`47491ec`, `000137`) and time-to-fill (`f6e7ac2`) committed, the last two now tested. Part 7 of `phase-6-assessments.md` coded and tested (migration `000138`, `AutoIssueTest`, `composer check` green); auto reports still wait for `legal-review.md` question 11 before go-live.
 - Front end: designed (`docs/design/frontend.md`), not coded; coding goes with the five API pieces of `docs/design/phase-8-*.md` plus a notification catalog and leaving shared screens out of video recordings (`frontend.md` 11.5, 11.6). Its open point before go-live: client IP behind the Nuxt proxy (`frontend.md` 5.2).
 
 ## Open work (not started)

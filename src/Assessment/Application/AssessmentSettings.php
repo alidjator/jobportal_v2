@@ -27,6 +27,10 @@ final class AssessmentSettings
 
     public const string MAX_VIDEO_MEGABYTES = 'assessment.max_video_megabytes';
 
+    public const string MAX_ATTACHMENT_MEGABYTES = 'assessment.max_attachment_megabytes';
+
+    public const string IDLE_MINUTES = 'assessment.idle_minutes';
+
     public const string BAND_FAIR_FROM = 'assessment.band_fair_from';
 
     public const string BAND_GOOD_FROM = 'assessment.band_good_from';
@@ -83,6 +87,15 @@ final class AssessmentSettings
             SettingDefinition::integer(
                 self::MAX_VIDEO_MEGABYTES, 100, 5, 500,
                 'The largest video take a candidate may upload, in megabytes.',
+            ),
+            SettingDefinition::integer(
+                self::MAX_ATTACHMENT_MEGABYTES, 10, 1, 20,
+                'The largest file (PDF, JPEG or PNG) a company may put on a test invitation, in megabytes.',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::IDLE_MINUTES, 3, 1, 30,
+                'How many minutes a candidate may give no input (pointer, key, touch) during a test before the browser reports an idle signal and shows a pop-up.',
             ),
             SettingDefinition::integer(
                 self::BAND_FAIR_FROM, 50, 1, 99,

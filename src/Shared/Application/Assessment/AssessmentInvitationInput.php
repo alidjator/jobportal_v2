@@ -6,7 +6,7 @@ use DateTimeImmutable;
 
 /**
  * What a recruiter enters to send a test: the test, when the candidate may start (null: now), the due time and the company members who score the
- * long-text answers. Whether they are acceptable is decided by Assessment.
+ * long-text answers, and where it is taken (`online`, or `onsite` at a named location). Whether they are acceptable is decided by Assessment.
  */
 final readonly class AssessmentInvitationInput
 {
@@ -16,5 +16,7 @@ final readonly class AssessmentInvitationInput
         public ?DateTimeImmutable $startsAt,
         public DateTimeImmutable $dueAt,
         public array $assessorIds = [],
+        public string $mode = 'online',
+        public ?string $location = null,
     ) {}
 }

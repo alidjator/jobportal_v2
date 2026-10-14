@@ -8,10 +8,13 @@ use Illuminate\Http\Response;
 use Src\Assessment\Application\Review\GetReview;
 use Src\Assessment\Application\Review\GetReviewDrawing;
 use Src\Assessment\Application\Review\ListReviews;
+use Src\Assessment\Application\Review\MarkReportReviewed;
+use Src\Assessment\Application\Review\ReviseReport;
 use Src\Assessment\Application\Review\ScoreDrawing;
 use Src\Assessment\Application\Review\SignReport;
 use Src\Assessment\Application\Review\UpdateReview;
 use Src\Assessment\Interface\Http\Requests\ListReviewsRequest;
+use Src\Assessment\Interface\Http\Requests\ReviseReportRequest;
 use Src\Assessment\Interface\Http\Requests\ScoreDrawingRequest;
 use Src\Assessment\Interface\Http\Requests\UpdateReviewRequest;
 use Src\Assessment\Interface\Http\Resources\ReviewListItemResource;
@@ -20,12 +23,12 @@ use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\PaginatedResources;
 
-/** The psychologist's review of the reports of their provider's batteries: the queue, the draft, the drawings, the edit and the signature. */
+/** The psychologist's review of the reports of their provider's batteries: the queue, the draft, the drawings, the edit and the signature, and the review or revision of a report issued automatically. */
 final class ReviewController extends ApiController
 {
     public function index(ListReviewsRequest $request, ActorResolver $actors, ListReviews $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->pageRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->reviewed(), $request->pageRequest());
 
         return ReviewListItemResource::collection(PaginatedResources::paginator($page, $request));
     }
@@ -56,6 +59,18 @@ final class ReviewController extends ApiController
     public function scoreDrawing(ScoreDrawingRequest $request, int $id, int $questionId, ActorResolver $actors, ScoreDrawing $score): ReviewResource
     {
         return new ReviewResource($score->execute($actors->fromRequest($request), $id, $questionId, $request->score(), $request->note()));
+    }
+
+    /** The report that was issued automatically has been read. */
+    public function markReviewed(Request $request, int $id, ActorResolver $actors, MarkReportReviewed $mark): ReviewResource
+    {
+        return new ReviewResource($mark->execute($actors->fromRequest($request), $id));
+    }
+
+    /** Replaces the text and the explanation of a report that was issued automatically; the number gets `-R1`, `-R2`. */
+    public function revise(ReviseReportRequest $request, int $id, ActorResolver $actors, ReviseReport $revise): ReviewResource
+    {
+        return new ReviewResource($revise->execute($actors->fromRequest($request), $id, $request->body(), $request->explanation(), $request->ip(), $request->userAgent()));
     }
 
     public function sign(Request $request, int $id, ActorResolver $actors, SignReport $sign): ReviewResource

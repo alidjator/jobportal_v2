@@ -23,4 +23,16 @@ final readonly class DatabaseReportTemplateRepository implements ReportTemplateR
     {
         $this->connection->table(self::TABLE)->upsert([['test_id' => $testId, 'body' => $body, 'updated_at' => $now]], ['test_id'], ['body', 'updated_at']);
     }
+
+    public function explanationTemplateOf(int $testId): ?string
+    {
+        $body = $this->connection->table(self::TABLE)->where('test_id', $testId)->value('explanation_template');
+
+        return $body === null ? null : (string) $body;
+    }
+
+    public function saveExplanationTemplate(int $testId, string $body, DateTimeImmutable $now): void
+    {
+        $this->connection->table(self::TABLE)->upsert([['test_id' => $testId, 'explanation_template' => $body, 'updated_at' => $now]], ['test_id'], ['explanation_template', 'updated_at']);
+    }
 }

@@ -30,6 +30,9 @@ final class MyInvitationResource extends JsonResource
             'status' => $invitation->status->value,
             'starts_at' => $invitation->startsAt->format(DateTimeInterface::ATOM),
             'due_at' => $invitation->dueAt->format(DateTimeInterface::ATOM),
+            'mode' => $invitation->mode->value,
+            'location' => $invitation->location,
+            'attachment' => $invitation->attachment === null ? null : ['name' => $invitation->attachment->name, 'size_bytes' => $invitation->attachment->sizeBytes],
             'created_at' => $invitation->createdAt?->format(DateTimeInterface::ATOM),
         ];
 

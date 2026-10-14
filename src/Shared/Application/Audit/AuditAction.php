@@ -160,4 +160,10 @@ final class AuditAction
     public const string ASSESSMENT_PSYCHOLOGIST_TWO_FACTOR_RESET = 'assessment.psychologist_two_factor_reset';
 
     public const string ASSESSMENT_REPORT_SIGNED = 'assessment.report_signed';
+
+    public const string ASSESSMENT_REPORT_AUTO_ISSUED = 'assessment.report_auto_issued';
+
+    public const string ASSESSMENT_REPORT_REVISED = 'assessment.report_revised';
+
+    public const string ASSESSMENT_PROVIDER_AUTO_ISSUE_CHANGED = 'assessment_provider.auto_issue_changed';
 }

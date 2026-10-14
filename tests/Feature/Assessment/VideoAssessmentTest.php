@@ -102,10 +102,19 @@ final class VideoAssessmentTest extends FeatureTestCase
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 
+    /** The token of the device that started the attempt, sent with every later call. */
+    private ?string $attemptSession = null;
+
     /** @param  array<string, mixed>  $body */
     private function take(string $method, string $uri, array $body = [], ?string $token = null): TestResponse
     {
-        return $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken);
+        $response = $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $token ?? $this->seekerToken, $this->attemptSession === null ? [] : ['X-Attempt-Session' => $this->attemptSession]);
+
+        if ($uri === 'start' && is_string($session = $response->json('data.attempt_session'))) {
+            $this->attemptSession = $session;
+        }
+
+        return $response;
     }
 
     private function show(): TestResponse

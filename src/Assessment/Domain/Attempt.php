@@ -27,12 +27,13 @@ final readonly class Attempt
         public int $seed,
         public ?string $lastIp,
         public ?DateTimeImmutable $videoConsentedAt = null,
+        public ?string $sessionHash = null,
     ) {}
 
     /** @param  list<int>  $durations  the seconds of each section, in order */
-    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip, bool $videoConsent = false): self
+    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip, bool $videoConsent = false, ?string $sessionHash = null): self
     {
-        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip, $videoConsent ? $now : null);
+        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip, $videoConsent ? $now : null, $sessionHash);
     }
 
     public function isSubmitted(): bool
@@ -94,6 +95,18 @@ final readonly class Attempt
         return $this->copy(questionCursor: $cursor);
     }
 
+    /** Another device takes the attempt over: only the token with this hash is served from now on. */
+    public function heldBy(string $sessionHash): self
+    {
+        return $this->copy(sessionHash: $sessionHash);
+    }
+
+    /** An attempt started before the device rule has no token and is served to anyone who is its candidate. */
+    public function isHeldBy(?string $sessionHash): bool
+    {
+        return $this->sessionHash === null || ($sessionHash !== null && hash_equals($this->sessionHash, $sessionHash));
+    }
+
     public function seenFrom(?string $ip): self
     {
         return $this->copy(lastIp: $ip);
@@ -115,6 +128,7 @@ final readonly class Attempt
         ?DateTimeImmutable $submittedAt = null,
         ?bool $autoSubmitted = null,
         ?string $lastIp = null,
+        ?string $sessionHash = null,
     ): self {
         return new self(
             $this->id, $this->invitationId, $this->consentedAt, $this->startedAt,
@@ -127,6 +141,7 @@ final readonly class Attempt
             $this->seed,
             $lastIp ?? $this->lastIp,
             $this->videoConsentedAt,
+            $sessionHash ?? $this->sessionHash,
         );
     }
 }

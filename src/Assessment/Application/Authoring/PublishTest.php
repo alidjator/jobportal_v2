@@ -21,7 +21,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * The author publishes a draft once it is complete: every section has what its format needs, and a battery also has a norm for every scale
- * its questions use and a report template. A test that is not complete is refused with every problem listed.
+ * its questions use and a report template (and, when it issues reports automatically, what that needs: see `AutoIssueChecks`). A test that is not complete is refused with every problem listed.
  */
 final readonly class PublishTest
 {
@@ -32,6 +32,7 @@ final readonly class PublishTest
         private QuestionRepository $questions,
         private NormRepository $norms,
         private ReportTemplateRepository $templates,
+        private AutoIssueChecks $autoIssue,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -106,6 +107,10 @@ final readonly class PublishTest
 
             if ($this->templates->bodyOf((int) $test->id) === null) {
                 $problems[] = 'The battery needs a report template.';
+            }
+
+            if ($test->autoIssue()) {
+                $problems = [...$problems, ...$this->autoIssue->problems($test)];
             }
         }
 

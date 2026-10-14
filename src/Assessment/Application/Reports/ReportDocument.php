@@ -4,7 +4,7 @@ namespace Src\Assessment\Application\Reports;
 
 use DateTimeImmutable;
 
-/** Everything the PDF of a signed report prints. */
+/** Everything the PDF of a signed report prints. `autoIssued` (a report issued automatically and not revised since) adds the notice that it was issued automatically under the signer's responsibility. */
 final readonly class ReportDocument
 {
     /** @param  list<array{scale: string, raw: float, standard: float|null, band: string|null}>  $scales */
@@ -20,5 +20,6 @@ final readonly class ReportDocument
         public string $signerStrNumber,
         public string $signerSilpNumber,
         public DateTimeImmutable $signedAt,
+        public bool $autoIssued = false,
     ) {}
 }

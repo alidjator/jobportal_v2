@@ -5,6 +5,7 @@ namespace Src\Assessment\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use LogicException;
 use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
@@ -17,6 +18,8 @@ use stdClass;
 final readonly class DatabaseReportRepository implements ReportRepository
 {
     private const string TABLE = 'assessment_reports';
+
+    private const string REVISIONS = 'assessment_report_revisions';
 
     public function __construct(
         private ConnectionInterface $connection,
@@ -44,16 +47,33 @@ final readonly class DatabaseReportRepository implements ReportRepository
         $now = $this->clock->now();
         $id = $this->connection->table(self::TABLE)->insertGetId($this->values($report) + ['attempt_id' => $report->attemptId, 'provider_id' => $report->providerId, 'created_at' => $now]);
 
-        return new Report(
-            (int) $id, $report->attemptId, $report->providerId, $report->status, $report->body, $report->explanation, $report->reviewNotes, $report->editedAt,
-            $report->number, $report->year, $report->sequence, $report->signedByPsychologistId, $report->signerName, $report->signerStrNumber,
-            $report->signerSilpNumber, $report->signedAt, $now,
-        );
+        return $this->find((int) $id) ?? throw new LogicException('The new report was not found.');
     }
 
     public function update(Report $report): void
     {
         $this->connection->table(self::TABLE)->where('id', $report->id)->update($this->values($report));
+    }
+
+    public function keepVersion(Report $report, DateTimeImmutable $supersededAt): void
+    {
+        $now = $this->clock->now();
+
+        $this->connection->table(self::REVISIONS)->insert([
+            'report_id' => $report->id,
+            'revision' => $report->revision,
+            'report_number' => (string) $report->number,
+            'body' => $report->body,
+            'explanation' => $report->explanation,
+            'signed_by_psychologist_id' => $report->signedByPsychologistId,
+            'signer_name' => $report->signerName,
+            'signer_str_number' => $report->signerStrNumber,
+            'signer_silp_number' => $report->signerSilpNumber,
+            'signed_at' => $report->signedAt,
+            'superseded_at' => $supersededAt,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 
     public function nextSequence(int $providerId, int $year): int
@@ -71,7 +91,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
         return $id === null ? null : (int) $id;
     }
 
-    public function pageOfProvider(int $providerId, ?ReportStatus $status, PageRequest $request): Page
+    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request): Page
     {
         $builder = $this->connection->table(self::TABLE.' as reports')
             ->join('assessment_attempts as attempts', 'attempts.id', '=', 'reports.attempt_id')
@@ -83,9 +103,18 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $builder->where('reports.status', $status->value);
         }
 
+        if ($reviewed !== null) {
+            // A report signed by hand is reviewed by the signature itself; only an automatic one waits for a review.
+            if ($reviewed) {
+                $builder->where(fn ($query) => $query->where('reports.auto_issued', false)->orWhereNotNull('reports.reviewed_at'));
+            } else {
+                $builder->where('reports.auto_issued', true)->whereNull('reports.reviewed_at');
+            }
+        }
+
         $total = (clone $builder)->count();
         $rows = $builder
-            ->select(['reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'tests.title'])
+            ->select(['reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'tests.title'])
             ->orderBy('attempts.submitted_at')
             ->orderBy('reports.id')
             ->offset($request->offset())
@@ -101,6 +130,8 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->report_number,
             $this->time((string) $row->submitted_at),
             $row->signed_at === null ? null : $this->time((string) $row->signed_at),
+            (bool) $row->auto_issued,
+            $row->reviewed_at === null ? null : $this->time((string) $row->reviewed_at),
         ), $rows->all()), $total, $request);
     }
 
@@ -121,6 +152,10 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'signer_str_number' => $report->signerStrNumber,
             'signer_silp_number' => $report->signerSilpNumber,
             'signed_at' => $report->signedAt,
+            'auto_issued' => $report->autoIssued,
+            'reviewed_at' => $report->reviewedAt,
+            'reviewed_by_psychologist_id' => $report->reviewedByPsychologistId,
+            'revision' => $report->revision,
             'updated_at' => $this->clock->now(),
         ];
     }
@@ -145,6 +180,10 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->signer_silp_number,
             $row->signed_at === null ? null : $this->time((string) $row->signed_at),
             $this->time((string) $row->created_at),
+            (bool) $row->auto_issued,
+            $row->reviewed_at === null ? null : $this->time((string) $row->reviewed_at),
+            $row->reviewed_by_psychologist_id === null ? null : (int) $row->reviewed_by_psychologist_id,
+            (int) $row->revision,
         );
     }
 

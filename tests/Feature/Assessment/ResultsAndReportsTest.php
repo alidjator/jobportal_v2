@@ -67,10 +67,19 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 
+    /** The token of the device that started the attempt, sent with every later call. */
+    private ?string $attemptSession = null;
+
     /** @param  array<string, mixed>  $body */
     private function take(string $method, string $uri, array $body = []): TestResponse
     {
-        return $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $this->seekerToken);
+        $response = $this->api($method, "/me/assessment/invitations/{$this->invitationId}/{$uri}", $body, $this->seekerToken, $this->attemptSession === null ? [] : ['X-Attempt-Session' => $this->attemptSession]);
+
+        if ($uri === 'start' && is_string($session = $response->json('data.attempt_session'))) {
+            $this->attemptSession = $session;
+        }
+
+        return $response;
     }
 
     /** @return list<int> the ids of the questions of the open section */
@@ -165,7 +174,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->withToken($this->seekerToken)->post(
             "/api/v1/me/assessment/invitations/{$this->invitationId}/attempt/questions/{$question}/drawing",
             ['file' => UploadedFile::fake()->createWithContent('drawing.png', $this->png()), 'source' => 'canvas'],
-            ['Accept' => 'application/json'],
+            ['Accept' => 'application/json', 'X-Attempt-Session' => (string) $this->attemptSession],
         )->assertNoContent();
 
         $this->take('POST', 'attempt/submit')->assertOk();

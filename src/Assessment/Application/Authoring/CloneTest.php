@@ -81,6 +81,12 @@ final readonly class CloneTest
                 $this->templates->save((int) $copy->id, $body, $this->clock->now());
             }
 
+            $explanation = $this->templates->explanationTemplateOf((int) $source->id);
+
+            if ($explanation !== null) {
+                $this->templates->saveExplanationTemplate((int) $copy->id, $explanation, $this->clock->now());
+            }
+
             return $copy;
         });
     }

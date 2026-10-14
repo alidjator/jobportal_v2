@@ -11,6 +11,8 @@ final class NormRules
 
     public const float SCORE_MAX = 9999.99;
 
+    public const int EXPLANATION_MAX = 2000;
+
     /**
      * @param  list<Norm>  $norms
      * @param  list<string>  $knownScales  the scales the questions of the test use
@@ -45,7 +47,13 @@ final class NormRules
                 throw self::invalid('Every row needs a band of 1 to 40 characters.');
             }
 
-            $clean[] = new Norm($norm->scaleKey, $norm->rawMin, $norm->rawMax, round($norm->standardScore, 2), $band);
+            $explanation = $norm->explanation === null ? null : trim($norm->explanation);
+
+            if ($explanation !== null && mb_strlen($explanation) > self::EXPLANATION_MAX) {
+                throw self::invalid('An explanation may have at most '.self::EXPLANATION_MAX.' characters.');
+            }
+
+            $clean[] = new Norm($norm->scaleKey, $norm->rawMin, $norm->rawMax, round($norm->standardScore, 2), $band, $explanation === '' ? null : $explanation);
         }
 
         usort($clean, static fn (Norm $a, Norm $b): int => [$a->scaleKey, $a->rawMin] <=> [$b->scaleKey, $b->rawMin]);

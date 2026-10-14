@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Attempts;
 
+use Src\Assessment\Application\AssessmentSettings;
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AttemptQuestion;
 use Src\Assessment\Domain\AttemptRepository;
@@ -10,6 +11,7 @@ use Src\Assessment\Domain\Navigation;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\SectionFormat;
 use Src\Assessment\Domain\SpeedColumnResult;
+use Src\Shared\Application\Settings\Settings;
 
 /** Builds what the candidate sees of an attempt at this moment. */
 final readonly class AttemptViews
@@ -18,6 +20,7 @@ final readonly class AttemptViews
         private AttemptRepository $attempts,
         private AnswerRepository $answers,
         private QuestionRepository $questions,
+        private Settings $settings,
     ) {}
 
     public function build(AttemptContext $context): AttemptView
@@ -29,7 +32,7 @@ final readonly class AttemptViews
         $section = $context->section();
 
         if ($section->format === SectionFormat::SpeedColumns) {
-            return new AttemptView($context, 0, [], $this->speed($context));
+            return new AttemptView($context, 0, [], $this->speed($context), $this->idleMinutes());
         }
 
         $drawn = $this->drawnOfSection($context);
@@ -48,7 +51,12 @@ final readonly class AttemptViews
             }
         }
 
-        return new AttemptView($context, count($drawn), $delivered, null);
+        return new AttemptView($context, count($drawn), $delivered, null, $this->idleMinutes());
+    }
+
+    private function idleMinutes(): int
+    {
+        return $this->settings->integer(AssessmentSettings::IDLE_MINUTES);
     }
 
     /** @return list<AttemptQuestion> the questions of the open section, in the order they are asked */

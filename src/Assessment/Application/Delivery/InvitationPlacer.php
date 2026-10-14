@@ -54,6 +54,8 @@ final readonly class InvitationPlacer
             $checked->dueAt,
             $invitedByUserId,
             $checked->assessorIds,
+            $checked->mode,
+            $checked->location,
         ));
 
         return new PlacedInvitation($saved, InvitationChanged::of(InvitationChange::Invited, $saved, $now), $previous instanceof Invitation);

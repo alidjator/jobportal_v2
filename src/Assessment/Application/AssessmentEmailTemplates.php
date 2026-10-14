@@ -22,6 +22,8 @@ final class AssessmentEmailTemplates
 
     public const string EXPLANATION_READY = 'assessment.explanation_ready';
 
+    public const string EXPLANATION_REVISED = 'assessment.explanation_revised';
+
     /** The template that tells the candidate about a change to a test invitation. */
     public static function keyForChange(InvitationChange $change): string
     {
@@ -69,6 +71,7 @@ final class AssessmentEmailTemplates
             new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
             new EmailVariable('test_title', 'The title of the test', 'Logika dan angka'),
             new EmailVariable('due_at', 'When the test is due (Jakarta time)', '2026-10-14 17:00 WIB'),
+            new EmailVariable('location', 'Where an onsite test is taken, as a line with its label; empty for an online test', 'Lokasi: Kantor Pusat, Lantai 3'),
         ];
 
         return [
@@ -78,8 +81,8 @@ final class AssessmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Tes untuk lamaran {{job_title}}', 'en' => 'A test for your application for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} mengundang Anda mengerjakan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}}.\n\nBatas pengerjaan: {{due_at}}\n\nBuka akun Anda untuk membaca petunjuk dan memulai tes.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} invited you to take the test \"{{test_title}}\" for your application for {{job_title}}.\n\nDue: {{due_at}}\n\nOpen your account to read the instructions and start the test.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengundang Anda mengerjakan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}}.\n\nBatas pengerjaan: {{due_at}}\n\n{{location}}\n\nBuka akun Anda untuk membaca petunjuk dan memulai tes.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} invited you to take the test \"{{test_title}}\" for your application for {{job_title}}.\n\nDue: {{due_at}}\n\n{{location}}\n\nOpen your account to read the instructions and start the test.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -88,8 +91,8 @@ final class AssessmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Pengingat: tes untuk {{job_title}}', 'en' => 'Reminder: your test for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\nIni pengingat bahwa tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}} belum Anda mulai.\n\nBatas pengerjaan: {{due_at}}\n\nBuka akun Anda untuk memulai tes.",
-                    'en' => "Hello {{name}},\n\nA reminder that you have not started the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nDue: {{due_at}}\n\nOpen your account to start the test.",
+                    'id' => "Halo {{name}},\n\nIni pengingat bahwa tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}} belum Anda mulai.\n\nBatas pengerjaan: {{due_at}}\n\n{{location}}\n\nBuka akun Anda untuk memulai tes.",
+                    'en' => "Hello {{name}},\n\nA reminder that you have not started the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nDue: {{due_at}}\n\n{{location}}\n\nOpen your account to start the test.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -120,6 +123,16 @@ final class AssessmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nPsikolog telah menandatangani laporan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}}.\n\nBuka akun Anda untuk membaca penjelasan hasil tes Anda.",
                     'en' => "Hello {{name}},\n\nA psychologist signed the report of the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nOpen your account to read the explanation of your result.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EXPLANATION_REVISED,
+                'Sent to a candidate when a psychologist revised the report of a psychological test they took, so they can read the revised explanation of the result.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Penjelasan hasil tes Anda telah direvisi', 'en' => 'The explanation of your test result was revised']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPsikolog merevisi laporan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}}.\n\nBuka akun Anda untuk membaca penjelasan hasil tes yang sudah direvisi.",
+                    'en' => "Hello {{name}},\n\nA psychologist revised the report of the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nOpen your account to read the revised explanation of your result.",
                 ]),
             ),
         ];

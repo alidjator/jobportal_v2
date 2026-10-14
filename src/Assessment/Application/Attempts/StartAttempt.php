@@ -3,10 +3,13 @@
 namespace Src\Assessment\Application\Attempts;
 
 use Src\Assessment\Domain\Attempt;
+use Src\Assessment\Domain\AttemptOutcomeRepository;
 use Src\Assessment\Domain\AttemptQuestion;
 use Src\Assessment\Domain\AttemptRepository;
+use Src\Assessment\Domain\IntegrityEventType;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
+use Src\Assessment\Domain\InvitationStatus;
 use Src\Assessment\Domain\QuestionDraw;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
@@ -24,13 +27,16 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * The candidate agrees to the terms of the test (and, when it has video questions, to be recorded) and starts it. The attempt begins at once: the first section opens, the server timer starts and the questions
- * of every section are drawn. Starting a test that was already started changes nothing and gives the attempt as it is, so a reload after a lost response is safe.
+ * of every section are drawn. Every start gives the device an `attempt_session` token that the other calls must carry. Starting a test that was already started (and is still
+ * open) gives the attempt as it is and takes it over for this device: the token of the device that held it stops working (`attempt-moved`) and a `device_switch` signal is
+ * recorded. The clock never stops. A test that is closed (submitted or cancelled) is given back as it is, with no token.
  */
 final readonly class StartAttempt
 {
     public function __construct(
         private InvitationRepository $invitations,
         private AttemptRepository $attempts,
+        private AttemptOutcomeRepository $outcomes,
         private QuestionRepository $questions,
         private SectionRepository $sections,
         private AttemptGate $gate,
@@ -40,7 +46,7 @@ final readonly class StartAttempt
     ) {}
 
     /**
-     * @return array{view: AttemptView, created: bool}
+     * @return array{view: AttemptView, created: bool, session: string|null}
      *
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
@@ -59,19 +65,30 @@ final readonly class StartAttempt
 
         $userId = $actor->id;
 
-        $created = $this->transactions->run(function () use ($userId, $invitationId, $ip, $videoConsent): bool {
+        /** @var array{0: bool, 1: string|null} $started */
+        $started = $this->transactions->run(function () use ($userId, $invitationId, $ip, $videoConsent): array {
             $invitation = $this->invitations->find($invitationId, forUpdate: true);
 
             if (! $invitation instanceof Invitation || $invitation->applicantUserId !== $userId) {
                 throw EntityNotFound::of('Invitation', $invitationId);
             }
 
-            if ($this->attempts->findByInvitation($invitationId) !== null) {
-                return false;
+            $existing = $this->attempts->findByInvitation($invitationId, forUpdate: true);
+            $now = $this->clock->now();
+
+            if ($existing !== null) {
+                if ($existing->isSubmitted() || $invitation->status !== InvitationStatus::Started) {
+                    return [false, null];
+                }
+
+                [$token, $hash] = AttemptSessionToken::issue();
+                $this->attempts->update($existing->heldBy($hash));
+                $this->outcomes->addEvent((int) $existing->id, IntegrityEventType::DeviceSwitch, $now);
+
+                return [false, $token];
             }
 
-            $now = $this->clock->now();
-            $started = $invitation->start($now);
+            $opened = $invitation->start($now);
             $sections = $this->sections->ofTest($invitation->testId);
 
             if (! $videoConsent && $this->questions->testHasType($invitation->testId, QuestionType::VideoAnswer)) {
@@ -80,16 +97,17 @@ final readonly class StartAttempt
                 throw new BusinessRuleViolation($message, 'video-consent-required', extensions: ['errors' => ['video_consent' => [$message]]]);
             }
 
-            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip, $videoConsent);
-            $this->invitations->update($started);
+            [$token, $hash] = AttemptSessionToken::issue();
+            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip, $videoConsent, $hash);
+            $this->invitations->update($opened);
             $this->attempts->add($attempt, $this->draw($sections, $attempt->seed));
 
-            return true;
+            return [true, $token];
         });
 
-        $view = $this->gate->run($actor, $invitationId, $ip, fn (AttemptContext $context): AttemptView => $this->views->build($context), readOnly: true);
+        $view = $this->gate->run($actor, $invitationId, $ip, fn (AttemptContext $context): AttemptView => $this->views->build($context), readOnly: true, checkSession: false);
 
-        return ['view' => $view, 'created' => $created];
+        return ['view' => $view->withSession($started[1]), 'created' => $started[0], 'session' => $started[1]];
     }
 
     /**

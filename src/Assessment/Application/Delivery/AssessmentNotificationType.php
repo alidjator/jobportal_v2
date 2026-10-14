@@ -27,6 +27,12 @@ final class AssessmentNotificationType
     /** To the candidate: the psychologist signed the report, so the explanation of the result can be read. */
     public const string EXPLANATION_READY = 'assessment.explanation_ready';
 
+    /** To the team: a psychologist revised the report that was issued automatically, so the scores and the text may differ from what was read before. */
+    public const string REPORT_REVISED = 'assessment.report_revised';
+
+    /** To the candidate: the explanation of the result was revised, so it can be read again. */
+    public const string EXPLANATION_REVISED = 'assessment.explanation_revised';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

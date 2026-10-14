@@ -21,6 +21,7 @@
     .body { margin: 0; }
     .signature { margin-top: 26px; page-break-inside: avoid; }
     .signature .line { margin-top: 44px; font-weight: bold; }
+    .notice { margin-top: 14px; padding: 6px 8px; border: 1px solid #999; background: #f6f6f6; font-size: 9pt; }
 </style>
 </head>
 <body>
@@ -54,6 +55,10 @@
 
 <h2>Report</h2>
 <p class="body">{!! nl2br(e($report->body)) !!}</p>
+
+@if ($report->autoIssued)
+    <p class="notice">This report was issued automatically at the time the test was submitted, under the responsibility of the psychologist named below.</p>
+@endif
 
 <div class="signature">
     <div>Signed by</div>

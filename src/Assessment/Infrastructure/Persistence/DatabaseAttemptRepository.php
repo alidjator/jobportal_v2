@@ -52,6 +52,7 @@ final readonly class DatabaseAttemptRepository implements AttemptRepository
             'seed' => $attempt->seed,
             'last_ip' => $attempt->lastIp,
             'video_consented_at' => $attempt->videoConsentedAt === null ? null : $this->format($attempt->videoConsentedAt),
+            'session_hash' => $attempt->sessionHash,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -78,6 +79,7 @@ final readonly class DatabaseAttemptRepository implements AttemptRepository
             'submitted_at' => $attempt->submittedAt === null ? null : $this->format($attempt->submittedAt),
             'auto_submitted' => $attempt->autoSubmitted,
             'last_ip' => $attempt->lastIp,
+            'session_hash' => $attempt->sessionHash,
             'updated_at' => $this->clock->now(),
         ]);
     }
@@ -121,6 +123,7 @@ final readonly class DatabaseAttemptRepository implements AttemptRepository
             (int) $row->seed,
             $row->last_ip,
             $row->video_consented_at === null ? null : $this->time((string) $row->video_consented_at),
+            $row->session_hash,
         );
     }
 

@@ -40,6 +40,10 @@ final class ReviewResource extends JsonResource
             'report_number' => $report->number,
             'signed_at' => $report->signedAt?->format(DateTimeInterface::ATOM),
             'signer_name' => $report->signerName,
+            'auto_issued' => $report->autoIssued,
+            'reviewed' => ! $report->autoIssued || $report->reviewedAt !== null,
+            'reviewed_at' => $report->reviewedAt?->format(DateTimeInterface::ATOM),
+            'revision' => $report->revision,
         ];
     }
 }

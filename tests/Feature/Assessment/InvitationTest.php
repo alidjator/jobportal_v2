@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Assessment;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use Src\Assessment\Application\EraseAssessmentData;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
 use Tests\Concerns\BuildsApplicationFixtures;
@@ -375,6 +378,157 @@ final class InvitationTest extends FeatureTestCase
         $this->company('POST', "invitations/{$id}/cancel", [], $this->otherAdminToken)->assertNotFound();
         $this->company('GET', "invitations/{$id}", [], $this->secondRecruiterToken)->assertNotFound();
         $this->company('GET', 'invitations/999999')->assertNotFound();
+    }
+
+    // ----- onsite and the attachment -----
+
+    private function png(): string
+    {
+        $image = imagecreatetruecolor(120, 80);
+        imagefill($image, 0, 0, (int) imagecolorallocate($image, 20, 20, 20));
+
+        ob_start();
+        imagepng($image);
+
+        return (string) ob_get_clean();
+    }
+
+    private function upload(int $invitationId, string $name, string $contents, ?string $token = null): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($token ?? $this->recruiterToken)->post(
+            "/api/v1/company/assessment/invitations/{$invitationId}/attachment",
+            ['file' => UploadedFile::fake()->createWithContent($name, $contents)],
+            ['Accept' => 'application/json'],
+        );
+    }
+
+    public function test_an_onsite_test_names_its_location_and_the_candidate_and_the_email_show_it(): void
+    {
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite']))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input')->assertJsonStructure(['errors' => ['location']]);
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => '   ']))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input');
+        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => str_repeat('x', 256)]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->assertSame('applied', $this->stageType());
+
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Head office, floor 3, room 301']))->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+
+        $this->company('GET', "invitations/{$id}")->assertOk()->assertJsonPath('data.mode', 'onsite')->assertJsonPath('data.location', 'Head office, floor 3, room 301')->assertJsonPath('data.attachment', null);
+        $this->mine("/{$id}")->assertOk()->assertJsonPath('data.mode', 'onsite')->assertJsonPath('data.location', 'Head office, floor 3, room 301');
+
+        $emails = array_values(array_filter($this->emails(), fn (Email $email): bool => str_contains((string) $email->getSubject(), 'A test for your application')));
+        $this->assertStringContainsString('Location: Head office, floor 3, room 301', (string) $emails[0]->getTextBody());
+    }
+
+    public function test_an_online_test_has_no_location_and_an_online_email_has_no_location_line(): void
+    {
+        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => 'Ignored']))->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+        $this->company('GET', "invitations/{$id}")->assertOk()->assertJsonPath('data.mode', 'online')->assertJsonPath('data.location', null);
+
+        $emails = array_values(array_filter($this->emails(), fn (Email $email): bool => str_contains((string) $email->getSubject(), 'A test for your application')));
+        $this->assertStringNotContainsString('Location', (string) $emails[0]->getTextBody());
+    }
+
+    public function test_a_reminder_of_an_onsite_test_shows_the_location(): void
+    {
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Branch office Surabaya']))->assertNoContent();
+
+        Carbon::setTestNow(now()->addHours(49));
+        $this->artisan('assessment:send-invitation-reminders')->assertSuccessful();
+
+        $emails = array_values(array_filter($this->emails(), fn (Email $email): bool => str_contains((string) $email->getSubject(), 'Reminder: your test')));
+        $this->assertStringContainsString('Location: Branch office Surabaya', (string) $emails[0]->getTextBody());
+    }
+
+    public function test_the_team_puts_one_file_on_an_invitation_and_the_candidate_downloads_it(): void
+    {
+        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+        $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n";
+
+        $this->upload($id, 'How to find us.pdf', $pdf)->assertOk()
+            ->assertJsonPath('data.attachment.name', 'How to find us.pdf')->assertJsonPath('data.attachment.size_bytes', strlen($pdf));
+        $first = DB::table('assessment_invitations')->value('attachment_path');
+        $this->assertStringStartsWith("assessment/invitation-files/{$id}/", $first);
+        Storage::assertExists($first);
+
+        $team = $this->company('GET', "invitations/{$id}/attachment", [], $this->adminToken)->assertOk();
+        $this->assertSame($pdf, $team->getContent());
+        $this->assertSame('application/pdf', $team->headers->get('Content-Type'));
+        $this->assertStringContainsString('attachment', (string) $team->headers->get('Content-Disposition'));
+        $this->assertSame('nosniff', $team->headers->get('X-Content-Type-Options'));
+        $this->assertSame($pdf, $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $this->seekerToken)->assertOk()->getContent());
+        $this->mine("/{$id}")->assertOk()->assertJsonPath('data.attachment.name', 'How to find us.pdf');
+
+        // A second file replaces the first, which is deleted; the name takes the extension of what the file really is.
+        $this->upload($id, 'floor-plan.exe', $this->png())->assertOk()->assertJsonPath('data.attachment.name', 'floor-plan.jpg');
+        Storage::assertMissing($first);
+        $this->assertSame('image/jpeg', DB::table('assessment_invitations')->value('attachment_mime'));
+
+        $this->company('DELETE', "invitations/{$id}/attachment", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.attachment', null);
+        $this->assertSame([], Storage::allFiles('assessment/invitation-files'));
+        $this->company('GET', "invitations/{$id}/attachment")->assertNotFound();
+        $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $this->seekerToken)->assertNotFound();
+    }
+
+    public function test_the_file_is_checked_by_its_content_and_its_size(): void
+    {
+        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+
+        $this->upload($id, 'notes.pdf', 'just some text')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
+        $this->upload($id, 'photo.jpg', "\xFF\xD8\xFFnot really a picture")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
+        $this->upload($id, 'sheet.pdf', '%PDF-'.str_repeat('0', 11 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->assertSame([], Storage::allFiles('assessment/invitation-files'));
+
+        $this->api('POST', "/company/assessment/invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+    }
+
+    public function test_erasing_the_candidate_deletes_the_file_of_the_invitation(): void
+    {
+        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+        $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
+        $this->assertCount(1, Storage::allFiles('assessment/invitation-files'));
+
+        $this->app->make(EraseAssessmentData::class)->execute($this->seekerId);
+
+        $this->assertSame([], Storage::allFiles('assessment/invitation-files'));
+        $row = (array) DB::table('assessment_invitations')->where('id', $id)->first();
+        $this->assertSame([null, null, null, null], [$row['attachment_path'], $row['attachment_name'], $row['attachment_mime'], $row['attachment_size_bytes']]);
+    }
+
+    public function test_the_file_changes_only_while_the_candidate_has_not_started(): void
+    {
+        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+        $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
+
+        DB::table('assessment_invitations')->where('id', $id)->update(['status' => 'started']);
+        $this->upload($id, 'other.pdf', '%PDF-1.4')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-active');
+        $this->company('DELETE', "invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-active');
+        $this->assertCount(1, Storage::allFiles('assessment/invitation-files'), 'A refused upload leaves no stray file.');
+        $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $this->seekerToken)->assertOk();
+    }
+
+    public function test_only_who_may_send_the_test_changes_the_file_and_only_its_candidate_downloads_it(): void
+    {
+        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $id = (int) DB::table('assessment_invitations')->value('id');
+        $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
+
+        $this->upload($id, 'x.pdf', '%PDF-1.4', $this->secondRecruiterToken)->assertNotFound();
+        $this->upload($id, 'x.pdf', '%PDF-1.4', $this->otherAdminToken)->assertNotFound();
+        $this->upload($id, 'x.pdf', '%PDF-1.4', $this->seekerToken)->assertForbidden();
+        $this->company('GET', "invitations/{$id}/attachment", [], $this->secondRecruiterToken)->assertNotFound();
+        $this->company('DELETE', "invitations/{$id}/attachment", [], $this->otherAdminToken)->assertNotFound();
+
+        $other = $this->tokenFor($this->seeker('rina.lain@example.test'));
+        $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $other)->assertNotFound();
+        $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $this->recruiterToken)->assertForbidden();
+        $this->upload(999999, 'x.pdf', '%PDF-1.4')->assertNotFound();
     }
 
     // ----- expiry and reminders -----

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Event;
 use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Application\AssessmentPermissions;
 use Src\Assessment\Application\AssessmentSettings;
+use Src\Assessment\Application\Attempts\AttemptSessionToken;
 use Src\Assessment\Application\Delivery\AssessmentInvitationService;
 use Src\Assessment\Application\Delivery\TestEmailSender;
 use Src\Assessment\Application\EraseAssessmentData;
@@ -22,10 +23,12 @@ use Src\Assessment\Domain\CompanyBatteryRepository;
 use Src\Assessment\Domain\Events\AttemptSubmitted;
 use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\Events\InvitationDeclined;
+use Src\Assessment\Domain\Events\ProviderAutoIssueChanged;
 use Src\Assessment\Domain\Events\ProviderRegistered;
 use Src\Assessment\Domain\Events\PsychologistChanged;
 use Src\Assessment\Domain\Events\PsychologistInvited;
 use Src\Assessment\Domain\Events\PsychologistJoined;
+use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\NormRepository;
@@ -106,6 +109,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->app->scoped(AttemptSessionToken::class);
+
         $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
@@ -137,6 +142,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             PsychologistJoined::class => 'onPsychologistJoined',
             PsychologistChanged::class => 'onPsychologistChanged',
             ReportSigned::class => 'onReportSigned',
+            ReportRevised::class => 'onReportRevised',
+            ProviderAutoIssueChanged::class => 'onProviderAutoIssueChanged',
         ] as $event => $method) {
             Event::listen($event, [RecordAssessmentAuditEntries::class, $method]);
         }
@@ -148,6 +155,9 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'inApp']);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'candidateInApp']);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'candidateEmail']);
+        Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedInApp']);
+        Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedCandidateInApp']);
+        Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedCandidateEmail']);
 
         $this->app->tag(EraseAssessmentData::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseAssessmentDataWhenUserAnonymized::class);

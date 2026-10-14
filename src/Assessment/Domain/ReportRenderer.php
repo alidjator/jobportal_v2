@@ -29,6 +29,36 @@ final class ReportRenderer
         return self::fill($template, $values);
     }
 
+    /**
+     * The explanation for the candidate of an automatically issued report, from the battery's explanation template: the fixed placeholders and, per scale, the raw score,
+     * the standard score, the band and the explanation of the norm range the raw score falls in. Null when a scale has no norm for its raw score or its range has no
+     * explanation, or when a placeholder is left unfilled: such a report is not issued automatically.
+     *
+     * @param  array<string, float>  $scaleScores
+     * @param  list<Norm>  $norms
+     */
+    public static function explanation(string $template, string $candidateName, string $testTitle, string $number, string $signedOn, string $psychologistName, array $scaleScores, array $norms): ?string
+    {
+        $values = ['candidate_name' => $candidateName, 'test_title' => $testTitle, 'report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName];
+
+        foreach ($scaleScores as $scale => $raw) {
+            $norm = NormConverter::convert($norms, (string) $scale, $raw);
+
+            if ($norm === null || $norm->explanation === null) {
+                return null;
+            }
+
+            $values["scale:{$scale}:raw"] = self::number($raw);
+            $values["scale:{$scale}:standard"] = self::number($norm->standardScore);
+            $values["scale:{$scale}:band"] = $norm->band;
+            $values["scale:{$scale}:explanation"] = $norm->explanation;
+        }
+
+        $text = self::fill($template, $values);
+
+        return preg_match('/\{\{.*?\}\}/s', $text) === 1 ? null : $text;
+    }
+
     public static function signed(string $body, string $number, string $signedOn, string $psychologistName): string
     {
         return self::fill($body, ['report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName]);

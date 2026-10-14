@@ -14,6 +14,7 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::post('assessment/providers', [AdminProviderController::class, 'store']);
         Route::get('assessment/providers/{id}', [AdminProviderController::class, 'show'])->whereNumber('id');
         Route::put('assessment/providers/{id}', [AdminProviderController::class, 'update'])->whereNumber('id');
+        Route::put('assessment/providers/{id}/auto-issue', [AdminProviderController::class, 'autoIssue'])->whereNumber('id');
         Route::post('assessment/providers/{id}/suspend', [AdminProviderController::class, 'suspend'])->whereNumber('id');
         Route::post('assessment/providers/{id}/restore', [AdminProviderController::class, 'restore'])->whereNumber('id');
 

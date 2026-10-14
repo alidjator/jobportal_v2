@@ -18,6 +18,7 @@ final class NormResource extends JsonResource
             'raw_max' => $this->resource->rawMax,
             'standard_score' => $this->resource->standardScore,
             'band' => $this->resource->band,
+            'explanation' => $this->resource->explanation,
         ];
     }
 }

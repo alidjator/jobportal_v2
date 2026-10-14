@@ -6,6 +6,7 @@ use DateTimeZone;
 use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\Invitation;
+use Src\Assessment\Domain\InvitationMode;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestRepository;
@@ -76,6 +77,7 @@ final readonly class NotifyOfInvitationChange
             'company_name' => $this->companyName($event),
             'test_title' => $test->title(),
             'due_at' => $invitation->dueAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
+            'location' => $invitation->mode === InvitationMode::Onsite ? ($contact->locale === 'id' ? 'Lokasi: ' : 'Location: ').$invitation->location : '',
         ]);
     }
 

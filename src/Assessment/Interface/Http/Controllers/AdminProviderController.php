@@ -10,9 +10,11 @@ use Src\Assessment\Application\Admin\GetProvider;
 use Src\Assessment\Application\Admin\ListProviders;
 use Src\Assessment\Application\Admin\RegisterProvider;
 use Src\Assessment\Application\Admin\RestoreProvider;
+use Src\Assessment\Application\Admin\SetProviderAutoIssue;
 use Src\Assessment\Application\Admin\SuspendProvider;
 use Src\Assessment\Application\Admin\UpdateProvider;
 use Src\Assessment\Interface\Http\Requests\ListProvidersRequest;
+use Src\Assessment\Interface\Http\Requests\ProviderAutoIssueRequest;
 use Src\Assessment\Interface\Http\Requests\ProviderRequest;
 use Src\Assessment\Interface\Http\Resources\ProviderResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -44,6 +46,12 @@ final class AdminProviderController extends ApiController
     public function update(ProviderRequest $request, int $id, ActorResolver $actors, UpdateProvider $update): ProviderResource
     {
         return new ProviderResource($update->execute($actors->fromRequest($request), $id, $request->code(), $request->name(), $request->legalName()));
+    }
+
+    /** The platform admin allows or stops the automatic issue of the provider's reports. */
+    public function autoIssue(ProviderAutoIssueRequest $request, int $id, ActorResolver $actors, SetProviderAutoIssue $set): ProviderResource
+    {
+        return new ProviderResource($set->execute($actors->fromRequest($request), $id, $request->allowed(), $request->ip(), $request->userAgent()));
     }
 
     public function suspend(Request $request, int $id, ActorResolver $actors, SuspendProvider $suspend): Response

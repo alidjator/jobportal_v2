@@ -164,9 +164,9 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `d
 - **Erasure:** `EraseAssessmentData` is the twelfth erasure step (`assessment-data`, listener `EraseAssessmentDataWhenUserAnonymized`): it deletes the drawing files, then the answers, drawings, speed-column results and integrity signals, clears the last IP and the scale scores, and empties the report's text, explanation and notes. The invitations, attempts, result totals and the number, signer and time of a signed report stay.
 - **Interpretations (confirmed 2026-10-11):** the points of a drawing question (1 to 100, set by the author, ignored by the section maximum) are the highest score the psychologist can give it, and the score does not feed the scale scores; the migration gives drawing questions without points 10; an assessor corrects a score until the application leaves its assessment stage (`scoring-locked`); the candidate is notified when the report is signed.
 
-## Part 7: LPTUI-style additions (designed 2026-10-14, not coded)
+## Part 7: LPTUI-style additions (designed 2026-10-14, coded 2026-10-14, migration 000138)
 
-Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (update 2026-10-14). Coded in a coding session.
+Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (update 2026-10-14).
 
 ### Idle signal
 
@@ -192,8 +192,9 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (updat
 
 ### Invitation attachment
 
-- **One file per invitation**: PDF, JPG or PNG, at most 10 MB, while the invitation is `invited`: `PUT`/`DELETE
-  company/assessment/invitations/{id}/attachment` (multipart `file`; `invitation-not-active` 409 otherwise), by whoever may send the test.
+- **One file per invitation**: PDF, JPG or PNG, at most `assessment.max_attachment_megabytes` (admin setting, default 10), while the invitation is
+  `invited`: `POST`/`DELETE company/assessment/invitations/{id}/attachment` (multipart `file`, `POST` because PHP does not read a multipart `PUT`;
+  `invitation-not-active` 409 otherwise), by whoever may send the test. The file is checked by its content, and an image is encoded again (as JPEG).
 - Kept on the private disk under `assessment/invitation-files/{invitation}/`, served as a download with the headers of the company documents
   (`phase-1-company.md`): the team through `GET company/assessment/invitations/{id}/attachment`, the candidate through
   `GET me/assessment/invitations/{id}/attachment`. The invitation shows the file name and size.
@@ -221,6 +222,20 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (updat
   with `-R1`, `-R2`, signed by the reviser; the earlier version is kept, marked superseded, and the company team and the candidate are told a revised
   report is ready. A manually signed report stays locked as today.
 - New audit actions `assessment.report_auto_issued`, `assessment.report_revised`, `assessment_provider.auto_issue_changed`.
+
+### Part 7 as coded (2026-10-14)
+
+Tests: `AttemptTest`, `InvitationTest`, `AutoIssueTest` (run after `php artisan test:database:migrate --env=testing`).
+
+- **Interpretations awaiting confirmation:**
+  - The invitation attachment is uploaded with `POST` (not `PUT`), because PHP does not parse a multipart `PUT`.
+  - `start` rotates the attempt session token every time it is called on an open attempt, and records a `device_switch` event; every other attempt route needs the `X-Attempt-Session` header (`attempt-session-required`, `attempt-moved`).
+  - The explanation template has its own endpoints (`GET`/`PUT tests/{id}/explanation-template`), and `{{scale:KEY:explanation}}` is valid only there.
+  - An automatically issued report can be revised repeatedly (`-R1`, `-R2`); each earlier version is kept in `assessment_report_revisions`.
+  - `mark-reviewed` and `revise` need a psychologist with a valid STR and SILP (`cannot-sign-reports`).
+  - Auto issue also falls back to the manual queue when a norm has no explanation, the explanation template is missing, or the responsible psychologist or provider is not active and licensed.
+  - The PDF shows the "issued automatically" notice only while the report is not revised.
+  - Added setting `assessment.max_attachment_megabytes`; added email template `assessment.explanation_revised`.
 
 ## Open questions
 

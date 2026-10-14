@@ -16,7 +16,7 @@ final readonly class DatabaseNormRepository implements NormRepository
     public function ofTest(int $testId): array
     {
         return array_map(
-            static fn (stdClass $row): Norm => new Norm((string) $row->scale_key, (int) $row->raw_min, (int) $row->raw_max, (float) $row->standard_score, (string) $row->band),
+            static fn (stdClass $row): Norm => new Norm((string) $row->scale_key, (int) $row->raw_min, (int) $row->raw_max, (float) $row->standard_score, (string) $row->band, $row->explanation),
             $this->connection->table(self::TABLE)->where('test_id', $testId)->orderBy('scale_key')->orderBy('raw_min')->get()->all(),
         );
     }
@@ -33,6 +33,7 @@ final readonly class DatabaseNormRepository implements NormRepository
                 'raw_max' => $norm->rawMax,
                 'standard_score' => $norm->standardScore,
                 'band' => $norm->band,
+                'explanation' => $norm->explanation,
             ], $norms));
         }
     }
