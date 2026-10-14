@@ -3,6 +3,8 @@
 namespace Src\Company\Application\Invitations;
 
 use Src\Company\Domain\CompanyMemberRepository;
+use Src\Company\Domain\CompanyRepository;
+use Src\Company\Domain\CompanyRole;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\InvitationRepository;
 use Src\Shared\Application\Accounts\AccountSession;
@@ -24,6 +26,7 @@ final readonly class AcceptInvitation
     public function __construct(
         private PendingInvitationFinder $finder,
         private InvitationRepository $invitations,
+        private CompanyRepository $companies,
         private CompanyMemberRepository $members,
         private CompanyMemberAccounts $accounts,
         private InvitationThrottle $throttle,
@@ -45,6 +48,9 @@ final readonly class AcceptInvitation
         $now = $this->clock->now();
 
         [$userId, $membership] = $this->transactions->run(function () use ($command, $now): array {
+            // The company is locked before the invitation, as everywhere else, and the first company admin to join it is its owner.
+            [, $company] = $this->finder->find($command->token);
+            $this->companies->lock((int) $company->id);
             [$invitation, $company] = $this->finder->find($command->token, forUpdate: true);
 
             if ($this->accounts->emailIsRegistered($invitation->email)) {
@@ -52,7 +58,8 @@ final readonly class AcceptInvitation
             }
 
             $userId = $this->accounts->register($command->name, $invitation->email, $command->password, $command->language);
-            $this->members->add((int) $company->id, $userId, $invitation->role, $invitation->permissions ?? []);
+            $isOwner = $invitation->role === CompanyRole::CompanyAdmin && $this->members->ownerUserId((int) $company->id) === null;
+            $this->members->add((int) $company->id, $userId, $invitation->role, $invitation->permissions ?? [], $isOwner);
 
             $invitation->accept($now);
             $this->invitations->save($invitation);

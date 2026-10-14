@@ -50,6 +50,21 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
         $this->connection->table('company_companies')->where('id', $companyId)->lockForUpdate()->first(['id']);
     }
 
+    public function invitationEmailDomains(int $companyId): ?array
+    {
+        $json = $this->connection->table('company_companies')->where('id', $companyId)->value('invitation_email_domains');
+
+        return $json === null ? null : array_values(array_map('strval', (array) json_decode((string) $json, true)));
+    }
+
+    public function setInvitationEmailDomains(int $companyId, ?array $domains): void
+    {
+        $this->connection->table('company_companies')->where('id', $companyId)->update([
+            'invitation_email_domains' => $domains === null ? null : json_encode($domains),
+            'updated_at' => $this->clock->now()->format(self::TIME_FORMAT),
+        ]);
+    }
+
     public function save(Company $company): Company
     {
         $now = $this->clock->now()->format(self::TIME_FORMAT);

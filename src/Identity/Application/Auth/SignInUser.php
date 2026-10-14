@@ -7,6 +7,7 @@ use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\MemberSignInGuard;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -22,6 +23,7 @@ final readonly class SignInUser
         private UserRepository $users,
         private PasswordHasher $hasher,
         private AccessTokenIssuer $tokens,
+        private MemberSignInGuard $memberships,
         private SignInThrottle $throttle,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -50,6 +52,7 @@ final readonly class SignInUser
 
         try {
             $user->assertCanSignIn();
+            $this->memberships->assertMayPass((int) $user->id);
         } catch (AccessDenied $e) {
             $this->events->dispatch([$this->failure($user->id, $e->errorCode(), $command)]);
 

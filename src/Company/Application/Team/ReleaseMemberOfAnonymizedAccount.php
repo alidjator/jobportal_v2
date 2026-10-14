@@ -46,7 +46,7 @@ final readonly class ReleaseMemberOfAnonymizedAccount
         });
 
         if ($released) {
-            $this->events->dispatch([new CompanyMemberRemoved($membership->companyId, $userId, $membership->role, $userId, null, null, $occurredAt)]);
+            $this->events->dispatch([new CompanyMemberRemoved($membership->companyId, $userId, $membership->role, $userId, null, null, null, $occurredAt)]);
         }
     }
 }

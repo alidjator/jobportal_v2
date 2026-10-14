@@ -5,6 +5,7 @@ namespace Src\Notification\Infrastructure\Persistence;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\SuspendedMembers;
 use Src\Shared\Application\Notifications\InAppNotifier;
 
 /** Inserts the rows of Laravel's standard `notifications` table for public users (morph name `user`, as Identity registers it). */
@@ -17,11 +18,13 @@ final readonly class DatabaseInAppNotifier implements InAppNotifier
     public function __construct(
         private ConnectionInterface $connection,
         private Clock $clock,
+        private SuspendedMembers $suspended,
     ) {}
 
     public function send(array $userIds, string $type, array $data = []): void
     {
-        $userIds = array_values(array_unique($userIds));
+        // A suspended company member gets nothing until a company admin reactivates them.
+        $userIds = array_values(array_diff(array_unique($userIds), $this->suspended->among($userIds)));
 
         if ($userIds === []) {
             return;
@@ -53,7 +56,7 @@ final readonly class DatabaseInAppNotifier implements InAppNotifier
         $group = (string) ($data[$groupKey] ?? '');
         $missing = [];
 
-        foreach (array_values(array_unique($userIds)) as $userId) {
+        foreach (array_values(array_diff(array_unique($userIds), $this->suspended->among($userIds))) as $userId) {
             $updated = $this->connection->table('notifications')
                 ->where('notifiable_type', self::USER_MORPH_TYPE)
                 ->where('notifiable_id', $userId)

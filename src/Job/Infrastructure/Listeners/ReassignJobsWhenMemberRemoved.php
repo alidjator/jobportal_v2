@@ -27,6 +27,6 @@ final class ReassignJobsWhenMemberRemoved implements ShouldQueue
 
     public function handle(CompanyMemberRemoved $event): void
     {
-        $this->reassign->execute($event->companyId, $event->userId, $event->occurredAt());
+        $this->reassign->execute($event->companyId, $event->userId, $event->occurredAt(), $event->transferToUserId);
     }
 }

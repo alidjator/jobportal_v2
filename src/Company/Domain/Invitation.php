@@ -9,6 +9,9 @@ final class Invitation
 {
     public const string VALIDITY = '+7 days';
 
+    /** An invitation that ended (expired, revoked or accepted) is kept this long, listed while expired, then deleted: it holds an email address. */
+    public const string KEEP_AFTER_END = '30 days';
+
     /** @param  ?list<string>  $permissions */
     public function __construct(
         public readonly ?int $id,
@@ -53,6 +56,30 @@ final class Invitation
     public function revokedAt(): ?DateTimeImmutable
     {
         return $this->revokedAt;
+    }
+
+    /** Not accepted, not revoked, and past its expiry: still listed, and it can be resent. */
+    public function isExpired(DateTimeImmutable $now): bool
+    {
+        return $this->acceptedAt === null && $this->revokedAt === null && $this->expiresAt <= $now;
+    }
+
+    /** The same invitation with another role, name and permissions: the link stays the same. */
+    public function edited(CompanyRole $role, ?string $name, ?array $permissions): self
+    {
+        return new self(
+            $this->id, $this->companyId, $this->email, $role, $name, $permissions, $this->tokenHash, $this->invitedByUserId, $this->invitedByAdminId,
+            $this->sentAt, $this->expiresAt, $this->acceptedAt, $this->revokedAt,
+        );
+    }
+
+    /** The same invitation with a new token and 7 more days from `$now`: the old link stops working. */
+    public function resent(string $tokenHash, DateTimeImmutable $now): self
+    {
+        return new self(
+            $this->id, $this->companyId, $this->email, $this->role, $this->name, $this->permissions, $tokenHash, $this->invitedByUserId, $this->invitedByAdminId,
+            $now, $now->modify(self::VALIDITY), $this->acceptedAt, $this->revokedAt,
+        );
     }
 
     /** Pending means it can still be accepted: not accepted, not revoked and not expired. */

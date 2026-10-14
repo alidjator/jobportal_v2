@@ -71,6 +71,20 @@ final class AuditAction
 
     public const string COMPANY_MEMBER_PERMISSIONS_CHANGED = 'company.member_permissions_changed';
 
+    public const string COMPANY_MEMBER_RENAMED = 'company.member_renamed';
+
+    public const string COMPANY_MEMBER_SUSPENDED = 'company.member_suspended';
+
+    public const string COMPANY_MEMBER_REACTIVATED = 'company.member_reactivated';
+
+    public const string COMPANY_OWNER_TRANSFERRED = 'company.owner_transferred';
+
+    public const string COMPANY_INVITATION_UPDATED = 'company.invitation_updated';
+
+    public const string COMPANY_INVITATION_RESENT = 'company.invitation_resent';
+
+    public const string COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED = 'company.invitation_email_domains_changed';
+
     public const string COMPANY_DOCUMENT_SUBMITTED = 'company.document_submitted';
 
     public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';

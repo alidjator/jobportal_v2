@@ -16,5 +16,9 @@ final readonly class AuditLogQuery
         public ?int $subjectId = null,
         public ?DateTimeImmutable $from = null,
         public ?DateTimeImmutable $to = null,
+        /** @var ?list<string> only these actions */
+        public ?array $actions = null,
+        /** Only entries whose metadata `user_id` is this account (the member an entry concerns). */
+        public ?int $metadataUserId = null,
     ) {}
 }

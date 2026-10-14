@@ -3,9 +3,9 @@
 namespace Src\Job\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Src\Job\Application\JobNotificationRecipients;
 use Src\Job\Application\JobNotificationType;
 use Src\Job\Domain\Events\JobStatusChanged;
-use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
@@ -18,7 +18,7 @@ final class NotifyAssigneesOfExpiry implements ShouldQueue
     public int $tries = 3;
 
     public function __construct(
-        private readonly JobAssignmentRepository $assignments,
+        private readonly JobNotificationRecipients $recipients,
         private readonly InAppNotifier $notifier,
     ) {}
 
@@ -39,6 +39,6 @@ final class NotifyAssigneesOfExpiry implements ShouldQueue
             return;
         }
 
-        $this->notifier->send($this->assignments->userIds($event->jobId), JobNotificationType::EXPIRED, ['job_id' => $event->jobId]);
+        $this->notifier->send($this->recipients->ofJob($event->jobId), JobNotificationType::EXPIRED, ['job_id' => $event->jobId]);
     }
 }

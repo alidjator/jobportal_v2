@@ -13,5 +13,6 @@ final readonly class MemberAccountSummary
         public string $email,
         public string $status,
         public ?DateTimeImmutable $lastLoginAt,
+        public string $locale = 'id',
     ) {}
 }

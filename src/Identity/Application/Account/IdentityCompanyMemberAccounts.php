@@ -54,12 +54,30 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         $this->tokens->revokeAllForUser($userId);
     }
 
+    public function rename(int $userId, string $name): void
+    {
+        $user = $this->users->findById($userId) ?? throw new RuntimeException("Account {$userId} does not exist.");
+
+        $user->rename($name);
+        $this->users->save($user);
+    }
+
+    public function passwordMatches(int $userId, string $password): bool
+    {
+        return $this->hasher->check($password, $this->users->findById($userId)?->passwordHash());
+    }
+
+    public function revokeSessions(int $userId): void
+    {
+        $this->tokens->revokeAllForUser($userId);
+    }
+
     public function summaries(array $userIds): array
     {
         $summaries = [];
 
         foreach ($this->users->findByIds($userIds) as $id => $user) {
-            $summaries[$id] = new MemberAccountSummary($id, $user->name(), $user->email(), $user->status()->value, $user->lastLoginAt());
+            $summaries[$id] = new MemberAccountSummary($id, $user->name(), $user->email(), $user->status()->value, $user->lastLoginAt(), $user->locale());
         }
 
         return $summaries;

@@ -35,4 +35,13 @@ interface CompanyMemberAccounts
      * @return array<int, MemberAccountSummary>
      */
     public function summaries(array $userIds): array;
+
+    /** Changes the name of the account. Runs inside the caller's transaction. */
+    public function rename(int $userId, string $name): void;
+
+    /** Whether the plain password is the account's current one (a sensitive action asks for it again). */
+    public function passwordMatches(int $userId, string $password): bool;
+
+    /** Revokes every token the account holds, which ends its sessions at once; the account stays active. Runs inside the caller's transaction. */
+    public function revokeSessions(int $userId): void;
 }

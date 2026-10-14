@@ -167,7 +167,7 @@ final class JobAssigneesTest extends FeatureTestCase
 
     // ----- a member leaves -----
 
-    public function test_removing_a_member_ends_their_assignments_and_a_job_left_alone_goes_to_the_company_admins(): void
+    public function test_removing_a_member_ends_their_assignments_and_a_job_left_without_assignees_goes_to_the_owner(): void
     {
         $alone = $this->insertJob('Only Rina', 'active', [$this->recruiterId]);
         $shared = $this->insertJob('Rina and Sari', 'active', [$this->recruiterId, $this->secondRecruiterId]);
@@ -203,7 +203,7 @@ final class JobAssigneesTest extends FeatureTestCase
         $this->assertSame([], $this->notificationsOf($this->secondRecruiterId));
     }
 
-    public function test_a_removed_company_admin_hands_their_jobs_to_the_admins_that_remain(): void
+    public function test_a_removed_company_admin_hands_their_jobs_to_the_owner(): void
     {
         $secondAdmin = $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
         $job = $this->insertJob('Admin only', 'draft', [$secondAdmin]);
@@ -222,5 +222,35 @@ final class JobAssigneesTest extends FeatureTestCase
 
         $this->assertSame([$this->adminId], $this->assigneesOf($alone));
         $this->assertCount(1, $this->auditEntries());
+    }
+
+    public function test_the_remover_may_pick_the_company_admin_who_takes_the_jobs(): void
+    {
+        $secondAdmin = $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
+        $alone = $this->insertJob('Only Rina', 'active', [$this->recruiterId]);
+        $shared = $this->insertJob('Rina and Sari', 'active', [$this->recruiterId, $this->secondRecruiterId]);
+
+        $this->api('DELETE', "/company/members/{$this->recruiterId}", ['transfer_to_user_id' => $secondAdmin])->assertNoContent();
+
+        $this->assertSame([$secondAdmin], $this->assigneesOf($alone));
+        $this->assertSame([$this->secondRecruiterId], $this->assigneesOf($shared));
+        $this->assertSame(
+            $secondAdmin,
+            (int) json_decode((string) DB::table('platform_audit_logs')->where('action', 'company.member_removed')->value('metadata'), true)['transfer_to_user_id'],
+        );
+    }
+
+    public function test_the_recipient_of_the_jobs_must_be_an_active_company_admin_of_the_company(): void
+    {
+        $this->insertJob('Only Rina', 'active', [$this->recruiterId]);
+        $secondAdmin = $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
+        DB::table('company_members')->where('user_id', $secondAdmin)->update(['status' => 'suspended']);
+
+        foreach ([$this->secondRecruiterId, $this->otherAdminId, $this->recruiterId, $secondAdmin, 999999] as $target) {
+            $this->api('DELETE', "/company/members/{$this->recruiterId}", ['transfer_to_user_id' => $target])
+                ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:transfer-target-not-company-admin');
+        }
+
+        $this->assertTrue(DB::table('company_members')->where('user_id', $this->recruiterId)->exists());
     }
 }

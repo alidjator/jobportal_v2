@@ -44,6 +44,13 @@ interface JobDirectory
     public function assigneeUserIds(int $jobId): array;
 
     /**
+     * Who is told about the job: its assignees, or the active company admins when every assignee is suspended.
+     *
+     * @return list<int>
+     */
+    public function notificationRecipients(int $jobId): array;
+
+    /**
      * The titles of these jobs whatever their status (an applicant keeps seeing the job they applied to), keyed by job id; an id without a job is missing.
      *
      * @param  list<int>  $jobIds

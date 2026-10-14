@@ -6,7 +6,7 @@ use DateTimeImmutable;
 
 interface InvitationRepository
 {
-    /** Inserts a new invitation or stores the acceptance or revocation of an existing one, and returns it with its id. */
+    /** Inserts a new invitation or stores the changes (acceptance, revocation, edit, resend) of an existing one, and returns it with its id. */
     public function save(Invitation $invitation): Invitation;
 
     /** Looks an invitation up by the hash of its token. `$forUpdate` locks the row until the transaction ends. */
@@ -21,4 +21,14 @@ interface InvitationRepository
      * @return list<Invitation>
      */
     public function pendingOfCompany(int $companyId, DateTimeImmutable $now, bool $forUpdate = false): array;
+
+    /**
+     * The invitations the team list shows: the pending ones and the ones that expired less than 30 days ago, never an accepted or revoked one. Newest first.
+     *
+     * @return list<Invitation>
+     */
+    public function listedOfCompany(int $companyId, DateTimeImmutable $now): array;
+
+    /** Deletes the invitations that ended (expired, revoked or accepted) more than 30 days ago, and returns how many. */
+    public function purgeEnded(DateTimeImmutable $now): int;
 }

@@ -16,4 +16,14 @@ interface CompanyRepository
 
     /** Inserts a new company, or stores the profile, slug, status and images of an existing one, and returns it with its id. Never writes the verification badge. */
     public function save(Company $company): Company;
+
+    /**
+     * The email domains a company admin may invite to, or null when the company sets no limit (the default).
+     *
+     * @return ?list<string>
+     */
+    public function invitationEmailDomains(int $companyId): ?array;
+
+    /** @param  ?list<string>  $domains  lower case, null for no limit */
+    public function setInvitationEmailDomains(int $companyId, ?array $domains): void;
 }

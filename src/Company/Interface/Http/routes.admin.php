@@ -14,6 +14,7 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::post('companies/{id}/suspend', [AdminCompanyController::class, 'suspend'])->whereNumber('id');
         Route::post('companies/{id}/restore', [AdminCompanyController::class, 'restore'])->whereNumber('id');
         Route::post('companies/{id}/invitations', [AdminCompanyController::class, 'inviteCompanyAdmin'])->whereNumber('id');
+        Route::put('companies/{id}/owner', [AdminCompanyController::class, 'setOwner'])->whereNumber('id');
 
         Route::get('companies/{id}/documents', [AdminCompanyDocumentController::class, 'index'])->whereNumber('id');
         Route::get('companies/{id}/documents/{typeId}/file', [AdminCompanyDocumentController::class, 'file'])->whereNumber(['id', 'typeId']);

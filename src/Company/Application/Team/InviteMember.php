@@ -20,13 +20,14 @@ final readonly class InviteMember
     public function __construct(
         private CompanyAdminGuard $guard,
         private IssueInvitation $issue,
+        private InvitationEmailDomains $domains,
     ) {}
 
     /**
      * @param  list<string>  $permissions  the permissions of a member (catalog names); ignored for a company admin
      *
      * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
-     * @throws BusinessRuleViolation `permissions-required` or `permission-requires-view` for a member
+     * @throws BusinessRuleViolation `permissions-required` or `permission-requires-view` for a member, or `email-domain-not-allowed`
      * @throws StateConflict `email-already-registered`
      * @throws TooManyAttempts `invitation-cooldown`
      * @throws ExternalServiceUnavailable `invitation-link-unavailable`
@@ -34,6 +35,7 @@ final readonly class InviteMember
     public function execute(Actor $actor, string $name, string $email, CompanyRole $role, array $permissions, string $language, ?string $ipAddress, ?string $userAgent): Invitation
     {
         $company = $this->guard->company($actor);
+        $this->domains->assertAllowed((int) $company->id, trim($email));
         $checked = $role === CompanyRole::Member ? MemberPermissionRules::validated($permissions) : null;
 
         return $this->issue->execute(new IssueInvitationCommand(

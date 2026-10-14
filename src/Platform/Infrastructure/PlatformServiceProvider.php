@@ -5,6 +5,7 @@ namespace Src\Platform\Infrastructure;
 use Illuminate\Console\Scheduling\Schedule;
 use Src\Platform\Application\Audit\AuditLogReader;
 use Src\Platform\Application\Audit\AuditLogRepository;
+use Src\Platform\Application\Audit\AuditMemberActivity;
 use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Platform\Application\Email\EmailBodyRenderer;
 use Src\Platform\Application\Email\EmailTemplateOverrideRepository;
@@ -21,6 +22,7 @@ use Src\Platform\Infrastructure\Persistence\DatabaseEmailTemplateOverrideReposit
 use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
 use Src\Platform\Interface\Console\PurgeAuditLogsCommand;
 use Src\Shared\Application\Audit\AuditTrail;
+use Src\Shared\Application\Audit\MemberActivity;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\AdHocEmails;
 use Src\Shared\Application\Email\EmailTemplates;
@@ -35,6 +37,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         AuditTrail::class => RecordAuditEntry::class,
         AuditLogRepository::class => DatabaseAuditLogRepository::class,
         AuditLogReader::class => DatabaseAuditLogReader::class,
+        MemberActivity::class => AuditMemberActivity::class,
         Settings::class => StoredSettings::class,
         EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
         EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,

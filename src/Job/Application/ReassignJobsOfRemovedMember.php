@@ -11,8 +11,9 @@ use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 
 /**
- * A member left the company: their assignments end, and a job left without any assignee is handed to the company admins that remain, so every job
- * keeps a team. Each job is handled in its own transaction with its row locked; running it again changes nothing.
+ * A member left the company: their assignments end, and a job left without assignees goes to the company admin the remover picked, or to the owner when
+ * none was picked; a job that still has assignees keeps them. A company with no owner (the owner's account was erased) hands such a job to the company
+ * admins that remain, so every job keeps a team. Each job is handled in its own transaction with its row locked; running it again changes nothing.
  */
 final readonly class ReassignJobsOfRemovedMember
 {
@@ -24,11 +25,13 @@ final readonly class ReassignJobsOfRemovedMember
         private EventDispatcher $events,
     ) {}
 
-    public function execute(int $companyId, int $userId, DateTimeImmutable $at): void
+    public function execute(int $companyId, int $userId, DateTimeImmutable $at, ?int $transferToUserId = null): void
     {
+        $recipient = $transferToUserId ?? $this->team->ownerUserId($companyId);
+
         foreach ($this->assignments->jobIdsOf($userId) as $jobId) {
             /** @var list<int>|null $added */
-            $added = $this->transactions->run(function () use ($companyId, $userId, $jobId, $at): ?array {
+            $added = $this->transactions->run(function () use ($companyId, $userId, $jobId, $at, $recipient): ?array {
                 $this->jobs->lock($jobId);
                 $job = $this->jobs->find($jobId);
 
@@ -38,8 +41,16 @@ final readonly class ReassignJobsOfRemovedMember
 
                 $this->assignments->remove($jobId, $userId);
 
-                if ($this->assignments->userIds($jobId) !== []) {
+                $remaining = $this->assignments->userIds($jobId);
+
+                if ($remaining !== []) {
                     return [];
+                }
+
+                if ($recipient !== null && $recipient !== $userId) {
+                    $this->assignments->add($jobId, $recipient, null, $at);
+
+                    return [$recipient];
                 }
 
                 $admins = array_keys(array_filter($this->team->roles($companyId), static fn (string $role): bool => $role === 'company_admin'));

@@ -26,6 +26,12 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
 
         if ($invitation->id !== null) {
             $this->connection->table('company_invitations')->where('id', $invitation->id)->update([
+                'role' => $invitation->role->value,
+                'name' => $invitation->name,
+                'permissions' => $invitation->permissions === null ? null : json_encode($invitation->permissions),
+                'token_hash' => $invitation->tokenHash,
+                'sent_at' => $invitation->sentAt->format(self::TIME_FORMAT),
+                'expires_at' => $invitation->expiresAt->format(self::TIME_FORMAT),
                 'accepted_at' => $invitation->acceptedAt()?->format(self::TIME_FORMAT),
                 'revoked_at' => $invitation->revokedAt()?->format(self::TIME_FORMAT),
                 'updated_at' => $now,
@@ -85,6 +91,27 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             fn (stdClass $row): Invitation => $this->toInvitation($row),
             ($forUpdate ? $query->lockForUpdate() : $query)->get()->all(),
         );
+    }
+
+    public function listedOfCompany(int $companyId, DateTimeImmutable $now): array
+    {
+        $rows = $this->connection->table('company_invitations')
+            ->where('company_id', $companyId)
+            ->whereNull('accepted_at')
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', $now->modify('-'.Invitation::KEEP_AFTER_END)->format(self::TIME_FORMAT))
+            ->orderByDesc('sent_at')
+            ->orderByDesc('id')
+            ->get();
+
+        return array_map(fn (stdClass $row): Invitation => $this->toInvitation($row), $rows->all());
+    }
+
+    public function purgeEnded(DateTimeImmutable $now): int
+    {
+        return $this->connection->table('company_invitations')
+            ->whereRaw('COALESCE(accepted_at, revoked_at, expires_at) < ?', [$now->modify('-'.Invitation::KEEP_AFTER_END)->format(self::TIME_FORMAT)])
+            ->delete();
     }
 
     private function toInvitation(stdClass $row): Invitation

@@ -10,6 +10,7 @@ use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
 use Src\Company\Interface\Http\Controllers\PublicCompanyController;
 use Src\Company\Interface\Http\Controllers\TeamInvitationController;
 use Src\Company\Interface\Http\Controllers\TeamMemberController;
+use Src\Company\Interface\Http\Controllers\TeamSettingsController;
 
 // Public: the invitee has no account yet, the token in the URL is the credential.
 Route::get('auth/invitations/{token}', [InvitationController::class, 'show']);
@@ -51,11 +52,21 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/slug', [CompanyProfileController::class, 'changeSlug']);
 
     // The team of the caller's own company; every use case checks that the caller is a company admin.
-    Route::get('company/invitations', [TeamInvitationController::class, 'index']);
+    // Open invitations are rows of the team list (`GET company/members`), so there is no list of invitations.
     Route::post('company/invitations', [TeamInvitationController::class, 'store']);
+    Route::patch('company/invitations/{id}', [TeamInvitationController::class, 'update'])->whereNumber('id');
+    Route::post('company/invitations/{id}/resend', [TeamInvitationController::class, 'resend'])->whereNumber('id');
     Route::delete('company/invitations/{id}', [TeamInvitationController::class, 'destroy'])->whereNumber('id');
     Route::get('company/members', [TeamMemberController::class, 'index']);
+    Route::get('company/members/{userId}', [TeamMemberController::class, 'show'])->whereNumber('userId');
     Route::get('company/members/{userId}/jobs', [TeamMemberController::class, 'jobs'])->whereNumber('userId');
+    Route::get('company/members/{userId}/activity', [TeamMemberController::class, 'activity'])->whereNumber('userId');
     Route::delete('company/members/{userId}', [TeamMemberController::class, 'destroy'])->whereNumber('userId');
     Route::patch('company/members/{userId}', [TeamMemberController::class, 'update'])->whereNumber('userId');
+    Route::post('company/members/{userId}/suspend', [TeamMemberController::class, 'suspend'])->whereNumber('userId');
+    Route::post('company/members/{userId}/reactivate', [TeamMemberController::class, 'reactivate'])->whereNumber('userId');
+    Route::post('company/members/{userId}/make-owner', [TeamMemberController::class, 'makeOwner'])->whereNumber('userId');
+    Route::get('company/team/history', [TeamSettingsController::class, 'history']);
+    Route::get('company/team/email-domains', [TeamSettingsController::class, 'emailDomains']);
+    Route::put('company/team/email-domains', [TeamSettingsController::class, 'updateEmailDomains']);
 });

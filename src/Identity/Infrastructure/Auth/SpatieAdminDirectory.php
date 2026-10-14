@@ -35,7 +35,7 @@ final class SpatieAdminDirectory implements AdminDirectory
                 $admin->roles->pluck('name')->sort()->first(),
                 AccountStatus::from((string) $admin->status),
                 $admin->two_factor_confirmed_at !== null,
-                $admin->last_login_at,
+                $admin->last_login_at?->toDateTimeImmutable(),
             ))
             ->values()->all();
     }

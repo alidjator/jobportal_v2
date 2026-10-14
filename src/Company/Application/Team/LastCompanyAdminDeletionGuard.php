@@ -10,7 +10,8 @@ use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * The same rule as `RemoveMember`, applied to a member who deletes their own account: a company keeps at least one company admin. An admin whose
+ * The same rules as `RemoveMember`, applied to a member who deletes their own account: a company keeps at least one active company admin, and its owner
+ * hands the ownership over first. An admin whose
  * account is already deactivated (a deletion pending, or removed) does not count, so two admins cannot both leave a company without one.
  */
 final readonly class LastCompanyAdminDeletionGuard implements CompanyMemberDeletionGuard
@@ -36,6 +37,11 @@ final readonly class LastCompanyAdminDeletionGuard implements CompanyMemberDelet
 
         foreach ($otherAdminIds as $adminId) {
             if (($summaries[$adminId]->status ?? null) === 'active') {
+                // The owner hands the ownership over before leaving.
+                if ($this->members->ownerUserId($membership->companyId) === $userId) {
+                    throw new StateConflict('The owner of the company must hand the ownership over before deleting the account.', 'member-is-owner');
+                }
+
                 return;
             }
         }

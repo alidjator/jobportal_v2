@@ -36,4 +36,25 @@ enum MemberPreset: string
     {
         return array_map(static fn (CompanyPermission $permission): string => $permission->value, $this->permissions());
     }
+
+    /** The preset whose role and permissions are exactly these, or null for a custom set. */
+    public static function matching(CompanyRole $role, array $permissions): ?self
+    {
+        foreach (self::cases() as $preset) {
+            if ($preset->role() !== $role) {
+                continue;
+            }
+
+            $names = $preset->permissionNames();
+            $held = $permissions;
+            sort($names);
+            sort($held);
+
+            if ($role === CompanyRole::CompanyAdmin || $names === $held) {
+                return $preset;
+            }
+        }
+
+        return null;
+    }
 }

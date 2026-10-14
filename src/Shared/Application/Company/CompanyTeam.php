@@ -19,4 +19,7 @@ interface CompanyTeam
      * @return list<int>
      */
     public function viewAllUserIds(int $companyId): array;
+
+    /** The account of the company's owner, or null when it has none. */
+    public function ownerUserId(int $companyId): ?int;
 }

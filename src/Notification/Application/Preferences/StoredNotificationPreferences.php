@@ -3,6 +3,7 @@
 namespace Src\Notification\Application\Preferences;
 
 use InvalidArgumentException;
+use Src\Shared\Application\Company\SuspendedMembers;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
@@ -14,11 +15,17 @@ final readonly class StoredNotificationPreferences implements NotificationPrefer
     public function __construct(
         private NotificationPreferenceCatalog $catalog,
         private NotificationPreferenceStore $store,
+        private SuspendedMembers $suspended,
     ) {}
 
     public function isEnabled(int $userId, string $key, NotificationChannel $channel): bool
     {
         $definition = $this->definition($key, $channel);
+
+        // A suspended company member gets no email or push either.
+        if ($this->suspended->among([$userId]) !== []) {
+            return false;
+        }
 
         return $this->store->stored($userId)["{$key}.{$channel->value}"] ?? $definition->defaultFor($channel);
     }
@@ -27,6 +34,7 @@ final readonly class StoredNotificationPreferences implements NotificationPrefer
     {
         $default = $this->definition($key, $channel)->defaultFor($channel);
         $stored = $this->store->storedFor($userIds);
+        $userIds = array_values(array_diff($userIds, $this->suspended->among($userIds)));
 
         return array_values(array_filter($userIds, static fn (int $userId): bool => $stored[$userId]["{$key}.{$channel->value}"] ?? $default));
     }

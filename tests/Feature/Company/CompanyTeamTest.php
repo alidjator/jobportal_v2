@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
-use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Company\Domain\MemberPreset;
+use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\Shared\Application\Company\CompanyPermission;
 use Tests\Concerns\CreatesReferenceRows;
@@ -149,7 +149,11 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_every_team_route_needs_a_signed_in_user(): void
     {
-        foreach ([['GET', '/invitations'], ['POST', '/invitations'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['GET', '/members/1/jobs'], ['DELETE', '/members/1'], ['PATCH', '/members/1'], ['GET', '/permissions']] as [$method, $uri]) {
+        foreach ([
+            ['POST', '/invitations'], ['PATCH', '/invitations/1'], ['POST', '/invitations/1/resend'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['GET', '/members/1'],
+            ['GET', '/members/1/jobs'], ['GET', '/members/1/activity'], ['DELETE', '/members/1'], ['PATCH', '/members/1'], ['POST', '/members/1/suspend'],
+            ['POST', '/members/1/reactivate'], ['POST', '/members/1/make-owner'], ['GET', '/team/history'], ['GET', '/team/email-domains'], ['PUT', '/team/email-domains'], ['GET', '/permissions'],
+        ] as [$method, $uri]) {
             $this->json($method, '/api/v1/company'.$uri)->assertStatus(401);
         }
     }
@@ -157,8 +161,12 @@ final class CompanyTeamTest extends FeatureTestCase
     public function test_a_member_cannot_manage_the_team(): void
     {
         foreach ([
-            ['GET', '/invitations', []], ['POST', '/invitations', ['name' => 'X', 'email' => 'x@example.test', 'role' => 'member', 'permissions' => ['applications.view']]], ['DELETE', '/invitations/1', []],
-            ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}/jobs", []], ['DELETE', "/members/{$this->admin->id}", []], ['PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin']],
+            ['POST', '/invitations', ['name' => 'X', 'email' => 'x@example.test', 'role' => 'member', 'permissions' => ['applications.view']]], ['PATCH', '/invitations/1', []],
+            ['POST', '/invitations/1/resend', []], ['DELETE', '/invitations/1', []], ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}", []],
+            ['GET', "/members/{$this->recruiter->id}/jobs", []], ['GET', "/members/{$this->recruiter->id}/activity", []], ['DELETE', "/members/{$this->admin->id}", []],
+            ['PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin']], ['POST', "/members/{$this->recruiter->id}/suspend", []],
+            ['POST', "/members/{$this->recruiter->id}/reactivate", []], ['POST', "/members/{$this->admin->id}/make-owner", ['password' => self::PASSWORD]],
+            ['GET', '/team/history', []], ['GET', '/team/email-domains', []], ['PUT', '/team/email-domains', ['domains' => []]],
         ] as [$method, $uri, $body]) {
             $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
         }
@@ -296,9 +304,15 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame(3, DB::table('company_invitations')->whereNull('revoked_at')->count());
     }
 
-    // ----- pending invitations -----
+    // ----- invitations in the team list -----
 
-    public function test_the_list_shows_only_pending_invitations_of_the_own_company_newest_first(): void
+    /** @return list<array<string, mixed>> the invitation rows of the team list */
+    private function invitationRows(): array
+    {
+        return array_values(array_filter($this->api('GET', '/members', ['per_page' => 100])->assertOk()->json('data'), fn (array $row): bool => $row['type'] === 'invitation'));
+    }
+
+    public function test_the_team_list_shows_pending_and_recently_expired_invitations_of_the_own_company(): void
     {
         $this->invite('first@example.test')->assertCreated();
         Carbon::setTestNow('2026-10-05 10:00:00');
@@ -308,7 +322,7 @@ final class CompanyTeamTest extends FeatureTestCase
             'company_id' => $this->companyId, 'email' => 'by-platform@example.test', 'role' => 'company_admin', 'token_hash' => str_repeat('a', 64),
             'invited_by_admin_id' => $this->seededAdminId(), 'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
-        // Not pending: accepted, revoked, expired; and one of another company.
+        // Not listed: accepted, revoked, expired more than 30 days ago; and one of another company. Listed as expired: ended 10 days ago.
         foreach ([['accepted_at', '2026-10-05 08:30:00', 'b'], ['revoked_at', '2026-10-05 08:30:00', 'c']] as [$column, $time, $hash]) {
             DB::table('company_invitations')->insert([
                 'company_id' => $this->companyId, 'email' => "{$hash}@example.test", 'role' => 'member', 'token_hash' => str_repeat($hash, 64),
@@ -317,7 +331,11 @@ final class CompanyTeamTest extends FeatureTestCase
         }
         DB::table('company_invitations')->insert([
             'company_id' => $this->companyId, 'email' => 'old@example.test', 'role' => 'member', 'token_hash' => str_repeat('d', 64),
-            'sent_at' => '2026-09-01 08:00:00', 'expires_at' => '2026-09-08 08:00:00', 'created_at' => now(), 'updated_at' => now(),
+            'sent_at' => '2026-08-01 08:00:00', 'expires_at' => '2026-08-08 08:00:00', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('company_invitations')->insert([
+            'company_id' => $this->companyId, 'email' => 'lapsed@example.test', 'role' => 'member', 'token_hash' => str_repeat('g', 64), 'name' => 'Lapsed',
+            'sent_at' => '2026-09-18 08:00:00', 'expires_at' => '2026-09-25 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $otherCompany = $this->makeCompany('PT Lain', 'pt-lain');
         DB::table('company_invitations')->insert([
@@ -325,14 +343,20 @@ final class CompanyTeamTest extends FeatureTestCase
             'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $response = $this->api('GET', '/invitations')->assertOk();
+        $rows = $this->invitationRows();
 
-        $this->assertSame(['second@example.test', 'first@example.test', 'by-platform@example.test'], array_column($response->json('data'), 'email'));
+        $this->assertEqualsCanonicalizing(
+            ['first@example.test', 'second@example.test', 'by-platform@example.test', 'lapsed@example.test'],
+            array_column($rows, 'email'),
+        );
+        $byEmail = array_column($rows, null, 'email');
         $this->assertSame([
-            'id' => $second, 'name' => 'Budi Baru', 'email' => 'second@example.test', 'role' => 'company_admin', 'permissions' => CompanyPermission::values(),
+            'type' => 'invitation', 'id' => $second, 'name' => 'Budi Baru', 'email' => 'second@example.test', 'role' => 'company_admin', 'status' => 'pending',
+            'permissions' => CompanyPermission::values(), 'actions' => ['edit', 'resend', 'revoke'],
             'sent_at' => '2026-10-05T10:00:00+00:00', 'expires_at' => '2026-10-12T10:00:00+00:00', 'invited_by' => 'Andi Admin',
-        ], $response->json('data.0'));
-        $this->assertNull($response->json('data.2.invited_by'));
+        ], $byEmail['second@example.test']);
+        $this->assertNull($byEmail['by-platform@example.test']['invited_by']);
+        $this->assertSame(['expired', ['resend']], [$byEmail['lapsed@example.test']['status'], $byEmail['lapsed@example.test']['actions']]);
     }
 
     public function test_an_invitation_can_be_revoked_and_then_cannot_be_accepted(): void
@@ -345,7 +369,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
         $this->assertNotNull(DB::table('company_invitations')->value('revoked_at'));
         $this->acceptInvitation($token)->assertStatus(404);
-        $this->api('GET', '/invitations')->assertOk()->assertJsonCount(0, 'data');
+        $this->assertSame([], $this->invitationRows());
         $this->api('DELETE', "/invitations/{$id}")->assertNotFound();
     }
 
@@ -371,7 +395,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
     // ----- members -----
 
-    public function test_the_member_list_has_company_admins_first_then_by_name_and_only_the_own_company(): void
+    public function test_the_member_list_has_the_owner_first_then_admins_then_members_by_name_and_only_the_own_company(): void
     {
         $this->makeMember($this->companyId, 'Bambang Rekruter', 'bambang@example.test', 'recruiter');
         $this->makeMember($this->companyId, 'Cici Admin', 'cici@example.test', 'company_admin');
@@ -382,10 +406,13 @@ final class CompanyTeamTest extends FeatureTestCase
 
         $this->assertSame(['Andi Admin', 'Cici Admin', 'Bambang Rekruter', 'Rina Rekruter'], array_column($response->json('data'), 'name'));
         $this->assertSame([
-            'user_id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin',
-            'permissions' => CompanyPermission::values(), 'status' => 'active', 'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
+            'type' => 'member', 'id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin', 'status' => 'active',
+            'permissions' => CompanyPermission::values(), 'actions' => ['edit'], 'is_owner' => true,
+            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.3.last_login_at'));
+        $this->assertSame(4, $response->json('meta.member_count'));
+        $this->assertSame(4, $response->json('meta.total'));
     }
 
     // ----- jobs of a member -----
@@ -443,23 +470,23 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->invite('rina@example.test')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
     }
 
-    public function test_a_company_admin_can_remove_another_company_admin_and_themselves_while_one_remains(): void
+    public function test_a_company_admin_can_remove_another_company_admin_but_not_the_owner_or_themselves(): void
     {
         $second = $this->makeMember($this->companyId, 'Cici Admin', 'cici@example.test', 'company_admin');
+        $secondToken = $this->tokenOf($second);
 
+        $this->api('DELETE', "/members/{$this->admin->id}", [], $secondToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-owner');
+        $this->api('DELETE', "/members/{$second->id}", [], $secondToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cannot-remove-self');
         $this->api('DELETE', "/members/{$second->id}")->assertNoContent();
+
         $this->assertSame('deactivated', UserModel::query()->findOrFail($second->id)->status);
-
-        $third = $this->makeMember($this->companyId, 'Dedi Admin', 'dedi@example.test', 'company_admin');
-        $this->api('DELETE', "/members/{$this->admin->id}")->assertNoContent();
-
         $remaining = DB::table('company_members')->pluck('user_id')->map(fn ($id): int => (int) $id)->all();
-        $this->assertEqualsCanonicalizing([$third->id, $this->recruiter->id], $remaining);
+        $this->assertEqualsCanonicalizing([$this->admin->id, $this->recruiter->id], $remaining);
     }
 
-    public function test_the_last_company_admin_cannot_be_removed(): void
+    public function test_the_only_company_admin_cannot_remove_themselves(): void
     {
-        $this->api('DELETE', "/members/{$this->admin->id}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->api('DELETE', "/members/{$this->admin->id}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cannot-remove-self');
 
         $this->assertTrue(DB::table('company_members')->where('user_id', $this->admin->id)->exists());
         $this->assertSame('active', UserModel::query()->findOrFail($this->admin->id)->status);
@@ -484,21 +511,22 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertSame(0, DB::table('company_member_permissions')->count());
+        $this->api('GET', '/members', [], $this->recruiterToken)->assertOk();
 
-        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertNoContent();
-        $this->assertSame('member', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
-        $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->admin));
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member'])->assertNoContent();
+        $this->assertSame('member', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
+        $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
 
         // The demoted admin lost the right with the next request, with the same token.
-        $this->api('GET', '/members')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('GET', '/members', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
     }
 
     public function test_a_demotion_may_name_the_permissions(): void
     {
         $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
-        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member', 'permissions' => ['applications.view']])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member', 'permissions' => ['applications.view']])->assertNoContent();
 
-        $this->assertSame(['applications.view'], $this->permissionsOf($this->admin));
+        $this->assertSame(['applications.view'], $this->permissionsOf($this->recruiter));
     }
 
     public function test_the_permissions_of_a_member_change_at_once_and_are_audited_and_notified(): void
@@ -530,8 +558,11 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
     }
 
-    public function test_the_last_company_admin_cannot_be_demoted(): void
+    public function test_the_owner_and_the_last_company_admin_cannot_be_demoted(): void
     {
+        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-owner');
+
+        DB::table('company_members')->update(['is_owner' => false]);
         $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
 
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
@@ -580,7 +611,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame($this->companyId, (int) $changed->subject_id);
         $this->assertSame(['user_id' => $this->recruiter->id, 'old_role' => 'member', 'new_role' => 'company_admin', 'permissions' => []], json_decode((string) $changed->metadata, true));
         $this->assertSame($this->admin->id, (int) $removed->actor_id);
-        $this->assertSame(['user_id' => $this->recruiter->id, 'role' => 'company_admin'], json_decode((string) $removed->metadata, true));
+        $this->assertSame(['user_id' => $this->recruiter->id, 'role' => 'company_admin', 'transfer_to_user_id' => null], json_decode((string) $removed->metadata, true));
         $this->assertStringNotContainsString('example.test', json_encode(DB::table('platform_audit_logs')->get()->all()));
     }
 

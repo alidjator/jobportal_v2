@@ -2,6 +2,7 @@
 
 namespace Src\Company\Infrastructure;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Application\Admin\AdminCompanyReader;
 use Src\Company\Application\CompanyEmailTemplates;
@@ -12,6 +13,7 @@ use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
 use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
+use Src\Company\Application\Team\MemberNoticeSender;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\CompanyMemberRepository;
@@ -23,12 +25,19 @@ use Src\Company\Domain\Events\CompanyDocumentDeleted;
 use Src\Company\Domain\Events\CompanyDocumentRejected;
 use Src\Company\Domain\Events\CompanyDocumentSubmitted;
 use Src\Company\Domain\Events\CompanyDocumentViewed;
+use Src\Company\Domain\Events\CompanyEmailDomainsChanged;
+use Src\Company\Domain\Events\CompanyInvitationResent;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
+use Src\Company\Domain\Events\CompanyInvitationUpdated;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberPermissionsChanged;
+use Src\Company\Domain\Events\CompanyMemberReactivated;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
+use Src\Company\Domain\Events\CompanyMemberSuspended;
+use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
 use Src\Company\Domain\Events\CompanyVerificationGranted;
@@ -43,6 +52,7 @@ use Src\Company\Infrastructure\Listeners\NotifyMemberOfPermissionChange;
 use Src\Company\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Company\Infrastructure\Listeners\ReleaseMembershipWhenUserAnonymized;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
+use Src\Company\Infrastructure\Mail\MailMemberNoticeSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyDocumentRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
@@ -53,13 +63,18 @@ use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
+use Src\Company\Infrastructure\Persistence\RepositoryMemberSignInGuard;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
+use Src\Company\Infrastructure\Persistence\RepositorySuspendedMembers;
+use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyTeam;
+use Src\Shared\Application\Company\MemberSignInGuard;
 use Src\Shared\Application\Company\PublicCompanies;
+use Src\Shared\Application\Company\SuspendedMembers;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
@@ -83,6 +98,9 @@ final class CompanyServiceProvider extends ContextServiceProvider
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
+        MemberNoticeSender::class => MailMemberNoticeSender::class,
+        MemberSignInGuard::class => RepositoryMemberSignInGuard::class,
+        SuspendedMembers::class => RepositorySuspendedMembers::class,
         DocumentTypeRepository::class => DatabaseDocumentTypeRepository::class,
         CompanyDocumentRepository::class => DatabaseCompanyDocumentRepository::class,
         CompanyVerificationBadge::class => DatabaseCompanyVerificationBadge::class,
@@ -90,6 +108,12 @@ final class CompanyServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->commands([PurgeEndedInvitationsCommand::class]);
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(PurgeEndedInvitationsCommand::class)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
+        });
+
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
             $cards->add(
                 $this->app->make(PlatformCompaniesCard::class),
@@ -130,6 +154,14 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyMemberPermissionsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberPermissionsChanged']);
         Event::listen(CompanyMemberRoleChanged::class, [NotifyMemberOfPermissionChange::class, 'onRoleChanged']);
         Event::listen(CompanyMemberPermissionsChanged::class, [NotifyMemberOfPermissionChange::class, 'onPermissionsChanged']);
+        Event::listen(CompanyMemberRenamed::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRenamed']);
+        Event::listen(CompanyMemberRenamed::class, [NotifyMemberOfPermissionChange::class, 'onRenamed']);
+        Event::listen(CompanyMemberSuspended::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberSuspended']);
+        Event::listen(CompanyMemberReactivated::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberReactivated']);
+        Event::listen(CompanyOwnerTransferred::class, [RecordCompanyAuditEntries::class, 'onCompanyOwnerTransferred']);
+        Event::listen(CompanyInvitationUpdated::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationUpdated']);
+        Event::listen(CompanyInvitationResent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationResent']);
+        Event::listen(CompanyEmailDomainsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyEmailDomainsChanged']);
         Event::listen(CompanyDocumentSubmitted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentSubmitted']);
         Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);

@@ -3,9 +3,9 @@
 namespace Src\Job\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Src\Job\Application\JobNotificationRecipients;
 use Src\Job\Application\JobNotificationType;
 use Src\Job\Domain\Events\JobDecided;
-use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
@@ -19,7 +19,7 @@ final class NotifyAssigneesOfDecision implements ShouldQueue
     public int $tries = 3;
 
     public function __construct(
-        private readonly JobAssignmentRepository $assignments,
+        private readonly JobNotificationRecipients $recipients,
         private readonly InAppNotifier $notifier,
     ) {}
 
@@ -50,6 +50,6 @@ final class NotifyAssigneesOfDecision implements ShouldQueue
             $data['reason'] = $event->reason;
         }
 
-        $this->notifier->send($this->assignments->userIds($event->jobId), $type, $data);
+        $this->notifier->send($this->recipients->ofJob($event->jobId), $type, $data);
     }
 }

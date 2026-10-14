@@ -409,7 +409,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $this->assertSame(['invitation_id' => (int) DB::table('company_invitations')->value('id'), 'role' => 'company_admin', 'permissions' => null], json_decode((string) $sent->metadata, true));
         $this->assertSame('user', $joined->actor_type);
         $this->assertSame($companyId, (int) $joined->subject_id);
-        $this->assertSame(['role' => 'company_admin'], json_decode((string) $joined->metadata, true));
+        $this->assertSame(['user_id' => (int) $joined->actor_id, 'role' => 'company_admin'], json_decode((string) $joined->metadata, true));
         $this->assertStringNotContainsString('example.test', json_encode(DB::table('platform_audit_logs')->get()->all()));
     }
 

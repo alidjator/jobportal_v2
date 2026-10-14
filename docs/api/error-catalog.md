@@ -36,7 +36,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `campaign-period-invalid` | 422 | Campaign | The campaign cannot end before it starts. |
 | `candidate-not-waiting` | 409 | Recruitment | The candidate is not waiting in the lobby. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
+| `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot sign reports. |
+| `cannot-suspend-self` | 409 | Company | You cannot suspend yourself. |
 | `category-limit` | 422 | TalentPool |  |
 | `category-name-invalid` | 422 | TalentPool |  |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
@@ -67,6 +69,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `education-limit-reached` | 409 | JobSeeker |  |
 | `email-already-registered` | 409 | Assessment, Company, Identity | An account with this email already exists. |
 | `email-already-verified` | 409 | Identity | The email address is already verified. |
+| `email-domain-not-allowed` | 422 | Company | This company only invites email addresses of its allowed domains. |
 | `email-not-verified` | 403, 409 | Identity, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `experience-limit-reached` | 409 | JobSeeker |  |
@@ -101,6 +104,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-cv` | 422 | JobSeeker | The language of a CV is id or en. |
 | `invalid-document` | 422 | Company | The file must be a PDF or a JPEG, PNG or WebP image. |
 | `invalid-education` | 422 | JobSeeker | The education level does not exist or is not active. |
+| `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
@@ -122,7 +126,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-offer` | 422 | Recruitment |  |
 | `invalid-offer-input` | 422 | Recruitment |  |
 | `invalid-order` | 422 | Assessment | The list must hold every question of the section exactly once. |
-| `invalid-password` | 422 | Identity | The password is incorrect. |
+| `invalid-password` | 422 | Company, Identity | The password is not correct. |
 | `invalid-phone` | 422 | Recruitment |  |
 | `invalid-profile` | 422 | JobSeeker |  |
 | `invalid-question` | 422 | Assessment |  |
@@ -187,6 +191,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-document-version-taken` | 409 | Content | Another version with this number was created at the same time. Try again. |
 | `location-parent-required` | 422 | ReferenceData |  |
 | `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
+| `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
+| `membership-suspended` | 403 | Company | Your access to the company was suspended by a company admin. |
 | `method-not-allowed` | 405 | Platform | The HTTP method is not allowed for this resource. |
 | `newsletter-issue-not-draft` | 409 | Newsletter | Only a draft can be deleted. |
 | `newsletter-no-recipients` | 409 | Newsletter | There is nobody to send this issue to. |
@@ -219,6 +225,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `offer-not-pending` | 409 | Recruitment | This offer is no longer pending. |
 | `offer-required` | 422 | Recruitment |  |
 | `own-review` | 403 | Review | You cannot report your own review. |
+| `owner-required` | 403 | Company | Only the owner of the company can hand the ownership over. |
+| `owner-target-not-company-admin` | 409 | Company | The owner must be an active company admin of the company. |
 | `page-out-of-range` | 422 | Job |  |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
@@ -295,6 +303,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `too-many-recipients` | 422 | Messaging |  |
 | `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
+| `transfer-target-not-company-admin` | 409 | Company | The jobs can only go to an active company admin of the company. |
 | `two-factor-already-enabled` | 409 | Identity | This administrator already has a second factor. |
 | `two-factor-challenge-expired` | 401 | Identity | The sign-in has expired. Sign in again. |
 | `two-factor-not-enabled` | 409 | Identity | This administrator has no second factor yet. |
@@ -303,6 +312,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
 | `unknown-permission` | 422 | Identity |  |
+| `unknown-team-action` | 422 | Company | This is not an action of the team history. |
 | `unknown-team-size` | 422 | Company |  |
 | `unsupported-language` | 422 | Platform |  |
 | `upload-deadline-passed` | 409 | Assessment | The time to send this recording has passed. |

@@ -7,7 +7,7 @@ use Src\Company\Domain\MemberPreset;
 
 /**
  * Inserts a company membership the way the application stores one. The role `recruiter` of the tests written before permissions existed stands for
- * a member with the Recruiter preset; a company admin gets no permission rows (it holds every permission).
+ * a member with the Recruiter preset; a company admin gets no permission rows (it holds every permission), and the first one of a company is its owner.
  */
 final class CompanyMemberRows
 {
@@ -16,8 +16,11 @@ final class CompanyMemberRows
     {
         $stored = $role === 'company_admin' ? 'company_admin' : 'member';
 
+        // The first company admin of a company is its owner, as when the first invitation is accepted.
+        $isOwner = $stored === 'company_admin' && ! DB::table('company_members')->where('company_id', $companyId)->where('is_owner', true)->exists();
+
         $id = (int) DB::table('company_members')->insertGetId([
-            'company_id' => $companyId, 'user_id' => $userId, 'role' => $stored, 'created_at' => now(), 'updated_at' => now(),
+            'company_id' => $companyId, 'user_id' => $userId, 'role' => $stored, 'is_owner' => $isOwner, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         if ($stored === 'member') {

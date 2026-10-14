@@ -9,12 +9,19 @@ use Src\Company\Domain\Events\CompanyDocumentDeleted;
 use Src\Company\Domain\Events\CompanyDocumentRejected;
 use Src\Company\Domain\Events\CompanyDocumentSubmitted;
 use Src\Company\Domain\Events\CompanyDocumentViewed;
+use Src\Company\Domain\Events\CompanyEmailDomainsChanged;
+use Src\Company\Domain\Events\CompanyInvitationResent;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
+use Src\Company\Domain\Events\CompanyInvitationUpdated;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberPermissionsChanged;
+use Src\Company\Domain\Events\CompanyMemberReactivated;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
+use Src\Company\Domain\Events\CompanyMemberSuspended;
+use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
 use Src\Company\Domain\Events\DocumentTypeCreated;
@@ -99,7 +106,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
     {
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->removedByUserId, AuditAction::COMPANY_MEMBER_REMOVED,
-            self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'role' => $event->role],
+            self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'role' => $event->role, 'transfer_to_user_id' => $event->transferToUserId],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
@@ -126,6 +133,65 @@ final class RecordCompanyAuditEntries implements ShouldQueue
                 'removed' => array_values(array_diff($event->before, $event->after)),
             ],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMemberRenamed(CompanyMemberRenamed $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_RENAMED, self::SUBJECT_TYPE, $event->companyId,
+            ['user_id' => $event->userId, 'old_name' => $event->oldName, 'new_name' => $event->newName], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMemberSuspended(CompanyMemberSuspended $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->suspendedByUserId, AuditAction::COMPANY_MEMBER_SUSPENDED, self::SUBJECT_TYPE, $event->companyId,
+            ['user_id' => $event->userId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMemberReactivated(CompanyMemberReactivated $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->reactivatedByUserId, AuditAction::COMPANY_MEMBER_REACTIVATED, self::SUBJECT_TYPE, $event->companyId,
+            ['user_id' => $event->userId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyOwnerTransferred(CompanyOwnerTransferred $event): void
+    {
+        $byAdmin = $event->byAdminId !== null;
+
+        $this->trail->record(new AuditEntry(
+            $byAdmin ? AuditActorType::Admin : AuditActorType::User, $byAdmin ? $event->byAdminId : $event->fromUserId, AuditAction::COMPANY_OWNER_TRANSFERRED,
+            self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->toUserId, 'from_user_id' => $event->fromUserId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyInvitationUpdated(CompanyInvitationUpdated $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->updatedByUserId, AuditAction::COMPANY_INVITATION_UPDATED, self::SUBJECT_TYPE, $event->companyId,
+            ['invitation_id' => $event->invitationId, 'old_role' => $event->oldRole, 'role' => $event->role, 'permissions' => $event->permissions],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyInvitationResent(CompanyInvitationResent $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->resentByUserId, AuditAction::COMPANY_INVITATION_RESENT, self::SUBJECT_TYPE, $event->companyId,
+            ['invitation_id' => $event->invitationId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyEmailDomainsChanged(CompanyEmailDomainsChanged $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
+            ['before' => $event->before, 'after' => $event->after], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 
@@ -199,7 +265,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
     {
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::COMPANY_MEMBER_JOINED,
-            self::SUBJECT_TYPE, $event->companyId, ['role' => $event->role], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+            self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'role' => $event->role], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 }

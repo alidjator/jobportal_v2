@@ -3,6 +3,7 @@
 namespace Src\Job\Infrastructure;
 
 use Src\Job\Application\JobListItem;
+use Src\Job\Application\JobNotificationRecipients;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobVisibility;
 use Src\Job\Domain\JobAssignmentRepository;
@@ -21,6 +22,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         private JobVisibility $visibility,
         private PublicCompanies $companies,
         private JobReader $reader,
+        private JobNotificationRecipients $recipients,
     ) {}
 
     public function visibleToMember(int $jobId, int $companyId, int $userId, bool $seesAllJobs): ?JobSummary
@@ -73,6 +75,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
     public function assigneeUserIds(int $jobId): array
     {
         return $this->assignments->userIds($jobId);
+    }
+
+    public function notificationRecipients(int $jobId): array
+    {
+        return $this->recipients->ofJob($jobId);
     }
 
     public function titles(array $jobIds): array

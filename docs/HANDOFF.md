@@ -11,9 +11,9 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
 - **Phases 0 to 7 coded and committed** (5: security, performance and architecture reviews; 6 assessments; 7 interview kits and tele-interview).
-- Real PostgreSQL `jobportal_v2`: migrated to `000135`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
+- Real PostgreSQL `jobportal_v2`: migrated to `000135` (`000136` and `000137` to run), reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- **Next coding (before go-live):** company member permissions, **part 1 coded on branch `phase-8-company-permissions`, uncommitted, unchecked** (migration `000136` new); part 2 (team: list, owner, suspension, history, remove) still to code (`phase-8-company-permissions.md`, "Part 1 coded"); then the time-to-fill report (`phase-4-business-intelligence.md`).
+- **Next coding (before go-live):** company member permissions on branch `phase-8-company-permissions`: **part 1 committed** (`a256e46`, migration `000136`, tests green); **part 2 (team: list, owner, suspension, history, remove, email domains) coded, uncommitted, unchecked** (migration `000137` new; `phase-8-company-permissions.md`, "Part 2 coded"); then the time-to-fill report (`phase-4-business-intelligence.md`).
 - Front end: designed (`docs/design/frontend.md`), not coded; coding goes with the five API pieces of `docs/design/phase-8-*.md` plus a notification catalog and leaving shared screens out of video recordings (`frontend.md` 11.5, 11.6). Its open point before go-live: client IP behind the Nuxt proxy (`frontend.md` 5.2).
 
 ## Open work (not started)

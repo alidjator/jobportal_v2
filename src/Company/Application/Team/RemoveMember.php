@@ -16,8 +16,9 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A company admin removes a member, themselves included. The membership is released and the account is deactivated with every token
- * revoked, but not anonymised, so what the member did stays attributed to their name. The last company admin cannot be removed.
+ * A company admin removes a member. The membership is released and the account is deactivated with every token revoked (sessions end at once), but
+ * not anonymised, so what the member did stays attributed to their name. The owner, oneself and the last active company admin cannot be removed.
+ * The jobs the member held go to a company admin the remover picks, or to the owner when they pick none (Job does that on `CompanyMemberRemoved`).
  */
 final readonly class RemoveMember
 {
@@ -25,6 +26,7 @@ final readonly class RemoveMember
         private CompanyAdminGuard $guard,
         private CompanyRepository $companies,
         private CompanyMemberRepository $members,
+        private LastCompanyAdminRule $lastAdmin,
         private CompanyMemberAccounts $accounts,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -32,30 +34,45 @@ final readonly class RemoveMember
     ) {}
 
     /**
+     * @param  ?int  $transferToUserId  an active company admin other than the removed member who takes over their jobs; null means the owner
+     *
      * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
      * @throws EntityNotFound when the account is not a member of the actor's company
-     * @throws StateConflict `last-company-admin` when the member is the only company admin
+     * @throws StateConflict `cannot-remove-self`, `member-is-owner`, `last-company-admin` or `transfer-target-not-company-admin`
      */
-    public function execute(Actor $actor, int $userId, ?string $ipAddress, ?string $userAgent): void
+    public function execute(Actor $actor, int $userId, ?int $transferToUserId, ?string $ipAddress, ?string $userAgent): void
     {
         $company = $this->guard->company($actor);
         $companyId = (int) $company->id;
 
-        $role = $this->transactions->run(function () use ($companyId, $userId): CompanyRole {
+        if ($userId === $actor->id) {
+            throw new StateConflict('You cannot remove yourself; another company admin can.', 'cannot-remove-self');
+        }
+
+        $role = $this->transactions->run(function () use ($companyId, $userId, $transferToUserId): CompanyRole {
             $this->companies->lock($companyId);
 
             $member = $this->members->find($companyId, $userId) ?? throw EntityNotFound::of('Member', $userId);
 
-            if ($member->role === CompanyRole::CompanyAdmin && count($this->members->lockCompanyAdminIds($companyId)) <= 1) {
-                throw new StateConflict('A company needs at least one company admin.', 'last-company-admin');
+            if ($member->isOwner) {
+                throw new StateConflict('The owner of the company cannot be removed; hand the ownership over first.', 'member-is-owner');
             }
 
+            if ($transferToUserId !== null) {
+                $target = $transferToUserId === $userId ? null : $this->members->find($companyId, $transferToUserId);
+
+                if ($target === null || ! $target->isCompanyAdmin() || $target->isSuspended()) {
+                    throw new StateConflict('The jobs can only go to an active company admin of the company.', 'transfer-target-not-company-admin');
+                }
+            }
+
+            $this->lastAdmin->assertAnotherRemains($companyId, $member);
             $this->members->remove($companyId, $userId);
             $this->accounts->deactivate($userId);
 
             return $member->role;
         });
 
-        $this->events->dispatch([new CompanyMemberRemoved($companyId, $userId, $role->value, (int) $actor->id, $ipAddress, $userAgent, $this->clock->now())]);
+        $this->events->dispatch([new CompanyMemberRemoved($companyId, $userId, $role->value, (int) $actor->id, $transferToUserId, $ipAddress, $userAgent, $this->clock->now())]);
     }
 }

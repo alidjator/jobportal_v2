@@ -33,4 +33,9 @@ final readonly class RepositoryCompanyTeam implements CompanyTeam
 
         return $ids;
     }
+
+    public function ownerUserId(int $companyId): ?int
+    {
+        return $this->members->ownerUserId($companyId);
+    }
 }

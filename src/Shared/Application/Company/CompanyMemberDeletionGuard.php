@@ -11,9 +11,9 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 interface CompanyMemberDeletionGuard
 {
     /**
-     * Passes for an account that belongs to no company, for a recruiter and for a company admin who has another active company admin.
+     * Passes for an account that belongs to no company, for a member and for a company admin who is not the owner and has another active company admin.
      *
-     * @throws StateConflict `last-company-admin` when the account is the only company admin that can still sign in
+     * @throws StateConflict `last-company-admin` when the account is the only company admin that can still sign in, or `member-is-owner` when it is the owner of the company
      */
     public function assertCanRequestDeletion(int $userId): void;
 }

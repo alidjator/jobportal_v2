@@ -24,7 +24,7 @@ final readonly class CompanyJobsCard implements DashboardCardProvider
         return [DashboardAudience::Company];
     }
 
-    public function permission(): ?string
+    public function permission(): string
     {
         return CompanyPermission::ApplicationsView->value;
     }

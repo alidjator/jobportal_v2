@@ -62,6 +62,8 @@ final readonly class DatabaseAuditLogReader implements AuditLogReader
             ->when($query->actorId !== null, fn (Builder $b) => $b->where('actor_id', $query->actorId))
             ->when($query->subjectType !== null, fn (Builder $b) => $b->where('subject_type', $query->subjectType))
             ->when($query->subjectId !== null, fn (Builder $b) => $b->where('subject_id', $query->subjectId))
+            ->when($query->actions !== null, fn (Builder $b) => $b->whereIn('action', $query->actions))
+            ->when($query->metadataUserId !== null, fn (Builder $b) => $b->whereRaw("(metadata::jsonb ->> 'user_id') = ?", [(string) $query->metadataUserId]))
             ->when($query->from !== null, fn (Builder $b) => $b->where('occurred_at', '>=', $query->from?->format(self::TIME_FORMAT)))
             ->when($query->to !== null, fn (Builder $b) => $b->where('occurred_at', '<=', $query->to?->format(self::TIME_FORMAT)));
     }

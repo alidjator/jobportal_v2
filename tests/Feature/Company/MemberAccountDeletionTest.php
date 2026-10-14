@@ -74,11 +74,21 @@ final class MemberAccountDeletionTest extends FeatureTestCase
     public function test_a_company_admin_may_delete_the_account_when_another_admin_can_still_sign_in(): void
     {
         $second = $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
+        UserModel::query()->whereKey($second)->update(['password' => Hash::make(self::PASSWORD)]);
 
-        $this->requestDeletion($this->adminToken)->assertOk();
+        $this->requestDeletion($this->tokenFor($second))->assertOk();
 
-        $this->assertSame('deactivated', UserModel::query()->findOrFail($this->adminId)->status);
-        $this->assertSame('active', UserModel::query()->findOrFail($second)->status);
+        $this->assertSame('deactivated', UserModel::query()->findOrFail($second)->status);
+        $this->assertSame('active', UserModel::query()->findOrFail($this->adminId)->status);
+    }
+
+    public function test_the_owner_must_hand_the_ownership_over_before_deleting_the_account(): void
+    {
+        $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
+
+        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-owner');
+
+        $this->assertSame('active', UserModel::query()->findOrFail($this->adminId)->status);
     }
 
     public function test_two_admins_cannot_both_leave_the_company_without_an_admin(): void
@@ -87,10 +97,10 @@ final class MemberAccountDeletionTest extends FeatureTestCase
         UserModel::query()->whereKey($second)->update(['password' => Hash::make(self::PASSWORD)]);
         $secondToken = $this->tokenFor($second);
 
-        $this->requestDeletion($this->adminToken)->assertOk();
-        $this->requestDeletion($secondToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->requestDeletion($secondToken)->assertOk();
+        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
 
-        $this->assertSame('active', UserModel::query()->findOrFail($second)->status);
+        $this->assertSame('active', UserModel::query()->findOrFail($this->adminId)->status);
     }
 
     public function test_an_admin_whose_colleague_admin_is_suspended_counts_as_the_last_one(): void

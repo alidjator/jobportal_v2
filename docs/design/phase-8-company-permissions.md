@@ -4,7 +4,7 @@ Context: `Company` (catalog, storage, team API), read through `Shared` by every 
 JobSeeker candidates, JobInvitation, Assessment, Campaign, Review, Dashboard). Source: the user stories "invite a new member by email and set their
 permissions" and "change a member's role and permissions so access always matches their responsibility" (company admin, 2026-10-13).
 
-**Status: designed, not coded.** Coding happens in a coding session, before go-live.
+**Status: coded** (part 1 permissions, part 2 team; see the two "coded" sections at the end), uncommitted part 2, unchecked.
 
 ## Decisions
 
@@ -34,7 +34,7 @@ permissions" and "change a member's role and permissions so access always matche
   permissions; a company admin may change a member's **name** (audited, the member is notified in-app); pending invitations are editable
   (`PATCH company/invitations/{id}`) (decided by the user).
 - 2026-10-14: the story "remove a member who no longer needs access" (AC1 to AC6): removing **oneself is refused** (409 `cannot-remove-self`);
-  the member's jobs go to **the owner or a company admin picked** in the dialog, on every job the member held; `created_by_user_id` **stays** as
+  a job left **without assignees** goes to **the owner or a company admin picked** in the dialog (changed 2026-10-14: a job that still has assignees just loses the member); `created_by_user_id` **stays** as
   history (decided by the user, [Remove](#remove)).
 - 2026-10-14: the story "see the team's change history" (AC1, AC2): a **team history** for company admins, `GET company/team/history`, from the
   audit log; the **12-month retention stays** ("cannot be deleted" means by no user); **no IP address or user agent** in it (decided by the user,
@@ -79,8 +79,8 @@ Story (company admin, 2026-10-13): extra actions per row of the team page.
   by being removed by another company admin).
 - **Jobs (AC5):** optional body `{transfer_to_user_id}`, an active company admin of the company other than the removed member (409
   `transfer-target-not-company-admin` otherwise); empty means the owner. The listener `ReassignJobsWhenMemberRemoved` ends the member's assignments
-  and assigns the recipient to **every job the member was assigned to** (skipped where already assigned), replacing "a job left without assignee goes
-  to every company admin". Jobs are never deleted; `created_by_user_id` keeps the original creator. The event `CompanyMemberRemoved` carries the
+  and assigns the recipient to **every job that is left without assignees** (a job that still has other assignees keeps them and gets no recipient;
+  changed 2026-10-14 from "every job the member held"), replacing "a job left without assignee goes to every company admin". Jobs are never deleted; `created_by_user_id` keeps the original creator. The event `CompanyMemberRemoved` carries the
   recipient; the recipient gets the existing assignment notification.
 - The confirmation dialog with the member's name (AC1), hiding the icon through `actions` (AC3) and refreshing `meta.member_count` (AC6) are
   front-end behaviour.
@@ -276,9 +276,7 @@ Coded: catalog (`Shared` enum `CompanyPermission`, 21), `CompanyMembership::can/
 `company.permissions_changed`, and the permission checks in Job, Recruitment, Assessment, Campaign, Review, TalentPool, JobSeeker candidates,
 JobInvitation, Messaging, Dashboard and Company (profile, images, documents).
 
-**Not coded yet (part 2, team):** `name` in `PATCH members`, `PATCH company/invitations/{id}`, the merged paginated and searchable team list with `actions`,
-owner, suspension, expired invitations and resend, member detail and activity, team history, allowed email domains, the new remove rules, the removal of
-`GET company/invitations`, and the time-to-fill report is a separate piece.
+Part 2 (team) is coded, see "Part 2 coded (2026-10-14): team" below. The time-to-fill report is a separate piece.
 
 Interpretations made while coding (to confirm):
 
@@ -292,3 +290,34 @@ Interpretations made while coding (to confirm):
 4. `analytics.view` is not in the Recruiter preset (decided by the user, replacing the catalog's earlier "yes"); migration `000136` does not grant it.
 5. Reading the stage list, the company profile and the reviews list stays open to every member.
 6. `CompanyTeam::viewAllUserIds` answers "does this account see every job" for interview and assessor assignment checks.
+
+## Part 2 coded (2026-10-14): team
+
+Coded: migration `000137` (**new, run `test:database:migrate --env=testing` then `migrate`**: `company_members.is_owner` with a partial unique index per
+company and a check that only a company admin owns, `status`, `suspended_at`, `suspended_by_user_id`, `company_companies.invitation_email_domains`; the
+oldest company admin of each company becomes its owner), `name` in `PATCH company/members/{userId}` (account renamed through `CompanyMemberAccounts::rename`,
+audit `company.member_renamed`, in-app `company.member_renamed`), `PATCH company/invitations/{id}`, `POST company/invitations/{id}/resend`, the merged
+paginated and searchable team list (`GET company/members`: `type`, `status`, `actions`, `is_owner`, `meta.member_count`), `GET company/members/{userId}`
+and `.../activity`, `GET company/team/history`, `GET`/`PUT company/team/email-domains`, `POST company/members/{userId}/suspend`, `.../reactivate` and
+`.../make-owner`, `PUT admin/companies/{id}/owner`, the new remove rules (`cannot-remove-self`, `member-is-owner`, `transfer_to_user_id`), `company/me`
+with `is_owner`, the nightly `company:purge-invitations` (03:15), and four email templates (`company.member_suspended`, `company.member_reactivated`,
+`company.ownership_gained`, `company.ownership_handed_over`). `GET company/invitations` is gone.
+
+Interpretations made while coding (to confirm):
+
+1. **A suspended member** is stopped at sign-in by a `Shared` port (`MemberSignInGuard`, Identity asks Company); the suspension revokes every token. The
+   last-admin rule counts **active** admins only (`lockCompanyAdminIds` skips suspended ones).
+2. **Notifications while suspended** are held back centrally: `DatabaseInAppNotifier` and `StoredNotificationPreferences` (which every email and push asks)
+   ask the `Shared` port `SuspendedMembers`. A job whose assignees are all suspended notifies the active company admins
+   (`JobDirectory::notificationRecipients`, used by the application, decision and expiry listeners).
+3. **Removing a member:** a job left without assignees goes to `transfer_to_user_id` or else to the owner; a job with other assignees keeps them
+   (`ReassignJobsOfRemovedMember`, decided by the user 2026-10-14); when the company has no owner (the owner's account was erased) such a job goes to the remaining company admins. Anonymising an account
+   releases it as a removal without a recipient.
+4. **The owner** cannot start deleting their own account while another admin exists (`member-is-owner`, after the `last-company-admin` check); they hand the
+   ownership over first. A company whose owner is gone gets one from a platform admin (`PUT admin/companies/{id}/owner`, no password).
+5. **Email domains** match exactly (`mail.example.com` is not `example.com`); at most 20; lower case; a leading `@` is stripped; an empty list lifts the limit.
+   The refusal carries `allowed_domains`.
+6. **Activity** shows a readable title for `job` subjects only; other subjects show type and id. The history resolves the name and email of the member
+   or invitation from the live records, so they are empty once an account or invitation is gone.
+7. **The team list is built in memory** (a team is small), so `per_page` slices the sorted list; a pending invitation sits in the group of its role.
+8. `member_count` counts members only (invitations excluded), search aside.

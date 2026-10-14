@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Src\Company\Application\Admin\GetAdminCompany;
 use Src\Company\Application\Admin\ListCompanies;
 use Src\Company\Application\Admin\RestoreCompany;
+use Src\Company\Application\Admin\SetCompanyOwner;
 use Src\Company\Application\Admin\SuspendCompany;
 use Src\Company\Application\CreateCompany;
 use Src\Company\Application\InviteCompanyAdminAgain;
@@ -16,6 +17,7 @@ use Src\Company\Interface\Http\Requests\CreateCompanyRequest;
 use Src\Company\Interface\Http\Requests\InviteCompanyAdminRequest;
 use Src\Company\Interface\Http\Requests\ListCompaniesRequest;
 use Src\Company\Interface\Http\Requests\RestoreCompanyRequest;
+use Src\Company\Interface\Http\Requests\SetCompanyOwnerRequest;
 use Src\Company\Interface\Http\Requests\SuspendCompanyRequest;
 use Src\Company\Interface\Http\Resources\AdminCompanyDetailResource;
 use Src\Company\Interface\Http\Resources\AdminCompanyListResource;
@@ -67,5 +69,13 @@ final class AdminCompanyController extends ApiController
         $invitation = $invite->execute($actors->fromRequest($request), $id, $request->email(), $context->language, $request->ip(), $request->userAgent());
 
         return (new IssuedInvitationResource($invitation))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
+    }
+
+    /** Names the owner of a company, for a company whose owner is gone. */
+    public function setOwner(SetCompanyOwnerRequest $request, int $id, ActorResolver $actors, SetCompanyOwner $setOwner): Response
+    {
+        $setOwner->execute($actors->fromRequest($request), $id, $request->userId(), $request->ip(), $request->userAgent());
+
+        return response()->noContent();
     }
 }

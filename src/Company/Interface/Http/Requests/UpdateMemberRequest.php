@@ -13,10 +13,16 @@ final class UpdateMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => ['sometimes', 'string', 'min:1', 'max:100'],
             'role' => ['sometimes', 'string', Rule::enum(CompanyRole::class)],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['string', Rule::enum(CompanyPermission::class)],
         ];
+    }
+
+    public function name(): ?string
+    {
+        return $this->has('name') ? $this->string('name')->toString() : null;
     }
 
     public function role(): ?CompanyRole

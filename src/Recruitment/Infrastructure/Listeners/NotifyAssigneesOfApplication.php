@@ -32,7 +32,7 @@ final class NotifyAssigneesOfApplication implements ShouldQueue
 
     public function handle(ApplicationSubmitted $event): void
     {
-        $this->notifier->send($this->jobs->assigneeUserIds($event->jobId), ApplicationNotificationType::RECEIVED, [
+        $this->notifier->send($this->jobs->notificationRecipients($event->jobId), ApplicationNotificationType::RECEIVED, [
             'application_id' => $event->applicationId,
             'job_id' => $event->jobId,
         ]);

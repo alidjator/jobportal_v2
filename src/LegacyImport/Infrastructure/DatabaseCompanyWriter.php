@@ -45,6 +45,7 @@ final readonly class DatabaseCompanyWriter implements CompanyWriter
             'company_id' => $id,
             'user_id' => $company->ownerUserId,
             'role' => 'company_admin',
+            'is_owner' => true,
             'created_at' => $company->createdAt,
             'updated_at' => $company->createdAt,
         ]);

@@ -12,5 +12,6 @@ final readonly class CurrentCompany
         public Company $company,
         public CompanyRole $role,
         public array $permissions,
+        public bool $isOwner,
     ) {}
 }

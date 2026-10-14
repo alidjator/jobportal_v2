@@ -4,11 +4,11 @@ namespace Src\Dashboard\Application;
 
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
-use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsScope;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;

@@ -90,6 +90,12 @@ final class User extends AggregateRoot
         return $this->name;
     }
 
+    /** A company admin renames a member of their company; the email stays. */
+    public function rename(string $name): void
+    {
+        $this->name = $name;
+    }
+
     public function email(): string
     {
         return $this->email;
