@@ -1,11 +1,11 @@
 # Handoff
 
-Entry point for a new session; rules, code standard, Git workflow and commands are in `CLAUDE.md`. Keep this file **under about 5 KB**: replace the status, do not append; decisions and "coded" notes belong in `docs/design/`. History: `docs/handoff-history.md` (to 2026-10-08) and `git log -p docs/HANDOFF.md` (later); search them, do not read them whole.
+Entry point for a new session; rules, code standard, Git workflow and commands: `CLAUDE.md`. Keep this file **under about 5 KB**: replace the status, do not append; decisions belong in `docs/design/`. History: `docs/handoff-history.md` (to 2026-10-08), then `git log -p docs/HANDOFF.md`; search, do not read whole.
 
 ## Read order
 
 1. This file.
-2. The design document of the step you work on (`docs/design/`: `decisions.md` cross-phase, `architecture.md` API/auth/persistence/queues/files, `phase-0-schema.md`, one `phase-N-*.md` per step; each phase's "coded" sections hold its interpretations, migrations and `.env` values). `docs/analysis/` holds the legacy flow map, benchmarks and gap analysis; `docs/api/` the API-document rules and error catalog; `docs/deployment-checklist.md` the go-live list.
+2. The design document of the step (`docs/design/`: `decisions.md` cross-phase, `architecture.md`, `phase-0-schema.md`, one `phase-N-*.md` per step whose "coded" sections hold interpretations, migrations and `.env` values). `docs/analysis/`: legacy flow, benchmarks, gaps; `docs/api/`: API-document rules, error catalog; `docs/deployment-checklist.md`: go-live list.
 
 ## Current state (2026-10-14)
 
@@ -38,7 +38,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 ## Operational facts not in `CLAUDE.md`
 
 - Commit identity: `git -c user.name=jobportal -c user.email=<the user's email> commit` (no git identity configured).
-- Live dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`, `COMPANY_INVITATION_URL` empty; nginx directly (no `trustProxies`); scheduler from the `jobportal` crontab. nginx config root-owned at `/etc/nginx/conf.d/api-karir.satu.solutions.conf` (copy in `/home/jobportal/nginx/`); it, the crontab and the ACLs are not in git.
+- Live dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`, `COMPANY_INVITATION_URL` empty; nginx directly (no `trustProxies`); scheduler from the `jobportal` crontab. nginx config (root) `/etc/nginx/conf.d/api-karir.satu.solutions.conf`, copy in `/home/jobportal/nginx/`; it, the crontab and ACLs are outside git.
 - `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added. Parallel tests need `php artisan test:database:parallel --env=testing` after every migration.
 - `KARIR_PKP_FILES_ROOT` is set in `.env`. Import mapping files: `--map=masters=<path>`, `--map=groups=<path>`.
 - Rehearsal database: create one (the role has `CREATEDB`), use `DB_DATABASE=<name>` and `LARAVEL_STORAGE_PATH=<scratch dir>`, then `migrate`, `db:seed`, `legacy:import --all --write`. The legacy source (`legacy` connection) stays MariaDB.
