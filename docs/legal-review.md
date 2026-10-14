@@ -36,6 +36,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
     revise it (`phase-6-assessments.md`, Part 7). Does this meet Law 23/2022 (Articles 26 and 33: psychological measurement by a psychologist; Article 44:
     explanation to the client), or must a psychologist review every report before the company sees it? Does the answer differ by test (intelligence,
     personality, work attitude)?
+12. **Accepting a job offer online (added 2026-10-14).** A job seeker accepts an offer letter on the platform with a checkbox and their account
+    password; the time, IP address, browser and the SHA-256 of the letter are kept in a separate evidence document (`phase-8-offer-letters.md`).
+    Is this enough as an electronic signature under UU ITE and PP 71/2019 for an offer letter, or should a certified e-signature (PSrE) or e-meterai
+    be offered? May the platform keep this evidence after the applicant's data is anonymised?
 
 ## 3. What we can change after the answers
 
