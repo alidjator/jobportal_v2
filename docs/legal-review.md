@@ -48,7 +48,7 @@ It is a factual inventory, not legal advice, and the legal references in the que
     Personal Data Protection Law and the non-discrimination rules? Must the person be told or be able to see it on a data access request, and which
     reasons must be refused?
 14. **Personal data export boundary (added 2026-10-14).** A job seeker can download their data (`phase-8-jobseeker-privacy.md`), which leaves out
-    what companies and psychologists wrote about them: team notes and ratings, interview scorecards, rejection and withdrawal notes of the team,
+    what companies and psychologists wrote about them: team notes and ratings, hiring managers' review reasons, interview scorecards, rejection and withdrawal notes of the team,
     talent pool notes, restriction reasons, the company's psychological report text and the psychologist's review notes. Do UU 27/2022 Articles 7
     and 13 require any of these in the copy (with question 9 and 13), and in what form (for example a summary instead of the full text)?
 15. **Applicant data retention per company (added 2026-10-14).** A final application (rejected, withdrawn, or still open on a closed job) is
