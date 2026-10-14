@@ -50,3 +50,37 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 - **Small groups:** setting `analytics.min_group_size` (default 5, 2 to 50). A row whose count is below it has its figures set to `null` and `suppressed: true` (the market tables hide only the applicant figures, the salary table the whole row); a CSV writes the count as `<5`. A median over fewer values than that is `null`.
 - **CSV:** one table per file (`table` picks it, the first by default); the file name carries the report, the table and the range.
 - **Not done:** the legal-review row only mentions the new per-application fields (the summaries hold no person). A recruiter filter on `by_job` and a per-job time series are not built.
+
+## Time to fill (designed 2026-10-14, not coded)
+
+How long a job takes from going live until its positions are filled. Time to hire (application to hired) already exists in `funnel` (`speed`).
+
+**Decided by the user (2026-10-14):**
+
+- **Start:** `job_jobs.published_at`, set once when the job first goes live (directly or by the first approval); draft and review time are left out. A
+  job never published is ignored.
+- **Filled:** the moment of the **N-th hire**, N = `vacancies` (the first hire when `vacancies` is empty). The hire time is the move to a `hired` stage
+  in `recruitment_application_stage_history`; only applications **still hired now** count, in the order of their hire time. A job with fewer current
+  hires than N is not filled, whatever its status; a job filled after it was closed counts.
+- **Where:** a new report **`fill`**: `GET company/analytics/fill` and `GET admin/analytics/fill`, same rules as the other analyses (`from`, `to` at
+  most 366 days, up to yesterday, `format=csv`, `table`, access).
+- **Computed live** from jobs and stage history (no summary table), cached 10 minutes like the live medians.
+
+**Report `fill`:** a job belongs to the range when the Jakarta day it was filled lies in it. Days are the whole time from `published_at` to the fill,
+in days with one decimal.
+
+| Table | Company | Admin | Columns |
+|---|---|---|---|
+| `summary` | yes | yes | filled jobs, average days, median days |
+| `by_job` | yes | no | job id, title, published, filled, days, vacancies, hires |
+| `by_category` | yes | yes | category, filled jobs, average days, median days |
+| `by_recruiter` | yes | no | recruiter (the job's assignees now; a job counts for each), filled jobs, average days, median days |
+| `by_company` | no | yes | company, filled jobs, average days, median days (top 100 by filled jobs) |
+| `open` | yes | no | active jobs not filled yet: job id, title, published, days open so far, vacancies, hires so far; longest open first |
+
+- Small groups: as today, a median over fewer values than `analytics.min_group_size` is `null`; the figures describe jobs, not people, so rows are
+  not suppressed otherwise.
+- Owned by **Recruitment** (it holds the stage history); job data (`published_at`, `vacancies`, title, category, assignees) is read through a
+  `Shared` job port. Registered in `AnalyticsReports` like the other reports.
+- **C1 dashboard card** (company): median time to fill of the last 90 days and the number of active jobs not filled yet, linking to C2.
+- Access: company admin today; `analytics.view` once the company permissions are coded (`phase-8-company-permissions.md`).
