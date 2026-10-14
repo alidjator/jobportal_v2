@@ -220,7 +220,7 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (updat
 - **Review afterwards:** auto-issued reports stay in the provider queue as `reviewed: false`; a psychologist marks them reviewed
   (`POST provider/reviews/{id}/mark-reviewed`) or issues a **revision** (`POST provider/reviews/{id}/revise` with body and explanation): same number
   with `-R1`, `-R2`, signed by the reviser; the earlier version is kept, marked superseded, and the company team and the candidate are told a revised
-  report is ready. A manually signed report stays locked as today.
+  report is ready. A manually signed report stays locked as today (revisable from `phase-8-provider-institutions.md`, 2026-10-15).
 - New audit actions `assessment.report_auto_issued`, `assessment.report_revised`, `assessment_provider.auto_issue_changed`.
 
 ### Part 7 as coded (2026-10-14)

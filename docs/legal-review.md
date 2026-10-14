@@ -58,6 +58,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
 16. **Reported chat messages read by platform admins (added 2026-10-15).** When a job seeker or a company reports a conversation, the report keeps
     the reported message and up to 10 earlier messages (`phase-8-platform-admin.md`), which platform admins read to decide; the excerpt is
     deleted 180 days after the decision. Is this covered by the terms and privacy notice as written, and is 180 days a sound period?
+17. **Raw psychological test data and account erasure (added 2026-10-15).** When a candidate erases their account, the answers, drawings and the
+    stored report PDF of their psychological tests are deleted today (`phase-6-assessments.md`; `phase-8-provider-institutions.md`). How long must
+    a partner institution keep the raw data of an examination under Law 23/2022 and the HIMPSI code of ethics, and does that duty override the
+    candidate's erasure request (UU 27/2022)? If it does, the data would move to a locked institution archive instead.
 
 ## 3. What we can change after the answers
 

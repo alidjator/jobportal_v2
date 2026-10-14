@@ -34,8 +34,9 @@ documents.
 | 17 | `phase-8-interview-results.md` | |
 | 18 | `phase-8-assessment-automation.md` | |
 | 19 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
-| 20 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
-| 21 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
+| 20 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17 |
+| 21 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
+| 22 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
 
 ## After the legacy import
 
