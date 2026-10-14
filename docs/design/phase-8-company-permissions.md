@@ -27,6 +27,15 @@ permissions" and "change a member's role and permissions so access always matche
   (decided by the user, [detail](#team-actions)); its five interpretations decided the same day, the activity shows IP address and user agent.
 - 2026-10-14: the story "see every team member with role and permissions" (AC1 to AC6): the member list is **paginated in the API** (20 per page,
   with the total for "N anggota tim"), each row carries its allowed **`actions`**, and the **owner comes first** (decided by the user, [API](#api)).
+- 2026-10-14: the story "invite a member and set their permissions" (AC1 to AC8): the invitation carries a **name** the invitee may change; a
+  member needs **at least one permission** (AC5, replacing "may be empty"); an optional **allowed email domains** setting per company, off by default;
+  open invitations are **rows of the team list** with status "Menunggu" or "Kedaluwarsa", and `GET company/invitations` goes (decided by the user).
+- 2026-10-14: the story "change a member's role and permissions" (AC1 to AC5): one `PATCH company/members/{userId}` for name, role and
+  permissions; a company admin may change a member's **name** (audited, the member is notified in-app); pending invitations are editable
+  (`PATCH company/invitations/{id}`) (decided by the user).
+- 2026-10-14: the story "remove a member who no longer needs access" (AC1 to AC6): removing **oneself is refused** (409 `cannot-remove-self`);
+  the member's jobs go to **the owner or a company admin picked** in the dialog, on every job the member held; `created_by_user_id` **stays** as
+  history (decided by the user, [Remove](#remove)).
 - 2026-10-14: the story "search members by name or email": `filter[q]` on the member list ([API](#api)); debounce, the 2-character start, the empty
   message and clearing are front-end behaviour.
 
@@ -42,6 +51,21 @@ Story (company admin, 2026-10-13): extra actions per row of the team page.
 | Reactivate | member suspended | `POST company/members/{userId}/reactivate` (new) |
 | Detail and activity | always | `GET company/members/{userId}`, `GET .../activity` (new); `GET .../jobs` (exists) |
 | Make primary account | only for the current owner | `POST company/members/{userId}/make-owner` (new) |
+| Remove | not the owner, not oneself | `DELETE company/members/{userId}` (exists, changed, [Remove](#remove)) |
+
+### Remove
+
+- Stays as coded (`RemoveMember`): the membership is released, the account deactivated with every token revoked (sessions end at once), not
+  anonymised; the last active company admin cannot be removed (`last-company-admin`).
+- **New refusals:** the owner (409 `member-is-owner`) and oneself (409 `cannot-remove-self`, replacing "themselves included"; a company admin leaves
+  by being removed by another company admin).
+- **Jobs (AC5):** optional body `{transfer_to_user_id}`, an active company admin of the company other than the removed member (409
+  `transfer-target-not-company-admin` otherwise); empty means the owner. The listener `ReassignJobsWhenMemberRemoved` ends the member's assignments
+  and assigns the recipient to **every job the member was assigned to** (skipped where already assigned), replacing "a job left without assignee goes
+  to every company admin". Jobs are never deleted; `created_by_user_id` keeps the original creator. The event `CompanyMemberRemoved` carries the
+  recipient; the recipient gets the existing assignment notification.
+- The confirmation dialog with the member's name (AC1), hiding the icon through `actions` (AC3) and refreshing `meta.member_count` (AC6) are
+  front-end behaviour.
 
 ### Owner (primary account)
 
@@ -72,7 +96,8 @@ Story (company admin, 2026-10-13): extra actions per row of the team page.
 
 ### Invitations: expired and resend
 
-- `GET company/invitations` lists `pending` and `expired` invitations (each with `status`); an expired one is listed for 30 days after it expired.
+- The team list (`GET company/members`, rows of `type` `invitation`) shows `pending` and `expired` invitations; an expired one is listed for 30
+  days after it expired.
 - **Resend** (pending or expired): a new token and 7 more days, same email, role and permissions; the old link stops working; the one-minute cooldown of
   inviting applies (429). Audited as `company.invitation_resent`.
 - An accepted or revoked invitation is not listed. Rows are deleted 30 days after expiry, revocation or acceptance (daily purge; they hold an email).
@@ -147,6 +172,9 @@ which is exactly what a recruiter may do today, so imported and existing recruit
 
 - `company_members.role`: `company_admin` or `member` (the value `recruiter` is migrated to `member`; check constraint changed).
 - New table `company_member_permissions` (`company_member_id` FK cascade, `permission` string, unique pair); no rows for a company admin.
+- `company_invitations.name` (string 100): the name the company admin typed; the invitee may change it when accepting.
+- `company_companies.invitation_email_domains` (jsonb list, null = no limit): checked on invitation and resend by a company admin, not on an
+  invitation by a platform admin.
 - `company_invitations.permissions` (jsonb, null for a company admin invitation): the checkboxes chosen at invitation, applied when it is accepted;
   `company_invitations.role` takes `company_admin` or `member`.
 - Migration: every `recruiter` membership gets the Recruiter preset rows; every pending `recruiter` invitation gets the Recruiter preset.
@@ -157,11 +185,14 @@ which is exactly what a recruiter may do today, so imported and existing recruit
 | Endpoint | Change |
 |---|---|
 | `GET company/permissions` | New (any member): the catalog with groups and the presets (name and permissions), for the invitation and edit dialogs. |
-| `POST company/invitations` | `role` (`company_admin` or `member`) and, for `member`, `permissions` (list, may be empty; unknown names 422). |
-| `GET company/invitations` | Each pending invitation shows `role` and `permissions`. |
-| `GET company/members` | Each member shows `role`, `is_owner`, `status`, `permissions` (a company admin lists every permission) and `actions`, the row actions the caller may take now (`edit`, `remove`, `suspend`, `reactivate`, `make_owner`), computed by the same rules as the use cases. **Paginated** (`page`, `per_page` default 20, at most 100, with the total); fixed order: the owner, then the other company admins by name, then the members by name. **Search** `filter[q]`: name or email, case-insensitive, partial (`TextSearch::contains`), 2 to 100 characters (422 otherwise); the total then counts the matches. |
-| `PUT company/members/{userId}/permissions` | New: replaces a member's permissions (`member` only; on a company admin 409 `member-is-company-admin`); same set changes and audits nothing. |
-| `PUT company/members/{userId}/role` | `company_admin` or `member`; a demotion gives the Recruiter preset. |
+| `POST company/invitations` | `name` (required, at most 100 characters), `email`, `role` (`company_admin` or `member`) and, for `member`, `permissions` (**at least one**, 422 `permissions-required`; unknown names 422). Refused with 422 `email-domain-not-allowed` when the company limits the email domains. |
+| `GET company/invitations` | **Removed**: invitations are rows of the team list. |
+| `GET`/`PUT company/team/email-domains` | New (company admin): the allowed email domains of invitations (list of domains, empty = no limit, the default). |
+| `GET auth/invitations/{token}` | Adds `name`, which prefills the acceptance form; the invitee may change it on `accept`. |
+| `GET company/members` | **One list of members and open invitations** (decided 2026-10-14): each row has `type` (`member` or `invitation`) and `status` (`active`, `suspended`, `pending`, `expired`); an invitation row shows name, email, role, permissions, sent and expiry times and the inviter. `meta.member_count` is the number of members of the company, unfiltered, for "N anggota tim". Each member shows `role`, `is_owner`, `status`, `permissions` (a company admin lists every permission) and `actions`, the row actions the caller may take now (`edit`, `remove`, `suspend`, `reactivate`, `make_owner`), computed by the same rules as the use cases. **Paginated** (`page`, `per_page` default 20, at most 100, with the total); fixed order: the owner, then the other company admins by name, then the members by name; an invitation sits in the group of its role, by name. **Search** `filter[q]`: name or email, case-insensitive, partial (`TextSearch::contains`), 2 to 100 characters (422 otherwise), invitations included; the total then counts the matches. |
+| `PATCH company/members/{userId}` | New, **replaces `PUT .../role` and `PUT .../permissions`** (decided 2026-10-14): `{name?, role?, permissions?}` saved in one transaction. `name` changes the member's account name through a `Shared` port to Identity. `role` `company_admin` or `member`; a demotion without `permissions` gives the Recruiter preset; the last active company admin (`last-company-admin`) and the owner (`member-is-owner`) cannot be demoted. `permissions` for a `member` only (at least one, `permissions-required`; on a company admin 409 `member-is-company-admin`). Nothing changed: nothing saved or audited. The email cannot be changed. |
+| `PATCH company/invitations/{id}` | New: `{name?, role?, permissions?}` of a pending invitation, same rules as inviting; the link stays the same; the email cannot be changed (revoke and invite again). |
+| `DELETE company/members/{userId}` | Optional `{transfer_to_user_id}`; refuses the owner and oneself ([Remove](#remove)). |
 | `GET company/me` | Adds `role` and the effective `permissions`, so the front end builds the menu. |
 
 New error: 403 `company-permission-required` with the missing permission in the problem body (`permission`), replacing `company-admin-required`
@@ -180,9 +211,10 @@ everywhere except team management.
 
 ## Audit and notification
 
-- New audit actions `company.member_permissions_changed` (before, added, removed, actor) and the existing role change entry gains the permissions after a
+- New audit actions `company.member_permissions_changed` (before, added, removed, actor), `company.member_renamed` (old and new name, actor),
+  `company.invitation_updated`, the existing removal entry gains the recipient of the jobs, and the existing role change entry gains the permissions after a
   demotion. The invitation entry records role and permissions (no email address, as today).
-- In-app notification `company.permissions_changed` to the member (no email), in the notification catalog of `phase-8-api-translations.md`.
+- In-app notifications `company.permissions_changed` and `company.member_renamed` to the member (no email), in the notification catalog of `phase-8-api-translations.md`.
 
 ## Front end
 
