@@ -13,6 +13,9 @@ every interview and lets the recruiter add a note for the candidate to the invit
 - 2026-10-14: interview emails to the job seeker carry an **`.ics` file**, and the team can download one per interview (decided by the user).
 - 2026-10-14: the interview gets a **note for the candidate**; changing only the note **does not reschedule**: the confirmation stays and the job
   seeker is told the details changed (decided by the user).
+- 2026-10-14: an application may move to an interview stage **without a schedule** when the request says so explicitly ("schedule later"), one by
+  one or in bulk; such applications are marked "not scheduled" (decided by the user, [section 4](#4-move-to-interview-without-a-schedule)). The
+  team toggle "send the invitation email" of Talenta is **not built**: the job seeker's own email preference decides (decided by the user).
 
 ## 1. Recruitment calendar
 
@@ -93,12 +96,31 @@ views, the type and job filters and "Hanya saya". Clicking an event opens a pane
 - Built by a small writer in Recruitment's infrastructure (no new library unless the coding session finds the escaping and line folding
   worth one).
 
+## 4. Move to interview without a schedule
+
+Talenta's "Move only". Cases: the time was agreed outside the platform (phone, walk-in), a large bulk move whose slots come later, a second
+interview stage whose time is not known yet.
+
+- **Explicit:** the move request (single and bulk) takes `interview: {schedule_later: true}` instead of a schedule. Without a schedule and without
+  this flag the move is still refused (422 `schedule-required`), so a forgotten schedule never passes silently. `schedule_later` with schedule
+  fields is 422 `invalid-interview`.
+- **No interview row** is created and nothing is sent to the job seeker except the usual stage change. The schedule comes later through
+  `PUT company/applications/{id}/interview` (exists), which sends the invitation as today.
+- **"Not scheduled"** is a derived state, not a stored one: an application in an interview stage with no `pending` or `confirmed` interview. It
+  already happens today after a cancel (the application stays in the stage), so the same mark covers both.
+- **Pipeline:** each application in the list (`GET company/jobs/{id}/applications`) carries `interview_state` (`not_scheduled`, `pending`,
+  `confirmed`, `completed`, or null outside an interview stage) and the list takes `filter[interview_state]=not_scheduled`. The front end shows a
+  "Belum dijadwalkan" badge with a "Jadwalkan" action on the table and the kanban card.
+- **Job seeker:** the interview card of the application says "Jadwal interview akan dikabarkan" while the application is in an interview stage
+  without an active interview (`GET me/applications/{id}/interview` answers `data: null` as today; the front end reads the stage type).
+- Not on the calendar (no time) and no reminder; the filter is the work list. No schema change.
+
 ## Changes in short
 
 | Piece | Change |
 |---|---|
 | Migration | `recruitment_interviews.note`, `calendar_uid`, `calendar_sequence`; indexes for the calendar reads |
-| API | `GET company/calendar`; `PATCH company/applications/{id}/interview`; `note` in schedule, move and bulk move; `GET company/interviews/{id}/calendar.ics`; `note` in the interview resources |
+| API | `schedule_later` in the move and bulk move; `interview_state` and its filter in the pipeline list; `GET company/calendar`; `PATCH company/applications/{id}/interview`; `note` in schedule, move and bulk move; `GET company/interviews/{id}/calendar.ics`; `note` in the interview resources |
 | Notification | `interview.updated` (in-app and email) |
 | Email | `.ics` on the interview emails; template `interview.updated` |
 | Errors | 422 `invalid-calendar-range` |
