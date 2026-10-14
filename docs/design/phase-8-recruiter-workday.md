@@ -59,7 +59,7 @@ them meanwhile), a full per-job email template library and a job widget for comp
 | `team_interview_changes` | on | a job seeker confirmed, declined or proposed a new time; an interview cancelled by a withdrawal (`phase-8-withdrawals.md`) |
 | `team_offer_answers` | on | an offer accepted or declined |
 | `team_new_applications` | off | each new application to a job assigned to the member (the digest counts them anyway) |
-| `team_scoring` | off | a test submitted where the member is an assessor; a scorecard reminder |
+| `team_scoring` | off | a test submitted where the member is an assessor (the scorecard emails moved to `team_scorecard_reminders`, `phase-8-interviewers.md`) |
 
 - New key for psychologists: `provider_reviews` (on), the waiting-reviews email of `phase-8-provider-tools.md`; the licence emails stay
   always on (they decide whether reports can be signed).
