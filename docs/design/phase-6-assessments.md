@@ -227,7 +227,7 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (updat
 
 Tests: `AttemptTest`, `InvitationTest`, `AutoIssueTest` (run after `php artisan test:database:migrate --env=testing`).
 
-- **Interpretations awaiting confirmation:**
+- **Interpretations (confirmed 2026-10-14, as coded):**
   - The invitation attachment is uploaded with `POST` (not `PUT`), because PHP does not parse a multipart `PUT`.
   - `start` rotates the attempt session token every time it is called on an open attempt, and records a `device_switch` event; every other attempt route needs the `X-Attempt-Session` header (`attempt-session-required`, `attempt-moved`).
   - The explanation template has its own endpoints (`GET`/`PUT tests/{id}/explanation-template`), and `{{scale:KEY:explanation}}` is valid only there.
