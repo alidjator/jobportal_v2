@@ -51,7 +51,7 @@ Lives in the `Dashboard` context (read side). Reads other contexts through their
 - **CSV:** one table per file (`table` picks it, the first by default); the file name carries the report, the table and the range.
 - **Not done:** the legal-review row only mentions the new per-application fields (the summaries hold no person). A recruiter filter on `by_job` and a per-job time series are not built.
 
-## Time to fill (designed 2026-10-14, not coded)
+## Time to fill (designed and coded 2026-10-14)
 
 How long a job takes from going live until its positions are filled. Time to hire (application to hired) already exists in `funnel` (`speed`).
 
@@ -84,3 +84,15 @@ in days with one decimal.
   `Shared` job port. Registered in `AnalyticsReports` like the other reports.
 - **C1 dashboard card** (company): median time to fill of the last 90 days and the number of active jobs not filled yet, linking to C2.
 - Access: company admin today; `analytics.view` once the company permissions are coded (`phase-8-company-permissions.md`).
+
+**Coded (2026-10-14):** no migration. `FillReport` (key `fill`, Recruitment) is built on `TimeToFill`, which combines `HireTimes` (the latest move into a hired
+stage of each application that is hired now) with the new `Shared` port `PublishedJobs` (`among`, `liveOfCompany`; Job's `DatabasePublishedJobs`:
+`published_at`, `vacancies`, title, category, current assignees). The card is `CompanyTimeToFillCard` (`time_to_fill`: `period_days` 90, `filled_jobs`,
+`median_days`, `open_jobs`; needs `analytics.view`, so a recruiter has no such card). Interpretations:
+
+1. A hire moment is the **latest** move into a hired stage, so an application hired twice counts once, at its last hire; hire times are not read before
+   `published_at` (a hire earlier than publication, as imported data may have, counts as 0 days).
+2. `by_job` (latest fill first) and `open` (longest open first) list every job, so a CSV export is complete (decided by the user); `by_company` is the top 100 by filled jobs; `by_category` has a row with empty
+   `category_id` for jobs without a category. `days_open` runs to the moment of the request (the table is the state now, not tied to the range).
+3. The `by_recruiter` table counts a job for each account assigned to it now, including a company admin who sits on it.
+4. A median needs `analytics.min_group_size` filled jobs, the card too; the average is shown whatever the count.

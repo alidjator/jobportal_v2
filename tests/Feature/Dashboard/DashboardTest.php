@@ -193,7 +193,7 @@ final class DashboardTest extends FeatureTestCase
         $admin = $this->company()->assertOk()->json('data.cards');
         $recruiter = $this->company($this->recruiterToken)->assertOk()->json('data.cards');
 
-        $this->assertSame(['applications', 'job_performance', 'jobs', 'messages', 'notifications', 'schedule'], array_keys($admin));
+        $this->assertSame(['applications', 'job_performance', 'jobs', 'messages', 'notifications', 'schedule', 'time_to_fill'], array_keys($admin));
 
         $this->assertSame(3, $admin['jobs']['total']);
         $this->assertSame(2, $admin['jobs']['by_status']['active']);

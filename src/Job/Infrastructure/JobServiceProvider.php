@@ -65,6 +65,7 @@ use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
 use Src\Shared\Application\Job\LiveJobProfiles;
+use Src\Shared\Application\Job\PublishedJobs;
 use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -97,6 +98,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSearchReader::class => DatabaseJobSearchReader::class,
         SearchThrottle::class => RateLimiterSearchThrottle::class,
         JobDirectory::class => RepositoryJobDirectory::class,
+        PublishedJobs::class => DatabasePublishedJobs::class,
         JobMatcher::class => AlertJobMatcher::class,
         LiveJobProfiles::class => LiveJobProfileProvider::class,
         JobProfileReader::class => DatabaseJobProfileReader::class,

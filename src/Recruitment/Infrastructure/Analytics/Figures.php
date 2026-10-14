@@ -16,4 +16,33 @@ final class Figures
     {
         return $whole === 0 ? null : round(min(1, $part / $whole), 4);
     }
+
+    /**
+     * The average of some values with one decimal; null when there are none.
+     *
+     * @param  list<float>  $values
+     */
+    public static function mean(array $values): ?float
+    {
+        return $values === [] ? null : round(array_sum($values) / count($values), 1);
+    }
+
+    /**
+     * The median of some values with one decimal; null when fewer than the smallest group the report may show.
+     *
+     * @param  list<float>  $values
+     */
+    public static function median(array $values, int $minGroup): ?float
+    {
+        $count = count($values);
+
+        if ($count === 0 || $count < $minGroup) {
+            return null;
+        }
+
+        sort($values);
+        $middle = intdiv($count, 2);
+
+        return round($count % 2 === 1 ? $values[$middle] : ($values[$middle - 1] + $values[$middle]) / 2, 1);
+    }
 }

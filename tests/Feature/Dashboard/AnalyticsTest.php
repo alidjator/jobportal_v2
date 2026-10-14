@@ -520,4 +520,136 @@ final class AnalyticsTest extends FeatureTestCase
         $this->assertFalse($row['suppressed']);
         $this->assertSame(2, $row['entered']);
     }
+
+    // ----- time to fill -----
+
+    private function hire(int $jobId, int $companyId, string $at): int
+    {
+        $application = $this->submitted($companyId, $jobId, '2026-09-01 00:00:00', 'direct', null);
+        $this->moved($application, $companyId, 'applied', 'hired', $at, $this->recruiterId);
+
+        return $application;
+    }
+
+    /**
+     * Company A: job A (one position, live 10-01 01:00) is hired 10-03 01:00; job B (two positions, live 09-28 00:00) has hires at 10-02, 10-04 and 10-04 05:00, so its
+     * second hire fills it on 10-04; job F is closed, live 09-01 and filled 09-20 (before the range); job C (two positions) has one hire, and another application that
+     * was hired and moved back; job E is live with no hire; a draft was never published. Company B: one job filled 10-02 01:00 after a day.
+     */
+    private function fillScenario(): void
+    {
+        $this->hire($this->jobId, $this->companyId, '2026-10-03 01:00:00');
+
+        $b = $this->insertJob('Job B', 'active', [$this->recruiterId], attributes: ['vacancies' => 2, 'published_at' => '2026-09-28 00:00:00']);
+
+        foreach (['2026-10-02 00:00:00', '2026-10-04 00:00:00', '2026-10-04 05:00:00'] as $at) {
+            $this->hire($b, $this->companyId, $at);
+        }
+
+        $f = $this->insertJob('Job F', 'closed', attributes: ['published_at' => '2026-09-01 00:00:00']);
+        $this->hire($f, $this->companyId, '2026-09-20 00:00:00');
+
+        $c = $this->insertJob('Job C', 'active', [$this->secondRecruiterId], attributes: ['vacancies' => 2, 'published_at' => '2026-10-02 00:00:00']);
+        $this->hire($c, $this->companyId, '2026-10-03 00:00:00');
+        $this->moved($this->hire($c, $this->companyId, '2026-10-03 02:00:00'), $this->companyId, 'hired', 'interview', '2026-10-03 03:00:00', $this->recruiterId);
+
+        $this->insertJob('Job E', 'active', attributes: ['published_at' => '2026-09-25 00:00:00']);
+        $this->insertJob('Never published', 'draft');
+
+        $foreign = $this->insertJob('Job H', 'active', companyId: $this->otherCompanyId, attributes: ['published_at' => '2026-10-01 01:00:00']);
+        $this->hire($foreign, $this->otherCompanyId, '2026-10-02 01:00:00');
+
+        $this->app->make('cache')->flush();
+    }
+
+    public function test_the_fill_report_measures_the_days_from_going_live_to_the_last_hire(): void
+    {
+        $this->fillScenario();
+
+        $tables = $this->company('fill')->assertOk()->json('data.tables');
+        $this->assertSame(['summary', 'by_category', 'by_job', 'by_recruiter', 'open'], array_keys($tables));
+
+        $summary = $tables['summary']['rows'][0];
+        $this->assertSame(2, $summary['filled_jobs']);
+        $this->assertEquals(4.0, $summary['average_days']);
+        $this->assertNull($summary['median_days'], 'Two jobs are too few for a median.');
+        $this->assertFalse($summary['suppressed']);
+
+        $byJob = $tables['by_job']['rows'];
+        $this->assertSame(['Job B', 'Backend Developer'], array_column($byJob, 'title'), 'The latest fill comes first.');
+        $this->assertEquals(['published' => '2026-09-28', 'filled' => '2026-10-04', 'days' => 6, 'vacancies' => 2, 'hires' => 3], array_intersect_key($byJob[0], array_flip(['published', 'filled', 'days', 'vacancies', 'hires'])));
+        $this->assertEquals(2.0, $byJob[1]['days']);
+        $this->assertNull($byJob[1]['vacancies']);
+
+        $this->assertSame(2, $tables['by_category']['rows'][0]['filled_jobs']);
+
+        $recruiters = $tables['by_recruiter']['rows'];
+        $this->assertEqualsCanonicalizing([$this->adminId, $this->recruiterId], array_column($recruiters, 'member_id'));
+        $this->assertSame([1, 1], array_column($recruiters, 'filled_jobs'));
+        $this->assertNotNull($recruiters[0]['name']);
+
+        $open = $tables['open']['rows'];
+        $this->assertSame(['Job E', 'Job C'], array_column($open, 'title'), 'The longest open comes first.');
+        $this->assertEquals(10.4, $open[0]['days_open']);
+        $this->assertSame(0, $open[0]['hires']);
+        $this->assertEquals(3.4, $open[1]['days_open']);
+        $this->assertSame(1, $open[1]['hires'], 'An application moved back from the hired stage is not a hire.');
+        $this->assertSame(2, $open[1]['vacancies']);
+    }
+
+    public function test_the_median_shows_once_enough_jobs_are_filled(): void
+    {
+        $this->fillScenario();
+        $this->app->make(SettingsStore::class)->setGlobal('analytics.min_group_size', 2, null);
+        $this->app->make('cache')->flush();
+
+        $this->assertEquals(4.0, $this->company('fill')->assertOk()->json('data.tables.summary.rows.0.median_days'));
+    }
+
+    public function test_a_job_counts_in_the_range_of_the_day_it_was_filled(): void
+    {
+        $this->fillScenario();
+
+        $this->assertSame(3, $this->company('fill', 'from=2026-09-01&to=2026-10-04')->assertOk()->json('data.tables.summary.rows.0.filled_jobs'));
+        $this->assertSame(1, $this->company('fill', 'from=2026-10-04&to=2026-10-04')->assertOk()->json('data.tables.summary.rows.0.filled_jobs'));
+        $this->assertSame(0, $this->company('fill', 'from=2026-10-01&to=2026-10-02')->assertOk()->json('data.tables.summary.rows.0.filled_jobs'));
+    }
+
+    public function test_the_platform_fill_report_adds_up_the_companies_and_has_no_job_tables(): void
+    {
+        $this->fillScenario();
+
+        $tables = $this->platform('fill', $this->adminAccountToken(['analytics.view']))->assertOk()->json('data.tables');
+        $this->assertSame(['summary', 'by_category', 'by_company'], array_keys($tables));
+        $this->assertSame(3, $tables['summary']['rows'][0]['filled_jobs']);
+        $this->assertEquals(3.0, $tables['summary']['rows'][0]['average_days']);
+        $this->assertSame([2, 1], array_column($tables['by_company']['rows'], 'filled_jobs'));
+        $this->assertSame($this->companyId, $tables['by_company']['rows'][0]['company_id']);
+        $this->assertNotNull($tables['by_company']['rows'][0]['company']);
+    }
+
+    public function test_the_fill_report_needs_the_analytics_permission_and_exports_a_table(): void
+    {
+        $this->fillScenario();
+
+        $this->company('fill', token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('permission', 'analytics.view');
+
+        $csv = $this->company('fill', self::RANGE.'&format=csv&table=open')->assertOk();
+        $this->assertStringContainsString('Job E', $csv->getContent());
+    }
+
+    public function test_the_dashboard_card_gives_the_median_of_the_last_90_days_and_the_jobs_not_filled(): void
+    {
+        $this->fillScenario();
+
+        $card = $this->api('GET', '/company/dashboard', [], $this->adminToken)->assertOk()->json('data.cards.time_to_fill');
+        $this->assertSame(['period_days' => 90, 'filled_jobs' => 3, 'median_days' => null, 'open_jobs' => 2], $card);
+
+        $this->app->make(SettingsStore::class)->setGlobal('analytics.min_group_size', 2, null);
+        $this->app->make('cache')->flush();
+        $this->assertEquals(6.0, $this->api('GET', '/company/dashboard', [], $this->adminToken)->assertOk()->json('data.cards.time_to_fill.median_days'));
+
+        $this->flushHeaders();
+        $this->assertArrayNotHasKey('time_to_fill', $this->api('GET', '/company/dashboard', [], $this->recruiterToken)->assertOk()->json('data.cards'));
+    }
 }

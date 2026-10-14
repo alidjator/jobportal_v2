@@ -67,6 +67,7 @@ use Src\Recruitment\Domain\Video\VideoRoomRepository;
 use Src\Recruitment\Domain\Voice\CallRepository;
 use Src\Recruitment\Domain\Voice\VoiceSessionRepository;
 use Src\Recruitment\Infrastructure\Analytics\ApplicationsDailyRollup;
+use Src\Recruitment\Infrastructure\Analytics\FillReport;
 use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
 use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
 use Src\Recruitment\Infrastructure\Analytics\RejectionsReport;
@@ -75,6 +76,7 @@ use Src\Recruitment\Infrastructure\Dashboard\ApplicantApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantInterviewsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyScheduleCard;
+use Src\Recruitment\Infrastructure\Dashboard\CompanyTimeToFillCard;
 use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
 use Src\Recruitment\Infrastructure\Listeners\ConvertRecordingWhenStopped;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
@@ -239,6 +241,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(AnalyticsReports::class, function (AnalyticsReports $reports): void {
             $reports->add(
+                $this->app->make(FillReport::class),
                 $this->app->make(FunnelReport::class),
                 $this->app->make(RejectionsReport::class),
                 $this->app->make(MatchingReport::class),
@@ -255,6 +258,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(ApplicantInterviewsCard::class),
                 $this->app->make(CompanyApplicationsCard::class),
                 $this->app->make(CompanyScheduleCard::class),
+                $this->app->make(CompanyTimeToFillCard::class),
                 $this->app->make(PlatformApplicationsCard::class),
             );
         });
