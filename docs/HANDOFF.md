@@ -10,11 +10,11 @@ Entry point for a new session; rules, code standard, Git workflow and commands a
 ## Current state (2026-10-14)
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
-- **Phases 0 to 7 coded and committed** (5: security, performance and architecture reviews; 6 assessments; 7 interview kits and tele-interview).
+- **Phases 0 to 7 coded and committed.**
 - Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
-- **Branch `phase-8-company-permissions`:** member permissions, team, time-to-fill and assessment Part 7 committed and tested (migrations `000136` to `000138`); Part 7 auto reports wait for `legal-review.md` question 11. **Next coding:** `phase-8-interview-calendar.md`, then `phase-8-offer-letters.md` (acceptance evidence waits for question 12), then `phase-8-hiring.md`, then `phase-8-rejections.md` (restrictions wait for question 13), then `phase-8-withdrawals.md`.
-- Front end: designed (`docs/design/frontend.md`), not coded; it needs the API pieces of `docs/design/phase-8-*.md` and `frontend.md` 11.5, 11.6; open point before go-live: client IP behind the Nuxt proxy (5.2).
+- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`); Part 7 auto reports wait for `legal-review.md` question 11. **Next coding** (`docs/design/phase-8-*`): `interview-calendar`, `offer-letters` (acceptance evidence waits for question 12), `hiring`, `rejections` (restrictions wait for question 13), `withdrawals`.
+- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 
