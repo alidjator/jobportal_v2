@@ -16,6 +16,10 @@ every interview and lets the recruiter add a note for the candidate to the invit
 - 2026-10-14: an application may move to an interview stage **without a schedule** when the request says so explicitly ("schedule later"), one by
   one or in bulk; such applications are marked "not scheduled" (decided by the user, [section 4](#4-move-to-interview-without-a-schedule)). The
   team toggle "send the invitation email" of Talenta is **not built**: the job seeker's own email preference decides (decided by the user).
+- 2026-10-14: an **email preview** before sending an interview, assessment or offer (decided by the user, [section 5](#5-email-preview)).
+- 2026-10-14: **no full email templates per company** (scam and phishing risk on the platform's domain, required content lost); instead **default
+  texts per scenario** that prefill the note of an interview, an assessment invitation (new note) or an offer, and the company logo in those emails.
+  Rejections stay without a message to the applicant (decision of 2026-10-06 kept) (decided by the user, [section 6](#6-default-texts-per-scenario)).
 
 ## 1. Recruitment calendar
 
@@ -115,13 +119,47 @@ interview stage whose time is not known yet.
   without an active interview (`GET me/applications/{id}/interview` answers `data: null` as today; the front end reads the stage type).
 - Not on the calendar (no time) and no reminder; the filter is the work list. No schema change.
 
+## 5. Email preview
+
+- `POST company/applications/{id}/email-preview` with `{scenario, ...}`: `scenario` is `interview_scheduled`, `interview_rescheduled`,
+  `interview_updated`, `assessment_invited` or `offer_sent`; the other fields are the ones of the form being filled (schedule, note, test and due
+  time, offer fields), validated by the same rules as the real request (422 with the same codes).
+- Answers `{subject, html, text, locale, email_enabled}`: the real email for that applicant (name, job, company, times in Jakarta time, note, logo)
+  in the applicant's language, rendered with the Platform's `EmailBodyRenderer` and the template the applicant would get (an admin override
+  included). Nothing is saved, sent or audited. The `.ics` is not rendered; the preview says one is attached.
+- `email_enabled: false` when the applicant turned off `application_update`: the front end says "Kandidat hanya menerima notifikasi in-app".
+- Bulk moves preview with the first selected application.
+- Access: whoever may send that action for the application (`interviews.manage`, `assessments.send`, `offers.manage` once the company permissions
+  are coded). Rate limited like other company writes.
+- The template rendering is reached through a `Shared` port the Platform provides (`EmailPreviewer`), so Recruitment and Assessment do not depend on
+  Platform.
+
+## 6. Default texts per scenario
+
+- **Setting per company:** `GET`/`PUT company/message-defaults` with `interview`, `assessment` and `offer`, each an optional plain text of at most
+  1,000 characters (the offer one at most 2,000, the length of the offer note). Changed by a company admin (`company.profile` once the permissions
+  are coded); audited (`company.message_defaults_changed`).
+- **No links:** a text with a URL or an email address other than one of the company's own domain is refused (422 `message-link-not-allowed`); the
+  company domain is the one of its website in the profile. Phone numbers are allowed.
+- **Prefill only:** the schedule, test invitation and offer dialogs start with the default in the note field (the front end reads the setting); the
+  recruiter may change or clear it per invitation. The server stores only the note actually sent, so a later change of the default never changes
+  an invitation already sent.
+- **Assessment note (new):** `assessment_invitations.note` (at most 1,000 characters, nullable, for the candidate), in the move request
+  (`assessment.note`), `PUT .../invitation` and bulk moves; shown on the candidate's invitation page and in the invitation and reminder emails. The
+  link rule above applies to every note sent to a candidate (interview, assessment, offer) as well.
+- **Logo:** the interview, assessment and offer emails show the company logo (from the company profile, the stored small rendition) above the
+  text; the platform's header and footer stay. Without a logo, the company name.
+- **What stays with the platform:** subject, structure, action buttons, the `.ics`, the email preference footer and a fixed anti-scam line in
+  these emails ("[platform] dan perusahaan tidak pernah memungut biaya dalam proses rekrutmen").
+- **Rejection:** no message to the applicant; the reason and note stay team-only (`phase-1-pipeline.md`, 2026-10-06).
+
 ## Changes in short
 
 | Piece | Change |
 |---|---|
-| Migration | `recruitment_interviews.note`, `calendar_uid`, `calendar_sequence`; indexes for the calendar reads |
-| API | `schedule_later` in the move and bulk move; `interview_state` and its filter in the pipeline list; `GET company/calendar`; `PATCH company/applications/{id}/interview`; `note` in schedule, move and bulk move; `GET company/interviews/{id}/calendar.ics`; `note` in the interview resources |
+| Migration | `recruitment_interviews.note`, `calendar_uid`, `calendar_sequence`; `assessment_invitations.note`; the company message defaults (a table or company settings, chosen when coding); indexes for the calendar reads |
+| API | `POST company/applications/{id}/email-preview`; `GET`/`PUT company/message-defaults`; `note` on assessment invitations; `schedule_later` in the move and bulk move; `interview_state` and its filter in the pipeline list; `GET company/calendar`; `PATCH company/applications/{id}/interview`; `note` in schedule, move and bulk move; `GET company/interviews/{id}/calendar.ics`; `note` in the interview resources |
 | Notification | `interview.updated` (in-app and email) |
 | Email | `.ics` on the interview emails; template `interview.updated` |
-| Errors | 422 `invalid-calendar-range` |
-| Front end | C26 Calendar; the note field in the schedule dialog and the job seeker's interview card |
+| Errors | 422 `invalid-calendar-range`, `message-link-not-allowed` |
+| Front end | C26 Calendar; the note field (prefilled from the defaults) and the "Preview email" button in the schedule, test and offer dialogs; the job seeker's interview and test cards; a "Teks default pesan" section in the company settings |
