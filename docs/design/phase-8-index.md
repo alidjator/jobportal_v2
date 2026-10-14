@@ -24,15 +24,16 @@ documents.
 | 7 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12 |
 | 8 | `phase-8-hiring.md` | |
 | 9 | `phase-8-rejections.md` | restricted candidates: question 13 |
-| 10 | `phase-8-withdrawals.md` | |
-| 11 | `phase-8-talent-pool.md` | |
-| 12 | `phase-8-applicant-search.md` | |
-| 13 | `phase-8-job-posting.md` | |
-| 14 | `phase-8-interview-results.md` | |
-| 15 | `phase-8-assessment-automation.md` | |
-| 16 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
-| 17 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
-| 18 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
+| 10 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
+| 11 | `phase-8-withdrawals.md` | |
+| 12 | `phase-8-talent-pool.md` | |
+| 13 | `phase-8-applicant-search.md` | |
+| 14 | `phase-8-job-posting.md` | |
+| 15 | `phase-8-interview-results.md` | |
+| 16 | `phase-8-assessment-automation.md` | |
+| 17 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
+| 18 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
+| 19 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
 
 ## After the legacy import
 

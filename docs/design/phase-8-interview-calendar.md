@@ -151,8 +151,8 @@ interview stage whose time is not known yet.
   text; the platform's header and footer stay. Without a logo, the company name.
 - **What stays with the platform:** subject, structure, action buttons, the `.ics`, the email preference footer and a fixed anti-scam line in
   these emails ("[platform] dan perusahaan tidak pernah memungut biaya dalam proses rekrutmen").
-- **Rejection:** no message to the applicant; the note stays team-only and the applicant sees only the reason code on the application detail
-  (`phase-1-applications.md`, 2026-10-09).
+- **Rejection:** the note stays team-only and the applicant sees the reason code on the application detail (`phase-1-applications.md`,
+  2026-10-09); a separate optional message for the candidate and a `rejection` default text are in `phase-8-candidate-experience.md` (2026-10-15).
 
 ## Changes in short
 

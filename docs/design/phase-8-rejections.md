@@ -84,7 +84,7 @@ admin edits the existing one instead).
 
 | Piece | Change |
 |---|---|
-| Migration | `recruitment_restricted_candidates`, `recruitment_pending_rejections`, `job_jobs.reapply_after_days` |
+| Migration | `recruitment_restricted_candidates`, `recruitment_pending_rejections` (gains `candidate_note` in `phase-8-candidate-experience.md`), `job_jobs.reapply_after_days` |
 | Settings | `recruitment.rejection_undo_minutes` (admin); `recruitment.reapply_after_days` (company) |
 | API | `restrict` in reject and bulk reject; `POST company/applications/{id}/restriction`; `GET`/`PATCH`/`DELETE company/restrictions`; reject answers 202 with `commit_at`; `DELETE company/applications/{id}/pending-rejection`, `DELETE company/rejection-batches/{batchId}`; `reapply_after_days` on jobs; `reapply_on` on `already-applied` and in the apply state |
 | Scheduler | `recruitment:commit-rejections` every minute |
