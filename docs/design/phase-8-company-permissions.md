@@ -25,6 +25,10 @@ permissions" and "change a member's role and permissions so access always matche
 - 2026-10-13: the story "extra team actions" (resend, revoke, suspend, reactivate, detail and activity, make primary account) adds **one owner per
   company**, **temporary suspension of a membership**, **expired invitations with resend** and **member detail with activity from the audit log**
   (decided by the user, [detail](#team-actions)); its five interpretations decided the same day, the activity shows IP address and user agent.
+- 2026-10-14: the story "see every team member with role and permissions" (AC1 to AC6): the member list is **paginated in the API** (20 per page,
+  with the total for "N anggota tim"), each row carries its allowed **`actions`**, and the **owner comes first** (decided by the user, [API](#api)).
+- 2026-10-14: the story "search members by name or email": `filter[q]` on the member list ([API](#api)); debounce, the 2-character start, the empty
+  message and clearing are front-end behaviour.
 
 ## Team actions
 
@@ -155,7 +159,7 @@ which is exactly what a recruiter may do today, so imported and existing recruit
 | `GET company/permissions` | New (any member): the catalog with groups and the presets (name and permissions), for the invitation and edit dialogs. |
 | `POST company/invitations` | `role` (`company_admin` or `member`) and, for `member`, `permissions` (list, may be empty; unknown names 422). |
 | `GET company/invitations` | Each pending invitation shows `role` and `permissions`. |
-| `GET company/members` | Each member shows `role` and `permissions` (a company admin lists every permission). |
+| `GET company/members` | Each member shows `role`, `is_owner`, `status`, `permissions` (a company admin lists every permission) and `actions`, the row actions the caller may take now (`edit`, `remove`, `suspend`, `reactivate`, `make_owner`), computed by the same rules as the use cases. **Paginated** (`page`, `per_page` default 20, at most 100, with the total); fixed order: the owner, then the other company admins by name, then the members by name. **Search** `filter[q]`: name or email, case-insensitive, partial (`TextSearch::contains`), 2 to 100 characters (422 otherwise); the total then counts the matches. |
 | `PUT company/members/{userId}/permissions` | New: replaces a member's permissions (`member` only; on a company admin 409 `member-is-company-admin`); same set changes and audits nothing. |
 | `PUT company/members/{userId}/role` | `company_admin` or `member`; a demotion gives the Recruiter preset. |
 | `GET company/me` | Adds `role` and the effective `permissions`, so the front end builds the menu. |
@@ -182,7 +186,9 @@ everywhere except team management.
 
 ## Front end
 
-- C22: invitation dialog with a preset picker and the grouped checkboxes; the member list shows the preset name when the set matches one, else
+- C22: title "Tim Anda" with the total of the unfiltered list (kept while searching); a search field that queries after 2 characters with a
+  300 ms debounce, shows "Anggota tim tidak ditemukan" on an empty result and reloads the full list when cleared; one "Semua izin" chip for a company admin instead of 21; row icons and the three-dot menu from `actions`;
+  invitation dialog with a preset picker and the grouped checkboxes; the member list shows the preset name when the set matches one, else
   "Kustom"; an edit dialog per member.
 - The company dashboard menu (section 8 of `frontend.md`) follows `GET company/me` permissions instead of the role.
 
