@@ -11,7 +11,7 @@ final readonly class Participant
         public SenderSide $side,
         public int $userId,
         public ?int $companyId = null,
-        public bool $isCompanyAdmin = false,
+        public bool $seesAllJobs = false,
     ) {}
 
     public function isCompany(): bool

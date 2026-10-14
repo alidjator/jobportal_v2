@@ -10,6 +10,7 @@ use Src\Recruitment\Domain\ScreeningQuestion;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
@@ -42,14 +43,14 @@ final readonly class ReplaceJobScreeningQuestions
      * @param  list<array{question_id: int, required: bool, must_have: bool, ideal: array<string, mixed>|null}>  $items
      * @return list<JobQuestion>
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `screening-disabled`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-permission-required` or `screening-disabled`
      * @throws EntityNotFound when the job does not exist in the company or the member may not see it
      * @throws StateConflict `job-not-editable`, `job-questions-locked` or `screening-limit-reached`
      * @throws BusinessRuleViolation `invalid-job-questions` with `errors` per `questions.<n>.<field>`
      */
     public function execute(Actor $actor, int $jobId, array $items): array
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor, CompanyPermission::JobsCreate);
         $this->switch->assertOn($member->companyId);
         $this->access->job($member, $jobId);
         $now = $this->clock->now();

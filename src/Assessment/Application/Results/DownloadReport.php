@@ -35,13 +35,13 @@ final readonly class DownloadReport
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `report-not-signed`
      */
     public function execute(Actor $actor, int $invitationId): ReportFile
     {
-        $invitation = $this->visible->find($actor, $invitationId);
+        $invitation = $this->visible->findForResults($actor, $invitationId);
         $attempt = $this->attempts->findByInvitation($invitationId) ?? throw EntityNotFound::of('Report', $invitationId);
         $report = $this->reports->findByAttempt((int) $attempt->id) ?? throw EntityNotFound::of('Report', $invitationId);
 

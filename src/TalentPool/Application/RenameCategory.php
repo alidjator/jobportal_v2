@@ -18,14 +18,14 @@ final readonly class RenameCategory
     public function __construct(private TalentPoolAccess $access, private CategoryRepository $categories, private EntryRepository $entries, private TransactionManager $transactions) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound the category is missing or another company's
      * @throws BusinessRuleViolation `category-name-invalid`
      * @throws StateConflict `category-name-taken`
      */
     public function execute(Actor $actor, int $id, string $name): CategoryView
     {
-        $member = $this->access->admin($actor);
+        $member = $this->access->member($actor);
         $name = Category::cleanName($name);
 
         return $this->transactions->run(function () use ($member, $id, $name): CategoryView {

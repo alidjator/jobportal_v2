@@ -16,6 +16,7 @@ final class InvitationPreviewResource extends JsonResource
         return [
             'company_name' => $this->resource->companyName,
             'email' => $this->resource->email,
+            'name' => $this->resource->name,
             'role' => $this->resource->role->value,
             'expires_at' => $this->resource->expiresAt->format(DateTimeInterface::ATOM),
         ];

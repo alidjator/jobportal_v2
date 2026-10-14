@@ -4,6 +4,7 @@ namespace Src\Assessment\Application\Delivery;
 
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -16,12 +17,12 @@ final readonly class ListApplicationInvitations
     /**
      * @return list<InvitationView>
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound
      */
     public function execute(Actor $actor, int $applicationId): array
     {
-        $this->applications->find($actor, $applicationId);
+        $this->applications->find($actor, $applicationId, permission: CompanyPermission::AssessmentsSend);
 
         return $this->views->many($this->invitations->ofApplication($applicationId));
     }

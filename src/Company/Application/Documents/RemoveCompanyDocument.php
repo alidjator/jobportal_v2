@@ -10,6 +10,7 @@ use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\Events\CompanyDocumentDeleted;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\TransactionManager;
@@ -36,13 +37,13 @@ final readonly class RemoveCompanyDocument
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the type or the company's document for it does not exist
      * @throws StateConflict `document-approved`
      */
     public function execute(Actor $actor, int $typeId, ?string $ipAddress, ?string $userAgent): void
     {
-        $companyId = (int) $this->guard->company($actor)->id;
+        $companyId = (int) $this->guard->companyWith($actor, CompanyPermission::CompanyProfile)->id;
 
         /** @var CompanyDocument $document */
         $document = $this->transactions->run(function () use ($companyId, $typeId): CompanyDocument {

@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Video\VideoRoom;
 use Src\Recruitment\Domain\Video\VideoRoomRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -39,7 +40,7 @@ final readonly class ViewVideoLobby
     public function asTeam(Actor $actor, int $applicationId): VideoLobby
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VideoLobby {
-            $team = $this->lookup->find($actor, $applicationId);
+            $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage);
             $interview = $this->sessions->joinable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

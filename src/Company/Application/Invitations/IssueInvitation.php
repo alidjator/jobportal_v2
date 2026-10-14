@@ -73,13 +73,13 @@ final readonly class IssueInvitation
             }
 
             return $this->invitations->save(Invitation::issue(
-                $companyId, $email, $command->role, $token->hash(), $command->invitedByUserId, $command->invitedByAdminId, $now,
+                $companyId, $email, $command->role, $command->name, $command->permissions, $token->hash(), $command->invitedByUserId, $command->invitedByAdminId, $now,
             ));
         });
 
         $this->sender->send($email, $command->language, $command->company->name(), $command->role, $this->links->build($token->plain), $invitation->expiresAt);
         $this->events->dispatch([new CompanyInvitationSent(
-            $companyId, (int) $invitation->id, $command->role->value, $command->invitedByUserId, $command->invitedByAdminId,
+            $companyId, (int) $invitation->id, $command->role->value, $command->permissions, $command->invitedByUserId, $command->invitedByAdminId,
             $command->ipAddress, $command->userAgent, $invitation->sentAt,
         )]);
 

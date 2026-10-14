@@ -28,7 +28,7 @@ final readonly class ListJobApplications
      */
     public function execute(Actor $actor, RecruiterApplicationQuery $query, PageRequest $request): JobApplicationList
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor);
         $this->access->job($member, $query->jobId);
 
         $counts = $this->reader->countByStage($query->jobId);

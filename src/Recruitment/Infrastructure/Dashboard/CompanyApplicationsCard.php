@@ -4,6 +4,7 @@ namespace Src\Recruitment\Infrastructure\Dashboard;
 
 use Illuminate\Database\ConnectionInterface;
 use Src\Recruitment\Domain\StageType;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCardProvider;
 use Src\Shared\Application\Dashboard\DashboardScope;
@@ -25,7 +26,7 @@ final readonly class CompanyApplicationsCard implements DashboardCardProvider
 
     public function permission(): ?string
     {
-        return null;
+        return CompanyPermission::ApplicationsView->value;
     }
 
     public function build(DashboardScope $scope): array

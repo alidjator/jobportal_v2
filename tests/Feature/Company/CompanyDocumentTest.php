@@ -10,6 +10,7 @@ use Illuminate\Testing\TestResponse;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\Platform\Application\Settings\SettingsStore;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class CompanyDocumentTest extends FeatureTestCase
 {
@@ -75,7 +76,7 @@ final class CompanyDocumentTest extends FeatureTestCase
     private function member(int $companyId, string $name, string $email, string $role): UserModel
     {
         $user = UserModel::query()->create(['type' => 'company_member', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
-        DB::table('company_members')->insert(['company_id' => $companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($companyId, $user->id, $role);
 
         return $user;
     }
@@ -167,11 +168,11 @@ final class CompanyDocumentTest extends FeatureTestCase
         $seeker = $this->token(UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']));
 
         foreach ([['GET', ''], ['DELETE', "/{$this->nib}"], ['GET', "/{$this->nib}/file"]] as [$method, $suffix]) {
-            $this->api($method, '/api/v1/company/documents'.$suffix, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+            $this->api($method, '/api/v1/company/documents'.$suffix, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
             $this->api($method, '/api/v1/company/documents'.$suffix, $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
         }
 
-        $this->upload($this->tax, $this->pdf(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->upload($this->tax, $this->pdf(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         $this->upload($this->tax, $this->pdf(), token: $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
         $this->assertNull($this->row($this->tax));
     }

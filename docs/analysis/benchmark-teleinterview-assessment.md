@@ -159,6 +159,17 @@ TestGorilla also offers video questions and "AI interviews" scored by AI from th
 - **Other tests:** MBTI as a separate test with statuses Not invited yet, Sent, Submitted and Expired (54018820786969). Custom tests the company builds itself: multiple choice, long text or numeric; a duration; navigation rules (skip, go back, jump); at most 10 measured capabilities (56549296871193).
 - **Pricing model:** credit packages (110, 500 and 1,000), not detailed here (billing is out of scope).
 
+**Update 2026-10-14 (direct, Talenta help center; cmlabs news):**
+
+- Sample questions are labelled by subtest codes (CDF, ART, VER for the professional and leadership batteries; CGF, SIK for the operational one),
+  which suggests IST-like intelligence subtests next to work-attitude (Kraepelin-like) tests.
+- The candidate gets a pop-up after a while **without cursor movement** during the test, and is told not to work from **two devices at once**.
+- Every result carries an official, unique LPTUI license or report number that can be validated, and a recommendation.
+- Results come out without a visible review step per candidate: LPTUI ran an online selection of **more than 20,000 participants** for a ministry
+  in 2025 (built with cmlabs), so reports are most likely issued from the norms under the institute's responsibility, not signed one by one.
+- The invitation also takes an attachment (JPG, PNG or PDF, at most 10 MB) that can go with the email; onsite invitations name the office.
+- The English feature page still says "Coming soon"; the help center articles were updated in July 2026.
+
 **Common Indonesian test instruments (search-summary):** CFIT and IST (intelligence), Kraepelin (concentration and pace), DISC, PAPI Kostick, EPPS, RMIB, and drawing tests (BAUM, HTP, DAP, Wartegg).
 
 **Law: UU 23/2022 on psychology education and services (direct, official copy)**

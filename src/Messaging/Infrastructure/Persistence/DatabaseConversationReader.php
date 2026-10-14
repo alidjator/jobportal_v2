@@ -68,7 +68,7 @@ final readonly class DatabaseConversationReader implements ConversationReader
 
         $query->where('c.company_id', $audience->companyId);
 
-        if ($audience->isCompanyAdmin) {
+        if ($audience->seesAllJobs) {
             return $query;
         }
 

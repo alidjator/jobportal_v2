@@ -131,11 +131,10 @@ final readonly class InvitationChecks
         }
 
         $roles = $assessors === [] ? [] : $this->team->roles($companyId);
+        $viewAll = $assessors === [] ? [] : $this->team->viewAllUserIds($companyId);
 
         foreach ($assessors as $userId) {
-            $role = $roles[$userId] ?? null;
-
-            if ($role === null || $this->jobs->visibleToMember($jobId, $companyId, $userId, $role === 'company_admin') === null) {
+            if (! array_key_exists($userId, $roles) || $this->jobs->visibleToMember($jobId, $companyId, $userId, in_array($userId, $viewAll, true)) === null) {
                 $this->refuse('invalid-assessor', 'assessor_ids', 'Choose members of your team who work on this job.');
             }
         }

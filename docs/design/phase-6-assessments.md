@@ -15,6 +15,9 @@ One line per decision; the detail sections below win if they disagree.
 - 2026-10-11: only the assigned assessors score long text (whole points, correctable); a psychologist edits the generated draft and signs with a numbered report, then writes a separate plain-language explanation for the candidate; the PDF goes to the company team only (Part 6).
 
 Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `decisions.md` ("assessments reopen R8"). Billing, credits and packages are out of scope (`decisions.md`).
+- 2026-10-14: after a second look at Talenta with LPTUI: an **idle signal** with a pop-up, **a new device takes the attempt over**, invitations
+  may be **onsite** (location shown) and carry **one attachment**, and a provider may **issue reports automatically** per battery once the platform
+  admin allows it for the provider (decided by the user, [Part 7](#part-7-lptui-style-additions-designed-2026-10-14-not-coded)).
 
 ## Decided (2026-10-11, user)
 
@@ -160,6 +163,64 @@ Source: `docs/analysis/benchmark-teleinterview-assessment.md` (section 3) and `d
 - **Candidate:** `GET /me/assessment/invitations/{id}/explanation` after the signature (`report-not-signed` 409 before): the report number, the signer, the explanation and the scale scores, never the company's report text or the psychologist's notes.
 - **Erasure:** `EraseAssessmentData` is the twelfth erasure step (`assessment-data`, listener `EraseAssessmentDataWhenUserAnonymized`): it deletes the drawing files, then the answers, drawings, speed-column results and integrity signals, clears the last IP and the scale scores, and empties the report's text, explanation and notes. The invitations, attempts, result totals and the number, signer and time of a signed report stay.
 - **Interpretations (confirmed 2026-10-11):** the points of a drawing question (1 to 100, set by the author, ignored by the section maximum) are the highest score the psychologist can give it, and the score does not feed the scale scores; the migration gives drawing questions without points 10; an assessor corrects a score until the application leaves its assessment stage (`scoring-locked`); the candidate is notified when the report is signed.
+
+## Part 7: LPTUI-style additions (designed 2026-10-14, not coded)
+
+Source: `docs/analysis/benchmark-teleinterview-assessment.md` section 3.3 (update 2026-10-14). Coded in a coding session.
+
+### Idle signal
+
+- The browser reports a new integrity event **`idle`** when the candidate gives no input (pointer, key, touch) for **`assessment.idle_minutes`**
+  (admin setting, default 3, 1 to 30, read in `GET attempt`), once per idle spell, and shows a pop-up the candidate closes.
+- It counts toward the tier like the other signals and never rejects anyone.
+
+### A new device takes the attempt over
+
+- `POST start` (also the 200 for an attempt already started) returns an **`attempt_session`** token; every attempt request carries it in the header
+  `X-Attempt-Session` (409 `attempt-session-required` without it). The attempt stores the current token (hashed).
+- Starting again from another device (or browser) issues a new token: the old one is answered 409 **`attempt-moved`** on its next call, and the
+  server records the integrity event **`device_switch`**. The clock never stops; a candidate whose laptop dies goes on from a phone.
+- `ip_change` stays as it is; a device switch from another address records both.
+
+### Onsite invitations
+
+- The invitation gets `mode` (`online` default, or `onsite`) and, for `onsite`, a required **`location`** (at most 255 characters: office, address,
+  room). The move request takes them in `assessment: {..., mode?, location?}` (`invalid-assessment-input` otherwise), as does
+  `PUT .../invitation`.
+- The location is shown on the candidate's invitation page and in the invitation and reminder emails. The test is still taken in the engine (on a
+  device at the office); nothing else changes.
+
+### Invitation attachment
+
+- **One file per invitation**: PDF, JPG or PNG, at most 10 MB, while the invitation is `invited`: `PUT`/`DELETE
+  company/assessment/invitations/{id}/attachment` (multipart `file`; `invitation-not-active` 409 otherwise), by whoever may send the test.
+- Kept on the private disk under `assessment/invitation-files/{invitation}/`, served as a download with the headers of the company documents
+  (`phase-1-company.md`): the team through `GET company/assessment/invitations/{id}/attachment`, the candidate through
+  `GET me/assessment/invitations/{id}/attachment`. The invitation shows the file name and size.
+- The emails **link** to the invitation page, where the file is downloaded; the file is not attached to the email (deliverability, and no file leaves
+  the access checks). Erased with the application anonymisation, like the drawings.
+- The front end uploads it right after sending; for a bulk move, once per invitation.
+
+### Automatic report issue (per battery)
+
+- **Platform gate:** the platform admin allows it per provider, `assessment_providers.auto_issue_allowed` (default off), after the legal review
+  (`docs/legal-review.md` question 11). Audited.
+- **Battery setting:** a provider psychologist turns on **`auto_issue`** on a battery and names the **responsible psychologist** (an active
+  psychologist of the provider). Publishing with `auto_issue` checks: the provider allows it, the battery has **no drawing question**, every scale has
+  norms, and the **explanation template** is complete (`test-incomplete` lists what is missing).
+- **Explanation template:** each norm range gets an `explanation` text, and the battery an explanation template with the existing placeholders plus
+  `{{scale:KEY:explanation}}`; it gives the candidate's plain-language explanation (Pasal 44) without a hand-written text.
+- **At submit:** the report is drafted as today, then **issued at once**: numbered (`CODE/YEAR/00001`), the signature placeholders filled with the
+  responsible psychologist (copy of name, STR and SILP), the explanation rendered from the template, status `signed` with `auto_issued: true`; the
+  company and the candidate are notified as for a signed report. The PDF says the report was issued automatically under that psychologist's
+  responsibility.
+- **Falls back to the manual queue** (`pending_review`, as today) when: the responsible psychologist's STR or SILP is not valid that day, the
+  psychologist or provider is not active, the provider no longer allows it, or the attempt's integrity tier is **major**.
+- **Review afterwards:** auto-issued reports stay in the provider queue as `reviewed: false`; a psychologist marks them reviewed
+  (`POST provider/reviews/{id}/mark-reviewed`) or issues a **revision** (`POST provider/reviews/{id}/revise` with body and explanation): same number
+  with `-R1`, `-R2`, signed by the reviser; the earlier version is kept, marked superseded, and the company team and the candidate are told a revised
+  report is ready. A manually signed report stays locked as today.
+- New audit actions `assessment.report_auto_issued`, `assessment.report_revised`, `assessment_provider.auto_issue_changed`.
 
 ## Open questions
 

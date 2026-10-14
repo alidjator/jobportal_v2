@@ -52,7 +52,7 @@ final readonly class AcceptInvitation
             }
 
             $userId = $this->accounts->register($command->name, $invitation->email, $command->password, $command->language);
-            $this->members->add((int) $company->id, $userId, $invitation->role);
+            $this->members->add((int) $company->id, $userId, $invitation->role, $invitation->permissions ?? []);
 
             $invitation->accept($now);
             $this->invitations->save($invitation);

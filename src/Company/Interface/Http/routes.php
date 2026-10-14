@@ -6,6 +6,7 @@ use Src\Company\Interface\Http\Controllers\CompanyImageController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
+use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
 use Src\Company\Interface\Http\Controllers\PublicCompanyController;
 use Src\Company\Interface\Http\Controllers\TeamInvitationController;
 use Src\Company\Interface\Http\Controllers\TeamMemberController;
@@ -29,6 +30,7 @@ foreach (['logo', 'banner'] as $kind) {
 
 Route::middleware('auth:user')->group(function (): void {
     Route::get('company/me', CurrentCompanyController::class);
+    Route::get('company/permissions', PermissionCatalogController::class);
 
     // Logo and banner of the own company: any member sees them, a company admin uploads (a multipart POST: PHP does not read a multipart PUT) and removes them.
     foreach (['logo', 'banner'] as $kind) {
@@ -55,5 +57,5 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/members', [TeamMemberController::class, 'index']);
     Route::get('company/members/{userId}/jobs', [TeamMemberController::class, 'jobs'])->whereNumber('userId');
     Route::delete('company/members/{userId}', [TeamMemberController::class, 'destroy'])->whereNumber('userId');
-    Route::put('company/members/{userId}/role', [TeamMemberController::class, 'changeRole'])->whereNumber('userId');
+    Route::patch('company/members/{userId}', [TeamMemberController::class, 'update'])->whereNumber('userId');
 });

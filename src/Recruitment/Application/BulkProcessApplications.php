@@ -16,6 +16,7 @@ use Src\Shared\Application\Actor;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -53,13 +54,13 @@ final readonly class BulkProcessApplications
      * @param  list<int>  $applicationIds
      * @return list<BulkItemResult> in the order of the selection
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the member may not see the job
      * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input`, `invalid-offer`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
      */
     public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null): array
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
         $this->access->job($member, $jobId);
 
         $states = $this->selection($member, $jobId, $applicationIds);
@@ -88,13 +89,13 @@ final readonly class BulkProcessApplications
      * @param  list<int>  $applicationIds
      * @return list<BulkItemResult> in the order of the selection
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the member may not see the job
      * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications` or `invalid-rejection`
      */
     public function reject(Actor $actor, int $jobId, array $applicationIds, RejectionReason $reason, ?string $note): array
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
         $this->access->job($member, $jobId);
 
         $this->selection($member, $jobId, $applicationIds);

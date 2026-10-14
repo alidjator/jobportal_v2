@@ -37,7 +37,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
             $response->json('data.description'), $response->json('data.deadline'),
         ]);
         $this->assertSame([], [...$response->json('data.skills'), ...$response->json('data.tags'), ...$response->json('data.benefits')]);
-        $this->assertSame([['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'recruiter']], $response->json('data.assignees'));
+        $this->assertSame([['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member']], $response->json('data.assignees'));
         $this->assertSame($this->recruiterId, $response->json('data.created_by_user_id'));
         $this->assertSame($this->companyId, (int) $this->jobRow($id)->company_id);
         $this->assertSame([$this->recruiterId], $this->assigneesOf($id));

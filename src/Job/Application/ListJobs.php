@@ -22,14 +22,14 @@ final readonly class ListJobs
     /**
      * @return Page<JobListItem>
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      */
     public function execute(Actor $actor, ?JobStatus $status, ?string $search, bool $assignedToMe, JobListSort $sort, PageRequest $request): Page
     {
         $member = $this->access->member($actor);
 
         return $this->reader->page(
-            new JobListQuery($member->companyId, $member->isCompanyAdmin && ! $assignedToMe ? null : $member->userId, $status, $search, $sort),
+            new JobListQuery($member->companyId, $member->viewsAll() && ! $assignedToMe ? null : $member->userId, $status, $search, $sort),
             $request,
         );
     }

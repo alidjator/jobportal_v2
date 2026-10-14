@@ -44,7 +44,7 @@ final readonly class CreateInvitation
     public function execute(Actor $actor, int $jobId, string $candidateSlug, ?string $note): Invitation
     {
         $member = $this->access->member($actor);
-        $this->jobs->visibleToMember($jobId, $member->companyId, $member->userId, $member->isCompanyAdmin) ?? throw EntityNotFound::of('Job', $jobId);
+        $this->jobs->visibleToMember($jobId, $member->companyId, $member->userId, $member->seesAllJobs) ?? throw EntityNotFound::of('Job', $jobId);
 
         if ($this->jobs->publicCompanyId($jobId) !== $member->companyId) {
             throw new BusinessRuleViolation('You can only invite candidates to a job that is live.', 'job-not-live');

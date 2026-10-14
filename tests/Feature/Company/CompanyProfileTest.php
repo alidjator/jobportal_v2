@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Src\Company\Domain\CompanyProfile;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class CompanyProfileTest extends FeatureTestCase
 {
@@ -83,7 +84,7 @@ final class CompanyProfileTest extends FeatureTestCase
         $user = UserModel::query()->create([
             'type' => 'company_member', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00',
         ]);
-        DB::table('company_members')->insert(['company_id' => $this->companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($this->companyId, $user->id, $role);
 
         return $user;
     }
@@ -180,8 +181,8 @@ final class CompanyProfileTest extends FeatureTestCase
 
     public function test_a_recruiter_and_a_suspended_company_cannot_change_the_profile(): void
     {
-        $this->update(['bio' => 'x'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
-        $this->api('PUT', '/slug', ['slug' => 'other-name'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->update(['bio' => 'x'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->api('PUT', '/slug', ['slug' => 'other-name'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
 
         DB::table('company_companies')->update(['status' => 'suspended']);
         $this->update(['bio' => 'x'])->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');

@@ -21,7 +21,7 @@ final readonly class GetJobScreeningQuestions
      */
     public function execute(Actor $actor, int $jobId): array
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor);
         $this->access->job($member, $jobId);
 
         return $this->jobQuestions->forJob($jobId);

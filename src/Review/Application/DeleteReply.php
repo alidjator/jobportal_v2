@@ -18,7 +18,7 @@ final readonly class DeleteReply
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound the review is not one of the company's, or has no reply
      */
     public function execute(Actor $actor, int $reviewId): void

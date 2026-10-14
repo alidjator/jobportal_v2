@@ -23,37 +23,46 @@ final readonly class DatabaseCompanyMemberRepository implements CompanyMemberRep
 
     public function findByUserId(int $userId): ?CompanyMembership
     {
-        $row = $this->connection->table('company_members')->where('user_id', $userId)->first(['company_id', 'role']);
+        // One query: the permissions come back as a comma-separated list, because this runs on every request of a company member.
+        $row = $this->connection->table('company_members as m')
+            ->leftJoin('company_member_permissions as p', 'p.company_member_id', '=', 'm.id')
+            ->where('m.user_id', $userId)
+            ->groupBy('m.id', 'm.company_id', 'm.role')
+            ->selectRaw("m.company_id, m.role, string_agg(p.permission, ',' order by p.id) as permissions")
+            ->first();
 
-        return $row === null ? null : new CompanyMembership((int) $row->company_id, (string) $row->role);
+        return $row === null
+            ? null
+            : new CompanyMembership((int) $row->company_id, (string) $row->role, $row->permissions === null ? [] : explode(',', (string) $row->permissions));
     }
 
-    public function add(int $companyId, int $userId, CompanyRole $role): void
+    public function add(int $companyId, int $userId, CompanyRole $role, array $permissions): void
     {
         $time = $this->clock->now()->format(self::TIME_FORMAT);
 
-        $this->connection->table('company_members')->insert([
+        $memberId = $this->connection->table('company_members')->insertGetId([
             'company_id' => $companyId,
             'user_id' => $userId,
             'role' => $role->value,
             'created_at' => $time,
             'updated_at' => $time,
         ]);
+
+        if ($role === CompanyRole::Member) {
+            $this->insertPermissions((int) $memberId, $permissions);
+        }
     }
 
     public function find(int $companyId, int $userId): ?CompanyMember
     {
         $row = $this->connection->table('company_members')->where('company_id', $companyId)->where('user_id', $userId)->first();
 
-        return $row === null ? null : $this->toMember($row);
+        return $row === null ? null : $this->toMembers([$row])[0];
     }
 
     public function ofCompany(int $companyId): array
     {
-        return array_map(
-            fn (stdClass $row): CompanyMember => $this->toMember($row),
-            $this->connection->table('company_members')->where('company_id', $companyId)->get()->all(),
-        );
+        return $this->toMembers($this->connection->table('company_members')->where('company_id', $companyId)->get()->all());
     }
 
     public function lockCompanyAdminIds(int $companyId): array
@@ -82,12 +91,60 @@ final readonly class DatabaseCompanyMemberRepository implements CompanyMemberRep
         ]);
     }
 
-    private function toMember(stdClass $row): CompanyMember
+    public function replacePermissions(int $companyId, int $userId, array $permissions): void
     {
-        return new CompanyMember(
+        $memberId = (int) $this->connection->table('company_members')->where('company_id', $companyId)->where('user_id', $userId)->value('id');
+
+        $this->connection->table('company_member_permissions')->where('company_member_id', $memberId)->delete();
+        $this->insertPermissions($memberId, $permissions);
+        $this->connection->table('company_members')->where('id', $memberId)->update(['updated_at' => $this->clock->now()->format(self::TIME_FORMAT)]);
+    }
+
+    /** @param  list<string>  $permissions */
+    private function insertPermissions(int $memberId, array $permissions): void
+    {
+        if ($permissions === []) {
+            return;
+        }
+
+        $time = $this->clock->now()->format(self::TIME_FORMAT);
+
+        $this->connection->table('company_member_permissions')->insert(array_map(
+            static fn (string $permission): array => ['company_member_id' => $memberId, 'permission' => $permission, 'created_at' => $time],
+            array_values(array_unique($permissions)),
+        ));
+    }
+
+    /**
+     * The permission names of the members, keyed by member row id, in one query.
+     *
+     * @param  list<int>  $memberIds
+     * @return array<int, list<string>>
+     */
+    private function permissionsOf(array $memberIds): array
+    {
+        $byMember = [];
+
+        foreach ($this->connection->table('company_member_permissions')->whereIn('company_member_id', $memberIds)->orderBy('id')->get(['company_member_id', 'permission']) as $row) {
+            $byMember[(int) $row->company_member_id][] = (string) $row->permission;
+        }
+
+        return $byMember;
+    }
+
+    /**
+     * @param  list<stdClass>  $rows
+     * @return list<CompanyMember>
+     */
+    private function toMembers(array $rows): array
+    {
+        $permissions = $this->permissionsOf(array_map(static fn (stdClass $row): int => (int) $row->id, $rows));
+
+        return array_map(static fn (stdClass $row): CompanyMember => new CompanyMember(
             (int) $row->user_id,
             CompanyRole::from($row->role),
+            $permissions[(int) $row->id] ?? [],
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
-        );
+        ), $rows);
     }
 }

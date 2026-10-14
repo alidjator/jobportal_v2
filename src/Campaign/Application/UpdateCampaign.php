@@ -25,7 +25,7 @@ final readonly class UpdateCampaign
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when the campaign is not in the actor's scope
      * @throws BusinessRuleViolation `campaign-period-invalid`
      */

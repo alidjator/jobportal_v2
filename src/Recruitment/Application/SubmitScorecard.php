@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Scorecard;
 use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -25,7 +26,7 @@ final readonly class SubmitScorecard
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `not-on-panel`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-permission-required` or `not-on-panel`
      * @throws EntityNotFound
      * @throws StateConflict `application-final` or `scoring-not-open`
      * @throws BusinessRuleViolation `recommendation-required`
@@ -33,7 +34,7 @@ final readonly class SubmitScorecard
     public function execute(Actor $actor, int $interviewId): ScorecardView
     {
         $saved = $this->transactions->run(function () use ($actor, $interviewId): Scorecard {
-            $team = $this->lookup->find($actor, $interviewId, forUpdate: true);
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $this->access->assertOnPanel($team);
             $now = $this->clock->now();
             $this->access->assertOpen($team, $now);

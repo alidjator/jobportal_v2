@@ -8,6 +8,7 @@ use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -32,12 +33,13 @@ final readonly class CreateJob
      * @param  array<string, mixed>  $fields  content property changes besides the title (camel case names; `tags` as raw text)
      * @return int the id of the new job
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws BusinessRuleViolation `invalid-job` with `errors` per field
      */
     public function execute(Actor $actor, string $title, array $fields): int
     {
         $member = $this->access->member($actor);
+        $this->access->require($member, CompanyPermission::JobsCreate);
         $content = $this->changes->apply(JobContent::draft($title), $fields, isNew: true);
 
         return $this->transactions->run(function () use ($member, $content): int {

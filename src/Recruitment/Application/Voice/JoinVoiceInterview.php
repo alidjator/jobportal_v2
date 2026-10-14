@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application\Voice;
 
 use Src\Recruitment\Application\TeamApplicationLookup;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -28,7 +29,7 @@ final readonly class JoinVoiceInterview
     public function execute(Actor $actor, int $applicationId): VoiceCredentials
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VoiceCredentials {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->sessions->callable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

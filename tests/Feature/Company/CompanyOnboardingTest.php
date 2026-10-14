@@ -11,6 +11,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class CompanyOnboardingTest extends FeatureTestCase
 {
@@ -386,7 +387,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $secondCompany = (int) DB::table('company_companies')->where('slug', 'pt-lain')->value('id');
 
         $this->expectException(QueryException::class);
-        DB::table('company_members')->insert(['company_id' => $secondCompany, 'user_id' => $userId, 'role' => 'recruiter', 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($secondCompany, $userId);
     }
 
     public function test_the_creation_and_the_joining_are_audited_without_email_addresses(): void
@@ -405,7 +406,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $sent = DB::table('platform_audit_logs')->where('action', 'company.invitation_sent')->first();
         $this->assertSame('admin', $sent->actor_type);
         $this->assertSame($companyId, (int) $sent->subject_id);
-        $this->assertSame(['invitation_id' => (int) DB::table('company_invitations')->value('id'), 'role' => 'company_admin'], json_decode((string) $sent->metadata, true));
+        $this->assertSame(['invitation_id' => (int) DB::table('company_invitations')->value('id'), 'role' => 'company_admin', 'permissions' => null], json_decode((string) $sent->metadata, true));
         $this->assertSame('user', $joined->actor_type);
         $this->assertSame($companyId, (int) $joined->subject_id);
         $this->assertSame(['role' => 'company_admin'], json_decode((string) $joined->metadata, true));

@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -22,13 +23,13 @@ final readonly class RenameStage
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when the stage is not one of the company's
      * @throws StateConflict `stage-name-taken`
      */
     public function execute(Actor $actor, int $stageId, string $name): Stage
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::StagesManage);
         $now = $this->clock->now();
 
         return $this->transactions->run(function () use ($member, $stageId, $name, $now): Stage {

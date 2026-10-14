@@ -15,7 +15,7 @@ final readonly class ConversationAudience
         public SenderSide $side,
         public int $userId,
         public ?int $companyId,
-        public bool $isCompanyAdmin,
+        public bool $seesAllJobs,
         public array $visibleSeekerIds = [],
     ) {}
 }

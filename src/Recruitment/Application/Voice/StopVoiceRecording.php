@@ -6,6 +6,7 @@ use Src\Recruitment\Application\TeamApplicationLookup;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\Video\InterviewRecording;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -32,7 +33,7 @@ final readonly class StopVoiceRecording
     public function execute(Actor $actor, int $applicationId): InterviewRecording
     {
         $stopped = $this->transactions->run(function () use ($actor, $applicationId): InterviewRecording {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->interviews->active($applicationId, forUpdate: true) ?? throw new StateConflict('This application has no active interview.', 'no-active-interview');
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

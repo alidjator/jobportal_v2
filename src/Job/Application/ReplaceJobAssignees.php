@@ -7,6 +7,7 @@ use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -33,14 +34,14 @@ final readonly class ReplaceJobAssignees
     /**
      * @param  list<int>  $userIds
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the job does not exist in the company
      * @throws BusinessRuleViolation `invalid-assignees` with `errors` on `user_ids`
      */
     public function execute(Actor $actor, int $jobId, array $userIds, ?string $ipAddress, ?string $userAgent): void
     {
         $member = $this->access->member($actor);
-        $this->access->requireCompanyAdmin($member);
+        $this->access->require($member, CompanyPermission::JobsAssign);
 
         $wanted = array_values(array_unique($userIds));
         $now = $this->clock->now();

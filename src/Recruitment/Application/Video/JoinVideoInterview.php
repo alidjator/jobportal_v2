@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Video\VideoRoomRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -40,7 +41,7 @@ final readonly class JoinVideoInterview
     public function asTeam(Actor $actor, int $applicationId): VideoJoinResult
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VideoJoinResult {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->sessions->joinable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

@@ -25,7 +25,7 @@ final readonly class ListJobInvitations
     public function execute(Actor $actor, int $jobId, ?InvitationStatus $status, PageRequest $request): Page
     {
         $member = $this->access->member($actor);
-        $this->jobs->visibleToMember($jobId, $member->companyId, $member->userId, $member->isCompanyAdmin) ?? throw EntityNotFound::of('Job', $jobId);
+        $this->jobs->visibleToMember($jobId, $member->companyId, $member->userId, $member->seesAllJobs) ?? throw EntityNotFound::of('Job', $jobId);
 
         return $this->views->forCompany($this->invitations->ofJob($jobId, $status, $request));
     }

@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -26,13 +27,13 @@ final readonly class CreateStage
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws BusinessRuleViolation `stage-type-not-allowed`
      * @throws StateConflict `stage-limit-reached` or `stage-name-taken`
      */
     public function execute(Actor $actor, string $name, StageType $type): Stage
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::StagesManage);
 
         if (! $type->allowsExtraStages()) {
             throw new BusinessRuleViolation('Extra stages can only be of the type screening, assessment, interview or offer.', 'stage-type-not-allowed');

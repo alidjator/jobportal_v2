@@ -39,11 +39,11 @@ interface ApplicantRelations
     /** Whether the job seeker has any application with the company, whatever its status (a withdrawn one counts). */
     public function hasApplied(int $companyId, int $applicantUserId): bool;
 
-    /** Whether the member may see at least one application of the job seeker (an admin: any application of the company). */
-    public function canSeeApplicant(int $companyId, int $memberUserId, bool $isCompanyAdmin, int $applicantUserId): bool;
+    /** Whether the member may see at least one application of the job seeker (a member who sees every job: any application of the company). */
+    public function canSeeApplicant(int $companyId, int $memberUserId, bool $seesAllJobs, int $applicantUserId): bool;
 
     /**
-     * The job seekers with an application on a job assigned to the member (for a company admin, use `hasApplied` instead: they see everyone).
+     * The job seekers with an application on a job assigned to the member (for a member who sees every job, use `hasApplied` instead: they see everyone).
      *
      * @return list<int>
      */

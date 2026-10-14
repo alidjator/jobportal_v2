@@ -27,7 +27,7 @@ final readonly class ListJobInterviewKits
      */
     public function execute(Actor $actor, int $jobId): array
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor);
         $this->access->job($member, $jobId);
 
         $kitIds = $this->defaults->forJob($jobId);

@@ -17,7 +17,7 @@ final readonly class RenderCampaignQr
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when the campaign is not in the actor's scope
      * @throws ExternalServiceUnavailable `campaign-link-unavailable` while the link template is not configured
      */

@@ -11,6 +11,7 @@ final readonly class InvitationPreview
     public function __construct(
         public string $companyName,
         public string $email,
+        public ?string $name,
         public CompanyRole $role,
         public DateTimeImmutable $expiresAt,
     ) {}

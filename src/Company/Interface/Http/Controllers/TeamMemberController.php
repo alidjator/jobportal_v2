@@ -5,11 +5,11 @@ namespace Src\Company\Interface\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-use Src\Company\Application\Team\ChangeMemberRole;
+use Src\Company\Application\Team\UpdateMember;
 use Src\Company\Application\Team\ListMemberJobs;
 use Src\Company\Application\Team\ListMembers;
 use Src\Company\Application\Team\RemoveMember;
-use Src\Company\Interface\Http\Requests\ChangeMemberRoleRequest;
+use Src\Company\Interface\Http\Requests\UpdateMemberRequest;
 use Src\Company\Interface\Http\Resources\MemberJobResource;
 use Src\Company\Interface\Http\Resources\MemberResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -36,9 +36,9 @@ final class TeamMemberController extends ApiController
         return response()->noContent();
     }
 
-    public function changeRole(ChangeMemberRoleRequest $request, int $userId, ActorResolver $actors, ChangeMemberRole $change): Response
+    public function update(UpdateMemberRequest $request, int $userId, ActorResolver $actors, UpdateMember $update): Response
     {
-        $change->execute($actors->fromRequest($request), $userId, $request->role(), $request->ip(), $request->userAgent());
+        $update->execute($actors->fromRequest($request), $userId, $request->role(), $request->permissions(), $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

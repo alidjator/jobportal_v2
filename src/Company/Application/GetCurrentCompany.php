@@ -24,6 +24,6 @@ final readonly class GetCurrentCompany
         $company = $this->companies->findById($actor->membership->companyId)
             ?? throw new RuntimeException("Company {$actor->membership->companyId} of a member does not exist.");
 
-        return new CurrentCompany($company, CompanyRole::from($actor->membership->role));
+        return new CurrentCompany($company, CompanyRole::from($actor->membership->role), $actor->membership->effectivePermissions());
     }
 }

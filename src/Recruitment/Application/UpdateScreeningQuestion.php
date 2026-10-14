@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\ScreeningQuestion;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -31,14 +32,14 @@ final readonly class UpdateScreeningQuestion
     /**
      * @param  list<array{id: int|null, label: string}>|null  $options  the whole new list of choices, or null to leave them alone
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-admin-required` or `screening-disabled`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-permission-required` or `screening-disabled`
      * @throws EntityNotFound
      * @throws BusinessRuleViolation `invalid-screening-question`
      * @throws StateConflict `question-in-use`
      */
     public function execute(Actor $actor, int $id, ?string $text, ?array $options): ScreeningQuestion
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::ScreeningQuestionsManage);
         $this->switch->assertOn($member->companyId);
 
         $text = $text === null ? null : QuestionRules::text($text);

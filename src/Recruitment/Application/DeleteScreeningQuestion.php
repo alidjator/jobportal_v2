@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -21,13 +22,13 @@ final readonly class DeleteScreeningQuestion
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-admin-required` or `screening-disabled`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-permission-required` or `screening-disabled`
      * @throws EntityNotFound
      * @throws StateConflict `question-in-use`
      */
     public function execute(Actor $actor, int $id): void
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::ScreeningQuestionsManage);
         $this->switch->assertOn($member->companyId);
 
         $this->transactions->run(function () use ($member, $id): void {

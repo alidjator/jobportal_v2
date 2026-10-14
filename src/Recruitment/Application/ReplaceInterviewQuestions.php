@@ -5,6 +5,7 @@ namespace Src\Recruitment\Application;
 use Src\Recruitment\Domain\InterviewQuestionRepository;
 use Src\Recruitment\Domain\KitQuestion;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -36,10 +37,10 @@ final readonly class ReplaceInterviewQuestions
     {
         // The application row stays locked, so a scorecard cannot be started between the check below and the replacement.
         $this->transactions->run(function () use ($actor, $interviewId, $questions): void {
-            $team = $this->lookup->find($actor, $interviewId, forUpdate: true);
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $team->interview;
 
-            if (! $team->member->isCompanyAdmin && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
+            if (! $team->member->isCompanyAdmin() && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
                 throw new AccessDenied('Only the member who scheduled the interview, its interviewer or a company admin can change its questions.', 'interview-edit-denied');
             }
 

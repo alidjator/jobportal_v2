@@ -5,6 +5,7 @@ namespace Src\Review\Application;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Company\PublicCompanyCard;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -49,11 +50,11 @@ final readonly class ReviewGate
     }
 
     /**
-     * The company of a member of an active company, and for a reply or a report only when they are a company admin.
+     * The company of a member of an active company, and for a reply or a report only when they hold the permission to reply (`reviews.reply`).
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      */
-    public function memberCompanyId(Actor $actor, bool $adminRequired): int
+    public function memberCompanyId(Actor $actor, bool $replyRequired): int
     {
         if ($actor->kind !== ActorKind::CompanyMember || $actor->membership === null || $actor->id === null) {
             throw new AccessDenied('Only a company member can do this.', 'not-a-company-member');
@@ -63,8 +64,8 @@ final readonly class ReviewGate
             throw new AccessDenied('This company is suspended.', 'company-suspended');
         }
 
-        if ($adminRequired && ! $actor->isCompanyAdmin()) {
-            throw new AccessDenied('Only a company admin can do this.', 'company-admin-required');
+        if ($replyRequired) {
+            $actor->membership->require(CompanyPermission::ReviewsReply);
         }
 
         return $actor->membership->companyId;

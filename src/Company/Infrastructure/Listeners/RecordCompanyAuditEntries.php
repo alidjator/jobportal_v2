@@ -12,6 +12,7 @@ use Src\Company\Domain\Events\CompanyDocumentViewed;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyMemberJoined;
+use Src\Company\Domain\Events\CompanyMemberPermissionsChanged;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyRestored;
@@ -26,7 +27,7 @@ use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
  * Writes the audit entries for the Company context: an admin creating a company, the invitations sent and revoked (they grant access to a
- * company's data), the membership changes (joining, removal, role change) and the document types that affect verification.
+ * company's data), the membership changes (joining, removal, role and permission changes) and the document types that affect verification.
  * Runs on the `default` queue, retried 3 times with a growing delay. The entries never hold an email address.
  */
 final class RecordCompanyAuditEntries implements ShouldQueue
@@ -82,7 +83,7 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->trail->record(new AuditEntry(
             $byAdmin ? AuditActorType::Admin : AuditActorType::User, $byAdmin ? $event->invitedByAdminId : $event->invitedByUserId,
             AuditAction::COMPANY_INVITATION_SENT, self::SUBJECT_TYPE, $event->companyId,
-            ['invitation_id' => $event->invitationId, 'role' => $event->role], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+            ['invitation_id' => $event->invitationId, 'role' => $event->role, 'permissions' => $event->permissions], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 
@@ -107,7 +108,23 @@ final class RecordCompanyAuditEntries implements ShouldQueue
     {
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_ROLE_CHANGED,
-            self::SUBJECT_TYPE, $event->companyId, ['user_id' => $event->userId, 'old_role' => $event->oldRole, 'new_role' => $event->newRole],
+            self::SUBJECT_TYPE, $event->companyId, [
+                'user_id' => $event->userId, 'old_role' => $event->oldRole, 'new_role' => $event->newRole, 'permissions' => $event->newPermissions,
+            ],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMemberPermissionsChanged(CompanyMemberPermissionsChanged $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MEMBER_PERMISSIONS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
+            [
+                'user_id' => $event->userId,
+                'before' => $event->before,
+                'added' => array_values(array_diff($event->after, $event->before)),
+                'removed' => array_values(array_diff($event->before, $event->after)),
+            ],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

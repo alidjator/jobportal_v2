@@ -11,6 +11,7 @@ use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class CompanyImageTest extends FeatureTestCase
 {
@@ -54,7 +55,7 @@ final class CompanyImageTest extends FeatureTestCase
     private function member(string $name, string $email, string $role): UserModel
     {
         $user = UserModel::query()->create(['type' => 'company_member', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
-        DB::table('company_members')->insert(['company_id' => $this->companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($this->companyId, $user->id, $role);
 
         return $user;
     }
@@ -126,8 +127,8 @@ final class CompanyImageTest extends FeatureTestCase
     {
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']);
 
-        $this->upload('logo', $this->imageBytes(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
-        $this->api('DELETE', '/api/v1/company/logo', $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->upload('logo', $this->imageBytes(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->api('DELETE', '/api/v1/company/logo', $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         $this->upload('logo', $this->imageBytes(), token: $this->token($seeker))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
 
         DB::table('company_companies')->update(['status' => 'suspended']);

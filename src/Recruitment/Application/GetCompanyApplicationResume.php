@@ -29,7 +29,7 @@ final readonly class GetCompanyApplicationResume
      */
     public function execute(Actor $actor, int $id): ApplicationFile
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor);
         $application = $this->applications->find($id) ?? throw EntityNotFound::of('Application', $id);
         $this->applicationAccess->assertCanSee($member, $id, $application->companyId, $application->jobId);
 

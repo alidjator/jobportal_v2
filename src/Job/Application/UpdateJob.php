@@ -8,6 +8,7 @@ use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Settings\Settings;
@@ -41,7 +42,7 @@ final readonly class UpdateJob
     /**
      * @param  array<string, mixed>  $changes
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
      * @throws StateConflict `job-not-editable` or `job-locked-after-applications`, naming the locked fields
      * @throws BusinessRuleViolation `invalid-job` or, for a live job, `job-incomplete`, with `errors` per field
@@ -49,6 +50,7 @@ final readonly class UpdateJob
     public function execute(Actor $actor, int $jobId, array $changes, ?string $ipAddress, ?string $userAgent): void
     {
         $member = $this->access->member($actor);
+        $this->access->require($member, CompanyPermission::JobsCreate);
         $now = $this->clock->now();
 
         $event = $this->transactions->run(function () use ($member, $jobId, $changes, $now, $ipAddress, $userAgent): ?JobStatusChanged {

@@ -110,7 +110,7 @@ final class CampaignTest extends FeatureTestCase
     {
         $id = $this->ownCampaign();
 
-        $this->api('GET', '/company/campaigns', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('GET', '/company/campaigns', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         $this->api('GET', '/company/campaigns', [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
         $this->api('GET', "/company/campaigns/{$id}", [], $this->otherAdminToken)->assertNotFound();
 

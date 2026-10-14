@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -27,14 +28,14 @@ final readonly class WithdrawOffer
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-offer`
      */
     public function execute(Actor $actor, int $applicationId): OfferView
     {
         [$saved, $event] = $this->transactions->run(function () use ($actor, $applicationId): array {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::OffersManage);
             $offer = $this->offers->active($applicationId, forUpdate: true) ?? throw new StateConflict('This application has no pending offer.', 'no-active-offer');
             $saved = $offer->withdraw();
             $this->offers->update($saved);

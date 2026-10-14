@@ -22,6 +22,7 @@ use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Assessment\InvitedApplication;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\TransactionManager;
@@ -63,7 +64,7 @@ final readonly class ProcessApplication
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
      * @throws StateConflict `application-final`, `already-in-stage`, `job-taken-down` or `invitation-in-progress`
      * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input`, `invalid-offer`, `assessment-required`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
@@ -100,7 +101,7 @@ final readonly class ProcessApplication
     }
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
      * @throws StateConflict `application-final` or `job-taken-down`
      * @throws BusinessRuleViolation `invalid-rejection`
@@ -125,7 +126,7 @@ final readonly class ProcessApplication
      */
     private function process(Actor $actor, int $applicationId, callable $change): void
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
 
         $events = $this->transactions->run(function () use ($member, $applicationId, $change): array {
             $before = $this->applications->find($applicationId, forUpdate: true) ?? throw EntityNotFound::of('Application', $applicationId);

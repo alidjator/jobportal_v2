@@ -34,7 +34,7 @@ final readonly class GetCompanyApplication
      */
     public function execute(Actor $actor, int $id): CompanyApplicationView
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor);
         $data = $this->reader->find($id) ?? throw EntityNotFound::of('Application', $id);
         $this->applicationAccess->assertCanSee($member, $id, $data->companyId, $data->jobId);
         $this->applications->markViewed($id, $this->clock->now());

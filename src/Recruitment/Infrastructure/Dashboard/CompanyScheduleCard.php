@@ -6,6 +6,7 @@ use Illuminate\Database\ConnectionInterface;
 use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\OfferStatus;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCardProvider;
 use Src\Shared\Application\Dashboard\DashboardScope;
@@ -30,7 +31,7 @@ final readonly class CompanyScheduleCard implements DashboardCardProvider
 
     public function permission(): ?string
     {
-        return null;
+        return CompanyPermission::ApplicationsView->value;
     }
 
     public function build(DashboardScope $scope): array

@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\ScreeningQuestion;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -16,10 +17,10 @@ final readonly class ListScreeningQuestions
     /**
      * @return Page<ScreeningQuestion>
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      */
     public function execute(Actor $actor, bool $archived, ?string $search, PageRequest $request): Page
     {
-        return $this->reader->page(new ScreeningQuestionListQuery($this->access->member($actor)->companyId, $archived, $search), $request);
+        return $this->reader->page(new ScreeningQuestionListQuery($this->access->anyOf($actor, CompanyPermission::JobsCreate, CompanyPermission::ScreeningQuestionsManage)->companyId, $archived, $search), $request);
     }
 }

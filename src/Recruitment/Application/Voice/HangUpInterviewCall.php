@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\Voice\CallRepository;
 use Src\Recruitment\Domain\Voice\InterviewCall;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
@@ -34,7 +35,7 @@ final readonly class HangUpInterviewCall
      */
     public function execute(Actor $actor, int $applicationId): InterviewCall
     {
-        $team = $this->lookup->find($actor, $applicationId);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage);
         $interview = $this->interviews->active((int) $team->application->id) ?? throw new StateConflict('This application has no active interview.', 'no-active-interview');
 
         if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

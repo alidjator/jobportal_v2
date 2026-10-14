@@ -11,6 +11,7 @@ use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class AdminCompanyTest extends FeatureTestCase
 {
@@ -62,7 +63,7 @@ final class AdminCompanyTest extends FeatureTestCase
     private function member(int $companyId, string $email, string $role = 'recruiter', string $status = 'active'): UserModel
     {
         $user = UserModel::query()->create(['type' => 'company_member', 'name' => ucfirst(strtok($email, '@')), 'email' => $email, 'status' => $status, 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
-        DB::table('company_members')->insert(['company_id' => $companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($companyId, $user->id, $role);
 
         return $user;
     }
@@ -231,7 +232,7 @@ final class AdminCompanyTest extends FeatureTestCase
         ]);
         $this->member($id, 'andi@example.test', 'company_admin');
         $invitation = fn (string $email, string $hash, string $sent, string $expires, array $state = []) => DB::table('company_invitations')->insert([
-            'company_id' => $id, 'email' => $email, 'role' => 'recruiter', 'token_hash' => str_repeat($hash, 64), 'sent_at' => $sent, 'expires_at' => $expires,
+            'company_id' => $id, 'email' => $email, 'role' => 'member', 'token_hash' => str_repeat($hash, 64), 'sent_at' => $sent, 'expires_at' => $expires,
             'accepted_at' => null, 'revoked_at' => null, 'created_at' => now(), 'updated_at' => now(), ...$state,
         ]);
         $invitation('pending@example.test', 'a', '2026-10-05 08:00:00', '2026-10-12 08:00:00');
@@ -313,7 +314,7 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->getJson('/api/v1/company/members')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
         $this->app['auth']->forgetGuards();
-        $this->withToken($token)->postJson('/api/v1/company/invitations', ['email' => 'new@example.test', 'role' => 'recruiter'])->assertStatus(403);
+        $this->withToken($token)->postJson('/api/v1/company/invitations', ['name' => 'New Member', 'email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(403);
 
         // The member still signs in and still sees the company with its status, but never the reason.
         $this->app['auth']->forgetGuards();
@@ -340,7 +341,7 @@ final class AdminCompanyTest extends FeatureTestCase
         $id = $this->company('PT Maju', 'pt-maju');
         $plain = str_repeat('x', 43);
         DB::table('company_invitations')->insert([
-            'company_id' => $id, 'email' => 'new@example.test', 'role' => 'recruiter', 'token_hash' => hash('sha256', $plain),
+            'company_id' => $id, 'email' => 'new@example.test', 'role' => 'member', 'token_hash' => hash('sha256', $plain),
             'sent_at' => now(), 'expires_at' => now()->addDays(7), 'created_at' => now(), 'updated_at' => now(),
         ]);
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Tests\Support\CompanyMemberRows;
 
 /**
  * A company with an admin and two recruiters, another company with its own admin, and helpers to call the job API and to insert jobs directly.
@@ -60,9 +61,23 @@ trait BuildsJobFixtures
     protected function jobMember(int $companyId, string $name, string $email, string $role): int
     {
         $user = UserModel::query()->create(['type' => 'company_member', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
-        DB::table('company_members')->insert(['company_id' => $companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($companyId, $user->id, $role);
 
         return (int) $user->id;
+    }
+
+    /**
+     * A member of the company with exactly these permissions (a role `member`), for tests of what one permission lets a member do or not.
+     *
+     * @param  list<string>  $permissions
+     * @return array{id: int, token: string}
+     */
+    protected function memberWith(array $permissions, string $email = 'limited@example.test', ?int $companyId = null): array
+    {
+        $user = UserModel::query()->create(['type' => 'company_member', 'name' => 'Limited Member', 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
+        CompanyMemberRows::insert($companyId ?? $this->companyId, $user->id, 'member', $permissions);
+
+        return ['id' => (int) $user->id, 'token' => $this->tokenFor((int) $user->id)];
     }
 
     protected function tokenFor(int $userId): string

@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Voice\InterviewCall;
 use Src\Recruitment\Domain\Voice\VoiceSessionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -44,7 +45,7 @@ final readonly class PlaceInterviewCall
     public function execute(Actor $actor, int $applicationId): InterviewCall
     {
         $call = $this->transactions->run(function () use ($actor, $applicationId): InterviewCall {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $companyId = $team->application->companyId;
             $interview = $this->sessions->callable($team->application);
             $interviewId = (int) $interview->id;

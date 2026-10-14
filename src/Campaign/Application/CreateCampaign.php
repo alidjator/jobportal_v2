@@ -33,7 +33,7 @@ final readonly class CreateCampaign
     /**
      * @param  int|null  $companyId  the company of the campaign, used for a platform admin only (null: a platform campaign); a company admin always creates for their own
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when a platform admin names a company that does not exist
      * @throws BusinessRuleViolation `campaign-period-invalid`
      * @throws StateConflict `campaign-code-taken`

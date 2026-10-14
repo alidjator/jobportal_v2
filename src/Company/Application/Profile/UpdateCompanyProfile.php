@@ -5,6 +5,7 @@ namespace Src\Company\Application\Profile;
 use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -29,12 +30,12 @@ final readonly class UpdateCompanyProfile
     /**
      * @param  array<string, mixed>  $changes
      *
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws BusinessRuleViolation `unknown-industry`, `unknown-organization-type`, `unknown-team-size` or `invalid-location`
      */
     public function execute(Actor $actor, array $changes): void
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
 
         $this->assertActive($changes, 'industryId', 'industries', 'unknown-industry', 'The industry does not exist or is not active.');
         $this->assertActive($changes, 'organizationTypeId', 'organization-types', 'unknown-organization-type', 'The organization type does not exist or is not active.');

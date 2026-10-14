@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\ScreeningQuestion;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -26,12 +27,12 @@ final readonly class CreateScreeningQuestion
     /**
      * @param  list<string>  $labels  the choices, for a choice question
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-admin-required` or `screening-disabled`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended`, `company-permission-required` or `screening-disabled`
      * @throws BusinessRuleViolation `invalid-screening-question`
      */
     public function execute(Actor $actor, QuestionType $type, string $text, array $labels): ScreeningQuestion
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::ScreeningQuestionsManage);
         $this->switch->assertOn($member->companyId);
 
         $text = QuestionRules::text($text);

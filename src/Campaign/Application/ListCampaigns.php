@@ -25,7 +25,7 @@ final readonly class ListCampaigns
     /**
      * @return Page<CampaignView>
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      */
     public function execute(Actor $actor, ?int $companyId, ?string $search, ?CampaignType $type, ?CampaignStatus $status, PageRequest $request): Page
     {

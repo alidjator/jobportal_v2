@@ -6,6 +6,7 @@ use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\DocumentTypeRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -21,12 +22,12 @@ final readonly class GetCompanyDocumentFile
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the type, the document or its file does not exist
      */
     public function execute(Actor $actor, int $typeId): DocumentFileContent
     {
-        $companyId = (int) $this->guard->company($actor)->id;
+        $companyId = (int) $this->guard->companyWith($actor, CompanyPermission::CompanyProfile)->id;
 
         $type = $this->types->find($typeId) ?? throw EntityNotFound::of('Document type', $typeId);
         $document = $this->documents->find($companyId, $typeId) ?? throw EntityNotFound::of('Document', $typeId);

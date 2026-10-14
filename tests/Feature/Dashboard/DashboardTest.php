@@ -399,7 +399,7 @@ final class DashboardTest extends FeatureTestCase
         $this->assertSame(1, $queue()['without_admin'], 'A revoked invitation does not count.');
 
         DB::table('company_invitations')->delete();
-        DB::table('company_invitations')->insert([...$invitation, 'role' => 'recruiter', 'expires_at' => now()->addDays(3)]);
+        DB::table('company_invitations')->insert([...$invitation, 'role' => 'member', 'expires_at' => now()->addDays(3)]);
         $this->assertSame(1, $queue()['without_admin'], 'An invitation for a recruiter does not count.');
     }
 

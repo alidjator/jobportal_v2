@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -31,7 +32,7 @@ final readonly class ManageInterview
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview` or `no-proposal`
      */
@@ -41,7 +42,7 @@ final readonly class ManageInterview
     }
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview`
      */
@@ -51,7 +52,7 @@ final readonly class ManageInterview
     }
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `no-active-interview` or `interview-not-confirmed`
      */
@@ -64,7 +65,7 @@ final readonly class ManageInterview
     private function apply(Actor $actor, int $applicationId, ?InterviewChange $announce, Closure $change): InterviewView
     {
         [$saved, $event] = $this->transactions->run(function () use ($actor, $applicationId, $announce, $change): array {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->interviews->active($applicationId, forUpdate: true) ?? throw new StateConflict('This application has no active interview.', 'no-active-interview');
             $saved = $change($interview);
             $this->interviews->update($saved);

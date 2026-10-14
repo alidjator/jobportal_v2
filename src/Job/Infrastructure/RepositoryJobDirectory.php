@@ -23,7 +23,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         private JobReader $reader,
     ) {}
 
-    public function visibleToMember(int $jobId, int $companyId, int $userId, bool $isCompanyAdmin): ?JobSummary
+    public function visibleToMember(int $jobId, int $companyId, int $userId, bool $seesAllJobs): ?JobSummary
     {
         $job = $this->jobs->find($jobId);
 
@@ -31,7 +31,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
             return null;
         }
 
-        if (! $isCompanyAdmin && ! in_array($userId, $this->assignments->userIds($jobId), true)) {
+        if (! $seesAllJobs && ! in_array($userId, $this->assignments->userIds($jobId), true)) {
             return null;
         }
 

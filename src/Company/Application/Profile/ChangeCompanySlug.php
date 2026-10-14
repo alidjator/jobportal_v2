@@ -6,6 +6,7 @@ use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\CompanySlug;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -22,13 +23,13 @@ final readonly class ChangeCompanySlug
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws BusinessRuleViolation `invalid-slug` or `slug-reserved`
      * @throws StateConflict `slug-taken` when another company has the slug
      */
     public function execute(Actor $actor, string $slug): void
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
         $new = CompanySlug::fromInput($slug)->value;
 
         if ($new === $company->slug()) {

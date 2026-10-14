@@ -9,11 +9,14 @@ final class Invitation
 {
     public const string VALIDITY = '+7 days';
 
+    /** @param  ?list<string>  $permissions */
     public function __construct(
         public readonly ?int $id,
         public readonly int $companyId,
         public readonly string $email,
         public readonly CompanyRole $role,
+        public readonly ?string $name,
+        public readonly ?array $permissions,
         public readonly string $tokenHash,
         public readonly ?int $invitedByUserId,
         public readonly ?int $invitedByAdminId,
@@ -23,17 +26,23 @@ final class Invitation
         private ?DateTimeImmutable $revokedAt,
     ) {}
 
-    /** @param  ?int  $invitedByUserId  the company admin who invites, or null when a platform admin does */
+    /**
+     * @param  ?int  $invitedByUserId  the company admin who invites, or null when a platform admin does
+     * @param  ?string  $name  the name the inviter typed, which the invitee may change when accepting
+     * @param  ?list<string>  $permissions  the permissions checked for a member, applied when the invitation is accepted; null for a company admin
+     */
     public static function issue(
         int $companyId,
         string $email,
         CompanyRole $role,
+        ?string $name,
+        ?array $permissions,
         string $tokenHash,
         ?int $invitedByUserId,
         ?int $invitedByAdminId,
         DateTimeImmutable $now,
     ): self {
-        return new self(null, $companyId, $email, $role, $tokenHash, $invitedByUserId, $invitedByAdminId, $now, $now->modify(self::VALIDITY), null, null);
+        return new self(null, $companyId, $email, $role, $name, $permissions, $tokenHash, $invitedByUserId, $invitedByAdminId, $now, $now->modify(self::VALIDITY), null, null);
     }
 
     public function acceptedAt(): ?DateTimeImmutable

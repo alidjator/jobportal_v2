@@ -39,6 +39,9 @@ permissions" and "change a member's role and permissions so access always matche
 - 2026-10-14: the story "see the team's change history" (AC1, AC2): a **team history** for company admins, `GET company/team/history`, from the
   audit log; the **12-month retention stays** ("cannot be deleted" means by no user); **no IP address or user agent** in it (decided by the user,
   [Team history](#team-history)).
+- 2026-10-14: coding review (decided by the user): **`analytics.view` leaves the Recruiter preset** (12 permissions; analytics was company-admin only, so recruiters
+  keep today's access); **reading test results needs `assessments.send` or being an assessor of that test**; the **unread conversations dashboard card is split
+  per audience**, the company one needing `messages.send` ([detail](#part-1-coded-2026-10-14-permissions)).
 - 2026-10-14: the story "search members by name or email": `filter[q]` on the member list ([API](#api)); debounce, the 2-character start, the empty
   message and clearing are front-end behaviour.
 
@@ -155,7 +158,7 @@ which is exactly what a recruiter may do today, so imported and existing recruit
 | Company | `company.profile` | profile, slug, logo and banner, verification documents | C20, C21 | no |
 | | `campaigns.manage` | campaigns | C23 | no |
 | | `reviews.reply` | reply to and report reviews | C24 | no |
-| | `analytics.view` | analytics reports | C2 | yes |
+| | `analytics.view` | analytics reports | C2 | no |
 
 **Presets** (labels for the front end; not stored):
 
@@ -263,3 +266,29 @@ Proposed while designing and decided by the user on 2026-10-13:
 4. **Talent pool categories** (agreed): renaming and deleting a category is part of `talent_pool.manage`, so the Recruiter preset gains it.
 5. **Overrides on the role** (agreed): rule 7; a member with `jobs.view_all` sees every interview but cannot delete another panel's recording or another
    author's note, nor edit another scheduler's interview questions or panel.
+
+## Part 1 coded (2026-10-14): permissions
+
+Coded: catalog (`Shared` enum `CompanyPermission`, 21), `CompanyMembership::can/require/effectivePermissions` and `Actor::can`, role `member`, presets
+(`MemberPreset`), `MemberPermissionRules` (`permissions-required`, `permission-requires-view`), migration `000136` (**new, run `test:database:migrate
+--env=testing` then `migrate`**), `GET company/permissions`, `POST company/invitations` with name and permissions, `PATCH company/members/{userId}`
+(`role`, `permissions`; replaces `PUT .../role`), `company/me` with `permissions`, audit `company.member_permissions_changed` and in-app
+`company.permissions_changed`, and the permission checks in Job, Recruitment, Assessment, Campaign, Review, TalentPool, JobSeeker candidates,
+JobInvitation, Messaging, Dashboard and Company (profile, images, documents).
+
+**Not coded yet (part 2, team):** `name` in `PATCH members`, `PATCH company/invitations/{id}`, the merged paginated and searchable team list with `actions`,
+owner, suspension, expired invitations and resend, member detail and activity, team history, allowed email domains, the new remove rules, the removal of
+`GET company/invitations`, and the time-to-fill report is a separate piece.
+
+Interpretations made while coding (to confirm):
+
+1. `RecruitmentAccess::viewer` (needs `applications.view`) guards every job and applicant read; `permitted` and `anyOf` guard the libraries, which need
+   no reading (rule 1). Ratings, notes, move, reject and bulk need `applications.manage`; scorecards, interview questions and panel, rooms, calls and
+   recordings need `interviews.manage`; setting or clearing a job's default kit needs `jobs.create`; stages `stages.manage`.
+2. `assessments.send` guards sending, cancelling and listing the tests of an application, and reading results, the report, integrity events and
+   candidate videos (`VisibleInvitations::findForResults`); an assessor of that test reads what they score without it (decided by the user).
+3. Any company-side chat use needs `messages.send`; the unread conversations card is one provider per audience, the company one with `messages.send`
+   (decided by the user).
+4. `analytics.view` is not in the Recruiter preset (decided by the user, replacing the catalog's earlier "yes"); migration `000136` does not grant it.
+5. Reading the stage list, the company profile and the reviews list stays open to every member.
+6. `CompanyTeam::viewAllUserIds` answers "does this account see every job" for interview and assessor assignment checks.

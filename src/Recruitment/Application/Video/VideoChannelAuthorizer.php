@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 
 /** Who may listen to the lobby channel of a video interview: its panel and its candidate. Nothing else; ids only travel on the channel. */
@@ -37,7 +38,7 @@ final readonly class VideoChannelAuthorizer
         }
 
         try {
-            $member = $this->access->member($actor);
+            $member = $this->access->viewer($actor, CompanyPermission::InterviewsManage);
 
             return $member->companyId === $application->companyId && $this->sessions->isOnPanel($interview, $member->userId);
         } catch (AccessDenied) {

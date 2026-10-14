@@ -12,4 +12,6 @@ final class CompanyNotificationType
     public const string VERIFIED = 'company.verified';
 
     public const string VERIFICATION_WITHDRAWN = 'company.verification_withdrawn';
+
+    public const string PERMISSIONS_CHANGED = 'company.permissions_changed';
 }

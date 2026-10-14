@@ -25,7 +25,7 @@ final readonly class ReportReview
     ) {}
 
     /**
-     * @throws AccessDenied `own-review`, `job-seeker-only`, `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `own-review`, `job-seeker-only`, `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound the review is not published (or not the company's)
      * @throws StateConflict `already-reported`
      */

@@ -47,7 +47,7 @@ final readonly class RecommendCandidates
     public function execute(Actor $actor, int $jobId, string $language): array
     {
         $viewer = $this->access->viewer($actor);
-        $this->jobs->visibleToMember($jobId, $viewer->companyId, $viewer->memberId, $viewer->isCompanyAdmin) ?? throw EntityNotFound::of('Job', $jobId);
+        $this->jobs->visibleToMember($jobId, $viewer->companyId, $viewer->memberId, $viewer->seesAllJobs) ?? throw EntityNotFound::of('Job', $jobId);
 
         if ($this->jobs->publicCompanyId($jobId) !== $viewer->companyId) {
             throw new BusinessRuleViolation('Candidates are only recommended for a job that is live.', 'job-not-live');

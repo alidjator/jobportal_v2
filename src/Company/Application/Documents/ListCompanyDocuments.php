@@ -6,6 +6,7 @@ use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyDocumentRepository;
 use Src\Company\Domain\DocumentTypeRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 
 /** A company admin sees every active document type with the company's document for it, and whether the company is verified. */
@@ -18,11 +19,11 @@ final readonly class ListCompanyDocuments
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      */
     public function execute(Actor $actor, string $language): CompanyDocumentsOverview
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
 
         $byType = [];
 

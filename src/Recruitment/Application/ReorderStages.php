@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageOrder;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -19,12 +20,12 @@ final readonly class ReorderStages
      * @param  list<int>  $stageIds
      * @return list<Stage> the stages in their new order
      *
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws BusinessRuleViolation `invalid-stage-order`
      */
     public function execute(Actor $actor, array $stageIds): array
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::StagesManage);
 
         $this->transactions->run(function () use ($member, $stageIds): void {
             $this->stages->lockCompany($member->companyId);

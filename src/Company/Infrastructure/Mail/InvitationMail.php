@@ -24,8 +24,8 @@ final class InvitationMail extends Mailable implements ShouldQueue
     use Queueable;
 
     private const array ROLE_LABELS = [
-        'id' => ['company_admin' => 'Admin perusahaan', 'recruiter' => 'Perekrut'],
-        'en' => ['company_admin' => 'Company admin', 'recruiter' => 'Recruiter'],
+        'id' => ['company_admin' => 'Admin perusahaan', 'member' => 'Anggota tim'],
+        'en' => ['company_admin' => 'Company admin', 'member' => 'Team member'],
     ];
 
     public int $tries = 3;

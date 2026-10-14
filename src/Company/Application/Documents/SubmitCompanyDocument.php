@@ -13,6 +13,7 @@ use Src\Company\Domain\DocumentTypeRepository;
 use Src\Company\Domain\Events\CompanyDocumentSubmitted;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Settings\Settings;
@@ -51,13 +52,13 @@ final readonly class SubmitCompanyDocument
     /**
      * @return bool true when the document was created, false when it replaced an earlier one
      *
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the type does not exist
      * @throws BusinessRuleViolation `document-type-inactive`, `file-too-large` or `invalid-document`
      */
     public function execute(Actor $actor, int $typeId, string $contents, string $originalName, ?string $ipAddress, ?string $userAgent): bool
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
         $companyId = (int) $company->id;
 
         $type = $this->types->find($typeId) ?? throw EntityNotFound::of('Document type', $typeId);

@@ -3,6 +3,7 @@
 namespace Src\Shared\Application;
 
 use Src\Shared\Application\Company\CompanyMembership;
+use Src\Shared\Application\Company\CompanyPermission;
 
 /**
  * Who performs a use case. Controllers build it from the authenticated account and pass it explicitly; there is no
@@ -25,7 +26,13 @@ final readonly class Actor
 
     public function isCompanyAdmin(): bool
     {
-        return $this->membership?->role === 'company_admin';
+        return $this->membership?->isCompanyAdmin() ?? false;
+    }
+
+    /** Whether a company member holds the permission; a company admin holds every one, anyone without a membership none. */
+    public function can(CompanyPermission $permission): bool
+    {
+        return $this->membership?->can($permission) ?? false;
     }
 
     public static function jobSeeker(int $id): self

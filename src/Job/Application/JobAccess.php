@@ -8,13 +8,15 @@ use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
- * The checks every company-side job action starts with: the actor is a member of an active company, and for one job, that the job belongs to the
- * company and the member may see it. A company admin sees every job of the company, a recruiter only the ones assigned to them; for anyone else the
- * job simply does not exist (404), so a recruiter cannot learn that a job they are not assigned to is there.
+ * The checks every company-side job action starts with: the actor is a member of an active company who may read jobs (`applications.view`), and
+ * for one job, that the job belongs to the company and the member may see it. A member with `jobs.view_all` (every company admin) sees every
+ * job of the company, any other only the ones assigned to them; for anyone else the job simply does not exist (404), so a member cannot learn
+ * that a job they are not assigned to is there.
  */
 final readonly class JobAccess
 {
@@ -25,7 +27,7 @@ final readonly class JobAccess
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      */
     public function member(Actor $actor): JobMember
     {
@@ -33,11 +35,13 @@ final readonly class JobAccess
             throw new AccessDenied('Only a company member can manage jobs.', 'not-a-company-member');
         }
 
+        $actor->membership->require(CompanyPermission::ApplicationsView);
+
         if (! $this->companies->isActive($actor->membership->companyId)) {
             throw new AccessDenied('This company is suspended.', 'company-suspended');
         }
 
-        return new JobMember($actor->id, $actor->membership->companyId, $actor->isCompanyAdmin());
+        return new JobMember($actor->id, $actor->membership->companyId, $actor->membership);
     }
 
     /**
@@ -51,7 +55,7 @@ final readonly class JobAccess
             throw EntityNotFound::of('Job', $jobId);
         }
 
-        if (! $member->isCompanyAdmin && ! in_array($member->userId, $this->assignments->userIds($jobId), true)) {
+        if (! $member->viewsAll() && ! in_array($member->userId, $this->assignments->userIds($jobId), true)) {
             throw EntityNotFound::of('Job', $jobId);
         }
 
@@ -59,12 +63,10 @@ final readonly class JobAccess
     }
 
     /**
-     * @throws AccessDenied `company-admin-required`
+     * @throws AccessDenied `company-permission-required`
      */
-    public function requireCompanyAdmin(JobMember $member): void
+    public function require(JobMember $member, CompanyPermission $permission): void
     {
-        if (! $member->isCompanyAdmin) {
-            throw new AccessDenied('Only a company admin can do this.', 'company-admin-required');
-        }
+        $member->membership->require($permission);
     }
 }

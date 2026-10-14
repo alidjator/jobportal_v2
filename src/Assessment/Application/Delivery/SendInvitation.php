@@ -5,6 +5,7 @@ namespace Src\Assessment\Application\Delivery;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Assessment\InvitedApplication;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\TransactionManager;
@@ -27,7 +28,7 @@ final readonly class SendInvitation
     /**
      * @return array{view: InvitationView, replaced: bool}
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound
      * @throws StateConflict `job-taken-down`, `not-in-assessment-stage` or `invitation-in-progress`
      * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
@@ -35,7 +36,7 @@ final readonly class SendInvitation
     public function execute(Actor $actor, int $applicationId, AssessmentInvitationInput $input): array
     {
         $placed = $this->transactions->run(function () use ($actor, $applicationId, $input): PlacedInvitation {
-            $application = $this->applications->find($actor, $applicationId, forUpdate: true);
+            $application = $this->applications->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::AssessmentsSend);
 
             if ($application->jobTakenDown) {
                 throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');

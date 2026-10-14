@@ -43,11 +43,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `chunk-out-of-order` | 409 | Assessment | Send the chunks in order. |
 | `column-already-submitted` | 409 | Assessment | This column was already handed in. |
-| `company-admin-only` | 403 | Dashboard | Only a company admin has the analytics. |
-| `company-admin-required` | 403 | Assessment, Campaign, Company, Job, Recruitment, Review, TalentPool | Only a company admin can do this. |
+| `company-admin-required` | 403 | Company | Only a company admin can manage the team. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
+| `company-permission-required` | 403 | Shared |  |
 | `company-suspended` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
@@ -186,6 +186,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-document-outdated` | 409 | Identity | A newer version was published. Read it and accept again. |
 | `legal-document-version-taken` | 409 | Content | Another version with this number was created at the same time. Try again. |
 | `location-parent-required` | 422 | ReferenceData |  |
+| `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `method-not-allowed` | 405 | Platform | The HTTP method is not allowed for this resource. |
 | `newsletter-issue-not-draft` | 409 | Newsletter | Only a draft can be deleted. |
 | `newsletter-no-recipients` | 409 | Newsletter | There is nobody to send this issue to. |
@@ -204,7 +205,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |
 | `not-a-voice-interview` | 409 | Recruitment | This interview is not held by phone. |
 | `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
-| `not-an-author` | 403 | Assessment | Only a company admin, a psychologist or an administrator can write tests. |
+| `not-an-author` | 403 | Assessment | Only a company member with the permission, a psychologist or an administrator can write tests. |
 | `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
@@ -221,7 +222,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `page-out-of-range` | 422 | Job |  |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
-| `permissions-required` | 422 | Identity | Give the role at least one permission. |
+| `permission-requires-view` | 422 | Company |  |
+| `permissions-required` | 422 | Company, Identity | A member needs at least one permission. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |

@@ -197,9 +197,8 @@ final readonly class InterviewScheduler
     /** @throws BusinessRuleViolation `invalid-interviewer` */
     private function assertWorksOnJob(int $companyId, int $jobId, int $userId, string $field): void
     {
-        $role = $this->team->roles($companyId)[$userId] ?? null;
-
-        if ($role === null || $this->jobs->visibleToMember($jobId, $companyId, $userId, $role === 'company_admin') === null) {
+        if (! array_key_exists($userId, $this->team->roles($companyId))
+            || $this->jobs->visibleToMember($jobId, $companyId, $userId, in_array($userId, $this->team->viewAllUserIds($companyId), true)) === null) {
             $this->refuse($field, 'Choose a member of your team who works on this job.');
         }
     }

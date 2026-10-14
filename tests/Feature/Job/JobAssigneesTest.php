@@ -57,7 +57,7 @@ final class JobAssigneesTest extends FeatureTestCase
         $id = $this->insertJob('Shared', 'draft', [$this->recruiterId, $this->adminId]);
 
         $this->assertSame(
-            [['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'recruiter'], ['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin']],
+            [['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member'], ['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin']],
             $this->api('GET', "/company/jobs/{$id}/assignees")->json('data'),
         );
     }
@@ -142,7 +142,7 @@ final class JobAssigneesTest extends FeatureTestCase
         $id = $this->insertJob('Mine', 'draft', [$this->recruiterId]);
 
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [$this->recruiterId, $this->secondRecruiterId]], $this->recruiterToken)
-            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
 
         $this->assertSame([$this->recruiterId], $this->assigneesOf($id));
     }

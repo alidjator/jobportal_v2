@@ -6,10 +6,10 @@ namespace Src\Shared\Application\Job;
 interface JobDirectory
 {
     /**
-     * The job, when it belongs to the company and the member may see it: a company admin sees every job of the company, anyone else only the jobs
-     * assigned to them. Null otherwise, whether the job is missing, foreign or not theirs.
+     * The job, when it belongs to the company and the member may see it: a member who sees every job of the company (`jobs.view_all`) sees any, anyone
+     * else only the jobs assigned to them. Null otherwise, whether the job is missing, foreign or not theirs.
      */
-    public function visibleToMember(int $jobId, int $companyId, int $userId, bool $isCompanyAdmin): ?JobSummary;
+    public function visibleToMember(int $jobId, int $companyId, int $userId, bool $seesAllJobs): ?JobSummary;
 
     /**
      * The ids of the jobs of the company that the account is assigned to.

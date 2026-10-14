@@ -79,7 +79,7 @@ final readonly class GetCandidate
             array_map(static fn (int $id): array => ['id' => $id, 'name' => $skills[$id] ?? null], $skillIds),
             array_map(static fn ($entry): array => ['id' => $entry->languageId, 'name' => $languageNames[$entry->languageId] ?? null, 'proficiency' => $entry->proficiency->value], $languages),
             $profile->resumeDiscoverable ? $this->resumes->forUser($userId) : [],
-            $this->relations->canSeeApplicant($viewer->companyId, $viewer->memberId, $viewer->isCompanyAdmin, $userId) ? $this->contact($profile) : null,
+            $this->relations->canSeeApplicant($viewer->companyId, $viewer->memberId, $viewer->seesAllJobs, $userId) ? $this->contact($profile) : null,
             $row->updatedAt,
         );
     }

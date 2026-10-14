@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
+use Src\Company\Domain\MemberPreset;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\Video\CloseVideoRooms;
@@ -155,7 +156,7 @@ final class VideoInterviewsTest extends FeatureTestCase
 
     private function member(int $userId, string $role): Actor
     {
-        return Actor::companyMember($userId)->withMembership(new CompanyMembership($this->companyId, $role));
+        return Actor::companyMember($userId)->withMembership(new CompanyMembership($this->companyId, $role === 'recruiter' ? 'member' : $role, $role === 'recruiter' ? MemberPreset::Recruiter->permissionNames() : []));
     }
 
     // ----- joining as the panel -----

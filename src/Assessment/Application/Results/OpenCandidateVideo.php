@@ -24,13 +24,13 @@ final readonly class OpenCandidateVideo
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `video-expired`
      */
     public function execute(Actor $actor, int $invitationId, int $questionId): StreamedFile
     {
-        $invitation = $this->visible->find($actor, $invitationId);
+        $invitation = $this->visible->findForResults($actor, $invitationId);
         $attempt = $this->attempts->findByInvitation((int) $invitation->id);
 
         if ($attempt === null || ! $attempt->isSubmitted()) {

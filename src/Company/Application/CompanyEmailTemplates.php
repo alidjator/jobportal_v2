@@ -20,7 +20,7 @@ final class CompanyEmailTemplates
                 'Sent when someone is invited to join a company, with the link that accepts the invitation.',
                 [
                     new EmailVariable('company', 'The name of the company that invites', 'PT Contoh Maju'),
-                    new EmailVariable('role', 'The role offered, in the language of the email', 'Recruiter'),
+                    new EmailVariable('role', 'The role offered, in the language of the email', 'Team member'),
                     new EmailVariable('link', 'The link that accepts the invitation', 'https://example.test/invitations/abc123', required: true),
                     new EmailVariable('days', 'How many days the invitation stays valid', '7'),
                 ],

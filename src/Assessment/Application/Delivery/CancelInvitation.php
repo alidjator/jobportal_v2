@@ -7,6 +7,7 @@ use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\TransactionManager;
@@ -27,7 +28,7 @@ final readonly class CancelInvitation
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound
      * @throws StateConflict `invitation-not-active`
      */
@@ -37,7 +38,7 @@ final readonly class CancelInvitation
 
         [$cancelled, $event] = $this->transactions->run(function () use ($actor, $invitation, $invitationId): array {
             // The application first, as every other change of an application does; a member who may not see it meets a 404.
-            $this->applications->find($actor, $invitation->applicationId, forUpdate: true);
+            $this->applications->find($actor, $invitation->applicationId, forUpdate: true, permission: CompanyPermission::AssessmentsSend);
             $current = $this->invitations->find($invitationId, forUpdate: true) ?? throw EntityNotFound::of('Invitation', $invitationId);
 
             $cancelled = $current->cancel($this->clock->now());

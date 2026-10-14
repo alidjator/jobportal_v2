@@ -25,6 +25,6 @@ final readonly class PreviewInvitation
 
         [$invitation, $company] = $this->finder->find($plainToken);
 
-        return new InvitationPreview($company->name(), $invitation->email, $invitation->role, $invitation->expiresAt);
+        return new InvitationPreview($company->name(), $invitation->email, $invitation->name, $invitation->role, $invitation->expiresAt);
     }
 }

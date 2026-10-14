@@ -8,13 +8,14 @@ use Src\Messaging\Domain\SenderSide;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
- * Who may take part in a conversation. A job seeker sees their own; a company admin sees every conversation of the company; any other member sees the ones they
- * started and the ones with a job seeker who applied to a job assigned to them. A conversation the caller may not see is a plain 404.
+ * Who may take part in a conversation. A job seeker sees their own; a company member needs `messages.send`, and with `jobs.view_all` (every company admin) sees every
+ * conversation of the company; any other member sees the ones they started and the ones with a job seeker who applied to a job assigned to them. A conversation the caller may not see is a plain 404.
  */
 final readonly class ConversationAccess
 {
@@ -25,7 +26,7 @@ final readonly class ConversationAccess
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-participant` or `company-suspended`
+     * @throws AccessDenied `not-a-participant`, `company-permission-required` or `company-suspended`
      */
     public function participant(Actor $actor): Participant
     {
@@ -41,20 +42,22 @@ final readonly class ConversationAccess
             throw new AccessDenied('Only a job seeker or a company member can use chat.', 'not-a-participant');
         }
 
+        $actor->membership->require(CompanyPermission::MessagesSend);
+
         if (! $this->companies->isActive($actor->membership->companyId)) {
             throw new AccessDenied('This company is suspended.', 'company-suspended');
         }
 
-        return new Participant(SenderSide::Company, $actor->id, $actor->membership->companyId, $actor->isCompanyAdmin());
+        return new Participant(SenderSide::Company, $actor->id, $actor->membership->companyId, $actor->can(CompanyPermission::JobsViewAll));
     }
 
-    /** @throws AccessDenied `not-a-company-member` */
+    /** @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended` */
     public function companyMember(Actor $actor): Participant
     {
         try {
             $participant = $this->participant($actor);
         } catch (AccessDenied $e) {
-            if ($e->errorCode() === 'company-suspended') {
+            if (in_array($e->errorCode(), ['company-suspended', 'company-permission-required'], true)) {
                 throw $e;
             }
 
@@ -80,11 +83,11 @@ final readonly class ConversationAccess
 
     public function audience(Participant $participant): ConversationAudience
     {
-        $visible = $participant->isCompany() && ! $participant->isCompanyAdmin
+        $visible = $participant->isCompany() && ! $participant->seesAllJobs
             ? $this->applicants->applicantsVisibleToRecruiter((int) $participant->companyId, $participant->userId)
             : [];
 
-        return new ConversationAudience($participant->side, $participant->userId, $participant->companyId, $participant->isCompanyAdmin, $visible);
+        return new ConversationAudience($participant->side, $participant->userId, $participant->companyId, $participant->seesAllJobs, $visible);
     }
 
     /** @throws EntityNotFound */
@@ -109,7 +112,7 @@ final readonly class ConversationAccess
             return false;
         }
 
-        return $participant->isCompanyAdmin
+        return $participant->seesAllJobs
             || $conversation->startedByUserId === $participant->userId
             || $this->applicants->canSeeApplicant($conversation->companyId, $participant->userId, false, $conversation->jobSeekerUserId);
     }

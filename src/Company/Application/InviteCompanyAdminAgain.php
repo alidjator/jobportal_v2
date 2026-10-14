@@ -38,7 +38,7 @@ final readonly class InviteCompanyAdminAgain
         $company = $this->companies->findById($companyId) ?? throw EntityNotFound::of('Company', $companyId);
 
         return $this->issue->execute(new IssueInvitationCommand(
-            $company, $email, CompanyRole::CompanyAdmin, null, (int) $actor->id, $language, $ipAddress, $userAgent,
+            $company, $email, CompanyRole::CompanyAdmin, null, null, null, (int) $actor->id, $language, $ipAddress, $userAgent,
         ));
     }
 }

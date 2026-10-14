@@ -87,7 +87,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
             ['POST', "/company/screening-questions/{$id}/archive", []],
             ['POST', "/company/screening-questions/{$id}/restore", []],
         ] as [$method, $uri, $body]) {
-            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         }
 
         $this->assertSame('Can you start next month?', DB::table('recruitment_screening_questions')->where('id', $id)->value('text'));

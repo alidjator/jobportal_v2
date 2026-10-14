@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
+use Src\Company\Domain\MemberPreset;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Src\Shared\Application\Company\CompanyPermission;
 use Tests\Concerns\CreatesReferenceRows;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class CompanyTeamTest extends FeatureTestCase
 {
@@ -70,7 +73,7 @@ final class CompanyTeamTest extends FeatureTestCase
             'type' => 'company_member', 'name' => $name, 'email' => $email, 'password' => Hash::make(self::PASSWORD),
             'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00',
         ]);
-        DB::table('company_members')->insert(['company_id' => $companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($companyId, $user->id, $role);
 
         return $user;
     }
@@ -106,9 +109,12 @@ final class CompanyTeamTest extends FeatureTestCase
         return $this->withToken($token ?? $this->adminToken)->withHeader('Accept-Language', $language)->json($method, '/api/v1/company'.$uri, $body);
     }
 
-    private function invite(string $email = 'new@example.test', string $role = 'recruiter', ?string $token = null): TestResponse
+    /** @param  ?list<string>  $permissions  the permissions of a member; reading and interviews when null */
+    private function invite(string $email = 'new@example.test', string $role = 'member', ?string $token = null, ?array $permissions = null): TestResponse
     {
-        return $this->api('POST', '/invitations', ['email' => $email, 'role' => $role], $token);
+        return $this->api('POST', '/invitations', [
+            'name' => 'Budi Baru', 'email' => $email, 'role' => $role, 'permissions' => $permissions ?? ['applications.view', 'interviews.manage'],
+        ], $token);
     }
 
     private function tokenFromMail(int $index = 0): string
@@ -143,22 +149,44 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_every_team_route_needs_a_signed_in_user(): void
     {
-        foreach ([['GET', '/invitations'], ['POST', '/invitations'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['GET', '/members/1/jobs'], ['DELETE', '/members/1'], ['PUT', '/members/1/role']] as [$method, $uri]) {
+        foreach ([['GET', '/invitations'], ['POST', '/invitations'], ['DELETE', '/invitations/1'], ['GET', '/members'], ['GET', '/members/1/jobs'], ['DELETE', '/members/1'], ['PATCH', '/members/1'], ['GET', '/permissions']] as [$method, $uri]) {
             $this->json($method, '/api/v1/company'.$uri)->assertStatus(401);
         }
     }
 
-    public function test_a_recruiter_cannot_manage_the_team(): void
+    public function test_a_member_cannot_manage_the_team(): void
     {
         foreach ([
-            ['GET', '/invitations', []], ['POST', '/invitations', ['email' => 'x@example.test', 'role' => 'recruiter']], ['DELETE', '/invitations/1', []],
-            ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}/jobs", []], ['DELETE', "/members/{$this->admin->id}", []], ['PUT', "/members/{$this->recruiter->id}/role", ['role' => 'company_admin']],
+            ['GET', '/invitations', []], ['POST', '/invitations', ['name' => 'X', 'email' => 'x@example.test', 'role' => 'member', 'permissions' => ['applications.view']]], ['DELETE', '/invitations/1', []],
+            ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}/jobs", []], ['DELETE', "/members/{$this->admin->id}", []], ['PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin']],
         ] as [$method, $uri, $body]) {
             $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
         }
 
         $this->assertSame(2, DB::table('company_members')->count());
         $this->assertSame(0, DB::table('company_invitations')->count());
+    }
+
+    public function test_any_member_reads_the_permission_catalog_and_the_presets(): void
+    {
+        $response = $this->api('GET', '/permissions', [], $this->recruiterToken)->assertOk();
+
+        $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company'], array_column($response->json('data.groups'), 'group'));
+        $this->assertSame(21, array_sum(array_map(fn (array $group): int => count($group['permissions']), $response->json('data.groups'))));
+        $this->assertSame(['company_admin', 'recruiter', 'interviewer'], array_column($response->json('data.presets'), 'preset'));
+        $this->assertSame(['applications.view', 'interviews.manage'], $response->json('data.presets.2.permissions'));
+        $this->assertSame(['member', 'member'], [$response->json('data.presets.1.role'), $response->json('data.presets.2.role')]);
+        $this->assertTrue($response->json('data.groups.0.permissions.0.requires_view'));
+    }
+
+    public function test_the_current_company_lists_the_effective_permissions(): void
+    {
+        $admin = $this->api('GET', '/me')->assertOk();
+        $this->assertCount(21, $admin->json('data.permissions'));
+
+        $recruiter = $this->api('GET', '/me', [], $this->recruiterToken)->assertOk()->assertJsonPath('data.role', 'member');
+        $this->assertContains('applications.view', $recruiter->json('data.permissions'));
+        $this->assertNotContains('jobs.assign', $recruiter->json('data.permissions'));
     }
 
     public function test_a_job_seeker_and_a_member_without_a_company_are_refused(): void
@@ -183,10 +211,12 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_a_company_admin_invites_a_colleague_who_can_then_join(): void
     {
-        $response = $this->invite('New@Example.test', 'recruiter')->assertCreated();
+        $response = $this->invite('New@Example.test', 'member')->assertCreated();
 
         $response->assertJsonPath('data.email', 'new@example.test')
-            ->assertJsonPath('data.role', 'recruiter')
+            ->assertJsonPath('data.name', 'Budi Baru')
+            ->assertJsonPath('data.role', 'member')
+            ->assertJsonPath('data.permissions', ['applications.view', 'interviews.manage'])
             ->assertJsonPath('data.sent_at', '2026-10-05T09:00:00+00:00')
             ->assertJsonPath('data.expires_at', '2026-10-12T09:00:00+00:00');
         $this->assertArrayNotHasKey('token', $response->json('data'));
@@ -198,13 +228,15 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame(hash('sha256', $this->tokenFromMail()), $row->token_hash);
 
         $this->acceptInvitation($this->tokenFromMail())->assertCreated();
-        $this->assertSame('recruiter', DB::table('company_members')->where('company_id', $this->companyId)->orderByDesc('id')->value('role'));
+        $joined = DB::table('company_members')->where('company_id', $this->companyId)->orderByDesc('id')->first();
+        $this->assertSame('member', $joined->role);
         $this->assertSame(3, DB::table('company_members')->where('company_id', $this->companyId)->count());
+        $this->assertSame(['applications.view', 'interviews.manage'], DB::table('company_member_permissions')->where('company_member_id', $joined->id)->orderBy('id')->pluck('permission')->all());
     }
 
     public function test_the_invitation_email_follows_the_request_language(): void
     {
-        $this->api('POST', '/invitations', ['email' => 'new@example.test', 'role' => 'company_admin'], null, 'id')->assertCreated();
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'role' => 'company_admin'], null, 'id')->assertCreated();
 
         $message = $this->app->make('mail.manager')->mailer()->getSymfonyTransport()->messages()[0]->getOriginalMessage();
         $this->assertSame('Undangan bergabung dengan PT Maju Bersama', $message->getSubject());
@@ -215,7 +247,11 @@ final class CompanyTeamTest extends FeatureTestCase
     {
         $this->invite('not-an-email')->assertStatus(422);
         $this->invite('new@example.test', 'owner')->assertStatus(422);
-        $this->api('POST', '/invitations', ['email' => 'new@example.test'])->assertStatus(422);
+        $this->api('POST', '/invitations', ['email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(422)->assertJsonValidationErrors(['name']);
+        $this->invite('new@example.test', 'member', null, ['jobs.fly'])->assertStatus(422);
+
+        $this->invite('new@example.test', 'member', null, [])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permissions-required');
+        $this->invite('new@example.test', 'member', null, ['jobs.create'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permission-requires-view')->assertJsonPath('permission', 'jobs.create');
 
         $this->invite('RINA@example.test')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
 
@@ -255,7 +291,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
         $otherCompany = $this->makeCompany('PT Lain', 'pt-lain');
         $otherAdmin = $this->makeMember($otherCompany, 'Oki Admin', 'oki@example.test', 'company_admin');
-        $this->invite('one@example.test', 'recruiter', $this->tokenOf($otherAdmin))->assertCreated();
+        $this->invite('one@example.test', 'member', $this->tokenOf($otherAdmin))->assertCreated();
 
         $this->assertSame(3, DB::table('company_invitations')->whereNull('revoked_at')->count());
     }
@@ -275,17 +311,17 @@ final class CompanyTeamTest extends FeatureTestCase
         // Not pending: accepted, revoked, expired; and one of another company.
         foreach ([['accepted_at', '2026-10-05 08:30:00', 'b'], ['revoked_at', '2026-10-05 08:30:00', 'c']] as [$column, $time, $hash]) {
             DB::table('company_invitations')->insert([
-                'company_id' => $this->companyId, 'email' => "{$hash}@example.test", 'role' => 'recruiter', 'token_hash' => str_repeat($hash, 64),
+                'company_id' => $this->companyId, 'email' => "{$hash}@example.test", 'role' => 'member', 'token_hash' => str_repeat($hash, 64),
                 'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', $column => $time, 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
         DB::table('company_invitations')->insert([
-            'company_id' => $this->companyId, 'email' => 'old@example.test', 'role' => 'recruiter', 'token_hash' => str_repeat('d', 64),
+            'company_id' => $this->companyId, 'email' => 'old@example.test', 'role' => 'member', 'token_hash' => str_repeat('d', 64),
             'sent_at' => '2026-09-01 08:00:00', 'expires_at' => '2026-09-08 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $otherCompany = $this->makeCompany('PT Lain', 'pt-lain');
         DB::table('company_invitations')->insert([
-            'company_id' => $otherCompany, 'email' => 'other@example.test', 'role' => 'recruiter', 'token_hash' => str_repeat('e', 64),
+            'company_id' => $otherCompany, 'email' => 'other@example.test', 'role' => 'member', 'token_hash' => str_repeat('e', 64),
             'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
@@ -293,7 +329,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
         $this->assertSame(['second@example.test', 'first@example.test', 'by-platform@example.test'], array_column($response->json('data'), 'email'));
         $this->assertSame([
-            'id' => $second, 'email' => 'second@example.test', 'role' => 'company_admin',
+            'id' => $second, 'name' => 'Budi Baru', 'email' => 'second@example.test', 'role' => 'company_admin', 'permissions' => CompanyPermission::values(),
             'sent_at' => '2026-10-05T10:00:00+00:00', 'expires_at' => '2026-10-12T10:00:00+00:00', 'invited_by' => 'Andi Admin',
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.2.invited_by'));
@@ -317,11 +353,11 @@ final class CompanyTeamTest extends FeatureTestCase
     {
         $otherCompany = $this->makeCompany('PT Lain', 'pt-lain');
         $foreign = (int) DB::table('company_invitations')->insertGetId([
-            'company_id' => $otherCompany, 'email' => 'other@example.test', 'role' => 'recruiter', 'token_hash' => str_repeat('e', 64),
+            'company_id' => $otherCompany, 'email' => 'other@example.test', 'role' => 'member', 'token_hash' => str_repeat('e', 64),
             'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $accepted = (int) DB::table('company_invitations')->insertGetId([
-            'company_id' => $this->companyId, 'email' => 'done@example.test', 'role' => 'recruiter', 'token_hash' => str_repeat('f', 64),
+            'company_id' => $this->companyId, 'email' => 'done@example.test', 'role' => 'member', 'token_hash' => str_repeat('f', 64),
             'sent_at' => '2026-10-05 08:00:00', 'expires_at' => '2026-10-12 08:00:00', 'accepted_at' => '2026-10-05 08:30:00', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
@@ -346,8 +382,8 @@ final class CompanyTeamTest extends FeatureTestCase
 
         $this->assertSame(['Andi Admin', 'Cici Admin', 'Bambang Rekruter', 'Rina Rekruter'], array_column($response->json('data'), 'name'));
         $this->assertSame([
-            'user_id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin', 'status' => 'active',
-            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
+            'user_id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin',
+            'permissions' => CompanyPermission::values(), 'status' => 'active', 'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.3.last_login_at'));
     }
@@ -441,51 +477,98 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertTrue(DB::table('company_members')->where('user_id', $outsider->id)->exists());
     }
 
-    // ----- changing roles -----
+    // ----- changing roles and permissions -----
 
-    public function test_a_recruiter_can_be_promoted_and_a_company_admin_demoted(): void
+    public function test_a_member_can_be_promoted_and_a_company_admin_demoted_to_the_recruiter_preset(): void
     {
-        $this->api('PUT', "/members/{$this->recruiter->id}/role", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
+        $this->assertSame(0, DB::table('company_member_permissions')->count());
 
-        $this->api('PUT', "/members/{$this->admin->id}/role", ['role' => 'recruiter'])->assertNoContent();
-        $this->assertSame('recruiter', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
+        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertNoContent();
+        $this->assertSame('member', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
+        $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->admin));
 
-        // The demoted admin lost the right with the next request.
+        // The demoted admin lost the right with the next request, with the same token.
         $this->api('GET', '/members')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+    }
+
+    public function test_a_demotion_may_name_the_permissions(): void
+    {
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member', 'permissions' => ['applications.view']])->assertNoContent();
+
+        $this->assertSame(['applications.view'], $this->permissionsOf($this->admin));
+    }
+
+    public function test_the_permissions_of_a_member_change_at_once_and_are_audited_and_notified(): void
+    {
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['applications.view', 'jobs.assign']])->assertNoContent();
+
+        $this->assertEqualsCanonicalizing(['applications.view', 'jobs.assign'], $this->permissionsOf($this->recruiter));
+
+        // The member's token still works, but the action it could do a moment ago is refused.
+        $this->api('GET', '/permissions', [], $this->recruiterToken)->assertOk();
+        $this->api('GET', '/me', [], $this->recruiterToken)->assertOk()->assertJsonPath('data.permissions', ['jobs.assign', 'applications.view']);
+
+        $entry = DB::table('platform_audit_logs')->where('action', 'company.member_permissions_changed')->first();
+        $metadata = json_decode((string) $entry->metadata, true);
+        $this->assertSame($this->recruiter->id, $metadata['user_id']);
+        $this->assertEqualsCanonicalizing(['jobs.assign'], $metadata['added']);
+        $this->assertContains('jobs.create', $metadata['removed']);
+        $this->assertSame($this->admin->id, (int) $entry->actor_id);
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->recruiter->id)->where('type', 'company.permissions_changed')->count());
+    }
+
+    public function test_the_permissions_of_a_member_are_checked(): void
+    {
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => []])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permissions-required');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['jobs.publish']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permission-requires-view');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['jobs.fly']])->assertStatus(422);
+        $this->api('PATCH', "/members/{$this->admin->id}", ['permissions' => ['applications.view']])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-company-admin');
+
+        $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
     }
 
     public function test_the_last_company_admin_cannot_be_demoted(): void
     {
-        $this->api('PUT', "/members/{$this->admin->id}/role", ['role' => 'recruiter'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
 
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
     }
 
-    public function test_giving_the_same_role_changes_and_audits_nothing(): void
+    public function test_giving_the_same_role_and_permissions_changes_and_audits_nothing(): void
     {
-        $this->api('PUT', "/members/{$this->recruiter->id}/role", ['role' => 'recruiter'])->assertNoContent();
-        $this->api('PUT', "/members/{$this->admin->id}/role", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => array_reverse(MemberPreset::Recruiter->permissionNames())])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'company_admin'])->assertNoContent();
 
-        $this->assertSame(0, DB::table('platform_audit_logs')->where('action', 'company.member_role_changed')->count());
+        $this->assertSame(0, DB::table('platform_audit_logs')->whereIn('action', ['company.member_role_changed', 'company.member_permissions_changed'])->count());
     }
 
-    public function test_a_role_change_needs_a_valid_role_and_a_member_of_the_own_company(): void
+    public function test_a_change_needs_a_valid_role_and_a_member_of_the_own_company(): void
     {
         $outsider = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'recruiter');
 
-        $this->api('PUT', "/members/{$this->recruiter->id}/role", ['role' => 'owner'])->assertStatus(422);
-        $this->api('PUT', "/members/{$this->recruiter->id}/role", [])->assertStatus(422);
-        $this->api('PUT', "/members/{$outsider->id}/role", ['role' => 'company_admin'])->assertNotFound();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'owner'])->assertStatus(422);
+        $this->api('PATCH', "/members/{$outsider->id}", ['role' => 'company_admin'])->assertNotFound();
 
-        $this->assertSame('recruiter', DB::table('company_members')->where('user_id', $outsider->id)->value('role'));
+        $this->assertSame('member', DB::table('company_members')->where('user_id', $outsider->id)->value('role'));
+    }
+
+    /** @return list<string> */
+    private function permissionsOf(UserModel $user): array
+    {
+        $memberId = DB::table('company_members')->where('user_id', $user->id)->value('id');
+
+        return DB::table('company_member_permissions')->where('company_member_id', $memberId)->orderBy('id')->pluck('permission')->all();
     }
 
     // ----- audit -----
 
     public function test_removals_and_role_changes_are_audited_with_the_actor_and_without_email_addresses(): void
     {
-        $this->api('PUT', "/members/{$this->recruiter->id}/role", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
         $this->api('DELETE', "/members/{$this->recruiter->id}")->assertNoContent();
 
         $changed = DB::table('platform_audit_logs')->where('action', 'company.member_role_changed')->first();
@@ -495,7 +578,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame($this->admin->id, (int) $changed->actor_id);
         $this->assertSame('company', $changed->subject_type);
         $this->assertSame($this->companyId, (int) $changed->subject_id);
-        $this->assertSame(['user_id' => $this->recruiter->id, 'old_role' => 'recruiter', 'new_role' => 'company_admin'], json_decode((string) $changed->metadata, true));
+        $this->assertSame(['user_id' => $this->recruiter->id, 'old_role' => 'member', 'new_role' => 'company_admin', 'permissions' => []], json_decode((string) $changed->metadata, true));
         $this->assertSame($this->admin->id, (int) $removed->actor_id);
         $this->assertSame(['user_id' => $this->recruiter->id, 'role' => 'company_admin'], json_decode((string) $removed->metadata, true));
         $this->assertStringNotContainsString('example.test', json_encode(DB::table('platform_audit_logs')->get()->all()));
@@ -503,7 +586,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_sending_and_revoking_an_invitation_are_audited_without_the_email_address(): void
     {
-        $this->invite('new@example.test', 'recruiter')->assertCreated();
+        $this->invite('new@example.test', 'member')->assertCreated();
         $id = (int) DB::table('company_invitations')->value('id');
         $this->api('DELETE', "/invitations/{$id}")->assertNoContent();
 
@@ -514,7 +597,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame($this->admin->id, (int) $sent->actor_id);
         $this->assertSame('company', $sent->subject_type);
         $this->assertSame($this->companyId, (int) $sent->subject_id);
-        $this->assertSame(['invitation_id' => $id, 'role' => 'recruiter'], json_decode((string) $sent->metadata, true));
+        $this->assertSame(['invitation_id' => $id, 'role' => 'member', 'permissions' => ['applications.view', 'interviews.manage']], json_decode((string) $sent->metadata, true));
         $this->assertNotNull($sent->ip_address);
 
         $this->assertSame($this->admin->id, (int) $revoked->actor_id);
@@ -536,7 +619,7 @@ final class CompanyTeamTest extends FeatureTestCase
     {
         $this->invite('rina@example.test')->assertStatus(409);
         $this->invite('new@example.test', 'owner')->assertStatus(422);
-        $this->api('POST', '/invitations', ['email' => 'x@example.test', 'role' => 'recruiter'], $this->recruiterToken)->assertStatus(403);
+        $this->invite('x@example.test', 'member', $this->recruiterToken)->assertStatus(403);
 
         $this->assertSame(0, DB::table('platform_audit_logs')->count());
     }
@@ -562,7 +645,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $sent = DB::table('platform_audit_logs')->where('action', 'company.invitation_sent')->first();
         $this->assertSame('admin', $sent->actor_type);
         $this->assertSame((int) $row->invited_by_admin_id, (int) $sent->actor_id);
-        $this->assertSame(['invitation_id' => (int) $row->id, 'role' => 'company_admin'], json_decode((string) $sent->metadata, true));
+        $this->assertSame(['invitation_id' => (int) $row->id, 'role' => 'company_admin', 'permissions' => null], json_decode((string) $sent->metadata, true));
 
         $this->acceptInvitation($this->tokenFromMail())->assertCreated();
         $this->assertSame('company_admin', DB::table('company_members')->orderByDesc('id')->value('role'));

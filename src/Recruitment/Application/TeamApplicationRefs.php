@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Recruitment\TeamApplicationRef;
 use Src\Shared\Application\Recruitment\TeamApplications;
@@ -13,9 +14,9 @@ final readonly class TeamApplicationRefs implements TeamApplications
 {
     public function __construct(private TeamApplicationLookup $lookup, private JobDirectory $jobs) {}
 
-    public function find(Actor $actor, int $applicationId, bool $forUpdate = false): TeamApplicationRef
+    public function find(Actor $actor, int $applicationId, bool $forUpdate = false, ?CompanyPermission $permission = null): TeamApplicationRef
     {
-        $application = $this->lookup->find($actor, $applicationId, $forUpdate)->application;
+        $application = $this->lookup->find($actor, $applicationId, $forUpdate, $permission)->application;
 
         return new TeamApplicationRef(
             $applicationId,

@@ -149,9 +149,17 @@ final class AnalyticsTest extends FeatureTestCase
 
     // ----- access -----
 
-    public function test_only_a_company_admin_reads_the_company_analytics(): void
+    public function test_a_company_member_reads_the_company_analytics_with_the_analytics_permission(): void
     {
-        $this->company('funnel', token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-only');
+        $limited = $this->memberWith(['applications.view'])['token'];
+
+        $this->company('funnel', token: $limited)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required')->assertJsonPath('permission', 'analytics.view');
+        $this->flushHeaders();
+        $this->company('funnel', token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->flushHeaders();
+        $analyst = $this->memberWith(['applications.view', 'analytics.view'], 'analyst@example.test')['token'];
+        $this->company('funnel', token: $analyst)->assertOk();
+        $this->flushHeaders();
         $this->company('funnel', token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
         $this->company('funnel', token: $this->adminToken)->assertOk();
 

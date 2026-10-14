@@ -11,6 +11,7 @@ use Src\Recruitment\Domain\Voice\CallRepository;
 use Src\Recruitment\Domain\Voice\CallStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -44,7 +45,7 @@ final readonly class StartVoiceRecording
     public function execute(Actor $actor, int $applicationId): InterviewRecording
     {
         return $this->transactions->run(function () use ($actor, $applicationId): InterviewRecording {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->sessions->callable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

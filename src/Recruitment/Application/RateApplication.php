@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -27,7 +28,7 @@ final readonly class RateApplication
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `application-final`
      * @throws BusinessRuleViolation `invalid-rating`
@@ -42,7 +43,7 @@ final readonly class RateApplication
     }
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `application-final`
      */
@@ -55,7 +56,7 @@ final readonly class RateApplication
     private function change(Actor $actor, int $applicationId, callable $write): ApplicationRatingView
     {
         return $this->transactions->run(function () use ($actor, $applicationId, $write): ApplicationRatingView {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::ApplicationsManage);
 
             $type = $team->application->stageType;
 

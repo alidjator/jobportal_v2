@@ -22,6 +22,7 @@ final class CurrentCompanyResource extends JsonResource
                 'status' => $company->status()->value,
             ],
             'role' => $this->resource->role->value,
+            'permissions' => $this->resource->permissions,
         ];
     }
 }

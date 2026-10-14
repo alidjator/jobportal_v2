@@ -3,6 +3,7 @@
 namespace Src\Company\Infrastructure\Persistence;
 
 use Src\Company\Domain\CompanyMemberRepository;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Company\CompanyTeam;
 
 final readonly class RepositoryCompanyTeam implements CompanyTeam
@@ -18,5 +19,18 @@ final readonly class RepositoryCompanyTeam implements CompanyTeam
         }
 
         return $roles;
+    }
+
+    public function viewAllUserIds(int $companyId): array
+    {
+        $ids = [];
+
+        foreach ($this->members->ofCompany($companyId) as $member) {
+            if (in_array(CompanyPermission::JobsViewAll->value, $member->effectivePermissions(), true)) {
+                $ids[] = $member->userId;
+            }
+        }
+
+        return $ids;
     }
 }

@@ -26,7 +26,9 @@ final class TeamInvitationController extends ApiController
 
     public function store(InviteMemberRequest $request, RequestContext $context, ActorResolver $actors, InviteMember $invite): JsonResponse
     {
-        $invitation = $invite->execute($actors->fromRequest($request), $request->email(), $request->role(), $context->language, $request->ip(), $request->userAgent());
+        $invitation = $invite->execute(
+            $actors->fromRequest($request), $request->name(), $request->email(), $request->role(), $request->permissions(), $context->language, $request->ip(), $request->userAgent(),
+        );
 
         return (new IssuedInvitationResource($invitation))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
     }

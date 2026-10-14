@@ -41,7 +41,7 @@ final class TestAuthoringTest extends FeatureTestCase
     public function test_only_a_company_admin_writes_tests_but_every_member_reads_the_catalogue(): void
     {
         $this->company('POST', 'tests', ['title' => 'Logic and numbers'], $this->recruiterToken)
-            ->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+            ->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         $this->company('GET', 'tests', [], $this->recruiterToken)->assertForbidden();
         $this->company('GET', 'library', [], $this->recruiterToken)->assertOk();
     }

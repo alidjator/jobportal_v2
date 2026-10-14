@@ -19,12 +19,12 @@ final readonly class ListIntegrityEvents
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      */
     public function execute(Actor $actor, int $invitationId): IntegrityLog
     {
-        $this->visible->find($actor, $invitationId);
+        $this->visible->findForResults($actor, $invitationId);
         $attempt = $this->attempts->findByInvitation($invitationId) ?? throw EntityNotFound::of('Attempt', $invitationId);
         $events = $this->outcomes->eventsOf((int) $attempt->id);
 

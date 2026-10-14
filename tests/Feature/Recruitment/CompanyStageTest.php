@@ -93,7 +93,7 @@ final class CompanyStageTest extends FeatureTestCase
             ['DELETE', "/company/stages/{$id}", []],
             ['PUT', '/company/stages/order', ['stage_ids' => [1]]],
         ] as [$method, $uri, $body]) {
-            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         }
 
         $this->assertCount(8, $this->names());

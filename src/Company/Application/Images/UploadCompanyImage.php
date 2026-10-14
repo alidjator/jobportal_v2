@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Images\ImageProcessor;
 use Src\Shared\Application\Settings\Settings;
@@ -30,12 +31,12 @@ final readonly class UploadCompanyImage
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws BusinessRuleViolation `file-too-large` or `invalid-image`
      */
     public function execute(Actor $actor, CompanyImageKind $kind, string $contents): void
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
 
         $maxBytes = $this->settings->integer($kind->maxSizeSetting()) * 1024;
 

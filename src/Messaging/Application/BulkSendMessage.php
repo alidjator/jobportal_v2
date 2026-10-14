@@ -50,7 +50,7 @@ final readonly class BulkSendMessage
         $sender = $this->access->companyMember($actor);
         $companyId = (int) $sender->companyId;
 
-        if ($this->jobs->visibleToMember($jobId, $companyId, $sender->userId, $sender->isCompanyAdmin) === null) {
+        if ($this->jobs->visibleToMember($jobId, $companyId, $sender->userId, $sender->seesAllJobs) === null) {
             throw EntityNotFound::of('Job', $jobId);
         }
 

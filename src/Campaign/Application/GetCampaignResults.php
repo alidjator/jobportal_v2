@@ -18,7 +18,7 @@ final readonly class GetCampaignResults
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when the campaign is not in the actor's scope
      */
     public function execute(Actor $actor, int $campaignId): CampaignResults

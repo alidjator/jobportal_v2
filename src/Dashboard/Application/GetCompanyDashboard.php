@@ -5,13 +5,15 @@ namespace Src\Dashboard\Application;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardScope;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 
 /**
- * The dashboard of a company member, kept for 2 minutes. A company admin sees every job of the company, a recruiter only the jobs assigned to them, in every card.
+ * The dashboard of a company member, kept for 2 minutes. A member with `jobs.view_all` (every company admin) sees every job of the company, any other
+ * only the jobs assigned to them, in every card; a card whose permission the member lacks is left out, so a member with no permission gets an empty dashboard.
  */
 final readonly class GetCompanyDashboard
 {
@@ -36,9 +38,10 @@ final readonly class GetCompanyDashboard
             throw new AccessDenied('This company is suspended.', 'company-suspended');
         }
 
-        $jobIds = $actor->isCompanyAdmin() ? null : $this->jobs->assignedJobIds($companyId, $actor->id);
-        $scope = new DashboardScope(DashboardAudience::Company, $actor->id, $companyId, $jobIds);
-        $key = $jobIds === null ? "dashboard:company:{$companyId}:all" : "dashboard:company:{$companyId}:member:{$actor->id}";
+        $jobIds = $actor->can(CompanyPermission::JobsViewAll) ? null : $this->jobs->assignedJobIds($companyId, $actor->id);
+        $permissions = $actor->membership->effectivePermissions();
+        $scope = new DashboardScope(DashboardAudience::Company, $actor->id, $companyId, $jobIds, $permissions);
+        $key = $actor->isCompanyAdmin() ? "dashboard:company:{$companyId}:all" : "dashboard:company:{$companyId}:member:{$actor->id}:".md5(implode(',', $permissions));
 
         return $this->composer->compose($scope, $key, self::CACHE_SECONDS);
     }

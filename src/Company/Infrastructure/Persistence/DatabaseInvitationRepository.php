@@ -38,6 +38,8 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             'company_id' => $invitation->companyId,
             'email' => $invitation->email,
             'role' => $invitation->role->value,
+            'name' => $invitation->name,
+            'permissions' => $invitation->permissions === null ? null : json_encode($invitation->permissions),
             'token_hash' => $invitation->tokenHash,
             'invited_by_user_id' => $invitation->invitedByUserId,
             'invited_by_admin_id' => $invitation->invitedByAdminId,
@@ -48,8 +50,8 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
         ]);
 
         return new Invitation(
-            (int) $id, $invitation->companyId, $invitation->email, $invitation->role, $invitation->tokenHash, $invitation->invitedByUserId,
-            $invitation->invitedByAdminId, $invitation->sentAt, $invitation->expiresAt, $invitation->acceptedAt(), $invitation->revokedAt(),
+            (int) $id, $invitation->companyId, $invitation->email, $invitation->role, $invitation->name, $invitation->permissions, $invitation->tokenHash,
+            $invitation->invitedByUserId, $invitation->invitedByAdminId, $invitation->sentAt, $invitation->expiresAt, $invitation->acceptedAt(), $invitation->revokedAt(),
         );
     }
 
@@ -92,6 +94,8 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             (int) $row->company_id,
             (string) $row->email,
             CompanyRole::from($row->role),
+            $row->name === null ? null : (string) $row->name,
+            $row->permissions === null ? null : array_values((array) json_decode((string) $row->permissions, true)),
             (string) $row->token_hash,
             $row->invited_by_user_id === null ? null : (int) $row->invited_by_user_id,
             $row->invited_by_admin_id === null ? null : (int) $row->invited_by_admin_id,

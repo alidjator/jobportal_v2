@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\Video\InterviewRecording;
 use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\RecordingStatus;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -32,14 +33,14 @@ final readonly class DeleteRecording
      */
     public function execute(Actor $actor, int $interviewId, int $recordingId): void
     {
-        $team = $this->lookup->find($actor, $interviewId);
+        $team = $this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage);
         $recording = $this->recordings->find($recordingId);
 
         if (! $recording instanceof InterviewRecording || $recording->interviewId !== $interviewId) {
             throw EntityNotFound::of('Recording', $recordingId);
         }
 
-        if (! $team->member->isCompanyAdmin && ! $this->sessions->isOnPanel($team->interview, $team->member->userId)) {
+        if (! $team->member->isCompanyAdmin() && ! $this->sessions->isOnPanel($team->interview, $team->member->userId)) {
             throw new AccessDenied('Only the interview panel and the company admins can delete a recording.', 'not-an-interview-participant');
         }
 

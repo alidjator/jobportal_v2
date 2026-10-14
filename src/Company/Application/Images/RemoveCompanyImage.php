@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Throwable;
@@ -20,10 +21,10 @@ final readonly class RemoveCompanyImage
         private LoggerInterface $logger,
     ) {}
 
-    /** @throws AccessDenied `not-a-company-member`, `company-admin-required` or `company-suspended` */
+    /** @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended` */
     public function execute(Actor $actor, CompanyImageKind $kind): void
     {
-        $company = $this->guard->company($actor);
+        $company = $this->guard->companyWith($actor, CompanyPermission::CompanyProfile);
         $path = $kind === CompanyImageKind::Logo ? $company->logoPath() : $company->bannerPath();
 
         if ($path === null) {

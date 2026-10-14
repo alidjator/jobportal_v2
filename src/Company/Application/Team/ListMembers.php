@@ -35,7 +35,7 @@ final readonly class ListMembers
             $account = $accounts[$member->userId] ?? null;
 
             if ($account !== null) {
-                $views[] = new MemberView($member->userId, $account->name, $account->email, $member->role, $account->status, $member->joinedAt, $account->lastLoginAt);
+                $views[] = new MemberView($member->userId, $account->name, $account->email, $member->role, $member->effectivePermissions(), $account->status, $member->joinedAt, $account->lastLoginAt);
             }
         }
 

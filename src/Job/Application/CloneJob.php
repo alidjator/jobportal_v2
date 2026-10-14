@@ -7,6 +7,7 @@ use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -28,12 +29,13 @@ final readonly class CloneJob
     /**
      * @return int the id of the new draft
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
      */
     public function execute(Actor $actor, int $jobId): int
     {
         $member = $this->access->member($actor);
+        $this->access->require($member, CompanyPermission::JobsCreate);
         $source = $this->access->job($member, $jobId);
 
         return $this->transactions->run(function () use ($member, $source): int {

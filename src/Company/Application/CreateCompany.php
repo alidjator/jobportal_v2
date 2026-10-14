@@ -80,7 +80,7 @@ final readonly class CreateCompany
                 $command->name, $this->uniqueSlug($command->name), $command->industryId, $command->organizationTypeId, (int) $actor->id,
             ));
             $invitation = $this->invitations->save(Invitation::issue(
-                (int) $company->id, $email, CompanyRole::CompanyAdmin, $token->hash(), null, (int) $actor->id, $now,
+                (int) $company->id, $email, CompanyRole::CompanyAdmin, null, null, $token->hash(), null, (int) $actor->id, $now,
             ));
             $this->stages->provision((int) $company->id);
 
@@ -91,7 +91,7 @@ final readonly class CreateCompany
         $this->events->dispatch([
             new CompanyCreated((int) $company->id, (int) $actor->id, $command->ipAddress, $command->userAgent, $now),
             new CompanyInvitationSent(
-                (int) $company->id, (int) $invitation->id, $invitation->role->value, null, (int) $actor->id, $command->ipAddress, $command->userAgent, $now,
+                (int) $company->id, (int) $invitation->id, $invitation->role->value, null, null, (int) $actor->id, $command->ipAddress, $command->userAgent, $now,
             ),
         ]);
 

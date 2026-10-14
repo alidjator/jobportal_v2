@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\Video\InterviewRecording;
 use Src\Recruitment\Domain\Video\RecordingRepository;
 use Src\Recruitment\Domain\Video\RecordingStatus;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\FileStreams;
 use Src\Shared\Application\StreamedFile;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -19,13 +20,13 @@ final readonly class OpenRecording
     public function __construct(private TeamInterviewLookup $lookup, private RecordingRepository $recordings, private FileStreams $streams) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `recording-not-ready`
      */
     public function execute(Actor $actor, int $interviewId, int $recordingId): StreamedFile
     {
-        $this->lookup->find($actor, $interviewId);
+        $this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage);
         $recording = $this->recordings->find($recordingId);
 
         if (! $recording instanceof InterviewRecording || $recording->interviewId !== $interviewId) {

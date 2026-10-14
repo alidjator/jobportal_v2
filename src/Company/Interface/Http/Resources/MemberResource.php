@@ -18,6 +18,7 @@ final class MemberResource extends JsonResource
             'name' => $this->resource->name,
             'email' => $this->resource->email,
             'role' => $this->resource->role->value,
+            'permissions' => $this->resource->permissions,
             'status' => $this->resource->status,
             'joined_at' => $this->resource->joinedAt->format(DateTimeInterface::ATOM),
             'last_login_at' => $this->resource->lastLoginAt?->format(DateTimeInterface::ATOM),

@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\ApplicationNote;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -21,13 +22,13 @@ final readonly class AddApplicationNote
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws BusinessRuleViolation `invalid-note`
      */
     public function execute(Actor $actor, int $applicationId, string $body): NoteView
     {
-        $team = $this->lookup->find($actor, $applicationId);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsManage);
         $note = $this->notes->add(ApplicationNote::write($applicationId, $team->member->userId, $body, $this->clock->now()));
 
         return $this->views->of([$note])[0];

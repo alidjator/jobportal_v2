@@ -424,7 +424,7 @@ final class ReviewTest extends FeatureTestCase
         $waiting = $this->writeIdOfAnother();
         $body = ['body' => 'Thank you for the kind words.'];
 
-        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
         $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
         $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->otherAdminToken)->assertNotFound();
         $this->api('PUT', "/company/reviews/{$waiting}/reply", $body)->assertNotFound();

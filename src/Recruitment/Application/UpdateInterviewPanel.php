@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -40,10 +41,10 @@ final readonly class UpdateInterviewPanel
     public function execute(Actor $actor, int $interviewId, array $participantIds): InterviewView
     {
         $team = $this->transactions->run(function () use ($actor, $interviewId, $participantIds): TeamInterview {
-            $team = $this->lookup->find($actor, $interviewId, forUpdate: true);
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $team->interview;
 
-            if (! $team->member->isCompanyAdmin && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
+            if (! $team->member->isCompanyAdmin() && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
                 throw new AccessDenied('Only the member who scheduled the interview, its interviewer or a company admin can change its panel.', 'interview-edit-denied');
             }
 

@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -26,13 +27,13 @@ final readonly class DeleteStage
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound when the stage is not one of the company's
      * @throws StateConflict `default-stage-cannot-be-deleted` or `applications-unavailable`
      */
     public function execute(Actor $actor, int $stageId): void
     {
-        $member = $this->access->companyAdmin($actor);
+        $member = $this->access->permitted($actor, CompanyPermission::StagesManage);
 
         $this->transactions->run(function () use ($member, $stageId): void {
             $this->stages->lockCompany($member->companyId);

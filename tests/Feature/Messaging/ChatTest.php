@@ -5,6 +5,7 @@ namespace Tests\Feature\Messaging;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Src\Company\Domain\MemberPreset;
 use Src\Messaging\Application\ChannelAuthorizer;
 use Src\Messaging\Application\CompanyPresence;
 use Src\Platform\Application\Settings\SettingsStore;
@@ -296,7 +297,7 @@ final class ChatTest extends FeatureTestCase
     {
         $id = $this->seekerStarts();
         $authorizer = $this->app->make(ChannelAuthorizer::class);
-        $member = fn (int $userId, string $role, int $company) => Actor::companyMember($userId)->withMembership(new CompanyMembership($company, $role));
+        $member = fn (int $userId, string $role, int $company) => Actor::companyMember($userId)->withMembership(new CompanyMembership($company, $role === 'recruiter' ? 'member' : $role, $role === 'recruiter' ? MemberPreset::Recruiter->permissionNames() : []));
 
         $this->assertTrue($authorizer->mayJoinConversation(Actor::jobSeeker($this->seekerId), $id));
         $this->assertTrue($authorizer->mayJoinConversation($member($this->recruiterId, 'recruiter', $this->companyId), $id));

@@ -4,6 +4,7 @@ namespace Src\Messaging\Infrastructure;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
@@ -41,6 +42,7 @@ use Src\Messaging\Infrastructure\Presence\ReverbCompanyPresence;
 use Src\Messaging\Interface\Broadcasting\MessagingChannels;
 use Src\Messaging\Interface\Console\SendUnreadMessageEmailsCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
+use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -73,7 +75,8 @@ final class MessagingServiceProvider extends ContextServiceProvider
     {
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
             $cards->add(
-                $this->app->make(UnreadConversationsCard::class),
+                new UnreadConversationsCard($this->app->make(ConnectionInterface::class), DashboardAudience::JobSeeker),
+                new UnreadConversationsCard($this->app->make(ConnectionInterface::class), DashboardAudience::Company),
             );
         });
 

@@ -12,6 +12,7 @@ use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Tests\FeatureTestCase;
+use Tests\Support\CompanyMemberRows;
 
 final class AdminCompanyDocumentTest extends FeatureTestCase
 {
@@ -90,7 +91,7 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
     private function member(string $name, string $email, string $role): int
     {
         $user = UserModel::query()->create(['type' => 'company_member', 'name' => $name, 'email' => $email, 'status' => 'active', 'locale' => 'en', 'email_verified_at' => '2026-10-01 00:00:00']);
-        DB::table('company_members')->insert(['company_id' => $this->companyId, 'user_id' => $user->id, 'role' => $role, 'created_at' => now(), 'updated_at' => now()]);
+        CompanyMemberRows::insert($this->companyId, $user->id, $role);
 
         return (int) $user->id;
     }

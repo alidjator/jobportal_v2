@@ -60,9 +60,9 @@ final readonly class DatabaseApplicantRelations implements ApplicantRelations
             ->exists();
     }
 
-    public function canSeeApplicant(int $companyId, int $memberUserId, bool $isCompanyAdmin, int $applicantUserId): bool
+    public function canSeeApplicant(int $companyId, int $memberUserId, bool $seesAllJobs, int $applicantUserId): bool
     {
-        if ($isCompanyAdmin) {
+        if ($seesAllJobs) {
             return $this->hasApplied($companyId, $applicantUserId);
         }
 

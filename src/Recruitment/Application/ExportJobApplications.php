@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\JobQuestion;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -34,13 +35,13 @@ final readonly class ExportJobApplications
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
      * @throws BusinessRuleViolation `export-too-large`
      */
     public function execute(Actor $actor, RecruiterApplicationQuery $query, ?string $ipAddress, ?string $userAgent): ApplicantExport
     {
-        $member = $this->access->member($actor);
+        $member = $this->access->viewer($actor, CompanyPermission::ApplicationsExport);
         $this->access->job($member, $query->jobId);
 
         $cap = $this->settings->integer(RecruitmentSettings::MAX_EXPORT_ROWS, $member->companyId);

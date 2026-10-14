@@ -220,12 +220,14 @@ final class TalentPoolTest extends FeatureTestCase
         $this->api('POST', '/company/talent-pool/categories', ['name' => 'Designers'], $this->otherAdminToken)->assertCreated();
     }
 
-    public function test_only_a_company_admin_renames_or_deletes_a_category(): void
+    public function test_a_category_is_renamed_or_deleted_only_with_the_talent_pool_permission(): void
     {
         $id = $this->categoryId('Designers');
+        $limited = $this->memberWith(['applications.view', 'interviews.manage'])['token'];
 
-        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
-        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $limited)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required')->assertJsonPath('permission', 'talent_pool.manage');
+        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $limited)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'Visual'], $this->recruiterToken)->assertOk()->assertJsonPath('data.name', 'Visual');
 
         $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->adminToken)->assertOk()->assertJsonPath('data.name', 'UX');
 

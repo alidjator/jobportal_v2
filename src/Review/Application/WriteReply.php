@@ -23,7 +23,7 @@ final readonly class WriteReply
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound the review is not a published review of the company
      */
     public function execute(Actor $actor, int $reviewId, string $body): Reply

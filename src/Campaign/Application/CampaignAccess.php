@@ -7,12 +7,13 @@ use Src\Campaign\Domain\CampaignRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
  * The checks every campaign action starts with. A platform admin handles every campaign (the route already requires `campaigns.manage`); a company handles its own
- * only, and only through a company admin of an active company. A campaign of another company, or of the platform, does not exist for a company (404).
+ * only, and only through a member of an active company who holds `campaigns.manage`. A campaign of another company, or of the platform, does not exist for a company (404).
  */
 final readonly class CampaignAccess
 {
@@ -22,7 +23,7 @@ final readonly class CampaignAccess
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      */
     public function scope(Actor $actor): CampaignScope
     {
@@ -38,9 +39,7 @@ final readonly class CampaignAccess
             throw new AccessDenied('This company is suspended.', 'company-suspended');
         }
 
-        if (! $actor->isCompanyAdmin()) {
-            throw new AccessDenied('Only a company admin can manage campaigns.', 'company-admin-required');
-        }
+        $actor->membership->require(CompanyPermission::CampaignsManage);
 
         return new CampaignScope($actor->membership->companyId, false);
     }

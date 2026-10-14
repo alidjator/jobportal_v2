@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\TransactionManager;
@@ -30,7 +31,7 @@ final readonly class SendOffer
     /**
      * @return array{view: OfferView, replaced: bool}
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `job-taken-down` or `not-in-offer-stage`
      * @throws BusinessRuleViolation `invalid-offer`
@@ -38,7 +39,7 @@ final readonly class SendOffer
     public function execute(Actor $actor, int $applicationId, OfferInput $input): array
     {
         $event = $this->transactions->run(function () use ($actor, $applicationId, $input) {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::OffersManage);
 
             if ($this->jobs->isTakenDown($team->application->jobId)) {
                 throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');

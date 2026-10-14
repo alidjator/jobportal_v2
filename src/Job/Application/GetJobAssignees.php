@@ -17,7 +17,7 @@ final readonly class GetJobAssignees
     /**
      * @return list<array{user_id: int, name: string, role: string}>
      *
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
      */
     public function execute(Actor $actor, int $jobId): array

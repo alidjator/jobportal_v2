@@ -11,9 +11,9 @@ final readonly class DeleteCategory
 {
     public function __construct(private TalentPoolAccess $access, private CategoryRepository $categories) {}
 
-    /** @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-admin-required` */
+    /** @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required` */
     public function execute(Actor $actor, int $id): void
     {
-        $this->categories->delete($this->access->admin($actor)->companyId, $id);
+        $this->categories->delete($this->access->member($actor)->companyId, $id);
     }
 }

@@ -15,8 +15,10 @@ final class PendingInvitationResource extends JsonResource
     {
         return [
             'id' => $this->resource->id,
+            'name' => $this->resource->name,
             'email' => $this->resource->email,
             'role' => $this->resource->role->value,
+            'permissions' => $this->resource->permissions,
             'sent_at' => $this->resource->sentAt->format(DateTimeInterface::ATOM),
             'expires_at' => $this->resource->expiresAt->format(DateTimeInterface::ATOM),
             'invited_by' => $this->resource->invitedBy,

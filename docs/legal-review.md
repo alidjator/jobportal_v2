@@ -31,6 +31,11 @@ It is a factual inventory, not legal advice, and the legal references in the que
 8. **Company reviews.** Who answers for a defamatory review (the author, the platform as the host)? What notice-and-takedown process should the terms promise, and is showing the author's real name lawful and wise? How long may a rejected review or a report be kept?
 9. **Talent pool notes.** Is a company's private note about a candidate personal data that the candidate may ask to see or have corrected, and what must the privacy policy say about it? Should the platform refuse notes about sensitive attributes or add a warning next to the field?
 10. **Member activity seen by the company (added 2026-10-13).** A company admin sees the activity of each team member, including the IP address and browser of their sign-ins (`phase-8-company-permissions.md`). What must the privacy policy and the terms for companies say about it, and may it be kept for the 12 months of the audit log?
+11. **Psychological reports issued automatically (added 2026-10-14).** A partner provider may let the system issue a psychological test report from
+    its norms at the moment the candidate submits, under the name, STR and SILP of a responsible psychologist who reviews it afterwards and may
+    revise it (`phase-6-assessments.md`, Part 7). Does this meet Law 23/2022 (Articles 26 and 33: psychological measurement by a psychologist; Article 44:
+    explanation to the client), or must a psychologist review every report before the company sees it? Does the answer differ by test (intelligence,
+    personality, work attitude)?
 
 ## 3. What we can change after the answers
 

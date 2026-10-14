@@ -4,6 +4,7 @@ namespace Src\Dashboard\Application;
 
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsScope;
 use Src\Shared\Application\Clock;
@@ -31,7 +32,7 @@ final readonly class GetAnalytics
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member`, `company-admin-only`, `company-suspended` or `admin-only`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required`, `company-suspended` or `admin-only`
      * @throws EntityNotFound the analysis does not exist for this kind of account
      * @throws BusinessRuleViolation `invalid-range`
      */
@@ -69,9 +70,7 @@ final readonly class GetAnalytics
             throw new AccessDenied('Only a company member or an admin has the analytics.', 'not-a-company-member');
         }
 
-        if (! $actor->isCompanyAdmin()) {
-            throw new AccessDenied('Only a company admin has the analytics.', 'company-admin-only');
-        }
+        $actor->membership->require(CompanyPermission::AnalyticsView);
 
         $companyId = $actor->membership->companyId;
 

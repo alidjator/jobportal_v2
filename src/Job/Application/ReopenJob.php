@@ -7,6 +7,7 @@ use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
@@ -32,7 +33,7 @@ final readonly class ReopenJob
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job
      * @throws StateConflict `job-not-reopenable`
      * @throws BusinessRuleViolation `job-incomplete` with `errors` per field
@@ -40,6 +41,7 @@ final readonly class ReopenJob
     public function execute(Actor $actor, int $jobId, DateTimeImmutable $deadline, ?string $ipAddress, ?string $userAgent): void
     {
         $member = $this->access->member($actor);
+        $this->access->require($member, CompanyPermission::JobsPublish);
         $now = $this->clock->now();
 
         $event = $this->transactions->run(function () use ($member, $jobId, $deadline, $now, $ipAddress, $userAgent): JobStatusChanged {

@@ -11,6 +11,7 @@ use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -27,12 +28,12 @@ final readonly class AuthoringAccess
     ) {}
 
     /**
-     * @throws AccessDenied `not-an-author`, `company-suspended`, `company-admin-required`, `psychologist-suspended` or `provider-suspended`
+     * @throws AccessDenied `not-an-author`, `company-suspended`, `company-permission-required`, `psychologist-suspended` or `provider-suspended`
      */
     public function author(Actor $actor): Author
     {
         if ($actor->id === null) {
-            throw new AccessDenied('Only a company admin, a psychologist or an administrator can write tests.', 'not-an-author');
+            throw new AccessDenied('Only a company member with the permission, a psychologist or an administrator can write tests.', 'not-an-author');
         }
 
         if ($actor->isAdmin()) {
@@ -44,9 +45,7 @@ final readonly class AuthoringAccess
                 throw new AccessDenied('This company is suspended.', 'company-suspended');
             }
 
-            if (! $actor->isCompanyAdmin()) {
-                throw new AccessDenied('Only a company admin can do this.', 'company-admin-required');
-            }
+            $actor->membership->require(CompanyPermission::AssessmentsAuthor);
 
             return new Author(TestOwner::company($actor->membership->companyId), $actor->id, null);
         }
