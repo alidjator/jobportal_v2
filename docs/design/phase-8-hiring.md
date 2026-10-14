@@ -49,7 +49,8 @@ Coded in a coding session.
     rules and notifications of the bulk reject (`applications.manage`), at most the bulk limit per request (the dialog sends batches). An
     application with a pending offer, already final, or not of this job is skipped with its code.
   - Answers 200 with the job status and `data: [{application_id, status: rejected|skipped, code?}]`. Audited (`job.filled`, counts only).
-- The candidates rejected this way get the usual rejection notice; the reason stays hidden from them.
+- The candidates rejected this way get the usual rejection notice (no reason in it); the reason code shows on their application detail, as for
+  every rejection since 2026-10-09; the note stays team-only.
 
 ## 3. Hires export
 

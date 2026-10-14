@@ -19,7 +19,7 @@ every interview and lets the recruiter add a note for the candidate to the invit
 - 2026-10-14: an **email preview** before sending an interview, assessment or offer (decided by the user, [section 5](#5-email-preview)).
 - 2026-10-14: **no full email templates per company** (scam and phishing risk on the platform's domain, required content lost); instead **default
   texts per scenario** that prefill the note of an interview, an assessment invitation (new note) or an offer, and the company logo in those emails.
-  Rejections stay without a message to the applicant (decision of 2026-10-06 kept) (decided by the user, [section 6](#6-default-texts-per-scenario)).
+  Rejections stay without a message to the applicant (the note stays team-only) (decided by the user, [section 6](#6-default-texts-per-scenario)).
 
 ## 1. Recruitment calendar
 
@@ -151,7 +151,8 @@ interview stage whose time is not known yet.
   text; the platform's header and footer stay. Without a logo, the company name.
 - **What stays with the platform:** subject, structure, action buttons, the `.ics`, the email preference footer and a fixed anti-scam line in
   these emails ("[platform] dan perusahaan tidak pernah memungut biaya dalam proses rekrutmen").
-- **Rejection:** no message to the applicant; the reason and note stay team-only (`phase-1-pipeline.md`, 2026-10-06).
+- **Rejection:** no message to the applicant; the note stays team-only and the applicant sees only the reason code on the application detail
+  (`phase-1-applications.md`, 2026-10-09).
 
 ## Changes in short
 

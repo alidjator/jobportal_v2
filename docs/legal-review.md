@@ -40,6 +40,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
     password; the time, IP address, browser and the SHA-256 of the letter are kept in a separate evidence document (`phase-8-offer-letters.md`).
     Is this enough as an electronic signature under UU ITE and PP 71/2019 for an offer letter, or should a certified e-signature (PSrE) or e-meterai
     be offered? May the platform keep this evidence after the applicant's data is anonymised?
+13. **Restricted candidates (added 2026-10-14).** A company may mark a job seeker as restricted (a blacklist with a reason and a period), which flags
+    their applications and hides them from the company's candidate search, without telling them (`phase-8-rejections.md`). Is this lawful under the
+    Personal Data Protection Law and the non-discrimination rules? Must the person be told or be able to see it on a data access request, and which
+    reasons must be refused?
 
 ## 3. What we can change after the answers
 
