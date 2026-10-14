@@ -1,4 +1,4 @@
-# Phase 8: job preview, summary, hidden vacancies, salary note and job list filters (designed 2026-10-14, not coded)
+# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14, not coded)
 
 Gaps found against Mekari Talenta's job listings (help center articles 34576595122073, 34630221946009 and 34573329191321), chosen by the user from
 the advice of 2026-10-14. Not taken: splitting the description into three fields (the Markdown description stays one field; the front end offers
@@ -11,6 +11,9 @@ resume parsing, per-job stages and paid posting to other job boards. Extends `ph
 - 2026-10-14: an optional **short summary** for search results and sharing; the description stays one Markdown field (chosen by the user).
 - 2026-10-14: the company may **hide the number of vacancies** and add a **salary note** (chosen by the user).
 - 2026-10-14: **more filters** on the company's job list (chosen by the user).
+- 2026-10-14: a job may require **extra profile items** chosen from existing profile fields (no form builder), and a signed-in job seeker gets the
+  job's **apply state** before applying (chosen by the user). This replaces "no eligibility pre-check endpoint" of `phase-1-applications.md`; the
+  public job page stays cached and free of per-user data.
 
 ## 1. Preview
 
@@ -61,12 +64,44 @@ resume parsing, per-job stages and paid posting to other job boards. Extends `ph
   them as columns.
 - Malformed values: 422 `invalid-filter`.
 
+## 5. Extra profile requirements per job
+
+- New column `job_jobs.apply_requirements` (JSON, null for none), set in the job form, any status, not a core field for review; it applies to
+  applications made after the change. Items, each at most once:
+
+| Item | Met when the profile has |
+|---|---|
+| `expected_salary` | an expected salary with its period |
+| `portfolio` | a link of type `portfolio`, `website` or `github` |
+| `linkedin` | a link of type `linkedin` |
+| `whatsapp` | a WhatsApp number |
+| `language` `{language_id, min_proficiency}` (at most 3) | that language at `min_proficiency` or above (`basic` < `conversational` < `fluent` < `native`) |
+
+- Errors on save: 422 `invalid-apply-requirements` (unknown item, inactive language, more than 3 languages, a repeated item).
+- **Applying:** Recruitment asks Job (`JobDirectory`) for the requirements and passes them to the JobSeeker port that builds the submission; a
+  missing item answers the existing 422 `profile-incomplete` with its code in `missing` next to the basic ones (`expected_salary`, `portfolio`,
+  `linkedin`, `whatsapp`, `language:{id}`). No new error.
+- **Shown:** the public detail lists them (`apply_requirements: [{item, language?, min_proficiency?}]`, names in the request language), so the job
+  page reads "Wajib: portofolio, Bahasa Inggris (lancar)"; the company detail and clone carry them.
+- Nothing about protected attributes can be required (the list is closed).
+
+## 6. Apply state
+
+- `GET me/jobs/{id}/apply-state` (job seekers, `auth:user`, `Cache-Control: no-store`; 404 when the job is not live, as applying):
+  `{can_apply: bool, reasons: [{code, missing?, reapply_on?}], application: {id, status, applied_at}|null, applications_left_today: int}`.
+- **Reasons**, the same codes the apply request would answer, checked in its order: `email-not-verified`, `profile-incomplete` (with `missing`,
+  basic and per-job items together), `already-applied` (with `reapply_on` when the job's waiting period of `phase-8-rejections.md` gives one),
+  `application-limit-reached`, `applications-unavailable`. Screening answers are not judged here; they belong to the apply form.
+- Read only, no locks; the apply request still decides. Limited by the general API limiter.
+- Front end: the job page calls it after sign-in; the "Lamar" button shows the first reason with its fix ("Verifikasi email", "Lengkapi
+  profil: portofolio", "Anda sudah melamar", "Batas lamaran hari ini tercapai").
+
 ## Changes in short
 
 | Piece | Change |
 |---|---|
-| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note` |
-| API | `GET company/jobs/{id}/preview`; the three fields on the job form, the company detail, the public detail and search row, alerts and recommendation emails; new filters, sorts and row fields on `GET company/jobs` |
+| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note`, `apply_requirements` |
+| API | `GET company/jobs/{id}/preview`; the three fields on the job form, the company detail, the public detail and search row, alerts and recommendation emails; new filters, sorts and row fields on `GET company/jobs`; `apply_requirements` on the job form and the public detail; `GET me/jobs/{id}/apply-state` |
 | Review | `summary` and `salary_note` are core fields |
-| Errors | 422 `invalid-summary`, `invalid-salary-note`, `message-link-not-allowed`, `invalid-filter` |
-| Front end | preview button and banner (C4, C5); summary with counter, Markdown outline, vacancies switch and salary note in the job form (C4); list filters and columns (C3) |
+| Errors | 422 `invalid-summary`, `invalid-salary-note`, `message-link-not-allowed`, `invalid-filter`, `invalid-apply-requirements`; new `missing` codes in `profile-incomplete` |
+| Front end | preview button and banner (C4, C5); summary with counter, Markdown outline, vacancies switch and salary note in the job form (C4); list filters and columns (C3); requirements picker in the job form; apply state on the job seeker's job page |

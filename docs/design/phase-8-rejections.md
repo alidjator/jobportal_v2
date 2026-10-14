@@ -76,8 +76,9 @@ admin edits the existing one instead).
   as today.
 - **Team:** the new application shows "Pernah melamar: ditolak {date} ({reason code})" with a link to the earlier application, and the restricted badge
   when that applies.
-- **Job seeker:** the job page (`GET jobs/{id}` for a signed-in job seeker) carries `my_application` with its status and `reapply_on`, so the button
-  reads "Anda dapat melamar lagi mulai {date}".
+- **Job seeker:** the apply state (`GET me/jobs/{id}/apply-state`, `phase-8-job-posting.md` section 6) carries the application and `reapply_on`,
+  so the button reads "Anda dapat melamar lagi mulai {date}". (Corrected 2026-10-14: not on the public job page, which is cached and holds no
+  per-user data.)
 
 ## Changes in short
 
@@ -85,7 +86,7 @@ admin edits the existing one instead).
 |---|---|
 | Migration | `recruitment_restricted_candidates`, `recruitment_pending_rejections`, `job_jobs.reapply_after_days` |
 | Settings | `recruitment.rejection_undo_minutes` (admin); `recruitment.reapply_after_days` (company) |
-| API | `restrict` in reject and bulk reject; `POST company/applications/{id}/restriction`; `GET`/`PATCH`/`DELETE company/restrictions`; reject answers 202 with `commit_at`; `DELETE company/applications/{id}/pending-rejection`, `DELETE company/rejection-batches/{batchId}`; `reapply_after_days` on jobs; `reapply_on` on `already-applied` and `my_application` on the job page |
+| API | `restrict` in reject and bulk reject; `POST company/applications/{id}/restriction`; `GET`/`PATCH`/`DELETE company/restrictions`; reject answers 202 with `commit_at`; `DELETE company/applications/{id}/pending-rejection`, `DELETE company/rejection-batches/{batchId}`; `reapply_after_days` on jobs; `reapply_on` on `already-applied` and in the apply state |
 | Scheduler | `recruitment:commit-rejections` every minute |
 | Notifications | `rejection.dropped` (in-app, team) |
 | Audit | `recruitment.candidate_restricted`, `restriction_changed`, `restriction_lifted` |
