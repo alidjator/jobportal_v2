@@ -30,7 +30,8 @@ It is a factual inventory, not legal advice, and the legal references in the que
 7. **Records and retention.** How long may the view log and the CV generation records be kept, and what may the platform keep after an account is anonymised?
 8. **Company reviews.** Who answers for a defamatory review (the author, the platform as the host)? What notice-and-takedown process should the terms promise, and is showing the author's real name lawful and wise? How long may a rejected review or a report be kept?
 9. **Talent pool notes.** Is a company's private note about a candidate personal data that the candidate may ask to see or have corrected, and what must the privacy policy say about it? Should the platform refuse notes about sensitive attributes or add a warning next to the field?
-10. **Member activity seen by the company (added 2026-10-13).** A company admin sees the activity of each team member, including the IP address and browser of their sign-ins (`phase-8-company-permissions.md`). What must the privacy policy and the terms for companies say about it, and may it be kept for the 12 months of the audit log?
+10. **Member activity seen by the company (added 2026-10-13).** A company admin sees the activity of each team member, including the IP address and browser of their sign-ins (`phase-8-company-permissions.md`). What must the privacy policy and the terms for companies say about it, and may it be kept for the 12 months of the audit log? Added 2026-10-14 (`phase-8-company-admin.md`): the
+    company admin also sees one activity log of the whole company (sign-ins, CV and report downloads, exports) and may export it as CSV.
 11. **Psychological reports issued automatically (added 2026-10-14).** A partner provider may let the system issue a psychological test report from
     its norms at the moment the candidate submits, under the name, STR and SILP of a responsible psychologist who reviews it afterwards and may
     revise it (`phase-6-assessments.md`, Part 7). Does this meet Law 23/2022 (Articles 26 and 33: psychological measurement by a psychologist; Article 44:
@@ -50,6 +51,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
     what companies and psychologists wrote about them: team notes and ratings, interview scorecards, rejection and withdrawal notes of the team,
     talent pool notes, restriction reasons, the company's psychological report text and the psychologist's review notes. Do UU 27/2022 Articles 7
     and 13 require any of these in the copy (with question 9 and 13), and in what form (for example a summary instead of the full text)?
+15. **Applicant data retention per company (added 2026-10-14).** A final application (rejected, withdrawn, or still open on a closed job) is
+    anonymised on the company's side after a period the company chooses, 6 to 60 months, default 24 (`phase-8-company-admin.md`); hires and
+    applications held in the talent pool are left out, and the stage dates, reason codes and counts stay. Is 24 months a sound default under UU
+    27/2022 (purpose limitation and retention), may the company choose the period, and is a shorter maximum required?
 
 ## 3. What we can change after the answers
 
