@@ -32,7 +32,7 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 ## 1. Job reports (before go-live)
 
 - **Table** `job_reports`: `job_id` (FK cascade), `reporter_user_id` (plain column), `reason` (`fee_requested`, `fake_or_misleading`,
-  `discriminatory`, `spam_or_duplicate`, `inappropriate`, `other`; CHECK), `note` (≤1,000, required for `other`), `status` (`open`, `dismissed`,
+  `discriminatory`, `spam_or_duplicate`, `inappropriate`, `false_accessibility_claim` (`phase-8-job-discovery.md`), `other`; CHECK), `note` (≤1,000, required for `other`), `status` (`open`, `dismissed`,
   `actioned`), `decided_by_admin_id`, `decided_at`, timestamps. One `open` report per reporter and job (partial unique index).
 - **Report:** `POST jobs/{id}/reports {reason, note?}` (job seekers with a verified email; the job `active`; 201; 409 `already-reported`;
   10 per hour). The public job page shows "Laporkan lowongan".
