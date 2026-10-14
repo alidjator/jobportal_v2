@@ -62,7 +62,7 @@ with a legal review of the purpose). Extends `phase-6-assessments.md` (Assessmen
 
 - **New reviews:** the hourly assessment task sends each active psychologist of a provider one in-app notification `provider.reviews_waiting`
   (count of unclaimed `pending_review` reports and of unreviewed auto-issued ones) and one email (`assessment.provider_reviews_waiting`) when the
-  count went up since the last notice; nothing when nothing changed. Psychologists have no preference screen yet: always on.
+  count went up since the last notice; nothing when nothing changed. The email follows the preference `provider_reviews` (`phase-8-recruiter-workday.md` section 3; on by default).
 - **Licence expiry:** a daily task tells the psychologist (in-app and email `assessment.licence_expiring`) and the admins with
   `assessment_providers.manage` (in-app) 60, 30 and 7 days before the STR or SILP ends, and on the day it ends ("tidak dapat menandatangani").
   Once per threshold and licence (`assessment_psychologists.licence_notified` JSON).

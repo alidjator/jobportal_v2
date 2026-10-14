@@ -16,18 +16,19 @@ documents.
 | # | Document | Waits for |
 |---|---|---|
 | 1 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | **before go-live**; export boundary: question 14 |
-| 2 | `phase-8-interview-calendar.md` | |
-| 3 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12 |
-| 4 | `phase-8-hiring.md` | |
-| 5 | `phase-8-rejections.md` | restricted candidates: question 13 |
-| 6 | `phase-8-withdrawals.md` | |
-| 7 | `phase-8-talent-pool.md` | |
-| 8 | `phase-8-applicant-search.md` | |
-| 9 | `phase-8-job-posting.md` | |
-| 10 | `phase-8-interview-results.md` | |
-| 11 | `phase-8-assessment-automation.md` | |
-| 12 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
-| 13 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
+| 2 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
+| 3 | `phase-8-interview-calendar.md` | |
+| 4 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12 |
+| 5 | `phase-8-hiring.md` | |
+| 6 | `phase-8-rejections.md` | restricted candidates: question 13 |
+| 7 | `phase-8-withdrawals.md` | |
+| 8 | `phase-8-talent-pool.md` | |
+| 9 | `phase-8-applicant-search.md` | |
+| 10 | `phase-8-job-posting.md` | |
+| 11 | `phase-8-interview-results.md` | |
+| 12 | `phase-8-assessment-automation.md` | |
+| 13 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
+| 14 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 
 ## After the legacy import
 

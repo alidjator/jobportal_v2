@@ -55,7 +55,7 @@ and `phase-8-interview-calendar.md` (`.ics`). Coded in a coding session.
   candidate name, the time (Jakarta), "Lamaran ditarik" and a link to the application, with `interview.ics` as `METHOD:CANCEL` (the interview's
   `calendar_uid`, `calendar_sequence` raised) so an event they added from `GET company/interviews/{id}/calendar.ics` disappears. The member who
   marked the withdrawal is left out.
-- Team emails have no preference yet: the email always goes (a member preference can be added later with the team notification settings).
+- The email follows the member's preference `team_interview_changes` (`phase-8-recruiter-workday.md` section 3; on by default).
 - Both run as queued listeners after commit (event `ApplicationWithdrawn` with `by`, `reason` and the cancelled interview id), retried like
   `NotifyAssigneesOfApplication`; a failure never undoes the withdrawal.
 
