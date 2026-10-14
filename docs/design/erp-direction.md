@@ -47,6 +47,8 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - One internal tenant is linked to exactly one legal entity. Teams, stages and jobs stay per tenant, as today.
 - The holding sees across the group's tenants through a group-level permission (designed with Organization); external tenants never see each
   other.
+- Widened on 2026-10-15 (`erp-organization.md`): the ERP serves **many customer groups** (SaaS), not only the PKP group; every Organization
+  table is scoped by group.
 
 ## 5. Effect on go-live
 

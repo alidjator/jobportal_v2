@@ -20,7 +20,7 @@ design document yet: they need a design session before a coding session can take
 | 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); the later IdP link stays additive (`erp-direction.md` section 2) |
 | 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2 |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
-| 5 | **new** Organization context and internal tenants | a design session; legal entities, units, positions, grades, cost centres, group permission (`erp-direction.md` sections 1 and 4) |
+| 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
 | 6 | **new** requisitions and a generic approval workflow | a design session; after #5; a job of an internal tenant starts from an approved requisition |
 | 7 | **new** employee sign-in through the central IdP | a design session; the choice of IdP product (`erp-direction.md` section 7) |
 | 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
