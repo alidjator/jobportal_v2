@@ -73,6 +73,20 @@ Coded in a coding session.
 - `GET company/talent-pool/{id}` (new): the entry with the same summary, plus the full candidate-search profile for a findable person or the
   snapshot (without contact data) otherwise, and links to the applications the member may see.
 
+## ERP later: a pool shared across a group (recorded 2026-10-15, not designed)
+
+A note for the ONESIS ERP (`erp-direction.md`, `erp-organization.md`); nothing changes in this design.
+
+- **Module:** the pipeline (`Recruitment`) and the talent pool (`TalentPool`) belong to ONESIS Talent; ONESIS Career only shows the candidate their
+  status and lets them give or revoke consent and findability.
+- **Idea:** the pool is per company today (at most 1,000). A group such as PKP may want a **pool shared by its internal tenants**, for example a
+  good candidate rejected by one legal entity offered to another.
+- **Consent:** the consent of section 1 names one company ("Izinkan {company} menyimpan profil saya ..."). Sharing with the other legal entities
+  of the group is a disclosure to other controllers under UU 27/2022, so a group pool needs its own consent that names the group, and revoking it
+  removes the shared entries. A findable profile (candidate search) is already visible to every company and needs nothing new.
+- **Open when designed:** who reads and adds (a group permission such as `group.talent_pool.manage`, or every internal tenant of the group), the
+  limit of a group pool, whether notes are shared, and a legal question in `docs/legal-review.md` on the consent wording.
+
 ## Changes in short
 
 | Piece | Change |
