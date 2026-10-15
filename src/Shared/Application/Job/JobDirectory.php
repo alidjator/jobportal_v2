@@ -58,6 +58,9 @@ interface JobDirectory
      */
     public function titles(array $jobIds): array;
 
+    /** Whether the job is live but on a report hold (enough job seekers reported it; an admin has not decided yet): it takes no new application. A job that does not exist is not on hold. */
+    public function isOnHold(int $jobId): bool;
+
     /** Whether an admin took the job down: its applications stay readable but are no longer processed. A job that does not exist is not taken down. */
     public function isTakenDown(int $jobId): bool;
 

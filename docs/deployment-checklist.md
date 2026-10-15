@@ -40,6 +40,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] `php artisan db:seed` (reference data), `php artisan identity:sync-permissions` (after every deployment that adds a permission).
 - [ ] `php artisan identity:create-admin`; the admin enrols the authenticator at the first sign-in (second factor is mandatory for admins).
 - [ ] Grant `cv_templates.manage` to the admins who manage the CV templates.
+- [ ] Verification document types: create at least one required type (`POST admin/company-document-types`) before the companies go live. With none, nobody holds the verification badge and, with `jobs.approval_for_unverified` on (the default), **every job waits for an admin's review**; the review queue (`GET admin/jobs?filter[status]=pending_review`) shows the flagged ones first. Review the list in `jobs.suspicious_phrases` and `jobs.report_hold_threshold` (3 distinct reporters hold a job) in the admin settings.
 - [ ] The legacy import, only after the freeze date (not set yet) and with a **new copy** of the karir.pkp database and of its folder taken at the freeze (the 2026-10-13 copy was for the rehearsal). Rehearsal done 2026-10-13 on PostgreSQL (`jobportal_v2_rehearsal`, report in its scratch storage): everything imports as it is, with no count limits; what is skipped is a row without a required value or a child of a row not imported. Steps: `KARIR_PKP_FILES_ROOT` set to the copy; the `legacy` connection (MariaDB, read-only account) configured; **all legacy avatar and resume files present under that root** (the rehearsal copy lacked 964 avatars and 3 resumes, which were skipped); dry run `php artisan legacy:import --all` (reads and reports only), compare it with the rehearsal report; then ask before `--write`, run as `jobportal` (never root) with `--map=masters=<path>` (`/home/jobportal/import/masters.draft.json`, approved) and `--map=groups=<path>`; the import adds only and never updates, so a second run creates no duplicates.
 - [ ] After the import: `php artisan analytics:rollup --backfill`; read the printed report: unmatched masters, skipped reasons and notes (`created` masters: skills, job roles, categories, languages).
 - [ ] Languages created by the import carry a **placeholder code** made from their name (the legacy list has no codes); set ISO codes by hand where they are needed.
@@ -69,7 +70,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] Trigger one queued action (for example an application email) and see it processed by the worker, not in the request.
 - [ ] Hit a throttled endpoint past its limit and see 429 (proves the Redis limiter).
 - [ ] Send a test email; open the unsubscribe and confirm links.
-- [ ] `php artisan schedule:list` shows the nightly tasks; the next morning check the log for failed erasure steps (`identity:reconcile-erasure`) and failed jobs (`php artisan queue:failed`).
+- [ ] `php artisan schedule:list` shows the nightly tasks (among them `company:purge-name-change-documents` at 03:30, which deletes the proof of a name change 90 days after its decision); the next morning check the log for failed erasure steps (`identity:reconcile-erasure`) and failed jobs (`php artisan queue:failed`).
 
 ## 7. Not code, but blocking
 

@@ -129,6 +129,20 @@ final class AuditAction
 
     public const string JOB_RESTORED = 'job.restored';
 
+    public const string JOB_REPORTS_DISMISSED = 'job.reports_dismissed';
+
+    public const string JOB_HOLD_RELEASED = 'job.hold_released';
+
+    public const string COMPANY_NAME_CHANGE_REQUESTED = 'company.name_change_requested';
+
+    public const string COMPANY_NAME_CHANGE_CANCELLED = 'company.name_change_cancelled';
+
+    public const string COMPANY_NAME_CHANGE_APPROVED = 'company.name_change_approved';
+
+    public const string COMPANY_NAME_CHANGE_REJECTED = 'company.name_change_rejected';
+
+    public const string COMPANY_NAME_CHANGE_DOCUMENT_VIEWED = 'company.name_change_document_viewed';
+
     public const string COMPANY_DOCUMENT_APPROVED = 'company.document_approved';
 
     public const string COMPANY_DOCUMENT_REJECTED = 'company.document_rejected';

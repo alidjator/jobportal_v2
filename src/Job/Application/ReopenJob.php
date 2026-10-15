@@ -3,13 +3,13 @@
 namespace Src\Job\Application;
 
 use DateTimeImmutable;
+use Src\Job\Application\Review\JobReviewPolicy;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -18,7 +18,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * A member reopens a closed or an expired job they may see, with a new deadline. The job must still be complete (its fields may have been emptied while it was
- * off) and the deadline in range; it goes live at once, or to review when the company's settings require approval.
+ * off) and the deadline in range; it goes live at once, or to review when the review policy asks for it.
  */
 final readonly class ReopenJob
 {
@@ -26,7 +26,7 @@ final readonly class ReopenJob
         private JobAccess $access,
         private JobCompleteness $completeness,
         private JobRepository $jobs,
-        private Settings $settings,
+        private JobReviewPolicy $review,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -52,7 +52,7 @@ final readonly class ReopenJob
             $content = $job->content->with(['deadline' => $deadline]);
             $this->completeness->assertComplete($content, $member->companyId, checkDeadlineRange: true);
 
-            $reopened = $job->changeContent($job->slug, $content)->reopen($this->settings->boolean(JobSettings::REQUIRE_APPROVAL, $member->companyId), $now);
+            $reopened = $job->changeContent($job->slug, $content)->reopen($this->review->required($member->companyId, $content), $now);
             $this->jobs->save($reopened);
 
             return new JobStatusChanged($jobId, $member->companyId, JobStatusChanged::REOPENED, $job->status->value, $reopened->status->value, $member->userId, $ipAddress, $userAgent, $now);

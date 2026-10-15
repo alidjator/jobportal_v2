@@ -7,12 +7,17 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Job;
 use Src\Shared\Application\Actor;
 
-/** An admin takes a live job down, with a reason the company reads. Only an admin can put it back (`RestoreJob`). */
+/** An admin takes a live job down, with a reason the company reads. Only an admin can put it back (`RestoreJob`). The open reports of the job close as `actioned`. */
 final class TakeDownJob extends AdminJobDecision
 {
     public function execute(Actor $actor, int $jobId, string $reason, ?string $ipAddress, ?string $userAgent): void
     {
         $this->run($actor, $jobId, $reason, $ipAddress, $userAgent);
+    }
+
+    protected function closesReports(): bool
+    {
+        return true;
     }
 
     protected function decision(): string

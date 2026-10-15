@@ -18,4 +18,8 @@ final class CompanyNotificationType
     public const string MEMBER_RENAMED = 'company.member_renamed';
 
     public const string TWO_FACTOR_RESET = 'company.two_factor_reset';
+
+    public const string NAME_CHANGE_APPROVED = 'company.name_change_approved';
+
+    public const string NAME_CHANGE_REJECTED = 'company.name_change_rejected';
 }

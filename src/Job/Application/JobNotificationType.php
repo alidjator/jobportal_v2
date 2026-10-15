@@ -18,4 +18,9 @@ final class JobNotificationType
     public const string TAKEN_DOWN = 'job.taken_down';
 
     public const string RESTORED = 'job.restored';
+
+    public const string HELD = 'job.held';
+
+    /** Sent to a job seeker whose report was decided; it never says how. */
+    public const string REPORT_REVIEWED = 'report.reviewed';
 }

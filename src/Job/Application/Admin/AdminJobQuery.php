@@ -10,12 +10,16 @@ use Src\Job\Domain\JobStatus;
  */
 final readonly class AdminJobQuery
 {
-    /** @param  list<int>  $searchCompanyIds */
+    /**
+     * @param  list<int>  $searchCompanyIds
+     * @param  list<int>  $flaggedFirstIds  jobs listed before all others (the flagged jobs of the review queue)
+     */
     public function __construct(
         public ?JobStatus $status = null,
         public ?int $companyId = null,
         public ?string $search = null,
         public array $searchCompanyIds = [],
         public AdminJobSort $sort = AdminJobSort::UpdatedAtDescending,
+        public array $flaggedFirstIds = [],
     ) {}
 }

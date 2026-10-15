@@ -10,6 +10,9 @@ interface CompanyDirectory
     /** True when the company exists and is not suspended. */
     public function isActive(int $companyId): bool;
 
+    /** Whether the company holds the verification badge (the same fact as `PublicCompanyCard::verified`, read also while the company is suspended or hidden). */
+    public function isVerified(int $companyId): bool;
+
     /**
      * Locks the company's row until the surrounding transaction ends, so requests of one company that count and then insert (a daily quota) run one after the
      * other. Call it inside a transaction; outside one the lock is released at once.

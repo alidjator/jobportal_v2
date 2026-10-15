@@ -42,6 +42,10 @@ use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
 use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
+use Src\Company\Domain\Events\CompanyNameChangeCancelled;
+use Src\Company\Domain\Events\CompanyNameChangeDecided;
+use Src\Company\Domain\Events\CompanyNameChangeDocumentViewed;
+use Src\Company\Domain\Events\CompanyNameChangeRequested;
 use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
@@ -50,8 +54,10 @@ use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
 use Src\Company\Domain\Events\DocumentTypeCreated;
 use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Company\Domain\InvitationRepository;
+use Src\Company\Domain\NameChangeRequestRepository;
 use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
+use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfNameChange;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
 use Src\Company\Infrastructure\Listeners\NotifyMemberOfPermissionChange;
 use Src\Company\Infrastructure\Listeners\RecordCompanyAuditEntries;
@@ -66,6 +72,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
 use Src\Company\Infrastructure\Persistence\DatabaseDocumentTypeRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
+use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
@@ -73,6 +80,7 @@ use Src\Company\Infrastructure\Persistence\RepositoryMemberSignInGuard;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
 use Src\Company\Infrastructure\Persistence\RepositorySuspendedMembers;
 use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
+use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
@@ -116,15 +124,17 @@ final class CompanyServiceProvider extends ContextServiceProvider
         SuspendedMembers::class => RepositorySuspendedMembers::class,
         DocumentTypeRepository::class => DatabaseDocumentTypeRepository::class,
         CompanyDocumentRepository::class => DatabaseCompanyDocumentRepository::class,
+        NameChangeRequestRepository::class => DatabaseNameChangeRequestRepository::class,
         CompanyVerificationBadge::class => DatabaseCompanyVerificationBadge::class,
     ];
 
     public function register(): void
     {
-        $this->commands([PurgeEndedInvitationsCommand::class]);
+        $this->commands([PurgeEndedInvitationsCommand::class, PurgeNameChangeDocumentsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(PurgeEndedInvitationsCommand::class)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeNameChangeDocumentsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
@@ -185,6 +195,11 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);
         Event::listen(CompanyDocumentRejected::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentRejected']);
         Event::listen(CompanyDocumentViewed::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentViewed']);
+        Event::listen(CompanyNameChangeRequested::class, [RecordCompanyAuditEntries::class, 'onCompanyNameChangeRequested']);
+        Event::listen(CompanyNameChangeCancelled::class, [RecordCompanyAuditEntries::class, 'onCompanyNameChangeCancelled']);
+        Event::listen(CompanyNameChangeDecided::class, [RecordCompanyAuditEntries::class, 'onCompanyNameChangeDecided']);
+        Event::listen(CompanyNameChangeDocumentViewed::class, [RecordCompanyAuditEntries::class, 'onCompanyNameChangeDocumentViewed']);
+        Event::listen(CompanyNameChangeDecided::class, NotifyCompanyAdminsOfNameChange::class);
         Event::listen(DocumentTypeCreated::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeCreated']);
         Event::listen(DocumentTypeVerificationRulesChanged::class, [RecordCompanyAuditEntries::class, 'onDocumentTypeVerificationRulesChanged']);
 

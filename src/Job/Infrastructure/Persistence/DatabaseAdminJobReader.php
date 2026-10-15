@@ -45,7 +45,13 @@ final readonly class DatabaseAdminJobReader implements AdminJobReader
             AdminJobSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
         };
 
-        $rows = $filtered
+        $rows = $filtered;
+
+        if ($query->flaggedFirstIds !== []) {
+            $rows->orderByRaw('(job_jobs.id in ('.implode(', ', array_fill(0, count($query->flaggedFirstIds), '?')).')) desc', $query->flaggedFirstIds);
+        }
+
+        $rows = $rows
             ->select([
                 'job_jobs.id', 'job_jobs.title', 'job_jobs.status', 'job_jobs.company_id', 'job_jobs.deadline', 'job_jobs.vacancies', 'job_jobs.published_at',
                 'job_jobs.created_at', 'job_jobs.updated_at',
@@ -59,6 +65,17 @@ final readonly class DatabaseAdminJobReader implements AdminJobReader
             ->all();
 
         return new Page(array_map(fn (stdClass $row): AdminJobListItem => $this->toItem($row), $rows), $total, $request);
+    }
+
+    public function pendingTexts(): array
+    {
+        $texts = [];
+
+        foreach ($this->connection->table('job_jobs')->where('status', JobStatus::PendingReview->value)->orderBy('id')->get(['id', 'title', 'description']) as $row) {
+            $texts[(int) $row->id] = ['title' => (string) $row->title, 'description' => $row->description === null ? null : (string) $row->description];
+        }
+
+        return $texts;
     }
 
     private function applyFilters(Builder $builder, AdminJobQuery $query): void

@@ -15,7 +15,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
 | `already-in-talent-pool` | 409 | TalentPool | This candidate is already in your talent pool. |
 | `already-invited` | 409 | JobInvitation | This candidate was already invited to the job. |
-| `already-reported` | 409 | Review | You already reported this review. |
+| `already-reported` | 409 | Job, Review | You have already reported this job. |
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
 | `application-final` | 409 | Recruitment | This application is final, so its ratings can no longer change. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
@@ -76,7 +76,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `email-already-registered` | 409 | Assessment, Company, Identity | An account with this email already exists. |
 | `email-already-verified` | 409 | Identity | The email address is already verified. |
 | `email-domain-not-allowed` | 422 | Company | This company only invites email addresses of its allowed domains. |
-| `email-not-verified` | 403, 409 | Identity, Training | Verify your email address before continuing. |
+| `email-not-verified` | 403, 409 | Identity, Job, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `experience-limit-reached` | 409 | JobSeeker |  |
 | `explanation-required` | 422 | Assessment | Write the explanation for the candidate. |
@@ -127,6 +127,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-name` | 422 | JobAlert |  |
+| `invalid-name-change` | 422 | Company | The name change request is not valid. |
 | `invalid-navigation` | 422 | Assessment |  |
 | `invalid-norms` | 422 | Assessment |  |
 | `invalid-note` | 422 | Recruitment |  |
@@ -142,7 +143,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
-| `invalid-report` | 422 | Assessment | The report text cannot be empty. |
+| `invalid-report` | 422 | Assessment, Job | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
@@ -183,6 +184,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-not-publishable` | 409 | Job | Only a draft or a rejected job can be published. |
 | `job-not-reopenable` | 409 | Job | Only a closed or an expired job can be reopened. |
 | `job-not-taken-down` | 409 | Job | Only a job that was taken down can be restored. |
+| `job-on-hold` | 409 | Recruitment | This job is under review and takes no applications right now. |
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
 | `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
 | `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
@@ -202,6 +204,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
 | `membership-suspended` | 403 | Company | Your access to the company was suspended by a company admin. |
 | `method-not-allowed` | 405 | Platform | The HTTP method is not allowed for this resource. |
+| `name-change-not-pending` | 409 | Company | This name change request has already been decided. |
+| `name-change-pending` | 409 | Company | A name change request of this company is already waiting for a decision. |
+| `name-locked` | 409 | Company | The name of a verified company is locked: ask for a change with a document. |
+| `name-not-locked` | 409 | Company | The name of this company is not locked: change it in the company profile. |
 | `newsletter-issue-not-draft` | 409 | Newsletter | Only a draft can be deleted. |
 | `newsletter-no-recipients` | 409 | Newsletter | There is nobody to send this issue to. |
 | `newsletter-token-invalid` | 422 | Newsletter | This confirmation link is not valid or has expired. |
@@ -210,6 +216,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-active-recording` | 409 | Recruitment | No recording is running. |
 | `no-live-call` | 409 | Recruitment | There is no call in progress. |
+| `no-open-reports` | 409 | Job | This job has no open reports. |
 | `no-phone-number` | 409 | Recruitment |  |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |

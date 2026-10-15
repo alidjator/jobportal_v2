@@ -23,6 +23,8 @@ use Src\Job\Application\JobSettings;
 use Src\Job\Application\JobSlugGenerator;
 use Src\Job\Application\Matching\JobSignalProvider;
 use Src\Job\Application\Matching\JobSignalReader;
+use Src\Job\Application\Reports\EraseJobReports;
+use Src\Job\Application\Reports\JobReportReader;
 use Src\Job\Application\Saved\EraseSavedJobs;
 use Src\Job\Application\Views\EraseJobViews;
 use Src\Job\Application\Views\JobViewLog;
@@ -30,8 +32,11 @@ use Src\Job\Application\Views\JobViewRecorder;
 use Src\Job\Application\Views\VisitorKeys;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
+use Src\Job\Domain\Events\JobHeld;
+use Src\Job\Domain\Events\JobReportsClosed;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobAssignmentRepository;
+use Src\Job\Domain\JobReportRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\SavedJobRepository;
 use Src\Job\Infrastructure\Analytics\JobMarketDailyRollup;
@@ -41,17 +46,22 @@ use Src\Job\Infrastructure\Dashboard\JobApprovalQueueCard;
 use Src\Job\Infrastructure\Dashboard\JobPerformanceCard;
 use Src\Job\Infrastructure\Dashboard\PlatformJobsCard;
 use Src\Job\Infrastructure\Insight\CachedSalaryInsightReader;
+use Src\Job\Infrastructure\Listeners\EraseJobReportsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\EraseJobViewsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\EraseSavedJobsWhenUserAnonymized;
 use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
+use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfHold;
+use Src\Job\Infrastructure\Listeners\NotifyReportersOfReview;
 use Src\Job\Infrastructure\Listeners\ReassignJobsWhenMemberRemoved;
 use Src\Job\Infrastructure\Listeners\RecordJobAuditEntries;
 use Src\Job\Infrastructure\Persistence\DatabaseAdminJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobProfileReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobReader;
+use Src\Job\Infrastructure\Persistence\DatabaseJobReportReader;
+use Src\Job\Infrastructure\Persistence\DatabaseJobReportRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
@@ -90,6 +100,11 @@ final class JobServiceProvider extends ContextServiceProvider
 
     private const int SAVES_PER_MINUTE = 60;
 
+    /** The name of the route limiter of reporting a job: 10 reports per account per hour. */
+    public const string REPORT_LIMITER = 'job-reports';
+
+    private const int REPORTS_PER_HOUR = 10;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         JobRepository::class => DatabaseJobRepository::class,
@@ -106,6 +121,8 @@ final class JobServiceProvider extends ContextServiceProvider
         JobProfileReader::class => DatabaseJobProfileReader::class,
         JobSignalReader::class => DatabaseJobSignalReader::class,
         JobSignalSource::class => JobSignalProvider::class,
+        JobReportRepository::class => DatabaseJobReportRepository::class,
+        JobReportReader::class => DatabaseJobReportReader::class,
         JobViewLog::class => DatabaseJobViewLog::class,
         SavedJobRepository::class => DatabaseSavedJobRepository::class,
         SalaryInsightReader::class => CachedSalaryInsightReader::class,
@@ -157,6 +174,8 @@ final class JobServiceProvider extends ContextServiceProvider
 
         RateLimiter::for(self::SAVED_LIMITER, fn (Request $request): Limit => Limit::perMinute(self::SAVES_PER_MINUTE)->by('saved-jobs|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
+        RateLimiter::for(self::REPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REPORTS_PER_HOUR)->by('job-reports|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(JobDecided::class, NotifyAssigneesOfDecision::class);
@@ -166,10 +185,15 @@ final class JobServiceProvider extends ContextServiceProvider
         $this->app->tag(EraseSavedJobs::class, ErasureStep::class);
         $this->app->tag(SavedJobsDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseSavedJobsWhenUserAnonymized::class);
+        $this->app->tag(EraseJobReports::class, ErasureStep::class);
+        Event::listen(UserAnonymized::class, EraseJobReportsWhenUserAnonymized::class);
+        Event::listen(JobHeld::class, NotifyAssigneesOfHold::class);
+        Event::listen(JobReportsClosed::class, NotifyReportersOfReview::class);
 
         Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);
         Event::listen(JobStatusChanged::class, [RecordJobAuditEntries::class, 'onJobStatusChanged']);
         Event::listen(JobDecided::class, [RecordJobAuditEntries::class, 'onJobDecided']);
+        Event::listen(JobReportsClosed::class, [RecordJobAuditEntries::class, 'onJobReportsClosed']);
 
         parent::boot();
     }

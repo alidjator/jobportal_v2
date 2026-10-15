@@ -5,7 +5,10 @@ namespace Src\Job\Application\Admin;
 use DateTimeImmutable;
 use Src\Job\Application\JakartaDate;
 use Src\Job\Domain\Events\JobDecided;
+use Src\Job\Domain\Events\JobReportsClosed;
 use Src\Job\Domain\Job;
+use Src\Job\Domain\JobReportRepository;
+use Src\Job\Domain\JobReportStatus;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
@@ -24,6 +27,7 @@ abstract class AdminJobDecision
 {
     public function __construct(
         private readonly JobRepository $jobs,
+        private readonly JobReportRepository $reports,
         private readonly TransactionManager $transactions,
         private readonly EventDispatcher $events,
         private readonly Clock $clock,
@@ -31,6 +35,12 @@ abstract class AdminJobDecision
 
     /** One of the `JobDecided` decision names. */
     abstract protected function decision(): string;
+
+    /** Whether the decision settles the open reports of the job (a take-down does: they close as `actioned`, and the hold, which `apply` lifts, goes with them). */
+    protected function closesReports(): bool
+    {
+        return false;
+    }
 
     /**
      * The job after the decision; throws a `StateConflict` when its status (or, for an approval, its deadline) does not allow it.
@@ -54,18 +64,30 @@ abstract class AdminJobDecision
         $today = JakartaDate::today($now);
         $adminId = (int) $actor->id;
 
-        $event = $this->transactions->run(function () use ($jobId, $adminId, $reason, $ipAddress, $userAgent, $now, $today): JobDecided {
+        $events = $this->transactions->run(function () use ($jobId, $adminId, $reason, $ipAddress, $userAgent, $now, $today): array {
             $this->jobs->lock($jobId);
             $job = $this->jobs->find($jobId) ?? throw EntityNotFound::of('Job', $jobId);
 
             $decided = $this->apply($job, $adminId, $reason, $now, $today);
             $this->jobs->save($decided);
 
-            return new JobDecided(
+            $events = [new JobDecided(
                 $jobId, $job->companyId, $this->decision(), $job->status->value, $decided->status->value, $reason, $adminId, $ipAddress, $userAgent, $now,
-            );
+            )];
+
+            if ($this->closesReports()) {
+                $closure = $this->reports->closeOpen($jobId, JobReportStatus::Actioned, $adminId, $now);
+
+                if ($closure['closed'] > 0 || $job->isOnHold()) {
+                    $events[] = new JobReportsClosed(
+                        $jobId, $job->companyId, JobReportsClosed::ACTIONED, $closure['closed'], $job->isOnHold(), $closure['reporters'], $adminId, $ipAddress, $userAgent, $now,
+                    );
+                }
+            }
+
+            return $events;
         });
 
-        $this->events->dispatch([$event]);
+        $this->events->dispatch($events);
     }
 }

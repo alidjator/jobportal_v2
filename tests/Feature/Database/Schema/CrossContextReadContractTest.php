@@ -120,7 +120,7 @@ final class CrossContextReadContractTest extends FeatureTestCase
         return $files;
     }
 
-    /** @return list<string> the context tables named in a quoted string (`'identity_users as u'`, `'from identity_users'`) */
+    /** @return list<string> the context tables named in a quoted string (`'identity_users as u'`, `'from identity_users'`); a quoted name used as an array key is a label, not a read */
     private function tablesOf(string $path): array
     {
         $tables = array_values(array_filter(Schema::getTableListing(schemaQualified: false), fn (string $table): bool => $this->isContextTable($table)));
@@ -130,7 +130,7 @@ final class CrossContextReadContractTest extends FeatureTestCase
         }
 
         $alternatives = implode('|', array_map(fn (string $table): string => preg_quote($table, '/'), $tables));
-        preg_match_all('/[\'"](?:[^\'"\n]*\b(?:from|join)\s+)?('.$alternatives.')(?:\s+(?:as\s+)?\w+)?[\'"]/i', (string) file_get_contents($path), $matches);
+        preg_match_all('/[\'"](?:[^\'"\n]*\b(?:from|join)\s+)?('.$alternatives.')(?:\s+(?:as\s+)?\w+)?[\'"](?!\s*=>)/i', (string) file_get_contents($path), $matches);
 
         return $matches[1];
     }

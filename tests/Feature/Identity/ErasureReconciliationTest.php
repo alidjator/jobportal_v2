@@ -36,7 +36,7 @@ final class ErasureReconciliationTest extends FeatureTestCase
     {
         $names = array_map(fn (ErasureStep $step): string => $step->name(), $this->app->make(ErasureSteps::class)->all());
 
-        $this->assertCount(13, $names);
+        $this->assertCount(14, $names);
         $this->assertSame($names, array_values(array_unique($names)));
     }
 
@@ -46,7 +46,7 @@ final class ErasureReconciliationTest extends FeatureTestCase
 
         Event::dispatch(new UserAnonymized($user->id, now()->toDateTimeImmutable()));
 
-        $this->assertSame(13, DB::table('identity_erasure_receipts')->where('user_id', $user->id)->count());
+        $this->assertSame(14, DB::table('identity_erasure_receipts')->where('user_id', $user->id)->count());
     }
 
     public function test_the_sweep_runs_again_only_the_steps_without_a_receipt(): void

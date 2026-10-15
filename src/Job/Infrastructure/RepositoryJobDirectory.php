@@ -87,6 +87,13 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return $this->jobs->titles($jobIds);
     }
 
+    public function isOnHold(int $jobId): bool
+    {
+        $job = $this->jobs->find($jobId);
+
+        return $job !== null && $job->status === JobStatus::Active && $job->isOnHold();
+    }
+
     public function isTakenDown(int $jobId): bool
     {
         return $this->jobs->find($jobId)?->status === JobStatus::TakenDown;

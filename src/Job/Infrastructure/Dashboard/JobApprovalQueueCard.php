@@ -4,12 +4,13 @@ namespace Src\Job\Infrastructure\Dashboard;
 
 use Illuminate\Database\ConnectionInterface;
 use Src\Job\Application\JobPermissions;
+use Src\Job\Domain\JobReportStatus;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCardProvider;
 use Src\Shared\Application\Dashboard\DashboardScope;
 
-/** The jobs that wait for an admin's decision; shown only to an admin who may manage jobs. */
+/** The jobs that wait for an admin's decision, and the jobs with open reports (and how many are on hold); shown only to an admin who may manage jobs. */
 final readonly class JobApprovalQueueCard implements DashboardCardProvider
 {
     public function __construct(private ConnectionInterface $connection) {}
@@ -31,6 +32,12 @@ final readonly class JobApprovalQueueCard implements DashboardCardProvider
 
     public function build(DashboardScope $scope): array
     {
-        return ['waiting_for_approval' => $this->connection->table('job_jobs')->where('status', JobStatus::PendingReview->value)->count()];
+        return [
+            'waiting_for_approval' => $this->connection->table('job_jobs')->where('status', JobStatus::PendingReview->value)->count(),
+            'job_reports' => [
+                'jobs_with_open_reports' => (int) $this->connection->table('job_reports')->where('status', JobReportStatus::Open->value)->distinct()->count('job_id'),
+                'held' => $this->connection->table('job_jobs')->whereNotNull('report_hold_at')->count(),
+            ],
+        ];
     }
 }

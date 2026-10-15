@@ -22,6 +22,11 @@ final readonly class RepositoryCompanyDirectory implements CompanyDirectory
         return $this->connection->table('company_companies')->where('id', $companyId)->where('status', CompanyStatus::Active->value)->exists();
     }
 
+    public function isVerified(int $companyId): bool
+    {
+        return $this->connection->table('company_companies')->where('id', $companyId)->whereNotNull('verified_at')->exists();
+    }
+
     public function lock(int $companyId): void
     {
         $this->connection->table('company_companies')->where('id', $companyId)->lockForUpdate()->first(['id']);

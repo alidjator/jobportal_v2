@@ -1,4 +1,4 @@
-# Phase 8: platform admin: job reports, approval for unverified companies, name lock, two-factor reset, chat reports, email suppression, announcements and scheduler watch (designed 2026-10-15, not coded)
+# Phase 8: platform admin: job reports, approval for unverified companies, name lock, two-factor reset, chat reports, email suppression, announcements and scheduler watch (designed 2026-10-15; sections 1 to 4 coded 2026-10-15)
 
 Gaps found from the platform admin's point of view, against Mekari Talenta (help center articles 9518591606041: in-app support chat;
 9324824732953: targeted announcements; 61590778970649: queue activity; 9096990286233: two-factor on promotion to admin) and against the job portals
@@ -144,3 +144,46 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 | Errors | 409 `already-reported`, `job-on-hold`, `name-locked`, `name-change-pending`, `conversation-blocked` |
 | Legal | question 16 (reported message excerpts) |
 | Front end | "Laporkan lowongan"; report and block in chat; name change request in the company profile; admin pages D23 Laporan (jobs, messages), D24 Perubahan nama, D25 Email tidak terkirim, D26 Pengumuman; moderation flags; operations card; announcement banner |
+
+## Coded: sections 1 to 4 (2026-10-15)
+
+Migration `000141` (`job_reports`, `job_jobs.report_hold_at`, `company_name_change_requests`). Section 4 was coded with `phase-8-company-admin.md`. Sections 5 to 8 wait (#17).
+Checked by the user. Interpretations, where the design left room:
+
+- **Job reports (section 1).** `POST jobs/{id}/reports` answers 201 with the report (`id`, `job_id`, `reason`, `status`, `created_at`); it never says whether the job went on
+  hold. The reporter is a job seeker with a verified email (403 `job-seeker-only`, 403 `email-not-verified`); the job must be live (a held job is not, so 404); 422
+  `invalid-report` for a missing or too long note. The reporter is the plain column `reporter_user_id`; the admin and the account foreign keys follow the existing rule
+  (`decided_by_admin_id` restricts, the job cascades). The hold counts **distinct reporters with an open report** (an erased reporter no longer counts) and is set in the
+  same locked transaction as the report; the threshold is the global setting `jobs.report_hold_threshold` (0 to 100, not per company). `JobVisibility::isLive` and the
+  public search skip a held job, so the page, the alerts, recommendations, saved jobs and the company page follow; `ApplyToJob` answers 409 `job-on-hold` (a new
+  `JobDirectory::isOnHold`); applications already made go on. The company's job detail carries `report_hold_at`; its assignees get `job.held` (job id only).
+- **Admin.** `GET admin/job-reports` lists jobs with open reports (held first, then most reported, then latest; `open_reports`, `reasons` as a map to counts, first and last
+  time, `held`, `held_at`, the company); `GET admin/jobs/{id}/reports` lists every report of a job, newest first, with the reporter id and the note. `POST
+  admin/jobs/{id}/reports/dismiss` closes the open reports as `dismissed` and lifts the hold (409 `no-open-reports` when there are none). A take-down closes them as
+  `actioned` and clears the hold (`Job::takeDown`). Every reporter gets `report.reviewed` (job id only, never the outcome). Audit `job.reports_dismissed` (count) and
+  `job.hold_released` (once, on either path, only when there was a hold). The queue card `jobs_queue` gains `job_reports {jobs_with_open_reports, held}`. The account
+  erasure step `job-reports` clears the reporter and the note. The reports are not part of the personal data export (the export lists what the person owns; a report is the
+  platform's record).
+- **Review rule (section 2).** `JobReviewPolicy::required(companyId, content)` replaces the `jobs.require_approval` check in `PublishJob`, `ReopenJob` and `UpdateJob` (a core
+  change of a live job): the company's approval setting, **or** `jobs.approval_for_unverified` (global, default on) while the company is not verified, **or** a flag.
+  "Verified" is read from `company_companies.verified_at` through the new `CompanyDirectory::isVerified` (the public card is null for a hidden company, and a hidden
+  company still publishes). The scanner reads the **title and the description** (the summary and the salary note do not exist yet; they join with
+  `phase-8-job-discovery.md`). A phrase matches whatever the letter case, on word boundaries, with any run of spaces for a space; a contact flag is the first email
+  address and the first phone number (Indonesian mobile or landline, or `+` international) of the description. The internal tenant exemption waits for #5.
+  The unverified rule means every job is reviewed until at least one required document type exists (`docs/deployment-checklist.md` says so).
+- **Admin view.** `GET admin/jobs/{id}` gains `company_verified` and `flags [{kind, value, field}]`; the list gains `flagged` (true or false in the review queue,
+  `filter[status]=pending_review`, null in any other list). In the queue the flagged jobs come first: the whole queue is scanned in memory (it is short) and the page is
+  ordered with the flagged ids first, so no column was added.
+- **Name lock (section 3).** `PATCH company/profile` answers 409 `name-locked` when the name differs and the company is verified; the same name sent again is not a change.
+  `POST company/name-change-requests` is multipart (`new_name`, `reason` 5 to 1,000, `file`): the name is trimmed and spaces folded, 2 to 255 characters and not equal to the
+  current name ignoring case (422 `invalid-name-change` with `errors`); the file is a PDF by content, at most 10 MB (`invalid-document`, `file-too-large`); an
+  **unverified company is refused with 409 `name-not-locked`** (it renames itself in the profile); 409 `name-change-pending` while one waits. Any member who holds
+  `company.profile` may ask, list (newest 50) and cancel; a cancel is a decision (`decided_at` is set, no admin). The company never sees which admin decided.
+- **Admin** (`companies.manage`): `GET admin/company-name-changes` (`filter[status]`; pending first, oldest first, then the decided newest first), `.../{id}` (the company,
+  who asked, who decided, `has_document`), `.../{id}/document` (download only, audited as `company.name_change_document_viewed`), `.../approve` (the name changes; the badge,
+  the slug and the other fields stay) and `.../reject {note}` (5 to 1,000). Both answer with the request afterwards; a request already decided is 409
+  `name-change-not-pending`. The company admins get `company.name_change_approved` or `_rejected` (with the note); audit `company.name_change_requested`, `_cancelled`,
+  `_approved` (from and to), `_rejected`; all four show in the company activity log (group `settings`). The queue card `companies_queue` gains `name_changes_waiting`.
+  `company:purge-name-change-documents` (03:30 daily) deletes the file 90 days after the decision and keeps the request.
+- **Tests.** `FeatureTestCase` wraps `Settings` so `jobs.approval_for_unverified` reads off unless a test sets `$unverifiedReview = true` (the companies of the older tests
+  are unverified and their jobs must still go live).

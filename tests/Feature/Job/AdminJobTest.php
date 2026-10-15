@@ -111,7 +111,7 @@ final class AdminJobTest extends FeatureTestCase
         $row = collect($response->json('data'))->firstWhere('id', $mine);
         $this->assertSame([
             'id' => $mine, 'title' => 'Backend Developer', 'status' => 'active', 'company' => ['id' => $this->companyId, 'name' => 'PT-MAJU', 'slug' => 'pt-maju'],
-            'deadline' => '2026-12-31', 'vacancies' => 3, 'assignees_count' => 2, 'published_at' => '2026-10-02T08:00:00+00:00',
+            'deadline' => '2026-12-31', 'vacancies' => 3, 'assignees_count' => 2, 'flagged' => null, 'published_at' => '2026-10-02T08:00:00+00:00',
             'created_at' => '2026-10-01T07:00:00+00:00', 'updated_at' => '2026-10-03T06:00:00+00:00',
         ], $row);
         $this->assertSame($this->otherCompanyId, collect($response->json('data'))->firstWhere('id', $theirs)['company']['id']);

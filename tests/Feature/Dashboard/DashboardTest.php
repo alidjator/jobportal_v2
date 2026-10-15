@@ -369,8 +369,8 @@ final class DashboardTest extends FeatureTestCase
         $this->assertCount(30, $cards['jobs']['daily']);
         $this->assertSame(2, $cards['applications']['total']);
         $this->assertSame(2, $cards['applications']['daily'][29]['count']);
-        $this->assertSame(['waiting_for_approval' => 1], $cards['jobs_queue']);
-        $this->assertSame(['waiting_for_review' => 1, 'without_admin' => 0, 'without_admin_companies' => []], $cards['companies_queue']);
+        $this->assertSame(['waiting_for_approval' => 1, 'job_reports' => ['jobs_with_open_reports' => 0, 'held' => 0]], $cards['jobs_queue']);
+        $this->assertSame(['waiting_for_review' => 1, 'name_changes_waiting' => 0, 'without_admin' => 0, 'without_admin_companies' => []], $cards['companies_queue']);
     }
 
     public function test_the_companies_card_lists_the_companies_without_a_company_admin(): void

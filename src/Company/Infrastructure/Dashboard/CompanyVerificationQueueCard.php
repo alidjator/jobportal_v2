@@ -6,13 +6,14 @@ use Illuminate\Database\ConnectionInterface;
 use Src\Company\Application\CompanyPermissions;
 use Src\Company\Domain\CompanyRole;
 use Src\Company\Domain\DocumentStatus;
+use Src\Company\Domain\NameChangeStatus;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCardProvider;
 use Src\Shared\Application\Dashboard\DashboardScope;
 
 /**
- * What needs a platform admin among the companies: the ones with a document that waits for a review, and the ones without a company admin (for
+ * What needs a platform admin among the companies: the ones with a document that waits for a review, the name change requests that wait for a decision, and the ones without a company admin (for
  * example after the last admin's account was erased), up to ten of them by name so the admin can invite a new one. A company whose first
  * company admin was invited and can still accept is not counted. Shown only to an admin who may manage companies.
  */
@@ -53,6 +54,7 @@ final readonly class CompanyVerificationQueueCard implements DashboardCardProvid
                 ->where('status', DocumentStatus::Pending->value)
                 ->distinct()
                 ->count('company_id'),
+            'name_changes_waiting' => $this->connection->table('company_name_change_requests')->where('status', NameChangeStatus::Pending->value)->count(),
             'without_admin' => (clone $withoutAdmin)->count(),
             'without_admin_companies' => (clone $withoutAdmin)->orderBy('c.id')->limit(self::LISTED)->get(['c.id', 'c.name'])
                 ->map(fn (object $row): array => ['id' => (int) $row->id, 'name' => (string) $row->name])

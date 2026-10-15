@@ -5,6 +5,7 @@ namespace Src\Job\Infrastructure\Listeners;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
+use Src\Job\Domain\Events\JobReportsClosed;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
@@ -68,6 +69,24 @@ final class RecordJobAuditEntries implements ShouldQueue
             ['from' => $event->from, 'to' => $event->to, ...($event->reason === null ? [] : ['reason' => $event->reason])],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
+    }
+
+    /** A dismissal is audited; a lifted hold is audited whichever way it ended (a take-down is audited by `onJobDecided`). */
+    public function onJobReportsClosed(JobReportsClosed $event): void
+    {
+        if ($event->outcome === JobReportsClosed::DISMISSED) {
+            $this->trail->record(new AuditEntry(
+                AuditActorType::Admin, $event->adminId, AuditAction::JOB_REPORTS_DISMISSED, self::SUBJECT_TYPE, $event->jobId, ['closed' => $event->closed],
+                $event->ipAddress, $event->userAgent, $event->occurredAt(),
+            ));
+        }
+
+        if ($event->holdReleased) {
+            $this->trail->record(new AuditEntry(
+                AuditActorType::Admin, $event->adminId, AuditAction::JOB_HOLD_RELEASED, self::SUBJECT_TYPE, $event->jobId, ['outcome' => $event->outcome],
+                $event->ipAddress, $event->userAgent, $event->occurredAt(),
+            ));
+        }
     }
 
     public function onJobAssigneesChanged(JobAssigneesChanged $event): void

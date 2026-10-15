@@ -20,7 +20,7 @@ use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
- * Only live jobs are searched: `active`, deadline not before today (Jakarta time), company not in the excluded list. Table and column names are fixed in this
+ * Only live jobs are searched: `active`, not on a report hold, deadline not before today (Jakarta time), company not in the excluded list. Table and column names are fixed in this
  * class (never taken from input); every value is a bound parameter. The title is matched through `TextSearch` (ignoring case and accents), so the keyword needs no lower-casing.
  */
 final readonly class DatabaseJobSearchReader implements JobSearchReader
@@ -89,6 +89,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
     {
         $filtered = $this->connection->table('job_jobs')
             ->where('job_jobs.status', JobStatus::Active->value)
+            ->whereNull('job_jobs.report_hold_at')
             ->where('job_jobs.deadline', '>=', $query->today->format('Y-m-d'));
 
         if ($query->excludedCompanyIds !== []) {

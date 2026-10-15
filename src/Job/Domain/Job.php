@@ -9,6 +9,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * A job a company posts. `slug` is a cosmetic form of the title (the public identifier is the id); it follows the title. The content can be changed
  * only while the status allows it. `publishedAt` is set once, when the job first goes live (directly, or by the first approval), and never changes.
  * An admin's decision stores when it was made and by whom (`reviewedAt`, `reviewedByAdminId`) and, for a rejection or a take-down, the reason.
+ * `reportHoldAt` is set once when enough job seekers reported the job: while it is set the job is not live for the public, whatever its status.
  */
 final readonly class Job
 {
@@ -25,6 +26,7 @@ final readonly class Job
         public ?int $reviewedByAdminId,
         public ?DateTimeImmutable $createdAt,
         public ?DateTimeImmutable $updatedAt,
+        public ?DateTimeImmutable $reportHoldAt = null,
     ) {}
 
     public static function draft(int $companyId, string $slug, JobContent $content, int $createdByUserId): self
@@ -135,7 +137,23 @@ final readonly class Job
             throw new StateConflict('Only a live job can be taken down.', 'job-not-active');
         }
 
-        return $this->with(status: JobStatus::TakenDown, statusReason: $reason, reviewedAt: $at, reviewedByAdminId: $adminId);
+        return $this->with(status: JobStatus::TakenDown, statusReason: $reason, reviewedAt: $at, reviewedByAdminId: $adminId, reportHoldAt: null);
+    }
+
+    public function isOnHold(): bool
+    {
+        return $this->reportHoldAt !== null;
+    }
+
+    /** Enough reporters put a live job on hold; a job already on hold keeps its first time. */
+    public function hold(DateTimeImmutable $at): self
+    {
+        return $this->isOnHold() ? $this : $this->with(reportHoldAt: $at);
+    }
+
+    public function releaseHold(): self
+    {
+        return $this->with(reportHoldAt: null);
     }
 
     /**

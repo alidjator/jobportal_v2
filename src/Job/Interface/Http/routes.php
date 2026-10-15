@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Src\Job\Infrastructure\JobServiceProvider;
 use Src\Job\Interface\Http\Controllers\AlertJobController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
+use Src\Job\Interface\Http\Controllers\JobReportController;
 use Src\Job\Interface\Http\Controllers\PublicJobController;
 use Src\Job\Interface\Http\Controllers\RecommendationController;
 use Src\Job\Interface\Http\Controllers\SalaryInsightController;
@@ -23,6 +24,9 @@ Route::get('jobs/{job}', [PublicJobController::class, 'show'])
 Route::post('jobs/{job}/view', [PublicJobController::class, 'view'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
     ->middleware('throttle:'.JobServiceProvider::VIEW_LIMITER);
+
+// A job seeker with a verified email reports a live job (10 an hour); enough reports put it on hold until an admin decides.
+Route::post('jobs/{id}/reports', [JobReportController::class, 'store'])->whereNumber('id')->middleware(['auth:user', 'throttle:'.JobServiceProvider::REPORT_LIMITER]);
 
 // Public: what the jobs on this platform pay for a role (J10a): a median and a spread, widened when the group is too small. Limited per client address, cached for 5 minutes.
 Route::get('salary-insight', [SalaryInsightController::class, 'show'])

@@ -2,6 +2,7 @@
 
 namespace Src\Job\Application;
 
+use Src\Job\Application\Review\JobReviewPolicy;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobRepository;
@@ -11,7 +12,6 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Recruitment\JobApplications;
-use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -21,7 +21,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * A member changes some fields of a job they may see: `$changes` holds only what changes, keyed by content property name, and a null clears an optional
  * field. A job waiting for review or taken down cannot be edited. A live job must stay complete (its deadline range is checked only when the deadline
- * changes); when the company's settings require approval, a change to a core field sends it back to review. The job row is locked, so two edits of the
+ * changes); when the review policy asks for it (approval required, an unverified company, a suspicious text), a change to a core field sends it back to review. The job row is locked, so two edits of the
  * same job run one after the other. The slug follows the title. Once the job has applications its title, category, role, job type and level are locked.
  */
 final readonly class UpdateJob
@@ -33,7 +33,7 @@ final readonly class UpdateJob
         private JobSlugGenerator $slugs,
         private JobRepository $jobs,
         private JobApplications $applications,
-        private Settings $settings,
+        private JobReviewPolicy $review,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -71,7 +71,7 @@ final readonly class UpdateJob
 
             $backToReview = $live
                 && $content->coreDiffersFrom($job->content)
-                && $this->settings->boolean(JobSettings::REQUIRE_APPROVAL, $member->companyId);
+                && $this->review->required($member->companyId, $content);
 
             if ($backToReview) {
                 $updated = $updated->sendForReview();

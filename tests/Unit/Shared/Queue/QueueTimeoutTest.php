@@ -54,7 +54,7 @@ final class QueueTimeoutTest extends TestCase
     {
         $listeners = $this->erasureListeners();
 
-        $this->assertCount(13, $listeners, 'A new erasure listener must be added to the expected count and set a timeout.');
+        $this->assertCount(14, $listeners, 'A new erasure listener must be added to the expected count and set a timeout.');
 
         foreach ($listeners as $class) {
             $this->assertSame(60, $this->timeoutOf($class), $class);

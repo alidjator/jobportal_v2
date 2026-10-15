@@ -22,6 +22,10 @@ use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
 use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
+use Src\Company\Domain\Events\CompanyNameChangeCancelled;
+use Src\Company\Domain\Events\CompanyNameChangeDecided;
+use Src\Company\Domain\Events\CompanyNameChangeDocumentViewed;
+use Src\Company\Domain\Events\CompanyNameChangeRequested;
 use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
@@ -201,6 +205,41 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
             ['before' => $event->before, 'after' => $event->after], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyNameChangeRequested(CompanyNameChangeRequested $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::COMPANY_NAME_CHANGE_REQUESTED, self::SUBJECT_TYPE, $event->companyId, ['request_id' => $event->requestId],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyNameChangeCancelled(CompanyNameChangeCancelled $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::COMPANY_NAME_CHANGE_CANCELLED, self::SUBJECT_TYPE, $event->companyId, ['request_id' => $event->requestId],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyNameChangeDecided(CompanyNameChangeDecided $event): void
+    {
+        $action = $event->decision === CompanyNameChangeDecided::APPROVED ? AuditAction::COMPANY_NAME_CHANGE_APPROVED : AuditAction::COMPANY_NAME_CHANGE_REJECTED;
+
+        $this->trail->record(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, $action, self::SUBJECT_TYPE, $event->companyId,
+            ['request_id' => $event->requestId, 'from' => $event->currentName, 'to' => $event->newName, ...($event->note === null ? [] : ['note' => $event->note])],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyNameChangeDocumentViewed(CompanyNameChangeDocumentViewed $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, AuditAction::COMPANY_NAME_CHANGE_DOCUMENT_VIEWED, self::SUBJECT_TYPE, $event->companyId, ['request_id' => $event->requestId],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

@@ -64,7 +64,7 @@ final readonly class ApplyToJob
     /**
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound the job is not live
-     * @throws StateConflict `already-applied`
+     * @throws StateConflict `already-applied` or `job-on-hold`
      * @throws TooManyAttempts `application-limit-reached` or `cv-limit`
      * @throws BusinessRuleViolation `profile-incomplete`, `invalid-application`, `invalid-answers`, `template-unavailable`, `invalid-cv`
      */
@@ -163,7 +163,17 @@ final readonly class ApplyToJob
     /** @throws EntityNotFound the job is not live */
     private function liveCompanyId(int $jobId): int
     {
-        return $this->jobs->publicCompanyId($jobId) ?? throw EntityNotFound::of('Job', $jobId);
+        $companyId = $this->jobs->publicCompanyId($jobId);
+
+        if ($companyId !== null) {
+            return $companyId;
+        }
+
+        if ($this->jobs->isOnHold($jobId)) {
+            throw new StateConflict('This job is under review and takes no applications right now.', 'job-on-hold');
+        }
+
+        throw EntityNotFound::of('Job', $jobId);
     }
 
     /**

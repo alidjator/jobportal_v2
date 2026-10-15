@@ -2,13 +2,13 @@
 
 namespace Src\Job\Application;
 
+use Src\Job\Application\Review\JobReviewPolicy;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -17,7 +17,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * A member publishes a draft or a rejected job they may see. The job must be complete and its deadline in range; it goes live at once, or to review
- * when the company's settings require approval. The status is checked before the content (409 before 422).
+ * when the review policy asks for it (approval required, an unverified company, a suspicious text). The status is checked before the content (409 before 422).
  */
 final readonly class PublishJob
 {
@@ -25,7 +25,7 @@ final readonly class PublishJob
         private JobAccess $access,
         private JobCompleteness $completeness,
         private JobRepository $jobs,
-        private Settings $settings,
+        private JobReviewPolicy $review,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -47,7 +47,7 @@ final readonly class PublishJob
             $this->jobs->lock($jobId);
             $job = $this->access->job($member, $jobId);
 
-            $published = $job->publish($this->settings->boolean(JobSettings::REQUIRE_APPROVAL, $member->companyId), $now);
+            $published = $job->publish($this->review->required($member->companyId, $job->content), $now);
             $this->completeness->assertComplete($job->content, $member->companyId, checkDeadlineRange: true);
             $this->jobs->save($published);
 

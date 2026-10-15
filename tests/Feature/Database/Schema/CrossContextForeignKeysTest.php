@@ -60,6 +60,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'identity_user_two_factor' => ['user_id'],
             'identity_user_recovery_codes' => ['user_id'],
             'identity_user_two_factor_challenges' => ['user_id'],
+            'company_name_change_requests' => ['requested_by_user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -77,6 +78,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_psychologist_invitations' => ['invited_by_admin_id'],
             'assessment_tests' => ['created_by_admin_id'],
             'assessment_company_batteries' => ['granted_by_admin_id'],
+            'job_reports' => ['decided_by_admin_id'],
+            'company_name_change_requests' => ['decided_by_admin_id'],
         ],
         'company_companies' => [
             'recruitment_interview_kits' => ['company_id'],
@@ -89,12 +92,12 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_invitations' => ['company_id'],
             'assessment_company_batteries' => ['company_id'],
         ],
-        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id']],
+        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id'], 'job_reports' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],
     ];
 
     /** @var list<string> attachments of a job: they go away with it, so a draft with one can still be deleted */
-    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits'];
+    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits', 'job_reports.job_id'];
 
     /** @var array<string, list<string>> logs, views, audit, notifications, deliveries and summaries keep plain columns */
     private const array WITHOUT = [
@@ -109,6 +112,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
         'legacyimport_id_map' => ['legacy_id', 'new_id'],
         'job_market_daily' => ['company_id', 'category_id', 'province_id'],
         'review_reports' => ['reporter_id'],
+        'job_reports' => ['reporter_user_id'],
     ];
 
     /** @return array<string, array{referenced: string, delete: string}> keyed by "table.column" */
@@ -134,7 +138,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
                 foreach ($columns as $column) {
                     $this->assertArrayHasKey("{$table}.{$column}", $keys, "{$table}.{$column} has no foreign key");
                     $this->assertSame($referenced, $keys["{$table}.{$column}"]['referenced'], "{$table}.{$column}");
-                    $this->assertSame(in_array($table, self::CASCADING, true) ? 'cascade' : 'restrict', $keys["{$table}.{$column}"]['delete'], "{$table}.{$column}");
+                    $this->assertSame(in_array($table, self::CASCADING, true) || in_array("{$table}.{$column}", self::CASCADING, true) ? 'cascade' : 'restrict', $keys["{$table}.{$column}"]['delete'], "{$table}.{$column}");
                 }
             }
         }

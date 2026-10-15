@@ -5,6 +5,7 @@ use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Company\Interface\Http\Controllers\CompanyActivityController;
 use Src\Company\Interface\Http\Controllers\CompanyDocumentController;
 use Src\Company\Interface\Http\Controllers\CompanyImageController;
+use Src\Company\Interface\Http\Controllers\CompanyNameChangeController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CompanySettingsController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
@@ -42,6 +43,11 @@ Route::middleware('auth:user')->group(function (): void {
         Route::post("company/{$kind}", [CompanyImageController::class, 'store'])->defaults('kind', $kind);
         Route::delete("company/{$kind}", [CompanyImageController::class, 'destroy'])->defaults('kind', $kind);
     }
+
+    // A verified company's name is locked: a member who may change the profile asks for a change with a PDF that proves it (a multipart POST); one request waits at a time.
+    Route::get('company/name-change-requests', [CompanyNameChangeController::class, 'index']);
+    Route::post('company/name-change-requests', [CompanyNameChangeController::class, 'store']);
+    Route::post('company/name-change-requests/{id}/cancel', [CompanyNameChangeController::class, 'cancel'])->whereNumber('id');
 
     // The verification documents of the own company; every use case checks that the caller is a company admin of an active company.
     Route::get('company/documents', [CompanyDocumentController::class, 'index']);

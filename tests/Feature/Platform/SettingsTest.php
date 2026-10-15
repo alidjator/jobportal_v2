@@ -182,7 +182,7 @@ final class SettingsTest extends FeatureTestCase
             'invitations.max_per_day',
             'job_seeker.available_from_max_days', 'job_seeker.candidate_sensitive_filters_enabled', 'job_seeker.candidate_views_per_day', 'job_seeker.cv_generations_per_hour', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
             'jobalert.max_alerts_per_user',
-            'jobs.max_deadline_days', 'jobs.require_approval',
+            'jobs.approval_for_unverified', 'jobs.max_deadline_days', 'jobs.report_hold_threshold', 'jobs.require_approval', 'jobs.suspicious_phrases',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
             'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',

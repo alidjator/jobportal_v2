@@ -27,6 +27,8 @@ final class AdminJobListResource extends JsonResource
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'vacancies' => $this->resource->vacancies,
             'assignees_count' => $this->resource->assigneesCount,
+            // Only the review queue (`filter[status]=pending_review`) knows; null in any other list.
+            'flagged' => $this->resource->flagged,
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),
             'created_at' => $this->resource->createdAt->format(DateTimeInterface::ATOM),
             'updated_at' => $this->resource->updatedAt->format(DateTimeInterface::ATOM),

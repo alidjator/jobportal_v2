@@ -5,6 +5,7 @@ namespace Src\Job\Interface\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\Admin\AdminJobDetail;
+use Src\Job\Application\Review\JobFlag;
 
 /**
  * A job as an admin sees it: everything the company sees, the company it belongs to, and the decision details (reason, when and by which admin) whenever they
@@ -32,6 +33,8 @@ final class AdminJobDetailResource extends JsonResource
                 ? ['id' => $job->companyId, 'name' => null, 'slug' => null, 'status' => null]
                 : ['id' => $company->id, 'name' => $company->name, 'slug' => $company->slug, 'status' => $company->status],
             'reviewed_by_admin_id' => $job->reviewedByAdminId,
+            'company_verified' => $this->resource->companyVerified,
+            'flags' => array_map(static fn (JobFlag $flag): array => ['kind' => $flag->kind, 'value' => $flag->value, 'field' => $flag->field], $this->resource->flags),
         ];
     }
 }
