@@ -24,7 +24,8 @@ final readonly class RepositoryCompanyDirectory implements CompanyDirectory
 
     public function isVerified(int $companyId): bool
     {
-        return $this->connection->table('company_companies')->where('id', $companyId)->whereNotNull('verified_at')->exists();
+        // An internal tenant (linked to a legal entity) counts as verified: derived, so removing the link removes it (`docs/design/erp-governance.md` section 1.2).
+        return $this->connection->table('company_companies')->where('id', $companyId)->where(fn ($verified) => $verified->whereNotNull('verified_at')->orWhereNotNull('legal_entity_id'))->exists();
     }
 
     public function lock(int $companyId): void

@@ -79,6 +79,7 @@ use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
 use Src\Company\Infrastructure\Persistence\RepositoryMemberSignInGuard;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
 use Src\Company\Infrastructure\Persistence\RepositorySuspendedMembers;
+use Src\Company\Infrastructure\Persistence\RepositoryTenantRegistry;
 use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
 use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
@@ -90,6 +91,7 @@ use Src\Shared\Application\Company\MemberSignInGuard;
 use Src\Shared\Application\Company\MemberTwoFactorPolicy;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Company\SuspendedMembers;
+use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
@@ -109,6 +111,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         CompanyMemberRepository::class => DatabaseCompanyMemberRepository::class,
         AdminCompanyReader::class => DatabaseAdminCompanyReader::class,
         CompanyDirectory::class => RepositoryCompanyDirectory::class,
+        TenantRegistry::class => RepositoryTenantRegistry::class,
         CompanyTeam::class => RepositoryCompanyTeam::class,
         CompanyMemberDeletionGuard::class => LastCompanyAdminDeletionGuard::class,
         PublicCompanies::class => RepositoryPublicCompanies::class,

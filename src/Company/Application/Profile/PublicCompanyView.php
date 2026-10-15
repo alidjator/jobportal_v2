@@ -23,5 +23,7 @@ final readonly class PublicCompanyView
         public ?DateTimeImmutable $verifiedAt,
         public ?string $logoVersion,
         public ?string $bannerVersion,
+        /** An internal tenant (linked to a legal entity) counts as verified without a document date. */
+        public bool $internal = false,
     ) {}
 }

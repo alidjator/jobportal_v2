@@ -61,6 +61,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'identity_user_recovery_codes' => ['user_id'],
             'identity_user_two_factor_challenges' => ['user_id'],
             'company_name_change_requests' => ['requested_by_user_id'],
+            'organization_group_members' => ['user_id'],
         ],
         'identity_admins' => [
             'job_jobs' => ['reviewed_by_admin_id'],
@@ -92,6 +93,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_invitations' => ['company_id'],
             'assessment_company_batteries' => ['company_id'],
         ],
+        'organization_legal_entities' => ['company_companies' => ['legal_entity_id']],
         'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id'], 'job_reports' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],
     ];

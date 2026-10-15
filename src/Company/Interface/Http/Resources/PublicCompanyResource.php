@@ -38,7 +38,7 @@ final class PublicCompanyResource extends JsonResource
                 'province' => $view->location->province,
                 'postal_code' => $view->location->postalCode,
             ],
-            'verified' => $view->verifiedAt !== null,
+            'verified' => $view->verifiedAt !== null || $view->internal,
             'verified_at' => $view->verifiedAt?->format(DateTimeInterface::ATOM),
             'logo_url' => $this->imageUrl($view->slug, 'logo', $view->logoVersion),
             'banner_url' => $this->imageUrl($view->slug, 'banner', $view->bannerVersion),

@@ -16,6 +16,7 @@ use Src\Matching\Infrastructure\MatchingServiceProvider;
 use Src\Messaging\Infrastructure\MessagingServiceProvider;
 use Src\Newsletter\Infrastructure\NewsletterServiceProvider;
 use Src\Notification\Infrastructure\NotificationServiceProvider;
+use Src\Organization\Infrastructure\OrganizationServiceProvider;
 use Src\Platform\Infrastructure\PlatformServiceProvider;
 use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
 use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
@@ -31,6 +32,7 @@ return [
     ContentServiceProvider::class,
     ReferenceDataServiceProvider::class,
     CompanyServiceProvider::class,
+    OrganizationServiceProvider::class,
     JobServiceProvider::class,
     RecruitmentServiceProvider::class,
     MessagingServiceProvider::class,

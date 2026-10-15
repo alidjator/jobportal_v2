@@ -15,6 +15,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
 | `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` waits for #12, section 3 for #26 |
+| `erp-organization.md` part A (groups, legal entities, tenant link, group roles, group status) | coded and checked 2026-10-16 (migration `000143`); parts B (structure), C (governance), D (group read rule) follow as #5b to #5d |
 | `naming.md` section 1 | coded 2026-10-15 (no migration; the problem `type` is now `urn:onesis:error:<code>`), checked |
 | `phase-8-job-discovery.md` sections 1 to 5 | coded and checked 2026-10-15 (migration `000142`); sections 6 and 7 wait (after go-live) |
 | `phase-8-platform-admin.md` sections 1 to 4 | coded and checked 2026-10-15 (migration `000141`), committed; the internal-tenant exemption of section 2 waits for #5, sections 5 to 8 for #17 |
@@ -23,7 +24,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 | # | Document | Waits for |
 |---|---|---|
-| 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
+| 5 | `erp-organization.md` (Organization context and internal tenants) | part A coded 2026-10-16 (see Coded); parts B, C and D remain |
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | designed 2026-10-15; after #5 |
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | designed 2026-10-15; after #2 and #5 |
 | 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |

@@ -4,6 +4,7 @@ namespace Src\Company\Application\Profile;
 
 use Src\Company\Application\Images\CompanyImageFile;
 use Src\Company\Domain\CompanyRepository;
+use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -15,6 +16,7 @@ final readonly class GetPublicCompany
         private CompanyRepository $companies,
         private ReferenceValues $references,
         private LocationReferences $locations,
+        private TenantRegistry $tenants,
     ) {}
 
     /** @throws EntityNotFound `company-not-found` */
@@ -43,6 +45,7 @@ final readonly class GetPublicCompany
             $company->verifiedAt(),
             $company->logoPath() === null ? null : CompanyImageFile::version($company->logoPath()),
             $company->bannerPath() === null ? null : CompanyImageFile::version($company->bannerPath()),
+            $company->id !== null && $this->tenants->legalEntityOf($company->id) !== null,
         );
     }
 }

@@ -30,7 +30,7 @@ final class CompanyForeignKeysTest extends FeatureTestCase
     public function test_a_company_points_to_the_reference_data_and_its_creator_with_foreign_keys(): void
     {
         $this->assertSame(
-            ['city_id', 'created_by_admin_id', 'industry_id', 'organization_type_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'team_size_id', 'village_id'],
+            ['city_id', 'created_by_admin_id', 'industry_id', 'legal_entity_id', 'organization_type_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'team_size_id', 'village_id'],
             $this->foreignKeyColumns('company_companies'),
         );
     }

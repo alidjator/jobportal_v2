@@ -198,4 +198,28 @@ final class AuditAction
     public const string ASSESSMENT_REPORT_REVISED = 'assessment.report_revised';
 
     public const string ASSESSMENT_PROVIDER_AUTO_ISSUE_CHANGED = 'assessment_provider.auto_issue_changed';
+
+    public const string GROUP_CREATED = 'group.created';
+
+    public const string GROUP_SUSPENDED = 'group.suspended';
+
+    public const string GROUP_RESTORED = 'group.restored';
+
+    public const string GROUP_LEGAL_ENTITY_CREATED = 'group.legal_entity_created';
+
+    public const string GROUP_LEGAL_ENTITY_UPDATED = 'group.legal_entity_updated';
+
+    public const string GROUP_LEGAL_ENTITY_DEACTIVATED = 'group.legal_entity_deactivated';
+
+    public const string GROUP_LEGAL_ENTITY_REACTIVATED = 'group.legal_entity_reactivated';
+
+    public const string GROUP_TENANT_LINKED = 'group.tenant_linked';
+
+    public const string GROUP_TENANT_UNLINKED = 'group.tenant_unlinked';
+
+    public const string GROUP_ROLE_GRANTED = 'group.role_granted';
+
+    public const string GROUP_ROLE_CHANGED = 'group.role_changed';
+
+    public const string GROUP_ROLE_REMOVED = 'group.role_removed';
 }

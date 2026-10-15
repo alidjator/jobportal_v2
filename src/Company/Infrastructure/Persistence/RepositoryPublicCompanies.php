@@ -37,12 +37,12 @@ final readonly class RepositoryPublicCompanies implements PublicCompanies
             ->whereIn('id', $companyIds)
             ->where('status', CompanyStatus::Active->value)
             ->where('is_visible', true)
-            ->get(['id', 'name', 'slug', 'verified_at', 'logo_path']) as $row) {
+            ->get(['id', 'name', 'slug', 'verified_at', 'legal_entity_id', 'logo_path']) as $row) {
             $cards[(int) $row->id] = new PublicCompanyCard(
                 (int) $row->id,
                 (string) $row->name,
                 (string) $row->slug,
-                $row->verified_at !== null,
+                $row->verified_at !== null || $row->legal_entity_id !== null,
                 $row->logo_path === null ? null : URL::to("/api/v1/companies/{$row->slug}/logo").'?v='.CompanyImageFile::version((string) $row->logo_path),
             );
         }

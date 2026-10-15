@@ -39,6 +39,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `campaign-period-invalid` | 422 | Campaign | The campaign cannot end before it starts. |
 | `candidate-not-waiting` | 409 | Recruitment | The candidate is not waiting in the lobby. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
+| `cannot-change-own-group-role` | 422 | Organization | You cannot change your own group role. |
 | `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
 | `cannot-reset-self` | 409 | Company | You cannot reset your own second factor here. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
@@ -50,6 +51,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `chunk-out-of-order` | 409 | Assessment | Send the chunks in order. |
 | `column-already-submitted` | 409 | Assessment | This column was already handed in. |
 | `company-admin-required` | 403 | Company | Only a company admin can manage the team. |
+| `company-already-linked` | 409 | Organization | The company is already linked to a legal entity. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
@@ -86,9 +88,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
 | `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging | A chunk is larger than the allowed 5 MB. |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
-| `forbidden` | 403 | Assessment, Company, Job, Platform | You are not allowed to perform this action. |
+| `forbidden` | 403 | Assessment, Company, Job, Organization, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
 | `google-sign-in-unavailable` | 401, 503 | Identity | This account cannot sign in with Google. |
+| `group-already-suspended` | 409 | Organization | The group is already suspended. |
+| `group-name-taken` | 409 | Organization | A group with this name already exists. |
+| `group-not-suspended` | 409 | Organization | The group is not suspended. |
+| `group-permission-required` | 403 | Organization |  |
+| `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
 | `interview-edit-denied` | 403 | Recruitment | Only the member who scheduled the interview, its interviewer or a company admin can change its questions. |
@@ -116,6 +123,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
+| `invalid-group-permissions` | 422 | Organization | A group role needs at least one permission. |
 | `invalid-ideal-answer` | 422 | Recruitment |  |
 | `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
 | `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
@@ -126,7 +134,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
-| `invalid-location` | 422 | Company, JobSeeker | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
+| `invalid-location` | 422 | Company, JobSeeker, Organization | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-name` | 422 | JobAlert |  |
 | `invalid-name-change` | 422 | Company | The name change request is not valid. |
 | `invalid-navigation` | 422 | Assessment |  |
@@ -200,6 +208,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-document-not-draft` | 409 | Content |  |
 | `legal-document-outdated` | 409 | Identity | A newer version was published. Read it and accept again. |
 | `legal-document-version-taken` | 409 | Content | Another version with this number was created at the same time. Try again. |
+| `legal-entity-already-active` | 409 | Organization | The legal entity is already active. |
+| `legal-entity-already-inactive` | 409 | Organization | The legal entity is already inactive. |
+| `legal-entity-has-active-tenant` | 409 | Organization | The tenant of this legal entity is active: ask the platform admin to suspend it first. |
+| `legal-entity-has-tenant` | 409 | Organization | The legal entity already has a tenant. |
+| `legal-entity-inactive` | 409 | Organization | The legal entity is inactive. |
+| `legal-entity-name-taken` | 409 | Organization | The group already has a legal entity with this name. |
 | `location-parent-required` | 422 | ReferenceData |  |
 | `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
@@ -222,6 +236,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
 | `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
+| `not-a-group-member` | 403 | Organization | This account holds no group role. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
 | `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |
@@ -309,6 +324,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `talent-pool-limit` | 422 | TalentPool |  |
 | `team-not-connected` | 409 | Recruitment | Join the call from your browser before you dial the candidate. |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
+| `tenant-link-in-use` | 409 | Organization | Members of this tenant hold group roles: remove them first. |
 | `terms-not-accepted` | 409 | Identity | You must accept the current terms and privacy policy before continuing. |
 | `test-archived` | 409 | Assessment | An archived test cannot be changed. Restore it first. |
 | `test-incomplete` | 422 | Assessment | The battery cannot issue reports automatically yet. |
@@ -336,6 +352,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unknown-team-size` | 422 | Company |  |
 | `unsupported-language` | 422 | Platform |  |
 | `upload-deadline-passed` | 409 | Assessment | The time to send this recording has passed. |
+| `user-in-another-group` | 409 | Organization | The account holds a group role in another group. |
+| `user-not-in-group` | 422 | Organization | The account is not a member of a tenant of this group. |
 | `validation-failed` | 422 | Platform | The request data is invalid. The `errors` member maps each field to its messages. |
 | `verification-code-cooldown` | 429 | Identity | Wait a moment before requesting another code. |
 | `verification-code-expired` | 422 | Identity | The verification code has expired or is no longer valid. Request a new one. |

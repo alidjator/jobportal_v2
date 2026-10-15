@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15, not coded)
+# ERP Organization context and internal tenants (designed 2026-10-15; part A coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -142,3 +142,32 @@ values of the settings).
 
 - Whether a job of an internal tenant must name a position and unit: decided in `erp-requisitions.md` (a setting per tenant, required by default).
 - ~~How groups map to the central IdP~~ no longer applies: the Identity context is the IAM of the ERP (`erp-sso.md`).
+
+## Coded: part A (2026-10-16)
+
+#5 is coded in parts, each checked and committed on its own: **A** groups, legal entities, the tenant link, group roles, the group status and "internal tenants count
+as verified" (this part); **B** grades, unit types, cost centres, units and positions with versions and `as_of` (sections 5 and 6); **C** governance (`group_id` on
+audit entries, the group activity log `group.audit.view`, the `group` scope of the settings with `group.settings.manage`, temporary support access); **D** the read rule
+`group.recruitment.view` in the recruitment contexts. Migration `000143` (`organization_groups`, `organization_legal_entities`, `organization_group_members`,
+`organization_group_member_permissions`, `company_companies.legal_entity_id` and `suspended_by_group_at`; the two new cross-context keys are in `CrossContextForeignKeysTest`).
+Interpretations, where the design left room:
+
+- **Who does what.** Platform admin (`companies.manage`, no new admin permission): `admin/groups` (list, create with the first legal entity, show, suspend with a reason of 5 to
+  500 characters, restore), `PUT`/`DELETE admin/groups/{id}/legal-entities/{entityId}/tenant` (link and unlink an existing company; creating the company stays
+  `POST admin/companies`) and `admin/groups/{id}/members` (the first group role, and support). Group member (`auth:user`): `organization/group`, the legal entities
+  (`POST`, `PATCH`, `.../deactivate`, `.../reactivate`, `group.structure.manage`) and `organization/members` (`group.members.manage`, only the own group, never the own role:
+  422 `cannot-change-own-group-role`). The group role is one `PUT members/{userId}` with the permission list (it grants or replaces; audited as `granted` or `changed`).
+- **Group role rules.** The account must be a member of a tenant of the group (422 `user-not-in-group`), holds one role in one group (409 `user-in-another-group`), the
+  role needs at least one permission, and it ends with the company membership (`CompanyMemberRemoved`). A role is refused with 403 `not-a-group-member`,
+  `group-suspended` or `group-permission-required`. The invitation of the first company admin does not grant the group role yet (the platform admin does it with `PUT`).
+- **Tenant link.** One entity has one tenant (409 `legal-entity-has-tenant`) and one company one entity (409 `company-already-linked`); linking needs an active group and
+  an active entity (409 `group-suspended`, `legal-entity-inactive`). Unlinking is refused while a group member belongs to that tenant (409 `tenant-link-in-use`; requisitions
+  and employees will count when they exist). The link is the only storage of "internal": `CompanyDirectory::isVerified` and the public card read `verified_at` **or** the
+  link, so the review rule of `phase-8-platform-admin.md` section 2 and the contact rule of `phase-8-job-discovery.md` section 4 treat an internal tenant as verified, and
+  removing the link removes it. `verified_at` itself stays null. The name lock is not extended to internal tenants.
+- **Group status.** Suspending a group suspends its active tenants in one statement (`TenantRegistry::suspendForGroup`: status, reason, `suspended_by_group_at`); restoring
+  restores only the tenants carrying that mark, so a tenant suspended on its own (or by an admin before) stays suspended. 409 `group-already-suspended` and
+  `group-not-suspended`. A deactivation of a legal entity whose tenant is active is 409 `legal-entity-has-active-tenant`.
+- **Audit.** `group.created`, `group.suspended`, `group.restored`, `group.legal_entity_created`, `.updated`, `.deactivated`, `.reactivated`, `group.tenant_linked`,
+  `.unlinked`, `group.role_granted`, `.changed`, `.removed` (subject `organization_group`, `group_id` in the metadata). They go in the platform audit log now; the group
+  activity log and the `group_id` column come with part C.
