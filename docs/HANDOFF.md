@@ -13,6 +13,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - **Phases 0 to 7 coded and committed.**
 - Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
+- **Name (2026-10-15):** ONESIS / ONESIS Career, `docs/design/naming.md` (URN rename before go-live).
 - **ERP (decided 2026-10-15):** TA is ERP phase 1 in this codebase; `docs/design/erp-direction.md`; the phase 8 order was changed for it (three new designs before the hiring work).
 - **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 to #4 are before go-live, #2 changes the login answer for company members).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).

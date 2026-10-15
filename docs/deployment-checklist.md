@@ -77,6 +77,8 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] `docs/analysis/legacy-security-report.md` (S1 to S3, critical) delivered to the maintainers of the running karir.pkp.
 - [ ] Front-end origin and the invitation page URL given by the user.
 - [ ] Client IP behind the Nuxt proxy decided (`docs/design/frontend.md`, section 5.2, open points): without a trusted proxy every visitor shares the Nuxt server's IP in rate limits, audit and consent records.
-- [ ] Brand name decided (`APP_NAME`, front-end `{brand}`, `docs/design/frontend.md` 11.4): it appears in page titles, emails and structured data.
+- [x] Brand name decided 2026-10-15: **ONESIS** (ERP) and **ONESIS Career** (job seeker site), `docs/design/naming.md`.
+- [ ] `APP_NAME=ONESIS` in the production `.env`; the problem `type` renamed to `urn:onesis:error:<code>` (coding session, `naming.md` section 1) before go-live.
+- [ ] Infrastructure names changed from `jobportal` to `onesis` together with separating the live site from the working folder (`naming.md` section 3).
 - [ ] Contact details for the public site (email, phone, address, WhatsApp if any) given by the user (`docs/design/frontend.md` 11.6).
 - [ ] Admin roles other than `super_admin` created and given (`identity:create-role`, `identity:set-admin-role`, `docs/design/phase-8-admin-console.md`); at least two active `super_admin` accounts so one can recover the other.

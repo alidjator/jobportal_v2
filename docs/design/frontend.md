@@ -518,7 +518,8 @@ Agreed by the user on 2026-10-13.
 
 **Decided by the user on 2026-10-13:**
 
-- **Brand name:** decided later; titles, emails and structured data read it from configuration (`{brand}`; the API's `APP_NAME` is `JobPortal` today).
+- **Brand name (decided 2026-10-15, `naming.md`):** `{brand}` is **ONESIS Career** on the job seeker site and **ONESIS** on the ERP side; titles,
+  emails and structured data read it from configuration (`APP_NAME=ONESIS`).
   It must be set before go-live (deployment checklist).
 - **Indexed filter pages:** only `/lowongan` with a category, a location (province or city), or both. Those pages carry a canonical URL with the
   parameters in a fixed order and their own title ("Lowongan IT di Bandung"); every other combination (keyword, salary, level, sort, more than one value)

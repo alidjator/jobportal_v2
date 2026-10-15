@@ -20,6 +20,7 @@ design document yet: they need a design session before a coding session can take
 | 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); internal tenants add a group two-factor rule and 12-hour tokens (`erp-sso.md`) |
 | 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2 |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
+| 4a | `naming.md` section 1 (problem `type` to `urn:onesis:error:<code>`) | **before go-live**; small, mechanical; may be done in any coding session before go-live |
 | 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | designed 2026-10-15; after #5 |
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | designed 2026-10-15; after #2 and #5 |
