@@ -2,8 +2,11 @@
 
 namespace Src\Company\Infrastructure;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Src\Company\Application\Admin\AdminCompanyReader;
 use Src\Company\Application\CompanyEmailTemplates;
 use Src\Company\Application\CompanyPermissions;
@@ -12,6 +15,7 @@ use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
+use Src\Company\Application\Team\CompanyTwoFactorPolicy;
 use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
 use Src\Company\Application\Team\MemberNoticeSender;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
@@ -37,6 +41,7 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
+use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
 use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
@@ -51,6 +56,7 @@ use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
 use Src\Company\Infrastructure\Listeners\NotifyMemberOfPermissionChange;
 use Src\Company\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Company\Infrastructure\Listeners\ReleaseMembershipWhenUserAnonymized;
+use Src\Company\Infrastructure\Listeners\RequireTwoFactorWhenCompanySwitchesItOn;
 use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Mail\MailMemberNoticeSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
@@ -73,16 +79,22 @@ use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\MemberSignInGuard;
+use Src\Shared\Application\Company\MemberTwoFactorPolicy;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Company\SuspendedMembers;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Settings\CompanySettingChanged;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class CompanyServiceProvider extends ContextServiceProvider
 {
+    public const string ACTIVITY_EXPORT_LIMITER = 'company-activity-export';
+
+    private const int ACTIVITY_EXPORTS_PER_HOUR = 10;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         CompanyRepository::class => DatabaseCompanyRepository::class,
@@ -94,6 +106,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         PublicCompanies::class => RepositoryPublicCompanies::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
+        MemberTwoFactorPolicy::class => CompanyTwoFactorPolicy::class,
         CompanySlugGenerator::class => LaravelCompanySlugGenerator::class,
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
@@ -136,6 +149,8 @@ final class CompanyServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for(self::ACTIVITY_EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::ACTIVITY_EXPORTS_PER_HOUR)->by('company-activity-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         Event::listen(CompanyDocumentApproved::class, [NotifyCompanyAdminsOfVerification::class, 'onDocumentApproved']);
         Event::listen(CompanyDocumentRejected::class, [NotifyCompanyAdminsOfVerification::class, 'onDocumentRejected']);
         Event::listen(CompanyVerificationGranted::class, [NotifyCompanyAdminsOfVerification::class, 'onVerificationGranted']);
@@ -157,6 +172,9 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyMemberRenamed::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberRenamed']);
         Event::listen(CompanyMemberRenamed::class, [NotifyMemberOfPermissionChange::class, 'onRenamed']);
         Event::listen(CompanyMemberSuspended::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberSuspended']);
+        Event::listen(CompanyMemberTwoFactorReset::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberTwoFactorReset']);
+        Event::listen(CompanyMemberTwoFactorReset::class, [NotifyMemberOfPermissionChange::class, 'onTwoFactorReset']);
+        Event::listen(CompanySettingChanged::class, RequireTwoFactorWhenCompanySwitchesItOn::class);
         Event::listen(CompanyMemberReactivated::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberReactivated']);
         Event::listen(CompanyOwnerTransferred::class, [RecordCompanyAuditEntries::class, 'onCompanyOwnerTransferred']);
         Event::listen(CompanyInvitationUpdated::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationUpdated']);

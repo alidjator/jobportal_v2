@@ -12,6 +12,7 @@ use Src\Company\Application\Team\ListMembers;
 use Src\Company\Application\Team\MakeOwner;
 use Src\Company\Application\Team\ReactivateMember;
 use Src\Company\Application\Team\RemoveMember;
+use Src\Company\Application\Team\ResetMemberTwoFactor;
 use Src\Company\Application\Team\SuspendMember;
 use Src\Company\Application\Team\UpdateMember;
 use Src\Company\Interface\Http\Requests\ListMemberActivityRequest;
@@ -89,6 +90,13 @@ final class TeamMemberController extends ApiController
     public function makeOwner(MakeOwnerRequest $request, int $userId, ActorResolver $actors, MakeOwner $makeOwner): Response
     {
         $makeOwner->execute($actors->fromRequest($request), $userId, $request->password(), $request->ip(), $request->userAgent());
+
+        return response()->noContent();
+    }
+
+    public function resetTwoFactor(Request $request, int $userId, ActorResolver $actors, ResetMemberTwoFactor $reset): Response
+    {
+        $reset->execute($actors->fromRequest($request), $userId, $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

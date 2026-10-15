@@ -483,6 +483,12 @@ final class CandidateSearchTest extends FeatureTestCase
         $this->assertSame(1, DB::table('jobseeker_profile_views')->where('kind', 'resume')->count());
         $this->assertSame($this->recruiterId, (int) DB::table('jobseeker_profile_views')->where('kind', 'resume')->value('member_id'));
 
+        // Each download is also an entry of the company activity log, with the candidate's slug (never an internal id).
+        $entries = DB::table('platform_audit_logs')->where('action', 'candidate.resume_downloaded')->get();
+        $this->assertCount(2, $entries);
+        $this->assertSame(['candidate' => $slug], json_decode((string) $entries[0]->metadata, true));
+        $this->assertSame($resume, (int) $entries[0]->subject_id);
+
         // A resume of somebody else, or one that does not exist, is not found; a missing file too.
         $this->api('GET', "/company/candidates/{$slug}/resumes/{$this->budi['resume']}", token: $this->recruiterToken)->assertNotFound();
         $this->api('GET', "/company/candidates/{$slug}/resumes/999999", token: $this->recruiterToken)->assertNotFound();

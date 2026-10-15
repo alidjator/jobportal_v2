@@ -7,6 +7,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
@@ -93,6 +94,20 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
 
         return $this->postJson("/api/v1/auth/invitations/{$token}/accept", $body);
+    }
+
+    /** A company admin must have a second factor, so accepting answers a challenge to enrol one; this finishes it and answers the sign-in. */
+    private function enrol(TestResponse $accepted): TestResponse
+    {
+        $accepted->assertCreated()->assertJsonPath('data.status', 'two_factor_enrolment_required')->assertJsonMissingPath('data.token');
+
+        $google2fa = new Google2FA;
+        $this->app['auth']->forgetGuards();
+
+        return $this->postJson('/api/v1/auth/two-factor', [
+            'challenge_token' => $accepted->json('data.challenge_token'),
+            'code' => $google2fa->oathTotp($accepted->json('data.enrolment.secret'), $google2fa->getTimestamp()),
+        ])->assertOk();
     }
 
     private function preview(string $token): TestResponse
@@ -255,7 +270,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $this->createCompany()->assertCreated();
         $token = $this->tokenFromMail();
 
-        $response = $this->accept($token)->assertCreated()
+        $response = $this->enrol($this->accept($token))
             ->assertJsonPath('data.token_type', 'Bearer')
             ->assertJsonPath('data.expires_at', '2026-11-04T09:00:00+00:00')
             ->assertJsonPath('data.user.type', 'company_member')
@@ -284,8 +299,9 @@ final class CompanyOnboardingTest extends FeatureTestCase
 
         $this->app['auth']->forgetGuards();
         $this->withHeader('Accept-Language', 'id')->postJson('/api/v1/auth/invitations/'.$this->tokenFromMail().'/accept', ['name' => 'Budi', 'password' => 'password-123'])
-            ->assertCreated()
-            ->assertJsonPath('data.user.locale', 'id');
+            ->assertCreated();
+
+        $this->assertSame('id', UserModel::query()->where('email', 'owner@example.test')->value('locale'));
     }
 
     public function test_an_invitation_can_be_accepted_only_once(): void
@@ -348,7 +364,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
     public function test_the_company_endpoint_shows_the_company_and_the_role_even_when_suspended(): void
     {
         $this->createCompany()->assertCreated();
-        $session = $this->accept($this->tokenFromMail())->assertCreated();
+        $session = $this->enrol($this->accept($this->tokenFromMail()));
         $token = $session->json('data.token');
 
         $this->companyMe($token)->assertOk()

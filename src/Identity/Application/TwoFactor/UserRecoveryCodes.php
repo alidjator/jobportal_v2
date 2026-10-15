@@ -17,5 +17,8 @@ interface UserRecoveryCodes
     /** Marks one unused code as used; false when there is no such unused code (wrong or already used). */
     public function consume(int $userId, string $hash, DateTimeImmutable $now): bool;
 
+    /** How many unused codes the user has left. */
+    public function remaining(int $userId): int;
+
     public function deleteForUser(int $userId): void;
 }

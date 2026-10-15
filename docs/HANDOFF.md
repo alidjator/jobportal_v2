@@ -11,11 +11,11 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
 - **Phases 0 to 7 coded and committed.**
-- Real PostgreSQL `jobportal_v2`: migrated to `000138`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
+- Real PostgreSQL `jobportal_v2`: migrated to `000138` (`000139`, `000140` waiting: the user runs `migrate`), reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
 - **Name (2026-10-15):** ONESIS / ONESIS Career, `docs/design/naming.md` (URN rename before go-live).
 - **ERP (decided 2026-10-15):** TA is ERP phase 1 in this codebase; `docs/design/erp-direction.md`; the phase 8 order was changed for it (three new designs before the hiring work).
-- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`); `phase-8-jobseeker-privacy.md` sections 1 and 2 coded 2026-10-15 (migration `000139`, **not yet checked by the user**). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 to #3 are before go-live, #1 changes the login answer for company members).
+- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill, assessment Part 7 and `phase-8-jobseeker-privacy.md` sections 1 and 2 coded, tested and committed (migrations `000136`-`000139`); `phase-8-company-admin.md` sections 1, 2 and 4 coded 2026-10-15 (migration `000140`, **not yet checked by the user**; company admins now enrol a second factor at sign-in, so the sign-in answer changes for the front end). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #3 and #4 are before go-live).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)

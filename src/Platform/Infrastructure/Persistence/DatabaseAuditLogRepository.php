@@ -33,6 +33,7 @@ final readonly class DatabaseAuditLogRepository implements AuditLogRepository
             'ip_address' => $entry->ipAddress,
             'user_agent' => $entry->userAgent === null ? null : mb_substr($entry->userAgent, 0, self::USER_AGENT_LENGTH),
             'occurred_at' => $entry->occurredAt->format('Y-m-d H:i:s.u'),
+            'company_id' => $entry->companyId,
         ]);
     }
 }

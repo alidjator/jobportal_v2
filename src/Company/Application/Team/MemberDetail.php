@@ -23,5 +23,6 @@ final readonly class MemberDetail
         public DateTimeImmutable $joinedAt,
         public ?DateTimeImmutable $lastLoginAt,
         public int $assignedJobCount,
+        public string $twoFactor,
     ) {}
 }

@@ -19,8 +19,11 @@ interface CompanyMemberAccounts
      */
     public function register(string $name, string $email, string $password, string $locale): int;
 
-    /** Signs the account in: issues a 30-day token and announces the sign-in. Call it after the transaction that created the account has committed. */
-    public function signIn(int $userId, string $deviceName, ?string $ipAddress, ?string $userAgent): AccountSession;
+    /**
+     * Signs the account in: issues a 30-day token and announces the sign-in. Call it after the transaction that created the account has committed. An account
+     * that must pass the second factor (a company admin always must) gets a challenge instead of a token, and the sign-in is not announced yet.
+     */
+    public function signIn(int $userId, string $deviceName, ?string $ipAddress, ?string $userAgent): AccountSession|TwoFactorChallengeRequired;
 
     /**
      * Deactivates the account (it can no longer sign in) and revokes every token it holds. The account is kept, not anonymised, so what it

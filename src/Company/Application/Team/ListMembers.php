@@ -29,6 +29,7 @@ final readonly class ListMembers
         private InvitationRepository $invitations,
         private LastCompanyAdminRule $lastAdmin,
         private CompanyMemberAccounts $accounts,
+        private MemberTwoFactorStatuses $twoFactor,
         private Clock $clock,
     ) {}
 
@@ -47,6 +48,7 @@ final readonly class ListMembers
         $inviterIds = array_values(array_unique(array_filter(array_map(fn (Invitation $i): ?int => $i->invitedByUserId, $invitations))));
         $accounts = $this->accounts->summaries([...array_map(fn (CompanyMember $m): int => $m->userId, $members), ...$inviterIds]);
         $activeAdmins = count(array_filter($members, fn (CompanyMember $m): bool => $m->isCompanyAdmin() && ! $m->isSuspended()));
+        $twoFactor = $this->twoFactor->of($companyId, $members);
         $callerIsOwner = $actor->id !== null && $this->members->ownerUserId($companyId) === $actor->id;
 
         $rows = [];
@@ -60,7 +62,7 @@ final readonly class ListMembers
 
             $rows[] = new TeamRow(
                 TeamRow::TYPE_MEMBER, $member->userId, $account->name, $account->email, $member->role, $member->isOwner, $member->status->value,
-                $member->effectivePermissions(), $this->memberActions($member, (int) $actor->id, $callerIsOwner, $activeAdmins), $member->joinedAt, $account->lastLoginAt, null, null, null,
+                $member->effectivePermissions(), $this->memberActions($member, (int) $actor->id, $callerIsOwner, $activeAdmins), $member->joinedAt, $account->lastLoginAt, null, null, null, $twoFactor[$member->userId] ?? null,
             );
         }
 

@@ -1,4 +1,4 @@
-# Phase 8: two-factor sign-in for company members, the company activity log, applicant retention and the company settings page (designed 2026-10-14, not coded)
+# Phase 8: two-factor sign-in for company members, the company activity log, applicant retention and the company settings page (designed 2026-10-14; sections 1, 2 and 4 coded 2026-10-15)
 
 Gaps found from the company admin's point of view and against Mekari Talenta (help center articles 9096990286233: 2-step verification switched on
 when a user becomes an admin; 9326458339993: a company-wide user activity log with export; 50946472825113 and 49066156260889: export log),
@@ -112,3 +112,38 @@ overrides) and the account erasure. Coded in a coding session.
 | Errors | 409 `two-factor-required`, `cannot-reset-self`; 422 `setting-not-editable` |
 | Legal | question 10 extended; new question 15 (retention) |
 | Front end | two-step sign-in and enrolment for company members; two-factor in the account settings (C25); reset and status on the team page (C22); "Log aktivitas" (C27); "Pengaturan perusahaan" tab (C20); retention notice on the application detail |
+
+## Coded: sections 1, 2 and 4 (2026-10-15)
+
+Migration `000140` (`platform_audit_logs.company_id` with index `(company_id, occurred_at)`, filled from the subjects and the memberships; the rollout deletes the tokens
+of every company admin without a confirmed factor). Section 3 (retention) waits (#26). Not yet checked by the user. Interpretations, where the design left room:
+
+- **Second factor (section 1).** One generic step serves both kinds of account: `IssueTwoFactorChallenge` and `CompleteTwoFactorSignIn` (the psychologist's sign-in
+  is a thin wrapper now; a company member's is `CompleteMemberSignIn` at `POST auth/two-factor`, 30-day token). The gate `MemberTwoFactorGate` decides at `auth/login`,
+  the Google sign-in and the end of the invitation accept: a company member who is required (company admin, or `company.require_two_factor` on) or has a confirmed
+  factor gets a challenge. The order is password, status, **suspended membership**, then the gate. Accepting an invitation as company admin answers 201 with the
+  enrolment challenge. A Google sign-in that ends in a challenge does not link the Google account (the link happens only at a sign-in that finishes).
+- **Ports.** Identity gives Company `MemberTwoFactor` (`confirmed`, `requireFor`, `reset`); Company gives Identity `MemberTwoFactorPolicy`. `requireFor` ends the
+  sessions of the accounts without a confirmed factor and sends `identity.two_factor_required`; it runs on promotion to company admin (`UpdateMember`, in its transaction)
+  and when `company.require_two_factor` goes from off to on for a company (`CompanySettingChanged`, a synchronous listener, so the sessions end in the same request).
+  The rollout migration sends no email (the next sign-in asks anyway). **A change of the platform-wide default** of the setting ends no session: it applies at the next sign-in.
+- **Own account** (`me/two-factor`): company members only (`not-a-company-member` for any other); `DELETE` needs the password and a current code, and is refused with
+  409 `two-factor-required` while the factor is required. 409 `two-factor-not-started` when `confirm` has no pending enrolment; `two-factor-already-enabled` when it is on.
+- **Reset.** `POST company/members/{userId}/reset-two-factor` (204): `cannot-reset-self`, `owner-required` for another company admin; audit `company.member_two_factor_reset`
+  and the in-app notice `company.two_factor_reset` (the member reads it after the next sign-in). The console `identity:reset-user-two-factor <email>` resets a company
+  member or a psychologist (audit `auth.two_factor_reset`, subject `user`, actor `system` with the operator). The audit of enrolment, recovery code use and renewal
+  (`auth.two_factor_enabled`, `auth.recovery_code_used`, `auth.recovery_codes_regenerated`, new `auth.two_factor_disabled`) now covers psychologists too. Erasing an account deletes its factor.
+- **Team list and detail** carry `two_factor`: `on`, `pending` (required, not enrolled), `off`.
+- **Activity log (section 2).** The recorder (`RecordAuditEntry`) fills `company_id` when an entry names none: the subject when it is a company (so a platform admin's
+  actions on it show), otherwise the company the acting member belongs to when the entry is written. The existing `CompanyMembershipResolver` does this; no `ActorCompany`
+  port was added. The entries of a member removed before the migration stay empty. Four new data access entries are recorded (`application.resume_downloaded`,
+  `candidate.resume_downloaded` with the candidate's slug, `assessment.report_downloaded`, `interview.recording_downloaded` once per playback, at the request that starts
+  it); **`offer.letter_downloaded` waits for the offer letters (#12)**. `GET company/activity` shows the address and browser of a member's action only: a platform admin's
+  actor is `{type: admin, name: null}` and its address stays with the platform. `GET company/members/{userId}/activity` stays as it was. The export streams in slices of 100, with no
+  row cap (the log is bounded by its 12 months), 10 an hour, and is audited before the first byte. Groups: `sign_in`, `security`, `data_access`, `export`, `team`, `jobs`, `settings`
+  (`settings` also holds the allowed email domains and the platform admin's overrides). The CSV writer is now the shared `CsvResponse`, also used by the applicant export.
+- **Settings page (section 4).** `SettingDefinition::companyEditable` implies `overridable`. Only `company.require_two_factor` is on the page now; the stale days and the
+  retention join when their designs are coded. `GET company/settings` (any member) lists only the company-editable keys; `PATCH company/settings` (company admin) saves all
+  or none through the Shared port `CompanySettingsEditor` (provided by Platform), as the same override a platform admin sees and resets. A value equal to the one in force
+  changes and audits nothing. Errors: 422 `setting-not-editable` (a key that is unknown, or only the platform may change) and 422 `invalid-setting-value` with `errors` (key to message).
+  Audit `company.settings_updated` (`before`, `after`).

@@ -39,7 +39,7 @@ final class InterviewRecordingController extends ApiController
 
     public function file(Request $request, int $id, int $recordingId, ActorResolver $actors, OpenRecording $open): SymfonyResponse
     {
-        return FileStreamResponse::make($request, $open->execute($actors->fromRequest($request), $id, $recordingId));
+        return FileStreamResponse::make($request, $open->execute($actors->fromRequest($request), $id, $recordingId, $this->startsAtTheBeginning($request), $request->ip(), $request->userAgent()));
     }
 
     public function destroy(Request $request, int $id, int $recordingId, ActorResolver $actors, DeleteRecording $delete): Response
@@ -52,5 +52,13 @@ final class InterviewRecordingController extends ApiController
     public function attendance(Request $request, int $id, ActorResolver $actors, ListAttendance $list): AnonymousResourceCollection
     {
         return AttendanceResource::collection($list->execute($actors->fromRequest($request), $id));
+    }
+
+    /** A player asks for a recording in many ranges; the download counts once, at the request that starts it. */
+    private function startsAtTheBeginning(Request $request): bool
+    {
+        $range = $request->headers->get('Range');
+
+        return $range === null || str_starts_with($range, 'bytes=0-');
     }
 }

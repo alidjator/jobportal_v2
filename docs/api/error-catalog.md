@@ -40,6 +40,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `candidate-not-waiting` | 409 | Recruitment | The candidate is not waiting in the lobby. |
 | `candidate-view-limit` | 429 | JobSeeker | You opened as many candidate profiles as you may today. Try again tomorrow. |
 | `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
+| `cannot-reset-self` | 409 | Company | You cannot reset your own second factor here. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
 | `cannot-suspend-self` | 409 | Company | You cannot suspend yourself. |
 | `category-limit` | 422 | TalentPool |  |
@@ -150,7 +151,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-scorecard` | 422 | Recruitment |  |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
-| `invalid-setting-value` | 422 | Shared |  |
+| `invalid-setting-value` | 422 | Platform, Shared | Some values are not valid. |
 | `invalid-skills` | 422 | JobSeeker | The skills are not valid. |
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
 | `invalid-stage` | 422 | Recruitment | An application cannot be moved to this stage. |
@@ -212,7 +213,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-phone-number` | 409 | Recruitment |  |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
-| `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
+| `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
 | `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |
@@ -288,6 +289,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
 | `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |
+| `setting-not-editable` | 422 | Platform |  |
 | `setting-not-overridable` | 422 | Platform | This setting cannot be overridden per company. |
 | `slug-reserved` | 422 | Company | This slug is reserved. |
 | `slug-taken` | 409 | Company | This slug is already taken. |
@@ -312,9 +314,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
 | `transfer-target-not-company-admin` | 409 | Company | The jobs can only go to an active company admin of the company. |
-| `two-factor-already-enabled` | 409 | Identity | This administrator already has a second factor. |
+| `two-factor-already-enabled` | 409 | Identity | The second factor is already switched on. |
 | `two-factor-challenge-expired` | 401 | Identity | The sign-in has expired. Sign in again. |
 | `two-factor-not-enabled` | 409 | Identity | This administrator has no second factor yet. |
+| `two-factor-not-started` | 409 | Identity | No enrolment is waiting for a code. Start one first. |
+| `two-factor-required` | 409 | Identity | The second factor is required for this account and cannot be switched off. |
 | `unauthenticated` | 401 | Platform | Authentication is required. |
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |

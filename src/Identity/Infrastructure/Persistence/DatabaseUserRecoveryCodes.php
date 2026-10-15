@@ -31,6 +31,11 @@ final readonly class DatabaseUserRecoveryCodes implements UserRecoveryCodes
             ->update(['used_at' => $now]) > 0;
     }
 
+    public function remaining(int $userId): int
+    {
+        return $this->connection->table(self::TABLE)->where('user_id', $userId)->whereNull('used_at')->count();
+    }
+
     public function deleteForUser(int $userId): void
     {
         $this->connection->table(self::TABLE)->where('user_id', $userId)->delete();

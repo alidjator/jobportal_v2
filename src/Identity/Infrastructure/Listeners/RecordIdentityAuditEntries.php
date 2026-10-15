@@ -23,6 +23,11 @@ use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\TwoFactorEnabled;
 use Src\Identity\Domain\Events\TwoFactorReset;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Identity\Domain\Events\UserRecoveryCodesRegenerated;
+use Src\Identity\Domain\Events\UserRecoveryCodeUsed;
+use Src\Identity\Domain\Events\UserTwoFactorDisabled;
+use Src\Identity\Domain\Events\UserTwoFactorEnabled;
+use Src\Identity\Domain\Events\UserTwoFactorReset;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
@@ -111,6 +116,35 @@ final class RecordIdentityAuditEntries implements ShouldQueue
         ));
     }
 
+    public function onUserTwoFactorEnabled(UserTwoFactorEnabled $event): void
+    {
+        $this->trail->record($this->ownFactorEntry(AuditAction::TWO_FACTOR_ENABLED, $event));
+    }
+
+    public function onUserTwoFactorDisabled(UserTwoFactorDisabled $event): void
+    {
+        $this->trail->record($this->ownFactorEntry(AuditAction::TWO_FACTOR_DISABLED, $event));
+    }
+
+    public function onUserRecoveryCodeUsed(UserRecoveryCodeUsed $event): void
+    {
+        $this->trail->record($this->ownFactorEntry(AuditAction::RECOVERY_CODE_USED, $event));
+    }
+
+    public function onUserRecoveryCodesRegenerated(UserRecoveryCodesRegenerated $event): void
+    {
+        $this->trail->record($this->ownFactorEntry(AuditAction::RECOVERY_CODES_REGENERATED, $event));
+    }
+
+    /** Done by an operator on the console, so the actor is the system. */
+    public function onUserTwoFactorReset(UserTwoFactorReset $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::System, null, AuditAction::TWO_FACTOR_RESET,
+            AccountScope::User->value, $event->userId, ['operator' => $event->operator], null, null, $event->occurredAt(),
+        ));
+    }
+
     public function onAccountDeletionRequested(AccountDeletionRequested $event): void
     {
         $this->trail->record($this->userEntry(
@@ -190,6 +224,11 @@ final class RecordIdentityAuditEntries implements ShouldQueue
             AuditActorType::Admin, $event->adminId, $action,
             AccountScope::Admin->value, $event->adminId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         );
+    }
+
+    private function ownFactorEntry(string $action, UserTwoFactorEnabled|UserTwoFactorDisabled|UserRecoveryCodeUsed|UserRecoveryCodesRegenerated $event): AuditEntry
+    {
+        return new AuditEntry(AuditActorType::User, $event->userId, $action, AccountScope::User->value, $event->userId, [], $event->ipAddress, $event->userAgent, $event->occurredAt());
     }
 
     /** @param  array<string, scalar|null>  $metadata */

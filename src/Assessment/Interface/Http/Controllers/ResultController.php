@@ -51,7 +51,7 @@ final class ResultController extends ApiController
 
     public function report(Request $request, int $id, ActorResolver $actors, DownloadReport $download): Response
     {
-        $file = $download->execute($actors->fromRequest($request), $id);
+        $file = $download->execute($actors->fromRequest($request), $id, $request->ip(), $request->userAgent());
 
         return new Response($file->contents, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',

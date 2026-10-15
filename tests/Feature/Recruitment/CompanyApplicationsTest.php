@@ -275,6 +275,12 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('Siti CV.pdf', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+
+        $entry = DB::table('platform_audit_logs')->where('action', 'application.resume_downloaded')->first();
+        $this->assertNotNull($entry);
+        $this->assertSame('application', $entry->subject_type);
+        $this->assertSame($this->firstId, (int) $entry->subject_id);
+        $this->assertNotNull($entry->company_id);
     }
 
     public function test_a_missing_resume_copy_is_not_found(): void

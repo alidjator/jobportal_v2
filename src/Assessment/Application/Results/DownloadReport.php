@@ -15,11 +15,16 @@ use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Audit\AuditAction;
+use Src\Shared\Application\Audit\AuditActorType;
+use Src\Shared\Application\Audit\AuditEntry;
+use Src\Shared\Application\Audit\AuditTrail;
+use Src\Shared\Application\Clock;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
-/** The PDF of a signed report, for the members who may see the application. A draft is never handed out. */
+/** The PDF of a signed report, for the members who may see the application. A draft is never handed out. Every download is audited (`assessment.report_downloaded`) for the company activity log. */
 final readonly class DownloadReport
 {
     public function __construct(
@@ -32,6 +37,8 @@ final readonly class DownloadReport
         private ApplicantContacts $accounts,
         private ScaleSummaries $scales,
         private ReportPdfRenderer $renderer,
+        private AuditTrail $audit,
+        private Clock $clock,
     ) {}
 
     /**
@@ -39,7 +46,7 @@ final readonly class DownloadReport
      * @throws EntityNotFound
      * @throws StateConflict `report-not-signed`
      */
-    public function execute(Actor $actor, int $invitationId): ReportFile
+    public function execute(Actor $actor, int $invitationId, ?string $ipAddress = null, ?string $userAgent = null): ReportFile
     {
         $invitation = $this->visible->findForResults($actor, $invitationId);
         $attempt = $this->attempts->findByInvitation($invitationId) ?? throw EntityNotFound::of('Report', $invitationId);
@@ -49,7 +56,13 @@ final readonly class DownloadReport
             throw new StateConflict('The report is not signed yet.', 'report-not-signed');
         }
 
-        return new ReportFile($this->fileName($report), $this->renderer->render($this->document($invitation, $report)));
+        $file = new ReportFile($this->fileName($report), $this->renderer->render($this->document($invitation, $report)));
+
+        $this->audit->record(new AuditEntry(
+            AuditActorType::User, $actor->id, AuditAction::ASSESSMENT_REPORT_DOWNLOADED, 'assessment_invitation', $invitationId, [], $ipAddress, $userAgent, $this->clock->now(),
+        ));
+
+        return $file;
     }
 
     private function document(Invitation $invitation, Report $report): ReportDocument

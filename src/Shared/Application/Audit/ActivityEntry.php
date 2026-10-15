@@ -19,5 +19,6 @@ final readonly class ActivityEntry
         public ?string $ipAddress,
         public ?string $userAgent,
         public DateTimeImmutable $occurredAt,
+        public ?int $companyId = null,
     ) {}
 }

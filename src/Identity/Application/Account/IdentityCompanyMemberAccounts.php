@@ -6,6 +6,7 @@ use RuntimeException;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
 use Src\Identity\Application\Auth\PasswordHasher;
 use Src\Identity\Application\Auth\SignInUser;
+use Src\Identity\Application\TwoFactor\MemberTwoFactorGate;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\UserRegistered;
@@ -14,6 +15,7 @@ use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Accounts\AccountSession;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\MemberAccountSummary;
+use Src\Shared\Application\Accounts\TwoFactorChallengeRequired;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 
@@ -24,6 +26,7 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         private UserRepository $users,
         private PasswordHasher $hasher,
         private AccessTokenIssuer $tokens,
+        private MemberTwoFactorGate $twoFactor,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -83,9 +86,17 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         return $summaries;
     }
 
-    public function signIn(int $userId, string $deviceName, ?string $ipAddress, ?string $userAgent): AccountSession
+    public function signIn(int $userId, string $deviceName, ?string $ipAddress, ?string $userAgent): AccountSession|TwoFactorChallengeRequired
     {
         $user = $this->users->findById($userId) ?? throw new RuntimeException("Account {$userId} does not exist.");
+        $challenge = $this->twoFactor->challengeFor($user);
+
+        if ($challenge !== null) {
+            return new TwoFactorChallengeRequired(
+                $challenge->token, $challenge->expiresAt, $challenge->enrolment?->secret, $challenge->enrolment?->otpauthUrl, $challenge->enrolment?->qrCode,
+            );
+        }
+
         $now = $this->clock->now();
         $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
 

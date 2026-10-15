@@ -9,6 +9,8 @@ use Src\Shared\Application\Audit\AuditEntry;
 use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Settings\CompanySettingChanged;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -23,6 +25,7 @@ final readonly class ResetCompanySetting
         private SettingsStore $store,
         private CompanySettingViews $views,
         private AuditTrail $audit,
+        private EventDispatcher $events,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -57,6 +60,9 @@ final readonly class ResetCompanySetting
             ));
         });
 
-        return $this->views->one($companyId, $key);
+        $updated = $this->views->one($companyId, $key);
+        $this->events->dispatch([new CompanySettingChanged($companyId, $key, $current->effectiveValue, $updated->effectiveValue, $this->clock->now())]);
+
+        return $updated;
     }
 }

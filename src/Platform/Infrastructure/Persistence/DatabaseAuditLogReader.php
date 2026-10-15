@@ -29,7 +29,7 @@ final readonly class DatabaseAuditLogReader implements AuditLogReader
     public function read(AuditLogQuery $query, CursorRequest $request): CursorPage
     {
         $builder = $this->connection->table('platform_audit_logs')->select([
-            'id', 'actor_type', 'actor_id', 'action', 'subject_type', 'subject_id', 'metadata', 'ip_address', 'user_agent', 'occurred_at',
+            'id', 'actor_type', 'actor_id', 'action', 'subject_type', 'subject_id', 'metadata', 'ip_address', 'user_agent', 'occurred_at', 'company_id',
         ]);
 
         $this->applyFilters($builder, $query);
@@ -62,6 +62,7 @@ final readonly class DatabaseAuditLogReader implements AuditLogReader
             ->when($query->actorId !== null, fn (Builder $b) => $b->where('actor_id', $query->actorId))
             ->when($query->subjectType !== null, fn (Builder $b) => $b->where('subject_type', $query->subjectType))
             ->when($query->subjectId !== null, fn (Builder $b) => $b->where('subject_id', $query->subjectId))
+            ->when($query->companyId !== null, fn (Builder $b) => $b->where('company_id', $query->companyId))
             ->when($query->actions !== null, fn (Builder $b) => $b->whereIn('action', $query->actions))
             ->when($query->metadataUserId !== null, fn (Builder $b) => $b->whereRaw("(metadata::jsonb ->> 'user_id') = ?", [(string) $query->metadataUserId]))
             ->when($query->from !== null, fn (Builder $b) => $b->where('occurred_at', '>=', $query->from?->format(self::TIME_FORMAT)))
@@ -83,6 +84,7 @@ final readonly class DatabaseAuditLogReader implements AuditLogReader
             $row->ip_address === null ? null : (string) $row->ip_address,
             $row->user_agent === null ? null : (string) $row->user_agent,
             new DateTimeImmutable((string) $row->occurred_at, new DateTimeZone('UTC')),
+            $row->company_id === null ? null : (int) $row->company_id,
         );
     }
 

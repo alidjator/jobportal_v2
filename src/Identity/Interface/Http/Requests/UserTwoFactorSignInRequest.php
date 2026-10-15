@@ -3,9 +3,9 @@
 namespace Src\Identity\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Src\Identity\Application\TwoFactor\CompletePsychologistSignInCommand;
+use Src\Identity\Application\TwoFactor\CompleteTwoFactorSignInCommand;
 
-final class PsychologistTwoFactorSignInRequest extends FormRequest
+final class UserTwoFactorSignInRequest extends FormRequest
 {
     private const string DEFAULT_DEVICE_NAME = 'api';
 
@@ -20,9 +20,9 @@ final class PsychologistTwoFactorSignInRequest extends FormRequest
         ];
     }
 
-    public function toCommand(): CompletePsychologistSignInCommand
+    public function toCommand(): CompleteTwoFactorSignInCommand
     {
-        return new CompletePsychologistSignInCommand(
+        return new CompleteTwoFactorSignInCommand(
             $this->string('challenge_token')->toString(),
             $this->filled('code') ? $this->string('code')->toString() : null,
             $this->filled('recovery_code') ? $this->string('recovery_code')->toString() : null,

@@ -6,6 +6,8 @@ use Src\Identity\Interface\Http\Controllers\CancelAccountDeletionController;
 use Src\Identity\Interface\Http\Controllers\ChangePasswordController;
 use Src\Identity\Interface\Http\Controllers\CurrentUserController;
 use Src\Identity\Interface\Http\Controllers\ForgotPasswordController;
+use Src\Identity\Interface\Http\Controllers\MemberTwoFactorSignInController;
+use Src\Identity\Interface\Http\Controllers\MyTwoFactorController;
 use Src\Identity\Interface\Http\Controllers\RegisterJobSeekerController;
 use Src\Identity\Interface\Http\Controllers\RequestAccountDeletionController;
 use Src\Identity\Interface\Http\Controllers\ResendEmailVerificationCodeController;
@@ -21,6 +23,7 @@ use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
 Route::post('auth/register', RegisterJobSeekerController::class);
 Route::post('auth/login', SignInUserController::class);
 Route::post('auth/google', SignInWithGoogleController::class);
+Route::post('auth/two-factor', MemberTwoFactorSignInController::class);
 Route::post('auth/account/restore', CancelAccountDeletionController::class);
 Route::post('auth/password/forgot', ForgotPasswordController::class);
 Route::post('auth/password/reset', ResetPasswordController::class);
@@ -30,6 +33,13 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('auth/email/resend', ResendEmailVerificationCodeController::class);
 
     Route::put('me/password', ChangePasswordController::class);
+
+    // The second factor of a company member (any other account is refused by the use cases).
+    Route::get('me/two-factor', [MyTwoFactorController::class, 'show']);
+    Route::post('me/two-factor', [MyTwoFactorController::class, 'store']);
+    Route::post('me/two-factor/confirm', [MyTwoFactorController::class, 'confirm']);
+    Route::delete('me/two-factor', [MyTwoFactorController::class, 'destroy']);
+    Route::post('me/two-factor/recovery-codes', [MyTwoFactorController::class, 'recoveryCodes']);
 
     Route::get('me/avatar', [AvatarController::class, 'show']);
     Route::post('me/avatar', [AvatarController::class, 'store']);

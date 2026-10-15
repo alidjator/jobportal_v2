@@ -20,5 +20,7 @@ final readonly class AuditLogQuery
         public ?array $actions = null,
         /** Only entries whose metadata `user_id` is this account (the member an entry concerns). */
         public ?int $metadataUserId = null,
+        /** Only the entries of the company activity log of this company. */
+        public ?int $companyId = null,
     ) {}
 }

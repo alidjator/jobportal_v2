@@ -4,7 +4,11 @@ namespace Src\Shared\Application\Audit;
 
 use DateTimeImmutable;
 
-/** One append-only audit record: who did what to which object, when and from where. Metadata must not hold sensitive values. */
+/**
+ * One append-only audit record: who did what to which object, when and from where. Metadata must not hold sensitive values. `companyId` is the company
+ * the entry belongs to for the company activity log; left empty, the recorder fills it (the company the acting member belongs to, or the subject when
+ * that is a company).
+ */
 final readonly class AuditEntry
 {
     /** @param  array<string, mixed>  $metadata values that can be written as JSON (scalars, lists) */
@@ -18,5 +22,6 @@ final readonly class AuditEntry
         public ?string $ipAddress,
         public ?string $userAgent,
         public DateTimeImmutable $occurredAt,
+        public ?int $companyId = null,
     ) {}
 }

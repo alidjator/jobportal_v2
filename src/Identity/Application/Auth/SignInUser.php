@@ -2,6 +2,8 @@
 
 namespace Src\Identity\Application\Auth;
 
+use Src\Identity\Application\TwoFactor\MemberTwoFactorGate;
+use Src\Identity\Application\TwoFactor\TwoFactorChallengeIssued;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
@@ -14,7 +16,10 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\AuthenticationFailed;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
-/** Signs a public user (job seeker or company member) in with email and password and issues a 30-day token. */
+/**
+ * Signs a public user (job seeker or company member) in with email and password and issues a 30-day token. A company member who must pass a second factor
+ * (or has one) gets a challenge instead: `POST auth/two-factor` finishes the sign-in.
+ */
 final readonly class SignInUser
 {
     public const string TOKEN_LIFETIME = '+30 days';
@@ -24,6 +29,7 @@ final readonly class SignInUser
         private PasswordHasher $hasher,
         private AccessTokenIssuer $tokens,
         private MemberSignInGuard $memberships,
+        private MemberTwoFactorGate $twoFactor,
         private SignInThrottle $throttle,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -35,7 +41,7 @@ final readonly class SignInUser
      * @throws AuthenticationFailed
      * @throws AccessDenied
      */
-    public function execute(SignInCommand $command): UserSignInResult
+    public function execute(SignInCommand $command): UserSignInResult|TwoFactorChallengeIssued
     {
         $email = mb_strtolower(trim($command->email));
         $this->throttle->assertCredentialsNotLocked(AccountScope::User, $email, $command->ipAddress);
@@ -57,6 +63,12 @@ final readonly class SignInUser
             $this->events->dispatch([$this->failure($user->id, $e->errorCode(), $command)]);
 
             throw $e;
+        }
+
+        $challenge = $this->twoFactor->challengeFor($user);
+
+        if ($challenge !== null) {
+            return $challenge;
         }
 
         $now = $this->clock->now();

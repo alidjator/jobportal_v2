@@ -48,7 +48,7 @@ final class CompanyApplicationController extends ApiController
 
     public function resume(Request $request, int $id, ActorResolver $actors, GetCompanyApplicationResume $get): Response
     {
-        return PdfDownload::of($get->execute($actors->fromRequest($request), $id));
+        return PdfDownload::of($get->execute($actors->fromRequest($request), $id, $request->ip(), $request->userAgent()));
     }
 
     public function move(MoveApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response

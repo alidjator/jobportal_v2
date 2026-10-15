@@ -13,6 +13,8 @@ final class IdentityEmailTemplates
 
     public const string PASSWORD_RESET = 'identity.password_reset';
 
+    public const string TWO_FACTOR_REQUIRED = 'identity.two_factor_required';
+
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
@@ -41,6 +43,16 @@ final class IdentityEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nGunakan kode ini untuk menetapkan kata sandi baru:\n\n# {{code}}\n\nKode berlaku selama {{minutes}} menit dan hanya dapat digunakan sekali.\n\nJika Anda tidak meminta reset kata sandi, abaikan email ini. Kata sandi Anda tidak berubah.",
                     'en' => "Hello {{name}},\n\nUse this code to set a new password:\n\n# {{code}}\n\nThe code is valid for {{minutes}} minutes and can be used once.\n\nIf you did not ask to reset your password, you can ignore this email. Your password stays unchanged.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TWO_FACTOR_REQUIRED,
+                'Sent to a company member when two-factor sign-in became required for their account (they were promoted to company admin, or their company switched it on) and they have not set it up yet.',
+                [new EmailVariable('name', 'The recipient\'s name', 'Budi')],
+                TranslatedText::fromArray(['id' => 'Verifikasi dua langkah kini diwajibkan', 'en' => 'Two-step verification is now required']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nUntuk menjaga keamanan data pelamar, akun Anda kini wajib memakai verifikasi dua langkah. Sesi Anda yang sedang aktif telah diakhiri.\n\nSaat Anda masuk berikutnya, Anda akan diminta memasang aplikasi autentikator (misalnya Google Authenticator) di ponsel Anda. Siapkan ponsel Anda sebelum masuk.",
+                    'en' => "Hello {{name}},\n\nTo keep applicant data safe, your account now needs two-step verification. Your active sessions have ended.\n\nThe next time you sign in you will be asked to set up an authenticator app (for example Google Authenticator) on your phone. Have your phone ready before you sign in.",
                 ]),
             ),
         ];

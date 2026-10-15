@@ -390,6 +390,14 @@ final class VideoRecordingsTest extends FeatureTestCase
         $this->assertSame('89', $open->streamedContent());
 
         $this->api('GET', "{$base}/{$id}/file", [], $this->recruiterToken, ['Range' => 'bytes=50-60'])->assertStatus(416)->assertHeader('Content-Range', 'bytes */10');
+
+        // The playback counts once, at the request that starts it, and the entry belongs to the company's activity log.
+        $entries = DB::table('platform_audit_logs')->where('action', 'interview.recording_downloaded')->get();
+        $this->assertCount(1, $entries);
+        $this->assertSame('interview', $entries[0]->subject_type);
+        $this->assertSame($this->interviewId(), (int) $entries[0]->subject_id);
+        $this->assertNotNull($entries[0]->company_id);
+        $this->assertSame(['recording_id' => $id], json_decode((string) $entries[0]->metadata, true));
     }
 
     public function test_a_recording_is_visible_only_to_the_members_who_may_see_the_application(): void

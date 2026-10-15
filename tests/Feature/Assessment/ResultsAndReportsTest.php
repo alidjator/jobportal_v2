@@ -598,6 +598,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->assertSame('application/pdf', $pdf->headers->get('Content-Type'));
         $this->assertStringContainsString('report-LEMB-2026-00001.pdf', (string) $pdf->headers->get('Content-Disposition'));
         $this->assertStringStartsWith('%PDF', (string) $pdf->getContent());
+        $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'assessment.report_downloaded')->where('subject_id', $this->invitationId)->count());
 
         $this->asTeam('GET', 'report.pdf', [], $this->otherAdminToken)->assertNotFound();
         $this->api('GET', "/company/assessment/invitations/{$this->invitationId}/report.pdf", [], $this->seekerToken)->assertForbidden();

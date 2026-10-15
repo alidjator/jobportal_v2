@@ -17,6 +17,7 @@ final readonly class GetMember
         private CompanyAdminGuard $guard,
         private CompanyMemberRepository $members,
         private CompanyMemberAccounts $accounts,
+        private MemberTwoFactorStatuses $twoFactor,
         private JobDirectory $jobs,
     ) {}
 
@@ -37,6 +38,7 @@ final readonly class GetMember
             MemberPreset::matching($member->role, $member->permissions)?->value, $member->effectivePermissions(), $member->status->value,
             $member->suspendedAt, $member->suspendedByUserId === null ? null : ($accounts[$member->suspendedByUserId] ?? null)?->name,
             $member->joinedAt, $account->lastLoginAt, count($this->jobs->assignedJobIds($companyId, $userId)),
+            $this->twoFactor->of($companyId, [$member])[$userId],
         );
     }
 }

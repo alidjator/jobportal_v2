@@ -6,7 +6,8 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 
 /**
  * One admin-configurable setting: its key (`area.name`), type, default, constraints and whether a company may have its own
- * value. Contexts register their definitions in the `SettingsCatalog`; the database stores only values that differ from the default.
+ * value. Contexts register their definitions in the `SettingsCatalog`; the database stores only values that differ from the default. A
+ * `companyEditable` setting is one the company admin changes on the company settings page (it implies `overridable`).
  * Settings are not for secrets: values are shown to admins and written to the audit log.
  */
 final readonly class SettingDefinition
@@ -25,30 +26,31 @@ final readonly class SettingDefinition
         public ?int $max,
         public array $allowedValues,
         public int $minItems,
+        public bool $companyEditable = false,
     ) {}
 
-    public static function integer(string $key, int $default, int $min, int $max, string $description, bool $overridable = false): self
+    public static function integer(string $key, int $default, int $min, int $max, string $description, bool $overridable = false, bool $companyEditable = false): self
     {
-        return new self($key, SettingType::Integer, $default, $description, $overridable, $min, $max, [], 0);
+        return new self($key, SettingType::Integer, $default, $description, $overridable || $companyEditable, $min, $max, [], 0, $companyEditable);
     }
 
-    public static function boolean(string $key, bool $default, string $description, bool $overridable = false): self
+    public static function boolean(string $key, bool $default, string $description, bool $overridable = false, bool $companyEditable = false): self
     {
-        return new self($key, SettingType::Boolean, $default, $description, $overridable, null, null, [], 0);
+        return new self($key, SettingType::Boolean, $default, $description, $overridable || $companyEditable, null, null, [], 0, $companyEditable);
     }
 
-    public static function text(string $key, string $default, int $maxLength, string $description, bool $overridable = false): self
+    public static function text(string $key, string $default, int $maxLength, string $description, bool $overridable = false, bool $companyEditable = false): self
     {
-        return new self($key, SettingType::Text, $default, $description, $overridable, null, $maxLength, [], 0);
+        return new self($key, SettingType::Text, $default, $description, $overridable || $companyEditable, null, $maxLength, [], 0, $companyEditable);
     }
 
     /**
      * @param  list<string>  $default
      * @param  list<string>  $allowedValues
      */
-    public static function choices(string $key, array $default, array $allowedValues, string $description, int $minItems = 0, bool $overridable = false): self
+    public static function choices(string $key, array $default, array $allowedValues, string $description, int $minItems = 0, bool $overridable = false, bool $companyEditable = false): self
     {
-        return new self($key, SettingType::Choices, $default, $description, $overridable, null, null, $allowedValues, $minItems);
+        return new self($key, SettingType::Choices, $default, $description, $overridable || $companyEditable, null, null, $allowedValues, $minItems, $companyEditable);
     }
 
     /**

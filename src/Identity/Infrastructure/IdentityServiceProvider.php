@@ -13,6 +13,7 @@ use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
 use Src\Identity\Application\Account\IdentityFirstSignIns;
+use Src\Identity\Application\Account\IdentityMemberTwoFactor;
 use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
 use Src\Identity\Application\Admin\AdminDirectory;
@@ -32,6 +33,7 @@ use Src\Identity\Application\IdentitySettings;
 use Src\Identity\Application\TwoFactor\RecoveryCodes;
 use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
 use Src\Identity\Application\TwoFactor\TwoFactorChallenges;
+use Src\Identity\Application\TwoFactor\TwoFactorNoticeSender;
 use Src\Identity\Application\TwoFactor\TwoFactorTokens;
 use Src\Identity\Application\TwoFactor\UserRecoveryCodes;
 use Src\Identity\Application\TwoFactor\UserTwoFactorChallenges;
@@ -56,6 +58,11 @@ use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\Events\TwoFactorEnabled;
 use Src\Identity\Domain\Events\TwoFactorReset;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Identity\Domain\Events\UserRecoveryCodesRegenerated;
+use Src\Identity\Domain\Events\UserRecoveryCodeUsed;
+use Src\Identity\Domain\Events\UserTwoFactorDisabled;
+use Src\Identity\Domain\Events\UserTwoFactorEnabled;
+use Src\Identity\Domain\Events\UserTwoFactorReset;
 use Src\Identity\Domain\SocialAccountRepository;
 use Src\Identity\Domain\TermsAcceptanceRepository;
 use Src\Identity\Domain\UserRepository;
@@ -75,6 +82,7 @@ use Src\Identity\Infrastructure\Auth\SpatieAdminDirectory;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
+use Src\Identity\Infrastructure\Mail\MailTwoFactorNoticeSender;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
 use Src\Identity\Infrastructure\Persistence\DatabaseErasureLedger;
 use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
@@ -103,6 +111,7 @@ use Src\Identity\Interface\Console\ReactivateAdminCommand;
 use Src\Identity\Interface\Console\ReconcileErasureCommand;
 use Src\Identity\Interface\Console\ResetAdminPasswordCommand;
 use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
+use Src\Identity\Interface\Console\ResetUserTwoFactorCommand;
 use Src\Identity\Interface\Console\SetAdminRoleCommand;
 use Src\Identity\Interface\Console\SetAdminRolePermissionsCommand;
 use Src\Identity\Interface\Console\SuspendAdminCommand;
@@ -111,6 +120,7 @@ use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureReceipts;
 use Src\Shared\Application\Accounts\FirstSignIns;
+use Src\Shared\Application\Accounts\MemberTwoFactor;
 use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
@@ -147,6 +157,8 @@ final class IdentityServiceProvider extends ContextServiceProvider
         UserDataEraser::class => EloquentUserDataEraser::class,
         ApplicantContacts::class => IdentityApplicantContacts::class,
         FirstSignIns::class => IdentityFirstSignIns::class,
+        MemberTwoFactor::class => IdentityMemberTwoFactor::class,
+        TwoFactorNoticeSender::class => MailTwoFactorNoticeSender::class,
         AdminContacts::class => IdentityAdminContacts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
@@ -189,7 +201,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
             ListAdminPermissionsCommand::class, ListAdminRolesCommand::class, ListAdminsCommand::class, CreateAdminRoleCommand::class, SetAdminRolePermissionsCommand::class,
             DeleteAdminRoleCommand::class, SetAdminRoleCommand::class, SuspendAdminCommand::class, ReactivateAdminCommand::class, ResetAdminPasswordCommand::class]);
 
@@ -217,6 +229,11 @@ final class IdentityServiceProvider extends ContextServiceProvider
             RecoveryCodeUsed::class => 'onRecoveryCodeUsed',
             RecoveryCodesRegenerated::class => 'onRecoveryCodesRegenerated',
             TwoFactorReset::class => 'onTwoFactorReset',
+            UserTwoFactorEnabled::class => 'onUserTwoFactorEnabled',
+            UserTwoFactorDisabled::class => 'onUserTwoFactorDisabled',
+            UserRecoveryCodeUsed::class => 'onUserRecoveryCodeUsed',
+            UserRecoveryCodesRegenerated::class => 'onUserRecoveryCodesRegenerated',
+            UserTwoFactorReset::class => 'onUserTwoFactorReset',
             AccountDeletionRequested::class => 'onAccountDeletionRequested',
             AccountDeletionCancelled::class => 'onAccountDeletionCancelled',
             UserAnonymized::class => 'onUserAnonymized',

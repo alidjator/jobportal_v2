@@ -37,6 +37,7 @@ final class TeamRowResource extends JsonResource
             'is_owner' => $row->isOwner,
             'joined_at' => $row->joinedAt?->format(DateTimeInterface::ATOM),
             'last_login_at' => $row->lastLoginAt?->format(DateTimeInterface::ATOM),
+            'two_factor' => $row->twoFactor,
         ];
     }
 }

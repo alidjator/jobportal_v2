@@ -408,7 +408,7 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame([
             'type' => 'member', 'id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin', 'status' => 'active',
             'permissions' => CompanyPermission::values(), 'actions' => ['edit'], 'is_owner' => true,
-            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00',
+            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00', 'two_factor' => 'pending',
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.3.last_login_at'));
         $this->assertSame(4, $response->json('meta.member_count'));
@@ -511,14 +511,15 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertSame(0, DB::table('company_member_permissions')->count());
-        $this->api('GET', '/members', [], $this->recruiterToken)->assertOk();
+        // A new company admin without a second factor loses the sessions: the next sign-in asks for the enrolment.
+        $this->api('GET', '/members', [], $this->recruiterToken)->assertUnauthorized();
 
         $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member'])->assertNoContent();
         $this->assertSame('member', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
 
-        // The demoted admin lost the right with the next request, with the same token.
-        $this->api('GET', '/members', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        // The demoted admin lost the right with the next request (with a new token: the promotion ended the old one).
+        $this->api('GET', '/members', [], $this->recruiter->createToken('phone', ['*'], now()->addDay())->plainTextToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
     }
 
     public function test_a_demotion_may_name_the_permissions(): void

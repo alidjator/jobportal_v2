@@ -31,4 +31,15 @@ interface MemberActivity
      * @throws BusinessRuleViolation `invalid-cursor`
      */
     public function ofCompany(int $companyId, array $actions, ?int $memberUserId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, CursorRequest $request): CursorPage;
+
+    /**
+     * The company activity log: every entry that belongs to the company (its members' actions and the platform admins' actions on it), newest first.
+     * `$userId` keeps the actions of that member; `$actions` null keeps every action, a list keeps those (an empty list keeps none).
+     *
+     * @param  ?list<string>  $actions
+     * @return CursorPage<ActivityEntry>
+     *
+     * @throws BusinessRuleViolation `invalid-cursor`
+     */
+    public function ofCompanyLog(int $companyId, ?int $userId, ?array $actions, ?DateTimeImmutable $from, ?DateTimeImmutable $to, CursorRequest $request): CursorPage;
 }

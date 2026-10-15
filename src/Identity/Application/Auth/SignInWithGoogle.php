@@ -2,6 +2,8 @@
 
 namespace Src\Identity\Application\Auth;
 
+use Src\Identity\Application\TwoFactor\MemberTwoFactorGate;
+use Src\Identity\Application\TwoFactor\TwoFactorChallengeIssued;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\SignInFailed;
@@ -22,7 +24,8 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
  * Signs a user in with a Google ID token (verified by the API itself, no Firebase), creating the account on the first
  * sign-in. The Google account is identified by its stable subject, never by the email alone. When an account with the same
  * email already exists it is linked, but only because Google vouches for the email: if that account's email was never verified,
- * its password is removed (whoever registered it may not own the address) and its tokens are revoked.
+ * its password is removed (whoever registered it may not own the address) and its tokens are revoked. A company member who has a second factor, or must
+ * have one, gets a challenge instead of a token.
  */
 final readonly class SignInWithGoogle
 {
@@ -33,6 +36,7 @@ final readonly class SignInWithGoogle
         private AccessTokenIssuer $tokens,
         private SignInThrottle $throttle,
         private CampaignCodes $campaigns,
+        private MemberTwoFactorGate $twoFactor,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -44,7 +48,7 @@ final readonly class SignInWithGoogle
      * @throws ExternalServiceUnavailable
      * @throws AccessDenied when the account is suspended or deactivated
      */
-    public function execute(GoogleSignInCommand $command): GoogleSignInResult
+    public function execute(GoogleSignInCommand $command): GoogleSignInResult|TwoFactorChallengeIssued
     {
         $throttleKey = 'google|'.$command->ipAddress;
         $this->throttle->assertNotLocked($throttleKey);
@@ -82,6 +86,15 @@ final readonly class SignInWithGoogle
 
                 throw $e;
             }
+        }
+
+        // A company member with a second factor (or who must have one) passes it as after a password: Google proves the email, not the device.
+        $challenge = $user === null ? null : $this->twoFactor->challengeFor($user);
+
+        if ($challenge !== null) {
+            $this->throttle->clear($throttleKey);
+
+            return $challenge;
         }
 
         $now = $this->clock->now();

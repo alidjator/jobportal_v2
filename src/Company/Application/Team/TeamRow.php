@@ -7,7 +7,7 @@ use Src\Company\Domain\CompanyRole;
 
 /**
  * One row of the team list: a member or an open invitation. A member row has `status` `active` or `suspended`, an invitation row `pending` or `expired`;
- * `actions` are the row actions the caller may take now (`edit`, `remove`, `suspend`, `reactivate`, `make_owner`, `resend`, `revoke`).
+ * `twoFactor` (members only) is `on`, `off` or `pending` (required, not enrolled yet). `actions` are the row actions the caller may take now (`edit`, `remove`, `suspend`, `reactivate`, `make_owner`, `resend`, `revoke`).
  */
 final readonly class TeamRow
 {
@@ -34,6 +34,7 @@ final readonly class TeamRow
         public ?DateTimeImmutable $sentAt,
         public ?DateTimeImmutable $expiresAt,
         public ?string $invitedBy,
+        public ?string $twoFactor = null,
     ) {}
 
     /** The position in the list: the owner, then the other company admins, then the members. */

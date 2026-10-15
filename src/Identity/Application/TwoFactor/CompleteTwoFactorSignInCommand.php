@@ -2,7 +2,7 @@
 
 namespace Src\Identity\Application\TwoFactor;
 
-final readonly class CompletePsychologistSignInCommand
+final readonly class CompleteTwoFactorSignInCommand
 {
     public function __construct(
         public string $challengeToken,

@@ -21,6 +21,7 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
+use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
 use Src\Company\Domain\Events\CompanyOwnerTransferred;
 use Src\Company\Domain\Events\CompanyRestored;
 use Src\Company\Domain\Events\CompanySuspended;
@@ -148,6 +149,14 @@ final class RecordCompanyAuditEntries implements ShouldQueue
     {
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->suspendedByUserId, AuditAction::COMPANY_MEMBER_SUSPENDED, self::SUBJECT_TYPE, $event->companyId,
+            ['user_id' => $event->userId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMemberTwoFactorReset(CompanyMemberTwoFactorReset $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->resetByUserId, AuditAction::COMPANY_MEMBER_TWO_FACTOR_RESET, self::SUBJECT_TYPE, $event->companyId,
             ['user_id' => $event->userId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

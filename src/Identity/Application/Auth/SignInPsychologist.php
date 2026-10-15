@@ -2,18 +2,13 @@
 
 namespace Src\Identity\Application\Auth;
 
-use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
+use Src\Identity\Application\TwoFactor\IssueTwoFactorChallenge;
 use Src\Identity\Application\TwoFactor\TwoFactorChallengeIssued;
-use Src\Identity\Application\TwoFactor\TwoFactorEnrolment;
-use Src\Identity\Application\TwoFactor\TwoFactorTokens;
-use Src\Identity\Application\TwoFactor\UserTwoFactorChallenges;
-use Src\Identity\Application\TwoFactor\UserTwoFactors;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\SignInFailed;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\AuthenticationFailed;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
@@ -28,17 +23,11 @@ final readonly class SignInPsychologist
 {
     public const string TOKEN_LIFETIME = '+12 hours';
 
-    public const string CHALLENGE_LIFETIME = '+5 minutes';
-
     public function __construct(
         private UserRepository $users,
         private PasswordHasher $hasher,
         private SignInThrottle $throttle,
-        private TwoFactorAuthenticator $authenticator,
-        private TwoFactorTokens $twoFactorTokens,
-        private UserTwoFactors $factors,
-        private UserTwoFactorChallenges $challenges,
-        private TransactionManager $transactions,
+        private IssueTwoFactorChallenge $challenge,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -70,26 +59,7 @@ final readonly class SignInPsychologist
             throw $e;
         }
 
-        $now = $this->clock->now();
-        $expiresAt = $now->modify(self::CHALLENGE_LIFETIME);
-        $token = $this->twoFactorTokens->challengeToken();
-        $userId = (int) $user->id;
-
-        return $this->transactions->run(function () use ($user, $userId, $token, $expiresAt, $now): TwoFactorChallengeIssued {
-            $enrolment = null;
-
-            if (! ($this->factors->find($userId)?->isConfirmed() ?? false)) {
-                $secret = $this->authenticator->generateSecret();
-                $this->factors->begin($userId, $secret, $now);
-
-                $url = $this->authenticator->otpauthUrl($user->email(), $secret);
-                $enrolment = new TwoFactorEnrolment($secret, $url, $this->authenticator->qrCode($url));
-            }
-
-            $this->challenges->issue($userId, $this->twoFactorTokens->hash($token), $expiresAt, $now);
-
-            return new TwoFactorChallengeIssued($token, $expiresAt, $enrolment);
-        });
+        return $this->challenge->execute($user);
     }
 
     private function failure(?int $accountId, string $reason, SignInCommand $command): SignInFailed

@@ -28,6 +28,13 @@ final readonly class AuditMemberActivity implements MemberActivity
         ), $request));
     }
 
+    public function ofCompanyLog(int $companyId, ?int $userId, ?array $actions, ?DateTimeImmutable $from, ?DateTimeImmutable $to, CursorRequest $request): CursorPage
+    {
+        return $this->entries($this->reader->read(new AuditLogQuery(
+            actorType: $userId === null ? null : AuditActorType::User, actorId: $userId, from: $from, to: $to, actions: $actions, companyId: $companyId,
+        ), $request));
+    }
+
     /**
      * @param  CursorPage<AuditLogRecord>  $page
      * @return CursorPage<ActivityEntry>
@@ -35,7 +42,7 @@ final readonly class AuditMemberActivity implements MemberActivity
     private function entries(CursorPage $page): CursorPage
     {
         return new CursorPage(array_map(static fn (AuditLogRecord $r): ActivityEntry => new ActivityEntry(
-            $r->id, $r->actorType, $r->actorId, $r->action, $r->subjectType, $r->subjectId, $r->metadata, $r->ipAddress, $r->userAgent, $r->occurredAt,
+            $r->id, $r->actorType, $r->actorId, $r->action, $r->subjectType, $r->subjectId, $r->metadata, $r->ipAddress, $r->userAgent, $r->occurredAt, $r->companyId,
         ), $page->items), $page->nextCursor, $page->perPage);
     }
 }

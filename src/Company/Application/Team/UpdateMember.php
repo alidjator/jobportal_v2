@@ -11,6 +11,7 @@ use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\MemberPermissionRules;
 use Src\Company\Domain\MemberPreset;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Accounts\MemberTwoFactor;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
@@ -23,7 +24,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * A company admin changes a member's name, role and permissions in one transaction, themselves included. A demotion without permissions gives the
  * Recruiter preset. Permissions apply to a member only, and a member needs at least one. The owner and the last active company admin cannot be
- * demoted. Giving a member what they already have changes and audits nothing. The change takes effect at once: permissions are read on every request.
+ * demoted. Promoting a member to company admin ends their sessions when they have no second factor yet. Giving a member what they already have changes and audits nothing. The change takes effect at once: permissions are read on every request.
  * The email cannot be changed.
  */
 final readonly class UpdateMember
@@ -34,6 +35,7 @@ final readonly class UpdateMember
         private CompanyMemberRepository $members,
         private LastCompanyAdminRule $lastAdmin,
         private CompanyMemberAccounts $accounts,
+        private MemberTwoFactor $twoFactor,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -98,6 +100,12 @@ final readonly class UpdateMember
 
             $this->members->changeRole($companyId, $userId, $newRole);
             $this->members->replacePermissions($companyId, $userId, $after);
+
+            // A new company admin must have a second factor: without one the sessions end here and the next sign-in asks for enrolment.
+            if ($newRole === CompanyRole::CompanyAdmin) {
+                $this->twoFactor->requireFor([$userId]);
+            }
+
             $events[] = new CompanyMemberRoleChanged($companyId, $userId, $member->role->value, $newRole->value, $after, (int) $actor->id, $ipAddress, $userAgent, $now);
 
             return $events;

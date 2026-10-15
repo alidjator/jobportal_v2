@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Company\Infrastructure\CompanyServiceProvider;
+use Src\Company\Interface\Http\Controllers\CompanyActivityController;
 use Src\Company\Interface\Http\Controllers\CompanyDocumentController;
 use Src\Company\Interface\Http\Controllers\CompanyImageController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
+use Src\Company\Interface\Http\Controllers\CompanySettingsController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
 use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
@@ -65,7 +68,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('company/members/{userId}', [TeamMemberController::class, 'update'])->whereNumber('userId');
     Route::post('company/members/{userId}/suspend', [TeamMemberController::class, 'suspend'])->whereNumber('userId');
     Route::post('company/members/{userId}/reactivate', [TeamMemberController::class, 'reactivate'])->whereNumber('userId');
+    Route::post('company/members/{userId}/reset-two-factor', [TeamMemberController::class, 'resetTwoFactor'])->whereNumber('userId');
     Route::post('company/members/{userId}/make-owner', [TeamMemberController::class, 'makeOwner'])->whereNumber('userId');
+    // The company settings page: any member reads, a company admin changes the settings that belong to the company.
+    Route::get('company/settings', [CompanySettingsController::class, 'show']);
+    Route::patch('company/settings', [CompanySettingsController::class, 'update']);
+
+    // The activity log of the company: the entries of its members and of the platform about it; the export is a CSV, limited per hour.
+    Route::get('company/activity', [CompanyActivityController::class, 'index']);
+    Route::get('company/activity/export', [CompanyActivityController::class, 'export'])->middleware('throttle:'.CompanyServiceProvider::ACTIVITY_EXPORT_LIMITER);
     Route::get('company/team/history', [TeamSettingsController::class, 'history']);
     Route::get('company/team/email-domains', [TeamSettingsController::class, 'emailDomains']);
     Route::put('company/team/email-domains', [TeamSettingsController::class, 'updateEmailDomains']);

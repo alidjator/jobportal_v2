@@ -2,33 +2,16 @@
 
 namespace Src\Identity\Interface\Http\Controllers;
 
-use DateTimeInterface;
-use Illuminate\Http\JsonResponse;
 use Src\Identity\Application\Auth\SignInPsychologist;
 use Src\Identity\Interface\Http\Requests\SignInRequest;
+use Src\Identity\Interface\Http\Resources\TwoFactorChallengeResource;
 use Src\Shared\Interface\Http\ApiController;
 
 /** The first step: a right password answers a challenge, never a token. The client finishes at `POST /provider/auth/two-factor`. */
 final class SignInPsychologistController extends ApiController
 {
-    public function __invoke(SignInRequest $request, SignInPsychologist $signIn): JsonResponse
+    public function __invoke(SignInRequest $request, SignInPsychologist $signIn): TwoFactorChallengeResource
     {
-        $challenge = $signIn->execute($request->toCommand());
-
-        $data = [
-            'status' => $challenge->enrolment === null ? 'two_factor_required' : 'two_factor_enrolment_required',
-            'challenge_token' => $challenge->token,
-            'expires_at' => $challenge->expiresAt->format(DateTimeInterface::ATOM),
-        ];
-
-        if ($challenge->enrolment !== null) {
-            $data['enrolment'] = [
-                'secret' => $challenge->enrolment->secret,
-                'otpauth_url' => $challenge->enrolment->otpauthUrl,
-                'qr_code' => $challenge->enrolment->qrCode,
-            ];
-        }
-
-        return new JsonResponse(['data' => $data]);
+        return new TwoFactorChallengeResource($signIn->execute($request->toCommand()));
     }
 }

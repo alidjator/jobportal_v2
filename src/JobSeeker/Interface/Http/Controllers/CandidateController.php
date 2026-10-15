@@ -57,7 +57,7 @@ final class CandidateController extends ApiController
 
     public function resume(Request $request, string $slug, int $id, ActorResolver $actors, GetCandidateResume $get): Response
     {
-        $file = $get->execute($actors->fromRequest($request), $slug, $id);
+        $file = $get->execute($actors->fromRequest($request), $slug, $id, $request->ip(), $request->userAgent());
         $name = str_ends_with(strtolower($file->name), '.pdf') ? $file->name : $file->name.'.pdf';
         $fallback = str_replace(['%', '/', '\\', '"'], '_', (string) preg_replace('/[^\x20-\x7E]/', '_', $name));
 

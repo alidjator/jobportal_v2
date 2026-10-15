@@ -9,6 +9,8 @@ use Src\Company\Application\Invitations\PreviewInvitation;
 use Src\Company\Interface\Http\Requests\AcceptInvitationRequest;
 use Src\Company\Interface\Http\Resources\AccountSessionResource;
 use Src\Company\Interface\Http\Resources\InvitationPreviewResource;
+use Src\Company\Interface\Http\Resources\TwoFactorChallengeResource;
+use Src\Shared\Application\Accounts\AccountSession;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ApiController;
 
@@ -22,7 +24,9 @@ final class InvitationController extends ApiController
 
     public function accept(AcceptInvitationRequest $request, string $token, RequestContext $context, AcceptInvitation $accept): JsonResponse
     {
-        return (new AccountSessionResource($accept->execute($request->toCommand($token, $context))))
+        $outcome = $accept->execute($request->toCommand($token, $context));
+
+        return ($outcome instanceof AccountSession ? new AccountSessionResource($outcome) : new TwoFactorChallengeResource($outcome))
             ->response()
             ->setStatusCode(JsonResponse::HTTP_CREATED);
     }

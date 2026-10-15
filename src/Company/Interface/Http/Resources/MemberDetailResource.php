@@ -29,6 +29,7 @@ final class MemberDetailResource extends JsonResource
             'joined_at' => $member->joinedAt->format(DateTimeInterface::ATOM),
             'last_login_at' => $member->lastLoginAt?->format(DateTimeInterface::ATOM),
             'assigned_job_count' => $member->assignedJobCount,
+            'two_factor' => $member->twoFactor,
         ];
     }
 }

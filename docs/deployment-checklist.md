@@ -65,7 +65,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 ## 6. Smoke test after the switch
 
 - [ ] `GET /up` answers 200; a public list endpoint answers 200 with the security headers; `/docs/api` answers 404.
-- [ ] Sign in as the admin with the second factor; sign in as a company member and a job seeker.
+- [ ] Sign in as the admin with the second factor; sign in as a company member and a job seeker. A company admin enrols the authenticator at the first sign-in (second factor is mandatory for company admins); a lone company admin who loses the device is reset by `php artisan identity:reset-user-two-factor <email>`.
 - [ ] Trigger one queued action (for example an application email) and see it processed by the worker, not in the request.
 - [ ] Hit a throttled endpoint past its limit and see 429 (proves the Redis limiter).
 - [ ] Send a test email; open the unsubscribe and confirm links.

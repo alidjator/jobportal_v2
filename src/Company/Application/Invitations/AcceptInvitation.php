@@ -9,6 +9,7 @@ use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\InvitationRepository;
 use Src\Shared\Application\Accounts\AccountSession;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Accounts\TwoFactorChallengeRequired;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -19,7 +20,8 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
 /**
  * Public: the invitee accepts, sets their name and password, and is signed in. The invitation row is locked while the account and the
- * membership are created, so a second request with the same token finds it already used.
+ * membership are created, so a second request with the same token finds it already used. A company admin must have a second factor, so for them the
+ * answer is a challenge to enrol one (the client finishes at `POST auth/two-factor`), not a token.
  */
 final readonly class AcceptInvitation
 {
@@ -41,7 +43,7 @@ final readonly class AcceptInvitation
      * @throws AccessDenied `company-suspended`
      * @throws StateConflict `email-already-registered` when the invited email got an account since the invitation was sent
      */
-    public function execute(AcceptInvitationCommand $command): AccountSession
+    public function execute(AcceptInvitationCommand $command): AccountSession|TwoFactorChallengeRequired
     {
         $this->throttle->hit($command->ipAddress);
 

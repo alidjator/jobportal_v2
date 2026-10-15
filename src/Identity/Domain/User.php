@@ -80,6 +80,11 @@ final class User extends AggregateRoot
         return $this->type === UserType::Psychologist;
     }
 
+    public function isCompanyMember(): bool
+    {
+        return $this->type === UserType::CompanyMember;
+    }
+
     /** True for the accounts that sign in at the public endpoints. A psychologist signs in only at the provider endpoints, with a second factor. */
     public function usesPublicSignIn(): bool
     {

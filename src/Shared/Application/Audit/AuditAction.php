@@ -23,6 +23,8 @@ final class AuditAction
 
     public const string TWO_FACTOR_RESET = 'auth.two_factor_reset';
 
+    public const string TWO_FACTOR_DISABLED = 'auth.two_factor_disabled';
+
     public const string ADMIN_ROLE_CREATED = 'admin.role_created';
 
     public const string ADMIN_ROLE_PERMISSIONS_CHANGED = 'admin.role_permissions_changed';
@@ -90,6 +92,20 @@ final class AuditAction
     public const string COMPANY_DOCUMENT_SUBMITTED = 'company.document_submitted';
 
     public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';
+
+    public const string COMPANY_MEMBER_TWO_FACTOR_RESET = 'company.member_two_factor_reset';
+
+    public const string COMPANY_ACTIVITY_EXPORTED = 'company.activity_exported';
+
+    public const string COMPANY_SETTINGS_UPDATED = 'company.settings_updated';
+
+    public const string APPLICATION_RESUME_DOWNLOADED = 'application.resume_downloaded';
+
+    public const string CANDIDATE_RESUME_DOWNLOADED = 'candidate.resume_downloaded';
+
+    public const string ASSESSMENT_REPORT_DOWNLOADED = 'assessment.report_downloaded';
+
+    public const string INTERVIEW_RECORDING_DOWNLOADED = 'interview.recording_downloaded';
 
     public const string JOB_ASSIGNEES_CHANGED = 'job.assignees_changed';
 

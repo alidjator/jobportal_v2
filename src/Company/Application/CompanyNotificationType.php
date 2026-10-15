@@ -16,4 +16,6 @@ final class CompanyNotificationType
     public const string PERMISSIONS_CHANGED = 'company.permissions_changed';
 
     public const string MEMBER_RENAMED = 'company.member_renamed';
+
+    public const string TWO_FACTOR_RESET = 'company.two_factor_reset';
 }
