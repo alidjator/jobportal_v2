@@ -100,7 +100,7 @@ final class AccountDeletionTest extends FeatureTestCase
 
         $this->requestDeletion($token, ['password' => 'wrong-password', 'confirm' => true])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-password');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-password');
 
         $this->requestDeletion($token, ['password' => self::PASSWORD])
             ->assertStatus(422)
@@ -118,7 +118,7 @@ final class AccountDeletionTest extends FeatureTestCase
 
         $this->requestDeletion($this->token($user))
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:password-required');
+            ->assertJsonPath('type', 'urn:onesis:error:password-required');
 
         $this->assertSame('active', $user->fresh()->status);
     }
@@ -133,7 +133,7 @@ final class AccountDeletionTest extends FeatureTestCase
 
         $this->requestDeletion($token)
             ->assertStatus(429)
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
     }
 
     public function test_deletion_requires_a_signed_in_user(): void
@@ -167,7 +167,7 @@ final class AccountDeletionTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/account/restore', ['email' => 'siti@example.test', 'password' => 'nope', 'confirm' => true])
             ->assertStatus(401)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-credentials');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-credentials');
         $this->postJson('/api/v1/auth/account/restore', ['email' => 'ghost@example.test', 'password' => 'nope', 'confirm' => true])->assertStatus(401);
         $this->postJson('/api/v1/auth/account/restore', ['email' => 'siti@example.test', 'password' => self::PASSWORD])
             ->assertStatus(422)
@@ -193,7 +193,7 @@ final class AccountDeletionTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/account/restore', ['email' => 'siti@example.test', 'password' => self::PASSWORD, 'confirm' => true])
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:deletion-not-requested');
+            ->assertJsonPath('type', 'urn:onesis:error:deletion-not-requested');
     }
 
     public function test_a_user_who_forgot_the_password_can_still_restore_the_account(): void

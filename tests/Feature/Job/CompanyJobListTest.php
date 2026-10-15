@@ -48,7 +48,7 @@ final class CompanyJobListTest extends FeatureTestCase
         foreach ([['GET', '/company/jobs'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
             ['DELETE', "/company/jobs/{$id}"], ['GET', "/company/jobs/{$id}/assignees"], ['PUT', "/company/jobs/{$id}/assignees"]] as [$method, $uri]) {
             $this->api($method, $uri, ['title' => 'Backend', 'user_ids' => [$this->adminId]], $seekerToken)->assertStatus(403)
-                ->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+                ->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         }
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
@@ -56,7 +56,7 @@ final class CompanyJobListTest extends FeatureTestCase
         foreach ([['GET', '/company/jobs'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
             ['DELETE', "/company/jobs/{$id}"], ['GET', "/company/jobs/{$id}/assignees"], ['PUT', "/company/jobs/{$id}/assignees"]] as [$method, $uri]) {
             $this->api($method, $uri, ['title' => 'Backend', 'user_ids' => [$this->adminId]])->assertStatus(403)
-                ->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+                ->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         }
 
         $this->assertNotNull($this->jobRow($id));

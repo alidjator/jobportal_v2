@@ -128,7 +128,7 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_only_company_members_use_the_library(): void
     {
-        $this->api('GET', '/company/interview-kits', [], $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/company/interview-kits', [], $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('POST', '/company/interview-kits', $this->kitBody(), $this->seekerToken)->assertForbidden();
     }
 
@@ -136,11 +136,11 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         $id = $this->createKit('Backend round');
 
-        $this->api('POST', '/company/interview-kits', $this->kitBody('BACKEND ROUND'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:kit-name-taken');
+        $this->api('POST', '/company/interview-kits', $this->kitBody('BACKEND ROUND'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:kit-name-taken');
         $this->createKit('Backend round', null, $this->otherAdminToken);
 
         $other = $this->createKit('Other');
-        $this->api('PUT', "/company/interview-kits/{$other}", $this->kitBody('backend Round'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:kit-name-taken');
+        $this->api('PUT', "/company/interview-kits/{$other}", $this->kitBody('backend Round'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:kit-name-taken');
         $this->api('PUT', "/company/interview-kits/{$id}", $this->kitBody('BACKEND round'))->assertOk();
     }
 
@@ -148,11 +148,11 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         $this->api('POST', '/company/interview-kits', $this->kitBody('Kit', [['text' => str_repeat('q', 501), 'weight' => 9]]))
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-kit')
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-kit')
             ->assertJsonStructure(['errors' => ['questions.0.text', 'questions.0.weight']]);
 
-        $this->api('POST', '/company/interview-kits', $this->kitBody('Kit', []))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->api('POST', '/company/interview-kits', $this->kitBody('Kit', array_fill(0, 21, ['text' => 'Q', 'weight' => 1])))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-kit');
+        $this->api('POST', '/company/interview-kits', $this->kitBody('Kit', []))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->api('POST', '/company/interview-kits', $this->kitBody('Kit', array_fill(0, 21, ['text' => 'Q', 'weight' => 1])))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-kit');
         $this->api('POST', '/company/interview-kits', $this->kitBody(str_repeat('n', 101)))->assertStatus(422)->assertJsonStructure(['errors' => ['name']]);
         $this->assertSame(0, DB::table('recruitment_interview_kits')->count());
     }
@@ -164,7 +164,7 @@ final class InterviewKitsTest extends FeatureTestCase
         $this->createKit('One');
         $this->createKit('Two');
 
-        $this->api('POST', '/company/interview-kits', $this->kitBody('Three'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:kit-limit-reached');
+        $this->api('POST', '/company/interview-kits', $this->kitBody('Three'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:kit-limit-reached');
         $this->createKit('Three', null, $this->otherAdminToken);
     }
 
@@ -192,10 +192,10 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         $kit = $this->createKit();
 
-        $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('offer')}", ['kit_id' => $kit])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:stage-not-interview');
+        $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('offer')}", ['kit_id' => $kit])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:stage-not-interview');
         $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/987654", ['kit_id' => $kit])->assertNotFound();
         $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('interview')}", ['kit_id' => $this->createKit('Foreign', null, $this->otherAdminToken)])->assertNotFound();
-        $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('interview')}", [])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('interview')}", [])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
     }
 
     public function test_a_member_who_cannot_see_the_job_cannot_set_its_default_kit(): void
@@ -311,10 +311,10 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_the_panel_is_checked(): void
     {
-        $this->schedule(['participant_ids' => [$this->recruiterId]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
-        $this->schedule(['participant_ids' => [$this->otherAdminId]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
-        $this->schedule(['participant_ids' => [$this->adminId, $this->adminId]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->schedule(['participant_ids' => [1, 2, 3, 4]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->schedule(['participant_ids' => [$this->recruiterId]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->schedule(['participant_ids' => [$this->otherAdminId]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->schedule(['participant_ids' => [$this->adminId, $this->adminId]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->schedule(['participant_ids' => [1, 2, 3, 4]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
 
         $this->assertSame(0, DB::table('recruitment_interviews')->count());
     }
@@ -323,7 +323,7 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         DB::table('job_assignments')->where('job_id', $this->job)->where('user_id', $this->secondRecruiterId)->delete();
 
-        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
+        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
     }
 
     // ----- editing the copy -----
@@ -334,7 +334,7 @@ final class InterviewKitsTest extends FeatureTestCase
         $interview = $this->activeInterviewId();
         $body = ['questions' => [['text' => 'Edited.', 'guidance' => 'Be kind.', 'weight' => 2]]];
 
-        $this->api('PUT', "/company/interviews/{$interview}/questions", $body, $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:interview-edit-denied');
+        $this->api('PUT', "/company/interviews/{$interview}/questions", $body, $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:interview-edit-denied');
         $this->api('GET', "/company/interviews/{$interview}/questions", [], $this->secondRecruiterToken)->assertOk();
 
         $this->api('PUT', "/company/interviews/{$interview}/questions", $body, $this->recruiterToken)->assertOk();
@@ -348,8 +348,8 @@ final class InterviewKitsTest extends FeatureTestCase
         $interview = $this->activeInterviewId();
 
         $this->api('PUT', "/company/interviews/{$interview}/questions", ['questions' => [['text' => '', 'weight' => 3]]])->assertStatus(422);
-        $this->api('PUT', "/company/interviews/{$interview}/questions", ['questions' => [['text' => 'Q', 'weight' => 6]]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-kit');
-        $this->api('PUT', "/company/interviews/{$interview}/questions", [])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->api('PUT', "/company/interviews/{$interview}/questions", ['questions' => [['text' => 'Q', 'weight' => 6]]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-kit');
+        $this->api('PUT', "/company/interviews/{$interview}/questions", [])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
         $this->api('PUT', "/company/interviews/{$interview}/questions", ['questions' => []])->assertOk();
     }
 

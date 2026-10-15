@@ -123,7 +123,7 @@ final class VideoReviewTest extends FeatureTestCase
             ->assertJsonPath('data.0.question_id', $this->questionId)->assertJsonPath('data.0.type', 'video_answer')->assertJsonPath('data.0.points', 10)
             ->assertJsonPath('data.0.answer', null)->assertJsonPath('data.0.score', null);
 
-        $this->team('PUT', "scoring/questions/{$this->questionId}", ['score' => 11])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-score');
+        $this->team('PUT', "scoring/questions/{$this->questionId}", ['score' => 11])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-score');
         $this->team('PUT', "scoring/questions/{$this->questionId}", ['score' => 8])->assertOk()->assertJsonPath('data.type', 'video_answer')->assertJsonPath('data.score', 8);
 
         $result = $this->team('GET', 'result')->assertOk()->assertJsonPath('data.result.status', 'scored');
@@ -167,7 +167,7 @@ final class VideoReviewTest extends FeatureTestCase
 
         // The access tokens of the test accounts do not live that long, so the team looks again with the clock back.
         $this->freeze(0);
-        $this->stream()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-expired');
+        $this->stream()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-expired');
     }
 
     public function test_the_retention_period_is_a_setting(): void

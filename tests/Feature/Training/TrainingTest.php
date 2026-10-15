@@ -113,14 +113,14 @@ final class TrainingTest extends FeatureTestCase
     {
         Http::fake(['*' => Http::response('down', 500)]);
 
-        $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:training-unavailable');
+        $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:training-unavailable');
     }
 
     public function test_a_moodle_exception_payload_is_a_503_and_never_leaks_the_token(): void
     {
         Http::fake(['*' => Http::response(['exception' => 'moodle_exception', 'errorcode' => 'invalidtoken', 'message' => 'Invalid token '.self::TOKEN])]);
 
-        $response = $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:training-unavailable');
+        $response = $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:training-unavailable');
 
         $this->assertStringNotContainsString(self::TOKEN, $response->getContent());
     }
@@ -130,7 +130,7 @@ final class TrainingTest extends FeatureTestCase
         config(['services.moodle.token' => null]);
         Http::fake();
 
-        $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:training-unavailable');
+        $this->getJson('/api/v1/training/courses')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:training-unavailable');
         Http::assertNothingSent();
     }
 
@@ -178,7 +178,7 @@ final class TrainingTest extends FeatureTestCase
         Http::fake();
         $token = $this->tokenFor($this->seeker('siti2@example.test', null));
 
-        $this->api('GET', '/me/training/courses', [], $token)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:email-not-verified');
+        $this->api('GET', '/me/training/courses', [], $token)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:email-not-verified');
         Http::assertNothingSent();
     }
 
@@ -189,8 +189,8 @@ final class TrainingTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->flushHeaders();
         $this->getJson('/api/v1/me/training/courses')->assertStatus(401);
-        $this->api('GET', '/me/training/courses', [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
-        $this->api('GET', '/me/training/courses', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->api('GET', '/me/training/courses', [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
+        $this->api('GET', '/me/training/courses', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         Http::assertNothingSent();
     }
 }

@@ -162,7 +162,7 @@ final class SavedJobTest extends FeatureTestCase
         $this->guest()->putJson("/api/v1/me/saved-jobs/{$job}")->assertUnauthorized();
 
         foreach ([['GET', '/me/saved-jobs'], ['PUT', "/me/saved-jobs/{$job}"], ['DELETE', "/me/saved-jobs/{$job}"]] as [$method, $uri]) {
-            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         }
     }
 
@@ -176,7 +176,7 @@ final class SavedJobTest extends FeatureTestCase
 
         $extra = $this->liveJob();
 
-        $this->api('PUT', "/me/saved-jobs/{$extra}", token: $this->seekerToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:saved-jobs-limit');
+        $this->api('PUT', "/me/saved-jobs/{$extra}", token: $this->seekerToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:saved-jobs-limit');
         $this->assertSame(SaveJob::MAX_SAVED, $this->savedCount());
 
         // A job that is already saved can be saved again at the limit, and removing one makes room.

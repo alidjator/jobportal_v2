@@ -75,7 +75,7 @@ final class StagedContactDataTest extends FeatureTestCase
             ->assertJsonPath('data.applicant.experiences.0.job_title', 'Backend Developer')
             ->assertJsonPath('data.resume', ['name' => 'Siti CV.pdf']);
 
-        $this->resume()->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:contact-not-available');
+        $this->resume()->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:contact-not-available');
         $this->assertSame(0, DB::table('platform_audit_logs')->where('action', 'application.resume_downloaded')->count());
         $this->assertSame(['', ''], $this->exportedContact());
     }

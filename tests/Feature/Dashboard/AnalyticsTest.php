@@ -153,14 +153,14 @@ final class AnalyticsTest extends FeatureTestCase
     {
         $limited = $this->memberWith(['applications.view'])['token'];
 
-        $this->company('funnel', token: $limited)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required')->assertJsonPath('permission', 'analytics.view');
+        $this->company('funnel', token: $limited)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required')->assertJsonPath('permission', 'analytics.view');
         $this->flushHeaders();
-        $this->company('funnel', token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->company('funnel', token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
         $this->flushHeaders();
         $analyst = $this->memberWith(['applications.view', 'analytics.view'], 'analyst@example.test')['token'];
         $this->company('funnel', token: $analyst)->assertOk();
         $this->flushHeaders();
-        $this->company('funnel', token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->company('funnel', token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->company('funnel', token: $this->adminToken)->assertOk();
 
         $this->flushHeaders();
@@ -172,7 +172,7 @@ final class AnalyticsTest extends FeatureTestCase
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->company('funnel')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->company('funnel')->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     public function test_the_platform_analytics_need_the_analytics_permission(): void
@@ -201,9 +201,9 @@ final class AnalyticsTest extends FeatureTestCase
 
     public function test_the_range_must_end_by_yesterday_and_stay_within_366_days(): void
     {
-        $this->company('funnel', 'from=2026-10-01&to=2026-10-05')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-range');
-        $this->company('funnel', 'from=2026-10-04&to=2026-10-01')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-range');
-        $this->company('funnel', 'from=2025-10-03&to=2026-10-04')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-range');
+        $this->company('funnel', 'from=2026-10-01&to=2026-10-05')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-range');
+        $this->company('funnel', 'from=2026-10-04&to=2026-10-01')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-range');
+        $this->company('funnel', 'from=2025-10-03&to=2026-10-04')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-range');
         $this->company('funnel', 'from=2025-10-04&to=2026-10-04')->assertOk();
         $this->company('funnel', 'from=yesterday')->assertStatus(422)->assertJsonStructure(['errors' => ['from']]);
         $this->company('funnel', 'format=xml')->assertStatus(422)->assertJsonStructure(['errors' => ['format']]);

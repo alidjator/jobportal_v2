@@ -22,7 +22,7 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * The list of error codes a client can receive (the `type` of the problem document is `urn:jobportal:error:<code>`). It is read from the source: every
+ * The list of error codes a client can receive (the `type` of the problem document is `urn:onesis:error:<code>`). It is read from the source: every
  * `new <DomainException>(...)` with its code, the status of its class and the context it is raised in. A code passed through a helper method (a `$code`
  * parameter) is read from the calls of that method in the same file; a code that cannot be read is left out of the list (the test of the catalog file shows
  * the count of those).

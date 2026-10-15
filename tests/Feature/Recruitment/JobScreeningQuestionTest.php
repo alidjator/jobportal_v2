@@ -134,7 +134,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
         $this->setQuestions($job, [['question_id' => $yes, 'required' => false, 'must_have' => true, 'ideal' => ['yes' => true]]])->assertOk()->assertJsonPath('data.0.required', true);
 
         $this->setQuestions($job, [['question_id' => $yes, 'must_have' => true]])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-job-questions')->assertJsonStructure(['errors' => ['questions.0.ideal']]);
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-job-questions')->assertJsonStructure(['errors' => ['questions.0.ideal']]);
         $this->setQuestions($job, [['question_id' => $yes, 'must_have' => true, 'ideal' => ['yes' => 'maybe']]])->assertStatus(422)->assertJsonStructure(['errors' => ['questions.0.ideal']]);
         $this->setQuestions($job, [['question_id' => $yes, 'ideal' => ['yes' => true]]])->assertStatus(422)->assertJsonStructure(['errors' => ['questions.0.ideal']]);
         $this->setQuestions($job, [['question_id' => $text, 'must_have' => true, 'ideal' => ['yes' => true]]])->assertStatus(422)->assertJsonStructure(['errors' => ['questions.0.must_have']]);
@@ -235,7 +235,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
         $this->getJson("/api/v1/company/jobs/{$job}/screening-questions")->assertStatus(401);
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
-        $this->api('GET', "/company/jobs/{$job}/screening-questions")->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->api('GET', "/company/jobs/{$job}/screening-questions")->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->setQuestions($job, [])->assertStatus(403);
     }
 
@@ -247,7 +247,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
 
         foreach (['pending_review', 'taken_down'] as $status) {
             $job = $this->insertJob("In {$status}", $status);
-            $this->setQuestions($job, [['question_id' => $question]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
+            $this->setQuestions($job, [['question_id' => $question]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-editable');
         }
 
         foreach (['draft', 'active', 'closed', 'expired', 'rejected'] as $status) {
@@ -270,7 +270,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
             }
         });
 
-        $this->setQuestions($job, [])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-questions-locked');
+        $this->setQuestions($job, [])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-questions-locked');
         $this->assertSame(1, DB::table('recruitment_job_questions')->count());
         $this->api('GET', "/company/jobs/{$job}/screening-questions")->assertOk()->assertJsonCount(1, 'data');
     }
@@ -281,7 +281,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
         $ids = array_map(fn (int $n): int => $this->question('yes_no', "Question number {$n} to answer"), range(1, 6));
 
         $this->setQuestions($job, array_map(fn (int $id): array => ['question_id' => $id], array_slice($ids, 0, 5)))->assertOk()->assertJsonCount(5, 'data');
-        $this->setQuestions($job, array_map(fn (int $id): array => ['question_id' => $id], $ids))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:screening-limit-reached');
+        $this->setQuestions($job, array_map(fn (int $id): array => ['question_id' => $id], $ids))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:screening-limit-reached');
         $this->assertSame(5, DB::table('recruitment_job_questions')->count());
 
         // The admin lowers the limit: what is attached stays and can be rearranged or reduced, but nothing new is added.
@@ -301,7 +301,7 @@ final class JobScreeningQuestionTest extends FeatureTestCase
         $this->setQuestions($job, [['question_id' => $question]])->assertOk();
         $this->app->make(SettingsStore::class)->setCompanyOverride(RecruitmentSettings::SCREENING_ENABLED, $this->companyId, false, null);
 
-        $this->setQuestions($job, [])->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:screening-disabled');
+        $this->setQuestions($job, [])->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:screening-disabled');
         $this->api('GET', "/company/jobs/{$job}/screening-questions")->assertOk()->assertJsonCount(1, 'data');
     }
 

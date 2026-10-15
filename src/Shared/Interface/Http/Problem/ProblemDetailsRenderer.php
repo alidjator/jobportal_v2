@@ -24,7 +24,7 @@ use Throwable;
  */
 final class ProblemDetailsRenderer
 {
-    public const string TYPE_PREFIX = 'urn:jobportal:error:';
+    public const string TYPE_PREFIX = 'urn:onesis:error:';
 
     public const string CONTENT_TYPE = 'application/problem+json';
 

@@ -183,7 +183,7 @@ final class AuditLogReadTest extends FeatureTestCase
         $this->entry('2026-10-03 10:00:00.000000');
 
         foreach (['garbage', rtrim(strtr(base64_encode('{"a":1}'), '+/', '-_'), '='), rtrim(strtr(base64_encode('["not a time", 5]'), '+/', '-_'), '=')] as $cursor) {
-            $this->logs('?cursor='.$cursor)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cursor');
+            $this->logs('?cursor='.$cursor)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cursor');
         }
     }
 

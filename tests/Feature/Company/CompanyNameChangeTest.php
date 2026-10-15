@@ -135,7 +135,7 @@ final class CompanyNameChangeTest extends FeatureTestCase
 
     public function test_a_verified_company_cannot_rename_itself_in_the_profile_but_may_change_the_rest(): void
     {
-        $this->api('PATCH', '/company/profile', ['name' => 'PT Baru'])->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-locked');
+        $this->api('PATCH', '/company/profile', ['name' => 'PT Baru'])->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-locked');
         $this->assertSame('PT Maju Bersama', DB::table('company_companies')->where('id', $this->companyId)->value('name'));
 
         $this->api('PATCH', '/company/profile', ['name' => 'PT Maju Bersama', 'bio' => 'We hire.'])->assertNoContent();
@@ -149,7 +149,7 @@ final class CompanyNameChangeTest extends FeatureTestCase
         $this->api('PATCH', '/company/profile', ['name' => 'PT Baru'])->assertNoContent();
         $this->assertSame('PT Baru', DB::table('company_companies')->where('id', $this->companyId)->value('name'));
 
-        $this->ask()->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-not-locked');
+        $this->ask()->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-not-locked');
         $this->assertSame(0, DB::table('company_name_change_requests')->count());
     }
 
@@ -179,14 +179,14 @@ final class CompanyNameChangeTest extends FeatureTestCase
 
     public function test_only_a_member_who_may_change_the_profile_asks(): void
     {
-        $this->ask(token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->ask(token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
         $this->api('GET', '/company/name-change-requests', token: $this->recruiterToken)->assertForbidden();
 
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->postJson('/api/v1/company/name-change-requests', [])->assertUnauthorized();
 
         DB::table('company_companies')->update(['status' => 'suspended']);
-        $this->ask()->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->ask()->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
 
         $this->assertSame(0, DB::table('company_name_change_requests')->count());
         $this->assertSame([], Storage::allFiles());
@@ -194,13 +194,13 @@ final class CompanyNameChangeTest extends FeatureTestCase
 
     public function test_the_fields_and_the_file_are_checked(): void
     {
-        $this->ask(['new_name' => 'pt maju bersama'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-name-change')->assertJsonPath('errors.new_name.0', 'The new name is the same as the current name.');
-        $this->ask(['new_name' => 'X', 'reason' => 'no'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-name-change')
+        $this->ask(['new_name' => 'pt maju bersama'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-name-change')->assertJsonPath('errors.new_name.0', 'The new name is the same as the current name.');
+        $this->ask(['new_name' => 'X', 'reason' => 'no'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-name-change')
             ->assertJsonStructure(['errors' => ['new_name', 'reason']]);
-        $this->ask(['reason' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-name-change');
-        $this->ask(contents: '')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->ask(contents: "\x89PNG\r\n\x1a\n not a pdf")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-document');
-        $this->ask(contents: '%PDF-'.str_repeat('a', 10 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large')->assertJsonPath('max_size_kb', 10240);
+        $this->ask(['reason' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-name-change');
+        $this->ask(contents: '')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->ask(contents: "\x89PNG\r\n\x1a\n not a pdf")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-document');
+        $this->ask(contents: '%PDF-'.str_repeat('a', 10 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large')->assertJsonPath('max_size_kb', 10240);
 
         $this->assertSame(0, DB::table('company_name_change_requests')->count());
         $this->assertSame([], Storage::allFiles());
@@ -210,7 +210,7 @@ final class CompanyNameChangeTest extends FeatureTestCase
     {
         $first = $this->requestId();
 
-        $this->ask(['new_name' => 'PT Lain Lagi'])->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-change-pending');
+        $this->ask(['new_name' => 'PT Lain Lagi'])->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-change-pending');
         $this->assertCount(1, Storage::allFiles(), 'the file of the refused request is not kept');
 
         $this->api('POST', "/company/name-change-requests/{$first}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.decided_at', '2026-10-05T09:00:00+00:00');
@@ -236,7 +236,7 @@ final class CompanyNameChangeTest extends FeatureTestCase
         $this->api('POST', "/company/name-change-requests/{$second}/cancel", token: $otherToken)->assertNotFound();
         $this->api('GET', '/company/name-change-requests', token: $otherToken)->assertOk()->assertJsonCount(0, 'data');
 
-        $this->api('POST', "/company/name-change-requests/{$first}/cancel")->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-change-not-pending');
+        $this->api('POST', "/company/name-change-requests/{$first}/cancel")->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-change-not-pending');
         $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'company.name_change_cancelled')->count());
     }
 
@@ -317,8 +317,8 @@ final class CompanyNameChangeTest extends FeatureTestCase
         $this->assertSame(['admin', $this->opsId, $this->companyId], [$entry->actor_type, (int) $entry->actor_id, (int) $entry->company_id]);
         $this->assertSame(['request_id' => $id, 'from' => 'PT Maju Bersama', 'to' => 'PT Maju Sejahtera'], json_decode((string) $entry->metadata, true));
 
-        $this->ops('POST', "/{$id}/approve")->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-change-not-pending');
-        $this->ops('POST', "/{$id}/reject", ['note' => 'Too late now.'])->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:name-change-not-pending');
+        $this->ops('POST', "/{$id}/approve")->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-change-not-pending');
+        $this->ops('POST', "/{$id}/reject", ['note' => 'Too late now.'])->assertConflict()->assertJsonPath('type', 'urn:onesis:error:name-change-not-pending');
         $this->assertSame('PT Maju Sejahtera', DB::table('company_companies')->where('id', $this->companyId)->value('name'));
     }
 
@@ -326,7 +326,7 @@ final class CompanyNameChangeTest extends FeatureTestCase
     {
         $id = $this->requestId();
 
-        $this->ops('POST', "/{$id}/reject")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->ops('POST', "/{$id}/reject")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
         $this->ops('POST', "/{$id}/reject", ['note' => 'abc'])->assertStatus(422);
         $this->assertSame('pending', DB::table('company_name_change_requests')->value('status'));
 

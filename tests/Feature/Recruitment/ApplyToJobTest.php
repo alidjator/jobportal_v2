@@ -142,10 +142,10 @@ final class ApplyToJobTest extends FeatureTestCase
         $this->flushHeaders();
         $this->postJson("/api/v1/jobs/{$job}/applications", ['resume_id' => 1])->assertStatus(401);
 
-        $this->apply($job, token: $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->apply($job, token: $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
 
         $unverified = $this->tokenFor($this->seeker('new@example.test', null));
-        $this->apply($job, token: $unverified)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-not-verified');
+        $this->apply($job, token: $unverified)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-not-verified');
         $this->assertSame(0, DB::table('recruitment_applications')->count());
     }
 
@@ -165,7 +165,7 @@ final class ApplyToJobTest extends FeatureTestCase
         $job = $this->liveJob();
         $this->apply($job)->assertCreated();
 
-        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
 
         $this->assertSame(1, DB::table('recruitment_applications')->count());
         $this->assertCount(1, Storage::allFiles('recruitment/applications'));
@@ -194,7 +194,7 @@ final class ApplyToJobTest extends FeatureTestCase
         $token = $this->tokenFor($this->seeker('empty@example.test'));
 
         $this->apply($this->liveJob(), ['resume_id' => 1], $token)->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:profile-incomplete')
+            ->assertJsonPath('type', 'urn:onesis:error:profile-incomplete')
             ->assertJsonPath('missing', ['phone', 'location', 'history', 'resume']);
     }
 
@@ -205,8 +205,8 @@ final class ApplyToJobTest extends FeatureTestCase
         $job = $this->liveJob();
 
         $this->apply($job, ['resume_id' => $otherResume])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-application')->assertJsonPath('errors.resume_id.0', 'Choose one of your own resumes.');
-        $this->apply($job, ['resume_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-application');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-application')->assertJsonPath('errors.resume_id.0', 'Choose one of your own resumes.');
+        $this->apply($job, ['resume_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-application');
         $this->assertSame(0, DB::table('recruitment_applications')->count());
     }
 
@@ -214,7 +214,7 @@ final class ApplyToJobTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->apply($job, ['cover_letter' => str_repeat('a', 2001)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-application')->assertJsonStructure(['errors' => ['cover_letter']]);
+        $this->apply($job, ['cover_letter' => str_repeat('a', 2001)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-application')->assertJsonStructure(['errors' => ['cover_letter']]);
         $this->apply($job, ['cover_letter' => '   '])->assertCreated();
 
         $this->assertNull(DB::table('recruitment_applications')->value('cover_letter'));
@@ -241,7 +241,7 @@ final class ApplyToJobTest extends FeatureTestCase
         $this->apply($first)->assertCreated();
         $this->apply($second)->assertCreated();
 
-        $response = $this->apply($third)->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:application-limit-reached');
+        $response = $this->apply($third)->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:application-limit-reached');
         // 09:00 UTC is 16:00 in Jakarta: eight hours to midnight.
         $this->assertSame('28800', $response->headers->get('Retry-After'));
 
@@ -259,7 +259,7 @@ final class ApplyToJobTest extends FeatureTestCase
         $city = $this->question('single_choice', 'Where do you live?', ['Jakarta', 'Bandung']);
         $this->setQuestions($job, [['question_id' => $relocate, 'required' => true], ['question_id' => $city]]);
 
-        $errors = fn (TestResponse $response): array => $response->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answers')->json('errors');
+        $errors = fn (TestResponse $response): array => $response->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answers')->json('errors');
 
         $this->assertSame(['This question needs an answer.'], $errors($this->apply($job))['answers.'.$relocate]);
         $this->assertSame(['The answer does not fit the question.'], $errors($this->apply($job, ['answers' => [['question_id' => $relocate, 'value' => 'yes']]]))['answers.'.$relocate]);

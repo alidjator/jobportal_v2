@@ -63,8 +63,8 @@ final class PipelineJourneyTest extends FeatureTestCase
         $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.rejected')->count());
 
         // 5. The application is final: the applicant can neither withdraw nor apply again, and the recruiter cannot move it.
-        $this->api('POST', "/me/applications/{$id}/withdraw", token: $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-not-withdrawable');
-        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->api('POST', "/me/applications/{$id}/withdraw", token: $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-not-withdrawable');
+        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
         $this->api('POST', "/company/applications/{$id}/move", ['stage_id' => $this->stage('offer')], $this->recruiterToken)->assertStatus(409);
 
         // 6. The recruiter's history tells the whole story.

@@ -140,7 +140,7 @@ final class InAppNotificationsTest extends FeatureTestCase
         $this->api('GET', '?filter[read]=maybe')->assertStatus(422);
         $this->api('GET', '?filter[type]=x')->assertStatus(422);
         $this->api('GET', '?per_page=101')->assertStatus(422);
-        $this->api('GET', '?cursor=not-a-cursor')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cursor');
+        $this->api('GET', '?cursor=not-a-cursor')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cursor');
     }
 
     public function test_the_unread_count_ignores_read_and_foreign_notifications(): void

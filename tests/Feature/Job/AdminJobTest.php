@@ -265,8 +265,8 @@ final class AdminJobTest extends FeatureTestCase
         foreach (['draft', 'active', 'closed', 'expired', 'rejected', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status, attributes: ['deadline' => '2026-12-31']);
 
-            $this->admin('POST', "/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-pending-review');
-            $this->admin('POST', "/{$id}/reject", ['reason' => 'Some reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-pending-review');
+            $this->admin('POST', "/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-pending-review');
+            $this->admin('POST', "/{$id}/reject", ['reason' => 'Some reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-pending-review');
             $this->assertSame($status, $this->jobRow($id)->status);
         }
 
@@ -278,7 +278,7 @@ final class AdminJobTest extends FeatureTestCase
     {
         $pending = $this->pending('Late', ['deadline' => '2026-10-04']);
 
-        $this->admin('POST', "/{$pending}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-deadline-passed');
+        $this->admin('POST', "/{$pending}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-deadline-passed');
 
         $this->assertSame('pending_review', $this->jobRow($pending)->status);
         $this->assertNull($this->jobRow($pending)->reviewed_at);
@@ -394,10 +394,10 @@ final class AdminJobTest extends FeatureTestCase
         $this->assertSame(['from' => 'active', 'to' => 'taken_down', 'reason' => 'It misleads applicants.'], json_decode((string) $this->audit('job.taken_down')[0]->metadata, true));
         $this->assertSame([['type' => 'job.taken_down', 'data' => ['job_id' => $id, 'reason' => 'It misleads applicants.']]], $this->notificationsOf($this->adminId));
 
-        $this->api('PATCH', "/company/jobs/{$id}", ['title' => 'Changed'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
-        $this->api('POST', "/company/jobs/{$id}/close")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-active');
-        $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-publishable');
-        $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-30'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-reopenable');
+        $this->api('PATCH', "/company/jobs/{$id}", ['title' => 'Changed'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-editable');
+        $this->api('POST', "/company/jobs/{$id}/close")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-active');
+        $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-publishable');
+        $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-30'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-reopenable');
         $this->api('GET', "/company/jobs/{$id}")->assertOk()->assertJsonPath('data.status_reason', 'It misleads applicants.');
     }
 
@@ -406,7 +406,7 @@ final class AdminJobTest extends FeatureTestCase
         foreach (['draft', 'pending_review', 'closed', 'expired', 'rejected', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->admin('POST', "/{$id}/take-down", ['reason' => 'Some reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-active');
+            $this->admin('POST', "/{$id}/take-down", ['reason' => 'Some reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-active');
             $this->assertSame($status, $this->jobRow($id)->status);
         }
     }
@@ -429,7 +429,7 @@ final class AdminJobTest extends FeatureTestCase
         foreach (['draft', 'pending_review', 'active', 'closed', 'expired', 'rejected'] as $status) {
             $id = $this->insertJob("Job {$status}", $status, attributes: ['deadline' => '2026-12-31']);
 
-            $this->admin('POST', "/{$id}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-taken-down');
+            $this->admin('POST', "/{$id}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-taken-down');
             $this->assertSame($status, $this->jobRow($id)->status);
         }
     }

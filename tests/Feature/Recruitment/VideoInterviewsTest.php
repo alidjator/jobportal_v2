@@ -197,7 +197,7 @@ final class VideoInterviewsTest extends FeatureTestCase
     {
         $this->confirmedVideoInterview();
 
-        $this->team('join', $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-an-interview-participant');
+        $this->team('join', $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-an-interview-participant');
         $this->team('lobby', $this->adminToken, 'GET')->assertForbidden();
         $this->team('admit', $this->adminToken)->assertForbidden();
         $this->team('join', $this->secondRecruiterToken)->assertNotFound();
@@ -210,8 +210,8 @@ final class VideoInterviewsTest extends FeatureTestCase
     {
         $this->confirmedVideoInterview(['starts_at' => $this->minutesFromNow(30)]);
 
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-window-closed');
-        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-window-closed');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-window-closed');
+        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-window-closed');
 
         Carbon::setTestNow(now()->addMinutes(20));
         $this->team('join')->assertOk();
@@ -220,21 +220,21 @@ final class VideoInterviewsTest extends FeatureTestCase
         $this->team('join')->assertOk();
 
         Carbon::setTestNow(now()->addMinutes(1));
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-window-closed');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-window-closed');
     }
 
     public function test_a_video_interview_must_be_confirmed_and_switched_on(): void
     {
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-interview');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-interview');
 
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5))], $this->recruiterToken)->assertNoContent();
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:interview-not-confirmed');
-        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:interview-not-confirmed');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-confirmed');
+        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-confirmed');
 
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
         $this->app->make(SettingsStore::class)->setGlobal(InterviewSettings::VIDEO_ENABLED, false, null);
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-disabled');
-        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-disabled');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-disabled');
+        $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-disabled');
     }
 
     public function test_an_interview_that_is_not_video_has_no_room(): void
@@ -242,8 +242,8 @@ final class VideoInterviewsTest extends FeatureTestCase
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->interviewSchedule(['starts_at' => $this->minutesFromNow(5)])], $this->recruiterToken)->assertNoContent();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
 
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-a-video-interview');
-        $this->mine('lobby', 'GET')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-a-video-interview');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-a-video-interview');
+        $this->mine('lobby', 'GET')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-a-video-interview');
     }
 
     public function test_the_number_of_rooms_open_at_once_is_capped(): void
@@ -256,7 +256,7 @@ final class VideoInterviewsTest extends FeatureTestCase
         $this->api('POST', "/me/applications/{$second}/interview/confirm", [], $this->seekerToken)->assertOk();
 
         $this->team('join')->assertOk();
-        $this->team('join', id: $second)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-capacity-full');
+        $this->team('join', id: $second)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-capacity-full');
         $this->assertCount(1, $this->sentToRoom('create'));
         $this->team('join')->assertOk();
     }
@@ -268,12 +268,12 @@ final class VideoInterviewsTest extends FeatureTestCase
         $this->confirmedVideoInterview();
 
         $this->janusDown = true;
-        $this->team('join')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:video-server-unavailable');
+        $this->team('join')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:video-server-unavailable');
         $this->assertNull($this->roomRow()->video_room_id);
 
         $this->janusDown = false;
         config(['services.janus.admin_secret' => '']);
-        $this->team('join')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:video-server-unavailable');
+        $this->team('join')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:video-server-unavailable');
     }
 
     public function test_a_room_whose_token_was_refused_is_destroyed_and_not_kept(): void
@@ -327,12 +327,12 @@ final class VideoInterviewsTest extends FeatureTestCase
     {
         $this->confirmedVideoInterview();
 
-        $this->team('admit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:candidate-not-waiting');
+        $this->team('admit')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:candidate-not-waiting');
         $this->mine('join')->assertOk();
 
         Carbon::setTestNow(now()->addSeconds(61));
         $this->team('lobby', method: 'GET')->assertOk()->assertJsonPath('data.state', 'idle');
-        $this->team('admit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:candidate-not-waiting');
+        $this->team('admit')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:candidate-not-waiting');
 
         $this->mine('lobby', 'GET')->assertOk()->assertJsonPath('data.state', 'waiting');
         $this->team('lobby', method: 'GET')->assertOk()->assertJsonPath('data.state', 'waiting');

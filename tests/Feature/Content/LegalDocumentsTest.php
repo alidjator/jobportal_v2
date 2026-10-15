@@ -75,7 +75,7 @@ final class LegalDocumentsTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->withToken($this->adminToken(['faqs.manage'], 'faq@example.test'))->getJson('/api/v1/admin/legal-documents')
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:forbidden');
+            ->assertJsonPath('type', 'urn:onesis:error:forbidden');
     }
 
     public function test_drafts_get_consecutive_versions_per_type(): void
@@ -108,7 +108,7 @@ final class LegalDocumentsTest extends FeatureTestCase
             ->assertOk()
             ->assertJsonPath('data.title', ['id' => 'Judul', 'en' => '']);
 
-        $this->publish($token, $id)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:legal-document-incomplete');
+        $this->publish($token, $id)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:legal-document-incomplete');
     }
 
     public function test_publishing_locks_the_document_and_replaces_the_active_version(): void
@@ -126,7 +126,7 @@ final class LegalDocumentsTest extends FeatureTestCase
         $statuses = DB::table('content_legal_documents')->where('type', 'terms')->orderBy('version')->pluck('status')->all();
         $this->assertSame(['archived', 'published'], $statuses);
 
-        $this->publish($token, $second)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:legal-document-not-draft');
+        $this->publish($token, $second)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:legal-document-not-draft');
 
         foreach ([$first, $second] as $id) {
             $this->app['auth']->forgetGuards();
@@ -191,7 +191,7 @@ final class LegalDocumentsTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->getJson("/api/v1/admin/legal-documents/{$id}")->assertOk()->assertJsonPath('data.id', $id);
         $this->app['auth']->forgetGuards();
-        $this->withToken($token)->getJson('/api/v1/admin/legal-documents/999999')->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:not-found');
+        $this->withToken($token)->getJson('/api/v1/admin/legal-documents/999999')->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:not-found');
         $this->publish($token, 999999)->assertStatus(404);
     }
 
@@ -233,7 +233,7 @@ final class LegalDocumentsTest extends FeatureTestCase
 
         $this->getJson('/api/v1/legal-documents/terms')->assertStatus(404);
         $this->getJson('/api/v1/legal-documents/terms/versions/1')->assertStatus(404);
-        $this->getJson('/api/v1/legal-documents/cookies')->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:not-found');
+        $this->getJson('/api/v1/legal-documents/cookies')->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:not-found');
     }
 
     public function test_a_specific_published_or_archived_version_can_be_read(): void

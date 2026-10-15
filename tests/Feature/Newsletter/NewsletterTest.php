@@ -136,7 +136,7 @@ final class NewsletterTest extends FeatureTestCase
         $this->visitor('/subscribers', ['email' => 'budi@example.test'])->assertStatus(202);
         $token = $this->tokenIn($this->lastMail());
 
-        $this->visitor('/confirm', ['token' => 'wrong'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:newsletter-token-invalid');
+        $this->visitor('/confirm', ['token' => 'wrong'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:newsletter-token-invalid');
         $this->visitor('/confirm', ['token' => $token])->assertNoContent();
 
         $row = DB::table('newsletter_subscribers')->first();
@@ -144,7 +144,7 @@ final class NewsletterTest extends FeatureTestCase
         $this->assertNull($row->confirm_token_hash);
         $this->assertNotNull($row->confirmed_at);
 
-        $this->visitor('/confirm', ['token' => $token])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:newsletter-token-invalid');
+        $this->visitor('/confirm', ['token' => $token])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:newsletter-token-invalid');
     }
 
     public function test_a_link_older_than_three_days_is_refused(): void
@@ -154,7 +154,7 @@ final class NewsletterTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-13 09:00:01');
 
-        $this->visitor('/confirm', ['token' => $token])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:newsletter-token-invalid');
+        $this->visitor('/confirm', ['token' => $token])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:newsletter-token-invalid');
         $this->assertSame('pending', DB::table('newsletter_subscribers')->value('status'));
     }
 
@@ -198,7 +198,7 @@ final class NewsletterTest extends FeatureTestCase
         $this->visitor('/subscribers', [])->assertStatus(422);
 
         config(['app.newsletter_confirm_url' => null]);
-        $this->visitor('/subscribers', ['email' => 'budi@example.test'])->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:newsletter-unavailable');
+        $this->visitor('/subscribers', ['email' => 'budi@example.test'])->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:newsletter-unavailable');
         $this->assertSame(0, DB::table('newsletter_subscribers')->count());
 
         config(['app.newsletter_confirm_url' => self::CONFIRM_URL, 'app.newsletter_unsubscribe_url' => 'https://no-placeholder.example.test']);
@@ -245,7 +245,7 @@ final class NewsletterTest extends FeatureTestCase
         $token = app(UnsubscribeTokens::class)->forSubscriber($id);
         [$number, $signature] = explode('.', $token);
 
-        $this->visitor('/unsubscribe', ['token' => ($number + 1).'.'.$signature])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:newsletter-token-invalid');
+        $this->visitor('/unsubscribe', ['token' => ($number + 1).'.'.$signature])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:newsletter-token-invalid');
         $this->visitor('/unsubscribe', ['token' => $number.'.'.str_repeat('0', 64)])->assertStatus(422);
         $this->visitor('/unsubscribe', ['token' => 'garbage'])->assertStatus(422);
         $this->visitor('/unsubscribe/'.$number.'.'.str_repeat('a', 64))->assertStatus(422);
@@ -372,9 +372,9 @@ final class NewsletterTest extends FeatureTestCase
         $this->admin('POST', "/issues/{$id}/send")->assertStatus(202);
         $before = count($this->sent());
 
-        $this->admin('POST', "/issues/{$id}/send")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:newsletter-issue-not-draft');
-        $this->admin('PUT', "/issues/{$id}", ['subject' => 'x', 'body' => 'y'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:newsletter-issue-not-draft');
-        $this->admin('DELETE', "/issues/{$id}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:newsletter-issue-not-draft');
+        $this->admin('POST', "/issues/{$id}/send")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:newsletter-issue-not-draft');
+        $this->admin('PUT', "/issues/{$id}", ['subject' => 'x', 'body' => 'y'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:newsletter-issue-not-draft');
+        $this->admin('DELETE', "/issues/{$id}")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:newsletter-issue-not-draft');
 
         $this->app->make(DispatchIssue::class)->execute($id);
         $this->assertCount($before, $this->sent(), 'a repeated dispatch sends nothing again');
@@ -387,7 +387,7 @@ final class NewsletterTest extends FeatureTestCase
         $this->visitor('/subscribers', ['email' => 'pending@example.test'])->assertStatus(202);
         $id = $this->issue();
 
-        $this->admin('POST', "/issues/{$id}/send")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:newsletter-no-recipients');
+        $this->admin('POST', "/issues/{$id}/send")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:newsletter-no-recipients');
         $this->assertSame('draft', DB::table('newsletter_issues')->value('status'));
         $this->assertSame(0, DB::table('platform_audit_logs')->where('action', 'newsletter.issue_sent')->count());
     }
@@ -398,7 +398,7 @@ final class NewsletterTest extends FeatureTestCase
         $id = $this->issue();
         config(['app.newsletter_unsubscribe_url' => null]);
 
-        $this->admin('POST', "/issues/{$id}/send")->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:newsletter-unavailable');
+        $this->admin('POST', "/issues/{$id}/send")->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:newsletter-unavailable');
         $this->assertSame('draft', DB::table('newsletter_issues')->value('status'));
     }
 

@@ -275,7 +275,7 @@ final class DashboardTest extends FeatureTestCase
         $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->recruiterToken)->assertOk();
         $this->api('GET', "/company/jobs/{$admins}/performance", [], $this->recruiterToken)->assertNotFound();
         $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->otherAdminToken)->assertNotFound();
-        $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', "/company/jobs/{$mine}/performance", [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
     }
 
     public function test_a_job_without_views_has_no_rate(): void
@@ -304,8 +304,8 @@ final class DashboardTest extends FeatureTestCase
     public function test_each_dashboard_refuses_the_wrong_kind_of_account(): void
     {
         $this->flushHeaders();
-        $this->mine($this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
-        $this->company($this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->mine($this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
+        $this->company($this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->app['auth']->forgetGuards();
         $this->flushHeaders();
         $this->getJson('/api/v1/me/dashboard')->assertStatus(401);
@@ -319,7 +319,7 @@ final class DashboardTest extends FeatureTestCase
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->company()->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->company()->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     // ----- admin -----

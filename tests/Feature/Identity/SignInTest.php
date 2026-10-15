@@ -88,7 +88,7 @@ final class SignInTest extends FeatureTestCase
         $unknownEmail = $this->postJson('/api/v1/auth/login', ['email' => 'ghost@example.test', 'password' => 'nope'])->assertStatus(401);
 
         $this->assertSame($wrongPassword->json(), $unknownEmail->json());
-        $this->assertSame('urn:jobportal:error:invalid-credentials', $wrongPassword->json('type'));
+        $this->assertSame('urn:onesis:error:invalid-credentials', $wrongPassword->json('type'));
         Event::assertDispatchedTimes(SignInFailed::class, 2);
     }
 
@@ -98,7 +98,7 @@ final class SignInTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/login', ['email' => 'siti@example.test', 'password' => self::PASSWORD])
             ->assertStatus(401)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-credentials');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-credentials');
     }
 
     public function test_a_suspended_account_is_refused_only_after_the_password_is_verified(): void
@@ -110,7 +110,7 @@ final class SignInTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/login', ['email' => 'siti@example.test', 'password' => self::PASSWORD])
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:account-suspended');
+            ->assertJsonPath('type', 'urn:onesis:error:account-suspended');
     }
 
     public function test_a_deactivated_account_waiting_for_deletion_is_told_the_deletion_date(): void
@@ -119,7 +119,7 @@ final class SignInTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/login', ['email' => 'siti@example.test', 'password' => self::PASSWORD])
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:account-deactivated')
+            ->assertJsonPath('type', 'urn:onesis:error:account-deactivated')
             ->assertJsonPath('detail', 'This account is scheduled for deletion on 2026-10-31. Cancel the deletion to restore it.');
     }
 
@@ -135,7 +135,7 @@ final class SignInTest extends FeatureTestCase
         $this->postJson('/api/v1/auth/login', ['email' => 'siti@example.test', 'password' => self::PASSWORD])
             ->assertStatus(429)
             ->assertHeader('Retry-After')
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
 
         $this->postJson('/api/v1/auth/login', ['email' => 'other@example.test', 'password' => 'nope'])->assertStatus(401);
 
@@ -163,7 +163,7 @@ final class SignInTest extends FeatureTestCase
     {
         $this->postJson('/api/v1/auth/login', ['email' => 'not-an-email'])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:validation-failed')
+            ->assertJsonPath('type', 'urn:onesis:error:validation-failed')
             ->assertJsonValidationErrors(['email', 'password'], 'errors');
     }
 

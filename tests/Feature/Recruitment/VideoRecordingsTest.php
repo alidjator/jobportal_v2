@@ -186,7 +186,7 @@ final class VideoRecordingsTest extends FeatureTestCase
         $this->assertTrue($this->sentToRoom('enable_recording')[0]['body']['record']);
         Event::assertDispatched(RecordingChangedBroadcast::class, fn (RecordingChangedBroadcast $event): bool => $event->recording && $event->interviewId === $this->interviewId());
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-in-progress');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-in-progress');
 
         $stopped = $this->recording('stop')->assertOk()->assertJsonPath('data.status', 'processing');
         $this->assertNotNull($stopped->json('data.stopped_at'));
@@ -194,7 +194,7 @@ final class VideoRecordingsTest extends FeatureTestCase
         Event::assertDispatched(RecordingChangedBroadcast::class, fn (RecordingChangedBroadcast $event): bool => ! $event->recording);
         $this->assertSame(1, $this->convertRequests());
 
-        $this->recording('stop')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-recording');
+        $this->recording('stop')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-recording');
     }
 
     public function test_the_converter_is_asked_with_the_shared_secret_and_the_raw_directory(): void
@@ -210,14 +210,14 @@ final class VideoRecordingsTest extends FeatureTestCase
     {
         $this->consentedInterview('refused');
         $this->join()->assertOk();
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-allowed');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-allowed');
     }
 
     public function test_only_the_panel_may_record_and_the_room_must_be_open(): void
     {
         $this->consentedInterview();
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-room-not-open');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-room-not-open');
 
         $this->join()->assertOk();
         $this->recording('start', $this->secondRecruiterToken)->assertNotFound();
@@ -234,7 +234,7 @@ final class VideoRecordingsTest extends FeatureTestCase
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
         $this->join()->assertOk();
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-allowed');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-allowed');
     }
 
     public function test_a_recording_that_the_video_server_refuses_leaves_nothing_behind(): void
@@ -255,7 +255,7 @@ final class VideoRecordingsTest extends FeatureTestCase
 
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", [], $this->seekerToken)->assertOk();
         $this->assertSame('withdrawn', DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->value('recording_consent'));
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-allowed');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-allowed');
     }
 
     public function test_withdrawing_the_consent_is_refused_after_the_recording_started(): void
@@ -264,7 +264,7 @@ final class VideoRecordingsTest extends FeatureTestCase
 
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", [], $this->seekerToken)
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:recording-started');
+            ->assertJsonPath('type', 'urn:onesis:error:recording-started');
         $this->assertSame('granted', DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->value('recording_consent'));
     }
 
@@ -315,7 +315,7 @@ final class VideoRecordingsTest extends FeatureTestCase
 
         $this->assertSame('failed', DB::table('recruitment_interview_recordings')->find($id)->status);
         $this->assertDirectoryDoesNotExist("{$this->volume}/raw/{$id}");
-        $this->api('GET', "/company/interviews/{$this->interviewId()}/recordings/{$id}/file", [], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-ready');
+        $this->api('GET', "/company/interviews/{$this->interviewId()}/recordings/{$id}/file", [], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-ready');
     }
 
     public function test_a_converter_that_cannot_be_reached_marks_the_recording_failed_after_the_last_retry(): void
@@ -348,7 +348,7 @@ final class VideoRecordingsTest extends FeatureTestCase
     {
         $id = $this->stoppedRecording();
 
-        $this->webhook('recordings', ['recording_id' => $id, 'status' => 'failed'], null)->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:invalid-webhook-credentials');
+        $this->webhook('recordings', ['recording_id' => $id, 'status' => 'failed'], null)->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:invalid-webhook-credentials');
         $this->webhook('recordings', ['recording_id' => $id, 'status' => 'failed'], 'wrong')->assertUnauthorized();
         $this->webhook('events', [], null)->assertUnauthorized();
 
@@ -439,7 +439,7 @@ final class VideoRecordingsTest extends FeatureTestCase
         $id = (int) $this->recording('start')->assertCreated()->json('data.id');
         $url = "/company/interviews/{$this->interviewId()}/recordings/{$id}";
 
-        $this->api('DELETE', $url, [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-finished');
+        $this->api('DELETE', $url, [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-finished');
 
         $this->recording('stop')->assertOk();
         $this->converted($id);

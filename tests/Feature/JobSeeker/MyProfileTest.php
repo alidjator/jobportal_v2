@@ -60,7 +60,7 @@ final class MyProfileTest extends FeatureTestCase
         $this->patchJson('/api/v1/me/profile', [])->assertStatus(401);
 
         $member = $this->account('company_member', 'member@example.test');
-        $this->api('GET', '/me/profile', token: $this->tokenFor($member))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->api('GET', '/me/profile', token: $this->tokenFor($member))->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         $this->api('PATCH', '/me/profile', ['headline' => 'Hello'], $this->tokenFor($member))->assertStatus(403);
         $this->assertSame(0, DB::table('jobseeker_profiles')->count());
     }
@@ -144,7 +144,7 @@ final class MyProfileTest extends FeatureTestCase
     {
         Carbon::setTestNow('2026-10-05 09:00:00');
 
-        $this->api('PATCH', '/me/profile', ['birth_date' => '2011-10-06'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-profile')->assertJsonStructure(['errors' => ['birth_date']]);
+        $this->api('PATCH', '/me/profile', ['birth_date' => '2011-10-06'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-profile')->assertJsonStructure(['errors' => ['birth_date']]);
         $this->api('PATCH', '/me/profile', ['birth_date' => '2020-01-01'])->assertStatus(422);
         $this->api('PATCH', '/me/profile', ['birth_date' => '2011-10-05'])->assertOk()->assertJsonPath('data.birth_date', '2011-10-05');
         $this->api('PATCH', '/me/profile', ['birth_date' => null])->assertOk()->assertJsonPath('data.birth_date', null);
@@ -161,7 +161,7 @@ final class MyProfileTest extends FeatureTestCase
         Carbon::setTestNow('2026-10-05 09:00:00');
 
         // Born on 5 October 1965 is 61 today; born the next day, still 60.
-        $this->api('PATCH', '/me/profile', ['birth_date' => '1965-10-05'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-profile')->assertJsonStructure(['errors' => ['birth_date']]);
+        $this->api('PATCH', '/me/profile', ['birth_date' => '1965-10-05'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-profile')->assertJsonStructure(['errors' => ['birth_date']]);
         $this->api('PATCH', '/me/profile', ['birth_date' => '1950-01-01'])->assertStatus(422);
         $this->api('PATCH', '/me/profile', ['birth_date' => '1965-10-06'])->assertOk()->assertJsonPath('data.birth_date', '1965-10-06');
 
@@ -269,7 +269,7 @@ final class MyProfileTest extends FeatureTestCase
         $this->api('PATCH', '/me/profile', ['religion_id' => $religion, 'nationality_id' => $nationality, 'experience_level_id' => $level])->assertOk()
             ->assertJsonPath('data.religion_id', $religion)->assertJsonPath('data.nationality_id', $nationality)->assertJsonPath('data.experience_level_id', $level);
 
-        $this->api('PATCH', '/me/profile', ['religion_id' => 999_999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-profile')->assertJsonStructure(['errors' => ['religion_id']]);
+        $this->api('PATCH', '/me/profile', ['religion_id' => 999_999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-profile')->assertJsonStructure(['errors' => ['religion_id']]);
 
         $inactive = $this->referenceId('reference_nationalities', 'retired', ['is_active' => false]);
         $this->api('PATCH', '/me/profile', ['nationality_id' => $inactive])->assertStatus(422)->assertJsonStructure(['errors' => ['nationality_id']]);
@@ -298,8 +298,8 @@ final class MyProfileTest extends FeatureTestCase
         $this->api('PATCH', '/me/profile', [...$chain, 'address_line' => 'Jl. Setiabudi 1'])->assertOk()
             ->assertJsonPath('data.province_id', $chain['province_id'])->assertJsonPath('data.postal_code_id', $chain['postal_code_id']);
 
-        $this->api('PATCH', '/me/profile', ['province_id' => $otherProvince])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
-        $this->api('PATCH', '/me/profile', ['province_id' => null])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->api('PATCH', '/me/profile', ['province_id' => $otherProvince])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
+        $this->api('PATCH', '/me/profile', ['province_id' => null])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
         $this->assertSame($chain['province_id'], (int) $this->profileRow()->province_id);
 
         $this->api('PATCH', '/me/profile', ['province_id' => null, 'city_id' => null, 'subdistrict_id' => null, 'village_id' => null, 'postal_code_id' => null])->assertOk()

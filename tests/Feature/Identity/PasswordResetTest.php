@@ -135,7 +135,7 @@ final class PasswordResetTest extends FeatureTestCase
         $this->forgot('nobody11@example.test')
             ->assertStatus(429)
             ->assertHeader('Retry-After', '3600')
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
 
         $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->postJson('/api/v1/auth/password/forgot', ['email' => 'nobody11@example.test'])->assertNoContent();
     }
@@ -171,7 +171,7 @@ final class PasswordResetTest extends FeatureTestCase
 
         $this->reset($code, password: 'another-new-password')
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
     }
 
     public function test_an_account_without_a_password_can_set_one(): void
@@ -193,11 +193,11 @@ final class PasswordResetTest extends FeatureTestCase
         foreach (range(1, 5) as $attempt) {
             $this->reset($this->wrongCode($correct))
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:invalid-verification-code');
+                ->assertJsonPath('type', 'urn:onesis:error:invalid-verification-code');
             $this->assertSame($attempt, (int) DB::table('identity_verification_codes')->value('attempts'));
         }
 
-        $this->reset($correct)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+        $this->reset($correct)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
         $this->assertTrue(Hash::check(self::OLD_PASSWORD, $user->fresh()->password));
     }
 
@@ -208,7 +208,7 @@ final class PasswordResetTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-03 10:15:01');
 
-        $this->reset($this->sender->lastCode())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+        $this->reset($this->sender->lastCode())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
     }
 
     public function test_unknown_suspended_and_deactivated_accounts_look_like_a_missing_code(): void
@@ -218,7 +218,7 @@ final class PasswordResetTest extends FeatureTestCase
         foreach (['ghost@example.test', 'suspended@example.test'] as $email) {
             $this->reset('123456', $email)
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+                ->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
         }
     }
 
@@ -237,7 +237,7 @@ final class PasswordResetTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/login', ['email' => 'siti@example.test', 'password' => self::NEW_PASSWORD])
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:account-deactivated')
+            ->assertJsonPath('type', 'urn:onesis:error:account-deactivated')
             ->assertJsonPath('detail', 'This account is scheduled for deletion on 2026-10-31. Cancel the deletion to restore it.');
     }
 
@@ -268,7 +268,7 @@ final class PasswordResetTest extends FeatureTestCase
 
         $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $resetCode])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
 
         Carbon::setTestNow('2026-10-03 10:02:00');
         $this->app['auth']->forgetGuards();

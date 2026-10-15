@@ -49,7 +49,7 @@ final class ApplicationLocksTest extends FeatureTestCase
         $job = $this->jobWithApplication();
 
         $this->api('PATCH', "/company/jobs/{$job}", ['title' => 'Frontend Developer'])->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:job-locked-after-applications')->assertJsonPath('fields', ['title']);
+            ->assertJsonPath('type', 'urn:onesis:error:job-locked-after-applications')->assertJsonPath('fields', ['title']);
 
         $this->api('PATCH', "/company/jobs/{$job}", [
             'category_id' => $this->referenceId('reference_job_categories', 'design'),
@@ -86,7 +86,7 @@ final class ApplicationLocksTest extends FeatureTestCase
         $job = $this->jobWithApplication();
         $this->api('POST', '/me/applications/'.DB::table('recruitment_applications')->value('id').'/withdraw', token: $this->seekerToken)->assertNoContent();
 
-        $this->api('PATCH', "/company/jobs/{$job}", ['title' => 'Frontend Developer'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-locked-after-applications');
+        $this->api('PATCH', "/company/jobs/{$job}", ['title' => 'Frontend Developer'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-locked-after-applications');
     }
 
     // ----- deleting an extra stage -----

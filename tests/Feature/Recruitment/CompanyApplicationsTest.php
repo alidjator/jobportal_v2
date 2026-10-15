@@ -79,7 +79,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
             $this->api('GET', "/company/applications/{$this->firstId}/resume", token: $token)->assertStatus(404);
         }
 
-        $this->list(token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->list(token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->show($this->firstId, $this->seekerToken)->assertStatus(403);
         $this->show(999999)->assertStatus(404);
         $this->list(job: 999999)->assertStatus(404);
@@ -89,7 +89,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->list()->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->list()->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->show($this->firstId)->assertStatus(403);
     }
 

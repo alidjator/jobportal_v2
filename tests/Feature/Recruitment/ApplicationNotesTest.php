@@ -55,7 +55,7 @@ final class ApplicationNotesTest extends FeatureTestCase
         $this->flushHeaders();
         $this->getJson("/api/v1/company/applications/{$this->applicationId}/notes")->assertStatus(401);
 
-        $this->api('GET', "/company/applications/{$this->applicationId}/notes", token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', "/company/applications/{$this->applicationId}/notes", token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->note('x', $this->seekerToken)->assertStatus(403);
         $this->rate(3, $this->seekerToken)->assertStatus(403);
 
@@ -96,7 +96,7 @@ final class ApplicationNotesTest extends FeatureTestCase
     {
         $this->note('')->assertStatus(422);
         $this->note('   ')->assertStatus(422);
-        $this->note(str_repeat('a', 2001))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-note');
+        $this->note(str_repeat('a', 2001))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-note');
         $this->note(str_repeat('é', 2000))->assertCreated();
 
         $this->assertSame(1, DB::table('recruitment_application_notes')->count());
@@ -107,7 +107,7 @@ final class ApplicationNotesTest extends FeatureTestCase
         $id = $this->note('Draft')->assertCreated()->json('data.id');
 
         $this->api('PUT', "/company/applications/{$this->applicationId}/notes/{$id}", ['body' => 'Hijacked'], $this->adminToken)
-            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-note-author');
+            ->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-note-author');
 
         $this->api('PUT', "/company/applications/{$this->applicationId}/notes/{$id}", ['body' => 'Draft'], $this->recruiterToken)->assertOk()->assertJsonPath('data.edited_at', null);
         $this->api('PUT', "/company/applications/{$this->applicationId}/notes/{$id}", ['body' => 'Final text'], $this->recruiterToken)->assertOk()
@@ -123,7 +123,7 @@ final class ApplicationNotesTest extends FeatureTestCase
         $first = $this->note('One')->assertCreated()->json('data.id');
         $second = $this->note('Two', $this->adminToken)->assertCreated()->json('data.id');
 
-        $this->api('DELETE', "/company/applications/{$this->applicationId}/notes/{$second}", token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-note-author');
+        $this->api('DELETE', "/company/applications/{$this->applicationId}/notes/{$second}", token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-note-author');
         $this->api('DELETE', "/company/applications/{$this->applicationId}/notes/{$first}", token: $this->adminToken)->assertNoContent();
         $this->api('DELETE', "/company/applications/{$this->applicationId}/notes/{$second}", token: $this->adminToken)->assertNoContent();
         $this->api('DELETE', "/company/applications/{$this->applicationId}/notes/{$second}", token: $this->adminToken)->assertStatus(404);
@@ -165,7 +165,7 @@ final class ApplicationNotesTest extends FeatureTestCase
     public function test_the_stars_must_be_from_one_to_five(): void
     {
         foreach ([0, 6, -1] as $stars) {
-            $this->rate($stars)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-rating');
+            $this->rate($stars)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-rating');
         }
 
         $this->api('PUT', "/company/applications/{$this->applicationId}/rating", ['stars' => 'many'], $this->recruiterToken)->assertStatus(422);
@@ -179,7 +179,7 @@ final class ApplicationNotesTest extends FeatureTestCase
         $this->rate(4)->assertOk();
         $this->reject();
 
-        $this->rate(1)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->rate(1)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
         $this->api('DELETE', "/company/applications/{$this->applicationId}/rating", token: $this->recruiterToken)->assertStatus(409);
 
         $this->assertSame(4, (int) DB::table('recruitment_application_ratings')->value('stars'));
@@ -190,7 +190,7 @@ final class ApplicationNotesTest extends FeatureTestCase
         $hired = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'hired')->where('is_default', 1)->value('id');
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $hired], $this->recruiterToken)->assertNoContent();
 
-        $this->rate(5)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->rate(5)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
         $this->note('Welcome aboard.')->assertCreated();
     }
 

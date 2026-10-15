@@ -63,14 +63,14 @@ final class ScreeningQuestionTest extends FeatureTestCase
 
         $stranger = $this->jobMember($this->companyId, 'X', 'x@example.test', 'recruiter');
         DB::table('company_members')->where('user_id', $stranger)->delete();
-        $this->api('GET', '/company/screening-questions', token: $this->tokenFor($stranger))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/company/screening-questions', token: $this->tokenFor($stranger))->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
     }
 
     public function test_a_suspended_company_cannot_use_its_library(): void
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->api('GET', '/company/screening-questions')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->api('GET', '/company/screening-questions')->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     public function test_recruiters_read_but_only_company_admins_change(): void
@@ -87,7 +87,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
             ['POST', "/company/screening-questions/{$id}/archive", []],
             ['POST', "/company/screening-questions/{$id}/restore", []],
         ] as [$method, $uri, $body]) {
-            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+            $this->api($method, $uri, $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
         }
 
         $this->assertSame('Can you start next month?', DB::table('recruitment_screening_questions')->where('id', $id)->value('text'));
@@ -116,7 +116,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
         $this->api('POST', '/company/screening-questions', ['text' => 'Without a type'])->assertStatus(422);
         $this->api('POST', '/company/screening-questions', ['type' => 'essay', 'text' => 'Unknown type'])->assertStatus(422);
         $this->api('POST', '/company/screening-questions', ['type' => 'yes_no', 'text' => 'abcd'])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-screening-question')->assertJsonStructure(['errors' => ['text']]);
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-screening-question')->assertJsonStructure(['errors' => ['text']]);
         $this->api('POST', '/company/screening-questions', ['type' => 'single_choice', 'text' => 'Only one option'])->assertStatus(422)->assertJsonStructure(['errors' => ['options']]);
         $this->api('POST', '/company/screening-questions', ['type' => 'single_choice', 'text' => 'Same options', 'options' => [['label' => 'A'], ['label' => 'a']]])->assertStatus(422);
         $this->api('POST', '/company/screening-questions', ['type' => 'yes_no', 'text' => 'Yes or no with options', 'options' => [['label' => 'A'], ['label' => 'B']]])->assertStatus(422)->assertJsonStructure(['errors' => ['options']]);
@@ -201,7 +201,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
 
         $this->api('PATCH', "/company/screening-questions/{$id}", ['options' => [['label' => 'Only one']]])->assertStatus(422);
         $this->api('PATCH', "/company/screening-questions/{$id}", ['options' => [['id' => $foreign, 'label' => 'A'], ['label' => 'B']]])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-screening-question');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-screening-question');
         $this->api('PATCH', "/company/screening-questions/{$id}", ['options' => [['id' => $jakarta, 'label' => 'A'], ['id' => $jakarta, 'label' => 'B']]])->assertStatus(422);
         $this->api('PATCH', "/company/screening-questions/{$id}", ['options' => [['label' => 'Same'], ['label' => 'SAME']]])->assertStatus(422);
         $this->assertSame(['Jakarta', 'Bandung'], $this->labels($id));
@@ -224,7 +224,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
         DB::table('recruitment_job_question_ideal_options')->insert(['job_question_id' => $attached, 'option_id' => $jakarta]);
 
         $this->api('PATCH', "/company/screening-questions/{$id}", ['options' => [['id' => $bandung, 'label' => 'Bandung'], ['label' => 'Medan']]])
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-in-use');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-in-use');
         $this->assertSame(['Jakarta', 'Bandung', 'Surabaya'], $this->labels($id));
 
         // The ideal choice may be renamed, and the others removed.
@@ -242,7 +242,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
         $this->api('DELETE', "/company/screening-questions/{$free}")->assertNoContent();
         $this->assertSame(0, DB::table('recruitment_screening_question_options')->count());
 
-        $this->api('DELETE', "/company/screening-questions/{$used}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-in-use');
+        $this->api('DELETE', "/company/screening-questions/{$used}")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-in-use');
         $this->assertSame(1, DB::table('recruitment_screening_questions')->count());
     }
 
@@ -257,7 +257,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
             }
         });
 
-        $this->api('PATCH', "/company/screening-questions/{$id}", ['text' => 'A text that must not apply'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-in-use');
+        $this->api('PATCH', "/company/screening-questions/{$id}", ['text' => 'A text that must not apply'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-in-use');
         $this->api('DELETE', "/company/screening-questions/{$id}")->assertStatus(409);
         $this->api('POST', "/company/screening-questions/{$id}/archive")->assertOk();
     }
@@ -292,7 +292,7 @@ final class ScreeningQuestionTest extends FeatureTestCase
             ['POST', "/company/screening-questions/{$id}/archive", []],
             ['POST', "/company/screening-questions/{$id}/restore", []],
         ] as [$method, $uri, $body]) {
-            $this->api($method, $uri, $body)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:screening-disabled');
+            $this->api($method, $uri, $body)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:screening-disabled');
         }
 
         $this->api('GET', '/company/screening-questions')->assertOk()->assertJsonPath('data.0.id', $id);

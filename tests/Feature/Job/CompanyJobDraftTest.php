@@ -118,7 +118,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
 
         $response = $this->api('POST', '/company/jobs', [
             ...$body, 'role_id' => 999999, 'skill_ids' => [$inactiveSkill, 999998], 'benefit_ids' => [999997],
-        ])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-job');
+        ])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-job');
 
         $errors = $response->json('errors');
         $this->assertSame(['category_id', 'role_id', 'skill_ids', 'benefit_ids'], array_keys($errors));
@@ -131,7 +131,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
         $pending = $this->referenceId('reference_benefits', 'gym', ['status' => 'pending', 'proposed_by_company_id' => $this->otherCompanyId]);
 
         $this->api('POST', '/company/jobs', ['title' => 'Backend', 'benefit_ids' => [$pending]])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-job')->assertJsonStructure(['errors' => ['benefit_ids']]);
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-job')->assertJsonStructure(['errors' => ['benefit_ids']]);
     }
 
     public function test_the_location_must_be_one_matching_chain(): void
@@ -249,7 +249,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
         foreach (['pending_review', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->api('PATCH', "/company/jobs/{$id}", ['title' => 'Changed'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
+            $this->api('PATCH', "/company/jobs/{$id}", ['title' => 'Changed'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-editable');
             $this->assertSame("Job {$status}", $this->jobRow($id)->title);
         }
 
@@ -263,7 +263,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
     {
         $id = $this->insertJob('Waiting job', 'pending_review');
 
-        $this->api('PATCH', "/company/jobs/{$id}", ['role_id' => 999999])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-editable');
+        $this->api('PATCH', "/company/jobs/{$id}", ['role_id' => 999999])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-editable');
     }
 
     // ----- who may touch a job -----
@@ -319,7 +319,7 @@ final class CompanyJobDraftTest extends FeatureTestCase
         foreach (['pending_review', 'active', 'closed', 'expired', 'rejected', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->api('DELETE', "/company/jobs/{$id}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-draft');
+            $this->api('DELETE', "/company/jobs/{$id}")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-draft');
             $this->assertNotNull($this->jobRow($id), $status);
         }
     }

@@ -61,7 +61,7 @@ final class LocationTest extends FeatureTestCase
         foreach (['cities', 'subdistricts', 'villages', 'postal-codes'] as $level) {
             $this->getJson("/api/v1/{$level}")
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:location-parent-required');
+                ->assertJsonPath('type', 'urn:onesis:error:location-parent-required');
         }
     }
 

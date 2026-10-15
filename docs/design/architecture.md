@@ -28,7 +28,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   daily limit); a conflict with the current state of a resource is **409** (for example applying to a job already applied to, or moving an application out of
   a final stage); not found 404, forbidden 403, unauthenticated 401, validation 422 with `errors`. The domain has two subclasses, `BusinessRuleViolation`
   and `StateConflict`, and every problem response carries a machine-readable `type`. The old mapping of business rules to 400 is dropped.
-- **Problem `type` (decided 2026-10-03):** a URN of the form `urn:jobportal:error:<code>`, for example `urn:jobportal:error:already-applied`, with kebab-case
+- **Problem `type` (decided 2026-10-03, renamed 2026-10-15 from `urn:jobportal:error:<code>`, see `naming.md`):** a URN of the form `urn:onesis:error:<code>`, for example `urn:onesis:error:already-applied`, with kebab-case
   codes registered in one catalog in code (the identifier does not depend on a domain name and needs no documentation page at that address).
 - Still to decide: the contents of the error catalog (written together with the use cases that raise each error).
 
@@ -145,7 +145,7 @@ The project is a **REST API only** (Laravel 13, PHP 8.3). Other parties build we
   **Implemented 2026-10-04** (`EnforceTermsAcceptance`; details and the two scope decisions, public users only and "never-published types are not required", in
   `docs/handoff-history.md`).
 - **Suspended and deactivated accounts (decided 2026-10-03):** when an admin suspends an account, all its tokens are revoked and sign-in is refused with 403 and
-  the problem `type` `urn:jobportal:error:account-suspended`, until an admin reactivates it. A deactivated account behaves the same way (including the one waiting
+  the problem `type` `urn:onesis:error:account-suspended`, until an admin reactivates it. A deactivated account behaves the same way (including the one waiting
   for anonymisation, see `phase-0-schema.md`) with `account-deactivated`; the response for the grace period explains the scheduled deletion and the user
   restores the account through the cancellation endpoint. The difference is only the message and who can restore the account (an admin for suspended,
   the user for deactivated).
@@ -208,7 +208,7 @@ these columns fails the test first.
 
 None of these blocks the start of Phase 0 code; each is decided one question at a time together with the context concerned.
 
-- The contents of the error catalog (`urn:jobportal:error:<code>`): written with the use cases that raise each error.
+- The contents of the error catalog (`urn:onesis:error:<code>`): written with the use cases that raise each error.
 - How company roles and per-job assignments are represented in the policies (Company context, Phase 1).
 - Cursor or offset pagination per list endpoint (the rule is fixed; each endpoint states its choice).
 - Compatibility checks when the packages are added: Sanctum per-token expiry in the installed version, Spatie permission with the custom table names,

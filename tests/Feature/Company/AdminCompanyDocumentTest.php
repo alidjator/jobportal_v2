@@ -381,8 +381,8 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
         $this->document($this->nib);
         DB::table('company_documents')->update(['submitted_at' => '2026-10-04 12:00:00']);
 
-        $this->api('POST', "/{$this->nib}/approve", ['submitted_at' => self::SEEN])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:document-changed');
-        $this->api('POST', "/{$this->nib}/reject", ['submitted_at' => self::SEEN, 'reason' => 'expired'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:document-changed');
+        $this->api('POST', "/{$this->nib}/approve", ['submitted_at' => self::SEEN])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:document-changed');
+        $this->api('POST', "/{$this->nib}/reject", ['submitted_at' => self::SEEN, 'reason' => 'expired'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:document-changed');
 
         $this->assertSame('pending', $this->row($this->nib)->status);
         $this->assertSame([], $this->audit('company.document_approved'));
@@ -407,8 +407,8 @@ final class AdminCompanyDocumentTest extends FeatureTestCase
             DB::table('company_documents')->delete();
             $this->document($this->nib, $status);
 
-            $this->api('POST', "/{$this->nib}/approve", ['submitted_at' => self::SEEN])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:document-not-pending');
-            $this->api('POST', "/{$this->nib}/reject", ['submitted_at' => self::SEEN, 'reason' => 'expired'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:document-not-pending');
+            $this->api('POST', "/{$this->nib}/approve", ['submitted_at' => self::SEEN])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:document-not-pending');
+            $this->api('POST', "/{$this->nib}/reject", ['submitted_at' => self::SEEN, 'reason' => 'expired'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:document-not-pending');
             $this->assertSame($status, $this->row($this->nib)->status);
         }
 

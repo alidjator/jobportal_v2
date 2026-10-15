@@ -37,14 +37,14 @@ final class ProblemDetailsTest extends FeatureTestCase
         $this->getJson(self::PREFIX.'/nothing-here')
             ->assertStatus(404)
             ->assertHeader('Content-Type', 'application/problem+json')
-            ->assertJson(['type' => 'urn:jobportal:error:not-found', 'status' => 404]);
+            ->assertJson(['type' => 'urn:onesis:error:not-found', 'status' => 404]);
     }
 
     public function test_a_wrong_method_is_a_405_problem(): void
     {
         $this->postJson(self::PREFIX.'/probe/not-found')
             ->assertStatus(405)
-            ->assertJson(['type' => 'urn:jobportal:error:method-not-allowed']);
+            ->assertJson(['type' => 'urn:onesis:error:method-not-allowed']);
     }
 
     public function test_an_entity_not_found_is_a_404_problem_with_the_default_code(): void
@@ -53,7 +53,7 @@ final class ProblemDetailsTest extends FeatureTestCase
             ->assertStatus(404)
             ->assertHeader('Content-Type', 'application/problem+json')
             ->assertExactJson([
-                'type' => 'urn:jobportal:error:not-found',
+                'type' => 'urn:onesis:error:not-found',
                 'title' => 'Not Found',
                 'status' => 404,
                 'detail' => 'Job not found: 7',
@@ -64,28 +64,28 @@ final class ProblemDetailsTest extends FeatureTestCase
     {
         $this->getJson(self::PREFIX.'/probe/forbidden')
             ->assertStatus(403)
-            ->assertJson(['type' => 'urn:jobportal:error:forbidden', 'detail' => 'Not your job.']);
+            ->assertJson(['type' => 'urn:onesis:error:forbidden', 'detail' => 'Not your job.']);
     }
 
     public function test_a_business_rule_violation_is_a_422_problem_with_its_own_code(): void
     {
         $this->getJson(self::PREFIX.'/probe/rule')
             ->assertStatus(422)
-            ->assertJson(['type' => 'urn:jobportal:error:invitation-limit-reached', 'detail' => 'Daily limit reached.']);
+            ->assertJson(['type' => 'urn:onesis:error:invitation-limit-reached', 'detail' => 'Daily limit reached.']);
     }
 
     public function test_a_state_conflict_is_a_409_problem_with_its_own_code(): void
     {
         $this->getJson(self::PREFIX.'/probe/conflict')
             ->assertStatus(409)
-            ->assertJson(['type' => 'urn:jobportal:error:already-applied', 'title' => 'Conflict']);
+            ->assertJson(['type' => 'urn:onesis:error:already-applied', 'title' => 'Conflict']);
     }
 
     public function test_an_unauthenticated_request_is_a_401_problem(): void
     {
         $this->getJson(self::PREFIX.'/probe/unauthenticated')
             ->assertStatus(401)
-            ->assertJson(['type' => 'urn:jobportal:error:unauthenticated']);
+            ->assertJson(['type' => 'urn:onesis:error:unauthenticated']);
     }
 
     public function test_a_validation_failure_is_a_422_problem_with_errors(): void
@@ -94,7 +94,7 @@ final class ProblemDetailsTest extends FeatureTestCase
             ->assertStatus(422)
             ->assertHeader('Content-Type', 'application/problem+json')
             ->assertJson([
-                'type' => 'urn:jobportal:error:validation-failed',
+                'type' => 'urn:onesis:error:validation-failed',
                 'errors' => ['email' => ['The email is required.']],
             ]);
     }
@@ -103,7 +103,7 @@ final class ProblemDetailsTest extends FeatureTestCase
     {
         $response = $this->getJson(self::PREFIX.'/probe/crash')
             ->assertStatus(500)
-            ->assertJson(['type' => 'urn:jobportal:error:internal-error']);
+            ->assertJson(['type' => 'urn:onesis:error:internal-error']);
 
         $this->assertStringNotContainsString('secret internals', $response->getContent());
     }

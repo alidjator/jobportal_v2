@@ -74,7 +74,7 @@ final class IdentityFoundationTest extends FeatureTestCase
         $token = $user->createToken('device', ['*'], now()->addDays(30))->plainTextToken;
 
         $this->withToken($token)->getJson(self::PREFIX.'/user')->assertOk()->assertJson(['id' => $user->id]);
-        $this->withToken($token)->getJson(self::PREFIX.'/admin')->assertStatus(401)->assertJson(['type' => 'urn:jobportal:error:unauthenticated']);
+        $this->withToken($token)->getJson(self::PREFIX.'/admin')->assertStatus(401)->assertJson(['type' => 'urn:onesis:error:unauthenticated']);
     }
 
     public function test_an_admin_token_authenticates_on_the_admin_guard_only(): void

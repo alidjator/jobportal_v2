@@ -26,7 +26,7 @@ final class ApiRateLimitTest extends FeatureTestCase
         $this->getJson('/api/v1/probe/limited')
             ->assertStatus(429)
             ->assertHeader('Retry-After')
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])->getJson('/api/v1/probe/limited')->assertOk();
     }

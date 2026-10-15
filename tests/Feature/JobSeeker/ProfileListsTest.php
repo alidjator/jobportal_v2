@@ -80,7 +80,7 @@ final class ProfileListsTest extends FeatureTestCase
 
         foreach ([['GET', '/me/experiences', []], ['POST', '/me/experiences', $this->experience()], ['GET', '/me/educations', []], ['POST', '/me/educations', $this->education()],
             ['PUT', '/me/skills', ['skill_ids' => []]], ['PUT', '/me/languages', ['languages' => []]], ['PUT', '/me/links', ['links' => []]]] as [$method, $uri, $body]) {
-            $this->api($method, $uri, $body, $member)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->api($method, $uri, $body, $member)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         }
 
         $this->assertSame(0, DB::table('jobseeker_experiences')->count());
@@ -129,7 +129,7 @@ final class ProfileListsTest extends FeatureTestCase
         ];
 
         foreach ($cases as $field => $body) {
-            $this->api('POST', '/me/experiences', $body)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-experience')->assertJsonStructure(['errors' => [$field]]);
+            $this->api('POST', '/me/experiences', $body)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-experience')->assertJsonStructure(['errors' => [$field]]);
         }
 
         $this->api('POST', '/me/experiences', $this->experience(['is_current' => true]))->assertStatus(422)->assertJsonStructure(['errors' => ['end_date']]);
@@ -167,7 +167,7 @@ final class ProfileListsTest extends FeatureTestCase
             ]);
         }
 
-        $this->api('POST', '/me/experiences', $this->experience())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:experience-limit-reached');
+        $this->api('POST', '/me/experiences', $this->experience())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:experience-limit-reached');
         $this->assertSame(30, DB::table('jobseeker_experiences')->count());
     }
 
@@ -238,7 +238,7 @@ final class ProfileListsTest extends FeatureTestCase
         ];
 
         foreach ($cases as $field => $body) {
-            $this->api('POST', '/me/educations', $body)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-education')->assertJsonStructure(['errors' => [$field]]);
+            $this->api('POST', '/me/educations', $body)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-education')->assertJsonStructure(['errors' => [$field]]);
         }
 
         $this->api('POST', '/me/educations', $this->education(['start_year' => 2027]))->assertStatus(422)->assertJsonStructure(['errors' => ['start_year']]);
@@ -273,7 +273,7 @@ final class ProfileListsTest extends FeatureTestCase
             ]);
         }
 
-        $this->api('POST', '/me/educations', $this->education())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:education-limit-reached');
+        $this->api('POST', '/me/educations', $this->education())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:education-limit-reached');
 
         $other = $this->account('job_seeker', 'budi@example.test');
         $this->api('GET', '/me/educations', token: $this->tokenFor($other))->assertExactJson(['data' => []]);
@@ -304,7 +304,7 @@ final class ProfileListsTest extends FeatureTestCase
         $inactive = $this->referenceId('reference_skills', 'cobol', ['kind' => 'hard', 'is_active' => false]);
         $this->api('PUT', '/me/skills', ['skill_ids' => [$php]])->assertOk();
 
-        $this->api('PUT', '/me/skills', ['skill_ids' => [$php, $php]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-skills')->assertJsonStructure(['errors' => ['skill_ids']]);
+        $this->api('PUT', '/me/skills', ['skill_ids' => [$php, $php]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-skills')->assertJsonStructure(['errors' => ['skill_ids']]);
         $this->api('PUT', '/me/skills', ['skill_ids' => [$php, 999_999]])->assertStatus(422)->assertJsonStructure(['errors' => ['skill_ids.1']]);
         $this->api('PUT', '/me/skills', ['skill_ids' => [$inactive]])->assertStatus(422)->assertJsonStructure(['errors' => ['skill_ids.0']]);
         $this->api('PUT', '/me/skills', [])->assertStatus(422);
@@ -343,7 +343,7 @@ final class ProfileListsTest extends FeatureTestCase
         $this->api('PUT', '/me/languages', ['languages' => [['language_id' => $english, 'proficiency' => 'expert']]])->assertStatus(422);
         $this->api('PUT', '/me/languages', ['languages' => [['language_id' => $english]]])->assertStatus(422);
         $this->api('PUT', '/me/languages', ['languages' => [['language_id' => $english, 'proficiency' => 'basic'], ['language_id' => $english, 'proficiency' => 'native']]])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-languages')->assertJsonStructure(['errors' => ['languages']]);
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-languages')->assertJsonStructure(['errors' => ['languages']]);
         $this->api('PUT', '/me/languages', ['languages' => [['language_id' => 999_999, 'proficiency' => 'basic']]])->assertStatus(422)->assertJsonStructure(['errors' => ['languages.0.language_id']]);
         $this->api('PUT', '/me/languages', ['languages' => [['language_id' => $retired, 'proficiency' => 'basic']]])->assertStatus(422);
 
@@ -381,7 +381,7 @@ final class ProfileListsTest extends FeatureTestCase
         $response = $this->api('PUT', '/me/links', ['links' => [
             ['type' => 'linkedin', 'url' => 'https://www.linkedin.com/in/siti'], ['type' => 'github', 'url' => 'https://evil.example.test/siti'], ['type' => 'website', 'url' => 'https://bit.ly/xyz'],
             ['type' => 'linkedin', 'url' => 'https://linkedin.com/in/other'], ['type' => 'portfolio', 'url' => 'http://siti.example.test'], ['type' => 'other', 'url' => 'https://10.0.0.1/cv'],
-        ]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-links');
+        ]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-links');
 
         $this->assertSame(['links.1.url', 'links.2.url', 'links.3.type', 'links.4.url', 'links.5.url'], array_keys($response->json('errors')));
         $this->api('PUT', '/me/links', ['links' => [['type' => 'blog', 'url' => 'https://siti.example.test']]])->assertStatus(422);

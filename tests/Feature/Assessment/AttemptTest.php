@@ -229,9 +229,9 @@ final class AttemptTest extends FeatureTestCase
     {
         $this->invite($this->skillTest([$this->choice(), $this->number(), $this->shortText()]));
 
-        $this->take('POST', 'start', [])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:consent-required')->assertJsonStructure(['errors' => ['consent']]);
-        $this->take('POST', 'start', ['consent' => false])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:consent-required');
-        $this->take('GET', 'attempt')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-not-started');
+        $this->take('POST', 'start', [])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:consent-required')->assertJsonStructure(['errors' => ['consent']]);
+        $this->take('POST', 'start', ['consent' => false])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:consent-required');
+        $this->take('GET', 'attempt')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-not-started');
 
         $response = $this->start()->assertCreated()
             ->assertJsonPath('data.status', 'in_progress')
@@ -260,11 +260,11 @@ final class AttemptTest extends FeatureTestCase
     {
         $this->invite($this->skillTest([$this->choice()]), ['starts_at' => $this->at(now()->addHours(1)), 'due_at' => $this->at(now()->addDays(2))]);
 
-        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
+        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
 
         $other = $this->tokenFor($this->seeker('rina.lain@example.test'));
         $this->start($other)->assertNotFound();
-        $this->start($this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->start($this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
 
         $this->moveClock(3601);
         $this->start()->assertCreated();
@@ -275,11 +275,11 @@ final class AttemptTest extends FeatureTestCase
         $this->invite($this->skillTest([$this->choice()]), ['due_at' => $this->at(now()->addHours(2))]);
 
         $this->moveClock(3 * 3600);
-        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
+        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
 
         $this->moveClock(0);
         $this->company('POST', "invitations/{$this->invitationId}/cancel", [], $this->recruiterToken)->assertOk();
-        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
+        $this->start()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
     }
 
     public function test_a_candidate_may_start_up_to_the_due_time_and_finish_after_it(): void
@@ -362,7 +362,7 @@ final class AttemptTest extends FeatureTestCase
         $this->start()->assertCreated();
         [$choice, $multiple, $number, $text] = $this->questionIds();
 
-        $this->answer($choice, ['option_positions' => [1, 2]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer')->assertJsonStructure(['errors' => ['option_positions']]);
+        $this->answer($choice, ['option_positions' => [1, 2]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer')->assertJsonStructure(['errors' => ['option_positions']]);
         $this->answer($choice, ['option_positions' => [4]])->assertStatus(422)->assertJsonStructure(['errors' => ['option_positions']]);
         $this->answer($choice, ['number' => 7])->assertStatus(422)->assertJsonStructure(['errors' => ['option_positions']]);
         $this->answer($multiple, [])->assertStatus(422)->assertJsonStructure(['errors' => ['option_positions']]);
@@ -424,16 +424,16 @@ final class AttemptTest extends FeatureTestCase
         $ids = array_map('intval', DB::table('assessment_attempt_questions')->orderBy('position')->pluck('question_id')->all());
 
         // Only the open question can be answered, and the next one only opens after an answer.
-        $this->answer($ids[1], ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-locked');
-        $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-navigation');
-        $this->take('PUT', 'attempt/cursor', ['index' => 2])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-navigation');
+        $this->answer($ids[1], ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-locked');
+        $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-navigation');
+        $this->take('PUT', 'attempt/cursor', ['index' => 2])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-navigation');
 
         $this->answer($ids[0], ['option_positions' => [2]])->assertNoContent();
         $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertOk()->assertJsonCount(1, 'data.questions')->assertJsonPath('data.questions.0.index', 1)->assertJsonPath('data.section.current_index', 1);
 
         // The first question is closed for good.
-        $this->take('PUT', 'attempt/cursor', ['index' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-navigation');
-        $this->answer($ids[0], ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-locked');
+        $this->take('PUT', 'attempt/cursor', ['index' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-navigation');
+        $this->answer($ids[0], ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-locked');
         $this->take('DELETE', "attempt/questions/{$ids[0]}/answer")->assertStatus(409);
     }
 
@@ -443,7 +443,7 @@ final class AttemptTest extends FeatureTestCase
         $this->start()->assertCreated();
         $ids = array_map('intval', DB::table('assessment_attempt_questions')->orderBy('position')->pluck('question_id')->all());
 
-        $this->take('PUT', 'attempt/cursor', ['index' => 2])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-navigation');
+        $this->take('PUT', 'attempt/cursor', ['index' => 2])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-navigation');
         $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertOk()->assertJsonCount(2, 'data.questions');
         $this->answer($ids[0], ['option_positions' => [1]])->assertNoContent();
         $this->take('PUT', 'attempt/cursor', ['index' => 0])->assertOk()->assertJsonCount(1, 'data.questions');
@@ -525,7 +525,7 @@ final class AttemptTest extends FeatureTestCase
             ->assertJsonPath('data.section.opened_at', '2026-10-05T09:00:10+00:00')
             ->assertJsonPath('data.ends_at', '2026-10-05T09:01:10+00:00');
 
-        $this->take('POST', 'attempt/next-section')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-section');
+        $this->take('POST', 'attempt/next-section')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-section');
     }
 
     public function test_when_the_time_runs_out_the_server_submits_what_was_saved(): void
@@ -538,8 +538,8 @@ final class AttemptTest extends FeatureTestCase
         $this->moveClock(125);
 
         // A write meets the closed attempt and the submission is kept.
-        $this->answer($question, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
-        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
+        $this->answer($question, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
+        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
 
         $this->attempt()->assertOk()->assertJsonPath('data.status', 'submitted')->assertJsonPath('data.auto_submitted', true)->assertJsonPath('data.submitted_at', '2026-10-05T09:02:00+00:00');
         $this->assertSame(['submitted'], DB::table('assessment_invitations')->pluck('status')->all());
@@ -573,7 +573,7 @@ final class AttemptTest extends FeatureTestCase
         $this->company('POST', "invitations/{$this->invitationId}/cancel", [], $this->recruiterToken)->assertOk();
 
         $this->attempt()->assertOk()->assertJsonPath('data.status', 'closed')->assertJsonMissingPath('data.section');
-        $this->answer($question, ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
+        $this->answer($question, ['option_positions' => [1]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
 
         $this->moveClock(300);
         $this->artisan('assessment:auto-submit-attempts')->expectsOutput('Submitted 0 attempts.')->assertSuccessful();
@@ -588,8 +588,8 @@ final class AttemptTest extends FeatureTestCase
         $this->answer($question, ['option_positions' => [1]])->assertNoContent();
 
         $this->take('POST', 'attempt/submit')->assertOk();
-        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
-        $this->answer($question, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
+        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
+        $this->answer($question, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
         $this->start()->assertOk()->assertJsonPath('data.status', 'submitted');
 
         $this->assertSame(['assessment.submitted'], $this->notificationTypes($this->recruiterId));
@@ -606,7 +606,7 @@ final class AttemptTest extends FeatureTestCase
 
         $this->take('GET', 'attempt', [], $other)->assertNotFound();
         $this->take('POST', 'attempt/submit', [], $other)->assertNotFound();
-        $this->take('GET', 'attempt', [], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->take('GET', 'attempt', [], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
     }
 
     // ----- integrity -----
@@ -682,11 +682,11 @@ final class AttemptTest extends FeatureTestCase
         $this->assertSame(hash('sha256', $token), DB::table('assessment_attempts')->value('session_hash'));
 
         $this->attemptSession = null;
-        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-session-required');
-        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-session-required');
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-session-required');
+        $this->take('POST', 'attempt/submit')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-session-required');
 
         $this->attemptSession = 'not-the-token';
-        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-moved');
 
         $this->attemptSession = $token;
         $this->attempt()->assertOk()->assertJsonMissingPath('data.attempt_session');
@@ -707,8 +707,8 @@ final class AttemptTest extends FeatureTestCase
         $this->assertSame('2026-10-05T09:10:00+00:00', $this->attempt()->json('data.ends_at'), 'The clock never stops.');
 
         $this->attemptSession = $first;
-        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
-        $this->answer($choice, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-moved');
+        $this->attempt()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-moved');
+        $this->answer($choice, ['option_positions' => [2]])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-moved');
 
         $this->assertEqualsCanonicalizing(['device_switch', 'ip_change'], DB::table('assessment_integrity_events')->pluck('type')->all());
 
@@ -737,14 +737,14 @@ final class AttemptTest extends FeatureTestCase
         $this->assertSame(ColumnDigits::of($seed, $sectionId, 1, 10), $speed['digits']);
 
         $sums = ColumnDigits::expected($speed['digits']);
-        $this->take('PUT', 'attempt/columns/2', ['answers' => $sums])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-column');
-        $this->take('PUT', 'attempt/columns/1', ['answers' => [...$sums, 1]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-column');
+        $this->take('PUT', 'attempt/columns/2', ['answers' => $sums])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-column');
+        $this->take('PUT', 'attempt/columns/1', ['answers' => [...$sums, 1]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-column');
         $this->take('PUT', 'attempt/columns/1', ['answers' => [10]])->assertStatus(422);
 
         $wrong = $sums;
         $wrong[0] = ($wrong[0] + 1) % 10;
         $this->take('PUT', 'attempt/columns/1', ['answers' => $wrong])->assertNoContent();
-        $this->take('PUT', 'attempt/columns/1', ['answers' => $sums])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:column-already-submitted');
+        $this->take('PUT', 'attempt/columns/1', ['answers' => $sums])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:column-already-submitted');
 
         $this->moveClock(31);
         $second = $this->attempt()->assertJsonPath('data.speed.column', 2)->assertJsonPath('data.speed.submitted_columns', [1])->json('data.speed');
@@ -790,13 +790,13 @@ final class AttemptTest extends FeatureTestCase
         $this->take('POST', 'attempt/next-section')->assertOk();
         $question = (int) $this->attempt()->json('data.questions.0.id');
 
-        $this->sendFile("attempt/questions/{$question}/drawing", 'not an image')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
+        $this->sendFile("attempt/questions/{$question}/drawing", 'not an image')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
         $this->sendFile("attempt/questions/{$question}/drawing", $this->png(), ['source' => 'camera'])->assertStatus(422)->assertJsonStructure(['errors' => ['source']]);
         $this->sendFile('attempt/questions/999999/drawing', $this->png())->assertNotFound();
         $this->assertSame([], Storage::allFiles('assessment/drawings'));
 
         // A drawing is not an answer.
-        $this->answer($question, ['text' => 'a tree'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
+        $this->answer($question, ['text' => 'a tree'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
     }
 
     public function test_a_drawing_cannot_be_sent_for_a_question_that_is_not_a_drawing_or_to_a_closed_attempt(): void
@@ -807,10 +807,10 @@ final class AttemptTest extends FeatureTestCase
         [$likert] = $this->questionIds();
 
         // The question belongs to the open section but is not a drawing question.
-        $this->sendFile("attempt/questions/{$likert}/drawing", $this->png())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
+        $this->sendFile("attempt/questions/{$likert}/drawing", $this->png())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
 
         $this->take('POST', 'attempt/submit')->assertOk();
-        $this->sendFile("attempt/questions/{$likert}/drawing", $this->png())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
+        $this->sendFile("attempt/questions/{$likert}/drawing", $this->png())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
     }
 
     public function test_a_speed_section_takes_no_answers_and_a_question_section_takes_no_columns(): void
@@ -820,9 +820,9 @@ final class AttemptTest extends FeatureTestCase
         $this->start()->assertCreated();
         [$likert] = $this->questionIds();
 
-        $this->take('PUT', 'attempt/columns/1', ['answers' => [1]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-column');
+        $this->take('PUT', 'attempt/columns/1', ['answers' => [1]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-column');
         $this->take('POST', 'attempt/next-section')->assertOk();
-        $this->answer($likert, ['option_positions' => [1]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
-        $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
+        $this->answer($likert, ['option_positions' => [1]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
+        $this->take('PUT', 'attempt/cursor', ['index' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
     }
 }

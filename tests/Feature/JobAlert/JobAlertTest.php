@@ -33,7 +33,7 @@ final class JobAlertTest extends FeatureTestCase
         $this->flushHeaders()->getJson('/api/v1/me/job-alerts')->assertUnauthorized();
 
         foreach ([['GET', ''], ['POST', '']] as [$method, $suffix]) {
-            $this->api($method, '/me/job-alerts'.$suffix, $this->alertBody(), $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->api($method, '/me/job-alerts'.$suffix, $this->alertBody(), $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         }
 
         $id = $this->alertId();
@@ -76,10 +76,10 @@ final class JobAlertTest extends FeatureTestCase
 
     public function test_the_rules_of_an_alert_are_enforced_with_their_own_codes(): void
     {
-        $this->createAlert(['criteria' => ['role_id' => [], 'q' => '  ']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:criteria-required');
-        $this->createAlert(['criteria' => ['salary_min' => 5000000]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:salary-period-required');
-        $this->createAlert(['criteria' => ['q' => 'one two three four five six']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-criteria');
-        $this->createAlert(['email' => false, 'in_app' => false])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:channel-required');
+        $this->createAlert(['criteria' => ['role_id' => [], 'q' => '  ']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:criteria-required');
+        $this->createAlert(['criteria' => ['salary_min' => 5000000]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:salary-period-required');
+        $this->createAlert(['criteria' => ['q' => 'one two three four five six']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-criteria');
+        $this->createAlert(['email' => false, 'in_app' => false])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:channel-required');
 
         $this->createAlert(['email' => false])->assertCreated()->assertJsonPath('data.email', false)->assertJsonPath('data.in_app', true);
         $this->createAlert(['in_app' => false])->assertCreated()->assertJsonPath('data.in_app', false);
@@ -93,7 +93,7 @@ final class JobAlertTest extends FeatureTestCase
             $ids[] = $this->alertId(['name' => "Alert {$number}"]);
         }
 
-        $this->createAlert(['name' => 'Alert 6'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:alert-limit');
+        $this->createAlert(['name' => 'Alert 6'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:alert-limit');
 
         $this->api('DELETE', "/me/job-alerts/{$ids[0]}", token: $this->seekerToken)->assertNoContent();
         $this->createAlert(['name' => 'Alert 6'])->assertCreated();
@@ -104,7 +104,7 @@ final class JobAlertTest extends FeatureTestCase
 
         $this->app->make(SettingsStore::class)->setGlobal(JobAlertSettings::MAX_ALERTS_PER_USER, 6, null);
         $this->createAlert(['name' => 'Alert 7'])->assertCreated();
-        $this->createAlert(['name' => 'Alert 8'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:alert-limit');
+        $this->createAlert(['name' => 'Alert 8'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:alert-limit');
         $this->app->make(SettingsStore::class)->setGlobal(JobAlertSettings::MAX_ALERTS_PER_USER, 7, null);
         $this->createAlert(['name' => 'Alert 8'])->assertCreated();
     }

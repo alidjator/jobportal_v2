@@ -95,9 +95,9 @@ final class NotificationPreferencesTest extends FeatureTestCase
 
     public function test_unknown_keys_and_unsupported_channels_are_refused(): void
     {
-        $this->api('PUT', '/nothing/email', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-notification-preference');
-        $this->api('PUT', '/newsletter/push', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-notification-preference');
-        $this->api('PUT', '/newsletter/sms', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-notification-preference');
+        $this->api('PUT', '/nothing/email', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-notification-preference');
+        $this->api('PUT', '/newsletter/push', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-notification-preference');
+        $this->api('PUT', '/newsletter/sms', ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-notification-preference');
         $this->assertSame(0, DB::table('notification_preferences')->count());
     }
 

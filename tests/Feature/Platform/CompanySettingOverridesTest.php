@@ -192,13 +192,13 @@ final class CompanySettingOverridesTest extends FeatureTestCase
 
     public function test_an_invalid_value_a_missing_value_an_unknown_key_and_a_global_only_setting_are_refused(): void
     {
-        $this->api('PUT', '/probe.limit', ['value' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-setting-value');
-        $this->api('PUT', '/probe.limit', ['value' => 51])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-setting-value');
+        $this->api('PUT', '/probe.limit', ['value' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-setting-value');
+        $this->api('PUT', '/probe.limit', ['value' => 51])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-setting-value');
         $this->api('PUT', '/probe.limit', ['value' => 'many'])->assertStatus(422);
         $this->api('PUT', '/probe.templates', ['value' => []])->assertStatus(422);
         $this->api('PUT', '/probe.limit', [])->assertStatus(422);
         $this->api('PUT', '/probe.nothing', ['value' => 1])->assertNotFound();
-        $this->api('PUT', '/probe.global_only', ['value' => 20])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:setting-not-overridable');
+        $this->api('PUT', '/probe.global_only', ['value' => 20])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:setting-not-overridable');
 
         $this->assertSame(0, DB::table('platform_setting_overrides')->count());
         $this->assertSame([], $this->audit('settings.updated'));
@@ -266,7 +266,7 @@ final class CompanySettingOverridesTest extends FeatureTestCase
 
     public function test_resetting_a_global_only_or_unknown_setting_is_refused(): void
     {
-        $this->api('DELETE', '/probe.global_only')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:setting-not-overridable');
+        $this->api('DELETE', '/probe.global_only')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:setting-not-overridable');
         $this->api('DELETE', '/probe.nothing')->assertNotFound();
         $this->assertSame([], $this->audit('settings.reset'));
     }

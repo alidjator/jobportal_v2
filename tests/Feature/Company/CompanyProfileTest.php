@@ -173,7 +173,7 @@ final class CompanyProfileTest extends FeatureTestCase
 
         foreach ([$seeker, $orphan] as $user) {
             $this->api('GET', '/profile', [], $user->createToken('phone', ['*'], now()->addDay())->plainTextToken)
-                ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+                ->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         }
     }
 
@@ -181,12 +181,12 @@ final class CompanyProfileTest extends FeatureTestCase
 
     public function test_a_recruiter_and_a_suspended_company_cannot_change_the_profile(): void
     {
-        $this->update(['bio' => 'x'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->api('PUT', '/slug', ['slug' => 'other-name'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->update(['bio' => 'x'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->api('PUT', '/slug', ['slug' => 'other-name'], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
 
         DB::table('company_companies')->update(['status' => 'suspended']);
-        $this->update(['bio' => 'x'])->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
-        $this->api('PUT', '/slug', ['slug' => 'other-name'])->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->update(['bio' => 'x'])->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
+        $this->api('PUT', '/slug', ['slug' => 'other-name'])->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
 
         $this->assertNull($this->row()->bio);
         $this->assertSame('pt-maju-bersama', $this->row()->slug);
@@ -282,10 +282,10 @@ final class CompanyProfileTest extends FeatureTestCase
     {
         $inactive = $this->master('reference_industries', 'Tutup', 'Closed', [], false);
 
-        $this->update(['industry_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-industry');
-        $this->update(['industry_id' => $inactive])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-industry');
-        $this->update(['organization_type_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-organization-type');
-        $this->update(['team_size_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-team-size');
+        $this->update(['industry_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-industry');
+        $this->update(['industry_id' => $inactive])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-industry');
+        $this->update(['organization_type_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-organization-type');
+        $this->update(['team_size_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-team-size');
 
         $this->assertSame($this->industryId, (int) $this->row()->industry_id);
     }
@@ -318,22 +318,22 @@ final class CompanyProfileTest extends FeatureTestCase
         $other = $this->makePlace('12', 'SUMATERA UTARA', 'MEDAN', 'MEDAN BARAT', 'KARANG BEROMBAK', '20118');
 
         // The city belongs to another province.
-        $this->update(['province_id' => $this->place['province'], 'city_id' => $other['city']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update(['province_id' => $this->place['province'], 'city_id' => $other['city']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
         // A village of another city.
-        $this->update([...$this->fullLocation(), 'village_id' => $other['village']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update([...$this->fullLocation(), 'village_id' => $other['village']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
         // A postal code of another village.
-        $this->update([...$this->fullLocation(), 'postal_code_id' => $other['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update([...$this->fullLocation(), 'postal_code_id' => $other['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
         // Ids that do not exist.
-        $this->update(['province_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update(['province_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
 
         $this->assertNull($this->row()->province_id);
     }
 
     public function test_a_level_needs_the_levels_above_it(): void
     {
-        $this->update(['city_id' => $this->place['city']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
-        $this->update(['province_id' => $this->place['province'], 'subdistrict_id' => $this->place['subdistrict']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
-        $this->update(['postal_code_id' => $this->place['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update(['city_id' => $this->place['city']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
+        $this->update(['province_id' => $this->place['province'], 'subdistrict_id' => $this->place['subdistrict']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
+        $this->update(['postal_code_id' => $this->place['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
 
         $this->update(['province_id' => $this->place['province'], 'city_id' => $this->place['city']])->assertNoContent();
     }
@@ -344,7 +344,7 @@ final class CompanyProfileTest extends FeatureTestCase
         $other = $this->makePlace('12', 'SUMATERA UTARA', 'MEDAN', 'MEDAN BARAT', 'KARANG BEROMBAK', '20118');
 
         // Changing only the province leaves the stored city under the wrong province.
-        $this->update(['province_id' => $other['province']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-location');
+        $this->update(['province_id' => $other['province']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
         // Sending the whole new chain works.
         $this->update([
             'province_id' => $other['province'], 'city_id' => $other['city'], 'subdistrict_id' => $other['subdistrict'],
@@ -397,7 +397,7 @@ final class CompanyProfileTest extends FeatureTestCase
     #[DataProvider('badSlugs')]
     public function test_a_badly_formed_slug_is_refused(string $slug): void
     {
-        $this->api('PUT', '/slug', ['slug' => $slug])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-slug');
+        $this->api('PUT', '/slug', ['slug' => $slug])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-slug');
 
         $this->assertSame('pt-maju-bersama', $this->row()->slug);
     }
@@ -415,11 +415,11 @@ final class CompanyProfileTest extends FeatureTestCase
 
             // Words under three characters are refused for their length first.
             $response->assertStatus(422);
-            $this->assertContains($response->json('type'), ['urn:jobportal:error:slug-reserved', 'urn:jobportal:error:invalid-slug']);
+            $this->assertContains($response->json('type'), ['urn:onesis:error:slug-reserved', 'urn:onesis:error:invalid-slug']);
         }
 
-        $this->api('PUT', '/slug', ['slug' => 'admin'])->assertJsonPath('type', 'urn:jobportal:error:slug-reserved');
-        $this->api('PUT', '/slug', ['slug' => 'jobs'])->assertJsonPath('type', 'urn:jobportal:error:slug-reserved');
+        $this->api('PUT', '/slug', ['slug' => 'admin'])->assertJsonPath('type', 'urn:onesis:error:slug-reserved');
+        $this->api('PUT', '/slug', ['slug' => 'jobs'])->assertJsonPath('type', 'urn:onesis:error:slug-reserved');
         $this->assertSame('pt-maju-bersama', $this->row()->slug);
     }
 
@@ -430,7 +430,7 @@ final class CompanyProfileTest extends FeatureTestCase
             'organization_type_id' => $this->organizationTypeId, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->api('PUT', '/slug', ['slug' => 'pt-lain'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:slug-taken');
+        $this->api('PUT', '/slug', ['slug' => 'pt-lain'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:slug-taken');
 
         $this->assertSame('pt-maju-bersama', $this->row()->slug);
     }
@@ -496,13 +496,13 @@ final class CompanyProfileTest extends FeatureTestCase
 
     public function test_an_unknown_suspended_or_hidden_company_is_not_found(): void
     {
-        $this->publicPage('no-such-company')->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:company-not-found');
+        $this->publicPage('no-such-company')->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:company-not-found');
 
         DB::table('company_companies')->update(['is_visible' => false]);
-        $this->publicPage()->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:company-not-found');
+        $this->publicPage()->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:company-not-found');
 
         DB::table('company_companies')->update(['is_visible' => true, 'status' => 'suspended']);
-        $this->publicPage()->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:company-not-found');
+        $this->publicPage()->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:company-not-found');
 
         DB::table('company_companies')->update(['status' => 'active']);
         $this->publicPage()->assertOk();

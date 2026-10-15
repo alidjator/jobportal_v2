@@ -89,7 +89,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
 
         $this->twoFactor(['challenge_token' => $challenge, 'code' => '000000'])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $this->assertDatabaseHas('platform_audit_logs', ['action' => 'auth.login_failed']);
 
         $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret)])->assertOk();
@@ -103,7 +103,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
         $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 0)])->assertOk();
         $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 1)])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
     }
 
     public function test_a_challenge_expires_after_five_minutes(): void
@@ -115,7 +115,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
 
         $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret)])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
     }
 
     public function test_a_new_login_replaces_the_open_challenge(): void
@@ -136,7 +136,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
         $this->twoFactor(['challenge_token' => $this->login()->json('data.challenge_token'), 'code' => $code])->assertOk();
         $this->twoFactor(['challenge_token' => $this->login()->json('data.challenge_token'), 'code' => $code])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
     }
 
     public function test_wrong_codes_count_in_the_sign_in_throttle(): void
@@ -218,7 +218,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
         ]);
 
         $login(strtoupper($codes[0]))->assertOk()->assertJsonMissingPath('data.recovery_codes');
-        $login($codes[0])->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+        $login($codes[0])->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $login($codes[1])->assertOk();
 
         $this->assertSame(2, DB::table('platform_audit_logs')->where('action', 'auth.recovery_code_used')->where('actor_id', $admin->id)->count());
@@ -255,7 +255,7 @@ final class AdminTwoFactorTest extends FeatureTestCase
         $this->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => '123456'])->assertUnauthorized();
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => '000000'])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/admin/me/two-factor/recovery-codes', ['code' => $this->totp($secret, -1)])
             ->assertStatus(422);

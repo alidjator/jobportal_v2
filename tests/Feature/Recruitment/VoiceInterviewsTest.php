@@ -77,7 +77,7 @@ final class VoiceInterviewsTest extends FeatureTestCase
     {
         $this->app->make(SettingsStore::class)->setGlobal(InterviewSettings::VOICE_ENABLED, false, null);
 
-        $this->schedule('voice')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:voice-not-enabled')->assertJsonStructure(['errors' => ['format']]);
+        $this->schedule('voice')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:voice-not-enabled')->assertJsonStructure(['errors' => ['format']]);
         $this->assertSame(0, DB::table('recruitment_interviews')->count());
     }
 
@@ -87,7 +87,7 @@ final class VoiceInterviewsTest extends FeatureTestCase
         $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.recorded', true);
 
         $this->mine('decline')->assertOk();
-        $this->schedule('online', ['meeting_url' => 'https://meet.example.test/a', 'recorded' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
+        $this->schedule('online', ['meeting_url' => 'https://meet.example.test/a', 'recorded' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
         $this->schedule('onsite', ['location' => 'Jakarta'])->assertSuccessful();
         $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.caller_number', null);
     }
@@ -98,9 +98,9 @@ final class VoiceInterviewsTest extends FeatureTestCase
     {
         $this->schedule('voice')->assertSuccessful();
 
-        $this->mine('confirm', [])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-phone')->assertJsonStructure(['errors' => ['phone']]);
-        $this->mine('confirm', ['phone' => '+1 415 555 0123'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-phone');
-        $this->mine('confirm', ['phone' => '81234567890'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-phone');
+        $this->mine('confirm', [])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-phone')->assertJsonStructure(['errors' => ['phone']]);
+        $this->mine('confirm', ['phone' => '+1 415 555 0123'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-phone');
+        $this->mine('confirm', ['phone' => '81234567890'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-phone');
         $this->assertNull($this->storedPhone());
 
         $this->mine('confirm', ['phone' => '0812-3456 7890'])->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.candidate_phone', '+6281234567890');
@@ -112,7 +112,7 @@ final class VoiceInterviewsTest extends FeatureTestCase
         $this->schedule('voice')->assertSuccessful();
         $later = now()->addDays(5)->utc()->format('Y-m-d\TH:i:s\Z');
 
-        $this->mine('propose', ['starts_at' => $later])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-phone');
+        $this->mine('propose', ['starts_at' => $later])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-phone');
         $this->mine('propose', ['starts_at' => $later, 'phone' => '6281234567890'])->assertOk()->assertJsonPath('data.candidate_phone', '+6281234567890');
 
         $this->api('POST', "/company/applications/{$this->applicationId}/interview/accept-proposal", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.status', 'confirmed');
@@ -122,7 +122,7 @@ final class VoiceInterviewsTest extends FeatureTestCase
     public function test_a_video_interview_takes_an_optional_fallback_number(): void
     {
         $this->schedule('video')->assertSuccessful();
-        $this->mine('confirm', ['fallback_phone' => '12345'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-phone')->assertJsonStructure(['errors' => ['fallback_phone']]);
+        $this->mine('confirm', ['fallback_phone' => '12345'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-phone')->assertJsonStructure(['errors' => ['fallback_phone']]);
         $this->mine('confirm', ['fallback_phone' => '08123456789'])->assertOk()->assertJsonPath('data.candidate_phone', '+628123456789');
 
         $this->mine('decline')->assertOk();

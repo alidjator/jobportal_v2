@@ -108,7 +108,7 @@ final class AdminMasterTest extends FeatureTestCase
 
     public function test_updating_an_unknown_item_is_a_404(): void
     {
-        $this->asAdmin('PUT', 'industries/999999', $this->payload())->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:not-found');
+        $this->asAdmin('PUT', 'industries/999999', $this->payload())->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:not-found');
     }
 
     public function test_extra_columns_follow_the_definition_of_the_master(): void
@@ -132,7 +132,7 @@ final class AdminMasterTest extends FeatureTestCase
 
         $this->asAdmin('POST', 'languages', $this->payload(['name' => ['id' => 'Lain', 'en' => 'Another'], 'code' => 'en']))
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:reference-value-taken');
+            ->assertJsonPath('type', 'urn:onesis:error:reference-value-taken');
         $this->asAdmin('PUT', "languages/{$other}", $this->payload(['name' => ['id' => 'Jerman', 'en' => 'German'], 'code' => 'en']))->assertStatus(409);
 
         $this->asAdmin('PUT', "languages/{$english}", $this->payload(['name' => ['id' => 'Inggris', 'en' => 'English'], 'code' => 'en']))->assertOk();

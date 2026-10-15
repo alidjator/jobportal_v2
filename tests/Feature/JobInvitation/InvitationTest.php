@@ -95,16 +95,16 @@ final class InvitationTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->getJson('/api/v1/me/invitations')->assertUnauthorized();
 
-        $this->invite($this->ana, token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->invite($this->ana, token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('GET', "/company/jobs/{$this->job}/invitations", token: $this->seekerToken)->assertForbidden();
 
         $id = $this->invitationId($this->ana);
         foreach ([['GET', '/me/invitations'], ['GET', "/me/invitations/{$id}"], ['POST', "/me/invitations/{$id}/decline"]] as [$method, $uri]) {
-            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         }
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
-        $this->invite($this->ana, token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->invite($this->ana, token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->api('GET', "/company/jobs/{$this->job}/invitations", token: $this->recruiterToken)->assertForbidden();
     }
 
@@ -159,7 +159,7 @@ final class InvitationTest extends FeatureTestCase
 
         $this->invite($this->ana, body: ['note' => " \n "])->assertCreated()->assertJsonPath('data.note', null);
         $this->invite($other, body: ['note' => str_repeat('é', 1000)])->assertCreated();
-        $this->invite($third, body: ['note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:note-too-long');
+        $this->invite($third, body: ['note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:note-too-long');
         $this->invite($third, body: ['note' => str_repeat('a', 4001)])->assertStatus(422);
         $this->invite($third, body: ['candidate' => ''])->assertStatus(422);
         $this->assertSame(2, DB::table('jobinvitation_invitations')->count());
@@ -169,11 +169,11 @@ final class InvitationTest extends FeatureTestCase
     {
         foreach (['draft', 'pending_review', 'closed', 'expired', 'rejected', 'taken_down'] as $status) {
             $job = $this->insertJob("Job {$status}", $status, [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
-            $this->invite($this->ana, $job)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:job-not-live');
+            $this->invite($this->ana, $job)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:job-not-live');
         }
 
         $late = $this->insertJob('Late', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-10-04']);
-        $this->invite($this->ana, $late)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:job-not-live');
+        $this->invite($this->ana, $late)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:job-not-live');
 
         $this->invite(['slug' => 'does-not-exist'])->assertNotFound();
         DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => false]);
@@ -181,7 +181,7 @@ final class InvitationTest extends FeatureTestCase
         DB::table('jobseeker_profiles')->where('user_id', $this->ana['id'])->update(['is_discoverable' => true]);
 
         $this->apply($this->job, ['resume_id' => $this->ana['resume']], $this->ana['token'])->assertCreated();
-        $this->invite($this->ana)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->invite($this->ana)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:already-applied');
         $this->assertSame(0, DB::table('jobinvitation_invitations')->count());
 
         // The same candidate may still be invited to another job.
@@ -191,10 +191,10 @@ final class InvitationTest extends FeatureTestCase
     public function test_a_candidate_is_invited_once_per_job_even_after_declining(): void
     {
         $id = $this->invitationId($this->ana);
-        $this->invite($this->ana)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-invited');
+        $this->invite($this->ana)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-invited');
 
         $this->api('POST', "/me/invitations/{$id}/decline", token: $this->ana['token'])->assertOk();
-        $this->invite($this->ana)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-invited');
+        $this->invite($this->ana)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-invited');
         $this->assertSame(1, DB::table('jobinvitation_invitations')->count());
     }
 
@@ -237,7 +237,7 @@ final class InvitationTest extends FeatureTestCase
         $this->invitationId($this->ana);
         $this->invite($this->ana)->assertStatus(409);
         $this->invitationId($b);
-        $this->invite($c)->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:invitation-limit');
+        $this->invite($c)->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:invitation-limit');
         $this->assertSame(2, DB::table('jobinvitation_invitations')->count());
 
         // The cap belongs to the company and can be overridden for it.
@@ -311,7 +311,7 @@ final class InvitationTest extends FeatureTestCase
         $this->assertSame([['invitation_id' => $id, 'job_id' => $this->job, 'reason' => 'Not looking for backend work.']], $this->notes($this->recruiterId, 'invitation.declined'));
         $this->assertSame([], $this->notes($this->adminId, 'invitation.declined'));
 
-        $this->api('POST', "/me/invitations/{$id}/decline", token: $this->ana['token'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-closed');
+        $this->api('POST', "/me/invitations/{$id}/decline", token: $this->ana['token'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-closed');
         $this->api('GET', "/company/jobs/{$this->job}/invitations", token: $this->recruiterToken)->assertOk()
             ->assertJsonPath('data.0.status', 'declined')->assertJsonPath('data.0.decline_reason', 'Not looking for backend work.');
     }
@@ -322,7 +322,7 @@ final class InvitationTest extends FeatureTestCase
         $b = $this->candidate('budi.s@example.test', 'Budi Santoso');
         $other = $this->invitationId($b);
 
-        $this->api('POST', "/me/invitations/{$id}/decline", ['reason' => str_repeat('a', 501)], $this->ana['token'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:reason-too-long');
+        $this->api('POST', "/me/invitations/{$id}/decline", ['reason' => str_repeat('a', 501)], $this->ana['token'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:reason-too-long');
         $this->api('POST', "/me/invitations/{$id}/decline", ['reason' => str_repeat('a', 2001)], $this->ana['token'])->assertStatus(422);
         $this->assertSame('sent', DB::table('jobinvitation_invitations')->where('id', $id)->value('status'));
 
@@ -366,7 +366,7 @@ final class InvitationTest extends FeatureTestCase
         DB::table('job_jobs')->where('id', $this->job)->update(['status' => 'closed']);
         $this->api('GET', '/me/invitations', token: $this->ana['token'])->assertOk()->assertJsonPath('data.0.status', 'sent')->assertJsonPath('data.0.expired', true);
         $this->api('GET', "/company/jobs/{$this->job}/invitations", token: $this->adminToken)->assertOk()->assertJsonPath('data.0.expired', true);
-        $this->api('POST', "/me/invitations/{$id}/decline", token: $this->ana['token'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-closed');
+        $this->api('POST', "/me/invitations/{$id}/decline", token: $this->ana['token'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-closed');
 
         // Opening it still works and the invitation lives again with the job.
         $this->api('GET', "/me/invitations/{$id}", token: $this->ana['token'])->assertOk()->assertJsonPath('data.status', 'viewed')->assertJsonPath('data.expired', true);

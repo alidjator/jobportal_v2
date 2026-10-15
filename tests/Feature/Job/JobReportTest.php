@@ -121,10 +121,10 @@ final class JobReportTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->postJson("/api/v1/jobs/{$job}/reports", ['reason' => 'spam_or_duplicate'])->assertUnauthorized();
 
-        $this->report($job, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->report($job, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
 
         $unverified = $this->tokenFor($this->seeker('belum@example.test', null));
-        $this->report($job, token: $unverified)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:email-not-verified');
+        $this->report($job, token: $unverified)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:email-not-verified');
 
         $draft = $this->insertJob('Draft job', 'draft');
         $this->report($draft)->assertNotFound();
@@ -137,9 +137,9 @@ final class JobReportTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->report($job, ['reason' => 'because'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->report($job, ['reason' => 'other'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-report')->assertJsonPath('errors.note.0', 'Tell us what is wrong with this job.');
-        $this->report($job, ['reason' => 'other', 'note' => '   '])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-report');
+        $this->report($job, ['reason' => 'because'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->report($job, ['reason' => 'other'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-report')->assertJsonPath('errors.note.0', 'Tell us what is wrong with this job.');
+        $this->report($job, ['reason' => 'other', 'note' => '   '])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-report');
         $this->report($job, ['note' => str_repeat('a', 1001)])->assertStatus(422);
 
         $this->report($job, ['reason' => 'other', 'note' => 'The salary is not what the page says.'])->assertCreated();
@@ -152,7 +152,7 @@ final class JobReportTest extends FeatureTestCase
         $other = $this->liveJob();
 
         $this->report($job)->assertCreated();
-        $this->report($job, ['reason' => 'spam_or_duplicate'])->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:already-reported');
+        $this->report($job, ['reason' => 'spam_or_duplicate'])->assertConflict()->assertJsonPath('type', 'urn:onesis:error:already-reported');
         $this->report($other)->assertCreated();
         $this->report($job, token: $this->secondToken)->assertCreated();
 
@@ -194,7 +194,7 @@ final class JobReportTest extends FeatureTestCase
 
         $this->holdByThree($job);
 
-        $this->apply($job, token: $this->secondToken)->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:job-on-hold');
+        $this->apply($job, token: $this->secondToken)->assertConflict()->assertJsonPath('type', 'urn:onesis:error:job-on-hold');
         $this->assertSame(1, DB::table('recruitment_applications')->where('job_id', $job)->count());
         $this->assertSame(200, $this->api('GET', "/company/jobs/{$job}", token: $this->adminToken)->status());
     }
@@ -323,7 +323,7 @@ final class JobReportTest extends FeatureTestCase
     {
         $job = $this->liveJob();
 
-        $this->admin('POST', "/jobs/{$job}/reports/dismiss")->assertConflict()->assertJsonPath('type', 'urn:jobportal:error:no-open-reports');
+        $this->admin('POST', "/jobs/{$job}/reports/dismiss")->assertConflict()->assertJsonPath('type', 'urn:onesis:error:no-open-reports');
         $this->admin('POST', '/jobs/999999/reports/dismiss')->assertNotFound();
 
         $this->report($job)->assertCreated();

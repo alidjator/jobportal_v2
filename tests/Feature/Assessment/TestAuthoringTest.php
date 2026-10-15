@@ -41,7 +41,7 @@ final class TestAuthoringTest extends FeatureTestCase
     public function test_only_a_company_admin_writes_tests_but_every_member_reads_the_catalogue(): void
     {
         $this->company('POST', 'tests', ['title' => 'Logic and numbers'], $this->recruiterToken)
-            ->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+            ->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
         $this->company('GET', 'tests', [], $this->recruiterToken)->assertForbidden();
         $this->company('GET', 'library', [], $this->recruiterToken)->assertOk();
     }
@@ -70,7 +70,7 @@ final class TestAuthoringTest extends FeatureTestCase
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->company('POST', 'tests', ['title' => 'Logic and numbers'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->company('POST', 'tests', ['title' => 'Logic and numbers'])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     // ----- tests -----
@@ -98,7 +98,7 @@ final class TestAuthoringTest extends FeatureTestCase
 
     public function test_the_descriptive_part_of_a_test_is_checked(): void
     {
-        $this->company('POST', 'tests', ['title' => 'ab'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-test')->assertJsonStructure(['errors' => ['title']]);
+        $this->company('POST', 'tests', ['title' => 'ab'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-test')->assertJsonStructure(['errors' => ['title']]);
         $this->company('POST', 'tests', ['title' => 'Valid title', 'measured_capabilities' => array_map(static fn (int $i): string => "Skill {$i}", range(1, 11))])
             ->assertStatus(422)->assertJsonStructure(['errors' => ['measured_capabilities']]);
         $this->company('POST', 'tests', ['title' => 'Valid title', 'measured_capabilities' => ['Logic', 'logic']])->assertStatus(422)->assertJsonStructure(['errors' => ['measured_capabilities']]);
@@ -112,8 +112,8 @@ final class TestAuthoringTest extends FeatureTestCase
         $this->company('PUT', "tests/{$id}", ['title' => 'Renamed test', 'description' => ''])->assertOk()->assertJsonPath('data.title', 'Renamed test')->assertJsonPath('data.description', null);
 
         $this->company('POST', "tests/{$id}/archive")->assertOk()->assertJsonPath('data.status', 'archived');
-        $this->company('PUT', "tests/{$id}", ['title' => 'Changed again'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-archived');
-        $this->company('POST', "tests/{$id}/sections", $this->section())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-archived');
+        $this->company('PUT', "tests/{$id}", ['title' => 'Changed again'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-archived');
+        $this->company('POST', "tests/{$id}/sections", $this->section())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-archived');
     }
 
     public function test_the_company_limit_counts_live_tests_only(): void
@@ -122,13 +122,13 @@ final class TestAuthoringTest extends FeatureTestCase
 
         $first = $this->newTest();
         $this->newTest();
-        $this->company('POST', 'tests', ['title' => 'A third test'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-limit-reached');
+        $this->company('POST', 'tests', ['title' => 'A third test'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-limit-reached');
 
         $this->company('POST', "tests/{$first}/archive")->assertOk();
         $third = $this->newTest();
 
-        $this->company('POST', "tests/{$first}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-limit-reached');
-        $this->company('POST', "tests/{$third}/clone")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-limit-reached');
+        $this->company('POST', "tests/{$first}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-limit-reached');
+        $this->company('POST', "tests/{$third}/clone")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-limit-reached');
     }
 
     public function test_only_a_draft_can_be_deleted(): void
@@ -141,7 +141,7 @@ final class TestAuthoringTest extends FeatureTestCase
         $this->company('DELETE', "tests/{$draft}")->assertNoContent();
         $this->assertSame(0, DB::table('assessment_tests')->where('id', $draft)->count());
 
-        $this->company('DELETE', "tests/{$published}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-not-draft');
+        $this->company('DELETE', "tests/{$published}")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-not-draft');
     }
 
     // ----- sections -----
@@ -157,7 +157,7 @@ final class TestAuthoringTest extends FeatureTestCase
         $this->company('PUT', "sections/{$first}", $this->section('One, renamed', 900))->assertOk()->assertJsonPath('data.title', 'One, renamed')->assertJsonPath('data.duration_seconds', 900);
 
         $this->company('PUT', "tests/{$id}/sections/order", ['ids' => [$second, $first]])->assertOk()->assertJsonPath('data.0.id', $second)->assertJsonPath('data.1.position', 2);
-        $this->company('PUT', "tests/{$id}/sections/order", ['ids' => [$second]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-order');
+        $this->company('PUT', "tests/{$id}/sections/order", ['ids' => [$second]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-order');
 
         $this->company('GET', "tests/{$id}")->assertOk()->assertJsonPath('data.total_seconds', 1500)->assertJsonPath('data.sections.0.id', $second)->assertJsonPath('data.sections.0.question_count', 0);
 
@@ -169,7 +169,7 @@ final class TestAuthoringTest extends FeatureTestCase
     {
         $id = $this->newTest();
 
-        $this->company('POST', "tests/{$id}/sections", $this->section('Too short', 59))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-section')->assertJsonStructure(['errors' => ['duration_seconds']]);
+        $this->company('POST', "tests/{$id}/sections", $this->section('Too short', 59))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-section')->assertJsonStructure(['errors' => ['duration_seconds']]);
         $this->company('POST', "tests/{$id}/sections", $this->section('Too long', 181 * 60))->assertStatus(422)->assertJsonStructure(['errors' => ['duration_seconds']]);
         $this->company('POST', "tests/{$id}/sections", ['title' => 'No time', 'format' => 'questions'])->assertStatus(422)->assertJsonStructure(['errors' => ['duration_seconds']]);
 
@@ -178,7 +178,7 @@ final class TestAuthoringTest extends FeatureTestCase
 
         $this->overrideSetting('assessment.max_sections_per_test', 2);
         $this->company('POST', "tests/{$id}/sections", $this->section('Second'))->assertCreated();
-        $this->company('POST', "tests/{$id}/sections", $this->section('Third'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:section-limit-reached');
+        $this->company('POST', "tests/{$id}/sections", $this->section('Third'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:section-limit-reached');
     }
 
     public function test_a_skill_test_cannot_use_the_psychological_formats(): void
@@ -229,7 +229,7 @@ final class TestAuthoringTest extends FeatureTestCase
     {
         $id = $this->newTest();
         $sectionId = (int) $this->company('POST', "tests/{$id}/sections", $this->section())->assertCreated()->json('data.id');
-        $post = fn (array $body) => $this->company('POST', "sections/{$sectionId}/questions", $body)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-question');
+        $post = fn (array $body) => $this->company('POST', "sections/{$sectionId}/questions", $body)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-question');
 
         $post($this->choice('Which is a prime number?', ['options' => [['label' => '7'], ['label' => '8']]]))->assertJsonStructure(['errors' => ['options']]);
         $post($this->choice('Which is a prime number?', ['options' => [['label' => '7', 'is_correct' => true], ['label' => '8', 'is_correct' => true]]]))->assertJsonStructure(['errors' => ['options']]);
@@ -268,7 +268,7 @@ final class TestAuthoringTest extends FeatureTestCase
 
         $this->company('PUT', "sections/{$sectionId}/questions/order", ['ids' => [$second, $first]])->assertOk()->assertJsonPath('data.0.id', $second);
         $this->company('PUT', "sections/{$sectionId}/questions/order", ['ids' => [$first, $first]])->assertStatus(422);
-        $this->company('PUT', "sections/{$sectionId}/questions/order", ['ids' => [$first]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-order');
+        $this->company('PUT', "sections/{$sectionId}/questions/order", ['ids' => [$first]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-order');
 
         $this->company('DELETE', "questions/{$second}")->assertNoContent();
         $this->assertSame(0, DB::table('assessment_question_options')->where('question_id', $second)->count());
@@ -295,7 +295,7 @@ final class TestAuthoringTest extends FeatureTestCase
         $sectionId = $this->sectionWithQuestion('company', $id);
         $this->company('POST', "sections/{$sectionId}/questions", $this->choice('Second question here'))->assertCreated();
 
-        $this->company('POST', "sections/{$sectionId}/questions", $this->choice('Third question here'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:question-limit-reached');
+        $this->company('POST', "sections/{$sectionId}/questions", $this->choice('Third question here'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:question-limit-reached');
     }
 
     public function test_only_one_sample_question_per_type_is_allowed(): void
@@ -315,7 +315,7 @@ final class TestAuthoringTest extends FeatureTestCase
     public function test_an_incomplete_test_is_not_published_and_the_problems_are_listed(): void
     {
         $id = $this->newTest();
-        $this->company('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')->assertJsonCount(1, 'errors.test');
+        $this->company('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->assertJsonCount(1, 'errors.test');
 
         $this->company('POST', "tests/{$id}/sections", $this->section('Empty section'))->assertCreated();
         $drawn = (int) $this->company('POST', "tests/{$id}/sections", $this->section('Drawn', 600, ['draw_count' => 3]))->assertCreated()->json('data.id');
@@ -331,7 +331,7 @@ final class TestAuthoringTest extends FeatureTestCase
         $this->sectionWithQuestion('company', $id);
 
         $this->company('POST', "tests/{$id}/publish")->assertOk()->assertJsonPath('data.status', 'published')->assertJsonPath('data.published_at', '2026-10-05T09:00:00+00:00');
-        $this->company('POST', "tests/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-not-draft');
+        $this->company('POST', "tests/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-not-draft');
     }
 
     public function test_archiving_and_restoring_are_repeatable_and_keep_the_publication(): void
@@ -426,6 +426,6 @@ final class TestAuthoringTest extends FeatureTestCase
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']);
         $token = $this->tokenFor((int) $seeker->id);
 
-        $this->company('GET', 'library', [], $token)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->company('GET', 'library', [], $token)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
     }
 }

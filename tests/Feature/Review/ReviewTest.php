@@ -128,8 +128,8 @@ final class ReviewTest extends FeatureTestCase
 
     public function test_only_someone_who_applied_to_the_company_may_review_it(): void
     {
-        $this->write([], $this->strangerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:review-requires-application');
-        $this->write([], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->write([], $this->strangerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:review-requires-application');
+        $this->write([], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
     }
 
     public function test_a_withdrawn_application_still_counts(): void
@@ -152,7 +152,7 @@ final class ReviewTest extends FeatureTestCase
     {
         $this->write()->assertCreated();
 
-        $this->write()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-reviewed');
+        $this->write()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-reviewed');
         $this->assertSame(1, DB::table('review_reviews')->count());
     }
 
@@ -193,7 +193,7 @@ final class ReviewTest extends FeatureTestCase
         $this->approve($id);
         $this->admin('POST', "/reviews/{$id}/remove", ['reason' => 'false-claim'])->assertOk();
 
-        $this->api('PUT', "/me/reviews/{$id}", $this->body(), $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:review-not-editable');
+        $this->api('PUT', "/me/reviews/{$id}", $this->body(), $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-not-editable');
     }
 
     public function test_an_author_deletes_their_review_with_its_reply(): void
@@ -214,7 +214,7 @@ final class ReviewTest extends FeatureTestCase
         $this->api('GET', "/me/reviews/{$id}", [], $this->strangerToken)->assertNotFound();
         $this->api('PUT', "/me/reviews/{$id}", $this->body(), $this->strangerToken)->assertNotFound();
         $this->api('DELETE', "/me/reviews/{$id}", [], $this->strangerToken)->assertNotFound();
-        $this->api('GET', '/me/reviews', [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->api('GET', '/me/reviews', [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
     }
 
     public function test_the_list_of_my_reviews_shows_every_state(): void
@@ -362,11 +362,11 @@ final class ReviewTest extends FeatureTestCase
     {
         $id = $this->publishedId();
 
-        $this->admin('POST', "/reviews/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:review-not-pending');
-        $this->admin('POST', "/reviews/{$id}/reject", ['reason' => 'spam'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:review-not-pending');
+        $this->admin('POST', "/reviews/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-not-pending');
+        $this->admin('POST', "/reviews/{$id}/reject", ['reason' => 'spam'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-not-pending');
 
         $pending = $this->otherReview(status: 'pending');
-        $this->admin('POST', "/reviews/{$pending}/remove", ['reason' => 'spam'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:review-not-published');
+        $this->admin('POST', "/reviews/{$pending}/remove", ['reason' => 'spam'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-not-published');
         $this->admin('POST', '/reviews/999999/approve')->assertNotFound();
     }
 
@@ -424,8 +424,8 @@ final class ReviewTest extends FeatureTestCase
         $waiting = $this->writeIdOfAnother();
         $body = ['body' => 'Thank you for the kind words.'];
 
-        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('PUT', "/company/reviews/{$id}/reply", $body, $this->otherAdminToken)->assertNotFound();
         $this->api('PUT', "/company/reviews/{$waiting}/reply", $body)->assertNotFound();
         $this->api('PUT', "/company/reviews/{$id}/reply", ['body' => 'short'])->assertStatus(422)->assertJsonValidationErrors(['body'], 'errors');
@@ -443,7 +443,7 @@ final class ReviewTest extends FeatureTestCase
 
         $this->admin('POST', "/review-replies/{$id}/reject", [])->assertStatus(422);
         $this->admin('POST', "/review-replies/{$id}/reject", ['reason' => 'abusive'])->assertNoContent();
-        $this->admin('POST', "/review-replies/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:reply-not-pending');
+        $this->admin('POST', "/review-replies/{$id}/approve")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:reply-not-pending');
         $this->api('GET', '/company/reviews')->assertJsonPath('data.0.reply.status', 'rejected')->assertJsonPath('data.0.reply.reason', 'abusive');
 
         $this->admin('GET', '/review-replies?filter[status]=rejected')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.review_id', $id);
@@ -466,8 +466,8 @@ final class ReviewTest extends FeatureTestCase
         $id = $this->publishedId();
 
         $this->api('POST', "/reviews/{$id}/report", ['reason' => 'false-claim', 'note' => 'This did not happen.'], $this->strangerToken)->assertNoContent();
-        $this->api('POST', "/reviews/{$id}/report", ['reason' => 'spam'], $this->strangerToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-reported');
-        $this->api('POST', "/reviews/{$id}/report", ['reason' => 'spam'], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:own-review');
+        $this->api('POST', "/reviews/{$id}/report", ['reason' => 'spam'], $this->strangerToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-reported');
+        $this->api('POST', "/reviews/{$id}/report", ['reason' => 'spam'], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:own-review');
         $this->api('POST', "/reviews/{$id}/report", ['reason' => 'rude'], $this->strangerToken)->assertStatus(422);
 
         $pending = $this->otherReview(status: 'pending');
@@ -498,7 +498,7 @@ final class ReviewTest extends FeatureTestCase
         $first = (int) $reports->json('data.1.id');
 
         $this->admin('POST', "/review-reports/{$first}/dismiss")->assertNoContent();
-        $this->admin('POST', "/review-reports/{$first}/dismiss")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-open');
+        $this->admin('POST', "/review-reports/{$first}/dismiss")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-open');
         $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'review.report_dismissed')->count());
 
         $this->admin('POST', "/reviews/{$id}/remove", ['reason' => 'abusive'])->assertOk()->assertJsonPath('data.status', 'removed');

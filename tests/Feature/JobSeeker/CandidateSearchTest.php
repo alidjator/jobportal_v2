@@ -139,7 +139,7 @@ final class CandidateSearchTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->getJson('/api/v1/company/candidates')->assertUnauthorized();
 
-        $this->api('GET', '/company/candidates', token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/company/candidates', token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('GET', '/company/candidates/maple-00000001', token: $this->seekerToken)->assertForbidden();
         $this->api('GET', '/company/candidates', token: $this->recruiterToken)->assertOk();
         $this->api('GET', '/company/candidates', token: $this->adminToken)->assertOk();
@@ -147,7 +147,7 @@ final class CandidateSearchTest extends FeatureTestCase
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
         foreach (['/company/candidates', '/company/candidates/maple-00000001', '/company/candidates/maple-00000001/avatar'] as $uri) {
-            $this->api('GET', $uri, token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+            $this->api('GET', $uri, token: $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         }
 
         $this->api('GET', '/company/candidates', token: $this->otherAdminToken)->assertOk();
@@ -155,7 +155,7 @@ final class CandidateSearchTest extends FeatureTestCase
 
     public function test_the_job_seeker_sees_which_companies_looked_only_as_a_job_seeker(): void
     {
-        $this->api('GET', '/me/profile/views', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->api('GET', '/me/profile/views', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         $this->api('GET', '/me/profile/views', token: $this->seekerToken)->assertOk()->assertJsonPath('meta.total', 0);
     }
 
@@ -287,7 +287,7 @@ final class CandidateSearchTest extends FeatureTestCase
 
         foreach ([['religion_id' => [$this->referenceId('reference_religions', 'islam')]], ['nationality_id' => [$this->referenceId('reference_nationalities', 'indonesian')]], ['age_min' => 20], ['age_max' => 40], ['gender' => 'female']] as $filter) {
             $this->api('GET', '/company/candidates?'.http_build_query(['filter' => $filter]), token: $this->adminToken)
-                ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:filter-not-available');
+                ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:filter-not-available');
         }
 
         // The other filters are not affected.
@@ -451,7 +451,7 @@ final class CandidateSearchTest extends FeatureTestCase
         $this->assertSame(10, DB::table('jobseeker_profile_views')->where('member_id', $this->recruiterId)->count());
 
         $this->api('GET', "/company/candidates/{$this->ana['slug']}", token: $this->recruiterToken)->assertOk();
-        $this->api('GET', "/company/candidates/{$this->budi['slug']}", token: $this->recruiterToken)->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:candidate-view-limit');
+        $this->api('GET', "/company/candidates/{$this->budi['slug']}", token: $this->recruiterToken)->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:candidate-view-limit');
         $this->assertSame(10, DB::table('jobseeker_profile_views')->where('member_id', $this->recruiterId)->count());
 
         // The limit belongs to the member and to the day; the list is not limited by it.
@@ -502,7 +502,7 @@ final class CandidateSearchTest extends FeatureTestCase
         $this->threeCandidates();
         $png = "\x89PNG\r\n\x1A\n".str_repeat("\0", 32);
 
-        $this->api('GET', "/company/candidates/{$this->ana['slug']}/avatar", token: $this->recruiterToken)->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:avatar-not-found');
+        $this->api('GET', "/company/candidates/{$this->ana['slug']}/avatar", token: $this->recruiterToken)->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:avatar-not-found');
 
         Storage::put('identity/avatars/ana.png', $png);
         DB::table('identity_users')->where('id', $this->ana['id'])->update(['avatar_path' => 'identity/avatars/ana.png']);

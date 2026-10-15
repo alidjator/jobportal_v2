@@ -1,4 +1,4 @@
-# Naming: ONESIS (decided 2026-10-15, not coded)
+# Naming: ONESIS (decided 2026-10-15; section 1 coded 2026-10-15)
 
 The project is no longer only a job portal (`erp-direction.md`), so the name "jobportal" is replaced where people or clients see it. This
 document records the names and when each place changes.
@@ -14,7 +14,7 @@ document records the names and when each place changes.
 - 2026-10-15: the API domain **stays `api-karir.satu.solutions`** for now; a neutral domain comes when the ERP goes to other customers (decided by
   the user; [Domains](#4-domains)).
 
-## 1. API contract (before go-live, coding session)
+## 1. API contract (coded 2026-10-15)
 
 - `ErrorCatalog` and `ErrorCatalogDocument` (`src/Shared/Infrastructure/Documentation`) build `urn:onesis:error:<code>`; the codes themselves do
   not change. `architecture.md` 2.1, `docs/api/` and the tests that assert the `type` follow.

@@ -257,7 +257,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
 
         $this->api('GET', '/me', [], $this->recruiterToken)->assertStatus(401);
         $this->postJson('/api/v1/auth/login', ['email' => 'rina@example.test', 'password' => self::PASSWORD])
-            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:membership-suspended');
+            ->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:membership-suspended');
 
         $mails = $this->mailsTo('rina@example.test');
         $this->assertCount(1, $mails);
@@ -309,8 +309,8 @@ final class CompanyTeamManagementTest extends FeatureTestCase
 
     public function test_the_owner_oneself_and_a_member_of_another_company_cannot_be_suspended(): void
     {
-        $this->api('POST', "/members/{$this->owner->id}/suspend", [], $this->secondToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-owner');
-        $this->api('POST', "/members/{$this->owner->id}/suspend")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cannot-suspend-self');
+        $this->api('POST', "/members/{$this->owner->id}/suspend", [], $this->secondToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:member-is-owner');
+        $this->api('POST', "/members/{$this->owner->id}/suspend")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:cannot-suspend-self');
         $outsider = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'recruiter');
         $this->api('POST', "/members/{$outsider->id}/suspend")->assertNotFound();
         $this->api('POST', "/members/{$this->recruiter->id}/suspend", ['message' => str_repeat('x', 501)])->assertStatus(422);
@@ -324,7 +324,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
         DB::table('company_members')->where('user_id', $this->owner->id)->update(['is_owner' => false]);
 
         // The owner flag aside, the only active admin cannot be demoted: the suspended one does not count.
-        $this->api('PATCH', "/members/{$this->owner->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->api('PATCH', "/members/{$this->owner->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
     }
 
     public function test_the_jobs_of_a_suspended_assignee_notify_the_company_admins_instead(): void
@@ -365,18 +365,18 @@ final class CompanyTeamManagementTest extends FeatureTestCase
     public function test_only_the_owner_hands_the_ownership_over_with_the_right_password_to_an_active_company_admin(): void
     {
         $this->api('POST', "/members/{$this->second->id}/make-owner", ['password' => self::PASSWORD], $this->secondToken)
-            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:owner-required');
+            ->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:owner-required');
         $this->api('POST', "/members/{$this->second->id}/make-owner", ['password' => 'wrong-password'])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-password');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-password');
         $this->api('POST', "/members/{$this->second->id}/make-owner")->assertStatus(422);
         $this->api('POST', "/members/{$this->recruiter->id}/make-owner", ['password' => self::PASSWORD])
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:owner-target-not-company-admin');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:owner-target-not-company-admin');
         $outsider = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'company_admin');
         $this->api('POST', "/members/{$outsider->id}/make-owner", ['password' => self::PASSWORD])->assertNotFound();
 
         DB::table('company_members')->where('user_id', $this->second->id)->update(['status' => 'suspended']);
         $this->api('POST', "/members/{$this->second->id}/make-owner", ['password' => self::PASSWORD])
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:owner-target-not-company-admin');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:owner-target-not-company-admin');
 
         $this->assertTrue((bool) DB::table('company_members')->where('user_id', $this->owner->id)->value('is_owner'));
         $this->assertSame(0, $this->actionCount('company.owner_transferred'));
@@ -404,7 +404,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
         $token = $this->platformAdminToken();
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->putJson("/api/v1/admin/companies/{$this->companyId}/owner", ['user_id' => $this->recruiter->id])
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:owner-target-not-company-admin');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:owner-target-not-company-admin');
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->putJson('/api/v1/admin/companies/999999/owner', ['user_id' => $this->second->id])->assertNotFound();
         $this->app['auth']->forgetGuards();
@@ -538,7 +538,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
         $this->assertCount(3, $this->api('GET', "/team/history?filter[user_id]={$this->recruiter->id}")->json('data'));
         $this->assertCount(0, $this->api('GET', "/team/history?filter[user_id]={$this->second->id}")->json('data'));
         $this->assertCount(1, $this->api('GET', '/team/history?filter[from]=2026-10-05T09:30:00Z')->json('data'));
-        $this->api('GET', '/team/history?filter[action]=job.published')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-team-action');
+        $this->api('GET', '/team/history?filter[action]=job.published')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-team-action');
     }
 
     public function test_a_platform_admin_shows_in_the_history_without_a_name(): void
@@ -589,8 +589,8 @@ final class CompanyTeamManagementTest extends FeatureTestCase
 
         $this->api('PATCH', "/invitations/{$id}", ['role' => 'company_admin'])->assertNoContent();
         $this->assertNull(DB::table('company_invitations')->value('permissions'));
-        $this->api('PATCH', "/invitations/{$id}", ['role' => 'member'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permissions-required');
-        $this->api('PATCH', "/invitations/{$id}", ['role' => 'member', 'permissions' => ['jobs.publish']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:permission-requires-view');
+        $this->api('PATCH', "/invitations/{$id}", ['role' => 'member'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permissions-required');
+        $this->api('PATCH', "/invitations/{$id}", ['role' => 'member', 'permissions' => ['jobs.publish']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permission-requires-view');
         $this->api('PATCH', "/invitations/{$id}", ['role' => 'member', 'permissions' => ['applications.view']])->assertNoContent();
         $this->assertSame(2, $this->actionCount('company.invitation_updated'));
     }
@@ -632,7 +632,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
         $this->invite()->assertCreated();
         $id = (int) DB::table('company_invitations')->value('id');
 
-        $this->api('POST', "/invitations/{$id}/resend")->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:invitation-cooldown');
+        $this->api('POST', "/invitations/{$id}/resend")->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:invitation-cooldown');
 
         Carbon::setTestNow('2026-10-14 09:00:00');
         $token = $this->tokenOf($this->owner);
@@ -661,7 +661,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
 
         $this->api('POST', "/invitations/{$foreign}/resend")->assertNotFound();
         $this->api('POST', "/invitations/{$revoked}/resend")->assertNotFound();
-        $this->api('POST', "/invitations/{$existing}/resend")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+        $this->api('POST', "/invitations/{$existing}/resend")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
     }
 
     public function test_the_purge_deletes_the_invitations_that_ended_more_than_thirty_days_ago(): void
@@ -709,8 +709,8 @@ final class CompanyTeamManagementTest extends FeatureTestCase
 
     public function test_the_domains_must_be_valid(): void
     {
-        $this->api('PUT', '/team/email-domains', ['domains' => ['not a domain']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-email-domain');
-        $this->api('PUT', '/team/email-domains', ['domains' => ['localhost']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-email-domain');
+        $this->api('PUT', '/team/email-domains', ['domains' => ['not a domain']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-email-domain');
+        $this->api('PUT', '/team/email-domains', ['domains' => ['localhost']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-email-domain');
         $this->api('PUT', '/team/email-domains', [])->assertStatus(422);
         $this->api('PUT', '/team/email-domains', ['domains' => array_map(fn (int $i): string => "d{$i}.example.test", range(1, 21))])->assertStatus(422);
         $this->assertSame(0, $this->actionCount('company.invitation_email_domains_changed'));
@@ -722,12 +722,12 @@ final class CompanyTeamManagementTest extends FeatureTestCase
         $id = (int) DB::table('company_invitations')->value('id');
         $this->api('PUT', '/team/email-domains', ['domains' => ['example.test']])->assertOk();
 
-        $this->invite('x@other.test')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:email-domain-not-allowed')
+        $this->invite('x@other.test')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:email-domain-not-allowed')
             ->assertJsonPath('allowed_domains', ['example.test']);
         $this->invite('x@example.test')->assertCreated();
 
         Carbon::setTestNow('2026-10-05 09:05:00');
-        $this->api('POST', "/invitations/{$id}/resend")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:email-domain-not-allowed');
+        $this->api('POST', "/invitations/{$id}/resend")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:email-domain-not-allowed');
 
         $token = $this->platformAdminToken();
         $this->app['auth']->forgetGuards();

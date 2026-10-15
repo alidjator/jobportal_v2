@@ -10,7 +10,7 @@ final class CompanyMemberPermissionsTest extends FeatureTestCase
 {
     use BuildsJobFixtures;
 
-    private const string NEEDED = 'urn:jobportal:error:company-permission-required';
+    private const string NEEDED = 'urn:onesis:error:company-permission-required';
 
     protected function setUp(): void
     {

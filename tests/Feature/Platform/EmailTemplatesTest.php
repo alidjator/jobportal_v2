@@ -84,7 +84,7 @@ final class EmailTemplatesTest extends FeatureTestCase
     public function test_one_template_can_be_read_and_an_unknown_one_is_a_404(): void
     {
         $this->asAdmin('GET', 'email-templates/'.self::KEY)->assertOk()->assertJsonPath('data.key', self::KEY);
-        $this->asAdmin('GET', 'email-templates/probe.nothing')->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:not-found');
+        $this->asAdmin('GET', 'email-templates/probe.nothing')->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:not-found');
     }
 
     public function test_an_override_is_saved_per_language_and_audited_without_its_text(): void
@@ -117,7 +117,7 @@ final class EmailTemplatesTest extends FeatureTestCase
     {
         $unknown = $this->asAdmin('PUT', 'email-templates/'.self::KEY.'/en', ['subject' => 'Hi', 'body' => 'Code {{code}} and {{secret}}'])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-email-template');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-email-template');
         $this->assertStringContainsString('{{secret}}', $unknown->json('errors.body.0'));
         $this->assertStringContainsString('{{name}}, {{code}}, {{minutes}}', $unknown->json('errors.body.0'));
 
@@ -246,7 +246,7 @@ final class EmailTemplatesTest extends FeatureTestCase
     {
         $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview', ['locale' => 'en', 'body' => 'No code'])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-email-template');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-email-template');
         $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview', ['locale' => 'en', 'subject' => 'Hi {{nope}}'])->assertStatus(422);
         $this->asAdmin('POST', 'email-templates/probe.nothing/preview', ['locale' => 'en'])->assertStatus(404);
     }

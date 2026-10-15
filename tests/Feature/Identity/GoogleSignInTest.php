@@ -173,7 +173,7 @@ final class GoogleSignInTest extends FeatureTestCase
 
         $this->signIn('token-unverified')
             ->assertStatus(401)
-            ->assertJsonPath('type', 'urn:jobportal:error:google-email-not-verified');
+            ->assertJsonPath('type', 'urn:onesis:error:google-email-not-verified');
 
         $this->assertSame(0, $this->links());
         $this->assertNotNull(UserModel::query()->first()->password);
@@ -182,7 +182,7 @@ final class GoogleSignInTest extends FeatureTestCase
     public function test_an_invalid_token_is_a_401_and_repeated_failures_are_throttled_per_address(): void
     {
         foreach (range(1, 5) as $ignored) {
-            $this->signIn('forged-token')->assertStatus(401)->assertJsonPath('type', 'urn:jobportal:error:invalid-google-token');
+            $this->signIn('forged-token')->assertStatus(401)->assertJsonPath('type', 'urn:onesis:error:invalid-google-token');
         }
 
         $this->signIn()->assertStatus(429)->assertHeader('Retry-After');
@@ -193,7 +193,7 @@ final class GoogleSignInTest extends FeatureTestCase
     {
         $this->user(['status' => 'suspended']);
 
-        $this->signIn()->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:account-suspended');
+        $this->signIn()->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:account-suspended');
 
         $this->assertSame(0, $this->links());
     }
@@ -204,7 +204,7 @@ final class GoogleSignInTest extends FeatureTestCase
 
         $this->signIn()
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:account-deactivated')
+            ->assertJsonPath('type', 'urn:onesis:error:account-deactivated')
             ->assertJsonPath('detail', 'This account is scheduled for deletion on 2026-10-31. Cancel the deletion to restore it.');
     }
 
@@ -213,7 +213,7 @@ final class GoogleSignInTest extends FeatureTestCase
         $user = $this->user();
         DB::table('identity_social_accounts')->insert(['user_id' => $user->id, 'provider' => 'google', 'provider_user_id' => 'another-subject', 'email' => 'siti@gmail.test', 'created_at' => now(), 'updated_at' => now()]);
 
-        $this->signIn()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:social-account-conflict');
+        $this->signIn()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:social-account-conflict');
 
         $this->assertSame(1, $this->links());
     }
@@ -222,7 +222,7 @@ final class GoogleSignInTest extends FeatureTestCase
     {
         $this->google->unavailable = true;
 
-        $this->signIn()->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:google-sign-in-unavailable');
+        $this->signIn()->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:google-sign-in-unavailable');
     }
 
     public function test_the_request_is_validated(): void

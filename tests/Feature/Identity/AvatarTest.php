@@ -100,7 +100,7 @@ final class AvatarTest extends FeatureTestCase
 
     public function test_the_picture_is_stored_under_a_random_name_and_served_back_to_its_owner(): void
     {
-        $this->show()->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:avatar-not-found');
+        $this->show()->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:avatar-not-found');
 
         $this->upload()->assertNoContent();
 
@@ -171,7 +171,7 @@ final class AvatarTest extends FeatureTestCase
         $this->upload()->assertNoContent();
         $path = $this->avatarPath();
 
-        $this->upload('plain text, not an image')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
+        $this->upload('plain text, not an image')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
         $this->upload("%PDF-1.4\n%%EOF")->assertStatus(422);
 
         $this->assertSame($path, $this->avatarPath());
@@ -186,7 +186,7 @@ final class AvatarTest extends FeatureTestCase
         $this->app->make(SettingsStore::class)->setGlobal(IdentitySettings::AVATAR_MAX_SIZE_KB, 100, null);
         $large = $this->imageBytes('png', 1, 1).str_repeat('a', 101 * 1024);
 
-        $this->upload($large)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large')->assertJsonPath('max_size_kb', 100);
+        $this->upload($large)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large')->assertJsonPath('max_size_kb', 100);
         $this->assertSame([], $this->storedFiles());
         $this->assertNull($this->avatarPath());
     }

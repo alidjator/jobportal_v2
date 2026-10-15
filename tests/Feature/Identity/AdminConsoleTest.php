@@ -176,7 +176,7 @@ final class AdminConsoleTest extends FeatureTestCase
         $this->assertSame(0, $other->tokens()->count());
         $this->postJson('/api/v1/admin/auth/login', ['email' => 'other@example.test', 'password' => 'a-strong-password'])
             ->assertForbidden()
-            ->assertJsonPath('type', 'urn:jobportal:error:account-suspended');
+            ->assertJsonPath('type', 'urn:onesis:error:account-suspended');
         $this->assertDatabaseHas('platform_audit_logs', ['action' => 'admin.suspended', 'subject_id' => $other->id]);
 
         $this->artisan('identity:suspend-admin', ['email' => 'other@example.test'])

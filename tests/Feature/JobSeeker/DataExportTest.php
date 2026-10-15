@@ -88,7 +88,7 @@ final class DataExportTest extends FeatureTestCase
         $this->postJson('/api/v1/me/data-export')->assertUnauthorized();
 
         $member = $this->tokenFor($this->account('company_member', 'budi@example.test'));
-        $this->api('POST', '/me/data-export', token: $member)->assertForbidden()->assertJson(['type' => 'urn:jobportal:error:job-seeker-only']);
+        $this->api('POST', '/me/data-export', token: $member)->assertForbidden()->assertJson(['type' => 'urn:onesis:error:job-seeker-only']);
         $this->api('GET', '/me/data-export', token: $member)->assertForbidden();
     }
 
@@ -162,7 +162,7 @@ final class DataExportTest extends FeatureTestCase
         $this->api('POST', '/me/data-export')->assertStatus(202);
 
         Carbon::setTestNow('2026-10-05 15:00:00');
-        $response = $this->api('POST', '/me/data-export')->assertStatus(429)->assertJson(['type' => 'urn:jobportal:error:data-export-limit']);
+        $response = $this->api('POST', '/me/data-export')->assertStatus(429)->assertJson(['type' => 'urn:onesis:error:data-export-limit']);
         $this->assertSame((string) (18 * 3600), $response->headers->get('Retry-After'));
 
         Carbon::setTestNow('2026-10-06 09:00:01');
@@ -174,7 +174,7 @@ final class DataExportTest extends FeatureTestCase
     {
         DB::table('jobseeker_data_exports')->insert(['user_id' => $this->userId, 'status' => 'building', 'created_at' => '2026-10-05 08:50:00', 'updated_at' => '2026-10-05 08:50:00']);
 
-        $this->api('POST', '/me/data-export')->assertStatus(409)->assertJson(['type' => 'urn:jobportal:error:data-export-running']);
+        $this->api('POST', '/me/data-export')->assertStatus(409)->assertJson(['type' => 'urn:onesis:error:data-export-running']);
     }
 
     public function test_a_failed_request_does_not_count_against_the_daily_limit(): void

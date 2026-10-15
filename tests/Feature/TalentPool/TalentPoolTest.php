@@ -104,7 +104,7 @@ final class TalentPoolTest extends FeatureTestCase
     {
         $this->entryId($this->ana);
 
-        $this->save($this->ana, $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-in-talent-pool');
+        $this->save($this->ana, $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-in-talent-pool');
         $this->assertSame(1, DB::table('talentpool_entries')->count());
 
         // Another company has its own pool.
@@ -212,9 +212,9 @@ final class TalentPoolTest extends FeatureTestCase
     {
         $this->assertSame('Designers', $this->api('POST', '/company/talent-pool/categories', ['name' => '  Designers  '], $this->recruiterToken)->assertCreated()->json('data.name'));
 
-        $this->api('POST', '/company/talent-pool/categories', ['name' => 'designers'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:category-name-taken');
+        $this->api('POST', '/company/talent-pool/categories', ['name' => 'designers'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:category-name-taken');
         $this->api('POST', '/company/talent-pool/categories', ['name' => '   '], $this->recruiterToken)->assertStatus(422);
-        $this->api('POST', '/company/talent-pool/categories', ['name' => str_repeat('a', 51)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:category-name-invalid');
+        $this->api('POST', '/company/talent-pool/categories', ['name' => str_repeat('a', 51)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:category-name-invalid');
 
         // Another company may use the same name.
         $this->api('POST', '/company/talent-pool/categories', ['name' => 'Designers'], $this->otherAdminToken)->assertCreated();
@@ -225,14 +225,14 @@ final class TalentPoolTest extends FeatureTestCase
         $id = $this->categoryId('Designers');
         $limited = $this->memberWith(['applications.view', 'interviews.manage'])['token'];
 
-        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $limited)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required')->assertJsonPath('permission', 'talent_pool.manage');
-        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $limited)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+        $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $limited)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-permission-required')->assertJsonPath('permission', 'talent_pool.manage');
+        $this->api('DELETE', "/company/talent-pool/categories/{$id}", token: $limited)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
         $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'Visual'], $this->recruiterToken)->assertOk()->assertJsonPath('data.name', 'Visual');
 
         $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'UX'], $this->adminToken)->assertOk()->assertJsonPath('data.name', 'UX');
 
         $other = $this->categoryId('Backend');
-        $this->api('PATCH', "/company/talent-pool/categories/{$other}", ['name' => 'ux'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:category-name-taken');
+        $this->api('PATCH', "/company/talent-pool/categories/{$other}", ['name' => 'ux'], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:category-name-taken');
         // Keeping its own name in another case is allowed.
         $this->api('PATCH', "/company/talent-pool/categories/{$id}", ['name' => 'Ux'], $this->adminToken)->assertOk();
         $this->api('PATCH', '/company/talent-pool/categories/999999', ['name' => 'Nothing'], $this->adminToken)->assertNotFound();
@@ -268,7 +268,7 @@ final class TalentPoolTest extends FeatureTestCase
             DB::table('talentpool_categories')->insert(['company_id' => $this->companyId, 'name' => "Category {$index}", 'created_at' => now(), 'updated_at' => now()]);
         }
 
-        $this->api('POST', '/company/talent-pool/categories', ['name' => 'One more'], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:category-limit');
+        $this->api('POST', '/company/talent-pool/categories', ['name' => 'One more'], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:category-limit');
 
         $rows = [];
 
@@ -279,7 +279,7 @@ final class TalentPoolTest extends FeatureTestCase
 
         DB::table('talentpool_entries')->insert($rows);
 
-        $this->save($this->ana)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:talent-pool-limit');
+        $this->save($this->ana)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:talent-pool-limit');
         $this->save($this->ana, $this->otherAdminToken)->assertCreated();
     }
 
@@ -288,14 +288,14 @@ final class TalentPoolTest extends FeatureTestCase
         $this->guest()->getJson('/api/v1/company/talent-pool')->assertUnauthorized();
 
         foreach ([['GET', '/company/talent-pool'], ['GET', '/company/talent-pool/categories']] as [$method, $uri]) {
-            $this->api($method, $uri, token: $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+            $this->api($method, $uri, token: $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         }
 
-        $this->save($this->budi, $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->save($this->budi, $this->ana['token'])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->api('GET', '/company/talent-pool', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->api('GET', '/company/talent-pool', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     public function test_the_entries_of_an_anonymised_candidate_are_deleted(): void
@@ -335,8 +335,8 @@ final class TalentPoolTest extends FeatureTestCase
     {
         $id = $this->entryId($this->ana, extra: ['note' => str_repeat('a', 500)]);
 
-        $this->save($this->budi, extra: ['note' => str_repeat('a', 501)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:note-too-long');
-        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => str_repeat('b', 501)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:note-too-long');
+        $this->save($this->budi, extra: ['note' => str_repeat('a', 501)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:note-too-long');
+        $this->api('PATCH', "/company/talent-pool/{$id}", ['note' => str_repeat('b', 501)], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:note-too-long');
 
         $this->assertSame(str_repeat('a', 500), DB::table('talentpool_entries')->where('id', $id)->value('note'));
         $this->assertSame(1, DB::table('talentpool_entries')->count());

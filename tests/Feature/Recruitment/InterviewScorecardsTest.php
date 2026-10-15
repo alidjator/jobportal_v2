@@ -107,8 +107,8 @@ final class InterviewScorecardsTest extends FeatureTestCase
     {
         $this->openInterview();
 
-        $this->api('GET', "/company/interviews/{$this->interview}/scorecard", [], $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-on-panel');
-        $this->save($this->card(), $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-on-panel');
+        $this->api('GET', "/company/interviews/{$this->interview}/scorecard", [], $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-on-panel');
+        $this->save($this->card(), $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-on-panel');
         $this->send($this->secondRecruiterToken)->assertForbidden();
 
         $this->api('GET', "/company/interviews/{$this->interview}/scorecard", [], $this->adminToken)->assertOk()->assertJsonPath('data.status', null);
@@ -120,7 +120,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $this->openInterview();
         $this->moveClockTo('2026-10-08 08:59:00');
 
-        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-not-open');
+        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-not-open');
 
         $this->moveClockTo('2026-10-08 09:00:00');
         $this->save($this->card())->assertOk();
@@ -134,10 +134,10 @@ final class InterviewScorecardsTest extends FeatureTestCase
     {
         $this->openInterview();
         DB::table('recruitment_interviews')->where('id', $this->interview)->update(['status' => 'pending']);
-        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-not-open');
+        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-not-open');
 
         DB::table('recruitment_interviews')->where('id', $this->interview)->update(['status' => 'cancelled', 'active_key' => null]);
-        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-not-open');
+        $this->save($this->card())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-not-open');
     }
 
     // ----- drafts, sending and the result -----
@@ -179,12 +179,12 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $foreign = 987654;
 
         $this->save(['answers' => [['question_id' => $this->questionIds[0], 'score' => 6]]])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-scorecard')->assertJsonStructure(['errors' => ['answers.0.score']]);
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-scorecard')->assertJsonStructure(['errors' => ['answers.0.score']]);
         $this->save(['answers' => [['question_id' => $foreign, 'score' => 3]]])->assertStatus(422)->assertJsonStructure(['errors' => ['answers.0.question_id']]);
         $this->save(['answers' => [['question_id' => $this->questionIds[0], 'score' => 3], ['question_id' => $this->questionIds[0], 'score' => 4]]])->assertStatus(422)->assertJsonStructure(['errors' => ['answers.1.question_id']]);
         $this->save(['note' => str_repeat('n', 2001)])->assertStatus(422)->assertJsonStructure(['errors' => ['note']]);
         $this->save(['answers' => [['question_id' => $this->questionIds[0], 'score' => 3, 'note' => str_repeat('n', 1001)]]])->assertStatus(422)->assertJsonStructure(['errors' => ['answers.0.note']]);
-        $this->save(['recommendation' => 'maybe'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->save(['recommendation' => 'maybe'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
 
         $this->assertSame(0, DB::table('recruitment_interview_scorecards')->count());
     }
@@ -193,10 +193,10 @@ final class InterviewScorecardsTest extends FeatureTestCase
     {
         $this->openInterview();
 
-        $this->send()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recommendation-required');
+        $this->send()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recommendation-required');
         $this->save($this->card('yes'))->assertOk();
         $this->save(['recommendation' => null, 'answers' => []])->assertOk();
-        $this->send()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recommendation-required');
+        $this->send()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recommendation-required');
 
         $this->save($this->card('strong_yes'))->assertOk();
         $this->send()->assertOk()->assertJsonPath('data.status', 'submitted');
@@ -228,7 +228,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $this->sent('yes', 5, 4, $this->recruiterToken);
         $this->save($this->card('no', 2, 2), $this->adminToken)->assertOk();
 
-        $this->sentList($this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:scorecards-locked');
+        $this->sentList($this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:scorecards-locked');
         $this->sentList($this->recruiterToken)->assertOk()->assertJsonCount(1, 'data');
         $this->sentList()->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.member.id', $this->recruiterId);
 
@@ -297,7 +297,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $this->openInterview();
         $this->sent('yes', 5, 2, $this->recruiterToken);
 
-        $this->save(['recommendation' => null, 'answers' => []])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recommendation-required');
+        $this->save(['recommendation' => null, 'answers' => []])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recommendation-required');
     }
 
     public function test_the_history_follows_the_lock_rule_and_belongs_to_a_sent_scorecard_of_the_interview(): void
@@ -308,7 +308,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $sent = (int) DB::table('recruitment_interview_scorecards')->where('member_id', $this->recruiterId)->value('id');
         $draft = (int) DB::table('recruitment_interview_scorecards')->where('member_id', $this->adminId)->value('id');
 
-        $this->api('GET', "/company/interviews/{$this->interview}/scorecards/{$sent}/revisions", [], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:scorecards-locked');
+        $this->api('GET', "/company/interviews/{$this->interview}/scorecards/{$sent}/revisions", [], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:scorecards-locked');
         $this->api('GET', "/company/interviews/{$this->interview}/scorecards/{$draft}/revisions", [], $this->secondRecruiterToken)->assertNotFound();
         $this->api('GET', "/company/interviews/{$this->interview}/scorecards/987654/revisions", [], $this->secondRecruiterToken)->assertNotFound();
     }
@@ -321,8 +321,8 @@ final class InterviewScorecardsTest extends FeatureTestCase
 
         $this->api('POST', "/company/applications/{$this->applicationId}/reject", ['reason' => 'position_filled'], $this->recruiterToken)->assertNoContent();
 
-        $this->save($this->card('strong_yes'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
-        $this->send($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->save($this->card('strong_yes'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
+        $this->send($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
         $this->sentList()->assertOk()->assertJsonCount(1, 'data');
     }
 
@@ -359,7 +359,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
             ->assertJsonPath('data.participants.1.id', $this->secondRecruiterId)
             ->assertJsonPath('data.participants.1.name', 'Sari Rekruter');
 
-        $this->sentList($this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:scorecards-locked');
+        $this->sentList($this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:scorecards-locked');
         $this->sent('no', 2, 2, $this->secondRecruiterToken);
         $this->sentList($this->secondRecruiterToken)->assertOk()->assertJsonCount(2, 'data');
     }
@@ -368,7 +368,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
     {
         $this->openInterview();
 
-        $this->panel([], $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:interview-edit-denied');
+        $this->panel([], $this->secondRecruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:interview-edit-denied');
         $this->panel([], $this->otherAdminToken)->assertNotFound();
         $this->panel([$this->secondRecruiterId], $this->adminToken)->assertOk();
         $this->panel([$this->adminId])->assertOk()->assertJsonCount(1, 'data.participants');
@@ -378,11 +378,11 @@ final class InterviewScorecardsTest extends FeatureTestCase
     {
         $this->openInterview();
 
-        $this->panel([$this->recruiterId])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
-        $this->panel([$this->otherAdminId])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
-        $this->panel([1, 2, 3, 4])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->panel([$this->adminId, $this->adminId])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
-        $this->api('PUT', "/company/interviews/{$this->interview}/participants", [], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->panel([$this->recruiterId])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->panel([$this->otherAdminId])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->panel([1, 2, 3, 4])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->panel([$this->adminId, $this->adminId])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->api('PUT', "/company/interviews/{$this->interview}/participants", [], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
 
         $this->assertSame([$this->adminId], DB::table('recruitment_interview_participants')->where('interview_id', $this->interview)->pluck('user_id')->map(fn ($id): int => (int) $id)->all());
     }
@@ -392,11 +392,11 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $this->openInterview();
 
         DB::table('recruitment_interviews')->where('id', $this->interview)->update(['status' => 'cancelled', 'active_key' => null]);
-        $this->panel([])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:interview-not-active');
+        $this->panel([])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-active');
 
         DB::table('recruitment_interviews')->where('id', $this->interview)->update(['status' => 'confirmed', 'active_key' => $this->applicationId]);
         $this->api('POST', "/company/applications/{$this->applicationId}/reject", ['reason' => 'position_filled'], $this->recruiterToken)->assertNoContent();
-        $this->panel([])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->panel([])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
     }
 
     // ----- the questions lock -----
@@ -409,7 +409,7 @@ final class InterviewScorecardsTest extends FeatureTestCase
         $this->save(['note' => 'Started.'])->assertOk();
 
         $this->api('GET', "/company/interviews/{$this->interview}/questions", [], $this->recruiterToken)->assertJsonPath('data.locked', true);
-        $this->api('PUT', "/company/interviews/{$this->interview}/questions", ['questions' => []], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-started');
+        $this->api('PUT', "/company/interviews/{$this->interview}/questions", ['questions' => []], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-started');
         $this->assertCount(2, DB::table('recruitment_interview_questions')->where('interview_id', $this->interview)->get());
     }
 

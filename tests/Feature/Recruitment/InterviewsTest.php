@@ -89,7 +89,7 @@ final class InterviewsTest extends FeatureTestCase
 
     public function test_a_move_to_an_interview_stage_needs_a_schedule_and_saves_it_with_the_move(): void
     {
-        $this->toInterviewStage()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:schedule-required');
+        $this->toInterviewStage()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:schedule-required');
         $this->assertSame('applied', DB::table('recruitment_applications')->where('id', $this->applicationId)->value('stage_type'));
 
         $this->toInterviewStage($this->interviewSchedule(['format' => 'onsite', 'location' => 'Room 2']))->assertNoContent();
@@ -103,9 +103,9 @@ final class InterviewsTest extends FeatureTestCase
     public function test_an_invalid_schedule_stops_the_move(): void
     {
         $this->toInterviewStage($this->interviewSchedule(['starts_at' => now()->subDay()->utc()->format('Y-m-d\TH:i:s\Z')]))
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
         $this->toInterviewStage($this->interviewSchedule(['interviewer_id' => $this->secondRecruiterId]))
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
         $this->toInterviewStage($this->interviewSchedule(['interviewer_id' => $this->otherAdminId]))->assertStatus(422);
         $this->toInterviewStage(['starts_at' => 'tomorrow'])->assertStatus(422);
 
@@ -123,7 +123,7 @@ final class InterviewsTest extends FeatureTestCase
     public function test_a_schedule_for_another_stage_is_refused(): void
     {
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-schedule');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-schedule');
     }
 
     public function test_moving_between_interview_stages_keeps_the_active_interview_and_needs_no_new_schedule(): void
@@ -140,7 +140,7 @@ final class InterviewsTest extends FeatureTestCase
 
     public function test_an_interview_can_be_scheduled_and_replaced_only_in_an_interview_stage(): void
     {
-        $this->schedule()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-in-interview-stage');
+        $this->schedule()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-in-interview-stage');
 
         $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
         DB::table('recruitment_interviews')->delete();
@@ -175,8 +175,8 @@ final class InterviewsTest extends FeatureTestCase
             $this->schedule($bad)->assertStatus(422);
         }
 
-        $this->schedule(['duration_minutes' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
-        $this->schedule(['format' => 'onsite'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
+        $this->schedule(['duration_minutes' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
+        $this->schedule(['format' => 'onsite'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
     }
 
     public function test_a_job_that_was_taken_down_cannot_be_scheduled(): void
@@ -184,7 +184,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
         DB::table('job_jobs')->where('id', $this->job)->update(['status' => 'taken_down']);
 
-        $this->schedule()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-taken-down');
+        $this->schedule()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-taken-down');
     }
 
     // ----- the job seeker answers -----
@@ -196,7 +196,7 @@ final class InterviewsTest extends FeatureTestCase
 
         $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.status', 'pending')->assertJsonPath('data.interviewer.name', 'Rina Rekruter')->assertJsonMissingPath('data.created_by');
         $this->mine('confirm')->assertOk()->assertJsonPath('data.status', 'confirmed');
-        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:interview-not-pending');
+        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-pending');
 
         $this->assertSame(['interview.confirmed'], $this->notificationTypes($this->recruiterId));
         $this->assertSame([], $this->notificationTypes($this->adminId));
@@ -208,8 +208,8 @@ final class InterviewsTest extends FeatureTestCase
         $proposed = $this->inTheFuture(6);
 
         $this->mine('propose', ['starts_at' => $proposed])->assertOk()->assertJsonPath('data.proposals_left', 1)->assertJsonPath('data.proposed_starts_at', $this->utc($proposed));
-        $this->mine('propose', ['starts_at' => $this->inTheFuture(7)])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:proposal-pending');
-        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:proposal-pending');
+        $this->mine('propose', ['starts_at' => $this->inTheFuture(7)])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:proposal-pending');
+        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:proposal-pending');
 
         $this->team('accept-proposal')->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.starts_at', $this->utc($proposed))->assertJsonPath('data.proposed_starts_at', null);
         $this->assertSame(['interview.proposed'], $this->notificationTypes($this->recruiterId));
@@ -221,7 +221,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
         DB::table('recruitment_interviews')->update(['proposals_used' => 2]);
 
-        $this->mine('propose', ['starts_at' => $this->inTheFuture(6)])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:proposal-limit');
+        $this->mine('propose', ['starts_at' => $this->inTheFuture(6)])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:proposal-limit');
         $this->mine('propose', ['starts_at' => now()->subDay()->utc()->format('Y-m-d\TH:i:s\Z')])->assertStatus(409);
         $this->mine('propose', ['starts_at' => 'soon'])->assertStatus(422);
         $this->mine('decline')->assertOk()->assertJsonPath('data.status', 'declined');
@@ -241,8 +241,8 @@ final class InterviewsTest extends FeatureTestCase
 
     public function test_nothing_to_answer_without_an_active_interview(): void
     {
-        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-interview');
-        $this->team('cancel')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-interview');
+        $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-interview');
+        $this->team('cancel')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-interview');
     }
 
     public function test_only_the_applicant_answers_and_only_their_own_application(): void
@@ -270,7 +270,7 @@ final class InterviewsTest extends FeatureTestCase
     {
         $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
 
-        $this->team('complete')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:interview-not-confirmed');
+        $this->team('complete')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-confirmed');
         $this->mine('confirm')->assertOk();
         $this->team('complete')->assertOk()->assertJsonPath('data.status', 'completed');
         $this->assertSame(0, DB::table('recruitment_interviews')->whereNotNull('active_key')->count());
@@ -370,7 +370,7 @@ final class InterviewsTest extends FeatureTestCase
 
     public function test_a_video_interview_is_refused_until_an_admin_switches_it_on(): void
     {
-        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-enabled');
         $this->assertSame('applied', DB::table('recruitment_applications')->where('id', $this->applicationId)->value('stage_type'));
 
         $this->enableVideo();
@@ -382,7 +382,7 @@ final class InterviewsTest extends FeatureTestCase
 
     public function test_an_admin_can_switch_video_on_for_one_company_only(): void
     {
-        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+        $this->toInterviewStage($this->videoSchedule())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-enabled');
 
         $platformAdmin = AdminModel::query()->create(['name' => 'Ops', 'email' => 'ops@example.test', 'password' => 'hash', 'status' => 'active']);
         $this->app->make(SettingsStore::class)->setCompanyOverride(InterviewSettings::VIDEO_ENABLED, $this->companyId, true, (int) $platformAdmin->id);
@@ -392,7 +392,7 @@ final class InterviewsTest extends FeatureTestCase
     public function test_only_a_video_interview_can_be_marked_recorded(): void
     {
         $this->enableVideo();
-        $this->toInterviewStage($this->interviewSchedule(['recorded' => true]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview')->assertJsonPath('errors.recorded.0', 'Only an interview held in the platform can be recorded.');
+        $this->toInterviewStage($this->interviewSchedule(['recorded' => true]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview')->assertJsonPath('errors.recorded.0', 'Only an interview held in the platform can be recorded.');
         $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
 
         $this->team('cancel')->assertOk();
@@ -405,7 +405,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
 
         $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.format', 'video')->assertJsonPath('data.recorded', true)->assertJsonPath('data.recording_consent', null);
-        $this->mine('confirm')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recording-consent-required');
+        $this->mine('confirm')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recording-consent-required');
         $this->mine('confirm', ['recording_consent' => 'withdrawn'])->assertStatus(422)->assertJsonValidationErrors(['recording_consent']);
         $this->assertSame('pending', DB::table('recruitment_interviews')->value('status'));
 
@@ -419,7 +419,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
 
         $this->mine('confirm', ['recording_consent' => 'refused'])->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.recording_consent', 'refused');
-        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-recording-consent');
     }
 
     public function test_an_interview_that_is_not_recorded_ignores_the_answer(): void
@@ -428,7 +428,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->videoSchedule())->assertNoContent();
 
         $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk()->assertJsonPath('data.recorded', false)->assertJsonPath('data.recording_consent', null);
-        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-recording-consent');
     }
 
     public function test_a_proposal_for_a_recorded_interview_carries_the_answer(): void
@@ -436,7 +436,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->enableVideo();
         $this->toInterviewStage($this->videoSchedule(['recorded' => true]))->assertNoContent();
 
-        $this->mine('propose', ['starts_at' => $this->inTheFuture(6)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:recording-consent-required');
+        $this->mine('propose', ['starts_at' => $this->inTheFuture(6)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recording-consent-required');
         $this->mine('propose', ['starts_at' => $this->inTheFuture(6), 'recording_consent' => 'granted'])->assertOk()->assertJsonPath('data.recording_consent', 'granted');
 
         $this->team('accept-proposal')->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.recording_consent', 'granted');
@@ -449,14 +449,14 @@ final class InterviewsTest extends FeatureTestCase
         $this->mine('confirm', ['recording_consent' => 'granted'])->assertOk();
 
         $this->mine('recording-consent/withdraw')->assertOk()->assertJsonPath('data.recording_consent', 'withdrawn')->assertJsonPath('data.status', 'confirmed');
-        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-recording-consent');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-recording-consent');
         $this->assertSame(['interview.confirmed', 'interview.recording_withdrawn'], $this->notificationTypes($this->recruiterId));
         $this->assertSame([], $this->notificationTypes($this->adminId));
     }
 
     public function test_withdrawing_needs_an_active_interview_and_the_applicant(): void
     {
-        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-interview');
+        $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-interview');
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", token: $this->recruiterToken)->assertForbidden();
     }
 
@@ -475,7 +475,7 @@ final class InterviewsTest extends FeatureTestCase
     {
         $body = ['stage_id' => $this->stage('interview'), 'application_ids' => [$this->applicationId], 'interview' => $this->videoSchedule(['recorded' => true])];
 
-        $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", $body, $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-enabled');
+        $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", $body, $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-enabled');
 
         $this->enableVideo();
         $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", $body, $this->recruiterToken)->assertSuccessful();

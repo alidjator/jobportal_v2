@@ -57,7 +57,7 @@ final class MemberAccountDeletionTest extends FeatureTestCase
     {
         $this->requestDeletion($this->adminToken)
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+            ->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
 
         $admin = UserModel::query()->findOrFail($this->adminId);
         $this->assertSame('active', $admin->status);
@@ -68,7 +68,7 @@ final class MemberAccountDeletionTest extends FeatureTestCase
 
     public function test_the_only_company_admin_of_another_company_is_judged_on_their_own_company(): void
     {
-        $this->requestDeletion($this->otherAdminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->requestDeletion($this->otherAdminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
     }
 
     public function test_a_company_admin_may_delete_the_account_when_another_admin_can_still_sign_in(): void
@@ -86,7 +86,7 @@ final class MemberAccountDeletionTest extends FeatureTestCase
     {
         $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
 
-        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:member-is-owner');
+        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:member-is-owner');
 
         $this->assertSame('active', UserModel::query()->findOrFail($this->adminId)->status);
     }
@@ -98,7 +98,7 @@ final class MemberAccountDeletionTest extends FeatureTestCase
         $secondToken = $this->tokenFor($second);
 
         $this->requestDeletion($secondToken)->assertOk();
-        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
 
         $this->assertSame('active', UserModel::query()->findOrFail($this->adminId)->status);
     }
@@ -108,7 +108,7 @@ final class MemberAccountDeletionTest extends FeatureTestCase
         $second = $this->jobMember($this->companyId, 'Dewi Admin', 'dewi@example.test', 'company_admin');
         UserModel::query()->whereKey($second)->update(['status' => 'suspended']);
 
-        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:last-company-admin');
+        $this->requestDeletion($this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
     }
 
     public function test_a_recruiter_may_delete_the_account_even_when_the_company_has_one_admin(): void

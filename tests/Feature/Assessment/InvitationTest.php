@@ -127,7 +127,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_move_to_an_assessment_stage_needs_a_test_and_sends_it_with_the_move(): void
     {
-        $this->moveToAssessment()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:assessment-required');
+        $this->moveToAssessment()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:assessment-required');
         $this->assertSame('applied', $this->stageType());
 
         $this->moveToAssessment($this->invitation(['assessor_ids' => [$this->adminId]]))->assertNoContent();
@@ -177,7 +177,7 @@ final class InvitationTest extends FeatureTestCase
             [['assessor_ids' => [$this->secondRecruiterId]], 'invalid-assessor'],
             [['assessor_ids' => [$this->otherAdminId]], 'invalid-assessor'],
         ] as [$overrides, $code]) {
-            $this->moveToAssessment($this->invitation($overrides))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:'.$code);
+            $this->moveToAssessment($this->invitation($overrides))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:'.$code);
         }
 
         $this->moveToAssessment($this->invitation(['due_at' => 'tomorrow']))->assertStatus(422);
@@ -207,7 +207,7 @@ final class InvitationTest extends FeatureTestCase
     {
         $essay = $this->publishedTest('Essay', ['type' => 'long_text', 'text' => 'Describe your last project.', 'points' => 10]);
 
-        $this->moveToAssessment($this->invitation(['test_id' => $essay]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessor');
+        $this->moveToAssessment($this->invitation(['test_id' => $essay]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
         $this->moveToAssessment($this->invitation(['test_id' => $essay, 'assessor_ids' => [$this->adminId, $this->recruiterId]]))->assertNoContent();
     }
 
@@ -215,12 +215,12 @@ final class InvitationTest extends FeatureTestCase
     {
         $ids = [$this->adminId, $this->recruiterId, $this->secondRecruiterId, 999_991, 999_992, 999_993];
 
-        $this->moveToAssessment($this->invitation(['assessor_ids' => $ids]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessor');
+        $this->moveToAssessment($this->invitation(['assessor_ids' => $ids]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
     }
 
     public function test_a_test_is_refused_for_another_stage(): void
     {
-        $this->moveToAssessment($this->invitation(), stage: $this->stage('screening'))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input');
+        $this->moveToAssessment($this->invitation(), stage: $this->stage('screening'))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-input');
         $this->assertSame('applied', $this->stageType());
     }
 
@@ -239,13 +239,13 @@ final class InvitationTest extends FeatureTestCase
         $this->provider('PUT', "tests/{$battery}/report-template", ['body' => 'Dear {{candidate_name}}'])->assertOk();
         $this->provider('POST', "tests/{$battery}/publish")->assertOk();
 
-        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-test');
+        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-test');
 
         $this->assessmentAdmin('POST', "companies/{$this->companyId}/batteries", ['test_id' => $battery])->assertNoContent();
-        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-test');
+        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-test');
 
         $this->overrideSetting('assessment.psychological_enabled', true);
-        $this->moveToAssessment($this->invitation(['test_id' => $battery, 'assessor_ids' => [$this->adminId]]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessor');
+        $this->moveToAssessment($this->invitation(['test_id' => $battery, 'assessor_ids' => [$this->adminId]]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
         $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertNoContent();
 
         $this->send(['test_id' => $library])->assertOk();
@@ -270,7 +270,7 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment($this->invitation())->assertNoContent();
         $this->company('POST', 'invitations/'.DB::table('assessment_invitations')->value('id').'/cancel')->assertOk();
 
-        $this->moveToAssessment(stage: $extra)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:assessment-required');
+        $this->moveToAssessment(stage: $extra)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:assessment-required');
     }
 
     public function test_moving_out_of_the_stage_cancels_the_active_test_and_tells_the_candidate(): void
@@ -316,7 +316,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_test_is_sent_and_replaced_only_in_an_assessment_stage(): void
     {
-        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-in-assessment-stage');
+        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-in-assessment-stage');
 
         $this->moveToAssessment($this->invitation())->assertNoContent();
         $this->company('POST', 'invitations/'.DB::table('assessment_invitations')->value('id').'/cancel')->assertOk();
@@ -335,7 +335,7 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment($this->invitation())->assertNoContent();
         DB::table('assessment_invitations')->update(['status' => 'started']);
 
-        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-in-progress');
+        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-in-progress');
         $this->moveToAssessment($this->invitation(), stage: $this->stage('assessment'))->assertStatus(409);
 
         $this->assertSame(['started'], $this->invitationStatuses());
@@ -346,7 +346,7 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment($this->invitation())->assertNoContent();
         DB::table('job_jobs')->where('id', $this->job)->update(['status' => 'taken_down']);
 
-        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-taken-down');
+        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-taken-down');
     }
 
     public function test_only_members_who_see_the_job_send_tests(): void
@@ -374,7 +374,7 @@ final class InvitationTest extends FeatureTestCase
         $this->assertSame('assessment', $this->stageType());
         $this->assertSame(['assessment.cancelled', 'assessment.invited'], $this->notificationTypes($this->seekerId));
 
-        $this->company('POST', "invitations/{$id}/cancel")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-active');
+        $this->company('POST', "invitations/{$id}/cancel")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-active');
         $this->company('POST', "invitations/{$id}/cancel", [], $this->otherAdminToken)->assertNotFound();
         $this->company('GET', "invitations/{$id}", [], $this->secondRecruiterToken)->assertNotFound();
         $this->company('GET', 'invitations/999999')->assertNotFound();
@@ -406,9 +406,9 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_an_onsite_test_names_its_location_and_the_candidate_and_the_email_show_it(): void
     {
-        $this->moveToAssessment($this->invitation(['mode' => 'onsite']))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input')->assertJsonStructure(['errors' => ['location']]);
-        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => '   ']))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input');
-        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => str_repeat('x', 256)]))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite']))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-input')->assertJsonStructure(['errors' => ['location']]);
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => '   ']))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-input');
+        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => str_repeat('x', 256)]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
         $this->assertSame('applied', $this->stageType());
 
         $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Head office, floor 3, room 301']))->assertNoContent();
@@ -478,12 +478,12 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment($this->invitation())->assertNoContent();
         $id = (int) DB::table('assessment_invitations')->value('id');
 
-        $this->upload($id, 'notes.pdf', 'just some text')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
-        $this->upload($id, 'photo.jpg', "\xFF\xD8\xFFnot really a picture")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
-        $this->upload($id, 'sheet.pdf', '%PDF-'.str_repeat('0', 11 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->upload($id, 'notes.pdf', 'just some text')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-attachment');
+        $this->upload($id, 'photo.jpg', "\xFF\xD8\xFFnot really a picture")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-attachment');
+        $this->upload($id, 'sheet.pdf', '%PDF-'.str_repeat('0', 11 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
         $this->assertSame([], Storage::allFiles('assessment/invitation-files'));
 
-        $this->api('POST', "/company/assessment/invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->api('POST', "/company/assessment/invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
     }
 
     public function test_erasing_the_candidate_deletes_the_file_of_the_invitation(): void
@@ -507,8 +507,8 @@ final class InvitationTest extends FeatureTestCase
         $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
 
         DB::table('assessment_invitations')->where('id', $id)->update(['status' => 'started']);
-        $this->upload($id, 'other.pdf', '%PDF-1.4')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-active');
-        $this->company('DELETE', "invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-active');
+        $this->upload($id, 'other.pdf', '%PDF-1.4')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-active');
+        $this->company('DELETE', "invitations/{$id}/attachment", [], $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-active');
         $this->assertCount(1, Storage::allFiles('assessment/invitation-files'), 'A refused upload leaves no stray file.');
         $this->api('GET', "/me/assessment/invitations/{$id}/attachment", [], $this->seekerToken)->assertOk();
     }
@@ -603,10 +603,10 @@ final class InvitationTest extends FeatureTestCase
 
         $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", [
             'application_ids' => [$this->applicationId, $second], 'stage_id' => $this->stage('assessment'), 'assessment' => $this->invitation(['test_id' => 999_999]),
-        ], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-test');
+        ], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-test');
         $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-move", [
             'application_ids' => [$this->applicationId, $second], 'stage_id' => $this->stage('screening'), 'assessment' => $this->invitation(),
-        ], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessment-input');
+        ], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessment-input');
 
         $this->assertSame(0, DB::table('assessment_invitations')->count());
         $this->assertSame('applied', $this->stageType());
@@ -663,7 +663,7 @@ final class InvitationTest extends FeatureTestCase
 
         $this->mine("/{$id}", $other)->assertNotFound();
         $this->mine('', $other)->assertOk()->assertJsonCount(0, 'data');
-        $this->mine('', $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->mine('', $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         $this->app['auth']->forgetGuards();
         $this->withToken('')->getJson('/api/v1/me/assessment/invitations')->assertUnauthorized();
     }
@@ -687,7 +687,7 @@ final class InvitationTest extends FeatureTestCase
             ['PUT', "questions/{$questionId}", $this->choice('Changed?')],
             ['DELETE', "questions/{$questionId}", []],
         ] as [$method, $uri, $body]) {
-            $this->company($method, $uri, $body)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:test-locked');
+            $this->company($method, $uri, $body)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:test-locked');
         }
 
         $this->assertSame('Before', DB::table('assessment_tests')->where('id', $this->testId)->value('title'));

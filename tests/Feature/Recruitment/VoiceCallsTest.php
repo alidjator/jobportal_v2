@@ -86,26 +86,26 @@ final class VoiceCallsTest extends FeatureTestCase
     public function test_only_the_panel_joins_and_only_a_callable_interview(): void
     {
         $this->confirmedVoiceInterview();
-        $this->team('join', $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-an-interview-participant');
+        $this->team('join', $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-an-interview-participant');
         $this->api('POST', "/company/applications/{$this->applicationId}/interview/voice/join", [], $this->seekerToken)->assertForbidden();
         $this->team('join', $this->otherAdminToken)->assertNotFound();
         $this->assertSame(0, DB::table('recruitment_interview_voice_endpoints')->count());
 
         $this->app->make(SettingsStore::class)->setGlobal(InterviewSettings::VOICE_ENABLED, false, null);
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:voice-disabled');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:voice-disabled');
     }
 
     public function test_the_interview_must_be_confirmed_held_by_phone_and_inside_its_window(): void
     {
         $this->confirmedVoiceInterview(['starts_at' => now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z')]);
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:voice-window-closed');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:voice-window-closed');
 
         $this->confirmedVoiceInterview(['format' => 'online', 'meeting_url' => 'https://meet.example.test/a'], 'online', []);
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-a-voice-interview');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-a-voice-interview');
 
         $this->app->make(SettingsStore::class)->setGlobal(InterviewSettings::VIDEO_ENABLED, true, null);
         $this->confirmedVoiceInterview(format: 'video', confirm: []);
-        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-phone-number');
+        $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-phone-number');
     }
 
     public function test_a_video_interview_with_a_fallback_number_can_be_joined_by_phone(): void
@@ -151,18 +151,18 @@ final class VoiceCallsTest extends FeatureTestCase
             'endpoint' => 'PJSIP/+6281234567890@trunk', 'app' => 'jobportal', 'appArgs' => "candidate,{$callId}", 'channelId' => $row->channel_id, 'callerId' => '+622150000000', 'timeout' => '45',
         ], $this->queryOf($channels[0]));
 
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:call-in-progress');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:call-in-progress');
     }
 
     public function test_the_team_must_be_in_the_call_before_it_dials(): void
     {
         $this->confirmedVoiceInterview();
 
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:team-not-connected');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:team-not-connected');
 
         $this->team('join')->assertOk();
         $this->bridgeChannels = 0;
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:team-not-connected');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:team-not-connected');
         $this->assertSame(0, DB::table('recruitment_interview_calls')->count());
     }
 
@@ -191,7 +191,7 @@ final class VoiceCallsTest extends FeatureTestCase
             $this->hear(['type' => 'ChannelDestroyed', 'cause' => 19, 'channel' => ['id' => $this->channelOf($callId)]]);
         }
 
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:call-attempts-used');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:call-attempts-used');
 
         // A new time starts the count again, and then the month's minutes and the platform's capacity are the limits.
         $this->confirmedVoiceInterview();
@@ -201,7 +201,7 @@ final class VoiceCallsTest extends FeatureTestCase
             'interview_id' => $this->interviewId(), 'started_by' => $this->recruiterId, 'status' => 'ended', 'number' => '+6281234567890', 'channel_id' => 'call-used', 'dialed_at' => now(),
             'answered_at' => now(), 'ended_at' => now(), 'duration_seconds' => 60, 'created_at' => now(), 'updated_at' => now(),
         ]);
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:voice-quota-used');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:voice-quota-used');
 
         $store->setGlobal(InterviewSettings::VOICE_MONTHLY_MINUTES, 600, null);
         $store->setGlobal(InterviewSettings::VOICE_MAX_CONCURRENT_CALLS, 1, null);
@@ -209,7 +209,7 @@ final class VoiceCallsTest extends FeatureTestCase
             'interview_id' => (int) DB::table('recruitment_interviews')->orderBy('id')->value('id'), 'started_by' => $this->recruiterId, 'status' => 'ringing', 'number' => '+6281234567891',
             'channel_id' => 'call-other', 'dialed_at' => now(), 'created_at' => now(), 'updated_at' => now(),
         ]);
-        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:voice-capacity-full');
+        $this->team('call')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:voice-capacity-full');
     }
 
     public function test_the_team_hangs_up_a_call_in_progress(): void
@@ -217,7 +217,7 @@ final class VoiceCallsTest extends FeatureTestCase
         $this->confirmedVoiceInterview();
         $this->team('join')->assertOk();
 
-        $this->team('hangup')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-live-call');
+        $this->team('hangup')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-live-call');
 
         $callId = (int) $this->team('call')->assertCreated()->json('data.id');
         $this->team('hangup')->assertOk()->assertJsonPath('data.id', $callId);

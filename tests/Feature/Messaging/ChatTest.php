@@ -59,7 +59,7 @@ final class ChatTest extends FeatureTestCase
         $unverified = $this->tokenFor($this->seeker('new@example.test', null));
 
         $this->multipartWithFiles('POST', '/me/conversations', ['company_id' => $this->companyId, 'body' => 'Hi'], [], $unverified)
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-not-verified');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-not-verified');
     }
 
     public function test_a_member_can_write_first_to_a_job_seeker_who_has_not_applied_and_only_the_starter_and_admins_see_it(): void
@@ -76,7 +76,7 @@ final class ChatTest extends FeatureTestCase
         $this->assertSame([], $this->api('GET', '/company/conversations', token: $this->secondRecruiterToken)->json('data'));
 
         // Another member who may not see the thread cannot start a second one in it.
-        $this->companyStarts($outsider, token: $this->secondRecruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:conversation-exists');
+        $this->companyStarts($outsider, token: $this->secondRecruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:conversation-exists');
         // The admin joins the existing thread.
         $this->companyStarts($outsider, 'Admin here', $this->adminToken)->assertOk();
     }
@@ -138,9 +138,9 @@ final class ChatTest extends FeatureTestCase
         $id = $this->seekerStarts();
 
         $this->say($id, null, $this->seekerToken, [$this->upload('cv.pdf', 'plain text, not a pdf')], 'seeker')
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-attachment');
         $this->say($id, null, $this->seekerToken, [$this->upload('cv.pdf', "%PDF-1.4\n/JavaScript (alert(1))")], 'seeker')
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-attachment');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-attachment');
         $this->assertSame(0, DB::table('messaging_attachments')->count());
     }
 
@@ -149,15 +149,15 @@ final class ChatTest extends FeatureTestCase
         Storage::fake();
         $id = $this->seekerStarts();
 
-        $this->say($id, '   ', $this->seekerToken, side: 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:empty-message');
-        $this->say($id, str_repeat('a', 5001), $this->seekerToken, side: 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:body-too-long');
+        $this->say($id, '   ', $this->seekerToken, side: 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:empty-message');
+        $this->say($id, str_repeat('a', 5001), $this->seekerToken, side: 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:body-too-long');
         $this->say($id, str_repeat('a', 5000), $this->seekerToken, side: 'seeker')->assertCreated();
 
         $six = array_map(fn (int $n) => $this->upload("f{$n}.png", $this->png()), range(1, 6));
-        $this->say($id, 'Too many', $this->seekerToken, $six, 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:too-many-attachments');
+        $this->say($id, 'Too many', $this->seekerToken, $six, 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:too-many-attachments');
 
         $big = "%PDF-1.4\n".str_repeat('a', 5 * 1024 * 1024);
-        $this->say($id, 'Too big', $this->seekerToken, [$this->upload('big.pdf', $big)], 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->say($id, 'Too big', $this->seekerToken, [$this->upload('big.pdf', $big)], 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
 
         $this->assertSame(0, DB::table('messaging_attachments')->count());
         $this->assertSame([], Storage::allFiles('messaging'));
@@ -168,7 +168,7 @@ final class ChatTest extends FeatureTestCase
         $this->app->make(SettingsStore::class)->setGlobal('messaging.max_attachment_bytes', 102_400, null);
         $id = $this->seekerStarts();
 
-        $this->say($id, null, $this->seekerToken, [$this->upload('a.png', $this->png().str_repeat('a', 102_400))], 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->say($id, null, $this->seekerToken, [$this->upload('a.png', $this->png().str_repeat('a', 102_400))], 'seeker')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
         $this->say($id, null, $this->seekerToken, [$this->upload('a.png', $this->png())], 'seeker')->assertCreated();
     }
 
@@ -184,7 +184,7 @@ final class ChatTest extends FeatureTestCase
         $second = $this->api('GET', "/me/conversations/{$id}/messages?per_page=2&cursor=".$first->json('meta.next_cursor'), token: $this->seekerToken)->assertOk();
         $this->assertSame(['one'], array_column($second->json('data'), 'body'));
         $this->assertNull($second->json('meta.next_cursor'));
-        $this->api('GET', "/me/conversations/{$id}/messages?cursor=garbage", token: $this->seekerToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cursor');
+        $this->api('GET', "/me/conversations/{$id}/messages?cursor=garbage", token: $this->seekerToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cursor');
     }
 
     public function test_unread_counts_are_per_person_and_reading_clears_them(): void
@@ -218,7 +218,7 @@ final class ChatTest extends FeatureTestCase
         $path = DB::table('messaging_attachments')->value('path');
         Storage::assertExists($path);
 
-        $this->api('DELETE', "/me/messages/{$messageId}", token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-your-message');
+        $this->api('DELETE', "/me/messages/{$messageId}", token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-your-message');
         $this->api('DELETE', "/company/messages/{$messageId}", token: $this->adminToken)->assertForbidden();
 
         $this->api('DELETE', "/company/messages/{$messageId}", token: $this->recruiterToken)->assertNoContent();
@@ -240,7 +240,7 @@ final class ChatTest extends FeatureTestCase
 
         Carbon::setTestNow(now()->addMinutes(16));
 
-        $this->api('DELETE', "/me/messages/{$messageId}", token: $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:delete-window-over');
+        $this->api('DELETE', "/me/messages/{$messageId}", token: $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:delete-window-over');
     }
 
     public function test_the_company_can_close_a_conversation_and_reopen_it(): void
@@ -252,8 +252,8 @@ final class ChatTest extends FeatureTestCase
         $closed = $this->api('POST', "/company/conversations/{$id}/close", token: $this->recruiterToken)->assertOk();
         $this->assertTrue($closed->json('data.closed'));
 
-        $this->say($id, 'Hello?', $this->seekerToken, side: 'seeker')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:conversation-closed');
-        $this->say($id, 'Hello', $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:conversation-closed');
+        $this->say($id, 'Hello?', $this->seekerToken, side: 'seeker')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:conversation-closed');
+        $this->say($id, 'Hello', $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:conversation-closed');
         $this->multipartWithFiles('POST', '/me/conversations', ['company_id' => $this->companyId, 'body' => 'Hi'], [], $this->seekerToken)->assertStatus(409);
 
         $this->assertFalse($this->api('POST', "/company/conversations/{$id}/reopen", token: $this->adminToken)->assertOk()->json('data.closed'));
@@ -266,7 +266,7 @@ final class ChatTest extends FeatureTestCase
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
         $this->api('GET', '/company/conversations', token: $this->adminToken)->assertForbidden();
-        $this->say($id, 'Hi', $this->seekerToken, side: 'seeker')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->say($id, 'Hi', $this->seekerToken, side: 'seeker')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->api('GET', "/me/conversations/{$id}/messages", token: $this->seekerToken)->assertOk();
     }
 
@@ -275,7 +275,7 @@ final class ChatTest extends FeatureTestCase
         $id = $this->seekerStarts();
         DB::table('identity_users')->where('id', $this->seekerId)->update(['anonymized_at' => now()]);
 
-        $this->say($id, 'Hello', $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recipient-unavailable');
+        $this->say($id, 'Hello', $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recipient-unavailable');
     }
 
     public function test_only_the_job_seeker_is_told_whether_the_company_is_online(): void
@@ -340,7 +340,7 @@ final class ChatTest extends FeatureTestCase
 
         $this->say($id, 'one', $this->recruiterToken)->assertCreated();
         $this->say($id, 'two', $this->recruiterToken)->assertCreated();
-        $this->say($id, 'three', $this->recruiterToken)->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:daily-limit');
+        $this->say($id, 'three', $this->recruiterToken)->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:daily-limit');
         // The job seeker's messages are not counted.
         $this->say($id, 'still free', $this->seekerToken, side: 'seeker')->assertCreated();
 

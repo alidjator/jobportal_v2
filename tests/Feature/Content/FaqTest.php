@@ -105,7 +105,7 @@ final class FaqTest extends FeatureTestCase
 
         $this->asAdmin('DELETE', "faq-categories/{$category}")
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:faq-category-not-empty');
+            ->assertJsonPath('type', 'urn:onesis:error:faq-category-not-empty');
 
         $this->asAdmin('DELETE', "faqs/{$faq}")->assertNoContent();
         $this->asAdmin('DELETE', "faq-categories/{$category}")->assertNoContent();
@@ -135,13 +135,13 @@ final class FaqTest extends FeatureTestCase
     {
         $this->asAdmin('POST', 'faqs', $this->faqPayload(999999))
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:faq-category-not-found');
+            ->assertJsonPath('type', 'urn:onesis:error:faq-category-not-found');
 
         $category = $this->category();
         $this->asAdmin('POST', 'faqs', $this->faqPayload($category, ['answer' => ['id' => 'Hanya Indonesia']]))->assertStatus(422)->assertJsonValidationErrors(['answer.en'], 'errors');
 
         $faq = $this->faq($category);
-        $this->asAdmin('PUT', "faqs/{$faq}", $this->faqPayload(999999))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:faq-category-not-found');
+        $this->asAdmin('PUT', "faqs/{$faq}", $this->faqPayload(999999))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:faq-category-not-found');
         $this->asAdmin('PUT', 'faqs/999999', $this->faqPayload($category))->assertStatus(404);
         $this->asAdmin('DELETE', 'faqs/999999')->assertStatus(404);
     }

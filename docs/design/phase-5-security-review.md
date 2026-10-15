@@ -80,7 +80,7 @@ Decided 2026-10-10 (user):
   follows P4. On success every **other** token of the account is revoked; the token of the request stays valid (`architecture.md` 2.2: tokens are revoked on
   password change). A wrong current password answers 422 and counts in the sign-in throttle of the account; the change and the sign-out from every device are written to the audit
   log (who, when, IP; `decisions.md`) (both decided 2026-10-10, user).
-- An account created with Google has no password (`identity_users.password` is nullable): it sets one through the password reset flow. The change endpoint answers 409 with the problem `type` `urn:jobportal:error:password-not-set` (decided 2026-10-10, user); it is added to `docs/api/error-catalog.md`.
+- An account created with Google has no password (`identity_users.password` is nullable): it sets one through the password reset flow. The change endpoint answers 409 with the problem `type` `urn:onesis:error:password-not-set` (decided 2026-10-10, user); it is added to `docs/api/error-catalog.md`.
 - `POST /api/v1/auth/logout-all` and `POST /api/v1/admin/auth/logout-all`: revoke every token of the account, the current one included.
 - Out: a forgot/reset flow for admins (stays on the console).
 - Coded 2026-10-10: `ChangePassword` and `SignOutEverywhere` use cases (one controller each serves both guards), events `PasswordChanged` and `SignedOutEverywhere`, audit actions `auth.password_changed` and `auth.signed_out_everywhere`; the new password must differ from the current one and be confirmed; `logout-all` is outside the terms gate, the change is not.

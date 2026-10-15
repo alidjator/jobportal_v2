@@ -163,7 +163,7 @@ final class CvGeneratorTest extends FeatureTestCase
         $this->recordDocuments();
 
         foreach ([['GET', '/me/cv/templates'], ['POST', '/me/cv']] as [$method, $uri]) {
-            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->api($method, $uri, token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
             $this->app['auth']->forgetGuards();
             $this->flushHeaders();
             $this->json($method, '/api/v1'.$uri)->assertStatus(401);
@@ -305,9 +305,9 @@ final class CvGeneratorTest extends FeatureTestCase
     {
         $this->recordDocuments();
 
-        $this->cv(['template' => 'fancy'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:template-unavailable');
+        $this->cv(['template' => 'fancy'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:template-unavailable');
         $this->cv(['language' => 'fr'])->assertStatus(422);
-        $this->cv(['include' => ['salary' => true]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cv');
+        $this->cv(['include' => ['salary' => true]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cv');
         $this->cv(['include' => ['photo' => 'maybe']])->assertStatus(422);
         $this->cv(['include' => 'photo'])->assertStatus(422);
 
@@ -335,7 +335,7 @@ final class CvGeneratorTest extends FeatureTestCase
         $this->admin('PATCH', '/modern', ['enabled' => false], $token)->assertOk()->assertJsonPath('data.enabled', false);
         $this->assertSame(['classic', 'compact'], array_column($this->api('GET', '/me/cv/templates', token: $this->seekerToken)->json('data'), 'key'));
         $this->recordDocuments();
-        $this->cv(['template' => 'modern'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:template-unavailable');
+        $this->cv(['template' => 'modern'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:template-unavailable');
 
         // Without a choice the default is used.
         $this->cv()->assertOk();
@@ -352,9 +352,9 @@ final class CvGeneratorTest extends FeatureTestCase
         $this->assertFalse($rows['classic']['is_default']);
 
         $this->admin('PATCH', '/compact', ['enabled' => false], $token)->assertOk();
-        $this->admin('PATCH', '/modern', ['enabled' => false], $token)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cv-template-required');
+        $this->admin('PATCH', '/modern', ['enabled' => false], $token)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:cv-template-required');
         // The default must be on.
-        $this->admin('PATCH', '/classic', ['is_default' => true], $token)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cv-template-required');
+        $this->admin('PATCH', '/classic', ['is_default' => true], $token)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:cv-template-required');
         $this->assertSame(['modern'], array_column($this->api('GET', '/me/cv/templates', token: $this->seekerToken)->json('data'), 'key'));
     }
 
@@ -392,7 +392,7 @@ final class CvGeneratorTest extends FeatureTestCase
 
         $this->cv()->assertOk();
         $this->cv()->assertOk();
-        $this->cv()->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:cv-limit');
+        $this->cv()->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:cv-limit');
         $this->assertCount(2, $this->renderer->documents);
 
         // Someone else has their own count.
@@ -465,7 +465,7 @@ final class CvGeneratorTest extends FeatureTestCase
         DB::table('jobseeker_resumes')->where('user_id', $this->seekerId)->delete();
         $job = $this->liveJob();
 
-        $this->apply($job, ['resume_id' => $this->resumeId])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:profile-incomplete');
+        $this->apply($job, ['resume_id' => $this->resumeId])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:profile-incomplete');
         $this->apply($job, ['resume_id' => null, 'cv' => []])->assertCreated();
 
         $this->assertSame('CV Siti Rahma.pdf', $this->applicationRow()->resume_name);
@@ -494,12 +494,12 @@ final class CvGeneratorTest extends FeatureTestCase
 
         // A template that is off.
         DB::table('jobseeker_cv_templates')->where('key', 'modern')->update(['enabled' => false]);
-        $this->apply($job, ['resume_id' => null, 'cv' => ['template' => 'modern']])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:template-unavailable');
+        $this->apply($job, ['resume_id' => null, 'cv' => ['template' => 'modern']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:template-unavailable');
 
         // The hourly limit.
         $this->setLimit(1);
         $this->cv()->assertOk();
-        $this->apply($job, ['resume_id' => null, 'cv' => []])->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:cv-limit');
+        $this->apply($job, ['resume_id' => null, 'cv' => []])->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:cv-limit');
 
         $this->assertNull($this->applicationRow());
         $this->assertSame([], Storage::allFiles('recruitment/applications'));
@@ -511,7 +511,7 @@ final class CvGeneratorTest extends FeatureTestCase
         $this->recordDocuments();
         DB::table('jobseeker_profiles')->where('user_id', $this->seekerId)->update(['phone' => null]);
 
-        $this->apply($this->liveJob(), ['resume_id' => null, 'cv' => []])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:profile-incomplete')->assertJsonPath('missing', ['phone']);
+        $this->apply($this->liveJob(), ['resume_id' => null, 'cv' => []])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:profile-incomplete')->assertJsonPath('missing', ['phone']);
 
         $this->assertSame([], $this->renderer->documents);
         $this->assertSame(0, DB::table('jobseeker_cv_generations')->count());
@@ -524,7 +524,7 @@ final class CvGeneratorTest extends FeatureTestCase
         $this->apply($job)->assertCreated();
 
         // Applying twice to the same job is refused before any CV is made.
-        $this->apply($job, ['resume_id' => null, 'cv' => []])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->apply($job, ['resume_id' => null, 'cv' => []])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
 
         $this->assertSame([], $this->renderer->documents);
         $this->assertSame(0, DB::table('jobseeker_cv_generations')->count());

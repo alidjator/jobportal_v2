@@ -127,12 +127,12 @@ final class CompanyImageTest extends FeatureTestCase
     {
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']);
 
-        $this->upload('logo', $this->imageBytes(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->api('DELETE', '/api/v1/company/logo', $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->upload('logo', $this->imageBytes(), token: $this->token($seeker))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->upload('logo', $this->imageBytes(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->api('DELETE', '/api/v1/company/logo', $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->upload('logo', $this->imageBytes(), token: $this->token($seeker))->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         DB::table('company_companies')->update(['status' => 'suspended']);
-        $this->upload('logo', $this->imageBytes())->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->upload('logo', $this->imageBytes())->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
 
         $this->assertSame([], $this->storedFiles());
         $this->assertNull($this->row()->logo_path);
@@ -244,10 +244,10 @@ final class CompanyImageTest extends FeatureTestCase
         $this->upload('logo', $this->imageBytes())->assertNoContent();
         $before = (string) $this->row()->logo_path;
 
-        $this->upload('logo', '<?php echo "hi"; ?>', 'logo.png')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
-        $this->upload('logo', 'GIF89a<?php system("id"); ?>', 'logo.gif')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
-        $this->upload('logo', '<svg xmlns="http://www.w3.org/2000/svg"/>', 'logo.svg')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
-        $this->upload('logo', substr($this->imageBytes('png', 300, 300), 0, 80), 'cut.png')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-image');
+        $this->upload('logo', '<?php echo "hi"; ?>', 'logo.png')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
+        $this->upload('logo', 'GIF89a<?php system("id"); ?>', 'logo.gif')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
+        $this->upload('logo', '<svg xmlns="http://www.w3.org/2000/svg"/>', 'logo.svg')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
+        $this->upload('logo', substr($this->imageBytes('png', 300, 300), 0, 80), 'cut.png')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-image');
 
         $this->assertSame($before, $this->row()->logo_path);
         $this->assertSame([$before], $this->storedFiles());
@@ -269,7 +269,7 @@ final class CompanyImageTest extends FeatureTestCase
         $padded = $bytes.str_repeat("\0", 101 * 1024);
 
         $this->upload('logo', $padded)->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:file-too-large')
+            ->assertJsonPath('type', 'urn:onesis:error:file-too-large')
             ->assertJsonPath('max_size_kb', 100);
 
         $this->assertSame([], $this->storedFiles());
@@ -286,7 +286,7 @@ final class CompanyImageTest extends FeatureTestCase
         $exact = $bytes.str_repeat("\0", 100 * 1024 - strlen($bytes));
 
         $this->upload('logo', $exact)->assertNoContent();
-        $this->upload('logo', $exact."\0")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->upload('logo', $exact."\0")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
     }
 
     public function test_the_default_size_settings_are_registered_for_admins(): void
@@ -312,7 +312,7 @@ final class CompanyImageTest extends FeatureTestCase
         $this->assertNull($this->row()->logo_path);
         $this->assertSame([], $this->storedFiles());
         $this->api('DELETE', '/api/v1/company/logo')->assertNoContent();
-        $this->api('GET', '/api/v1/company/logo')->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:image-not-found');
+        $this->api('GET', '/api/v1/company/logo')->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:image-not-found');
     }
 
     // ----- reading -----
@@ -321,7 +321,7 @@ final class CompanyImageTest extends FeatureTestCase
     {
         $this->api('GET', '/api/v1/company/profile')->assertJsonPath('data.logo_url', null)->assertJsonPath('data.banner_url', null);
         $this->get('/api/v1/companies/pt-maju-bersama')->assertOk()->assertJsonPath('data.logo_url', null)->assertJsonPath('data.banner_url', null);
-        $this->get('/api/v1/companies/pt-maju-bersama/logo')->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:image-not-found');
+        $this->get('/api/v1/companies/pt-maju-bersama/logo')->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:image-not-found');
         $this->get('/api/v1/companies/pt-maju-bersama/banner')->assertNotFound();
     }
 
@@ -361,7 +361,7 @@ final class CompanyImageTest extends FeatureTestCase
         $this->upload('logo', $this->imageBytes())->assertNoContent();
         Storage::delete((string) $this->row()->logo_path);
 
-        $this->get('/api/v1/companies/pt-maju-bersama/logo')->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:image-not-found');
+        $this->get('/api/v1/companies/pt-maju-bersama/logo')->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:image-not-found');
         $this->api('GET', '/api/v1/company/logo')->assertNotFound();
     }
 

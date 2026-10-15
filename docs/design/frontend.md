@@ -375,7 +375,7 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   names, problem `detail` per code); the front end shows the text the API returns and never keeps its own text per error code. New API work, done with
   front-end coding.
 - **Errors (agreed):** one parser turns `application/problem+json` into `{code, status, detail, errors, retryAfter}`, with `code` taken from
-  `urn:jobportal:error:<code>`; the union of codes (for decisions, not for text) is generated from `docs/api/error-catalog.md`. A 422 `errors` map goes onto the vee-validate fields, a
+  `urn:onesis:error:<code>`; the union of codes (for decisions, not for text) is generated from `docs/api/error-catalog.md`. A 422 `errors` map goes onto the vee-validate fields, a
   429 shows the wait from `Retry-After`; 401, 403 and 409 are handled centrally (section 5.2).
 - **Data and state (agreed):** Pinia for the session and UI settings; server-rendered public pages use Nuxt `useFetch`; the browser-rendered areas
   (`/me`, `/rekruter`) and the admin application use TanStack Vue Query for caching and invalidation. `@nuxtjs/i18n` with `prefix_except_default` and

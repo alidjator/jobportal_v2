@@ -86,7 +86,7 @@ final class ProcessApplicationTest extends FeatureTestCase
         $this->postJson("/api/v1/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview')])->assertStatus(401);
         $this->postJson("/api/v1/company/applications/{$this->applicationId}/reject", ['reason' => 'other', 'note' => 'x'])->assertStatus(401);
 
-        $this->move($this->stage('interview'), $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->move($this->stage('interview'), $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->reject(['reason' => 'position_filled'], $this->seekerToken)->assertStatus(403);
 
         foreach ([$this->secondRecruiterToken, $this->otherAdminToken] as $token) {
@@ -107,7 +107,7 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        $this->move($this->stage('interview'))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->move($this->stage('interview'))->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->reject(['reason' => 'position_filled'])->assertStatus(403);
         $this->assertSame('applied', $this->row()->stage_type);
     }
@@ -170,11 +170,11 @@ final class ProcessApplicationTest extends FeatureTestCase
         $foreign = (int) DB::table('recruitment_stages')->where('company_id', $this->otherCompanyId)->where('type', 'interview')->value('id');
 
         foreach ([$this->stage('rejected'), $this->stage('withdrawn'), $foreign, 999999] as $stageId) {
-            $this->move($stageId)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-stage')->assertJsonStructure(['errors' => ['stage_id']]);
+            $this->move($stageId)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage')->assertJsonStructure(['errors' => ['stage_id']]);
         }
 
         $this->api('POST', "/company/applications/{$this->applicationId}/move", [], $this->recruiterToken)->assertStatus(422);
-        $this->move($this->stage('applied'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-in-stage');
+        $this->move($this->stage('applied'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-in-stage');
 
         $this->assertSame('applied', $this->row()->stage_type);
         $this->assertSame(1, $this->historyCount());
@@ -216,9 +216,9 @@ final class ProcessApplicationTest extends FeatureTestCase
         }
 
         // "other" needs a note; a note is at most 1,000 characters; the reason must be on the list.
-        $this->reject(['reason' => 'other'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-rejection')->assertJsonStructure(['errors' => ['note']]);
-        $this->reject(['reason' => 'other', 'note' => '   '])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-rejection');
-        $this->reject(['reason' => 'position_filled', 'note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-rejection');
+        $this->reject(['reason' => 'other'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-rejection')->assertJsonStructure(['errors' => ['note']]);
+        $this->reject(['reason' => 'other', 'note' => '   '])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-rejection');
+        $this->reject(['reason' => 'position_filled', 'note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-rejection');
         $this->reject(['reason' => 'because'])->assertStatus(422);
         $this->reject([])->assertStatus(422);
         $this->assertSame('applied', $this->row()->stage_type);
@@ -231,7 +231,7 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         $this->reject(['reason' => 'position_filled'])->assertNoContent();
 
-        $this->apply($this->job)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->apply($this->job)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
     }
 
     public function test_an_application_can_be_rejected_from_hired_too(): void
@@ -251,15 +251,15 @@ final class ProcessApplicationTest extends FeatureTestCase
         $count = $this->historyCount();
         $this->events = [];
 
-        $this->move($this->stage('interview'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
-        $this->reject(['reason' => 'position_filled'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->move($this->stage('interview'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
+        $this->reject(['reason' => 'position_filled'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
 
         $other = $this->insertJob('Other job', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
         $withdrawn = (int) $this->apply($other)->assertCreated()->json('data.id');
         $this->api('POST', "/me/applications/{$withdrawn}/withdraw", token: $this->seekerToken)->assertNoContent();
 
         // The recruiter saw the application before the applicant withdrew, so the move meets the withdrawal.
-        $this->move($this->stage('interview'), id: $withdrawn)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-final');
+        $this->move($this->stage('interview'), id: $withdrawn)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
         $this->reject(['reason' => 'position_filled'], id: $withdrawn)->assertStatus(409);
 
         $this->assertSame($count, $this->historyCount());
@@ -282,8 +282,8 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         DB::table('job_jobs')->where('id', $this->job)->update(['status' => 'taken_down']);
 
-        $this->move($this->stage('interview'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-taken-down');
-        $this->reject(['reason' => 'position_filled'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-taken-down');
+        $this->move($this->stage('interview'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-taken-down');
+        $this->reject(['reason' => 'position_filled'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-taken-down');
         $this->api('GET', "/company/applications/{$this->applicationId}", token: $this->recruiterToken)->assertOk();
         $this->api('GET', "/company/jobs/{$this->job}/applications", token: $this->recruiterToken)->assertOk();
 

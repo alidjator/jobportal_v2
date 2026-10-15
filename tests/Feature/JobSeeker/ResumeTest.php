@@ -82,7 +82,7 @@ final class ResumeTest extends FeatureTestCase
         }
 
         $member = $this->tokenFor($this->account('company_member', 'member@example.test'));
-        $this->upload(token: $member)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->upload(token: $member)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         $this->api('GET', '/me/resumes', token: $member)->assertStatus(403);
         $this->assertSame([], $this->storedFiles());
     }
@@ -116,7 +116,7 @@ final class ResumeTest extends FeatureTestCase
 
     public function test_the_file_is_checked_by_its_content_not_by_its_name(): void
     {
-        $this->upload('just some text', 'cv.pdf')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-resume');
+        $this->upload('just some text', 'cv.pdf')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-resume');
         $this->upload("\x89PNG\r\n\x1a\n".str_repeat('x', 100), 'cv.pdf')->assertStatus(422);
         $this->upload('  %PDF-1.4 starts late', 'cv.pdf')->assertStatus(422);
         $this->upload($this->pdf(), 'cv.txt')->assertCreated();
@@ -126,7 +126,7 @@ final class ResumeTest extends FeatureTestCase
     public function test_a_pdf_with_active_content_or_encryption_is_refused(): void
     {
         foreach (['/Encrypt 5 0 R', '/JavaScript (app.alert(1))', '/S /JavaScript', '/JS (app.alert(1))', '/Launch << /F (cmd.exe) >>', '/EmbeddedFile', '/Type /EmbeddedFile'] as $extra) {
-            $this->upload($this->pdf($extra))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-resume');
+            $this->upload($this->pdf($extra))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-resume');
         }
 
         $this->assertSame([], $this->storedFiles());
@@ -140,7 +140,7 @@ final class ResumeTest extends FeatureTestCase
 
     public function test_the_size_limit_follows_the_admin_setting(): void
     {
-        $this->upload($this->pdf(str_repeat('a', 5120 * 1024)))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large')->assertJsonPath('max_size_kb', 5120);
+        $this->upload($this->pdf(str_repeat('a', 5120 * 1024)))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large')->assertJsonPath('max_size_kb', 5120);
         $this->assertSame([], $this->storedFiles());
 
         $this->app->make(SettingsStore::class)->setGlobal(JobSeekerSettings::RESUME_MAX_SIZE_KB, 512, null);
@@ -179,7 +179,7 @@ final class ResumeTest extends FeatureTestCase
             $this->upload($this->pdf("% {$i}"), "cv-{$i}.pdf")->assertCreated();
         }
 
-        $this->upload($this->pdf('% six'), 'cv-6.pdf')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:resume-limit-reached');
+        $this->upload($this->pdf('% six'), 'cv-6.pdf')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:resume-limit-reached');
         $this->assertCount(5, $this->storedFiles());
         $this->assertSame(5, DB::table('jobseeker_resumes')->count());
 

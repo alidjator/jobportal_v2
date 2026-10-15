@@ -168,12 +168,12 @@ final class CompanyDocumentTest extends FeatureTestCase
         $seeker = $this->token(UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']));
 
         foreach ([['GET', ''], ['DELETE', "/{$this->nib}"], ['GET', "/{$this->nib}/file"]] as [$method, $suffix]) {
-            $this->api($method, '/api/v1/company/documents'.$suffix, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-            $this->api($method, '/api/v1/company/documents'.$suffix, $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+            $this->api($method, '/api/v1/company/documents'.$suffix, $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+            $this->api($method, '/api/v1/company/documents'.$suffix, $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         }
 
-        $this->upload($this->tax, $this->pdf(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->upload($this->tax, $this->pdf(), token: $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->upload($this->tax, $this->pdf(), token: $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->upload($this->tax, $this->pdf(), token: $seeker)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->assertNull($this->row($this->tax));
     }
 
@@ -183,10 +183,10 @@ final class CompanyDocumentTest extends FeatureTestCase
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
         foreach ([['GET', ''], ['DELETE', "/{$this->nib}"], ['GET', "/{$this->nib}/file"]] as [$method, $suffix]) {
-            $this->api($method, '/api/v1/company/documents'.$suffix)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+            $this->api($method, '/api/v1/company/documents'.$suffix)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         }
 
-        $this->upload($this->tax, $this->pdf())->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->upload($this->tax, $this->pdf())->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->assertNull($this->row($this->tax));
         $this->assertNotNull($this->row($this->nib));
     }
@@ -299,8 +299,8 @@ final class CompanyDocumentTest extends FeatureTestCase
 
     public function test_a_file_that_is_neither_a_pdf_nor_an_image_is_refused(): void
     {
-        $this->upload($this->nib, 'just some text', 'nib.pdf')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-document');
-        $this->upload($this->nib, "PK\x03\x04 fake office file", 'nib.docx')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-document');
+        $this->upload($this->nib, 'just some text', 'nib.pdf')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-document');
+        $this->upload($this->nib, "PK\x03\x04 fake office file", 'nib.docx')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-document');
         $this->upload($this->nib, '', 'empty.pdf')->assertStatus(422);
 
         $this->assertNull($this->row($this->nib));
@@ -317,7 +317,7 @@ final class CompanyDocumentTest extends FeatureTestCase
     public function test_an_unknown_type_is_404_and_an_inactive_type_is_refused(): void
     {
         $this->upload(999999, $this->pdf())->assertNotFound();
-        $this->upload($this->retired, $this->pdf())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:document-type-inactive');
+        $this->upload($this->retired, $this->pdf())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:document-type-inactive');
 
         $this->assertSame(0, DB::table('company_documents')->count());
         $this->assertSame([], $this->storedFiles());
@@ -333,7 +333,7 @@ final class CompanyDocumentTest extends FeatureTestCase
         $store->setCompanyOverride('company.document_max_size_kb', $this->companyId, 100, null);
 
         $this->upload($this->tax, $padded)->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:file-too-large')
+            ->assertJsonPath('type', 'urn:onesis:error:file-too-large')
             ->assertJsonPath('max_size_kb', 100);
         $this->assertNull($this->row($this->tax));
         $this->assertCount(1, $this->storedFiles());
@@ -347,7 +347,7 @@ final class CompanyDocumentTest extends FeatureTestCase
     {
         $this->app->make(SettingsStore::class)->setGlobal('company.document_max_size_kb', 100, null);
 
-        $this->upload($this->nib, $this->pdf().str_repeat('x', 101 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->upload($this->nib, $this->pdf().str_repeat('x', 101 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
         $this->upload($this->nib, $this->pdf())->assertCreated();
     }
 
@@ -442,7 +442,7 @@ final class CompanyDocumentTest extends FeatureTestCase
     {
         $this->seedDocument($this->nib, 'approved');
 
-        $this->api('DELETE', "/api/v1/company/documents/{$this->nib}")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:document-approved');
+        $this->api('DELETE', "/api/v1/company/documents/{$this->nib}")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:document-approved');
 
         $this->assertNotNull($this->row($this->nib));
         Storage::assertExists('company/documents/seed.pdf');

@@ -50,7 +50,7 @@ final class SignInThrottleLayersTest extends FeatureTestCase
         $this->attempt('/api/v1/auth/login', 'siti@example.test', self::PASSWORD, '10.2.0.1')
             ->assertStatus(429)
             ->assertHeader('Retry-After')
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
 
         Carbon::setTestNow('2026-10-03 11:00:01');
 

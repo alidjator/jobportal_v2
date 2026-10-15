@@ -207,6 +207,6 @@ final class AccountsImporterTest extends FeatureTestCase
         $this->legacyUser(['email' => 'old@example.test', 'password' => Hash::make('secret123'), 'status' => 0]);
         $this->import();
 
-        $this->postJson('/api/v1/auth/login', ['email' => 'old@example.test', 'password' => 'secret123'])->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:account-deactivated');
+        $this->postJson('/api/v1/auth/login', ['email' => 'old@example.test', 'password' => 'secret123'])->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:account-deactivated');
     }
 }

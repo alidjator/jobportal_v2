@@ -257,7 +257,7 @@ final class SettingsTest extends FeatureTestCase
         ] as [$key, $value]) {
             $this->asAdmin('PUT', "settings/{$key}", ['value' => $value])
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:invalid-setting-value');
+                ->assertJsonPath('type', 'urn:onesis:error:invalid-setting-value');
         }
 
         $this->asAdmin('PUT', 'settings/probe.limit', [])->assertStatus(422)->assertJsonValidationErrors(['value'], 'errors');
@@ -268,7 +268,7 @@ final class SettingsTest extends FeatureTestCase
 
     public function test_an_unknown_setting_is_a_404(): void
     {
-        $this->asAdmin('PUT', 'settings/probe.unknown', ['value' => 1])->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:not-found');
+        $this->asAdmin('PUT', 'settings/probe.unknown', ['value' => 1])->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:not-found');
         $this->asAdmin('DELETE', 'settings/probe.unknown')->assertStatus(404);
     }
 

@@ -54,7 +54,7 @@ final class MyApplicationsTest extends FeatureTestCase
         }
 
         foreach ([['GET', ''], ['GET', "/{$id}"], ['GET', "/{$id}/resume"], ['POST', "/{$id}/withdraw"]] as [$method, $uri]) {
-            $this->mine($method, $uri, token: $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+            $this->mine($method, $uri, token: $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
         }
     }
 
@@ -113,7 +113,7 @@ final class MyApplicationsTest extends FeatureTestCase
         $this->assertSame([$ids[0]], array_column($second->json('data'), 'id'));
         $this->assertNull($second->json('meta.next_cursor'));
 
-        $this->mine('GET', '?cursor=garbage')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cursor');
+        $this->mine('GET', '?cursor=garbage')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cursor');
     }
 
     public function test_the_list_filters_by_stage_type_and_refuses_other_filters(): void
@@ -238,7 +238,7 @@ final class MyApplicationsTest extends FeatureTestCase
         $this->assertNull(DB::table('recruitment_applications')->value('withdrawn_note'));
 
         $two = $this->applyTo('Two');
-        $this->mine('POST', "/{$two}/withdraw", ['note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-withdrawal')->assertJsonStructure(['errors' => ['note']]);
+        $this->mine('POST', "/{$two}/withdraw", ['note' => str_repeat('a', 1001)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-withdrawal')->assertJsonStructure(['errors' => ['note']]);
         $this->assertSame('applied', DB::table('recruitment_applications')->where('id', $two)->value('stage_type'));
     }
 
@@ -260,7 +260,7 @@ final class MyApplicationsTest extends FeatureTestCase
             $id = $this->applyTo('Job '.$type);
             DB::table('recruitment_applications')->where('id', $id)->update(['stage_type' => $type]);
 
-            $this->mine('POST', "/{$id}/withdraw")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:application-not-withdrawable');
+            $this->mine('POST', "/{$id}/withdraw")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-not-withdrawable');
             $this->assertSame($type, DB::table('recruitment_applications')->where('id', $id)->value('stage_type'));
             $this->assertSame(1, DB::table('recruitment_application_stage_history')->where('application_id', $id)->count());
         }
@@ -271,7 +271,7 @@ final class MyApplicationsTest extends FeatureTestCase
         $job = $this->insertJob('Backend Developer', 'active', attributes: ['deadline' => '2026-12-31']);
         $first = (int) $this->apply($job)->assertCreated()->json('data.id');
 
-        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
 
         $this->mine('POST', "/{$first}/withdraw")->assertNoContent();
         $second = (int) $this->apply($job)->assertCreated()->json('data.id');
@@ -284,6 +284,6 @@ final class MyApplicationsTest extends FeatureTestCase
         // A rejection is final: the key stays and the job cannot be applied to again.
         $stage = DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'rejected')->where('is_default', 1)->value('id');
         DB::table('recruitment_applications')->where('id', $second)->update(['stage_type' => 'rejected', 'stage_id' => $stage]);
-        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:already-applied');
+        $this->apply($job)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:already-applied');
     }
 }

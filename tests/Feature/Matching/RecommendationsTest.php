@@ -224,7 +224,7 @@ final class RecommendationsTest extends FeatureTestCase
     public function test_only_a_signed_in_job_seeker_gets_recommendations(): void
     {
         $this->anonymous('/me/recommendations')->assertStatus(401);
-        $this->api('GET', '/me/recommendations', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->api('GET', '/me/recommendations', token: $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
     }
 
     // ----- the match on the public list and page -----
@@ -379,12 +379,12 @@ final class RecommendationsTest extends FeatureTestCase
         $job = $this->fittingJob();
         $draft = $this->insertJob('Draft', 'draft', [$this->recruiterId]);
 
-        $this->api('GET', "/company/jobs/{$draft}/candidates", token: $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:job-not-live');
+        $this->api('GET', "/company/jobs/{$draft}/candidates", token: $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:job-not-live');
         // A recruiter the job is not assigned to, another company's admin and a missing job all get 404.
         $this->api('GET', "/company/jobs/{$job}/candidates", token: $this->secondRecruiterToken)->assertNotFound();
         $this->api('GET', "/company/jobs/{$job}/candidates", token: $this->otherAdminToken)->assertNotFound();
         $this->api('GET', '/company/jobs/999999/candidates', token: $this->adminToken)->assertNotFound();
-        $this->api('GET', "/company/jobs/{$job}/candidates", token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', "/company/jobs/{$job}/candidates", token: $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->anonymous("/company/jobs/{$job}/candidates")->assertStatus(401);
     }
 

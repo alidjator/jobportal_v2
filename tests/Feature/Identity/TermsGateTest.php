@@ -74,7 +74,7 @@ final class TermsGateTest extends FeatureTestCase
         $response = $this->asUser('POST', 'auth/email/resend')
             ->assertStatus(409)
             ->assertHeader('Content-Type', 'application/problem+json')
-            ->assertJsonPath('type', 'urn:jobportal:error:terms-not-accepted')
+            ->assertJsonPath('type', 'urn:onesis:error:terms-not-accepted')
             ->assertJsonPath('status', 409);
 
         $this->assertSame([['type' => 'privacy', 'version' => 2], ['type' => 'terms', 'version' => 3]], $this->sorted($response->json('required_documents')));
@@ -143,7 +143,7 @@ final class TermsGateTest extends FeatureTestCase
 
         $this->asUser('POST', 'me/terms-acceptance', ['terms_version' => 1])
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:legal-document-outdated')
+            ->assertJsonPath('type', 'urn:onesis:error:legal-document-outdated')
             ->assertJsonPath('required_documents', [['type' => 'terms', 'version' => 2]]);
 
         $this->assertSame(0, DB::table('identity_terms_acceptances')->count());
@@ -156,13 +156,13 @@ final class TermsGateTest extends FeatureTestCase
 
         $this->asUser('POST', 'me/terms-acceptance', ['terms_version' => 1])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:legal-document-missing')
+            ->assertJsonPath('type', 'urn:onesis:error:legal-document-missing')
             ->assertJsonPath('types', ['privacy']);
 
         DB::table('content_legal_documents')->where('type', 'privacy')->delete();
         $this->asUser('POST', 'me/terms-acceptance', ['terms_version' => 1, 'privacy_version' => 1])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:legal-document-not-active')
+            ->assertJsonPath('type', 'urn:onesis:error:legal-document-not-active')
             ->assertJsonPath('types', ['privacy']);
 
         $this->asUser('POST', 'me/terms-acceptance', ['terms_version' => 'x'])->assertStatus(422)->assertJsonValidationErrors(['terms_version'], 'errors');

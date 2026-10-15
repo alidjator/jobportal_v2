@@ -99,7 +99,7 @@ final class CampaignTest extends FeatureTestCase
     {
         $this->create($this->body('Kampus-2026'))->assertCreated();
 
-        $this->create($this->body('KAMPUS-2026'))->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:campaign-code-taken');
+        $this->create($this->body('KAMPUS-2026'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:campaign-code-taken');
         $this->create($this->body('ab'))->assertStatus(422)->assertJsonValidationErrors(['code'], 'errors');
         $this->create($this->body('bad code!'))->assertStatus(422)->assertJsonValidationErrors(['code'], 'errors');
         $this->create($this->body('other', ['type' => 'party']))->assertStatus(422)->assertJsonValidationErrors(['type'], 'errors');
@@ -110,12 +110,12 @@ final class CampaignTest extends FeatureTestCase
     {
         $id = $this->ownCampaign();
 
-        $this->api('GET', '/company/campaigns', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
-        $this->api('GET', '/company/campaigns', [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/company/campaigns', [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
+        $this->api('GET', '/company/campaigns', [], $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('GET', "/company/campaigns/{$id}", [], $this->otherAdminToken)->assertNotFound();
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
-        $this->api('GET', "/company/campaigns/{$id}", [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->api('GET', "/company/campaigns/{$id}", [], $this->adminToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     public function test_a_company_sees_only_its_own_campaigns_and_can_filter_them(): void
@@ -166,7 +166,7 @@ final class CampaignTest extends FeatureTestCase
         $used = $this->ownCampaign('used-one');
         UserModel::query()->whereKey($this->seekerId)->update(['registration_campaign_code' => 'Used-One']);
 
-        $this->api('DELETE', "/company/campaigns/{$used}", [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:campaign-has-registrations');
+        $this->api('DELETE', "/company/campaigns/{$used}", [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:campaign-has-registrations');
         $this->api('DELETE', "/company/campaigns/{$empty}", [], $this->otherAdminToken)->assertNotFound();
         $this->api('DELETE', "/company/campaigns/{$empty}", [], $this->adminToken)->assertNoContent();
 
@@ -213,7 +213,7 @@ final class CampaignTest extends FeatureTestCase
         $this->assertStringContainsString('<svg', $response->getContent());
 
         config(['app.campaign_registration_url' => null]);
-        $this->api('GET', "/company/campaigns/{$id}/qr", [], $this->adminToken)->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:campaign-link-unavailable');
+        $this->api('GET', "/company/campaigns/{$id}/qr", [], $this->adminToken)->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:campaign-link-unavailable');
         $this->api('GET', "/company/campaigns/{$id}/qr", [], $this->otherAdminToken)->assertNotFound();
     }
 

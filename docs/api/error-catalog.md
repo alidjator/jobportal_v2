@@ -1,6 +1,6 @@
 # Error codes
 
-Every error is an RFC 9457 problem document (`application/problem+json`) with `type`, `title`, `status` and `detail`. The `type` is `urn:jobportal:error:<code>`: a client decides what to do from the code, never from the text of `detail`, which may change. A `422` with `validation-failed` also carries `errors`, a map of field to messages; some business rules (`422`) carry the same member. A `429` carries a `Retry-After` header. The list is generated from the source (`php artisan api:error-catalog`).
+Every error is an RFC 9457 problem document (`application/problem+json`) with `type`, `title`, `status` and `detail`. The `type` is `urn:onesis:error:<code>`: a client decides what to do from the code, never from the text of `detail`, which may change. A `422` with `validation-failed` also carries `errors`, a map of field to messages; some business rules (`422`) carry the same member. A `429` carries a `Retry-After` header. The list is generated from the source (`php artisan api:error-catalog`).
 
 | Code | Status | Raised in | Message |
 |---|---|---|---|

@@ -89,11 +89,11 @@ final class BatteryAuthoringTest extends FeatureTestCase
     public function test_a_suspended_psychologist_or_provider_cannot_write(): void
     {
         DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->update(['status' => 'suspended']);
-        $this->provider('GET', 'tests')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:psychologist-suspended');
+        $this->provider('GET', 'tests')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:psychologist-suspended');
 
         DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->update(['status' => 'active']);
         DB::table('assessment_providers')->where('id', $this->providerId)->update(['status' => 'suspended']);
-        $this->provider('GET', 'tests')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:provider-suspended');
+        $this->provider('GET', 'tests')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:provider-suspended');
     }
 
     public function test_the_provider_endpoints_need_a_signed_in_psychologist(): void
@@ -115,7 +115,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->provider('POST', "sections/{$sectionId}/questions", $this->likert())
             ->assertCreated()->assertJsonPath('data.scale_key', 'extraversion')->assertJsonPath('data.points', 0)->assertJsonPath('data.options.2.score_value', 3)->assertJsonPath('data.options.0.is_correct', false);
 
-        $post = fn (array $body) => $this->provider('POST', "sections/{$sectionId}/questions", $body)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-question');
+        $post = fn (array $body) => $this->provider('POST', "sections/{$sectionId}/questions", $body)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-question');
         $post($this->likert('I enjoy meeting new people.', 'extraversion', ['scale_key' => null]))->assertJsonStructure(['errors' => ['scale_key']]);
         $post($this->likert('I enjoy meeting new people.', 'Extra Version'))->assertJsonStructure(['errors' => ['scale_key']]);
         $post($this->likert('I enjoy meeting new people.', 'extraversion', ['options' => [['label' => 'Never'], ['label' => 'Always']]]))->assertJsonStructure(['errors' => ['options']]);
@@ -197,7 +197,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
     {
         $id = $this->newTest('provider');
         $this->sectionWithQuestion('provider', $id, $this->likert());
-        $put = fn (array $norms) => $this->provider('PUT', "tests/{$id}/norms", ['norms' => $norms])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-norms');
+        $put = fn (array $norms) => $this->provider('PUT', "tests/{$id}/norms", ['norms' => $norms])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-norms');
         $row = ['scale_key' => 'extraversion', 'raw_min' => 0, 'raw_max' => 10, 'standard_score' => 90, 'band' => 'Low'];
 
         $put([[...$row, 'scale_key' => 'unknown_scale']])->assertJsonStructure(['errors' => ['norms']]);
@@ -224,8 +224,8 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $id = $this->newTest('company');
 
         // A company admin reaches the provider routes as the author of the company's own tests, which are never batteries.
-        $this->api('PUT', "/provider/tests/{$id}/norms", ['norms' => []], $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-not-psychological');
-        $this->api('PUT', "/provider/tests/{$id}/report-template", ['body' => 'Hello'], $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-not-psychological');
+        $this->api('PUT', "/provider/tests/{$id}/norms", ['norms' => []], $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-not-psychological');
+        $this->api('PUT', "/provider/tests/{$id}/report-template", ['body' => 'Hello'], $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-not-psychological');
     }
 
     public function test_the_report_template_accepts_only_known_placeholders_of_known_scales(): void
@@ -241,7 +241,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->provider('GET', "tests/{$id}/report-template")->assertOk()->assertJsonPath('data.body', $body);
 
         foreach (['Hello {{secret}}', 'Hello {{scale:extraversion}}', 'Hello {{scale:extraversion:weight}}', 'Hello {{scale:missing:band}}', 'Hello {{scale:extraversion:band:more}}'] as $bad) {
-            $this->provider('PUT', "tests/{$id}/report-template", ['body' => $bad])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-report-template')->assertJsonStructure(['errors' => ['body']]);
+            $this->provider('PUT', "tests/{$id}/report-template", ['body' => $bad])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-report-template')->assertJsonStructure(['errors' => ['body']]);
         }
 
         $this->provider('PUT', "tests/{$id}/report-template", ['body' => 'No placeholders at all'])->assertOk();
@@ -259,7 +259,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->provider('POST', "sections/{$section}/questions", $this->likert('I like order and routine.', 'conscientiousness'))->assertCreated();
         $this->provider('PUT', "tests/{$id}/norms", ['norms' => $this->norms()])->assertOk();
 
-        $this->provider('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')->assertJsonCount(2, 'errors.test');
+        $this->provider('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->assertJsonCount(2, 'errors.test');
 
         $this->provider('PUT', "tests/{$id}/norms", ['norms' => [...$this->norms(), ...$this->norms('conscientiousness')]])->assertOk();
         $this->provider('PUT', "tests/{$id}/report-template", ['body' => 'Your score is {{scale:extraversion:band}}.'])->assertOk();
@@ -306,7 +306,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
 
     public function test_a_company_sees_no_batteries_until_the_setting_is_on(): void
     {
-        $this->company('GET', 'batteries')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:psychological-disabled');
+        $this->company('GET', 'batteries')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:psychological-disabled');
 
         $this->overrideSetting('assessment.psychological_enabled', true);
         $this->company('GET', 'batteries')->assertOk()->assertJsonCount(0, 'data');
@@ -317,7 +317,7 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $id = $this->readyBattery('Personality profile');
         $this->provider('PUT', 'questions/'.(int) DB::table('assessment_questions')->value('id'), $this->likert('I enjoy meeting new people.', 'extraversion', ['is_sample' => true]))->assertOk();
 
-        $this->assessmentAdmin('POST', "companies/{$this->companyId}/batteries", ['test_id' => $id])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:battery-not-published');
+        $this->assessmentAdmin('POST', "companies/{$this->companyId}/batteries", ['test_id' => $id])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:battery-not-published');
         $this->provider('POST', "tests/{$id}/publish")->assertOk();
 
         $this->assessmentAdmin('GET', 'batteries')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.title', 'Personality profile');

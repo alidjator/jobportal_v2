@@ -312,7 +312,7 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->get('/api/v1/companies/pt-maju/logo')->assertNotFound();
 
         $this->app['auth']->forgetGuards();
-        $this->withToken($token)->getJson('/api/v1/company/members')->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->withToken($token)->getJson('/api/v1/company/members')->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/company/invitations', ['name' => 'New Member', 'email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(403);
 
@@ -347,7 +347,7 @@ final class AdminCompanyTest extends FeatureTestCase
 
         $this->api('POST', "/{$id}/suspend", ['reason' => 'Under investigation.'])->assertNoContent();
 
-        $this->getJson("/api/v1/auth/invitations/{$plain}")->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->getJson("/api/v1/auth/invitations/{$plain}")->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
     }
 
     public function test_suspending_twice_or_an_unknown_company_is_refused_and_keeps_the_first_reason(): void
@@ -356,7 +356,7 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->api('POST', "/{$id}/suspend", ['reason' => 'First reason.'])->assertNoContent();
         Carbon::setTestNow('2026-10-06 09:00:00');
 
-        $this->api('POST', "/{$id}/suspend", ['reason' => 'Second reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:company-already-suspended');
+        $this->api('POST', "/{$id}/suspend", ['reason' => 'Second reason.'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:company-already-suspended');
         $this->api('POST', '/999999/suspend', ['reason' => 'Some reason.'])->assertNotFound();
 
         $row = DB::table('company_companies')->where('id', $id)->first();
@@ -395,7 +395,7 @@ final class AdminCompanyTest extends FeatureTestCase
     {
         $id = $this->company('PT Maju', 'pt-maju');
 
-        $this->api('POST', "/{$id}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:company-not-suspended');
+        $this->api('POST', "/{$id}/restore")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:company-not-suspended');
         $this->api('POST', '/999999/restore')->assertNotFound();
     }
 

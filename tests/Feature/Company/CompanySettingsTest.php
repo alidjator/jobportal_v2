@@ -121,11 +121,11 @@ final class CompanySettingsTest extends FeatureTestCase
 
     public function test_only_a_member_reads_and_only_a_company_admin_changes(): void
     {
-        $this->api('PATCH', [self::KEY => true], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('PATCH', [self::KEY => true], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-admin-required');
         $this->assertSame(0, DB::table('platform_setting_overrides')->count());
 
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'id']);
-        $this->api('GET', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->getJson('/api/v1/company/settings')->assertUnauthorized();
@@ -168,9 +168,9 @@ final class CompanySettingsTest extends FeatureTestCase
 
     public function test_a_key_the_company_may_not_change_is_refused(): void
     {
-        $this->api('PATCH', ['no.such_setting' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:setting-not-editable');
-        $this->api('PATCH', ['company.document_max_size_kb' => 100])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:setting-not-editable');
-        $this->api('PATCH', ['identity.avatar_max_size_kb' => 100])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:setting-not-editable');
+        $this->api('PATCH', ['no.such_setting' => 1])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:setting-not-editable');
+        $this->api('PATCH', ['company.document_max_size_kb' => 100])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:setting-not-editable');
+        $this->api('PATCH', ['identity.avatar_max_size_kb' => 100])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:setting-not-editable');
 
         $this->assertSame(0, DB::table('platform_setting_overrides')->count());
     }
@@ -178,7 +178,7 @@ final class CompanySettingsTest extends FeatureTestCase
     public function test_a_value_the_setting_refuses_is_named_by_key_and_nothing_is_saved(): void
     {
         $this->api('PATCH', [self::KEY => 'yes'])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-setting-value')
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-setting-value')
             ->assertJson(['errors' => [self::KEY => 'The value of company.require_two_factor must be true or false.']]);
 
         $this->assertSame(0, DB::table('platform_setting_overrides')->count());
@@ -189,7 +189,7 @@ final class CompanySettingsTest extends FeatureTestCase
     {
         DB::table('company_companies')->update(['status' => 'suspended']);
 
-        $this->api('PATCH', [self::KEY => true])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->api('PATCH', [self::KEY => true])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->api('GET')->assertOk();
     }
 }

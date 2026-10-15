@@ -326,7 +326,7 @@ final class JobSearchTest extends FeatureTestCase
 
     public function test_a_minimum_salary_needs_its_period(): void
     {
-        $this->search('filter[salary_min]=5000000')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:salary-period-required');
+        $this->search('filter[salary_min]=5000000')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:salary-period-required');
         $this->search('filter[salary_period_id]=1')->assertOk();
     }
 
@@ -394,8 +394,8 @@ final class JobSearchTest extends FeatureTestCase
         $this->live('Job');
 
         $this->search('page=200&per_page=50')->assertOk();
-        $this->search('page=201&per_page=50')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:page-out-of-range');
-        $this->search('page=10001&per_page=1')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:page-out-of-range');
+        $this->search('page=201&per_page=50')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:page-out-of-range');
+        $this->search('page=10001&per_page=1')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:page-out-of-range');
     }
 
     // ----- validation -----
@@ -429,7 +429,7 @@ final class JobSearchTest extends FeatureTestCase
             $this->search()->assertOk();
         }
 
-        $response = $this->search()->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+        $response = $this->search()->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
         $this->assertGreaterThan(0, (int) $response->headers->get('Retry-After'));
     }
 

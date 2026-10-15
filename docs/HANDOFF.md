@@ -11,7 +11,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green).
 - **Phases 0 to 7 coded and committed.**
-- Real PostgreSQL `jobportal_v2`: migrated to `000138` (`000139` to `000142` waiting: the user runs `migrate`), reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
+- Real PostgreSQL `jobportal_v2`: migrated to `000142`, reference data only (0 accounts). Test database behind: `php artisan test:database:migrate --env=testing`.
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
 - **Name (2026-10-15):** ONESIS / ONESIS Career, `docs/design/naming.md` (URN rename before go-live).
 - **ERP (decided 2026-10-15):** TA is ERP phase 1 in this codebase; `docs/design/erp-direction.md`; the phase 8 order was changed for it (three new designs before the hiring work).

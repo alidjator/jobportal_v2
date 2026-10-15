@@ -119,7 +119,7 @@ final class ProviderAdminTest extends FeatureTestCase
 
         $this->admin('POST', 'providers', ['code' => 'LAIN', 'name' => 'lembaga psikologi contoh', 'legal_name' => 'PT Lain'])
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:provider-name-taken');
+            ->assertJsonPath('type', 'urn:onesis:error:provider-name-taken');
     }
 
     public function test_a_provider_code_is_unique_and_made_of_two_to_ten_letters_or_digits(): void
@@ -128,7 +128,7 @@ final class ProviderAdminTest extends FeatureTestCase
 
         $this->admin('POST', 'providers', ['code' => 'lemb', 'name' => 'Biro Lain', 'legal_name' => 'PT Biro Lain'])
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:provider-code-taken');
+            ->assertJsonPath('type', 'urn:onesis:error:provider-code-taken');
 
         foreach (['A', 'TOOLONGCODE1', 'AB-C', 'AB C'] as $code) {
             $this->admin('POST', 'providers', ['code' => $code, 'name' => 'Biro Lain', 'legal_name' => 'PT Biro Lain'])->assertUnprocessable()->assertJsonValidationErrors(['code']);
@@ -169,7 +169,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $this->admin('GET', "providers/{$first}")->assertOk()->assertJsonPath('data.name', 'Alpha Psikologi');
         $this->admin('PUT', "providers/{$first}", ['code' => 'ALB', 'name' => 'Alpha Baru', 'legal_name' => 'PT Alpha Baru'])->assertOk()->assertJsonPath('data.name', 'Alpha Baru')->assertJsonPath('data.code', 'ALB');
         $this->admin('PUT', "providers/{$first}", ['code' => 'ALB', 'name' => 'beta konsultan', 'legal_name' => 'PT X'])->assertStatus(409);
-        $this->admin('PUT', "providers/{$first}", ['code' => 'BETA', 'name' => 'Alpha Baru', 'legal_name' => 'PT X'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:provider-code-taken');
+        $this->admin('PUT', "providers/{$first}", ['code' => 'BETA', 'name' => 'Alpha Baru', 'legal_name' => 'PT X'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:provider-code-taken');
         $this->admin('GET', 'providers/999999')->assertNotFound();
 
         $this->admin('POST', "providers/{$second}/restore")->assertNoContent();
@@ -216,7 +216,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $providerId = $this->provider();
         DB::table('identity_users')->insert(['type' => 'job_seeker', 'name' => 'Taken', 'email' => 'dewi@example.test', 'status' => 'active', 'locale' => 'id', 'created_at' => now(), 'updated_at' => now()]);
 
-        $this->invite($providerId)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+        $this->invite($providerId)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
         $this->assertSame(0, DB::table('assessment_psychologist_invitations')->count());
     }
 
@@ -225,7 +225,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $providerId = $this->provider();
         $this->admin('POST', "providers/{$providerId}/suspend")->assertNoContent();
 
-        $this->invite($providerId)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:provider-suspended');
+        $this->invite($providerId)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:provider-suspended');
     }
 
     public function test_an_invitation_for_a_provider_that_does_not_exist_is_a_404(): void
@@ -238,7 +238,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $providerId = $this->provider();
         config(['app.psychologist_invitation_url' => null]);
 
-        $this->invite($providerId)->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:invitation-link-unavailable');
+        $this->invite($providerId)->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:invitation-link-unavailable');
         $this->assertSame(0, DB::table('assessment_psychologist_invitations')->count());
     }
 
@@ -247,7 +247,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $providerId = $this->provider();
         $this->invite($providerId)->assertCreated();
 
-        $this->invite($providerId)->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:invitation-cooldown');
+        $this->invite($providerId)->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:invitation-cooldown');
 
         Carbon::setTestNow('2026-10-11 09:01:00');
         $this->invite($providerId)->assertCreated();
@@ -282,7 +282,7 @@ final class ProviderAdminTest extends FeatureTestCase
             ->assertJsonPath('data.email', 'dewi@example.test')
             ->assertJsonPath('data.expires_at', '2026-10-18T09:00:00+00:00');
 
-        $this->getJson('/api/v1/provider/invitations/'.str_repeat('a', 43))->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
+        $this->getJson('/api/v1/provider/invitations/'.str_repeat('a', 43))->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
     }
 
     public function test_accepting_creates_a_psychologist_account_without_a_token(): void
@@ -318,7 +318,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $token = $this->tokenFromMail();
 
         $this->accept($token)->assertCreated();
-        $this->accept($token)->assertNotFound()->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
+        $this->accept($token)->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
     }
 
     public function test_an_invitation_expires_after_seven_days(): void
@@ -345,7 +345,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $this->invite($providerId)->assertCreated();
         $this->admin('POST', "providers/{$providerId}/suspend")->assertNoContent();
 
-        $this->accept($this->tokenFromMail())->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:provider-suspended');
+        $this->accept($this->tokenFromMail())->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:provider-suspended');
     }
 
     public function test_an_email_registered_after_the_invitation_blocks_the_acceptance(): void
@@ -353,7 +353,7 @@ final class ProviderAdminTest extends FeatureTestCase
         $this->invite($this->provider())->assertCreated();
         DB::table('identity_users')->insert(['type' => 'job_seeker', 'name' => 'Late', 'email' => 'dewi@example.test', 'status' => 'active', 'locale' => 'id', 'created_at' => now(), 'updated_at' => now()]);
 
-        $this->accept($this->tokenFromMail())->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+        $this->accept($this->tokenFromMail())->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
         $this->assertSame(0, DB::table('assessment_psychologists')->count());
     }
 

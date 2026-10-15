@@ -266,12 +266,12 @@ final class ResultsAndReportsTest extends FeatureTestCase
 
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
 
-        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 5])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-locked');
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 5])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-locked');
         $this->assertEquals(4, DB::table('assessment_answers')->where('question_id', $written)->value('score'));
         $this->asTeam('GET', 'scoring')->assertOk()->assertJsonPath('data.0.score', 4);
 
         $this->api('POST', "/company/applications/{$this->applicationId}/reject", ['reason' => 'failed_screening'], $this->recruiterToken)->assertNoContent();
-        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:scoring-locked');
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-locked');
     }
 
     public function test_only_an_assessor_scores_and_only_a_submitted_test(): void
@@ -279,14 +279,14 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->takeWrittenTest();
         $written = (int) DB::table('assessment_questions')->where('type', 'long_text')->value('id');
 
-        $this->asTeam('GET', 'scoring')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-not-submitted');
-        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-not-submitted');
+        $this->asTeam('GET', 'scoring')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-not-submitted');
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-not-submitted');
 
         $this->take('POST', 'attempt/submit')->assertOk();
 
         // The company admin sees the result but was not named as an assessor.
-        $this->asTeam('GET', 'scoring', [], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-an-assessor');
-        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-an-assessor');
+        $this->asTeam('GET', 'scoring', [], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-an-assessor');
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 1], $this->adminToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-an-assessor');
         $this->asTeam('GET', 'scoring', [], $this->otherAdminToken)->assertNotFound();
         $this->assertNull(DB::table('assessment_answers')->where('question_id', $written)->value('score'));
     }
@@ -298,7 +298,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $written = (int) DB::table('assessment_questions')->where('type', 'long_text')->value('id');
         $choice = (int) DB::table('assessment_questions')->where('type', 'single_choice')->value('id');
 
-        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 6])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-score')->assertJsonStructure(['errors' => ['score']]);
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 6])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-score')->assertJsonStructure(['errors' => ['score']]);
         $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 2.5])->assertStatus(422)->assertJsonValidationErrors(['score']);
         $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => -1])->assertStatus(422)->assertJsonValidationErrors(['score']);
         $this->asTeam('PUT', "scoring/questions/{$written}", [])->assertStatus(422)->assertJsonValidationErrors(['score']);
@@ -373,7 +373,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
             ->assertJsonPath('data.result.report', null);
 
         $this->assertStringNotContainsString('extraversion', json_encode($response->json(), JSON_THROW_ON_ERROR));
-        $this->asTeam('GET', 'report.pdf')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-signed');
+        $this->asTeam('GET', 'report.pdf')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-signed');
     }
 
     // ----- a psychological test: the review -----
@@ -416,7 +416,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->withToken('')->getJson('/api/v1/provider/reviews')->assertUnauthorized();
 
         DB::table('assessment_providers')->where('id', $this->providerId)->update(['status' => 'suspended']);
-        $this->provider('GET', 'reviews')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:provider-suspended');
+        $this->provider('GET', 'reviews')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:provider-suspended');
     }
 
     public function test_the_psychologist_reads_the_draft_the_scores_and_the_drawing(): void
@@ -449,7 +449,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->provider('PUT', "reviews/{$reportId}/drawings/{$question}", ['score' => 7.5, 'note' => 'Roots are strong.'])->assertOk()
             ->assertJsonPath('data.drawings.0.score', 7.5)
             ->assertJsonPath('data.drawings.0.note', 'Roots are strong.');
-        $this->provider('PUT', "reviews/{$reportId}/drawings/{$question}", ['score' => 11])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-score');
+        $this->provider('PUT', "reviews/{$reportId}/drawings/{$question}", ['score' => 11])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-score');
         $this->provider('PUT', "reviews/{$reportId}/drawings/{$question}", ['score' => -1])->assertStatus(422);
         $this->provider('PUT', "reviews/{$reportId}/drawings/999999", ['score' => 5])->assertNotFound();
         $this->assertSame('7.50', DB::table('assessment_drawings')->value('score'));
@@ -538,9 +538,9 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->readyToSign($reportId);
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
 
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-signed');
-        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Changed', 'explanation' => 'Changed', 'review_notes' => null])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-signed');
-        $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-signed');
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Changed', 'explanation' => 'Changed', 'review_notes' => null])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
+        $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 1])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
         $this->assertSame(1, DB::table('assessment_reports')->where('status', 'signed')->count());
     }
 
@@ -548,16 +548,16 @@ final class ResultsAndReportsTest extends FeatureTestCase
     {
         $reportId = $this->takeBattery();
 
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:explanation-required')->assertJsonStructure(['errors' => ['explanation']]);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:explanation-required')->assertJsonStructure(['errors' => ['explanation']]);
 
         $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'You like people.', 'review_notes' => null])->assertOk();
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:drawings-unscored')->assertJsonStructure(['errors' => ['drawings']]);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:drawings-unscored')->assertJsonStructure(['errors' => ['drawings']]);
 
         $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 5])->assertOk();
 
         // The norm that covered the raw score disappears from under the battery (an admin edit of the table, here done directly).
         DB::table('assessment_norms')->where('band', 'High')->delete();
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:scales-not-normed')->assertJsonStructure(['errors' => ['norms']]);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:scales-not-normed')->assertJsonStructure(['errors' => ['norms']]);
 
         $this->assertSame(0, DB::table('assessment_reports')->where('status', 'signed')->count());
         $this->assertNull(DB::table('assessment_reports')->value('report_number'));
@@ -570,10 +570,10 @@ final class ResultsAndReportsTest extends FeatureTestCase
 
         DB::table('assessment_psychologists')->update(['silp_valid_until' => '2026-10-04']);
         $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.signing_problems', ['licence-invalid']);
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:cannot-sign-reports');
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:cannot-sign-reports');
 
         DB::table('assessment_psychologists')->update(['silp_valid_until' => '2030-01-31', 'status' => 'suspended']);
-        $this->provider('POST', "reviews/{$reportId}/sign")->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:psychologist-suspended');
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:psychologist-suspended');
 
         $this->assertSame(0, DB::table('assessment_reports')->where('status', 'signed')->count());
     }
@@ -608,7 +608,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
     {
         $reportId = $this->takeBattery();
 
-        $this->take('GET', 'explanation')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-signed');
+        $this->take('GET', 'explanation')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-signed');
 
         $this->readyToSign($reportId);
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();

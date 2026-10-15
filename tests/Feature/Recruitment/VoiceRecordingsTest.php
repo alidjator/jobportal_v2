@@ -74,7 +74,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $this->assertCount(1, $play);
         $this->assertSame(['media' => 'sound:jobportal/recording-announcement'], $this->queryOf($play[0]));
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-in-progress');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-in-progress');
 
         Carbon::setTestNow(now()->addSeconds(125));
         $this->recording('stop')->assertOk()->assertJsonPath('data.id', $id)->assertJsonPath('data.status', 'processing');
@@ -101,7 +101,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
     public function test_recording_needs_consent_a_panel_member_and_the_candidate_on_the_line(): void
     {
         $this->answeredRecordedCall('refused');
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-allowed');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-allowed');
         $this->assertSame(0, DB::table('recruitment_interview_recordings')->count());
     }
 
@@ -111,7 +111,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $callId = $this->dial();
         $this->hear(['type' => 'StasisStart', 'args' => ['candidate', (string) $callId], 'channel' => ['id' => $this->channelOf($callId), 'name' => 'PJSIP/trunk-00000001']]);
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-allowed');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-allowed');
     }
 
     public function test_recording_starts_only_while_the_candidate_is_on_the_line(): void
@@ -119,12 +119,12 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $this->confirmedVoiceInterview(['recorded' => true], confirm: ['phone' => '0812-3456-7890', 'recording_consent' => 'granted']);
         $this->team('join')->assertOk();
 
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-live-call');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-live-call');
 
         // Ringing is not enough: nobody would hear the announcement.
         $callId = (int) $this->team('call')->assertCreated()->json('data.id');
         $this->hear(['type' => 'ChannelStateChange', 'channel' => ['id' => $this->channelOf($callId), 'state' => 'Ringing']]);
-        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-live-call');
+        $this->recording('start')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-live-call');
         $this->assertSame(0, DB::table('recruitment_interview_recordings')->count());
     }
 
@@ -134,7 +134,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
 
         $this->recording('start', $this->adminToken)->assertForbidden();
         $this->recording('start', $this->seekerToken)->assertForbidden();
-        $this->recording('stop')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-recording');
+        $this->recording('stop')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-recording');
 
         $this->recording('start')->assertCreated();
         $this->recording('stop', $this->adminToken)->assertForbidden();
@@ -146,7 +146,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $this->answeredRecordedCall();
         $this->announceFails = true;
 
-        $this->recording('start')->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:voice-server-unavailable');
+        $this->recording('start')->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:voice-server-unavailable');
 
         $this->assertSame(0, DB::table('recruitment_interview_recordings')->count());
         $this->assertCount(1, $this->ari('post', '/recordings/live/'));
@@ -158,7 +158,7 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $this->answeredRecordedCall();
         $this->recording('start')->assertCreated();
 
-        $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", [], $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-started');
+        $this->api('POST', "/me/applications/{$this->applicationId}/interview/recording-consent/withdraw", [], $this->seekerToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-started');
     }
 
     // ----- ending -----
@@ -243,6 +243,6 @@ final class VoiceRecordingsTest extends FeatureTestCase
         $row = DB::table('recruitment_interview_recordings')->where('id', $id)->first();
         $this->assertSame('failed', $row->status);
         $this->assertNull($row->path);
-        $this->api('GET', "/company/interviews/{$this->interviewId()}/recordings/{$id}/file", [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:recording-not-ready');
+        $this->api('GET', "/company/interviews/{$this->interviewId()}/recordings/{$id}/file", [], $this->adminToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:recording-not-ready');
     }
 }

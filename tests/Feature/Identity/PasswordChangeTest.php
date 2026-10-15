@@ -98,7 +98,7 @@ final class PasswordChangeTest extends FeatureTestCase
 
         $this->change('/api/v1/me/password', $token, [
             'current_password' => 'wrong-password-here', 'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
-        ])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-password');
+        ])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-password');
 
         $this->assertTrue(Hash::check(self::PASSWORD, $user->refresh()->password));
     }
@@ -135,7 +135,7 @@ final class PasswordChangeTest extends FeatureTestCase
 
         $this->change('/api/v1/me/password', $this->token($user))
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:password-not-set');
+            ->assertJsonPath('type', 'urn:onesis:error:password-not-set');
     }
 
     public function test_changing_the_password_needs_a_signed_in_account_of_the_right_kind(): void

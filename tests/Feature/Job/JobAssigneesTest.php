@@ -129,8 +129,8 @@ final class JobAssigneesTest extends FeatureTestCase
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => []])->assertStatus(422)->assertJsonValidationErrors(['user_ids']);
         $this->api('PUT', "/company/jobs/{$id}/assignees", [])->assertStatus(422)->assertJsonValidationErrors(['user_ids']);
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [$this->adminId, $this->otherAdminId]])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-assignees')->assertJsonStructure(['errors' => ['user_ids']]);
-        $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [999999]])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assignees');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-assignees')->assertJsonStructure(['errors' => ['user_ids']]);
+        $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [999999]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assignees');
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [$this->adminId, $this->adminId]])->assertStatus(422)->assertJsonValidationErrors(['user_ids.1']);
 
         $this->assertSame([$this->adminId], $this->assigneesOf($id));
@@ -142,7 +142,7 @@ final class JobAssigneesTest extends FeatureTestCase
         $id = $this->insertJob('Mine', 'draft', [$this->recruiterId]);
 
         $this->api('PUT', "/company/jobs/{$id}/assignees", ['user_ids' => [$this->recruiterId, $this->secondRecruiterId]], $this->recruiterToken)
-            ->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-permission-required');
+            ->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-permission-required');
 
         $this->assertSame([$this->recruiterId], $this->assigneesOf($id));
     }
@@ -248,7 +248,7 @@ final class JobAssigneesTest extends FeatureTestCase
 
         foreach ([$this->secondRecruiterId, $this->otherAdminId, $this->recruiterId, $secondAdmin, 999999] as $target) {
             $this->api('DELETE', "/company/members/{$this->recruiterId}", ['transfer_to_user_id' => $target])
-                ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:transfer-target-not-company-admin');
+                ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:transfer-target-not-company-admin');
         }
 
         $this->assertTrue(DB::table('company_members')->where('user_id', $this->recruiterId)->exists());

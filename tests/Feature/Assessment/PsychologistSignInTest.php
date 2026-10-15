@@ -134,7 +134,7 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->twoFactor(['challenge_token' => $first, 'code' => $this->totp($secret, 0)])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
     }
 
     public function test_a_wrong_code_is_refused_audited_and_leaves_the_challenge_usable(): void
@@ -144,7 +144,7 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->twoFactor(['challenge_token' => $challenge, 'code' => '000000'])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $this->assertDatabaseHas('platform_audit_logs', ['action' => 'auth.login_failed', 'actor_id' => $this->userId]);
 
         $this->twoFactor(['challenge_token' => $challenge, 'code' => $this->totp($secret, 1)])->assertOk();
@@ -158,14 +158,14 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->twoFactor(['challenge_token' => $used, 'code' => $this->totp($secret, -1)])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
 
         $stale = $this->login()->json('data.challenge_token');
         Carbon::setTestNow('2026-10-11 10:05:01');
 
         $this->twoFactor(['challenge_token' => $stale, 'code' => $this->totp($secret, 1)])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
     }
 
     public function test_a_recovery_code_signs_in_once(): void
@@ -176,7 +176,7 @@ final class PsychologistSignInTest extends FeatureTestCase
         $this->twoFactor(['challenge_token' => $this->login()->json('data.challenge_token'), 'recovery_code' => $code])->assertOk();
         $this->twoFactor(['challenge_token' => $this->login()->json('data.challenge_token'), 'recovery_code' => $code])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
     }
 
     public function test_a_recovery_code_cannot_finish_the_enrolment(): void
@@ -194,14 +194,14 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->assertSame($wrong->json('type'), $unknown->json('type'));
         $this->assertSame($wrong->json('detail'), $unknown->json('detail'));
-        $wrong->assertJsonPath('type', 'urn:jobportal:error:invalid-credentials');
+        $wrong->assertJsonPath('type', 'urn:onesis:error:invalid-credentials');
     }
 
     public function test_a_job_seeker_cannot_use_the_provider_sign_in(): void
     {
         $this->account('job_seeker', 'seeker@example.test');
 
-        $this->login('seeker@example.test')->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:invalid-credentials');
+        $this->login('seeker@example.test')->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:invalid-credentials');
         $this->assertSame(0, DB::table('identity_user_two_factor')->count());
     }
 
@@ -211,7 +211,7 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/login', ['email' => 'dewi@example.test', 'password' => self::PASSWORD])
             ->assertUnauthorized()
-            ->assertJsonPath('type', 'urn:jobportal:error:invalid-credentials');
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-credentials');
         $this->assertSame(0, DB::table('personal_access_tokens')->where('tokenable_id', $this->userId)->count());
     }
 
@@ -227,7 +227,7 @@ final class PsychologistSignInTest extends FeatureTestCase
     {
         DB::table('identity_users')->where('id', $this->userId)->update(['status' => 'deactivated']);
 
-        $this->login()->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:account-deactivated');
+        $this->login()->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:account-deactivated');
     }
 
     public function test_an_account_that_was_deactivated_after_the_password_step_is_refused_at_the_code_step(): void
@@ -284,7 +284,7 @@ final class PsychologistSignInTest extends FeatureTestCase
         [, $enrolled] = $this->enrol();
         $this->app['auth']->forgetGuards();
 
-        $this->withToken($enrolled->json('data.token'))->getJson('/api/v1/me/profile')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:job-seeker-only');
+        $this->withToken($enrolled->json('data.token'))->getJson('/api/v1/me/profile')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
     }
 
     public function test_a_psychologist_cannot_delete_the_account_themselves(): void
@@ -294,7 +294,7 @@ final class PsychologistSignInTest extends FeatureTestCase
 
         $this->withToken($enrolled->json('data.token'))->postJson('/api/v1/me/deletion', ['password' => self::PASSWORD, 'confirm' => true])
             ->assertForbidden()
-            ->assertJsonPath('type', 'urn:jobportal:error:psychologist-account-managed');
+            ->assertJsonPath('type', 'urn:onesis:error:psychologist-account-managed');
         $this->assertDatabaseHas('identity_users', ['id' => $this->userId, 'status' => 'active']);
     }
 

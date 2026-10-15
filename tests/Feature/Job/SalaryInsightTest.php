@@ -229,7 +229,7 @@ final class SalaryInsightTest extends FeatureTestCase
     public function test_ids_that_do_not_exist_and_a_city_outside_its_province_are_refused(): void
     {
         $this->insight('')->assertStatus(422)->assertJsonValidationErrors(['role_id']);
-        $this->insight('role_id=999999')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-reference')->assertJsonPath('errors.role_id.0', 'This value does not exist or is not active.');
+        $this->insight('role_id=999999')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-reference')->assertJsonPath('errors.role_id.0', 'This value does not exist or is not active.');
         $this->insight("role_id={$this->role}&experience_level_id=999999&category_id=999999")->assertStatus(422)->assertJsonStructure(['errors' => ['experience_level_id', 'category_id']]);
 
         $province = DB::table('reference_provinces')->insertGetId(['bps_code' => '35', 'name' => 'JAWA TIMUR']);

@@ -13,6 +13,6 @@ final class GoogleSignInDisabledTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/google', ['id_token' => 'any.token.value'])
             ->assertStatus(503)
-            ->assertJsonPath('type', 'urn:jobportal:error:google-sign-in-unavailable');
+            ->assertJsonPath('type', 'urn:onesis:error:google-sign-in-unavailable');
     }
 }

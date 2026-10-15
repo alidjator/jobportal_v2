@@ -37,7 +37,7 @@ final class VerifiedEmailGateTest extends FeatureTestCase
     {
         $this->withToken($this->token(null))->getJson(self::PREFIX.'/verified')
             ->assertStatus(409)
-            ->assertJson(['type' => 'urn:jobportal:error:email-not-verified']);
+            ->assertJson(['type' => 'urn:onesis:error:email-not-verified']);
     }
 
     public function test_a_verified_account_passes(): void

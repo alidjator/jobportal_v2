@@ -178,7 +178,7 @@ final class ApplicantExportTest extends FeatureTestCase
     public function test_only_the_members_who_may_see_the_job_can_export(): void
     {
         $this->export(token: $this->recruiterToken)->assertOk();
-        $this->export(token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->export(token: $this->seekerToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         foreach ([$this->secondRecruiterToken, $this->otherAdminToken] as $token) {
             $this->export(token: $token)->assertStatus(404);
@@ -202,7 +202,7 @@ final class ApplicantExportTest extends FeatureTestCase
     {
         $this->app->make(SettingsStore::class)->setGlobal('recruitment.max_export_rows', 1, null);
 
-        $this->export()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:export-too-large')->assertJsonPath('max_rows', 1);
+        $this->export()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:export-too-large')->assertJsonPath('max_rows', 1);
         $this->assertCount(0, $this->audit());
 
         $lines = $this->lines($this->export(['filter' => ['stage_type' => 'applied', 'q' => 'budi']])->assertOk());

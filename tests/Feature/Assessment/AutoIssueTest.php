@@ -189,12 +189,12 @@ final class AutoIssueTest extends FeatureTestCase
     {
         $battery = $this->battery();
 
-        $this->enable($battery)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:auto-issue-not-allowed');
+        $this->enable($battery)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:auto-issue-not-allowed');
 
         $this->allow()->assertOk();
-        $this->provider('PUT', "tests/{$battery}/auto-issue", ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-psychologist');
-        $this->enable($battery, $this->psychologistId($this->otherProviderId))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-psychologist');
-        $this->enable($battery, 999999)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-psychologist');
+        $this->provider('PUT', "tests/{$battery}/auto-issue", ['enabled' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-psychologist');
+        $this->enable($battery, $this->psychologistId($this->otherProviderId))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-psychologist');
+        $this->enable($battery, 999999)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-psychologist');
 
         $this->enable($battery)->assertOk()->assertJsonPath('data.auto_issue', true)->assertJsonPath('data.responsible_psychologist_id', $this->psychologistId());
         $this->provider('PUT', "tests/{$battery}/auto-issue", ['enabled' => false])->assertOk()->assertJsonPath('data.auto_issue', false)->assertJsonPath('data.responsible_psychologist_id', null);
@@ -213,7 +213,7 @@ final class AutoIssueTest extends FeatureTestCase
         $this->allow()->assertOk();
         $battery = $this->battery(explanationTemplate: null, explainNorms: false);
 
-        $problems = $this->enable($battery)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')->json('errors.test');
+        $problems = $this->enable($battery)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->json('errors.test');
         $this->assertContains('The battery needs an explanation template.', $problems);
         $this->assertContains('The norm of the scale extraversion from 0 to 2 has no explanation.', $problems);
         $this->assertContains('The norm of the scale extraversion from 3 to 10 has no explanation.', $problems);
@@ -230,7 +230,7 @@ final class AutoIssueTest extends FeatureTestCase
         $this->provider('POST', "sections/{$drawing}/questions", ['type' => 'drawing', 'text' => 'Draw a tree.', 'points' => 10])->assertCreated();
         $this->provider('POST', "tests/{$copy}/publish")->assertOk();
 
-        $this->enable($copy)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')
+        $this->enable($copy)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')
             ->assertJsonFragment(['A battery with a drawing question cannot issue reports automatically: a psychologist scores drawings.']);
     }
 
@@ -247,7 +247,7 @@ final class AutoIssueTest extends FeatureTestCase
         $this->provider('PUT', "tests/{$id}/report-template", ['body' => 'Report for {{candidate_name}}'])->assertOk();
 
         $this->enable($id)->assertOk();
-        $this->provider('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')
+        $this->provider('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')
             ->assertJsonFragment(['The battery needs an explanation template.']);
 
         $this->provider('PUT', "tests/{$id}/explanation-template", ['body' => 'Hello {{candidate_name}}'])->assertOk();
@@ -264,8 +264,8 @@ final class AutoIssueTest extends FeatureTestCase
             'options' => [['label' => 'Never', 'score_value' => 1], ['label' => 'Always', 'score_value' => 3]],
         ])->assertCreated();
 
-        $this->provider('PUT', "tests/{$battery}/report-template", ['body' => '{{scale:extraversion:explanation}}'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-report-template');
-        $this->provider('PUT', "tests/{$battery}/explanation-template", ['body' => '{{scale:other:explanation}}'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-report-template');
+        $this->provider('PUT', "tests/{$battery}/report-template", ['body' => '{{scale:extraversion:explanation}}'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-report-template');
+        $this->provider('PUT', "tests/{$battery}/explanation-template", ['body' => '{{scale:other:explanation}}'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-report-template');
         $this->provider('PUT', "tests/{$battery}/explanation-template", ['body' => '{{unknown}}'])->assertStatus(422);
         $this->provider('GET', "tests/{$battery}/explanation-template")->assertOk()->assertJsonPath('data.body', null);
         $this->provider('PUT', "tests/{$battery}/explanation-template", ['body' => '{{scale:extraversion:explanation}}'])->assertOk()->assertJsonPath('data.body', '{{scale:extraversion:explanation}}');
@@ -403,8 +403,8 @@ final class AutoIssueTest extends FeatureTestCase
         $this->provider('PUT', "reviews/{$reportId}", ['body' => (string) $this->report()['body'], 'explanation' => 'You like people.', 'review_notes' => null])->assertOk();
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
 
-        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-auto-issued');
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-auto-issued');
+        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
         $this->provider('GET', 'reviews?filter[reviewed]=1')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reviewed', true);
     }
 
@@ -414,8 +414,8 @@ final class AutoIssueTest extends FeatureTestCase
         $battery = $this->battery();
         $reportId = $this->takeBattery($battery);
 
-        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-auto-issued');
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:report-not-auto-issued');
+        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
     }
 
     public function test_a_revision_keeps_the_number_with_a_suffix_and_the_earlier_version(): void
@@ -459,11 +459,11 @@ final class AutoIssueTest extends FeatureTestCase
 
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => '   ', 'explanation' => 'x'])->assertStatus(422);
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => '   '])->assertStatus(422);
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:validation-failed');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
 
         DB::table('assessment_psychologists')->update(['silp_valid_until' => '2026-10-04']);
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => 'y'])->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:cannot-sign-reports');
-        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:cannot-sign-reports');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => 'y'])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:cannot-sign-reports');
+        $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:cannot-sign-reports');
 
         $this->assertSame(0, DB::table('assessment_report_revisions')->count());
         $this->assertSame('LEMB/2026/00001', $this->report()['report_number']);

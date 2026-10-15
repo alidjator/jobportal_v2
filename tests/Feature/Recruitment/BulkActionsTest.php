@@ -97,11 +97,11 @@ final class BulkActionsTest extends FeatureTestCase
     {
         $url = "/company/jobs/{$this->job}/applications/bulk-reject";
 
-        $this->api('POST', $url, ['application_ids' => $this->ids, 'reason' => 'other'], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-rejection');
+        $this->api('POST', $url, ['application_ids' => $this->ids, 'reason' => 'other'], $this->recruiterToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-rejection');
         $this->api('POST', $url, ['application_ids' => [], 'reason' => 'position_filled'], $this->recruiterToken)->assertStatus(422);
         $this->api('POST', $url, ['application_ids' => [$this->ids[0], $this->ids[0]], 'reason' => 'position_filled'], $this->recruiterToken)->assertStatus(422);
         $this->api('POST', $url, ['application_ids' => [...$this->ids, 999999], 'reason' => 'position_filled'], $this->recruiterToken)
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-applications');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-applications');
 
         $this->assertSame(['applied', 'applied', 'applied'], $this->stageTypes());
     }
@@ -112,7 +112,7 @@ final class BulkActionsTest extends FeatureTestCase
         $unassigned = $this->insertJob('Designer', 'active', [$this->secondRecruiterId], attributes: ['deadline' => '2026-12-31']);
 
         $this->api('POST', "/company/jobs/{$other}/applications/bulk-reject", ['application_ids' => $this->ids, 'reason' => 'position_filled'], $this->recruiterToken)
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-applications');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-applications');
         $this->api('POST', "/company/jobs/{$unassigned}/applications/bulk-reject", ['application_ids' => $this->ids, 'reason' => 'position_filled'], $this->recruiterToken)->assertNotFound();
     }
 
@@ -121,7 +121,7 @@ final class BulkActionsTest extends FeatureTestCase
         $this->app->make(SettingsStore::class)->setGlobal(RecruitmentSettings::MAX_BULK_APPLICATIONS, 2, null);
 
         $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-reject", ['application_ids' => $this->ids, 'reason' => 'position_filled'], $this->recruiterToken)
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:too-many-applications');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:too-many-applications');
         $this->api('POST', "/company/jobs/{$this->job}/applications/bulk-reject", ['application_ids' => array_slice($this->ids, 0, 2), 'reason' => 'position_filled'], $this->recruiterToken)->assertOk();
     }
 
@@ -143,12 +143,12 @@ final class BulkActionsTest extends FeatureTestCase
 
     public function test_a_bulk_move_refuses_a_wrong_stage_or_input_for_the_stage(): void
     {
-        $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $this->stage('rejected')])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-stage');
-        $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-stage');
+        $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $this->stage('rejected')])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage');
+        $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage');
         $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $this->stage('screening'), 'interview' => $this->baseSchedule()])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-schedule');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-schedule');
         $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $this->stage('screening'), 'offer' => $this->offerDetails()])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-offer-input');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-offer-input');
 
         $this->assertSame(['applied', 'applied', 'applied'], $this->stageTypes());
     }
@@ -210,10 +210,10 @@ final class BulkActionsTest extends FeatureTestCase
     {
         $body = ['application_ids' => $this->ids, 'stage_id' => $this->stage('interview')];
 
-        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['starts_at' => '2026-10-01T02:00:00Z'])])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
-        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['interviewer_id' => $this->secondRecruiterId])])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interviewer');
-        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['duration_minutes' => 120, 'day_end' => '10:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
-        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['day_start' => '17:00', 'day_end' => '09:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-interview');
+        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['starts_at' => '2026-10-01T02:00:00Z'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
+        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['interviewer_id' => $this->secondRecruiterId])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['duration_minutes' => 120, 'day_end' => '10:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
+        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['day_start' => '17:00', 'day_end' => '09:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
         $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['gap_minutes' => 500])])->assertStatus(422);
 
         $this->assertSame(['applied', 'applied', 'applied'], $this->stageTypes());
@@ -245,7 +245,7 @@ final class BulkActionsTest extends FeatureTestCase
     public function test_a_wrong_shared_offer_changes_nothing(): void
     {
         $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $this->stage('offer'), 'offer' => $this->offerDetails(['salary' => 0])])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-offer');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-offer');
 
         $this->assertSame(['applied', 'applied', 'applied'], $this->stageTypes());
         $this->assertSame(0, DB::table('recruitment_offers')->count());

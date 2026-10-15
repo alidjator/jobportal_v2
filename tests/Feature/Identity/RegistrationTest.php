@@ -113,7 +113,7 @@ final class RegistrationTest extends FeatureTestCase
 
         $this->postJson('/api/v1/auth/register', $this->payload(['email' => 'SITI@example.TEST']))
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+            ->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
 
         $this->assertSame(1, UserModel::query()->count());
     }
@@ -128,7 +128,7 @@ final class RegistrationTest extends FeatureTestCase
         $this->postJson('/api/v1/auth/register', $this->payload())
             ->assertStatus(429)
             ->assertHeader('Retry-After', '3600')
-            ->assertJsonPath('type', 'urn:jobportal:error:too-many-requests');
+            ->assertJsonPath('type', 'urn:onesis:error:too-many-requests');
 
         $this->postJson('/api/v1/auth/register', $this->payload(['email' => 'other@example.test']))->assertCreated();
 
@@ -183,7 +183,7 @@ final class RegistrationTest extends FeatureTestCase
         $this->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $code])
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:email-already-verified');
+            ->assertJsonPath('type', 'urn:onesis:error:email-already-verified');
     }
 
     public function test_a_wrong_code_counts_an_attempt_and_five_wrong_attempts_burn_the_code(): void
@@ -196,14 +196,14 @@ final class RegistrationTest extends FeatureTestCase
             $this->forgetGuards();
             $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $wrong])
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:invalid-verification-code');
+                ->assertJsonPath('type', 'urn:onesis:error:invalid-verification-code');
             $this->assertSame($attempt, (int) DB::table('identity_verification_codes')->value('attempts'));
         }
 
         $this->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $correct])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
     }
 
     public function test_an_expired_code_is_refused(): void
@@ -214,7 +214,7 @@ final class RegistrationTest extends FeatureTestCase
 
         $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $this->sender->lastCode()])
             ->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-expired');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-expired');
     }
 
     public function test_the_code_must_be_six_digits(): void
@@ -239,7 +239,7 @@ final class RegistrationTest extends FeatureTestCase
         $this->withToken($token)->postJson('/api/v1/auth/email/resend')
             ->assertStatus(429)
             ->assertHeader('Retry-After', '40')
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-cooldown');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-cooldown');
         $this->assertCount(1, $this->sender->sent);
     }
 
@@ -258,7 +258,7 @@ final class RegistrationTest extends FeatureTestCase
             $this->forgetGuards();
             $this->withToken($token)->postJson('/api/v1/auth/email/verify', ['code' => $first])
                 ->assertStatus(422)
-                ->assertJsonPath('type', 'urn:jobportal:error:invalid-verification-code');
+                ->assertJsonPath('type', 'urn:onesis:error:invalid-verification-code');
         }
 
         $this->forgetGuards();
@@ -280,7 +280,7 @@ final class RegistrationTest extends FeatureTestCase
         $this->withToken($token)->postJson('/api/v1/auth/email/resend')
             ->assertStatus(429)
             ->assertHeader('Retry-After', '3300')
-            ->assertJsonPath('type', 'urn:jobportal:error:verification-code-limit-reached');
+            ->assertJsonPath('type', 'urn:onesis:error:verification-code-limit-reached');
 
         Carbon::setTestNow('2026-10-03 11:00:01');
         $this->forgetGuards();
@@ -296,6 +296,6 @@ final class RegistrationTest extends FeatureTestCase
         $this->forgetGuards();
         $this->withToken($token)->postJson('/api/v1/auth/email/resend')
             ->assertStatus(409)
-            ->assertJsonPath('type', 'urn:jobportal:error:email-already-verified');
+            ->assertJsonPath('type', 'urn:onesis:error:email-already-verified');
     }
 }

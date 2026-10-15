@@ -199,10 +199,10 @@ final class CompanyOnboardingTest extends FeatureTestCase
 
     public function test_an_unknown_or_inactive_classification_is_refused(): void
     {
-        $this->createCompany(['industry_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-industry');
+        $this->createCompany(['industry_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-industry');
 
         $inactive = $this->master('reference_organization_types', 'closed', false);
-        $this->createCompany(['organization_type_id' => $inactive])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:unknown-organization-type');
+        $this->createCompany(['organization_type_id' => $inactive])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-organization-type');
 
         $this->assertSame(0, DB::table('company_companies')->count());
     }
@@ -211,7 +211,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
     {
         UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'owner@example.test', 'status' => 'active', 'locale' => 'en']);
 
-        $this->createCompany()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+        $this->createCompany()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
 
         $this->assertSame(0, DB::table('company_companies')->count());
         $this->assertSame(0, DB::table('company_invitations')->count());
@@ -221,7 +221,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
     {
         config(['app.invitation_url' => null]);
 
-        $this->createCompany()->assertStatus(503)->assertJsonPath('type', 'urn:jobportal:error:invitation-link-unavailable');
+        $this->createCompany()->assertStatus(503)->assertJsonPath('type', 'urn:onesis:error:invitation-link-unavailable');
 
         $this->assertSame(0, DB::table('company_companies')->count());
         $this->assertSame(0, DB::table('company_invitations')->count());
@@ -243,12 +243,12 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $this->createCompany()->assertCreated();
         $token = $this->tokenFromMail();
 
-        $this->preview(str_repeat('a', 43))->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
-        $this->preview('short')->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
+        $this->preview(str_repeat('a', 43))->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
+        $this->preview('short')->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
 
         DB::table('company_invitations')->update(['revoked_at' => '2026-10-05 09:30:00']);
-        $this->preview($token)->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
-        $this->accept($token)->assertStatus(404)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-found');
+        $this->preview($token)->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
+        $this->accept($token)->assertStatus(404)->assertJsonPath('type', 'urn:onesis:error:invitation-not-found');
     }
 
     public function test_an_expired_invitation_is_not_found(): void
@@ -335,7 +335,7 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $token = $this->tokenFromMail();
         UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'owner@example.test', 'status' => 'active', 'locale' => 'en']);
 
-        $this->accept($token)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:email-already-registered');
+        $this->accept($token)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
 
         $this->assertSame(0, DB::table('company_members')->count());
         $this->assertNull(DB::table('company_invitations')->value('accepted_at'));
@@ -347,8 +347,8 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $token = $this->tokenFromMail();
         DB::table('company_companies')->update(['status' => 'suspended']);
 
-        $this->preview($token)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
-        $this->accept($token)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+        $this->preview($token)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
+        $this->accept($token)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->assertSame(0, UserModel::query()->count());
     }
 
@@ -385,12 +385,12 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']);
         $this->companyMe($seeker->createToken('phone', ['*'], now()->addDay())->plainTextToken)
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+            ->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         $member = UserModel::query()->create(['type' => 'company_member', 'name' => 'Orphan', 'email' => 'orphan@example.test', 'status' => 'active', 'locale' => 'en']);
         $this->companyMe($member->createToken('phone', ['*'], now()->addDay())->plainTextToken)
             ->assertStatus(403)
-            ->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+            ->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
     }
 
     public function test_an_account_can_belong_to_only_one_company(): void

@@ -127,7 +127,7 @@ final class BulkMessageTest extends FeatureTestCase
         $this->app->make(SettingsStore::class)->setGlobal('messaging.max_bulk_recipients', 1, null);
 
         $this->bulk([$this->applicationId, $this->secondApplicationId], files: [$this->upload('info.pdf', $this->pdf())])
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:too-many-recipients');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:too-many-recipients');
 
         $this->assertSame(0, DB::table('messaging_attachments')->count());
         $this->assertSame([], Storage::allFiles('messaging'));
@@ -142,7 +142,7 @@ final class BulkMessageTest extends FeatureTestCase
 
         $this->assertSame(['sent', 'skipped'], array_column($response->json('data'), 'status'));
         $this->assertSame('daily-limit', $response->json('data.1.code'));
-        $this->bulk([$this->applicationId])->assertStatus(429)->assertJsonPath('type', 'urn:jobportal:error:daily-limit');
+        $this->bulk([$this->applicationId])->assertStatus(429)->assertJsonPath('type', 'urn:onesis:error:daily-limit');
     }
 
     public function test_who_may_send_a_bulk_message(): void
@@ -152,6 +152,6 @@ final class BulkMessageTest extends FeatureTestCase
         $this->bulk([$this->applicationId], token: $this->seekerToken)->assertForbidden();
         $this->bulk([$this->applicationId], token: $this->adminToken)->assertOk();
         $this->bulk([], token: $this->adminToken)->assertStatus(422);
-        $this->bulk([$this->applicationId], null, $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:empty-message');
+        $this->bulk([$this->applicationId], null, $this->adminToken)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:empty-message');
     }
 }

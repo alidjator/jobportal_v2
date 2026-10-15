@@ -163,7 +163,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
             ->assertJsonMissingPath('data.enrolment')
             ->assertJsonMissingPath('data.token');
 
-        $this->finish($second, '000000')->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+        $this->finish($second, '000000')->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $this->finish($second, $this->code($secret, $this->second->id))->assertOk()->assertJsonMissingPath('data.recovery_codes');
 
         $this->app['auth']->forgetGuards();
@@ -172,7 +172,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
 
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->postJson('/api/v1/auth/two-factor', ['challenge_token' => $this->login('cici@example.test')->json('data.challenge_token'), 'recovery_code' => $codes[0]])
-            ->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+            ->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
     }
 
     public function test_a_member_may_do_without_a_second_factor_and_a_job_seeker_never_has_one(): void
@@ -202,7 +202,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
     {
         $this->api('POST', "/company/members/{$this->recruiter->id}/suspend")->assertNoContent();
 
-        $this->login('rina@example.test')->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:membership-suspended');
+        $this->login('rina@example.test')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:membership-suspended');
     }
 
     public function test_google_sign_in_of_a_company_admin_also_asks_for_the_second_factor(): void
@@ -223,7 +223,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
 
         $this->flushHeaders()->postJson('/api/v1/auth/two-factor', ['challenge_token' => str_repeat('a', 43), 'code' => '123456'])
-            ->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
     }
 
     public function test_the_challenge_of_a_psychologist_does_not_finish_a_company_member_sign_in(): void
@@ -233,7 +233,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         $challenge = $this->flushHeaders()->postJson('/api/v1/provider/auth/login', ['email' => 'dewi@example.test', 'password' => self::PASSWORD])->assertOk();
 
         $this->finish($challenge, $this->code($challenge->json('data.enrolment.secret'), $psychologist->id))
-            ->assertUnauthorized()->assertJsonPath('type', 'urn:jobportal:error:two-factor-challenge-expired');
+            ->assertUnauthorized()->assertJsonPath('type', 'urn:onesis:error:two-factor-challenge-expired');
     }
 
     // ----- the account endpoints -----
@@ -242,7 +242,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
     {
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'id']);
 
-        $this->api('GET', '/me/two-factor', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/me/two-factor', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
         $this->api('POST', '/me/two-factor', [], $this->tokenOf($seeker))->assertForbidden();
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->getJson('/api/v1/me/two-factor')->assertUnauthorized();
@@ -256,18 +256,18 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         $secret = (string) $this->api('POST', '/me/two-factor', [], $token)->assertOk()->assertJsonStructure(['data' => ['secret', 'otpauth_url', 'qr_code']])->json('data.secret');
         $this->assertNotSame($secret, DB::table('identity_user_two_factor')->where('user_id', $this->recruiter->id)->value('secret'), 'the secret is stored encrypted');
 
-        $this->api('POST', '/me/two-factor/confirm', ['code' => '000000'], $token)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-two-factor-code');
+        $this->api('POST', '/me/two-factor/confirm', ['code' => '000000'], $token)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-two-factor-code');
         $codes = $this->api('POST', '/me/two-factor/confirm', ['code' => $this->code($secret, $this->recruiter->id)], $token)->assertOk()->assertJsonCount(10, 'data.recovery_codes')->json('data.recovery_codes');
         $this->assertCount(10, array_unique($codes));
-        $this->api('POST', '/me/two-factor/confirm', ['code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:two-factor-not-started');
-        $this->api('POST', '/me/two-factor', [], $token)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:two-factor-already-enabled');
+        $this->api('POST', '/me/two-factor/confirm', ['code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-not-started');
+        $this->api('POST', '/me/two-factor', [], $token)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-already-enabled');
         $this->api('GET', '/me/two-factor', [], $token)->assertOk()->assertExactJson(['data' => ['enabled' => true, 'required' => false, 'recovery_codes_left' => 10]]);
 
         $this->api('POST', '/me/two-factor/recovery-codes', ['code' => '000000'], $token)->assertStatus(422);
         $renewed = $this->api('POST', '/me/two-factor/recovery-codes', ['code' => $this->code($secret, $this->recruiter->id)], $token)->assertOk()->assertJsonCount(10, 'data.recovery_codes')->json('data.recovery_codes');
         $this->assertEmpty(array_intersect($codes, $renewed));
 
-        $this->api('DELETE', '/me/two-factor', ['password' => 'wrong-password', 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-password');
+        $this->api('DELETE', '/me/two-factor', ['password' => 'wrong-password', 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-password');
         $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertNoContent();
         $this->assertSame(0, DB::table('identity_user_two_factor')->where('user_id', $this->recruiter->id)->count());
         $this->assertSame(0, DB::table('identity_user_recovery_codes')->where('user_id', $this->recruiter->id)->count());
@@ -285,7 +285,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
 
         $this->api('GET', '/me/two-factor')->assertOk()->assertJsonPath('data.required', true)->assertJsonPath('data.enabled', true);
         $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->owner->id)])
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:two-factor-required');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-required');
         $this->assertSame(1, DB::table('identity_user_two_factor')->where('user_id', $this->owner->id)->count());
     }
 
@@ -295,7 +295,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         $this->requireForCompany();
 
         $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $this->recruiterToken)
-            ->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:two-factor-required');
+            ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-required');
     }
 
     // ----- becoming required -----
@@ -382,10 +382,10 @@ final class CompanyTwoFactorTest extends FeatureTestCase
 
     public function test_the_reset_has_rules_about_who_may_reset_whom(): void
     {
-        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:cannot-reset-self');
-        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor", [], $this->tokenOf($this->second))->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:owner-required');
+        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:cannot-reset-self');
+        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor", [], $this->tokenOf($this->second))->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:owner-required');
         $this->api('POST', "/company/members/{$this->second->id}/reset-two-factor")->assertNoContent();
-        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor", [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('POST', "/company/members/{$this->owner->id}/reset-two-factor", [], $this->recruiterToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-admin-required');
         $this->api('POST', '/company/members/999999/reset-two-factor')->assertNotFound();
 
         $otherCompany = (int) DB::table('company_companies')->insertGetId([

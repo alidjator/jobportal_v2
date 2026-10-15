@@ -94,7 +94,7 @@ final class VideoTakesTest extends FeatureTestCase
         $this->startVideoAttempt(retakes: 0);
         $this->record();
 
-        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:retake-limit');
+        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:retake-limit');
     }
 
     public function test_a_take_given_up_half_way_still_counts_and_loses_its_chunks(): void
@@ -109,7 +109,7 @@ final class VideoTakesTest extends FeatureTestCase
         $this->assertSame([], Storage::allFiles('assessment/video-chunks'));
         $this->assertSame('rejected', DB::table('assessment_video_takes')->where('id', $abandoned)->value('status'));
         $this->sendChunk((int) $next->json('data.id'), 0, $this->webm());
-        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:retake-limit');
+        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:retake-limit');
     }
 
     // ----- what the server checks -----
@@ -119,7 +119,7 @@ final class VideoTakesTest extends FeatureTestCase
         $this->startVideoAttempt();
         $takeId = (int) $this->startTake()->assertCreated()->json('data.id');
 
-        $this->sendChunkRaw($takeId, 1, 'two')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:chunk-out-of-order')->assertJsonPath('expected_index', 0);
+        $this->sendChunkRaw($takeId, 1, 'two')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:chunk-out-of-order')->assertJsonPath('expected_index', 0);
         $this->sendChunk($takeId, 0, $this->webm());
         $this->sendChunk($takeId, 0, $this->webm())->assertOk()->assertJsonPath('data.chunks_received', 1);
         $this->assertSame(1, (int) DB::table('assessment_video_takes')->where('id', $takeId)->value('chunk_count'));
@@ -130,8 +130,8 @@ final class VideoTakesTest extends FeatureTestCase
         $this->startVideoAttempt();
         $takeId = (int) $this->startTake()->assertCreated()->json('data.id');
 
-        $this->sendChunkRaw($takeId, 0, '<?php echo 1;')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-video')->assertJsonStructure(['errors' => ['file']]);
-        $this->sendChunkRaw($takeId, 0, '')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-video');
+        $this->sendChunkRaw($takeId, 0, '<?php echo 1;')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-video')->assertJsonStructure(['errors' => ['file']]);
+        $this->sendChunkRaw($takeId, 0, '')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-video');
         $this->assertSame([], Storage::allFiles('assessment'));
 
         $this->sendChunk($takeId, 0, "\x00\x00\x00\x18ftypmp42morebytes");
@@ -145,11 +145,11 @@ final class VideoTakesTest extends FeatureTestCase
         $this->startVideoAttempt();
         $takeId = (int) $this->startTake()->assertCreated()->json('data.id');
 
-        $this->sendChunkRaw($takeId, 0, $this->webm(str_repeat('x', 5 * 1024 * 1024)))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:file-too-large');
+        $this->sendChunkRaw($takeId, 0, $this->webm(str_repeat('x', 5 * 1024 * 1024)))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:file-too-large');
 
         $this->app->make(SettingsStore::class)->setGlobal('assessment.max_video_megabytes', 5, null);
         $this->sendChunk($takeId, 0, $this->webm(str_repeat('x', 4 * 1024 * 1024)));
-        $this->sendChunkRaw($takeId, 1, str_repeat('y', 2 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-too-large')->assertJsonPath('max_size_mb', 5);
+        $this->sendChunkRaw($takeId, 1, str_repeat('y', 2 * 1024 * 1024))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-too-large')->assertJsonPath('max_size_mb', 5);
     }
 
     public function test_the_upload_deadline_is_the_answer_time_plus_two_minutes(): void
@@ -162,8 +162,8 @@ final class VideoTakesTest extends FeatureTestCase
         $this->sendChunk($takeId, 1, 'late-but-in-grace')->assertOk();
 
         $this->freeze(60 + 121);
-        $this->sendChunkRaw($takeId, 2, 'too-late')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:upload-deadline-passed');
-        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:upload-deadline-passed');
+        $this->sendChunkRaw($takeId, 2, 'too-late')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:upload-deadline-passed');
+        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:upload-deadline-passed');
         $this->take('GET', $this->videoUri())->assertOk()->assertJsonPath('data.recording', null);
     }
 
@@ -172,12 +172,12 @@ final class VideoTakesTest extends FeatureTestCase
         $this->startVideoAttempt();
         $takeId = (int) $this->startTake()->assertCreated()->json('data.id');
 
-        $this->completeTake($takeId)->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-video');
+        $this->completeTake($takeId)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-video');
 
         $this->sendChunk($takeId, 0, $this->webm());
         $this->completeTake($takeId)->assertOk();
-        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-take-closed');
-        $this->sendChunkRaw($takeId, 1, 'more')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:video-take-closed');
+        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-take-closed');
+        $this->sendChunkRaw($takeId, 1, 'more')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:video-take-closed');
     }
 
     public function test_only_the_video_question_of_the_open_attempt_takes_recordings(): void
@@ -192,8 +192,8 @@ final class VideoTakesTest extends FeatureTestCase
         $this->take('POST', "attempt/questions/{$other}/video/takes")->assertNotFound();
         $this->take('POST', $this->videoUri('/takes/999999/complete'))->assertNotFound();
 
-        $this->take('PUT', "attempt/questions/{$this->questionId}/answer", ['text' => 'typed'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
-        $this->take('DELETE', "attempt/questions/{$this->questionId}/answer")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
+        $this->take('PUT', "attempt/questions/{$this->questionId}/answer", ['text' => 'typed'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
+        $this->take('DELETE', "attempt/questions/{$this->questionId}/answer")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
     }
 
     public function test_nothing_is_recorded_once_the_attempt_is_closed(): void
@@ -204,7 +204,7 @@ final class VideoTakesTest extends FeatureTestCase
 
         $this->take('POST', 'attempt/submit')->assertOk();
 
-        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
-        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:attempt-closed');
+        $this->completeTake($takeId)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
+        $this->startTake()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:attempt-closed');
     }
 }

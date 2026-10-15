@@ -90,7 +90,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_a_move_to_an_offer_stage_needs_an_offer_and_saves_it_with_the_move(): void
     {
-        $this->toOfferStage()->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:offer-required');
+        $this->toOfferStage()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:offer-required');
         $this->assertSame('applied', $this->applicationType());
 
         $this->toOfferStage($this->offerDetails())->assertNoContent();
@@ -103,7 +103,7 @@ final class OffersTest extends FeatureTestCase
     public function test_an_offer_for_another_stage_is_refused(): void
     {
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening'), 'offer' => $this->offerDetails()], $this->recruiterToken)
-            ->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-offer-input');
+            ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-offer-input');
     }
 
     public function test_the_position_defaults_to_the_job_title_and_the_values_are_checked(): void
@@ -111,7 +111,7 @@ final class OffersTest extends FeatureTestCase
         $this->toOfferStage($this->offerDetails(['position' => null]))->assertNoContent();
         $this->assertSame('Backend Developer', DB::table('recruitment_offers')->value('position'));
 
-        $this->send(['salary' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-offer');
+        $this->send(['salary' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-offer');
         $this->send(['start_date' => now()->subDays(2)->format('Y-m-d')])->assertStatus(422);
         $this->send(['expires_at' => now()->subDay()->utc()->format('Y-m-d\TH:i:s\Z')])->assertStatus(422);
         $this->send(['expires_at' => now()->addDays(31)->utc()->format('Y-m-d\TH:i:s\Z')])->assertStatus(422);
@@ -124,7 +124,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_sending_needs_the_offer_stage_and_a_revision_replaces_the_pending_offer(): void
     {
-        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:not-in-offer-stage');
+        $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-in-offer-stage');
 
         $this->toOfferStage($this->offerDetails())->assertNoContent();
         $this->send(['salary' => 15_000_000])->assertOk()->assertJsonPath('data.salary', 15_000_000)->assertJsonPath('data.status', 'pending');
@@ -147,7 +147,7 @@ final class OffersTest extends FeatureTestCase
     {
         $this->toOfferStage($this->offerDetails())->assertNoContent();
         $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertOk()->assertJsonPath('data.status', 'withdrawn');
-        $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-offer');
+        $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-offer');
 
         $this->assertSame('offer', $this->applicationType());
         $this->assertContains('offer.withdrawn', $this->notificationTypes($this->seekerId));
@@ -184,7 +184,7 @@ final class OffersTest extends FeatureTestCase
         $this->assertSame(0, DB::table('recruitment_offers')->whereNotNull('active_key')->count());
         $this->assertSame(['offer.accepted'], $this->notificationTypes($this->recruiterId));
         $this->assertSame('applicant', DB::table('recruitment_application_stage_history')->where('application_id', $this->applicationId)->orderByDesc('id')->value('actor_kind'));
-        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-offer');
+        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-offer');
     }
 
     public function test_declining_withdraws_the_application_with_the_note_and_frees_the_job(): void
@@ -210,7 +210,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_nothing_to_answer_without_a_pending_offer(): void
     {
-        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:no-active-offer');
+        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-offer');
         $this->mine('decline')->assertStatus(409);
     }
 
@@ -252,7 +252,7 @@ final class OffersTest extends FeatureTestCase
         // The deadline passes (the clock is not moved: the access tokens would expire with it).
         DB::table('recruitment_offers')->update(['expires_at' => now()->subHour()->utc()->format('Y-m-d H:i:s')]);
         $this->mine('', method: 'GET')->assertOk()->assertJsonPath('data.status', 'expired');
-        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:offer-expired');
+        $this->mine('accept')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:offer-expired');
         $this->assertSame('offer', $this->applicationType());
 
         $this->api('PUT', "/company/applications/{$this->applicationId}/offer", $this->offerDetails([

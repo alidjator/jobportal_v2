@@ -209,7 +209,7 @@ final class CompanyActivityLogTest extends FeatureTestCase
         $this->api('GET', '/activity?filter[user_id]=abc')->assertStatus(422);
         $this->api('GET', '/activity?filter[from]=2026-10-06&filter[to]=2026-10-05')->assertStatus(422);
         $this->api('GET', '/activity?per_page=0')->assertStatus(422);
-        $this->api('GET', '/activity?cursor=not-a-cursor')->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-cursor');
+        $this->api('GET', '/activity?cursor=not-a-cursor')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-cursor');
     }
 
     public function test_the_log_is_read_in_slices(): void
@@ -225,11 +225,11 @@ final class CompanyActivityLogTest extends FeatureTestCase
 
     public function test_only_a_company_admin_reads_the_log(): void
     {
-        $this->api('GET', '/activity', [], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:company-admin-required');
+        $this->api('GET', '/activity', [], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:company-admin-required');
         $this->api('GET', '/activity/export', [], $this->recruiterToken)->assertForbidden();
 
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'id']);
-        $this->api('GET', '/activity', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:jobportal:error:not-a-company-member');
+        $this->api('GET', '/activity', [], $this->tokenOf($seeker))->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         $this->app['auth']->forgetGuards();
         $this->flushHeaders()->getJson('/api/v1/company/activity')->assertUnauthorized();

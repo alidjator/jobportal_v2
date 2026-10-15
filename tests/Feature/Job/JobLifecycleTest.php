@@ -106,7 +106,7 @@ final class JobLifecycleTest extends FeatureTestCase
     {
         $id = (int) $this->api('POST', '/company/jobs', ['title' => 'Only a title'])->json('data.id');
 
-        $response = $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:job-incomplete');
+        $response = $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:job-incomplete');
 
         $this->assertSame(
             ['description', 'category_id', 'role_id', 'job_type_id', 'job_level_id', 'work_time_id', 'experience_level_id', 'education_level_id', 'vacancies',
@@ -186,7 +186,7 @@ final class JobLifecycleTest extends FeatureTestCase
         foreach (['pending_review', 'active', 'closed', 'expired', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-publishable');
+            $this->api('POST', "/company/jobs/{$id}/publish")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-publishable');
             $this->assertSame($status, $this->statusOf($id));
         }
     }
@@ -219,7 +219,7 @@ final class JobLifecycleTest extends FeatureTestCase
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
         foreach (['publish', 'close', 'clone'] as $action) {
-            $this->api('POST', "/company/jobs/{$id}/{$action}")->assertStatus(403)->assertJsonPath('type', 'urn:jobportal:error:company-suspended');
+            $this->api('POST', "/company/jobs/{$id}/{$action}")->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         }
         $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-01'])->assertStatus(403);
     }
@@ -241,7 +241,7 @@ final class JobLifecycleTest extends FeatureTestCase
         foreach (['draft', 'pending_review', 'closed', 'expired', 'rejected', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->api('POST', "/company/jobs/{$id}/close")->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-active');
+            $this->api('POST', "/company/jobs/{$id}/close")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-active');
             $this->assertSame($status, $this->statusOf($id));
         }
     }
@@ -298,7 +298,7 @@ final class JobLifecycleTest extends FeatureTestCase
         $this->api('PATCH', "/company/jobs/{$id}", ['description' => null, 'skill_ids' => []])->assertOk();
 
         $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-30'])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:job-incomplete')->assertJsonStructure(['errors' => ['description', 'skill_ids']]);
+            ->assertJsonPath('type', 'urn:onesis:error:job-incomplete')->assertJsonStructure(['errors' => ['description', 'skill_ids']]);
         $this->assertSame('closed', $this->statusOf($id));
 
         $this->api('PATCH', "/company/jobs/{$id}", ['description' => str_repeat('b', 60), 'skill_ids' => [$this->skillId('php')]])->assertOk();
@@ -310,7 +310,7 @@ final class JobLifecycleTest extends FeatureTestCase
         foreach (['draft', 'pending_review', 'active', 'rejected', 'taken_down'] as $status) {
             $id = $this->insertJob("Job {$status}", $status);
 
-            $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-30'])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:job-not-reopenable');
+            $this->api('POST', "/company/jobs/{$id}/reopen", ['deadline' => '2026-11-30'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-not-reopenable');
             $this->assertSame($status, $this->statusOf($id));
         }
     }
@@ -390,7 +390,7 @@ final class JobLifecycleTest extends FeatureTestCase
         $this->api('POST', "/company/jobs/{$id}/publish")->assertOk();
 
         $this->api('PATCH', "/company/jobs/{$id}", ['description' => null, 'skill_ids' => [], 'category_id' => null, 'deadline' => null])->assertStatus(422)
-            ->assertJsonPath('type', 'urn:jobportal:error:job-incomplete')
+            ->assertJsonPath('type', 'urn:onesis:error:job-incomplete')
             ->assertJsonStructure(['errors' => ['description', 'skill_ids', 'category_id', 'deadline']]);
 
         $this->assertSame('active', $this->statusOf($id));

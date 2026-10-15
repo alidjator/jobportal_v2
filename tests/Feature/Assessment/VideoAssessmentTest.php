@@ -141,7 +141,7 @@ final class VideoAssessmentTest extends FeatureTestCase
             ->assertCreated()->assertJsonPath('data.format', 'video')->assertJsonPath('data.allow_back', false)->assertJsonPath('data.allow_jump', false)->assertJsonPath('data.allow_skip', true);
 
         $sectionId = (int) DB::table('assessment_sections')->where('test_id', $id)->value('id');
-        $this->company('POST', "sections/{$sectionId}/questions", $this->choice())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-allowed')->assertJsonStructure(['errors' => ['type']]);
+        $this->company('POST', "sections/{$sectionId}/questions", $this->choice())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-allowed')->assertJsonStructure(['errors' => ['type']]);
         $this->company('POST', "sections/{$sectionId}/questions", $this->videoQuestion())->assertCreated()
             ->assertJsonPath('data.type', 'video_answer')->assertJsonPath('data.think_seconds', 60)->assertJsonPath('data.answer_seconds', 120)->assertJsonPath('data.max_retakes', 1)->assertJsonPath('data.options', []);
 
@@ -153,17 +153,17 @@ final class VideoAssessmentTest extends FeatureTestCase
         $id = $this->newTest();
         $plain = (int) $this->company('POST', "tests/{$id}/sections", $this->section())->assertCreated()->json('data.id');
 
-        $this->company('POST', "sections/{$plain}/questions", $this->videoQuestion())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-allowed');
+        $this->company('POST', "sections/{$plain}/questions", $this->videoQuestion())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-allowed');
 
         $battery = (int) $this->provider('POST', 'tests', ['title' => 'Battery', 'measured_capabilities' => ['Logic']])->assertCreated()->json('data.id');
-        $this->provider('POST', "tests/{$battery}/sections", $this->videoSection())->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-not-allowed')->assertJsonStructure(['errors' => ['format']]);
+        $this->provider('POST', "tests/{$battery}/sections", $this->videoSection())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-not-allowed')->assertJsonStructure(['errors' => ['format']]);
     }
 
     public function test_the_video_settings_of_a_question_are_checked(): void
     {
         $id = $this->newTest();
         $sectionId = $this->videoSectionOf($id);
-        $post = fn (array $extra) => $this->company('POST', "sections/{$sectionId}/questions", $this->videoQuestion($extra))->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-question');
+        $post = fn (array $extra) => $this->company('POST', "sections/{$sectionId}/questions", $this->videoQuestion($extra))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-question');
 
         $post(['answer_seconds' => 29])->assertJsonStructure(['errors' => ['answer_seconds']]);
         $post(['answer_seconds' => 301])->assertJsonStructure(['errors' => ['answer_seconds']]);
@@ -214,7 +214,7 @@ final class VideoAssessmentTest extends FeatureTestCase
         $this->company('POST', "sections/{$sectionId}/questions", $this->videoQuestion())->assertCreated();
 
         // 60 s think + 120 s × 2 takes = 300 s, but the section lasts 240 s.
-        $this->company('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:test-incomplete')->assertJsonPath('errors.test.0', fn (string $message): bool => str_contains($message, 'at least 300 seconds'));
+        $this->company('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->assertJsonPath('errors.test.0', fn (string $message): bool => str_contains($message, 'at least 300 seconds'));
 
         $this->company('PUT', "sections/{$sectionId}", $this->videoSection(seconds: 300))->assertOk();
         $this->company('POST', "tests/{$id}/publish")->assertOk()->assertJsonPath('data.status', 'published');
@@ -235,7 +235,7 @@ final class VideoAssessmentTest extends FeatureTestCase
     {
         $id = $this->publishedVideoTest();
 
-        $this->moveToAssessment($id, ['assessor_ids' => []])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-assessor');
+        $this->moveToAssessment($id, ['assessor_ids' => []])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
         $this->assertSame(0, DB::table('assessment_invitations')->count());
 
         $this->moveToAssessment($id)->assertNoContent();
@@ -254,12 +254,12 @@ final class VideoAssessmentTest extends FeatureTestCase
     {
         $this->invite($this->publishedVideoTest());
 
-        $this->take('POST', 'start', ['consent' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-consent-required')->assertJsonStructure(['errors' => ['video_consent']]);
-        $this->take('POST', 'start', ['consent' => true, 'video_consent' => false])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:video-consent-required');
+        $this->take('POST', 'start', ['consent' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-consent-required')->assertJsonStructure(['errors' => ['video_consent']]);
+        $this->take('POST', 'start', ['consent' => true, 'video_consent' => false])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:video-consent-required');
         $this->assertSame(0, DB::table('assessment_attempts')->count());
         $this->assertSame(['invited'], DB::table('assessment_invitations')->pluck('status')->all());
 
-        $this->take('POST', 'start', ['video_consent' => true])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:consent-required');
+        $this->take('POST', 'start', ['video_consent' => true])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:consent-required');
 
         $this->take('POST', 'start', ['consent' => true, 'video_consent' => true])->assertCreated()->assertJsonPath('data.section.format', 'video');
         $this->assertNotNull(DB::table('assessment_attempts')->value('video_consented_at'));
@@ -288,7 +288,7 @@ final class VideoAssessmentTest extends FeatureTestCase
         $questionId = (int) DB::table('assessment_questions')->value('id');
 
         $this->take('GET', 'attempt')->assertOk()->assertJsonPath('data.questions.0.type', 'video_answer')->assertJsonPath('data.questions.0.video.answer_seconds', 120)->assertJsonPath('data.questions.0.video.max_retakes', 1);
-        $this->take('PUT', "attempt/questions/{$questionId}/answer", ['text' => 'typed answer'])->assertStatus(422)->assertJsonPath('type', 'urn:jobportal:error:invalid-answer');
+        $this->take('PUT', "attempt/questions/{$questionId}/answer", ['text' => 'typed answer'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-answer');
     }
 
     // ----- declining -----
@@ -306,8 +306,8 @@ final class VideoAssessmentTest extends FeatureTestCase
         $this->assertSame(['assessment.declined'], $this->notificationTypes($this->adminId));
 
         $this->show()->assertOk()->assertJsonPath('data.status', 'declined');
-        $this->take('POST', 'start', ['consent' => true, 'video_consent' => true])->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
-        $this->take('POST', 'decline')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
+        $this->take('POST', 'start', ['consent' => true, 'video_consent' => true])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
+        $this->take('POST', 'decline')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
     }
 
     public function test_a_declined_test_frees_the_application_for_another_invitation(): void
@@ -325,7 +325,7 @@ final class VideoAssessmentTest extends FeatureTestCase
         $this->invite($this->publishedVideoTest());
         $this->take('POST', 'start', ['consent' => true, 'video_consent' => true])->assertCreated();
 
-        $this->take('POST', 'decline')->assertStatus(409)->assertJsonPath('type', 'urn:jobportal:error:invitation-not-open');
+        $this->take('POST', 'decline')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-not-open');
     }
 
     public function test_only_the_candidate_declines_their_own_test(): void
