@@ -237,6 +237,20 @@ Tests: `AttemptTest`, `InvitationTest`, `AutoIssueTest` (run after `php artisan 
   - The PDF shows the "issued automatically" notice only while the report is not revised.
   - Added setting `assessment.max_attachment_megabytes`; added email template `assessment.explanation_revised`.
 
+## ERP later (recorded 2026-10-15, not designed)
+
+Notes for the ONESIS ERP (`erp-direction.md`); nothing changes now.
+
+- **Module:** the Assessment context is part of the shared talent acquisition core (ONESIS Talent on the recruiter side, ONESIS Career on the
+  candidate side); the code stays in `src/Assessment`.
+- **Employees as subjects:** an invitation is tied to an application today (`assessment_invitations.application_id`, required, foreign key to
+  `recruitment_applications`). ERP uses of psychological tests for employees (promotion, assessment centre, talent review) need the subject widened
+  to "an application or an employee". Decided with the Employee context (ERP phase 2); until then no new design should assume that the subject is
+  always an applicant.
+- **Hand-off to Employee:** psychological reports and test results are **not** carried to the employee record by default: the candidate consented
+  for selection (UU 23/2022 Pasal 27, UU 27/2022 purpose limitation). Carrying them over would need a new consent of the employee;
+  `docs/legal-review.md` question 18.
+
 ## Open questions
 
 1. ~~Stage type~~: decided, see above.

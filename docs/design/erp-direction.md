@@ -44,6 +44,8 @@ code and no schema before go-live; it adds new designs and sets a new order for 
   similar data live only there, under stricter access, never in Recruitment; the "out of scope" note of `phase-8-hiring.md` stays true for Recruitment.
 - The hires export of `phase-8-hiring.md` is the **bridge** until Employee exists: it feeds the existing HRIS.
 - A hire of an internal tenant later creates a pending employee record through a domain event (hand-off design, section 6, item 13).
+- The hand-off does **not** carry psychological reports or test results by default (`phase-6-assessments.md`, "ERP later"; `legal-review.md`
+  question 18).
 
 ## 4. Tenant per legal entity
 

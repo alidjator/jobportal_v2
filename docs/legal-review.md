@@ -62,6 +62,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
     stored report PDF of their psychological tests are deleted today (`phase-6-assessments.md`; `phase-8-provider-institutions.md`). How long must
     a partner institution keep the raw data of an examination under Law 23/2022 and the HIMPSI code of ethics, and does that duty override the
     candidate's erasure request (UU 27/2022)? If it does, the data would move to a locked institution archive instead.
+18. **Psychological results after hiring (added 2026-10-15).** A candidate consents to a psychological test for selection. When a hire moves to the
+    employee record of the ONESIS ERP (`erp-direction.md` section 3), the plan is **not** to carry the report or the results over
+    (`phase-6-assessments.md`, "ERP later"). May the employer keep using the selection report for employment purposes (placement, promotion) under
+    Law 23/2022 and UU 27/2022 (purpose limitation), and if so, what consent from the employee and what retention apply?
 
 ## 3. What we can change after the answers
 
