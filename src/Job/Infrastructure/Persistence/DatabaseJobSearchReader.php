@@ -10,18 +10,17 @@ use Src\Job\Application\Browse\JobSearchHit;
 use Src\Job\Application\Browse\JobSearchQuery;
 use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\JobSearchSort;
-use Src\Job\Application\Browse\SearchWord;
+use Src\Job\Application\Browse\SimilarJobsQuery;
 use Src\Job\Domain\JobStatus;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Infrastructure\Persistence\NullOrder;
-use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
 /**
  * Only live jobs are searched: `active`, not on a report hold, deadline not before today (Jakarta time), company not in the excluded list. Table and column names are fixed in this
- * class (never taken from input); every value is a bound parameter. The title is matched through `TextSearch` (ignoring case and accents), so the keyword needs no lower-casing.
+ * class (never taken from input); every value is a bound parameter. The keyword is matched against the full text vector of the job (`JobSearchVectors`), ignoring case and accents.
  */
 final readonly class DatabaseJobSearchReader implements JobSearchReader
 {
@@ -46,6 +45,14 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         'job_jobs.deadline', 'job_jobs.published_at',
     ];
 
+    /**
+     * The keyword as a full text query: PostgreSQL splits and unaccents it the way it indexed the job, every word must match and the last one also as a prefix
+     * (`'dev' & 'backend'` becomes `'dev' & 'backend':*`). The job alerts match a new job with the same expression (`DatabaseJobAlertRepository`).
+     */
+    private const string TS_QUERY = <<<'SQL'
+        to_tsquery('simple', regexp_replace(plainto_tsquery('simple', immutable_unaccent(?))::text, '''$', ''':*'))
+        SQL;
+
     public function __construct(private ConnectionInterface $connection) {}
 
     public function page(JobSearchQuery $query, PageRequest $request): Page
@@ -54,23 +61,87 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
 
         $total = (clone $filtered)->count();
 
-        [$column, $direction] = match ($query->criteria->sort) {
-            JobSearchSort::PublishedAtDescending => ['job_jobs.published_at', 'desc'],
-            JobSearchSort::PublishedAtAscending => ['job_jobs.published_at', 'asc'],
-            JobSearchSort::DeadlineAscending => ['job_jobs.deadline', 'asc'],
-            JobSearchSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
-        };
-
-        $rows = $filtered
-            ->select(self::COLUMNS)
-            ->orderByRaw(NullOrder::sql($column, $direction))
-            ->orderBy('job_jobs.id', $direction)
+        $rows = $this->ordered($filtered->select(self::COLUMNS), $query)
             ->offset($request->offset())
             ->limit($request->perPage)
             ->get()
             ->all();
 
         return new Page(array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows), $total, $request);
+    }
+
+    public function topHits(JobSearchQuery $query, int $limit): array
+    {
+        $rows = $this->ordered($this->live($query)->select(self::COLUMNS), $query, byRelevance: true)->limit($limit)->get()->all();
+
+        return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows);
+    }
+
+    public function similarTo(JobSearchQuery $query, SimilarJobsQuery $subject, int $limit, int $perCompany): array
+    {
+        $builder = $this->live($query)->where('job_jobs.id', '<>', $subject->jobId);
+
+        $builder->where(function (Builder $same) use ($subject): void {
+            if ($subject->roleId !== null) {
+                $same->where('job_jobs.role_id', $subject->roleId);
+            }
+
+            if ($subject->categoryId !== null) {
+                $same->orWhere('job_jobs.category_id', $subject->categoryId);
+            }
+
+            // A subject without role and category is similar to nothing.
+            if ($subject->roleId === null && $subject->categoryId === null) {
+                $same->whereRaw('1 = 0');
+            }
+        });
+
+        $grammar = $builder->getGrammar();
+        $score = [];
+        $bindings = [];
+
+        foreach ([['job_jobs.role_id', $subject->roleId], ['job_jobs.city_id', $subject->cityId], ['job_jobs.province_id', $subject->provinceId]] as [$column, $value]) {
+            if ($value !== null) {
+                $score[] = 'CASE WHEN '.$grammar->wrap($column).' = ? THEN 1 ELSE 0 END';
+                $bindings[] = $value;
+            }
+        }
+
+        $order = [];
+
+        foreach ($score as $index => $expression) {
+            $order[] = [$expression, [$bindings[$index]]];
+        }
+
+        if ($subject->levelIds !== []) {
+            $order[] = ['CASE WHEN '.$grammar->wrap('job_jobs.job_level_id').' IN ('.implode(', ', array_fill(0, count($subject->levelIds), '?')).') THEN 1 ELSE 0 END', $subject->levelIds];
+        }
+
+        foreach ($order as [$expression, $expressionBindings]) {
+            $builder->orderByRaw($expression.' DESC', $expressionBindings);
+        }
+
+        $rows = $builder->select(self::COLUMNS)->orderByRaw(NullOrder::sql('job_jobs.published_at', 'desc'))->orderBy('job_jobs.id', 'desc')->limit($limit * 10)->get()->all();
+
+        $perCompanyCount = [];
+        $hits = [];
+
+        foreach ($rows as $row) {
+            $company = (int) $row->company_id;
+
+            if (($perCompanyCount[$company] ?? 0) >= $perCompany) {
+                continue;
+            }
+
+            $perCompanyCount[$company] = ($perCompanyCount[$company] ?? 0) + 1;
+            $hits[] = $this->toHit($row);
+
+            if (count($hits) === $limit) {
+                break;
+            }
+        }
+
+        return $hits;
     }
 
     public function hitsOf(JobSearchQuery $query, array $jobIds): array
@@ -82,6 +153,31 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         $rows = $this->live($query)->whereIn('job_jobs.id', $jobIds)->select(self::COLUMNS)->get()->all();
 
         return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows);
+    }
+
+    /**
+     * The order of the query: by relevance when asked and a keyword is given, else the chosen date order (newest first for `match`, whose ranking is done by the
+     * caller). `$byRelevance` makes the keyword order win over the sort, for the pool that is scored.
+     */
+    private function ordered(Builder $builder, JobSearchQuery $query, bool $byRelevance = false): Builder
+    {
+        if ($query->keyword !== null && ($byRelevance || $query->criteria->sort === JobSearchSort::Relevance)) {
+            $vector = $builder->getGrammar()->wrap('job_jobs.search_vector');
+
+            return $builder
+                ->orderByRaw("ts_rank_cd({$vector}, ".self::TS_QUERY.') desc', [$query->keyword])
+                ->orderByRaw(NullOrder::sql('job_jobs.published_at', 'desc'))
+                ->orderBy('job_jobs.id', 'desc');
+        }
+
+        [$column, $direction] = match ($query->criteria->sort) {
+            JobSearchSort::PublishedAtAscending => ['job_jobs.published_at', 'asc'],
+            JobSearchSort::DeadlineAscending => ['job_jobs.deadline', 'asc'],
+            JobSearchSort::DeadlineDescending => ['job_jobs.deadline', 'desc'],
+            default => ['job_jobs.published_at', 'desc'],
+        };
+
+        return $builder->orderByRaw(NullOrder::sql($column, $direction))->orderBy('job_jobs.id', $direction);
     }
 
     /** The live jobs of companies the public may see that match the criteria and the window of the query. */
@@ -111,6 +207,10 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
 
         if ($query->publishedUntil !== null) {
             $builder->where('job_jobs.published_at', '<=', $query->publishedUntil->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'));
+        }
+
+        if ($query->postedSince !== null) {
+            $builder->where('job_jobs.published_at', '>=', $query->postedSince->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'));
         }
 
         if ($query->onlyJobId !== null) {
@@ -150,29 +250,9 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
                 ->whereRaw('COALESCE('.$grammar->wrap('job_jobs.salary_max').', '.$grammar->wrap('job_jobs.salary_min').') >= ?', [$criteria->salaryMin]);
         }
 
-        foreach ($query->words as $word) {
-            $this->matchWord($builder, $word);
+        if ($query->keyword !== null) {
+            $builder->whereRaw($builder->getGrammar()->wrap('job_jobs.search_vector').' @@ '.self::TS_QUERY, [$query->keyword]);
         }
-    }
-
-    /** A word matches through the title, one of the tags it matches, or one of the companies whose name it matches. */
-    private function matchWord(Builder $builder, SearchWord $word): void
-    {
-        $builder->where(function (Builder $match) use ($word): void {
-            TextSearch::contains($match, 'job_jobs.title', $word->text);
-
-            if ($word->tagIds !== []) {
-                $match->orWhereExists(fn (Builder $tags) => $tags
-                    ->selectRaw('1')
-                    ->from('job_job_tags')
-                    ->whereColumn('job_job_tags.job_id', 'job_jobs.id')
-                    ->whereIn('job_job_tags.tag_id', $word->tagIds));
-            }
-
-            if ($word->companyIds !== []) {
-                $match->orWhereIn('job_jobs.company_id', $word->companyIds);
-            }
-        });
     }
 
     private function toHit(stdClass $row): JobSearchHit

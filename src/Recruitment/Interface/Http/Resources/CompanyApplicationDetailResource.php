@@ -47,7 +47,7 @@ final class CompanyApplicationDetailResource extends JsonResource
             ], $view->interviews),
             'applicant' => $data->snapshot === null
                 ? ['is_deleted' => true, 'name' => null]
-                : ['is_deleted' => false, ...array_diff_key($data->snapshot, ['version' => true])],
+                : ['is_deleted' => false, 'contact_hidden' => $data->contactHidden, ...array_diff_key($data->snapshot, ['version' => true])],
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,

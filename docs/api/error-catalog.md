@@ -56,6 +56,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-permission-required` | 403 | Shared |  |
 | `company-suspended` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
+| `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |

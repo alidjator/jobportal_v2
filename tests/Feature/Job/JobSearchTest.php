@@ -5,6 +5,7 @@ namespace Tests\Feature\Job;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Src\Job\Infrastructure\Persistence\JobSearchVectors;
 use Src\Shared\Application\References\TagRegistry;
 use Tests\Concerns\BuildsJobFixtures;
 use Tests\FeatureTestCase;
@@ -60,6 +61,8 @@ final class JobSearchTest extends FeatureTestCase
         foreach ($this->app->make(TagRegistry::class)->idsFor($tags) as $tagId) {
             DB::table('job_job_tags')->insert(['job_id' => $id, 'tag_id' => $tagId]);
         }
+
+        $this->app->make(JobSearchVectors::class)->refresh($id);
 
         return $id;
     }
@@ -233,15 +236,24 @@ final class JobSearchTest extends FeatureTestCase
 
     // ----- keyword -----
 
-    public function test_the_keyword_matches_a_piece_of_the_title_whatever_the_letter_case(): void
+    public function test_the_keyword_matches_whole_words_and_the_start_of_the_last_one_whatever_the_letter_case(): void
     {
         $this->live('Backend Developer');
         $this->live('Data Analyst');
 
-        $this->assertSame(['Backend Developer'], $this->titles('filter[q]=dev'));
+        $this->assertSame(['Backend Developer'], $this->titles('filter[q]=develo'));
         $this->assertSame(['Backend Developer'], $this->titles('filter[q]=BACKEND'));
-        $this->assertSame(['Data Analyst'], $this->titles('filter[q]=a analy'));
+        $this->assertSame(['Data Analyst'], $this->titles('filter[q]=data analy'));
+        $this->assertSame([], $this->titles('filter[q]=dev+backend'), 'a word in the middle is a whole word, not a prefix');
         $this->assertSame([], $this->titles('filter[q]=nothing'));
+    }
+
+    public function test_the_keyword_ignores_accents(): void
+    {
+        $this->live('Café Manager');
+
+        $this->assertSame(['Café Manager'], $this->titles('filter[q]=cafe'));
+        $this->assertSame(['Café Manager'], $this->titles('filter[q]='.urlencode('café')));
     }
 
     public function test_two_letter_words_work(): void
@@ -262,7 +274,6 @@ final class JobSearchTest extends FeatureTestCase
 
         $this->assertSame(['Engineer'], $this->titles('filter[q]=laravel'));
         $this->assertSame(['Engineer'], $this->titles('filter[q]=LARAV'));
-        $this->assertSame(['Engineer'], $this->titles('filter[q]='.urlencode('c++')));
         $this->assertSame(['Designer'], $this->titles('filter[q]=sinar'));
         $this->assertSame(['Designer'], $this->titles('filter[q]=digital'));
     }
@@ -280,31 +291,33 @@ final class JobSearchTest extends FeatureTestCase
         $this->assertEqualsCanonicalizing(['Engineer', 'Designer'], $this->titles('filter[q]=laravel'));
     }
 
-    public function test_the_description_is_not_searched(): void
+    public function test_the_description_is_searched_without_its_markdown_marks(): void
     {
-        $this->live('Cook', ['description' => 'We use PHP and Laravel every day, with a special kitchen.']);
+        $this->live('Cook', ['description' => "We use **PHP** and [Laravel](https://example.test) every day,\nwith a special kitchen."]);
+        $this->live('Waiter');
 
-        $this->assertSame([], $this->titles('filter[q]=laravel'));
-        $this->assertSame([], $this->titles('filter[q]=kitchen'));
+        $this->assertSame(['Cook'], $this->titles('filter[q]=laravel'));
+        $this->assertSame(['Cook'], $this->titles('filter[q]=php kitchen'));
     }
 
-    public function test_the_keyword_treats_wildcards_literally(): void
+    public function test_marks_typed_in_the_keyword_cannot_break_the_search(): void
     {
         $this->live('100% Remote');
         $this->live('Backend');
-        $this->live('Under_score');
 
-        $this->assertSame(['100% Remote'], $this->titles('filter[q]=%25'));
-        $this->assertSame(['Under_score'], $this->titles('filter[q]=_'));
-        $this->assertSame([], $this->titles('filter[q]='.urlencode('\\')));
+        foreach (['%', '_', '\\', "'", '&', '|', '!', ':*', '(', ')', '<->'] as $text) {
+            $this->search('filter[q]='.urlencode($text))->assertOk();
+        }
+
+        $this->assertSame(['100% Remote'], $this->titles('filter[q]='.urlencode('100%')));
     }
 
     public function test_repeated_words_count_once_and_the_keyword_has_limits(): void
     {
         $this->live('Backend Developer');
 
-        $this->assertSame(['Backend Developer'], $this->titles('filter[q]=dev DEV Dev'));
-        $this->assertSame(['Backend Developer'], $this->titles('filter[q]=a b c d e'));
+        $this->assertSame(['Backend Developer'], $this->titles('filter[q]=backend BACKEND Backend'));
+        $this->search('filter[q]=a b c d e')->assertOk();
         $this->search('filter[q]=a b c d e f')->assertStatus(422)->assertJsonValidationErrors(['filter.q']);
         $this->search('filter[q]='.str_repeat('a', 101))->assertStatus(422)->assertJsonValidationErrors(['filter.q']);
     }

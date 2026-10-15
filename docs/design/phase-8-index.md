@@ -15,13 +15,13 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
 | `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` waits for #12, section 3 for #26 |
+| `phase-8-job-discovery.md` sections 1 to 5 | coded and checked 2026-10-15 (migration `000142`); sections 6 and 7 wait (after go-live) |
 | `phase-8-platform-admin.md` sections 1 to 4 | coded and checked 2026-10-15 (migration `000141`), committed; the internal-tenant exemption of section 2 waits for #5, sections 5 to 8 for #17 |
 
 ## Next coding (in this order)
 
 | # | Document | Waits for |
 |---|---|---|
-| 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
 | 4a | `naming.md` section 1 (problem `type` to `urn:onesis:error:<code>`) | **before go-live**; small, mechanical; may be done in any coding session before go-live |
 | 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | designed 2026-10-15; after #5 |

@@ -6,7 +6,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 
 /**
  * What an alert looks for: the filters of the public job search, by their names: `q` (a keyword of up to 5 words), `work_mode`, the id filters (each a list
- * of up to 20 ids, matching any) and `salary_min` with `salary_period_id`. Whatever is empty is dropped, so equal searches are stored the same way. At least
+ * of up to 20 ids, matching any) `salary_min` with `salary_period_id` and `posted_within` (1, 3, 7 or 30 days; not used by an immediate alert, which is about one job that just went live). Whatever is empty is dropped, so equal searches are stored the same way. At least
  * one filter is required (an empty alert would match every job) and a minimum salary needs its period.
  */
 final readonly class AlertCriteria
@@ -24,6 +24,8 @@ final readonly class AlertCriteria
     public const array WORK_MODES = ['onsite', 'hybrid', 'remote'];
 
     public const int MAX_SALARY = 9999999999;
+
+    public const array POSTED_WITHIN = [1, 3, 7, 30];
 
     /** @param  array<string, mixed>  $filters  already cleaned, see `of` */
     private function __construct(private array $filters) {}
@@ -86,6 +88,14 @@ final readonly class AlertCriteria
 
             $filters['salary_min'] = $salary;
             $filters['salary_period_id'] = $period;
+        }
+
+        if (($input['posted_within'] ?? null) !== null) {
+            if (! is_int($input['posted_within']) || ! in_array($input['posted_within'], self::POSTED_WITHIN, true)) {
+                throw new BusinessRuleViolation('The posting window must be one of: '.implode(', ', self::POSTED_WITHIN).' days.', 'invalid-criteria');
+            }
+
+            $filters['posted_within'] = $input['posted_within'];
         }
 
         if ($filters === []) {

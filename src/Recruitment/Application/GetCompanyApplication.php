@@ -12,7 +12,7 @@ use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
-/** One application for a member who may see its job (see `CompanyApplicationAccess`). */
+/** One application for a member who may see its job (see `CompanyApplicationAccess`). The contact data is closed for an unverified company while the application is in `applied` (`ContactVisibility`). */
 final readonly class GetCompanyApplication
 {
     public function __construct(
@@ -25,6 +25,7 @@ final readonly class GetCompanyApplication
         private ApplicationRatings $ratings,
         private ApplicationInterviewResults $interviewResults,
         private ApplicationRepository $applications,
+        private ContactVisibility $contact,
         private Clock $clock,
     ) {}
 
@@ -38,6 +39,10 @@ final readonly class GetCompanyApplication
         $data = $this->reader->find($id) ?? throw EntityNotFound::of('Application', $id);
         $this->applicationAccess->assertCanSee($member, $id, $data->companyId, $data->jobId);
         $this->applications->markViewed($id, $this->clock->now());
+
+        if ($this->contact->isClosed($data->companyId, $data->stageType)) {
+            $data = $data->withContactHidden();
+        }
 
         $stageNames = [];
 

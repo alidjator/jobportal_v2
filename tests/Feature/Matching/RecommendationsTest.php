@@ -243,6 +243,32 @@ final class RecommendationsTest extends FeatureTestCase
         $this->assertSame(['skills' => 50, 'location' => 100, 'experience' => 100, 'education' => null, 'salary' => null, 'role' => 100], $page->json('data.match.signals'));
     }
 
+    public function test_the_best_match_order_ranks_by_percentage_then_newest_and_says_which_order_was_used(): void
+    {
+        $fitting = $this->fittingJob('Backend Developer', ['published_at' => '2026-10-04 08:00:00']);
+        $remote = $this->remoteJob();
+        $older = $this->fittingJob('Backend Developer Two', ['published_at' => '2026-10-01 08:00:00']);
+        $unknown = $this->job('Chef', ['published_at' => '2026-10-04 09:00:00']);
+
+        $response = $this->api('GET', '/jobs?sort=match', token: $this->seekerToken)->assertOk()->assertJsonPath('meta.sort', 'match');
+
+        $this->assertSame([$remote, $fitting, $older], array_slice($this->ids($response), 0, 3));
+        $this->assertSame($unknown, $this->ids($response)[3], 'a job without a percentage comes last');
+        $this->assertSame(100, $response->json('data.0.match.percent'));
+        $this->assertSame(4, $response->json('meta.total'));
+    }
+
+    public function test_the_best_match_order_falls_back_without_a_complete_profile_or_a_sign_in(): void
+    {
+        $this->remoteJob('Backend Engineer');
+        $this->job('Chef', ['published_at' => '2026-10-04 09:00:00']);
+        $bare = $this->tokenFor($this->seeker('bare@example.test'));
+
+        $this->api('GET', '/jobs?sort=match', token: $bare)->assertOk()->assertJsonPath('meta.sort', '-published_at');
+        $this->anonymous('/jobs?sort=match')->assertOk()->assertJsonPath('meta.sort', '-published_at');
+        $this->api('GET', '/jobs?sort=match&filter[q]=backend', token: $bare)->assertOk()->assertJsonPath('meta.sort', 'relevance');
+    }
+
     public function test_the_match_is_left_out_for_everyone_else_and_the_cache_headers_follow(): void
     {
         $job = $this->fittingJob();

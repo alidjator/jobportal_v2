@@ -20,6 +20,11 @@ Route::get('jobs/{job}', [PublicJobController::class, 'show'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
     ->middleware(PublicCacheHeaders::class.':public;max_age=60;etag');
 
+// Public: the jobs like this one (live, closed or expired job); the answer may be cached for 10 minutes.
+Route::get('jobs/{job}/similar', [PublicJobController::class, 'similar'])
+    ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')
+    ->middleware(PublicCacheHeaders::class.':public;max_age=600;etag');
+
 // Public: one counted view of a live job, sent by the client when a person looks at the page (the page itself is cached and only reads). Limited per client address.
 Route::post('jobs/{job}/view', [PublicJobController::class, 'view'])
     ->where('job', '[0-9]+(?:-[a-z0-9-]*)?')

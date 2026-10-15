@@ -26,6 +26,14 @@ interface ReferenceValues
      */
     public function names(string $master, array $ids, string $language): array;
 
+    /**
+     * The ids of the items at most `$steps` places away from this one in the curated order (itself included), among the active items; empty when the item is
+     * unknown or not active. For a master whose order means something, such as the job levels.
+     *
+     * @return list<int>
+     */
+    public function neighbours(string $master, int $id, int $steps): array;
+
     /** The id of the item with that slug, active or not, or null when there is none. For a fixed, well-known item such as the monthly salary period. */
     public function idBySlug(string $master, string $slug): ?int;
 }

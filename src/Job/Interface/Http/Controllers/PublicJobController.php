@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Job\Application\Browse\GetPublicJob;
+use Src\Job\Application\Browse\GetSimilarJobs;
 use Src\Job\Application\Browse\SearchJobs;
 use Src\Job\Application\Views\TrackJobView;
 use Src\Job\Interface\Http\Requests\SearchJobsRequest;
@@ -27,14 +28,20 @@ final class PublicJobController extends ApiController
 {
     public function index(SearchJobsRequest $request, RequestContext $context, SearchJobs $search): AnonymousResourceCollection
     {
-        $page = $search->execute($request->criteria(), $request->pageRequest(), $request->ip(), $context->language, $this->jobSeekerId($request));
+        $result = $search->execute($request->criteria(), $request->pageRequest(), $request->ip(), $context->language, $this->jobSeekerId($request));
 
-        return PublicJobListResource::collection(PaginatedResources::paginator($page, $request));
+        return PublicJobListResource::collection(PaginatedResources::paginator($result->page, $request))->additional(['meta' => ['sort' => $result->sort->value]]);
     }
 
     public function show(Request $request, string $job, RequestContext $context, GetPublicJob $get): PublicJobResource
     {
         return new PublicJobResource($get->execute((int) $job, $context->language, $this->jobSeekerId($request)));
+    }
+
+    /** Up to 6 live jobs like this one, for the page of a job (live, closed or expired). */
+    public function similar(string $job, RequestContext $context, GetSimilarJobs $similar): AnonymousResourceCollection
+    {
+        return PublicJobListResource::collection($similar->execute((int) $job, $context->language));
     }
 
     /** Counts one view of a live job; the client calls it when a person looks at the page. Nothing is returned. */

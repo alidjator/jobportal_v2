@@ -10,9 +10,10 @@ enum ApplicationSource: string
     case Alert = 'alert';
     case Direct = 'direct';
     case Invitation = 'invitation';
+    case Shared = 'shared';
 
     /** The hints a client may send; `invitation` is never one of them. */
-    public const array HINTS = ['search', 'recommendation', 'alert', 'direct'];
+    public const array HINTS = ['search', 'recommendation', 'alert', 'direct', 'shared'];
 
     /** The source for a hint from the client: `direct` when it is missing or not one of the allowed values. */
     public static function fromHint(?string $hint): self

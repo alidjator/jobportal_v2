@@ -44,6 +44,17 @@ final readonly class DatabaseJobWriter implements JobWriter
             'updated_at' => $job->updatedAt,
         ]);
 
+        // The full text vector of the search (see `JobSearchVectors`): title, company name and description; the legacy jobs have no tags.
+        $grammar = $this->connection->table('job_jobs')->getGrammar();
+        $jobs = $grammar->wrapTable('job_jobs');
+        $companies = $grammar->wrapTable('company_companies');
+        $this->connection->update(
+            "UPDATE {$jobs} AS j SET search_vector = setweight(to_tsvector('simple', immutable_unaccent(j.title)), 'A')"
+            ." || setweight(to_tsvector('simple', immutable_unaccent(COALESCE((SELECT c.name FROM {$companies} c WHERE c.id = j.company_id), ''))), 'C')"
+            ." || setweight(to_tsvector('simple', immutable_unaccent(regexp_replace(COALESCE(j.description, ''), '[#*_`>~\\[\\]()!|-]+', ' ', 'g'))), 'D') WHERE j.id = ?",
+            [$id],
+        );
+
         $this->insertPivot('job_job_skills', 'skill_id', $id, $job->skillIds, $job->createdAt);
         $this->insertPivot('job_job_benefits', 'benefit_id', $id, $job->benefitIds, $job->createdAt);
 

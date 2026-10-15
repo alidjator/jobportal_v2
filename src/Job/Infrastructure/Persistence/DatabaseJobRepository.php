@@ -24,6 +24,7 @@ final readonly class DatabaseJobRepository implements JobRepository
         private ConnectionInterface $connection,
         private Clock $clock,
         private TagRegistry $tags,
+        private JobSearchVectors $vectors,
     ) {}
 
     public function find(int $id): ?Job
@@ -66,6 +67,7 @@ final readonly class DatabaseJobRepository implements JobRepository
         ]);
 
         $this->syncLists($id, $job->content);
+        $this->vectors->refresh($id);
 
         return $this->find($id) ?? throw new \LogicException("Job {$id} was just created.");
     }
@@ -78,6 +80,7 @@ final readonly class DatabaseJobRepository implements JobRepository
         ]);
 
         $this->syncLists((int) $job->id, $job->content);
+        $this->vectors->refresh((int) $job->id);
     }
 
     public function delete(int $id): void

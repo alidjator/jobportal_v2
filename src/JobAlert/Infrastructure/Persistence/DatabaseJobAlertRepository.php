@@ -158,12 +158,11 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
             );
         }
 
-        // Every word of the keyword must be contained in the title, the company name or a tag name, ignoring case and accents, as `TextSearch` does.
+        // The keyword must match the full text vector of the job exactly as the public search matches it: the words are split and unaccented by PostgreSQL, every word
+        // must be there and the last one may be a prefix (the same expression as `DatabaseJobSearchReader`).
         $query->whereRaw(
-            'NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(keywords) AS word(text) WHERE NOT EXISTS ('
-            .'SELECT 1 FROM jsonb_array_elements_text(?::jsonb) AS field(text) '
-            ."WHERE immutable_unaccent(field.text) ILIKE immutable_unaccent('%' || replace(replace(replace(word.text, '\\', '\\\\'), '%', '\\%'), '_', '\\_') || '%')))",
-            [json_encode($job->searchableTexts, JSON_THROW_ON_ERROR)],
+            "(jsonb_array_length(keywords) = 0 OR ?::tsvector @@ to_tsquery('simple', regexp_replace(plainto_tsquery('simple', immutable_unaccent((SELECT string_agg(word.text, ' ' ORDER BY word.position) FROM jsonb_array_elements_text(keywords) WITH ORDINALITY AS word(text, position))))::text, '''$', ''':*')))",
+            [$job->searchVector],
         );
 
         return array_map(

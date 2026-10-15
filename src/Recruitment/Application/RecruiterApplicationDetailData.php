@@ -27,5 +27,17 @@ final readonly class RecruiterApplicationDetailData
         public array $answers,
         public array $history,
         public DateTimeImmutable $appliedAt,
+        public bool $contactHidden = false,
     ) {}
+
+    /** The same application with the contact data of the applicant removed from the snapshot (see `ContactVisibility`). */
+    public function withContactHidden(): self
+    {
+        $snapshot = $this->snapshot === null ? null : [...$this->snapshot, 'email' => null, 'phone' => null, 'whatsapp' => null];
+
+        return new self(
+            $this->id, $this->jobId, $this->companyId, $this->stageId, $this->stageType, $this->meetsMustHave, $this->coverLetter, $this->resumeName, $this->withdrawnNote,
+            $snapshot, $this->answers, $this->history, $this->appliedAt, $this->snapshot !== null,
+        );
+    }
 }

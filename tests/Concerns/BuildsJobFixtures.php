@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Src\Job\Infrastructure\Persistence\JobSearchVectors;
 use Tests\Support\CompanyMemberRows;
 
 /**
@@ -105,6 +106,9 @@ trait BuildsJobFixtures
             'company_id' => $companyId ?? $this->companyId, 'title' => $title, 'slug' => strtolower(str_replace(' ', '-', $title)), 'status' => $status,
             'created_by_user_id' => $this->adminId, 'created_at' => now(), 'updated_at' => now(), ...$attributes,
         ]);
+
+        // Rows inserted here skip the repository, so the full text vector of the search is filled the way the repository does.
+        $this->app->make(JobSearchVectors::class)->refresh($id);
 
         foreach ($assignees ?? [$this->adminId] as $userId) {
             DB::table('job_assignments')->insert(['job_id' => $id, 'user_id' => $userId, 'created_at' => now()]);

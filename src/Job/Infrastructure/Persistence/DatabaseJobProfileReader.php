@@ -52,6 +52,7 @@ final readonly class DatabaseJobProfileReader implements JobProfileReader
             (bool) $row->salary_visible,
             $row->salary_period_id === null ? null : (int) $row->salary_period_id,
             $row->salary_max !== null ? (int) $row->salary_max : ($row->salary_min !== null ? (int) $row->salary_min : null),
+            (string) ($row->search_vector ?? ''),
         );
     }
 }

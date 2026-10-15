@@ -23,6 +23,7 @@ final readonly class GetCompanyApplicationResume
     public function __construct(
         private RecruitmentAccess $access,
         private CompanyApplicationAccess $applicationAccess,
+        private ContactVisibility $contact,
         private ApplicationRepository $applications,
         private FileStorage $files,
         private AuditTrail $audit,
@@ -31,7 +32,7 @@ final readonly class GetCompanyApplicationResume
     ) {}
 
     /**
-     * @throws AccessDenied `not-a-company-member` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-suspended` or `contact-not-available`
      * @throws EntityNotFound
      */
     public function execute(Actor $actor, int $id, ?string $ipAddress = null, ?string $userAgent = null): ApplicationFile
@@ -41,6 +42,11 @@ final readonly class GetCompanyApplicationResume
         $this->applicationAccess->assertCanSee($member, $id, $application->companyId, $application->jobId);
 
         $resume = $application->resume ?? throw EntityNotFound::of('Resume', $id);
+
+        if ($this->contact->isClosed($application->companyId, $application->stageType)) {
+            throw new AccessDenied('The resume opens when the application moves to screening, or once the company is verified.', 'contact-not-available');
+        }
+
         $contents = $this->files->get($resume->path);
 
         if ($contents === null) {

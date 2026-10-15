@@ -6,10 +6,13 @@ use Src\Job\Domain\WorkMode;
 
 /**
  * What a visitor asks of the job search. Every id list matches any of its values (an empty list is no filter). `words` are the keyword split into words: each
- * word must match the title, a tag or the company name. A minimum salary needs its period.
+ * word must match somewhere in the full text vector of the job (title, tags, company name, description). A minimum salary needs its period.
  */
 final readonly class JobSearchCriteria
 {
+    /** The windows of the posting-date filter, in days. */
+    public const array POSTED_WITHIN = [1, 3, 7, 30];
+
     /**
      * @param  list<string>  $words
      * @param  list<int>  $categoryIds
@@ -42,12 +45,21 @@ final readonly class JobSearchCriteria
         public ?int $salaryMin = null,
         public ?int $salaryPeriodId = null,
         public JobSearchSort $sort = JobSearchSort::PublishedAtDescending,
+        public ?int $postedWithin = null,
     ) {}
+
+    public function withSort(JobSearchSort $sort): self
+    {
+        return new self(
+            $this->words, $this->categoryIds, $this->roleIds, $this->jobTypeIds, $this->jobLevelIds, $this->experienceLevelIds, $this->educationLevelIds, $this->workTimeIds,
+            $this->workModes, $this->provinceIds, $this->cityIds, $this->skillIds, $this->companyIds, $this->salaryMin, $this->salaryPeriodId, $sort, $this->postedWithin,
+        );
+    }
 
     /**
      * The criteria of a saved search, kept as the names of the search filters: `q` (a string), `work_mode` (a list of work modes), the id filters (`category_id`,
      * `role_id`, `job_type_id`, `job_level_id`, `experience_level_id`, `education_level_id`, `work_time_id`, `province_id`, `city_id`, `skill_id`, `company_id`,
-     * each a list of ids) and `salary_min` with `salary_period_id`. A filter that is missing or empty is no filter.
+     * each a list of ids) and `salary_min` with `salary_period_id`, and `posted_within` (1, 3, 7 or 30 days). A filter that is missing or empty is no filter.
      *
      * @param  array<string, mixed>  $filters
      */
@@ -79,6 +91,7 @@ final readonly class JobSearchCriteria
             isset($filters['salary_min']) ? (int) $filters['salary_min'] : null,
             isset($filters['salary_period_id']) ? (int) $filters['salary_period_id'] : null,
             $sort,
+            isset($filters['posted_within']) && in_array((int) $filters['posted_within'], self::POSTED_WITHIN, true) ? (int) $filters['posted_within'] : null,
         );
     }
 }

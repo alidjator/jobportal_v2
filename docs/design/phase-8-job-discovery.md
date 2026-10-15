@@ -1,4 +1,4 @@
-# Phase 8: job discovery: relevance search, posting-date filter, similar jobs, staged contact data, sharing, disability-friendly jobs and following companies (designed 2026-10-15, not coded)
+# Phase 8: job discovery: relevance search, posting-date filter, similar jobs, staged contact data, sharing, disability-friendly jobs and following companies (designed 2026-10-15; sections 1 to 5 coded 2026-10-15)
 
 Gaps found from the job seeker's point of view while finding a job and starting an application, after `phase-8-jobseeker-privacy.md` and
 `phase-8-candidate-experience.md`, against Mekari Talenta (help center articles 42469038713369: career page filters; 34576595122073 and
@@ -105,3 +105,33 @@ button, Open Graph cards and `JobPosting` data on P3.
 | Notifications | `company_follow.new_job` (in-app); email `jobalert.followed_companies_digest`; preference `company_follows` |
 | Errors | 403 `contact-not-available`; 422 `follow-limit`, `company-blocked` |
 | Front end | relevance and best-match orders; "Tanggal posting" filter; "Lowongan serupa" on P3 and its 404; share with Web Share, WhatsApp and copy link; the contact notice on the application detail; disability badge, filter and editor fields; "Ikuti" on the company page and a followed list |
+
+## Coded: sections 1 to 5 (2026-10-15)
+
+Migration `000142` (`job_jobs.search_vector` with its GIN index, filled for the existing rows; the `recruitment_applications.source` CHECK with `shared`). Sections 6 and 7 wait.
+Interpretations, where the design left room:
+
+- **Vector (section 1).** `JobSearchVectors` (Job infrastructure) builds it: title A, tag names B, company name C, description D (the Markdown marks # * _ ` > ~ [ ] ( ) ! | - replaced by
+  spaces), `simple` configuration over `immutable_unaccent`. It runs whenever the repository creates or saves a job, and for every job of a company when the company is
+  renamed (new event `CompanyRenamed` from `UpdateCompanyProfile`, and the approved `CompanyNameChangeDecided`; listener `RefreshSearchVectorsOfCompany`, queue `bulk`).
+  Tags are not renamable (the master is not admin-managed), so no tag listener exists. The legacy importer fills the vector in the same statement as the insert. The summary
+  joins the vector with `phase-8-job-posting.md`.
+- **Matching.** The words of the keyword (at most 5) are split into letters and digits and joined with `&`; the last one also matches as a prefix (`develo` finds
+  "developer", `dev backend` does not). `c++` becomes `c`. `ts_rank_cd` orders by relevance, ties by newest. PostgreSQL itself splits the keyword (`plainto_tsquery`, then `:*` on the last word), so the
+  search and the job alerts use one tokenizer. The reverse matching of immediate alerts (one new job against all alerts) compares the job's own `search_vector` (carried by
+  `LiveJobProfile`) with the keywords of each alert through the same expression, so a new job and the forward search always agree. A keyword with no letter or digit is no
+  filter in the search. `TagRegistry::idsMatching`, `CompanyDirectory::idsByName` and `SearchWord` are no longer used by the search.
+- **Orders.** `sort=relevance` is the default with a keyword (the request decides; an alert has no order). `meta.sort` of `GET jobs` always names the order really used:
+  `relevance` without a keyword, and `match` without a signed-in job seeker with a complete profile, answer `-published_at` (`match` with a keyword answers `relevance`).
+  `match` ranks the first 500 jobs (by relevance, or newest) by percentage then newest, a job without a percentage last; `meta.total` is then at most 500.
+- **Window (section 2).** `filter[posted_within]` accepts 1, 3, 7 or 30 (422 otherwise) and compares `published_at` with now minus that many days. An alert criterion
+  `posted_within` has the same values; a run about one new job (the immediate alerts) ignores it.
+- **Similar jobs (section 3).** The subject is a job whose status is `active`, `closed` or `expired`, not on hold, with a public company; anything else is 404. The
+  candidates are live jobs with the same role or the same category (a subject with neither has none), ordered by same role, same city, same province, a level within
+  one step (the neighbours in the curated order, new `ReferenceValues::neighbours`), then newest, from the first 60 rows of that order, at most 2 per company, at most 6.
+  Cached through the HTTP headers (`max-age=600`, private when a token is sent), not on the server.
+- **Staged contact data (section 4).** `ContactVisibility` (Recruitment) closes the contact while the company is not verified and the stage type is `applied`; a rejected,
+  withdrawn or later stage is open. The detail nulls `email`, `phone` and `whatsapp` of the snapshot and says `applicant.contact_hidden: true`; the resume answers 403
+  `contact-not-available` after the access and the missing-copy checks; the export leaves the email and phone cells empty. The pipeline list never carried contact data, and
+  there is no bulk export of contact data besides the export of one job.
+- **Sharing (section 5).** `ApplicationSource::Shared` is one of the hints a client may send; the BI source tables list sources as they are, so `shared` appears by itself.

@@ -34,7 +34,7 @@ final class ApplicationSourceTest extends FeatureTestCase
 
     public function test_the_hint_of_the_client_is_recorded_when_it_is_one_of_the_allowed_sources(): void
     {
-        foreach (['search', 'recommendation', 'alert', 'direct'] as $hint) {
+        foreach (['search', 'recommendation', 'alert', 'direct', 'shared'] as $hint) {
             $job = $this->liveJob();
             $this->apply($job, ['source' => $hint])->assertCreated();
 

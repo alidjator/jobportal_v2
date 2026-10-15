@@ -27,6 +27,7 @@ final class ApplicantExportTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-05 09:00:00');
         $this->buildApplicationFixtures();
+        $this->verifyTheCompany();
         $this->job = $this->insertJob('Backend Developer', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
 
         $relocate = $this->question('yes_no', 'Can you relocate?');

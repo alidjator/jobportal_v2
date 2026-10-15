@@ -13,8 +13,8 @@ use Src\Shared\Application\Pagination\PageRequest;
 /**
  * Allowed: `filter[q]` (at most 100 characters and 5 words), the master and place filters `filter[category_id]`, `role_id`, `job_type_id`, `job_level_id`,
  * `experience_level_id`, `education_level_id`, `work_time_id`, `province_id`, `city_id`, `skill_id` and `company_id` (each one id or up to 20 ids separated by
- * commas, matching any), `filter[work_mode]` (the same, with `onsite`, `hybrid`, `remote`), `filter[salary_min]` with `filter[salary_period_id]`, `sort`
- * (`-published_at` by default, `published_at`, `deadline`, `-deadline`), `page` and `per_page` (1 to 50, default 20). Any other filter is refused with 422.
+ * commas, matching any), `filter[work_mode]` (the same, with `onsite`, `hybrid`, `remote`), `filter[salary_min]` with `filter[salary_period_id]`, `filter[posted_within]` (1, 3, 7 or 30
+ * days), `sort` (`relevance` by default with a keyword, else `-published_at`; also `published_at`, `deadline`, `-deadline`, `match`), `page` and `per_page` (1 to 50, default 20). Any other filter is refused with 422.
  */
 final class SearchJobsRequest extends FormRequest
 {
@@ -37,11 +37,12 @@ final class SearchJobsRequest extends FormRequest
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_PER_PAGE],
             'sort' => ['nullable', 'string', Rule::enum(JobSearchSort::class)],
-            'filter' => ['nullable', 'array:q,work_mode,salary_min,salary_period_id,'.implode(',', self::ID_FILTERS)],
+            'filter' => ['nullable', 'array:q,work_mode,salary_min,salary_period_id,posted_within,'.implode(',', self::ID_FILTERS)],
             'filter.q' => ['nullable', 'string', 'max:'.self::MAX_QUERY_LENGTH, $this->maxWords()],
             'filter.work_mode' => ['nullable', 'string', $this->listOf(array_map(static fn (WorkMode $mode): string => $mode->value, WorkMode::cases()))],
             'filter.salary_min' => ['nullable', 'integer', 'min:0', 'max:9999999999'],
             'filter.salary_period_id' => ['nullable', 'integer', 'min:1'],
+            'filter.posted_within' => ['nullable', 'integer', Rule::in(JobSearchCriteria::POSTED_WITHIN)],
         ];
 
         foreach (self::ID_FILTERS as $filter) {
@@ -74,8 +75,19 @@ final class SearchJobsRequest extends FormRequest
             $this->ids('company_id'),
             $this->filled('filter.salary_min') ? $this->integer('filter.salary_min') : null,
             $this->filled('filter.salary_period_id') ? $this->integer('filter.salary_period_id') : null,
-            $this->filled('sort') ? JobSearchSort::from($this->string('sort')->toString()) : JobSearchSort::PublishedAtDescending,
+            $this->sort(),
+            $this->filled('filter.posted_within') ? $this->integer('filter.posted_within') : null,
         );
+    }
+
+    /** The asked order; relevance is the default when there is a keyword, newest first otherwise. */
+    private function sort(): JobSearchSort
+    {
+        if ($this->filled('sort')) {
+            return JobSearchSort::from($this->string('sort')->toString());
+        }
+
+        return $this->words() === [] ? JobSearchSort::PublishedAtDescending : JobSearchSort::Relevance;
     }
 
     /** @return list<string> the keyword's words, each once whatever the letter case, in the order typed */

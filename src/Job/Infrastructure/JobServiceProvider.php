@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Company\Domain\Events\CompanyNameChangeDecided;
+use Src\Company\Domain\Events\CompanyRenamed;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Application\Admin\AdminJobReader;
 use Src\Job\Application\Browse\AlertJobMatcher;
@@ -56,6 +58,7 @@ use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfHold;
 use Src\Job\Infrastructure\Listeners\NotifyReportersOfReview;
 use Src\Job\Infrastructure\Listeners\ReassignJobsWhenMemberRemoved;
 use Src\Job\Infrastructure\Listeners\RecordJobAuditEntries;
+use Src\Job\Infrastructure\Listeners\RefreshSearchVectorsOfCompany;
 use Src\Job\Infrastructure\Persistence\DatabaseAdminJobReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobAssignmentRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobProfileReader;
@@ -188,6 +191,8 @@ final class JobServiceProvider extends ContextServiceProvider
         $this->app->tag(EraseJobReports::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseJobReportsWhenUserAnonymized::class);
         Event::listen(JobHeld::class, NotifyAssigneesOfHold::class);
+        Event::listen(CompanyRenamed::class, [RefreshSearchVectorsOfCompany::class, 'onRenamed']);
+        Event::listen(CompanyNameChangeDecided::class, [RefreshSearchVectorsOfCompany::class, 'onNameChangeDecided']);
         Event::listen(JobReportsClosed::class, NotifyReportersOfReview::class);
 
         Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);

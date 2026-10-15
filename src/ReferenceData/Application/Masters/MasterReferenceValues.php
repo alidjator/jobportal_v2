@@ -29,6 +29,17 @@ final readonly class MasterReferenceValues implements ReferenceValues
         );
     }
 
+    public function neighbours(string $master, int $id, int $steps): array
+    {
+        $ids = array_map(
+            static fn (MasterItem $item): int => $item->id,
+            $this->masters->all($this->definition($master), new MasterQuery(onlyActive: true, language: 'en')),
+        );
+        $position = array_search($id, $ids, true);
+
+        return $position === false ? [] : array_slice($ids, max(0, $position - $steps), min($steps, $position) + $steps + 1);
+    }
+
     public function idBySlug(string $master, string $slug): ?int
     {
         return $this->masters->idBySlug($this->definition($master), $slug);

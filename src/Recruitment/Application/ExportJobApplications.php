@@ -32,6 +32,7 @@ final readonly class ExportJobApplications
         private EventDispatcher $events,
         private Clock $clock,
         private Settings $settings,
+        private ContactVisibility $contact,
     ) {}
 
     /**
@@ -56,17 +57,17 @@ final readonly class ExportJobApplications
 
         $this->events->dispatch([new ApplicantsExported($query->jobId, $member->companyId, $member->userId, $this->filters($query), $total, $ipAddress, $userAgent, $now)]);
 
-        return new ApplicantExport($query->jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions));
+        return new ApplicantExport($query->jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions, $this->contact->companyIsOpen($member->companyId)));
     }
 
     /**
      * @param  list<JobQuestion>  $questions
      * @return iterable<list<string>>
      */
-    private function rows(RecruiterApplicationQuery $query, int $limit, array $questions): iterable
+    private function rows(RecruiterApplicationQuery $query, int $limit, array $questions, bool $companyIsOpen): iterable
     {
         foreach ($this->reader->export($query, $limit) as $applicant) {
-            yield $this->cells($applicant, $questions);
+            yield $this->cells($applicant, $questions, $this->contact->closedFor($companyIsOpen, $applicant->row->stageType));
         }
     }
 
@@ -74,7 +75,7 @@ final readonly class ExportJobApplications
      * @param  list<JobQuestion>  $questions
      * @return list<string>
      */
-    private function cells(ApplicantExportRow $applicant, array $questions): array
+    private function cells(ApplicantExportRow $applicant, array $questions, bool $contactClosed): array
     {
         $row = $applicant->row;
         $answers = [];
@@ -91,8 +92,8 @@ final readonly class ExportJobApplications
         // An anonymised applicant keeps a row for the count, with every personal column empty.
         $personal = $row->isDeleted ? array_fill(0, 9, '') : [
             (string) $row->name,
-            (string) $applicant->email,
-            (string) $applicant->phone,
+            $contactClosed ? '' : (string) $applicant->email,
+            $contactClosed ? '' : (string) $applicant->phone,
             (string) $row->city,
             (string) $row->age,
             (string) $row->headline,

@@ -34,6 +34,12 @@ trait BuildsApplicationFixtures
         $this->resumeId = $this->completeProfile($this->seekerToken);
     }
 
+    /** The company holds the verification badge, so the team sees the contact data of applicants in every stage (see `ContactVisibility`). */
+    protected function verifyTheCompany(): void
+    {
+        DB::table('company_companies')->where('id', $this->companyId)->update(['verified_at' => now()]);
+    }
+
     protected function tearDownApplicationFixtures(): void
     {
         $this->tearDownJobFixtures();

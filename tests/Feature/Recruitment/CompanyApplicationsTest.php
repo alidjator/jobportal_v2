@@ -26,6 +26,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         parent::setUp();
 
         $this->buildApplicationFixtures();
+        $this->verifyTheCompany();
         $this->job = $this->insertJob('Backend Developer', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
 
         // Siti applies first, Budi an hour later.

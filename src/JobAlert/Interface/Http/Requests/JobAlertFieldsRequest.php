@@ -11,7 +11,7 @@ use Src\JobAlert\Domain\JobAlert;
 
 /**
  * The body that creates or replaces a job alert: `name`, `frequency` (`immediate`, `daily`, `weekly`), `criteria` (the filters of the public job search by name:
- * `q`, `work_mode`, the id filters as lists of ids, `salary_min` with `salary_period_id`) and the channels `email` and `in_app` (both on by default). Only the shape
+ * `q`, `work_mode`, the id filters as lists of ids, `salary_min` with `salary_period_id`, `posted_within`) and the channels `email` and `in_app` (both on by default). Only the shape
  * is checked here; the rules (at least one filter, a period with the salary, at least one channel) are the domain's. Any other criterion is refused with 422.
  */
 final class JobAlertFieldsRequest extends FormRequest
@@ -22,12 +22,13 @@ final class JobAlertFieldsRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:'.JobAlert::MAX_NAME_LENGTH],
             'frequency' => ['required', 'string', Rule::enum(AlertFrequency::class)],
-            'criteria' => ['required', 'array:'.implode(',', ['q', 'work_mode', 'salary_min', 'salary_period_id', ...AlertCriteria::ID_FILTERS])],
+            'criteria' => ['required', 'array:'.implode(',', ['q', 'work_mode', 'salary_min', 'salary_period_id', 'posted_within', ...AlertCriteria::ID_FILTERS])],
             'criteria.q' => ['nullable', 'string', 'max:'.AlertCriteria::MAX_KEYWORD_LENGTH],
             'criteria.work_mode' => ['nullable', 'array', 'max:'.AlertCriteria::MAX_VALUES],
             'criteria.work_mode.*' => ['string', Rule::in(AlertCriteria::WORK_MODES)],
             'criteria.salary_min' => ['nullable', 'integer', 'min:0', 'max:'.AlertCriteria::MAX_SALARY],
             'criteria.salary_period_id' => ['nullable', 'integer', 'min:1'],
+            'criteria.posted_within' => ['nullable', 'integer', Rule::in(AlertCriteria::POSTED_WITHIN)],
             'email' => ['sometimes', 'boolean'],
             'in_app' => ['sometimes', 'boolean'],
         ];

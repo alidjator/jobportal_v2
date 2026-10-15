@@ -4,8 +4,11 @@ namespace Src\Company\Application\Profile;
 
 use Src\Company\Application\Team\CompanyAdminGuard;
 use Src\Company\Domain\CompanyRepository;
+use Src\Company\Domain\Events\CompanyRenamed;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -27,6 +30,8 @@ final readonly class UpdateCompanyProfile
         private CompanyRepository $companies,
         private ReferenceValues $references,
         private LocationReferences $locations,
+        private EventDispatcher $events,
+        private Clock $clock,
     ) {}
 
     /**
@@ -58,8 +63,14 @@ final readonly class UpdateCompanyProfile
             );
         }
 
+        $renamed = isset($changes['name']) && $changes['name'] !== $company->name();
+
         $company->changeProfile($profile);
         $this->companies->save($company);
+
+        if ($renamed) {
+            $this->events->dispatch([new CompanyRenamed((int) $company->id, $this->clock->now())]);
+        }
     }
 
     /** @param  array<string, mixed>  $changes */

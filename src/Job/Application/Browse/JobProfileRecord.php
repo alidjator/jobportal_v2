@@ -5,7 +5,7 @@ namespace Src\Job\Application\Browse;
 use DateTimeImmutable;
 
 /**
- * The columns of a job that a saved search can filter on, plus its title, its company and its tags.
+ * The columns of a job that a saved search can filter on, plus its full text vector.
  */
 final readonly class JobProfileRecord
 {
@@ -26,5 +26,6 @@ final readonly class JobProfileRecord
         public bool $salaryVisible,
         public ?int $salaryPeriodId,
         public ?int $salaryCeiling,
+        public string $searchVector = '',
     ) {}
 }

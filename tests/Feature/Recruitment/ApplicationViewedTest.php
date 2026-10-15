@@ -21,6 +21,7 @@ final class ApplicationViewedTest extends FeatureTestCase
         parent::setUp();
 
         $this->buildApplicationFixtures();
+        $this->verifyTheCompany();
         $this->job = $this->insertJob('Backend Developer', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
 
         Carbon::setTestNow('2026-10-05 09:00:00');
