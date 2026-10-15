@@ -71,6 +71,8 @@ The catalog is code (like the company catalog of `phase-8-company-permissions.md
 | `group.members.manage` | granting, changing and removing group roles (never one's own) |
 | `group.recruitment.view` | reading jobs, applicants and reports of every tenant of the group; read only; every read of an applicant is audited |
 
+Extended by `erp-requisitions.md` with `group.workforce.view`, `group.workforce.manage` and `group.approvals.manage`.
+
 - Moving, rejecting, offers, notes and every other action on an application keep the company rules: the actor needs a membership of that tenant
   with the permission, and the job assignment stays the data boundary.
 - The policies of the recruitment contexts gain one read rule ("a group member with `group.recruitment.view` of the tenant's group may read"); no
@@ -127,5 +129,5 @@ The catalog is code (like the company catalog of `phase-8-company-permissions.md
 
 ## Still open
 
-- Whether a job of an internal tenant must name a position and unit: decided with requisitions (#6).
+- Whether a job of an internal tenant must name a position and unit: decided in `erp-requisitions.md` (a setting per tenant, required by default).
 - How groups map to the central IdP (one realm or organisation per group): decided with the SSO design (#7).

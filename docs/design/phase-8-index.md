@@ -21,7 +21,7 @@ design document yet: they need a design session before a coding session can take
 | 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2 |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
 | 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
-| 6 | **new** requisitions and a generic approval workflow | a design session; after #5; a job of an internal tenant starts from an approved requisition |
+| 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | designed 2026-10-15; after #5 |
 | 7 | **new** employee sign-in through the central IdP | a design session; the choice of IdP product (`erp-direction.md` section 7) |
 | 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | tasks and team preferences of the recruiter workday; requisitions are now in scope through #6 |
