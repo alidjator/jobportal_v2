@@ -71,7 +71,9 @@ The catalog is code (like the company catalog of `phase-8-company-permissions.md
 | `group.members.manage` | granting, changing and removing group roles (never one's own) |
 | `group.recruitment.view` | reading jobs, applicants and reports of every tenant of the group; read only; every read of an applicant is audited |
 
-Extended by `erp-requisitions.md` with `group.workforce.view`, `group.workforce.manage` and `group.approvals.manage`.
+Extended by `erp-requisitions.md` with `group.workforce.view`, `group.workforce.manage` and `group.approvals.manage`, and by `erp-governance.md`
+with `group.audit.view` (a group activity log; audit entries gain `group_id`, backfilled from `company_id`) and `group.settings.manage` (group
+values of the settings).
 
 - Moving, rejecting, offers, notes and every other action on an application keep the company rules: the actor needs a membership of that tenant
   with the permission, and the job assignment stays the data boundary.

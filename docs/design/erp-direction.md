@@ -99,11 +99,32 @@ working list from now on and wins if the two differ.
 `phase-8-company-registrations.md`, `phase-8-training-course-detail.md`. **After the legacy import (unchanged):** `phase-8-api-translations.md`,
 `phase-8-user-management.md`.
 
+## 8. ONESIS modules (decided 2026-10-15)
+
+A map of the bounded contexts to the modules of ONESIS (`naming.md`), used for the front-end menus, the permission catalogs and the customer
+documentation. The code stays in `src/<Context>`; nothing moves.
+
+| Module | Contexts |
+|---|---|
+| **ONESIS Core** | Identity (the IAM), Platform, Notification, ReferenceData, Content, Organization, Approval, Shared |
+| **ONESIS Workforce** | Workforce (manpower plans, requisitions) |
+| **ONESIS Talent** | Company (team, permissions), Job, Recruitment (pipeline, interviews, offers, hires), Assessment, TalentPool, Messaging, JobInvitation, Matching, Dashboard |
+| **ONESIS Career** (job seekers, public) | JobSeeker, JobAlert, Review, Newsletter, Campaign, Training |
+| (internal tool) | LegacyImport |
+
+- Workforce is a module of its own (decided by the user); Talent uses it through the requisition rule of `erp-requisitions.md` section 1. A
+  customer without Workforce turns `recruitment.requisition_required` off.
+- The ONESIS Career side of a Talent feature (the candidate taking a test, answering an offer, seeing their status) is a screen of Career over a
+  Talent context, not a context of Career.
+- Whether modules can be switched on per group is not decided (plans and billing stay out of scope).
+
 ## 7. Still open
 
 - ~~The IdP product and who runs it~~ settled 2026-10-15: no separate IdP (`erp-sso.md`).
 - Which existing HRIS application runs in production, which of its features Employee replaces (payroll with BPJS and PPh 21 is a large scope of
   its own) and whether its data is migrated.
-- Requisition approval levels and who approves (by organisation unit, grade or cost centre).
-- Whether hiring managers and interviewers of internal tenants are company members, employees, or both.
-- Scope of the holding's group permission (read only, or acting on the tenants' applications).
+- ~~Requisition approval levels and who approves~~ settled 2026-10-15: flows with conditions (`erp-requisitions.md` section 4).
+- ~~Whether hiring managers and interviewers of internal tenants are company members, employees, or both~~ decided 2026-10-15 (user): they stay
+  **company members**; when Employee exists, a member account of an internal tenant may be linked 1:1 to an employee record (used later for
+  "head of unit" approvers and inviting from the employee directory); one account, one sign-in.
+- ~~Scope of the holding's group permission~~ settled 2026-10-15: manage the structure, read across tenants (`erp-organization.md` section 4).

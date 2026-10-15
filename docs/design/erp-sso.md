@@ -25,7 +25,9 @@ internal tenants). Plans, billing, payments, orders and invoices stay out of sco
 - **Applications outside this codebase** (Moodle, the old HRIS during the move, partner applications) that later need single sign-on are served by
   making Identity an OpenID Connect provider inside this codebase (for example Laravel Passport with OpenID Connect), designed when the first
   such application is asked for. Until then nothing is built for it.
-- Accounts of employees who neither recruit nor approve (self-service in later ERP modules) are decided with the Employee context.
+- Accounts of employees who neither recruit nor approve (self-service in later ERP modules) are decided with the Employee context. Hiring
+  managers and interviewers stay company members; their account may later be linked 1:1 to their employee record (decided 2026-10-15,
+  `erp-direction.md` section 7).
 
 ## 2. Work accounts
 
@@ -53,8 +55,8 @@ internal tenants). Plans, billing, payments, orders and invoices stay out of sco
 - **The group setting is switched on**, or a member joins an internal tenant whose group requires two-factor: the rule of #2 "becoming required"
   applies (tokens revoked for accounts without a confirmed factor, email `identity.two_factor_required`).
 - **A tenant link is removed** (allowed only before ERP data depends on it): nothing is revoked; new tokens follow the external rules.
-- **Settings and errors:** `group.require_two_factor` is a group setting stored on `organization_groups` (a column, since the settings catalog
-  scopes values per company only); no new error codes.
+- **Settings and errors:** `group.require_two_factor` is a setting with the **group scope** of the settings (changed 2026-10-15 from a column on
+  `organization_groups`, `erp-governance.md` section 3); no new error codes.
 
 ## Still open
 

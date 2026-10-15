@@ -48,6 +48,10 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 
 ## 2. Review for unverified companies and suspicious phrases (before go-live)
 
+- **Internal tenants (decided 2026-10-15, `erp-governance.md` section 1.2):** a company linked to a legal entity counts as verified (the public card's
+  `verified` is "verified or linked") and none of the triggers below applies to its jobs. The link column arrives with `erp-organization.md`; until
+  it is coded every company is external and the rule below is unchanged.
+
 - **Rule:** a publish, reopen or a content change of a live job needs review when `jobs.require_approval` is on for the company, **or** the
   company is not verified (read through the existing public company card, `verified`) and `jobs.approval_for_unverified` is on (admin setting,
   default **on**), **or** the job matches a suspicious phrase. With no active required document type nobody is verified, so every job is reviewed

@@ -115,7 +115,8 @@ designed here. Plans, billing, payments, orders and invoices stay out of scope.
   `approval_delegations` (approver, delegate, from, to).
 - **Jobs:** `job_jobs.requisition_id` (nullable, index; a cross-context key to `workforce_requisitions`, added to `cross-context-foreign-keys.md`
   when coded). Creating a job from a requisition: `POST company/requisitions/{id}/jobs`.
-- **Group setting:** fiscal year start month on `organization_groups` (integer 1 to 12, default 1).
+- **Group setting:** `workforce.fiscal_year_start_month` (integer 1 to 12, default 1) with the **group scope** of the settings (changed 2026-10-15
+  from a column on `organization_groups`, `erp-governance.md` section 3).
 - **API** (`architecture.md` 2.5): `company/workforce/plans` (with `submit`, `revise`), `company/requisitions` (with `submit`, `amend`, `close`,
   `cancel`, `jobs`), `company/approvals` (my pending steps; `approve`, `reject`, `return`), `company/approval-flows`, `company/approval-delegations`;
   group side under `organization/workforce/plans`, `organization/requisitions` (read) and `organization/approval-flows`.
