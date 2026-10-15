@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
 use Src\JobSeeker\Interface\Http\Controllers\CandidateController;
 use Src\JobSeeker\Interface\Http\Controllers\CvController;
+use Src\JobSeeker\Interface\Http\Controllers\DataExportController;
 use Src\JobSeeker\Interface\Http\Controllers\MyProfileController;
 
 // The job seeker's own profile and its lists; every use case checks that the caller is a job seeker.
@@ -30,6 +31,11 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('me/resumes/{id}', [MyProfileController::class, 'renameResume'])->whereNumber('id');
     Route::delete('me/resumes/{id}', [MyProfileController::class, 'deleteResume'])->whereNumber('id');
     Route::get('me/resumes/{id}/download', [MyProfileController::class, 'downloadResume'])->whereNumber('id');
+
+    // A copy of the job seeker's personal data (UU PDP): one request at a time, one a day; the archive lasts 24 hours.
+    Route::post('me/data-export', [DataExportController::class, 'store']);
+    Route::get('me/data-export', [DataExportController::class, 'show']);
+    Route::get('me/data-export/download', [DataExportController::class, 'download']);
 
     // The CV generator: the templates on offer, and a PDF made from the latest profile.
     Route::get('me/cv/templates', [CvController::class, 'templates']);

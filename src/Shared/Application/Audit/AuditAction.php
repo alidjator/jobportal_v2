@@ -37,6 +37,8 @@ final class AuditAction
 
     public const string ADMIN_PASSWORD_RESET = 'admin.password_reset';
 
+    public const string PRIVACY_DATA_EXPORTED = 'privacy.data_exported';
+
     public const string ACCOUNT_DELETION_REQUESTED = 'account.deletion_requested';
 
     public const string ACCOUNT_DELETION_CANCELLED = 'account.deletion_cancelled';

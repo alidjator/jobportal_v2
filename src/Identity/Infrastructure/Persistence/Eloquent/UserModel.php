@@ -26,6 +26,7 @@ use Src\Shared\Application\ActorProvider;
  * @property string $locale
  * @property string|null $registration_campaign_code
  * @property Carbon|null $last_login_at
+ * @property Carbon|null $first_login_at
  * @property Carbon|null $deletion_requested_at
  * @property Carbon|null $anonymized_at
  */
@@ -59,6 +60,7 @@ final class UserModel extends Authenticatable implements ActorProvider, HasApiTo
         return [
             'email_verified_at' => 'immutable_datetime',
             'last_login_at' => 'immutable_datetime',
+            'first_login_at' => 'immutable_datetime',
             'deletion_requested_at' => 'immutable_datetime',
             'anonymized_at' => 'immutable_datetime',
         ];

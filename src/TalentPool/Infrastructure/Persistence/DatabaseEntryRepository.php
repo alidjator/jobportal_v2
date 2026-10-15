@@ -101,6 +101,14 @@ final readonly class DatabaseEntryRepository implements EntryRepository
         return $counts;
     }
 
+    public function ofCandidate(int $candidateUserId): array
+    {
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->connection->table('talentpool_entries')->where('candidate_user_id', $candidateUserId)->orderBy('created_at')->orderBy('id')->get()->all(),
+        );
+    }
+
     public function deleteOfCandidate(int $candidateUserId): void
     {
         $this->connection->table('talentpool_entries')->where('candidate_user_id', $candidateUserId)->delete();

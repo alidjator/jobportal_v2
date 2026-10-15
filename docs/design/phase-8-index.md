@@ -13,12 +13,12 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 |---|---|
 | `phase-8-admin-console.md` | coded 2026-10-13 (before go-live) |
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
+| `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded 2026-10-15, **not yet checked by the user** (migration `000139`); sections 3 and 4 wait (#25) |
 
 ## Next coding (in this order)
 
 | # | Document | Waits for |
 |---|---|---|
-| 1 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | **before go-live**; export boundary: question 14 |
 | 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); internal tenants add a group two-factor rule and 12-hour tokens (`erp-sso.md`) |
 | 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2; section 2 notes the internal-tenant rule (`erp-governance.md` 1.2), which takes effect with #5 |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |

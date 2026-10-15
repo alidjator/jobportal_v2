@@ -41,6 +41,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'jobseeker_links' => ['user_id'],
             'jobseeker_resumes' => ['user_id'],
             'jobseeker_cv_generations' => ['user_id'],
+            'jobseeker_data_exports' => ['user_id'],
             'messaging_conversations' => ['job_seeker_user_id', 'started_by_user_id', 'closed_by_user_id'],
             'messaging_messages' => ['sender_user_id'],
             'messaging_conversation_reads' => ['user_id'],

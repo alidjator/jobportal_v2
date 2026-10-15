@@ -167,6 +167,21 @@ final class UserTest extends TestCase
         $this->assertSame($first, $user->emailVerifiedAt());
     }
 
+    public function test_the_first_sign_in_is_kept_while_the_last_one_moves_on(): void
+    {
+        $user = $this->user();
+        $first = new DateTimeImmutable('2026-10-03 09:00:00');
+        $second = new DateTimeImmutable('2026-10-04 09:00:00');
+
+        $this->assertNull($user->firstLoginAt());
+
+        $user->recordSignIn($first);
+        $user->recordSignIn($second);
+
+        $this->assertSame($first, $user->firstLoginAt());
+        $this->assertSame($second, $user->lastLoginAt());
+    }
+
     public function test_an_admin_follows_the_same_sign_in_rule(): void
     {
         $admin = new Admin(1, 'Root', 'root@example.test', 'hash', null, AccountStatus::Suspended, null, null);

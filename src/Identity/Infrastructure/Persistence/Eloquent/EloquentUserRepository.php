@@ -58,6 +58,22 @@ final class EloquentUserRepository implements UserRepository
             ->all();
     }
 
+    public function findJobSeekerIdsFirstSignedInBefore(DateTimeImmutable $cutoff, int $afterId, int $limit): array
+    {
+        return UserModel::query()
+            ->where('type', UserType::JobSeeker->value)
+            ->where('status', AccountStatus::Active->value)
+            ->whereNull('anonymized_at')
+            ->whereNotNull('email_verified_at')
+            ->where('first_login_at', '<=', $cutoff)
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
     public function save(User $user): User
     {
         $model = $user->id === null ? new UserModel : UserModel::query()->findOrFail($user->id);
@@ -73,6 +89,7 @@ final class EloquentUserRepository implements UserRepository
             'locale' => $user->locale(),
             'registration_campaign_code' => $user->registrationCampaignCode(),
             'last_login_at' => $user->lastLoginAt(),
+            'first_login_at' => $user->firstLoginAt(),
             'deletion_requested_at' => $user->deletionRequestedAt(),
             'anonymized_at' => $user->anonymizedAt(),
         ]);
@@ -103,6 +120,7 @@ final class EloquentUserRepository implements UserRepository
             $model->last_login_at?->toDateTimeImmutable(),
             $model->deletion_requested_at?->toDateTimeImmutable(),
             $model->anonymized_at?->toDateTimeImmutable(),
+            $model->first_login_at?->toDateTimeImmutable(),
         );
     }
 }

@@ -15,10 +15,12 @@ use Src\Shared\Application\FileStreams;
 use Src\Shared\Application\Images\ImageProcessor;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Privacy\PersonalDataExporters;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Infrastructure\ContainerErasureSteps;
+use Src\Shared\Infrastructure\ContainerPersonalDataExporters;
 use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
 use Src\Shared\Infrastructure\Documentation\ErrorCatalogCommand;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
@@ -50,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
         FileStreams::class => LaravelFileStreams::class,
         ImageProcessor::class => GdImageProcessor::class,
         ErasureSteps::class => ContainerErasureSteps::class,
+        PersonalDataExporters::class => ContainerPersonalDataExporters::class,
     ];
 
     public function register(): void

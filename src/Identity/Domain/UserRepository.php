@@ -25,6 +25,13 @@ interface UserRepository
      */
     public function findDueForAnonymization(DateTimeImmutable $now, int $limit): array;
 
+    /**
+     * The ids of the active, non-anonymised job seeker accounts with a verified email whose first sign-in was at or before the cutoff, ascending, after the cursor.
+     *
+     * @return list<int>
+     */
+    public function findJobSeekerIdsFirstSignedInBefore(DateTimeImmutable $cutoff, int $afterId, int $limit): array;
+
     /** Inserts a new user or updates an existing one, and returns the stored aggregate (with its id). */
     public function save(User $user): User;
 }

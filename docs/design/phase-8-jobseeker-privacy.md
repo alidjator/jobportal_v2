@@ -1,4 +1,4 @@
-# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14, not coded)
+# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14; sections 1 and 2 coded 2026-10-15)
 
 Gaps found from the job seeker's point of view (Mekari Talenta has no job seeker accounts, so it offers no benchmark here), chosen by the user from
 the advice of 2026-10-14. Sections 1 and 2 are **before go-live**: the export answers UU 27/2022 (PDP) Articles 7 and 13, and the reminder helps the
@@ -12,6 +12,7 @@ and `phase-3-matching.md`. Coded in a coding session.
 - 2026-10-14: **reminders to complete the profile**, by email, limited and switchable (chosen by the user).
 - 2026-10-14: a job seeker may **block companies** from finding them (chosen by the user).
 - 2026-10-14: candidate search shows a rounded **last active** status and an **open to offers** switch (chosen by the user).
+- 2026-10-15: the first reminder counts from a new `identity_users.first_login_at` (set once at the first sign-in; empty for imported accounts until their first one) (chosen by the user; [coded](#coded-sections-1-and-2-2026-10-15)).
 
 ## 1. Personal data export (before go-live)
 
@@ -84,3 +85,32 @@ and `phase-3-matching.md`. Coded in a coding session.
 | Errors | 429 `data-export-limit`; 409 `data-export-running`; 422 `blocked-companies-limit` |
 | Legal | `docs/legal-review.md` question 14 (export boundary) |
 | Front end | "Unduh data saya" in account settings; blocked companies list; open to offers switch and activity note on the profile; badges in candidate search |
+
+## Coded: sections 1 and 2 (2026-10-15)
+
+Migration `000139` (`identity_users.first_login_at`; `jobseeker_profiles.reminders_sent` 0 to 3 and `last_reminded_at`; `jobseeker_data_exports`). Not yet checked by the
+user. Interpretations, where the design left room:
+
+- **Export machinery** (JobSeeker): `RequestDataExport` locks the profile row, so two requests cannot both pass the checks; the build runs in a queued
+  listener of the event `DataExportRequested` (queue `default`, 3 tries, 300 s). The archive is built in memory and a temporary file, so it is bounded by the
+  size of the person's own files (a few resumes and attachments). A build still `building` after **60 minutes** is dead: it does not block a new request and the
+  hourly cleanup (`job-seeker:clean-up-data-exports`) closes it as `failed`. A `failed` request does not count against the one-a-day limit. The cleanup runs
+  **hourly**, not daily, so an archive is deleted soon after its 24 hours; a ready archive past its 24 hours is already refused (404) and shows `expired`.
+- **Parts of `data.json`** (key: exporter, context): `account` (Identity), `profile` (JobSeeker), `applications` (Recruitment), `assessments` (Assessment),
+  `job_invitations`, `saved_jobs`, `job_alerts`, `conversations` (Messaging), `reviews`, `notification_preferences`, `talent_pool`. Files go to
+  `files/<key>/`. Each context tags its own `PersonalDataExporter` (a Shared port with a registry, like the erasure steps).
+- **Not in the archive, for the legal review (question 14):** the company's replies to reviews; the in-app notifications; **interview recordings and voice
+  call logs** (they hold the candidate's voice or image, the design does not list them); the raw test answers and scores (they carry the test provider's answer
+  keys); the company-side category of a talent pool entry. **Training enrolments:** Training holds no data of its own (Moodle is the source), so there is no part.
+  **Blocked companies** and the activity switches join the archive when sections 3 and 4 are coded. The newsletter and campaign subscriptions are by email address, not by account, and are not exported.
+- **Talent pool:** until the talent pool consent of `phase-8-talent-pool.md` exists, `talent_pool` lists the companies that keep the person, and since when.
+- **Ready notice:** in-app type `account.data_export_ready` and the email template of the same key (always sent, to the account's address, whether or not verified).
+  The audit entry `privacy.data_exported` carries the export id and the size.
+- **Erasure** deletes the archives and the request rows.
+- **Reminders:** the Identity port `FirstSignIns` gives the accounts that signed in before today (Jakarta) and are active, verified job seekers; JobSeeker keeps
+  the state. Days are Jakarta days: the first reminder goes at the first run on a day after the first sign-in, the next ones when the last one was sent on a day
+  at least 7 days ago. An account that never saved a profile gets its profile row at the first reminder (the state lives there). A switched-off
+  `profile_reminder` preference sends nothing and counts nothing, so turning it on again resumes. **Recommendations** are not named: they need a complete
+  profile, which a reminded person does not have; only the live jobs that match their (unpaused) alerts are, as one sentence of the email, counted up to 100 per alert.
+- **Link and opt-out:** the email links to the client profile page set in `JOB_SEEKER_PROFILE_URL` (empty: no link). There is no signed one-click opt-out
+  link yet (no signed routes exist in the API); the preference in the notification settings is the opt-out, and the email says so.

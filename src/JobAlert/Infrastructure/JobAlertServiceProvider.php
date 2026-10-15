@@ -9,7 +9,9 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
 use Src\JobAlert\Application\AlertEmailSender;
 use Src\JobAlert\Application\AlertSavedSearches;
+use Src\JobAlert\Application\CountAlertMatches;
 use Src\JobAlert\Application\EraseJobAlerts;
+use Src\JobAlert\Application\Export\AlertsDataExporter;
 use Src\JobAlert\Application\JobAlertEmailTemplates;
 use Src\JobAlert\Application\JobAlertNotificationType;
 use Src\JobAlert\Application\JobAlertSettings;
@@ -23,10 +25,12 @@ use Src\JobAlert\Infrastructure\Persistence\DatabaseJobAlertRepository;
 use Src\JobAlert\Interface\Console\SendJobAlertDigestsCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\JobAlert\AlertMatchCounts;
 use Src\Shared\Application\JobAlert\SavedSearches;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -38,6 +42,7 @@ final class JobAlertServiceProvider extends ContextServiceProvider
         AlertDeliveryRepository::class => DatabaseAlertDeliveryRepository::class,
         AlertEmailSender::class => MailAlertSender::class,
         SavedSearches::class => AlertSavedSearches::class,
+        AlertMatchCounts::class => CountAlertMatches::class,
     ];
 
     public function register(): void
@@ -74,6 +79,7 @@ final class JobAlertServiceProvider extends ContextServiceProvider
         Event::listen(JobStatusChanged::class, NotifyAlertsOfLiveJob::class);
         Event::listen(JobDecided::class, NotifyAlertsOfLiveJob::class);
         $this->app->tag(EraseJobAlerts::class, ErasureStep::class);
+        $this->app->tag(AlertsDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseJobAlertsWhenUserAnonymized::class);
     }
 }

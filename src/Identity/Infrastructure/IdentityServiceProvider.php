@@ -12,6 +12,7 @@ use Src\Identity\Application\Account\AdminAccessReader;
 use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
+use Src\Identity\Application\Account\IdentityFirstSignIns;
 use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
 use Src\Identity\Application\Admin\AdminDirectory;
@@ -89,6 +90,7 @@ use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentVerificationCodeRep
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
 use Src\Identity\Infrastructure\Persistence\EloquentSocialAccountRepository;
 use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
+use Src\Identity\Infrastructure\Privacy\AccountDataExporter;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\CreateAdminRoleCommand;
@@ -108,10 +110,12 @@ use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureReceipts;
+use Src\Shared\Application\Accounts\FirstSignIns;
 use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -142,6 +146,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         AdminAccessReader::class => SpatieAdminAccessReader::class,
         UserDataEraser::class => EloquentUserDataEraser::class,
         ApplicantContacts::class => IdentityApplicantContacts::class,
+        FirstSignIns::class => IdentityFirstSignIns::class,
         AdminContacts::class => IdentityAdminContacts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
@@ -199,6 +204,8 @@ final class IdentityServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         Relation::morphMap(self::MORPH_MAP);
+
+        $this->app->tag(AccountDataExporter::class, PersonalDataExporter::class);
 
         foreach ([
             SignedIn::class => 'onSignedIn',

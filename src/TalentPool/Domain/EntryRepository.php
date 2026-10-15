@@ -36,6 +36,13 @@ interface EntryRepository
      */
     public function countsByCategory(int $companyId): array;
 
+    /**
+     * The entries that hold the candidate, one per company, oldest first.
+     *
+     * @return list<Entry>
+     */
+    public function ofCandidate(int $candidateUserId): array;
+
     public function deleteOfCandidate(int $candidateUserId): void;
 
     /**

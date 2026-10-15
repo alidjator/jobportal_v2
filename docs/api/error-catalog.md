@@ -61,6 +61,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `cv-limit` | 429 | JobSeeker | You have had too many CVs generated this hour. Try again later. |
 | `cv-template-required` | 409 | JobSeeker | The default CV template must be switched on. |
 | `daily-limit` | 429 | Messaging | Your company reached its daily limit of chat messages. Try again tomorrow. |
+| `data-export-limit` | 429 | JobSeeker | You can ask for a copy of your data once a day. |
+| `data-export-running` | 409 | JobSeeker | A copy of your data is already being prepared. |
 | `default-stage-cannot-be-deleted` | 409 | Recruitment | A default stage cannot be deleted. |
 | `delete-window-over` | 409 | Messaging |  |
 | `deletion-already-requested` | 409 | Identity | The deletion of this account was already requested. |

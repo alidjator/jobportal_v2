@@ -15,7 +15,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - **Direction (agreed 2026-10-13): no new features, go-live readiness first**: `docs/deployment-checklist.md`, and separating the live site from the working folder (the scheduler fails when code needing a new migration is live before `migrate`).
 - **Name (2026-10-15):** ONESIS / ONESIS Career, `docs/design/naming.md` (URN rename before go-live).
 - **ERP (decided 2026-10-15):** TA is ERP phase 1 in this codebase; `docs/design/erp-direction.md`; the phase 8 order was changed for it (three new designs before the hiring work).
-- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 to #4 are before go-live, #2 changes the login answer for company members).
+- **Branch `phase-8-company-permissions`:** permissions, team, time-to-fill and assessment Part 7 coded and tested (migrations `000136`-`000138`); `phase-8-jobseeker-privacy.md` sections 1 and 2 coded 2026-10-15 (migration `000139`, **not yet checked by the user**). **Next coding:** the first open item of `docs/design/phase-8-index.md` (order, status and legal waits of every phase 8 design; #1 to #3 are before go-live, #1 changes the login answer for company members).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
@@ -30,7 +30,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 - Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`, checklist section 3); the **freeze date** for the final run is not set.
 - SMTP; then reset emails to the imported accounts without a usable password (761 in the 2026-10-13 copy): dry run first, ask before sending.
-- `CORS_ALLOWED_ORIGINS` (front-end origin); consider nginx `limit_req` for unknown paths.
+- `CORS_ALLOWED_ORIGINS` (front-end origin); `JOB_SEEKER_PROFILE_URL` (the profile reminder email's link); consider nginx `limit_req` for unknown paths.
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins with limited roles through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).

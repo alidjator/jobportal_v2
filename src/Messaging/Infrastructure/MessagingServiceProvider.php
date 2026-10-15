@@ -13,6 +13,7 @@ use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Messaging\Application\CompanyPresence;
 use Src\Messaging\Application\ConversationReader;
 use Src\Messaging\Application\EraseMessagingData;
+use Src\Messaging\Application\Export\ConversationsDataExporter;
 use Src\Messaging\Application\MessageReader;
 use Src\Messaging\Application\MessagingEmailTemplates;
 use Src\Messaging\Application\MessagingNotificationType;
@@ -48,6 +49,7 @@ use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -119,6 +121,7 @@ final class MessagingServiceProvider extends ContextServiceProvider
         Event::listen(MessageDeleted::class, [BroadcastMessagingEvents::class, 'deleted']);
         Event::listen(MessagesRead::class, [BroadcastMessagingEvents::class, 'read']);
         $this->app->tag(EraseMessagingData::class, ErasureStep::class);
+        $this->app->tag(ConversationsDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseMessagingDataWhenUserAnonymized::class);
     }
 }

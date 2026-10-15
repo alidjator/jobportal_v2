@@ -11,6 +11,7 @@ use Src\Assessment\Application\Attempts\AttemptSessionToken;
 use Src\Assessment\Application\Delivery\AssessmentInvitationService;
 use Src\Assessment\Application\Delivery\TestEmailSender;
 use Src\Assessment\Application\EraseAssessmentData;
+use Src\Assessment\Application\Export\AssessmentDataExporter;
 use Src\Assessment\Application\Invitations\InvitationLinkBuilder;
 use Src\Assessment\Application\Invitations\InvitationSender;
 use Src\Assessment\Application\Invitations\InvitationThrottle;
@@ -76,6 +77,7 @@ use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -160,6 +162,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedCandidateEmail']);
 
         $this->app->tag(EraseAssessmentData::class, ErasureStep::class);
+        $this->app->tag(AssessmentDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseAssessmentDataWhenUserAnonymized::class);
 
         parent::boot();

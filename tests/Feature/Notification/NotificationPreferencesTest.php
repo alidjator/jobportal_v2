@@ -62,7 +62,7 @@ final class NotificationPreferencesTest extends FeatureTestCase
     {
         $response = $this->api('GET', '')->assertOk();
 
-        $this->assertSame(['application_update', 'chat_message', 'invitation', 'job_alert', 'newsletter', 'probe_update', 'recommendation'], array_column($response->json('data'), 'key'));
+        $this->assertSame(['application_update', 'chat_message', 'invitation', 'job_alert', 'newsletter', 'probe_update', 'profile_reminder', 'recommendation'], array_column($response->json('data'), 'key'));
         $this->assertSame('Updates on your job applications', $response->json('data.5.description'));
         $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.5.channels.email'));
         $this->assertSame(['enabled' => true, 'is_default' => true], $response->json('data.5.channels.push'));

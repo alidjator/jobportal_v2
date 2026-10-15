@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Review\Application\EraseReviewerData;
+use Src\Review\Application\Export\ReviewsDataExporter;
 use Src\Review\Application\ReviewPermissions;
 use Src\Review\Application\ReviewSummaries;
 use Src\Review\Domain\Events\ReviewModerated;
@@ -21,6 +22,7 @@ use Src\Review\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Review\Infrastructure\Persistence\DatabaseReviewRepository;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class ReviewServiceProvider extends ContextServiceProvider
@@ -60,6 +62,7 @@ final class ReviewServiceProvider extends ContextServiceProvider
         RateLimiter::for(self::COMPANY_WRITE_LIMITER, fn (Request $request): Limit => Limit::perHour(self::COMPANY_WRITES_PER_HOUR)->by('review-company-write|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         $this->app->tag(EraseReviewerData::class, ErasureStep::class);
+        $this->app->tag(ReviewsDataExporter::class, PersonalDataExporter::class);
 
         Event::listen(UserAnonymized::class, EraseReviewerDataWhenUserAnonymized::class);
 

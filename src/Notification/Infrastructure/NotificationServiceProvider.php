@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Notification\Application\DeviceTokens\DeviceTokenRepository;
+use Src\Notification\Application\Export\PreferencesDataExporter;
 use Src\Notification\Application\InApp\InAppNotificationReader;
 use Src\Notification\Application\InApp\InAppNotificationRepository;
 use Src\Notification\Application\Preferences\NotificationPreferenceStore;
@@ -25,6 +26,7 @@ use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Application\Notifications\NotificationPreferences;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class NotificationServiceProvider extends ContextServiceProvider
@@ -58,6 +60,7 @@ final class NotificationServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         $this->app->tag(PurgeUserNotificationData::class, ErasureStep::class);
+        $this->app->tag(PreferencesDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, PurgeNotificationDataWhenUserAnonymized::class);
 
         parent::boot();

@@ -15,6 +15,7 @@ use Src\Job\Application\Browse\JobProfileReader;
 use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\LiveJobProfileProvider;
 use Src\Job\Application\Browse\SearchThrottle;
+use Src\Job\Application\Export\SavedJobsDataExporter;
 use Src\Job\Application\Insight\SalaryInsightReader;
 use Src\Job\Application\JobPermissions;
 use Src\Job\Application\JobReader;
@@ -68,6 +69,7 @@ use Src\Shared\Application\Job\LiveJobProfiles;
 use Src\Shared\Application\Job\PublishedJobs;
 use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -162,6 +164,7 @@ final class JobServiceProvider extends ContextServiceProvider
         $this->app->tag(EraseJobViews::class, ErasureStep::class);
         Event::listen(UserAnonymized::class, EraseJobViewsWhenUserAnonymized::class);
         $this->app->tag(EraseSavedJobs::class, ErasureStep::class);
+        $this->app->tag(SavedJobsDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseSavedJobsWhenUserAnonymized::class);
 
         Event::listen(JobAssigneesChanged::class, [RecordJobAuditEntries::class, 'onJobAssigneesChanged']);

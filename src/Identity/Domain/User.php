@@ -28,6 +28,7 @@ final class User extends AggregateRoot
         private ?DateTimeImmutable $lastLoginAt,
         private ?DateTimeImmutable $deletionRequestedAt,
         private ?DateTimeImmutable $anonymizedAt,
+        private ?DateTimeImmutable $firstLoginAt = null,
     ) {}
 
     /** A new self-registered job seeker: active, email not yet verified. Company members are created by an admin. */
@@ -138,6 +139,11 @@ final class User extends AggregateRoot
         return $this->lastLoginAt;
     }
 
+    public function firstLoginAt(): ?DateTimeImmutable
+    {
+        return $this->firstLoginAt;
+    }
+
     public function deletionRequestedAt(): ?DateTimeImmutable
     {
         return $this->deletionRequestedAt;
@@ -174,6 +180,7 @@ final class User extends AggregateRoot
     public function recordSignIn(DateTimeImmutable $at): void
     {
         $this->lastLoginAt = $at;
+        $this->firstLoginAt ??= $at;
     }
 
     public function verifyEmail(DateTimeImmutable $at): void
@@ -262,6 +269,7 @@ final class User extends AggregateRoot
         $this->avatarPath = null;
         $this->emailVerifiedAt = null;
         $this->lastLoginAt = null;
+        $this->firstLoginAt = null;
         $this->anonymizedAt = $now;
     }
 
