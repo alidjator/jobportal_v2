@@ -5,6 +5,8 @@ first open item, codes it, records a "coded" section in its document and updates
 documents. The order was changed for the ERP direction on 2026-10-15 (confirmed by the user; `erp-direction.md` section 6). Items marked **new** have no
 design document yet: they need a design session before a coding session can take them.
 
+Open ERP governance proposals (platform admin, reference data, settings and audit scope): `erp-governance.md`, nothing decided yet.
+
 ## Coded
 
 | Document | Status |
@@ -18,7 +20,7 @@ design document yet: they need a design session before a coding session can take
 |---|---|---|
 | 1 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | **before go-live**; export boundary: question 14 |
 | 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); internal tenants add a group two-factor rule and 12-hour tokens (`erp-sso.md`) |
-| 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2 |
+| 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2; section 2 waits for `erp-governance.md` question 5 (internal tenants as verified) |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
 | 4a | `naming.md` section 1 (problem `type` to `urn:onesis:error:<code>`) | **before go-live**; small, mechanical; may be done in any coding session before go-live |
 | 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
