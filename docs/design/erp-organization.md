@@ -33,6 +33,8 @@ for ERP customers.
 - 2026-10-15: deactivating a legal entity whose tenant is active is **refused**; the tenant is suspended first (decided by the user;
   [Lifecycle](#7-lifecycle)).
 - 2026-10-15: a tenant link may be **removed or moved only before ERP data depends on it** (decided by the user; [Lifecycle](#7-lifecycle)).
+- 2026-10-15: a **group status** (`active`, `suspended`); suspending a group suspends its internal tenants, stored as `organization_groups.status`
+  and `company_companies.suspended_by_group_at` (decided by the user; [Lifecycle](#7-lifecycle)).
 - 2026-10-15: the details of section 7 (legal forms, reason length, error codes) and **section 8** (tables, routes, `as_of`, domain events)
   approved as written (decided by the user; [Lifecycle](#7-lifecycle), [Storage and API](#8-storage-and-api)).
 
@@ -116,6 +118,13 @@ values of the settings).
   before and after.
 - **Deactivating a legal entity** whose tenant is `active` is refused with 409 `legal-entity-has-active-tenant`; the platform admin suspends the
   tenant first (the suspension rules of `phase-1-company.md`).
+- **Group status (decided 2026-10-15, `erp-governance.md` question 6):** `active` or `suspended`, set by the platform admin with a reason
+  (audited). Suspending a group suspends every internal tenant of the group with the company suspension rules of `phase-1-company.md` (public
+  profile and jobs hidden, members refused with 403 `company-suspended`, applications unchanged) and refuses every group role with 403
+  `group-suspended`. Restoring the group restores only the tenants that the group suspension suspended; a tenant suspended on its own stays
+  suspended. Nothing is deleted.
+- **Storage (approved by the user 2026-10-15):** `organization_groups.status` and `status_reason`; `company_companies` gains
+  `suspended_by_group_at` (nullable) so a restore knows which tenants to bring back.
 - **Removing or moving a tenant link** (platform admin) is allowed only while nothing of the ERP depends on it (group roles of its members,
   requisitions, later employees); otherwise 409 `tenant-link-in-use`.
 

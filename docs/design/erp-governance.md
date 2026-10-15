@@ -19,6 +19,8 @@ invoices stay out of scope.
   group may add values of its own and hide global values from its members' choices (decided by the user, question 1; [Reference data](#2-reference-data-three-layers-decided-2026-10-15)).
 - 2026-10-15: **no default platform admin access to customer ERP data**; a group admin grants temporary support access, every read audited and shown
   in the group activity log (decided by the user, question 4; [Customer ERP data](#11-no-default-access-to-customer-erp-data-decided-2026-10-15)).
+- 2026-10-15: **suspending a group suspends all its internal tenants**; restoring the group restores only the tenants it suspended (decided by the
+  user, question 6; `erp-organization.md` section 7).
 
 ## 1. Platform admin after the ERP
 
@@ -88,7 +90,7 @@ The ERP has no public content, so it needs no moderation. Its controls:
 - `erp-organization.md` (decided): the audit entry gains `group_id` next to the `company_id` of `phase-8-company-admin.md` section 2, and the group
   catalog gains `group.audit.view`.
 - `phase-8-platform-admin.md` section 2: the review rule reads "verified or internal".
-- `erp-organization.md`: a group status (`active`, `suspended`) and its effect on the group's tenants (**open**, see question 6).
+- `erp-organization.md` section 7 (done 2026-10-15): a group status and its effect on the group's tenants.
 
 ## 5. Open questions
 
@@ -97,4 +99,4 @@ The ERP has no public content, so it needs no moderation. Its controls:
 3. ~~`group_id` on audit entries and a group activity log~~ decided 2026-10-15 (section 3).
 4. ~~No default platform admin access to customer ERP data~~ decided 2026-10-15 (section 1.1).
 5. ~~Internal tenants counted as verified~~ decided 2026-10-15 (section 1.2).
-6. A group status (`active`, `suspended`) set by the platform admin and its effect on the group's tenants: open, decided before coding #5.
+6. ~~A group status~~ decided 2026-10-15 (`erp-organization.md` section 7).
