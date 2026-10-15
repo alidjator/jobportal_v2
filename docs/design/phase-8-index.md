@@ -17,12 +17,12 @@ design document yet: they need a design session before a coding session can take
 | # | Document | Waits for |
 |---|---|---|
 | 1 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | **before go-live**; export boundary: question 14 |
-| 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); the later IdP link stays additive (`erp-direction.md` section 2) |
+| 2 | `phase-8-company-admin.md` sections 1, 2 and 4 | **before go-live**; the login answer changes for company members (front end); internal tenants add a group two-factor rule and 12-hour tokens (`erp-sso.md`) |
 | 3 | `phase-8-platform-admin.md` sections 1 to 4 | **before go-live**; section 4 (console two-factor reset) is coded with #2 |
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | **before go-live**; section 4 reads the verification badge |
 | 5 | `erp-organization.md` (Organization context and internal tenants) | designed 2026-10-15 |
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | designed 2026-10-15; after #5 |
-| 7 | **new** employee sign-in through the central IdP | a design session; the choice of IdP product (`erp-direction.md` section 7) |
+| 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | designed 2026-10-15; after #2 and #5 |
 | 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | tasks and team preferences of the recruiter workday; requisitions are now in scope through #6 |
 | 10 | `phase-8-interview-calendar.md` | |

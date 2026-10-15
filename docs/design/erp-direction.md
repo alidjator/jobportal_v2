@@ -8,8 +8,8 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 
 - 2026-10-15: **one codebase**: the public multi-company portal keeps running, and the ERP uses the same recruitment contexts; internal tenants of
   the PKP group get the ERP features on top (decided by the user; section 1).
-- 2026-10-15: **employee sign-in through a central identity provider (IdP), step by step**: job seekers keep today's sign-in, employees sign in
-  through OIDC single sign-on; the direction is fixed before go-live, the SSO itself is coded after it (decided by the user; section 2).
+- ~~2026-10-15: employee sign-in through a central identity provider (IdP), step by step~~ **changed 2026-10-15: the Identity context is the
+  IAM of the ERP**, no third-party or separate IdP; all ERP modules share its sign-in (decided by the user; section 2, `erp-sso.md`).
 - 2026-10-15: **this ERP replaces the existing HRIS**: a new Employee context is built in this project as ERP phase 2 (decided by the user; section 3).
 - 2026-10-15: **one tenant per legal entity**: each company of the PKP group is one internal tenant linked to one legal entity of a new
   Organization context; the holding sees across tenants through a group permission (decided by the user; section 4).
@@ -25,7 +25,11 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - The recruitment contexts (Job, Recruitment, interviews, offers, assessments) are shared by both kinds of tenant; ERP rules are added through
   ports and policies that check the tenant kind, never through a second copy of the recruiting logic.
 
-## 2. Identity: central IdP, step by step
+## 2. Identity: the IAM of the ERP (changed 2026-10-15)
+
+- **Changed 2026-10-15 (user):** the Identity context of this codebase is the IAM of the ERP; no third-party or separate IdP. The modules share
+  one codebase, so one Sanctum token serves all of them. Detail in `erp-sso.md`; the bullets below are the earlier direction, kept as history.
+
 
 - Job seekers keep the current sign-in (email and password, Google) in the Identity context.
 - Employees of internal tenants sign in through a central IdP with OIDC; every ERP module trusts the same IdP, so no module depends on the
@@ -68,7 +72,7 @@ working list from now on and wins if the two differ.
 | 4 | `phase-8-job-discovery.md` sections 1 to 5 | before go-live (unchanged) |
 | 5 | **new** Organization context and internal tenants | legal entities, units, positions, grades, cost centres, group permission |
 | 6 | **new** requisitions and a generic approval workflow | a job of an internal tenant starts from an approved requisition |
-| 7 | **new** employee sign-in through the central IdP | needs the choice of IdP product |
+| 7 | **new** employee sign-in (changed: Identity is the IAM, `erp-sso.md`) | |
 | 8 | `phase-8-recruiter-workday.md` | |
 | 9 | `phase-8-hiring-managers.md` | requisitions are now in scope through item 6 |
 | 10 | `phase-8-interview-calendar.md` | |
@@ -95,7 +99,7 @@ working list from now on and wins if the two differ.
 
 ## 7. Still open
 
-- The IdP product (for example Keycloak) and who runs it; how platform admins relate to it.
+- ~~The IdP product and who runs it~~ settled 2026-10-15: no separate IdP (`erp-sso.md`).
 - Which existing HRIS application runs in production, which of its features Employee replaces (payroll with BPJS and PPh 21 is a large scope of
   its own) and whether its data is migrated.
 - Requisition approval levels and who approves (by organisation unit, grade or cost centre).

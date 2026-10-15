@@ -41,8 +41,8 @@ for ERP customers.
 - A **group** is one ERP customer (for example the PKP group with its holding and subsidiaries). Each group owns its legal entities, units,
   positions, grades and cost centres; no data is shared between groups.
 - External tenants of the portal (client companies that only post jobs) have no group and no structure, as today.
-- Consequence for `erp-direction.md` section 2: the central IdP must separate groups (for example one realm or organisation per group); decided
-  with the SSO design (#7).
+- ~~Consequence for `erp-direction.md` section 2: the central IdP must separate groups~~ no longer applies (2026-10-15): the Identity context
+  is the IAM of the ERP (`erp-sso.md`).
 
 ## 2. Relations
 
@@ -130,4 +130,4 @@ Extended by `erp-requisitions.md` with `group.workforce.view`, `group.workforce.
 ## Still open
 
 - Whether a job of an internal tenant must name a position and unit: decided in `erp-requisitions.md` (a setting per tenant, required by default).
-- How groups map to the central IdP (one realm or organisation per group): decided with the SSO design (#7).
+- ~~How groups map to the central IdP~~ no longer applies: the Identity context is the IAM of the ERP (`erp-sso.md`).
