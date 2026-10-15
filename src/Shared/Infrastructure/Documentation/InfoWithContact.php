@@ -18,9 +18,9 @@ final class InfoWithContact extends InfoObject
     }
 
     /** @param array<array-key, mixed> $contact */
-    public static function from(InfoObject $info, array $contact): self
+    public static function from(InfoObject $info, array $contact, ?string $title = null): self
     {
-        return new self($info->title, $info->version, $info->description, array_filter(array_map(static fn (mixed $value): string => is_scalar($value) ? (string) $value : '', $contact)));
+        return new self($title ?? $info->title, $info->version, $info->description, array_filter(array_map(static fn (mixed $value): string => is_scalar($value) ? (string) $value : '', $contact)));
     }
 
     public function toArray(): array

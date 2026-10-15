@@ -10,19 +10,26 @@ final class InfoWithContactTest extends TestCase
 {
     public function test_the_contact_is_written_next_to_the_title_version_and_description(): void
     {
-        $info = InfoWithContact::from((new InfoObject('Job Portal API', '1.2.0'))->setDescription('About'), ['name' => 'Team', 'email' => 'team@example.test', 'url' => null]);
+        $info = InfoWithContact::from((new InfoObject('ONESIS API', '1.2.0'))->setDescription('About'), ['name' => 'Team', 'email' => 'team@example.test', 'url' => null]);
 
         $this->assertSame([
-            'title' => 'Job Portal API',
+            'title' => 'ONESIS API',
             'version' => '1.2.0',
             'description' => 'About',
             'contact' => ['name' => 'Team', 'email' => 'team@example.test'],
         ], $info->toArray());
     }
 
+    public function test_a_given_title_replaces_the_one_of_the_generated_document(): void
+    {
+        $info = InfoWithContact::from(new InfoObject('Some App'), [], 'ONESIS API');
+
+        $this->assertSame('ONESIS API', $info->toArray()['title']);
+    }
+
     public function test_an_empty_contact_is_left_out(): void
     {
-        $info = InfoWithContact::from(new InfoObject('Job Portal API'), ['email' => null]);
+        $info = InfoWithContact::from(new InfoObject('ONESIS API'), ['email' => null]);
 
         $this->assertArrayNotHasKey('contact', $info->toArray());
     }

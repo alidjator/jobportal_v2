@@ -8,7 +8,7 @@ final class ApiRootTest extends FeatureTestCase
 {
     public function test_the_root_answers_with_a_minimal_status(): void
     {
-        $this->getJson('/')->assertOk()->assertExactJson(['name' => 'Job Portal API', 'version' => 'v1', 'status' => 'ok']);
+        $this->getJson('/')->assertOk()->assertExactJson(['name' => 'ONESIS API', 'version' => 'v1', 'status' => 'ok']);
     }
 
     public function test_the_root_sets_no_cookie(): void

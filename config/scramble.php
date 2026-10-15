@@ -47,6 +47,11 @@ return [
 
     'info' => [
         /*
+         * Title of the document: the name of the product, not the application name (which is also the sender name of emails).
+         */
+        'title' => 'ONESIS API',
+
+        /*
          * API version.
          */
         'version' => env('API_VERSION', '0.0.1'),
@@ -54,7 +59,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'REST API of the job portal. Errors are RFC 9457 problem documents; every administrator route lists the permission it needs.',
+        'description' => 'REST API of ONESIS: the talent acquisition ERP and the ONESIS Career job portal. Errors are RFC 9457 problem documents; every administrator route lists the permission it needs.',
 
         /*
          * The `contact` object of the document (`name`, `url`, `email`); empty values are left out.
@@ -65,7 +70,7 @@ return [
     ],
 
     'ui' => [
-        'title' => 'Job Portal API',
+        'title' => 'ONESIS API',
     ],
 
     /*
