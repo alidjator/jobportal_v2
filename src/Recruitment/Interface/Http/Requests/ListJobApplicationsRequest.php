@@ -9,8 +9,8 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
 /**
- * Allowed: `filter[stage_id]`, `filter[stage_type]`, `filter[meets_must_have]` (true or false), `filter[q]` (a piece of the name), `sort` (`applied_at` or
- * `-applied_at`, newest first when left out), `page` and `per_page`. Any other filter is refused with 422.
+ * Allowed: `filter[stage_id]`, `filter[stage_type]`, `filter[meets_must_have]` (true or false), `filter[q]` (a piece of the name), `filter[stale]` (true: only the stale ones), `sort`
+ * (`applied_at` or `-applied_at`, `days_in_stage` or `-days_in_stage`; newest first when left out, `-days_in_stage` is the longest wait first), `page` and `per_page`. Any other filter is refused with 422.
  */
 final class ListJobApplicationsRequest extends FormRequest
 {
@@ -21,24 +21,31 @@ final class ListJobApplicationsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:stage_id,stage_type,meets_must_have,q'],
+            'filter' => ['nullable', 'array:stage_id,stage_type,meets_must_have,q,stale'],
             'filter.stage_id' => ['nullable', 'integer', 'min:1'],
             'filter.stage_type' => ['nullable', 'string', Rule::enum(StageType::class)],
             'filter.meets_must_have' => ['nullable', 'in:true,false,1,0'],
             'filter.q' => ['nullable', 'string', 'max:100'],
-            'sort' => ['nullable', 'in:applied_at,-applied_at'],
+            'filter.stale' => ['nullable', 'in:true,false,1,0'],
+            'sort' => ['nullable', 'in:applied_at,-applied_at,days_in_stage,-days_in_stage'],
         ];
     }
 
+    /** The stale limit is the company's: the use case fills it in. */
     public function toQuery(int $jobId): RecruiterApplicationQuery
     {
+        $sort = (string) $this->input('sort', '-applied_at');
+
         return new RecruiterApplicationQuery(
             $jobId,
             $this->filled('filter.stage_id') ? $this->integer('filter.stage_id') : null,
             $this->filled('filter.stage_type') ? StageType::from($this->string('filter.stage_type')->toString()) : null,
             $this->filled('filter.meets_must_have') ? $this->boolean('filter.meets_must_have') : null,
             $this->filled('filter.q') ? trim($this->string('filter.q')->toString()) : null,
-            $this->input('sort') !== 'applied_at',
+            ! in_array($sort, ['applied_at', 'days_in_stage'], true),
+            $this->boolean('filter.stale'),
+            7,
+            ltrim($sort, '-'),
         );
     }
 }

@@ -36,6 +36,10 @@ final class CompanyApplicationResource extends JsonResource
             'interview_result' => $row->interviewResult === null ? null : ['score' => $row->interviewResult->score, 'yes' => $row->interviewResult->yes(), 'no' => $row->interviewResult->no()],
             'stage' => ['id' => $row->stageId, 'type' => $row->stageType->value, 'name' => $row->stageName],
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
+            'stage_entered_at' => $row->stageEnteredAt?->format(DATE_ATOM),
+            'days_in_stage' => $row->daysInStage,
+            'stale' => $row->stale,
+            'other_applications_count' => $row->otherApplicationsCount,
         ];
     }
 }

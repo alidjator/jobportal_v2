@@ -93,6 +93,14 @@ final readonly class DatabaseJobReader implements JobReader
         if ($query->search !== null && $query->search !== '') {
             TextSearch::contains($builder, 'job_jobs.title', $query->search);
         }
+
+        if ($query->deadlineTo !== null) {
+            $builder->whereNotNull('job_jobs.deadline')->where('job_jobs.deadline', '<=', $query->deadlineTo->format('Y-m-d'));
+        }
+
+        if ($query->withoutApplications) {
+            $builder->whereNotExists(fn (Builder $applied) => $applied->selectRaw('1')->from('recruitment_applications')->whereColumn('recruitment_applications.job_id', 'job_jobs.id'));
+        }
     }
 
     private function toItem(stdClass $row): JobListItem

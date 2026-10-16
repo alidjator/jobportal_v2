@@ -29,4 +29,21 @@ interface RecruiterApplicationReader
     public function countByStage(int $jobId): array;
 
     public function find(int $id): ?RecruiterApplicationDetailData;
+
+    /**
+     * The other applications of the same person to the same company, newest first (every stage, withdrawn and rejected ones included).
+     *
+     * @return list<OtherApplicationRow>
+     */
+    public function otherApplications(int $applicationId): array;
+
+    /**
+     * How many other active (not rejected or withdrawn) applications of the same person to the same company each application has, keyed by application id; an application whose
+     * applicant was anonymised, or without others, is missing. `$visibleJobIds` limits the count to those jobs (null: every job).
+     *
+     * @param  list<int>  $applicationIds
+     * @param  list<int>|null  $visibleJobIds
+     * @return array<int, int>
+     */
+    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds): array;
 }

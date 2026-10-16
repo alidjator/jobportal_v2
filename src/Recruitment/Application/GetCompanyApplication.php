@@ -9,6 +9,7 @@ use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
@@ -26,6 +27,8 @@ final readonly class GetCompanyApplication
         private ApplicationInterviewResults $interviewResults,
         private ApplicationRepository $applications,
         private ContactVisibility $contact,
+        private OtherApplications $others,
+        private Settings $settings,
         private Clock $clock,
     ) {}
 
@@ -66,6 +69,9 @@ final readonly class GetCompanyApplication
             $actorNames[$userId] = $summary->name;
         }
 
+        [$otherApplications, $othersHidden] = $this->others->of($member, $data);
+        $days = StageClock::days($data->stageEnteredAt, $this->clock->now());
+
         return new CompanyApplicationView(
             $data,
             $this->jobs->titles([$data->jobId])[$data->jobId] ?? null,
@@ -74,6 +80,10 @@ final readonly class GetCompanyApplication
             $actorNames,
             $this->ratings->view($id, $member->userId),
             $this->interviewResults->forApplication($id, $member->userId),
+            $days,
+            StageClock::isStale($data->stageType, $days, $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $data->companyId)),
+            $otherApplications,
+            $othersHidden,
         );
     }
 }

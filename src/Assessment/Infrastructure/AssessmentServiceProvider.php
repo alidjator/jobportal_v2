@@ -67,6 +67,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseReportTemplateRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
+use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
 use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
@@ -79,6 +80,7 @@ use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class AssessmentServiceProvider extends ContextServiceProvider
@@ -112,6 +114,10 @@ final class AssessmentServiceProvider extends ContextServiceProvider
     public function register(): void
     {
         $this->app->scoped(AttemptSessionToken::class);
+
+        $this->callAfterResolving(TaskProviders::class, function (TaskProviders $tasks): void {
+            $tasks->add($this->app->make(MyScoringTask::class));
+        });
 
         $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
 

@@ -2,11 +2,13 @@
 
 namespace Src\Job\Application;
 
+use DateTimeImmutable;
 use Src\Job\Domain\JobStatus;
 
 /**
  * What a member asks of the job list of their company. `assignedToUserId` limits the list to the jobs assigned to that account: it is always set for a
- * recruiter (they see only their jobs) and is set for a company admin who asked for `assigned_to_me`. `search` matches the title, whatever the letter case.
+ * recruiter (they see only their jobs) and is set for a company admin who asked for `assigned_to_me`. `search` matches the title, whatever the letter case. `deadlineTo` keeps
+ * the jobs with a deadline on or before that day; `withoutApplications` keeps the jobs nobody applied to.
  */
 final readonly class JobListQuery
 {
@@ -16,5 +18,7 @@ final readonly class JobListQuery
         public ?JobStatus $status = null,
         public ?string $search = null,
         public JobListSort $sort = JobListSort::UpdatedAtDescending,
+        public ?DateTimeImmutable $deadlineTo = null,
+        public bool $withoutApplications = false,
     ) {}
 }

@@ -72,6 +72,9 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
 use Src\Job\Infrastructure\Persistence\DatabaseRequisitionJobs;
 use Src\Job\Infrastructure\Persistence\DatabaseSavedJobRepository;
+use Src\Job\Infrastructure\Tasks\JobsClosingTask;
+use Src\Job\Infrastructure\Tasks\JobsDraftTask;
+use Src\Job\Infrastructure\Tasks\JobsWithoutApplicantsTask;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Job\Interface\Console\FoldJobViewsCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
@@ -88,6 +91,7 @@ use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class JobServiceProvider extends ContextServiceProvider
@@ -161,6 +165,14 @@ final class JobServiceProvider extends ContextServiceProvider
                 $this->app->make(JobPerformanceCard::class),
                 $this->app->make(PlatformJobsCard::class),
                 $this->app->make(JobApprovalQueueCard::class),
+            );
+        });
+
+        $this->callAfterResolving(TaskProviders::class, function (TaskProviders $tasks): void {
+            $tasks->add(
+                $this->app->make(JobsClosingTask::class),
+                $this->app->make(JobsDraftTask::class),
+                $this->app->make(JobsWithoutApplicantsTask::class),
             );
         });
 

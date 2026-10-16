@@ -27,7 +27,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | 5 | `erp-organization.md` (Organization context and internal tenants) | parts A and B and the group log (C1, migration `000145`) coded 2026-10-16 (see Coded); C2 (group settings, migration `000146`) coded 2026-10-16; C3 (support access, migration `000147`) coded 2026-10-16, so part C is complete; D (the group read rule in recruitment) coded 2026-10-16, so #5 is complete |
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | Approval A (catalog, flows; migration `000148`) B1 (running approvals, decisions, delegation, vacant approvers; migration `000149`) and B2 (notifications, reminders; migration `000150`) coded 2026-10-16, so the Approval context is complete; Workforce plans (migration `000151`) and requisitions with the job rule (migration `000152`) coded 2026-10-16, so #6 is complete |
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | coded 2026-10-16 (see Coded); done before #6 |
-| 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
+| 8 | `phase-8-recruiter-workday.md` | sections 2, 4 and 1 (without `unscheduled_interviews`) coded 2026-10-17 (migration `000153`); sections 3 and 5 wait for the interview calendar (#10: message defaults, logo); team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | tasks and team preferences of the recruiter workday; requisitions are now in scope through #6 |
 | 10 | `phase-8-interview-calendar.md` | |
 | 11 | `phase-8-interviewers.md` | `.ics` of the interview calendar; shares the access rule of the hiring managers |

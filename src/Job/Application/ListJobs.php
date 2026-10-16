@@ -2,6 +2,7 @@
 
 namespace Src\Job\Application;
 
+use DateTimeImmutable;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Pagination\Page;
@@ -24,12 +25,12 @@ final readonly class ListJobs
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      */
-    public function execute(Actor $actor, ?JobStatus $status, ?string $search, bool $assignedToMe, JobListSort $sort, PageRequest $request): Page
+    public function execute(Actor $actor, ?JobStatus $status, ?string $search, bool $assignedToMe, JobListSort $sort, PageRequest $request, ?DateTimeImmutable $deadlineTo = null, bool $withoutApplications = false): Page
     {
         $member = $this->access->member($actor);
 
         return $this->reader->page(
-            new JobListQuery($member->companyId, $member->viewsAll() && ! $assignedToMe ? null : $member->userId, $status, $search, $sort),
+            new JobListQuery($member->companyId, $member->viewsAll() && ! $assignedToMe ? null : $member->userId, $status, $search, $sort, $deadlineTo, $withoutApplications),
             $request,
         );
     }

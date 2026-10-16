@@ -113,6 +113,10 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
+use Src\Recruitment\Infrastructure\Tasks\OffersExpiringTask;
+use Src\Recruitment\Infrastructure\Tasks\OffersWaitingTask;
+use Src\Recruitment\Infrastructure\Tasks\StaleApplicationsTask;
 use Src\Recruitment\Infrastructure\Video\BroadcastLobbySignal;
 use Src\Recruitment\Infrastructure\Video\BroadcastRecordingSignal;
 use Src\Recruitment\Infrastructure\Video\CoturnIceServers;
@@ -150,6 +154,7 @@ use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class RecruitmentServiceProvider extends ContextServiceProvider
@@ -262,6 +267,15 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(CompanyScheduleCard::class),
                 $this->app->make(CompanyTimeToFillCard::class),
                 $this->app->make(PlatformApplicationsCard::class),
+            );
+        });
+
+        $this->callAfterResolving(TaskProviders::class, function (TaskProviders $tasks): void {
+            $tasks->add(
+                $this->app->make(StaleApplicationsTask::class),
+                $this->app->make(MyScorecardsTask::class),
+                $this->app->make(OffersWaitingTask::class),
+                $this->app->make(OffersExpiringTask::class),
             );
         });
 

@@ -32,6 +32,10 @@ final readonly class RecruiterApplicationRow
         public ?float $ratingAverage = null,
         public int $ratingCount = 0,
         public ?InterviewResult $interviewResult = null,
+        public ?DateTimeImmutable $stageEnteredAt = null,
+        public int $daysInStage = 0,
+        public bool $stale = false,
+        public int $otherApplicationsCount = 0,
     ) {}
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */
@@ -40,6 +44,17 @@ final readonly class RecruiterApplicationRow
         return new self(
             $this->id, $this->isDeleted, $this->name, $this->headline, $this->latestExperience, $this->city, $this->expectedSalary, $this->age,
             $this->meetsMustHave, $this->stageId, $this->stageType, $this->stageName, $this->appliedAt, $this->ratingAverage, $this->ratingCount, $result,
+            $this->stageEnteredAt, $this->daysInStage, $this->stale, $this->otherApplicationsCount,
+        );
+    }
+
+    /** The row with the number of other active applications of the same person that the viewer may see. */
+    public function withOtherApplications(int $count): self
+    {
+        return new self(
+            $this->id, $this->isDeleted, $this->name, $this->headline, $this->latestExperience, $this->city, $this->expectedSalary, $this->age,
+            $this->meetsMustHave, $this->stageId, $this->stageType, $this->stageName, $this->appliedAt, $this->ratingAverage, $this->ratingCount, $this->interviewResult,
+            $this->stageEnteredAt, $this->daysInStage, $this->stale, $count,
         );
     }
 }

@@ -13,6 +13,7 @@ use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class DashboardServiceProvider extends ContextServiceProvider
@@ -25,6 +26,7 @@ final class DashboardServiceProvider extends ContextServiceProvider
     /** @var array<class-string, class-string> One list of cards, analyses and summaries for the whole application; every context adds its own. */
     public array $singletons = [
         DashboardCards::class => DashboardCards::class,
+        TaskProviders::class => TaskProviders::class,
         AnalyticsReports::class => AnalyticsReports::class,
         AnalyticsRollups::class => AnalyticsRollups::class,
     ];

@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationInterviewResult;
 use Src\Recruitment\Application\CompanyApplicationView;
+use Src\Recruitment\Application\OtherApplicationView;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
 
 /**
@@ -30,6 +31,17 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
+            'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),
+            'days_in_stage' => $view->daysInStage,
+            'stale' => $view->stale,
+            /** @var list<array{id: int, job: array{id: int, title: string|null}, stage: array{type: string, name: string}, applied_at: string}> */
+            'other_applications' => array_map(static fn (OtherApplicationView $other): array => [
+                'id' => $other->application->id,
+                'job' => ['id' => $other->application->jobId, 'title' => $other->jobTitle],
+                'stage' => ['type' => $other->application->stageType->value, 'name' => $other->application->stageName],
+                'applied_at' => $other->application->appliedAt->format(DATE_ATOM),
+            ], $view->otherApplications),
+            'others_hidden' => $view->othersHidden,
             /** @var array{average: float|null, count: int, mine: int|null, members: list<array{user_id: int, name: string, stars: int}>} */
             'rating' => (new ApplicationRatingResource($view->rating))->resolve($request),
             /** @var list<array{id: int, status: string, starts_at: string, format: string, result: array{score: float|null, scorecards_sent: int, panel_size: int, recommendations: array<string, int>}|null}> */

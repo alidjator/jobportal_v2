@@ -105,6 +105,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             'stage_id' => $after->stageId,
             'stage_type' => $after->stageType->value,
             'active_key' => $after->activeKey(),
+            'stage_entered_at' => $time,
             'updated_at' => $time,
         ]);
 
@@ -133,7 +134,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
                 ->selectRaw('id, ?::bigint, ?::bigint, ?::varchar, ?::varchar, ?::varchar, NULL::bigint, NULL::varchar, NULL::varchar, ?::timestamp', [$fromStageId, $toStageId, $type->value, $type->value, StageMoveActor::System->value, $time]),
         );
 
-        return $this->connection->table('recruitment_applications')->where('stage_id', $fromStageId)->update(['stage_id' => $toStageId, 'updated_at' => $time]);
+        return $this->connection->table('recruitment_applications')->where('stage_id', $fromStageId)->update(['stage_id' => $toStageId, 'stage_entered_at' => $time, 'updated_at' => $time]);
     }
 
     public function add(Application $application, array $answers): Application
@@ -158,6 +159,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
                 'match_score' => $application->matchScore,
                 'withdrawn_note' => $application->withdrawnNote,
                 'applied_at' => $appliedAt,
+                'stage_entered_at' => $appliedAt,
                 'created_at' => $appliedAt,
                 'updated_at' => $appliedAt,
             ]);

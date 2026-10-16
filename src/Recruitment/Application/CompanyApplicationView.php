@@ -12,6 +12,7 @@ final readonly class CompanyApplicationView
      * @param  array<int, string>  $stageNames
      * @param  array<int, string>  $actorNames
      * @param  list<ApplicationInterviewResult>  $interviews  newest first, with the results the viewer may see
+     * @param  list<OtherApplicationView>  $otherApplications  the person's other applications to this company that the viewer may see, newest first
      */
     public function __construct(
         public RecruiterApplicationDetailData $data,
@@ -21,5 +22,9 @@ final readonly class CompanyApplicationView
         public array $actorNames,
         public ApplicationRatingView $rating,
         public array $interviews = [],
+        public int $daysInStage = 0,
+        public bool $stale = false,
+        public array $otherApplications = [],
+        public int $othersHidden = 0,
     ) {}
 }

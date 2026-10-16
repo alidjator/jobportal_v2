@@ -21,6 +21,8 @@ final class RecruitmentSettings
 
     public const string MAX_INTERVIEW_KITS = 'recruitment.max_interview_kits';
 
+    public const string STALE_AFTER_DAYS = 'recruitment.stale_after_days';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -58,6 +60,11 @@ final class RecruitmentSettings
                 self::MAX_INTERVIEW_KITS, 100, 1, 500,
                 'The most interview kits a company may keep.',
                 overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::STALE_AFTER_DAYS, 7, 1, 60,
+                'After how many days in the applied or screening stage an application is marked stale. The company admin sets it on the company settings page.',
+                companyEditable: true,
             ),
         ];
     }

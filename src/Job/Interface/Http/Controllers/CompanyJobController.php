@@ -38,7 +38,7 @@ final class CompanyJobController extends ApiController
 {
     public function index(ListJobsRequest $request, ActorResolver $actors, ListJobs $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest(), $request->deadlineTo(), $request->withoutApplications());
 
         return JobListResource::collection(PaginatedResources::paginator($page, $request));
     }

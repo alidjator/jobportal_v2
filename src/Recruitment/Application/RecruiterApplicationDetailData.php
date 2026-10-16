@@ -27,6 +27,7 @@ final readonly class RecruiterApplicationDetailData
         public array $answers,
         public array $history,
         public DateTimeImmutable $appliedAt,
+        public DateTimeImmutable $stageEnteredAt,
         public bool $contactHidden = false,
     ) {}
 
@@ -37,7 +38,7 @@ final readonly class RecruiterApplicationDetailData
 
         return new self(
             $this->id, $this->jobId, $this->companyId, $this->stageId, $this->stageType, $this->meetsMustHave, $this->coverLetter, $this->resumeName, $this->withdrawnNote,
-            $snapshot, $this->answers, $this->history, $this->appliedAt, $this->snapshot !== null,
+            $snapshot, $this->answers, $this->history, $this->appliedAt, $this->stageEnteredAt, $this->snapshot !== null,
         );
     }
 }

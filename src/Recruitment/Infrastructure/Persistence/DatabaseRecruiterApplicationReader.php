@@ -8,14 +8,17 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Src\Recruitment\Application\ApplicantExportRow;
+use Src\Recruitment\Application\OtherApplicationRow;
 use Src\Recruitment\Application\RecruiterApplicationDetailData;
 use Src\Recruitment\Application\RecruiterApplicationQuery;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruiterApplicationRow;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
+use Src\Recruitment\Application\StageClock;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Infrastructure\Persistence\TextSearch;
@@ -29,9 +32,9 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 {
     private const int EXPORT_CHUNK = 200;
 
-    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
-    public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers) {}
+    public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
 
     public function page(RecruiterApplicationQuery $query, PageRequest $request): Page
     {
@@ -39,14 +42,13 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         $total = (clone $filtered)->count();
         $direction = $query->newestFirst ? 'desc' : 'asc';
+        $now = $this->clock->now();
 
-        $rows = $this->withRatings($filtered)
-            ->orderBy('a.applied_at', $direction)
-            ->orderBy('a.id', $direction)
+        $rows = $this->ordered($this->withRatings($filtered), $query, $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
             ->get(self::ROW_COLUMNS)
-            ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row))
+            ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row, $query->staleAfterDays, $now))
             ->all();
 
         return new Page($rows, $total, $request);
@@ -62,7 +64,9 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         $direction = $query->newestFirst ? 'desc' : 'asc';
 
         // The ids are read first and the rows in chunks, so the export stays consistent while applications arrive; only the ids (at most `$limit`) are held, the rows live one chunk at a time.
-        $ids = $this->filtered($query)->orderBy('a.applied_at', $direction)->orderBy('a.id', $direction)->limit($limit)->pluck('a.id')->map(static fn (mixed $id): int => (int) $id)->all();
+        $ids = $this->ordered($this->filtered($query), $query, $direction)->limit($limit)->pluck('a.id')->map(static fn (mixed $id): int => (int) $id)->all();
+
+        $now = $this->clock->now();
 
         foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
             $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))
@@ -75,7 +79,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
                 if ($row instanceof stdClass) {
                     $snapshot = $this->snapshot($row->profile_snapshot);
 
-                    yield new ApplicantExportRow($this->toRow($row), $snapshot['email'] ?? null, $snapshot['phone'] ?? null, $this->answers->forApplication($id, (int) $row->job_id));
+                    yield new ApplicantExportRow($this->toRow($row, $query->staleAfterDays, $now), $snapshot['email'] ?? null, $snapshot['phone'] ?? null, $this->answers->forApplication($id, (int) $row->job_id));
                 }
             }
         }
@@ -90,11 +94,31 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->when($query->stageType !== null, fn (Builder $b) => $b->where('a.stage_type', $query->stageType?->value))
             ->when($query->meetsMustHave !== null, fn (Builder $b) => $b->where('a.meets_must_have', $query->meetsMustHave === true ? 1 : 0));
 
+        if ($query->staleOnly) {
+            // Whole Jakarta days: the day the stage was entered, in Jakarta time, is more than the limit before today.
+            $zone = new DateTimeZone(StageClock::ZONE);
+            $cutoff = $this->clock->now()->setTimezone($zone)->modify("-{$query->staleAfterDays} days")->format('Y-m-d');
+            $filtered->whereIn('a.stage_type', [StageType::Applied->value, StageType::Screening->value])
+                ->whereRaw("(a.stage_entered_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date < ?::date", [StageClock::ZONE, $cutoff]);
+        }
+
         if ($query->search !== null && $query->search !== '') {
             TextSearch::contains($filtered, new Expression("a.profile_snapshot->>'name'"), $query->search);
         }
 
         return $filtered;
+    }
+
+    /** By the applied time, or by the time in stage: more days in the stage is an earlier `stage_entered_at`, so the direction is reversed. */
+    private function ordered(Builder $builder, RecruiterApplicationQuery $query, string $direction): Builder
+    {
+        if ($query->sortKey === RecruiterApplicationQuery::SORT_DAYS_IN_STAGE) {
+            $builder->orderByRaw("(a.stage_entered_at AT TIME ZONE 'UTC' AT TIME ZONE '".StageClock::ZONE."')::date ".($direction === 'desc' ? 'asc' : 'desc'));
+        } else {
+            $builder->orderBy('a.applied_at', $direction);
+        }
+
+        return $builder->orderBy('a.id', $direction);
     }
 
     /** The ratings are summed per listed application in a lateral join, so only the ratings of the rows on the page are read. */
@@ -140,7 +164,50 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->answers->forApplication($id, (int) $row->job_id),
             $this->history($id),
             $this->time((string) $row->applied_at),
+            $this->time((string) $row->stage_entered_at),
         );
+    }
+
+    public function otherApplications(int $applicationId): array
+    {
+        $own = $this->connection->table('recruitment_applications')->where('id', $applicationId)->first(['user_id', 'company_id']);
+
+        if ($own === null) {
+            return [];
+        }
+
+        return $this->connection->table('recruitment_applications as a')
+            ->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')
+            ->where('a.user_id', $own->user_id)->where('a.company_id', $own->company_id)->where('a.id', '!=', $applicationId)
+            ->orderByDesc('a.applied_at')->orderByDesc('a.id')
+            ->get(['a.id', 'a.job_id', 'a.stage_type', 's.name as stage_name', 'a.applied_at'])
+            ->map(fn (stdClass $row): OtherApplicationRow => new OtherApplicationRow((int) $row->id, (int) $row->job_id, StageType::from($row->stage_type), (string) $row->stage_name, $this->time((string) $row->applied_at)))
+            ->all();
+    }
+
+    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds): array
+    {
+        if ($applicationIds === [] || $visibleJobIds === []) {
+            return [];
+        }
+
+        $counts = [];
+        $query = $this->connection->table('recruitment_applications as a')
+            ->join('recruitment_applications as o', function ($join): void {
+                $join->on('o.user_id', '=', 'a.user_id')->on('o.company_id', '=', 'a.company_id')->on('o.id', '!=', 'a.id');
+            })
+            ->whereIn('a.id', $applicationIds)->whereNotNull('a.profile_snapshot')
+            ->whereNotIn('o.stage_type', [StageType::Rejected->value, StageType::Withdrawn->value]);
+
+        if ($visibleJobIds !== null) {
+            $query->whereIn('o.job_id', $visibleJobIds);
+        }
+
+        foreach ($query->groupBy('a.id')->selectRaw('a.id, COUNT(*) as total')->get() as $row) {
+            $counts[(int) $row->id] = (int) $row->total;
+        }
+
+        return $counts;
     }
 
     /** @return list<RecruiterHistoryEntry> */
@@ -165,8 +232,12 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->all();
     }
 
-    private function toRow(stdClass $row): RecruiterApplicationRow
+    private function toRow(stdClass $row, int $staleAfterDays, DateTimeImmutable $now): RecruiterApplicationRow
     {
+        $type = StageType::from($row->stage_type);
+        $entered = $this->time((string) $row->stage_entered_at);
+        $days = StageClock::days($entered, $now);
+
         $snapshot = $this->snapshot($row->profile_snapshot);
         $experience = $snapshot['experiences'][0] ?? null;
         $salary = $snapshot['expected_salary'] ?? null;
@@ -187,6 +258,10 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->time((string) $row->applied_at),
             $row->rating_average === null ? null : round((float) $row->rating_average, 1),
             (int) $row->rating_count,
+            null,
+            $entered,
+            $days,
+            StageClock::isStale($type, $days, $staleAfterDays),
         );
     }
 

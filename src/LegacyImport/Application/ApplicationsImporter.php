@@ -426,6 +426,7 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             'meets_must_have' => null,
             'withdrawn_note' => null,
             'applied_at' => $appliedAt,
+            'stage_entered_at' => $stage['type'] === StageType::Applied ? $appliedAt : $now,
             'created_at' => $appliedAt,
             'updated_at' => $row->updated_at === null ? $appliedAt : $this->time($row->updated_at, $context),
         ]);
