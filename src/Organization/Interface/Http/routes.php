@@ -1,14 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Dashboard\Interface\Http\Controllers\AnalyticsController;
+use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Organization\Interface\Http\Controllers\GroupActivityController;
 use Src\Organization\Interface\Http\Controllers\GroupRoleController;
 use Src\Organization\Interface\Http\Controllers\GroupSettingsController;
+use Src\Organization\Interface\Http\Controllers\GroupTenantController;
 use Src\Organization\Interface\Http\Controllers\OrganizationController;
 use Src\Organization\Interface\Http\Controllers\PositionController;
 use Src\Organization\Interface\Http\Controllers\StructureCatalogController;
 use Src\Organization\Interface\Http\Controllers\SupportGrantController;
 use Src\Organization\Interface\Http\Controllers\UnitController;
+use Src\Organization\Interface\Http\Middleware\ReadAsGroup;
+use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 
 // The group of the signed-in company member. Every use case checks that the caller holds a group role in a group that is not suspended, and the permission the
 // action needs (`group.structure.manage` for the legal entities, `group.members.manage` for the group roles).
@@ -51,6 +56,23 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('organization/support-grants', [SupportGrantController::class, 'index']);
     Route::post('organization/support-grants', [SupportGrantController::class, 'store']);
     Route::delete('organization/support-grants/{id}', [SupportGrantController::class, 'destroy'])->whereNumber('id');
+
+    // Reading the recruitment of the group's tenants (`group.recruitment.view`): the tenants, then the recruiter's own read routes with `?tenant_id=<company>`, answered as a read-only
+    // member of that tenant. Only GET routes exist here; reads of applicants are audited. Acting on applications still needs a membership of that tenant.
+    Route::get('organization/tenants', [GroupTenantController::class, 'index']);
+
+    Route::middleware(ReadAsGroup::class)->group(function (): void {
+        Route::get('organization/read/jobs', [CompanyJobController::class, 'index']);
+        Route::get('organization/read/jobs/{id}', [CompanyJobController::class, 'show'])->whereNumber('id');
+        Route::get('organization/read/jobs/{id}/performance', [CompanyJobController::class, 'performance'])->whereNumber('id');
+        Route::get('organization/read/analytics/{report}', [AnalyticsController::class, 'show'])->where('report', '[a-z_]+');
+    });
+
+    Route::middleware(ReadAsGroup::class.':audited')->group(function (): void {
+        Route::get('organization/read/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
+        Route::get('organization/read/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
+        Route::get('organization/read/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
+    });
 
     Route::get('organization/members', [GroupRoleController::class, 'index']);
     Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');

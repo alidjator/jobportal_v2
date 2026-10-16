@@ -7,6 +7,7 @@ use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Organization\Application\OrganizationPermissions;
 use Src\Organization\Domain\CostCentreRepository;
 use Src\Organization\Domain\Events\GroupCreated;
+use Src\Organization\Domain\Events\GroupRecruitmentRead;
 use Src\Organization\Domain\Events\GroupRestored;
 use Src\Organization\Domain\Events\GroupRoleChanged;
 use Src\Organization\Domain\Events\GroupSuspended;
@@ -85,6 +86,7 @@ final class OrganizationServiceProvider extends ContextServiceProvider
         Event::listen(UnitRestructured::class, [RecordOrganizationAuditEntries::class, 'onUnitRestructured']);
         Event::listen(PositionChanged::class, [RecordOrganizationAuditEntries::class, 'onPositionChanged']);
         Event::listen(SupportAccessChanged::class, [RecordOrganizationAuditEntries::class, 'onSupportAccessChanged']);
+        Event::listen(GroupRecruitmentRead::class, [RecordOrganizationAuditEntries::class, 'onGroupRecruitmentRead']);
         Event::listen(SupportRead::class, [RecordOrganizationAuditEntries::class, 'onSupportRead']);
     }
 }

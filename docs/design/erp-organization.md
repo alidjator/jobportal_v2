@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and C coded 2026-10-16)
+# ERP Organization context and internal tenants (designed 2026-10-15; parts A to D coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -258,3 +258,21 @@ platform admin must hold a new permission, **`groups.support`**, to receive it. 
   `support-access-required`. A missing `group_id` is 422. A suspended group can still be read under a grant (nothing is changed and support may be needed most then).
 - **Audit.** Every successful read is `group.support_read` (actor type `admin`, metadata `admin_name` and `request`, the IP address stays with the platform) with the group's `group_id`, so it shows in
   the group activity log (`group.audit.view`) and, for the group, names which platform admin read what. A refused read is not audited as a read.
+
+## Coded: part D, the group read rule in recruitment (2026-10-16)
+
+No migration. The rule is one new read path, not a change inside each recruitment policy: a group member with `group.recruitment.view`, in a group that is not suspended, reads a tenant of
+their group **as a read-only member of that tenant**, so the recruiter use cases answer unchanged and every action that changes something is refused by their own permission checks.
+
+- **The read-only membership.** `RecruitmentReadAccess` (Organization) checks the group role, the group status and that the tenant's legal entity belongs to the member's group (otherwise the
+  tenant does not exist: 404; an external tenant, or one of another group, is the same), then builds a `CompanyMembership` of that tenant with exactly `applications.view`, `jobs.view_all`
+  and `analytics.view`. Plumbing: the `ReadAsGroup` middleware sets it on the request, `ActorResolver` returns the actor with `Actor::readingForGroup()`. A suspended tenant
+  stays unreadable (`company-suspended`), as for its own members.
+- **Routes** (`auth:user`, GET only, `?tenant_id=<company>` required, 422 without it): `organization/tenants` (the internal tenants of the group, `group.recruitment.view`) and under
+  `organization/read/`: `jobs`, `jobs/{id}`, `jobs/{id}/performance`, `analytics/{report}`, and, audited, `jobs/{id}/applications`, `applications/{id}`, `applications/{id}/resume`. They are the
+  recruiter's own controllers, so filters, pagination and resources are the recruiter's. No write route exists under `organization/read`; notes, ratings, interviews, offers and the CSV export are not
+  exposed (not needed to read jobs, applicants and reports, and the export has its own permission).
+- **No trace on the applicant's side.** Reading an application through the group leaves `viewed_at` alone (`Actor::groupRead`), so the applicant is not told a group member looked.
+- **Audit.** Every successful applicant read (list, detail, resume) is `group.recruitment_read`: actor the member, subject the group, `company_id` the tenant read, metadata `request`. It shows in
+  the group activity log and in the tenant's own company activity log (its admins see which group member read what). The resume download keeps its own `application.resume_downloaded` entry as well.
+- **Contact data.** The unverified-company rule of `phase-8-job-discovery.md` section 4 applies as for any member; internal tenants count as verified, so contact data is open in every stage.

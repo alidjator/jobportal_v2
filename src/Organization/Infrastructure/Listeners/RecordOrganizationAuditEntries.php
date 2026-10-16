@@ -5,6 +5,7 @@ namespace Src\Organization\Infrastructure\Listeners;
 use DateTimeImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Src\Organization\Domain\Events\GroupCreated;
+use Src\Organization\Domain\Events\GroupRecruitmentRead;
 use Src\Organization\Domain\Events\GroupRestored;
 use Src\Organization\Domain\Events\GroupRoleChanged;
 use Src\Organization\Domain\Events\GroupSuspended;
@@ -161,6 +162,15 @@ final class RecordOrganizationAuditEntries implements ShouldQueue
             $event->adminId, true, AuditAction::GROUP_SUPPORT_READ, $event->groupId, ['admin_name' => $this->adminName($event->adminId), 'request' => $event->request],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         );
+    }
+
+    /** Reading applicants of a tenant is audited for the group and for the tenant: its own admins see which group member read what in the company activity log. */
+    public function onGroupRecruitmentRead(GroupRecruitmentRead $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::GROUP_RECRUITMENT_READ, self::SUBJECT_TYPE, $event->groupId,
+            ['group_id' => $event->groupId, 'company_id' => $event->companyId, 'request' => $event->request], $event->ipAddress, $event->userAgent, $event->occurredAt(), $event->companyId,
+        ));
     }
 
     private function adminName(int $adminId): ?string

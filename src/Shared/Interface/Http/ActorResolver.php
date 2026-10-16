@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\ActorProvider;
+use Src\Shared\Application\Company\CompanyMembership;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 
 /** Builds the `Actor` of a use case from the account authenticated on the request. A company member's actor also carries their company and role. */
@@ -28,6 +29,12 @@ final readonly class ActorResolver
 
         if ($actor->kind === ActorKind::Admin && is_int($supportGroup)) {
             return $actor->forSupport($supportGroup);
+        }
+
+        $groupRead = $request->attributes->get('group_read_membership');
+
+        if ($actor->kind === ActorKind::CompanyMember && $groupRead instanceof CompanyMembership) {
+            return $actor->readingForGroup($groupRead);
         }
 
         return $actor->kind === ActorKind::CompanyMember && $actor->id !== null

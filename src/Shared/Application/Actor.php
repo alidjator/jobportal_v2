@@ -19,17 +19,27 @@ final readonly class Actor
         public ?int $id,
         public ?CompanyMembership $membership = null,
         public ?int $supportGroupId = null,
+        public bool $groupRead = false,
     ) {}
 
     public function withMembership(?CompanyMembership $membership): self
     {
-        return new self($this->kind, $this->id, $membership, $this->supportGroupId);
+        return new self($this->kind, $this->id, $membership, $this->supportGroupId, $this->groupRead);
     }
 
     /** A platform admin acting under a group's temporary support access: read only, and only while the group's grant is active. */
     public function forSupport(int $groupId): self
     {
-        return new self($this->kind, $this->id, $this->membership, $groupId);
+        return new self($this->kind, $this->id, $this->membership, $groupId, $this->groupRead);
+    }
+
+    /**
+     * A group member reading a tenant of their group under `group.recruitment.view`: the membership is a read-only one for that tenant, and reads must leave no trace
+     * on the applicant's side (an application is not marked as viewed).
+     */
+    public function readingForGroup(CompanyMembership $readOnly): self
+    {
+        return new self($this->kind, $this->id, $readOnly, $this->supportGroupId, true);
     }
 
     public function isCompanyAdmin(): bool
