@@ -21,6 +21,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
+| `approval-already-pending` | 409 | Approval | This subject is already in approval. |
+| `approval-decision-not-allowed` | 403 | Approval | This approval is not waiting for a decision from you. |
+| `approval-flow-missing` | 409 | Approval | Neither the tenant nor its group has an approval flow for this kind of request. |
+| `approval-not-internal-tenant` | 422 | Approval | Approvals belong to the tenants of an ERP group. |
+| `approval-not-pending` | 409 | Approval | This approval has ended. |
+| `approval-reason-required` | 422 | Approval | A reason of 5 to 500 characters is required. |
+| `approval-requester-only-approver` | 422 | Approval |  |
+| `approval-slot-not-open` | 409 | Approval | This approval place is not open. |
+| `approval-slot-not-vacant` | 409 | Approval | This approval place is not vacant. |
+| `approval-unknown-subject-type` | 422 | Approval |  |
 | `assessment-required` | 422 | Recruitment |  |
 | `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
 | `attempt-moved` | 409 | Assessment | This test is open on another device now. Start it again here to take it back. |
@@ -111,6 +121,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
 | `invalid-applications` | 422 | Recruitment |  |
+| `invalid-approver` | 422 | Approval | The replacement must be a member of a tenant of the group, other than the requester. |
 | `invalid-assessment-input` | 422 | Assessment, Recruitment |  |
 | `invalid-assessment-schedule` | 422 | Assessment |  |
 | `invalid-assessment-test` | 422 | Assessment |  |
@@ -123,6 +134,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
 | `invalid-cursor` | 422 | Messaging, Notification, Platform, Recruitment | The cursor is not valid. Start again without a cursor. |
 | `invalid-cv` | 422 | JobSeeker | The language of a CV is id or en. |
+| `invalid-delegate` | 422 | Approval | The delegate must be another member of a tenant of the same group. |
+| `invalid-delegation-range` | 422 | Approval |  |
 | `invalid-document` | 422 | Company | The file must be a PDF or a JPEG, PNG or WebP image. |
 | `invalid-education` | 422 | JobSeeker | The education level does not exist or is not active. |
 | `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |

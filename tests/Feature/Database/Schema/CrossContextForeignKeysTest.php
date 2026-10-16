@@ -63,6 +63,9 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'company_name_change_requests' => ['requested_by_user_id'],
             'organization_group_members' => ['user_id'],
             'organization_support_grants' => ['granted_by_user_id', 'revoked_by_user_id'],
+            'approval_instances' => ['requester_id', 'outcome_by_user_id'],
+            'approval_instance_slots' => ['user_id', 'decided_by_user_id', 'on_behalf_of_user_id'],
+            'approval_delegations' => ['approver_user_id', 'delegate_user_id'],
         ],
         'identity_admins' => [
             'organization_support_grants' => ['admin_id'],
@@ -85,6 +88,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'company_name_change_requests' => ['decided_by_admin_id'],
         ],
         'company_companies' => [
+            'approval_instances' => ['company_id'],
             'recruitment_interview_kits' => ['company_id'],
             'jobinvitation_invitations' => ['company_id'],
             'campaign_campaigns' => ['company_id'],

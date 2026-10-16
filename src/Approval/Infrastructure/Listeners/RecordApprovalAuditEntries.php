@@ -3,6 +3,7 @@
 namespace Src\Approval\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Src\Approval\Domain\Events\ApprovalChanged;
 use Src\Approval\Domain\Events\ApprovalFlowChanged;
 use Src\Approval\Domain\OwnerType;
 use Src\Shared\Application\Audit\AuditAction;
@@ -27,6 +28,17 @@ final class RecordApprovalAuditEntries implements ShouldQueue
     public function backoff(): array
     {
         return [10, 60, 300];
+    }
+
+    /** An approval that is submitted, decided, reassigned or delegated: audited for the tenant it belongs to and so for its group. The actor is the account, or the system for a vacancy. */
+    public function onApprovalChanged(ApprovalChanged $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            $event->actorId === null ? AuditActorType::System : AuditActorType::User, $event->actorId, 'approval.'.$event->change,
+            $event->approvalId === null ? 'company' : 'approval', $event->approvalId ?? $event->companyId,
+            ['approval_id' => $event->approvalId, 'subject_type' => $event->subjectType, 'subject_id' => $event->subjectId, ...$event->detail],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(), $event->companyId,
+        ));
     }
 
     public function onFlowChanged(ApprovalFlowChanged $event): void

@@ -5,6 +5,7 @@ namespace Src\Organization\Application\Group;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Organization\GroupPermission;
 use Src\Shared\Application\Organization\GroupPermissions;
+use Src\Shared\Domain\Exceptions\AccessDenied;
 
 /** Organization's side of `GroupPermissions`: the group role check of `GroupAccess`, answered to other contexts as the group id. */
 final readonly class GroupPermissionCheck implements GroupPermissions
@@ -14,5 +15,19 @@ final readonly class GroupPermissionCheck implements GroupPermissions
     public function groupOf(Actor $actor, ?GroupPermission $permission = null): int
     {
         return (int) $this->access->context($actor, $permission)->group->id;
+    }
+
+    public function heldBy(Actor $actor): array
+    {
+        try {
+            $context = $this->access->context($actor);
+        } catch (AccessDenied) {
+            return [];
+        }
+
+        return [
+            'group_id' => (int) $context->group->id,
+            'permissions' => array_map(static fn (GroupPermission $permission): string => $permission->value, $context->member?->permissions ?? []),
+        ];
     }
 }

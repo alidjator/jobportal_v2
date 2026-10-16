@@ -1,4 +1,4 @@
-# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval part A coded 2026-10-16)
+# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A and B1 coded 2026-10-16)
 
 Item #6 of `phase-8-index.md`. Builds on `erp-organization.md` (groups, legal entities, units, positions, grades, cost centres, internal tenants)
 and extends `phase-1-jobs.md` (job lifecycle). Offer approval of internal tenants (#12, `phase-8-offer-letters.md`) uses the approval workflow
@@ -148,3 +148,31 @@ reminders, **Workforce plans**, **requisitions and the job rule** (`recruitment.
 - **Resolution.** `ApprovalFlows::resolve(companyId, groupId, subjectType)`: the tenant's own flow, else its group's, else null (the submission of part B refuses it with 409 `approval-flow-missing`).
   A running approval is not touched by editing a flow (the snapshot of part B).
 - **Audit.** `approval.flow_saved` and `approval.flow_removed` (steps count in the metadata); a group flow belongs to the group log, a tenant flow to the tenant's log and so to its group's.
+
+## Coded: Approval part B1, running approvals (2026-10-16)
+
+Migration `000149` (`approval_instances`, `approval_instance_steps`, `approval_instance_slots`, `approval_delegations`; the keys are in `CrossContextForeignKeysTest` and `cross-context-foreign-keys.md`). The
+reminders and the notifications are **B2** (next). Interpretations, where the design left room:
+
+- **The port.** `Approvals` (Shared, provided by Approval): `submit(ApprovalSubmission): int` and `cancel(subjectType, subjectId, actor)`. A submission carries the subject type and id, the tenant, the requester, a
+  title, one value for every fact of the subject type and the accounts the relative roles name now (`hiring_manager`). It runs in the caller's transaction and returns the approval id. Refusals: 409
+  `approval-flow-missing`, 409 `approval-already-pending` (one running approval per subject: a partial unique index), 422 `approval-not-internal-tenant`, `approval-unknown-subject-type`,
+  `approval-requester-only-approver`. The outcome comes back as the Shared events `ApprovalGranted`, `ApprovalRejected` (with the reason) and `ApprovalReturned` (with the reason), which the context that owns the subject
+  listens to (a returned subject goes back to a draft; a rejected one is editable and can be submitted again, which is a new approval).
+- **Snapshot.** The steps whose conditions hold of the facts are copied as `approval_instance_steps`, each approver as a slot: `user` (a member, or each account a relative role names; a role that names nobody is one vacant
+  place) or `role` (any holder of the group permission, in the group of the approval). The flow is never read again, so editing it changes nothing for a running approval. A flow with no applicable step approves at once.
+- **Steps and modes.** One step is decided at a time. Mode `any`: one approved slot completes it; `all`: every slot must approve (a vacant place blocks it until replaced). The last step approved approves the approval.
+- **No self-approval.** The requester never decides, even as a delegate or a holder of the permission. Their own places are dropped at submission; a step they alone could approve, or an `all` step that names them, is refused.
+- **Deciding.** `POST company/approvals/{id}/approve`, `/reject` and `/return` (the last two with a `reason` of 5 to 500 characters). No separate permission: the account decides when it holds a place of the step
+  being decided, a role place (group permission in the approval's group), or is the delegate of the account named. 403 `approval-decision-not-allowed`, 409 `approval-not-pending`; an account with nothing to do with
+  the approval (not the requester, no place, not an admin who may replace approvers) gets 404. Decisions lock the approval row, so two decisions never run side by side.
+- **Reading.** `GET company/approvals` (`?as=approver`, the default: the approvals waiting for the account, newest first; `?as=requester`: the ones it asked for) and `GET company/approvals/{id}` with the steps,
+  places, who decided and for whom, the outcome, `can_decide` and `can_replace`. `company/approvals` serves group role holders too (they decide the approvals of their group's tenants; this is an approval action, not an
+  action on applications, so `erp-organization.md` section 4 is unchanged).
+- **Delegation.** `company/approval-delegations` (`GET` mine that have not ended, `POST`, `DELETE`): another member of a tenant of the same group (not oneself) for 1 to 90 days starting today or later
+  (422 `invalid-delegate`, `invalid-delegation-range`). A decision by the delegate records both names; a delegation covers only user places, not role places.
+- **An approver who leaves.** The `CompanyMemberRemoved` event makes their open places in running approvals `vacant` (audited `approval.approver_vacated`). `PUT company/approvals/{id}/approvers/{slotId}`
+  (`user_id`) names a replacement: a company admin of the tenant or a holder of `group.approvals.manage` of its group; the account must be a member of a tenant of the group and not the requester (422
+  `invalid-approver`, 409 `approval-slot-not-vacant`). Telling the requester is part of B2.
+- **Audit.** `approval.submitted`, `.step_approved` (step and who it stood in for), `.granted`, `.rejected`, `.returned`, `.cancelled`, `.approver_vacated`, `.approver_replaced`, `.delegation_created`,
+  `.delegation_removed`, all with the tenant's `company_id` and so in the group log.

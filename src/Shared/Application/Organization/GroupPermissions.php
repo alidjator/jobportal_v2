@@ -14,4 +14,11 @@ interface GroupPermissions
      * @throws AccessDenied `not-a-group-member`, `group-suspended` or `group-permission-required`
      */
     public function groupOf(Actor $actor, ?GroupPermission $permission = null): int;
+
+    /**
+     * The group role of the actor as `group_id` and the permissions it holds; empty when the actor holds no role or the group is suspended.
+     *
+     * @return array{group_id: int, permissions: list<string>}|array{}
+     */
+    public function heldBy(Actor $actor): array;
 }

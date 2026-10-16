@@ -237,6 +237,26 @@ final class AuditAction
 
     public const string APPROVAL_FLOW_REMOVED = 'approval.flow_removed';
 
+    public const string APPROVAL_SUBMITTED = 'approval.submitted';
+
+    public const string APPROVAL_STEP_APPROVED = 'approval.step_approved';
+
+    public const string APPROVAL_GRANTED = 'approval.granted';
+
+    public const string APPROVAL_REJECTED = 'approval.rejected';
+
+    public const string APPROVAL_RETURNED = 'approval.returned';
+
+    public const string APPROVAL_CANCELLED = 'approval.cancelled';
+
+    public const string APPROVAL_APPROVER_VACATED = 'approval.approver_vacated';
+
+    public const string APPROVAL_APPROVER_REPLACED = 'approval.approver_replaced';
+
+    public const string APPROVAL_DELEGATION_CREATED = 'approval.delegation_created';
+
+    public const string APPROVAL_DELEGATION_REMOVED = 'approval.delegation_removed';
+
     public const string GROUP_GRADE_CREATED = 'group.grade_created';
 
     public const string GROUP_GRADE_UPDATED = 'group.grade_updated';
