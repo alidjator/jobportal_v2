@@ -75,7 +75,8 @@ The catalog is code (like the company catalog of `phase-8-company-permissions.md
 
 Extended by `erp-requisitions.md` with `group.workforce.view`, `group.workforce.manage` and `group.approvals.manage`, and by `erp-governance.md`
 with `group.audit.view` (a group activity log; audit entries gain `group_id`, backfilled from `company_id`) and `group.settings.manage` (group
-values of the settings).
+values of the settings), and by `phase-8-provider-institutions.md` section 8 with `group.assessment.manage` (private assessment providers, their
+psychologists and their battery grants).
 
 - Moving, rejecting, offers, notes and every other action on an application keep the company rules: the actor needs a membership of that tenant
   with the permission, and the job assignment stays the data boundary.

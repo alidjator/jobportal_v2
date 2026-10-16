@@ -43,7 +43,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | 21 | `phase-8-interview-results.md` | |
 | 22 | `phase-8-assessment-automation.md` | |
 | 23 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
-| 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17 |
+| 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
 

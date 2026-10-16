@@ -26,7 +26,10 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - 2026-10-15: the schema below (decided by the user).
 - 2026-10-16: **in-house psychologists** (a customer's own psychologist): a provider may be **private to one group**; candidate scope as for partners; the report
   states the signer is in-house (legal review question 19); the add-on and `assessment.psychological_enabled` apply as for partners; the group admin registers
-  and the platform admin approves (decided by the user; [section 8](#8-in-house-psychologists-answered-2026-10-16)). Tables and routes are not designed yet.
+  and the platform admin approves (decided by the user; [section 8](#8-in-house-psychologists-designed-2026-10-16)).
+- 2026-10-16: the private provider needs **no approval of its own**; the group admin **grants batteries per tenant**; **one account, two roles** (the
+  psychologist role by area, private providers and group members only); invitations to group members or outsiders; **two-factor always required**;
+  the in-house note **printed by the system**; schema, routes and rules approved (decided by the user; sections 8.1 to 8.6).
 
 ## 1. Leads and team self-management
 
@@ -106,11 +109,11 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   whether that duty overrides a candidate's account erasure. Until answered the erasure stays as it is. If retention is required, the assessment
   erasure step moves the data to a locked institution archive instead of deleting it (designed then).
 
-## 8. In-house psychologists (answered 2026-10-16)
+## 8. In-house psychologists (designed 2026-10-16)
 
-The design models a psychologist only as staff of a partner institution registered by the platform admin. A customer's **own psychologist** (for example
-the HR psychologist of a group) is not designed and not forbidden. The workaround is to register the customer's psychology unit as a provider and invite
-its psychologists; in the self-hosted edition the customer's platform admin does this itself (`self-hosted.md`). Answered by the user on 2026-10-16:
+Until 2026-10-16 the design modelled a psychologist only as staff of a partner institution registered by the platform admin. A customer's **own
+psychologist** (for example the HR psychologist of a group) is now a psychologist of a **private provider** of the group. In the self-hosted edition the
+customer's platform admin is the customer itself (`self-hosted.md`). Answered by the user on 2026-10-16:
 
 1. ~~Private provider~~ **answered 2026-10-16: yes, a provider may be private to one group** (only that group's tenants use its batteries); partner providers
    stay shared as today.
@@ -122,17 +125,98 @@ its psychologists; in the self-hosted edition the customer's platform admin does
    company setting `assessment.psychological_enabled` both apply, one rule for every provider.
 5. ~~Who registers and approves~~ **answered 2026-10-16: the group admin registers the private provider and invites its psychologists; the platform admin approves
    them** and checks the STR and SILP as for partners (in the self-hosted edition the platform admin is the customer itself). All questions of this section are
-   answered; the design (tables, routes, group permission for registering) is written in a later session.
+   answered; the design is below (8.1 to 8.6, designed 2026-10-16).
+
+Further decisions of 2026-10-16 (the user):
+
+6. **The private provider needs no approval of its own**: it is active once the group admin registers it; each psychologist still needs the platform
+   admin's approval of the STR and SILP with the document (section 2) before signing.
+7. **The group admin grants the batteries per tenant** of the group, through `assessment_company_batteries`, as the platform admin does for partners.
+8. **One account, two roles**: an in-house psychologist who is a company member keeps one account; the psychologist role is chosen by the **area**
+   (8.4). Only for private providers and only for members of a tenant of the provider's group; partner psychologists keep their own `psychologist`
+   accounts.
+9. **Invitations go to group members or to outsiders**: a member of a tenant of the group gets the role on the existing account, anyone else gets a new
+   `psychologist` account (for example a contract psychologist).
+10. **Two-factor is always required** for the psychologist role, whatever `group.require_two_factor` says.
+11. **The in-house note is printed by the system**, not through a template placeholder.
+12. The schema, routes and rules of 8.1 to 8.6 approved as written.
+
+### 8.1 Schema (one migration)
+
+- `assessment_providers.group_id` (nullable, FK `organization_groups` RESTRICT, index): `null` is a partner shared by every tenant the platform admin
+  grants, a value makes the provider **private** to that group. `created_by_user_id` (nullable, FK `identity_users`): the group member who registered
+  it. `code` stays unique across all providers (it starts the report number). The group of a provider is fixed after creation; turning a private
+  provider into a partner, or back, is not offered.
+- `assessment_psychologist_invitations.invited_by_user_id` (nullable, FK `identity_users`): the CHECK of section 1 becomes **exactly one** of
+  `invited_by_admin_id`, `invited_by_psychologist_id`, `invited_by_user_id`. An invitation by a group member carries no licence (as one by a lead).
+- `assessment_company_batteries.granted_by_admin_id` becomes nullable and `granted_by_user_id` (nullable, FK `identity_users`) is added, CHECK exactly
+  one.
+- `assessment_reports` and `assessment_report_revisions` gain `signer_in_house` (boolean, default `false`) and `signer_group_name` (≤200, nullable): set at signing, auto issue and
+  revision when the signer's provider is private, so a later change never alters an issued report.
+- `identity_users.type` is unchanged. `assessment_psychologists.user_id` (already unique) may point to a `company_member` account only when the provider
+  is private and the member's tenant is in the provider's group (application rule, checked at acceptance and when a tenant leaves a group).
+
+### 8.2 Group permission
+
+- New group permission **`group.assessment.manage`** (the catalog of `erp-organization.md` section 4): register and edit the group's private providers,
+  invite psychologists, set leads, suspend and restore them, and grant or revoke batteries for the tenants of the group. Never one's own role: a group
+  member who is also a psychologist of the provider cannot change their own psychologist row (409 `cannot-change-own-psychologist`).
+- It works only while the group's entitlement holds the add-on "Psychological tests" (`self-hosted.md` section 8); otherwise 403 `module-not-licensed`.
+  Audited in the group log (`group.audit.view`).
+
+### 8.3 Routes
+
+Group member with `group.assessment.manage` (`auth:user`, under `organization/`):
+
+| Route | Use |
+|---|---|
+| `GET`, `POST assessment-providers`; `GET`, `PUT assessment-providers/{id}` | the private providers of the group: name, legal name, code and the identity of section 3; `review_target_days` |
+| `GET`, `POST assessment-providers/{id}/invitations`; `DELETE .../invitations/{invitationId}` | invitations (email, name, role) |
+| `GET assessment-providers/{id}/psychologists`; `PUT .../{psychologistId}/role`; `POST .../{psychologistId}/suspend`, `/restore` | the team, as the leads' `/provider/team` |
+| `GET assessment-batteries` | published batteries of the group's private providers |
+| `GET`, `PUT`, `DELETE companies/{companyId}/batteries[/{testId}]` | grants per tenant; a tenant outside the group: 422 `company-not-in-group`; a battery of another provider: 422 `invalid-assessment-test` |
+
+Platform admin: the provider list gains `filter[scope]=partner|private` and shows the group; `auto_issue_allowed`, licence approval (section 2),
+suspension and two-factor reset stay with the platform admin for every provider. The platform admin does not grant a private provider's batteries.
+
+### 8.4 The psychologist role on a member account
+
+- **Actor by area:** on `/provider/*` a `company_member` token whose account has an **active** psychologist row resolves as `Actor::psychologist`;
+  elsewhere the same token stays the member. One sign-in and one token: the member sign-in, its token lifetime (12 hours for internal tenants,
+  `erp-sso.md` section 4) and its sessions.
+- **Two-factor:** the provider area refuses an account without enrolled TOTP (403 `two-factor-required`), even when `group.require_two_factor` is off.
+- **Acceptance** (`POST invitations/{token}/accept`):
+  - the email belongs to a member of a tenant of the provider's group: the person must be signed in as that account, and the psychologist row is added
+    to it;
+  - the email belongs to another account (a job seeker, a partner psychologist, a member outside the group): 409 `email-in-use`;
+  - the email is unknown: a new `psychologist` account is made, as for partners today.
+- **End of the role:** removing the member deactivates the account (`phase-8-company-permissions.md`, Remove), which ends the role too; when the tenant
+  leaves the group, or the group is suspended, the psychologist row is suspended and its claims are released (`phase-8-provider-tools.md` section 3).
+  A suspended group also makes its private providers' batteries unusable (`invalid-assessment-test`).
+- **Account erasure:** the refusal that holds for psychologist accounts today holds for a member account with a psychologist row.
+
+### 8.5 Catalogue and invitations
+
+- A company sees a private provider's battery only when it is granted to that tenant and the tenant is still in the provider's group;
+  `InvitationChecks` adds the same rule. `assessment.psychological_enabled` applies as for partners.
+- Candidate scope is unchanged: the psychologist sees only the candidates who took the provider's batteries.
+
+### 8.6 The in-house note
+
+- When `signer_in_house` is true the system prints a fixed line, "Ditandatangani oleh psikolog internal {group name}", on the PDF, the company result
+  and the public verification page, whatever the report template holds. The group name is copied at signing with the flag (`signer_group_name`,
+  ≤200, on the report and the revision rows).
+- Legal review question 19 decides whether the note stays enough; until then the rule stands.
 
 ## Changes in short
 
 | Piece | Change |
 |---|---|
-| Migration | `assessment_psychologists.role`, `signature_path`; invitations `invited_by_admin_id` nullable, `invited_by_psychologist_id`; `assessment_licence_submissions`; `assessment_providers.address`, `practice_licence_number`, `phone`, `email`, `logo_path`, `review_target_days`; `assessment_reports` and `assessment_report_revisions` `signer_signature_path`, `revision_reason`; `assessment_report_messages` |
-| API | `/provider/team` (list, invitations, suspend, restore, role); `/provider/me/licences`; `/provider/institution` and logo; `/provider/me/signature`; revise for every signed report; `review_due_on`, `overdue`; report messages (company and provider); admin licence submissions; `role` in the admin psychologist update |
+| Migration | `assessment_psychologists.role`, `signature_path`; invitations `invited_by_admin_id` nullable, `invited_by_psychologist_id`; `assessment_licence_submissions`; `assessment_providers.address`, `practice_licence_number`, `phone`, `email`, `logo_path`, `review_target_days`; `assessment_reports` and `assessment_report_revisions` `signer_signature_path`, `revision_reason`; `assessment_report_messages`; in-house (section 8): `assessment_providers.group_id`, `created_by_user_id`; invitations `invited_by_user_id`; `assessment_company_batteries.granted_by_admin_id` nullable, `granted_by_user_id`; reports and revisions `signer_in_house`, `signer_group_name` |
+| API | `/provider/team` (list, invitations, suspend, restore, role); `/provider/me/licences`; `/provider/institution` and logo; `/provider/me/signature`; revise for every signed report; `review_due_on`, `overdue`; report messages (company and provider); admin licence submissions; `role` in the admin psychologist update; `organization/assessment-providers`, `organization/assessment-batteries`, `organization/companies/{id}/batteries` (group permission `group.assessment.manage`); `filter[scope]` on the admin provider list |
 | Templates | `{{provider_letterhead}}`, `{{provider_address}}`, `{{provider_licence}}`, `{{signature_image}}` |
 | Notifications | licence decided (in-app); `provider.report_question` (in-app, email `assessment.report_question`); `assessment.report_answered` (in-app) |
 | Audit | `assessment.licence_approved`, `_rejected`; team actions by leads |
-| Errors | 409 `last-lead`, `cannot-suspend-self`, `licence-pending`, `report-questions-closed`; 422 `reason-required` |
-| Legal | question 17 (raw data retention) |
+| Errors | 409 `last-lead`, `cannot-suspend-self`, `licence-pending`, `report-questions-closed`; 422 `reason-required`; in-house: 403 `two-factor-required`, `module-not-licensed`; 409 `email-in-use`, `cannot-change-own-psychologist`; 422 `company-not-in-group` |
+| Legal | question 17 (raw data retention), question 19 (in-house signer) |
 | Front end | provider app: team page, licence upload, institution profile and logo, signature upload, revise with reason, due dates, report questions; admin: licence queue (D19), lead role; company: "Perkiraan selesai" and the question thread on the result; candidate: institution contact on the explanation |
