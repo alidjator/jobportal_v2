@@ -268,7 +268,7 @@ Notes for the ONESIS ERP (`erp-direction.md`); nothing changes now.
    - How long are answers and reports kept?
    - Should deletion follow the application anonymisation that already exists?
 8. ~~Decided.~~ such as Kraepelin (speed columns) and drawing tests: include them now, or start with question-based formats only?
-9. **Limits:** tests per company, sections and questions per test, and minimum and maximum durations, as admin settings like the screening limits.
+9. ~~Limits~~ **decided 2026-10-11 (section "Limits"):** tests per company, sections and questions per test, and minimum and maximum durations, as admin settings like the screening limits.
 10. ~~Decided.~~
     - The candidate gets the invitation, a reminder before the due time and an expiry notice.
     - The team gets submissions and signed reports, in-app only as for interviews.

@@ -23,7 +23,6 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - Performance audit steps 4 (measure) and 6 (query-count tests); `jobportal_v2_perf` (at `000112`, empty) is dropped when done.
 - Architecture review findings deferred: 7, 8, 20 (`decisions.md` section 6), 9, 21 (refactor after the import).
 - Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 designed in `phase-8-platform-admin.md` (G20 before go-live), G14 in `phase-8-job-discovery.md`; the rest await scope or are designed elsewhere. R8 reopened by the tele-interview benchmark.
-- `phase-7-interview-kits.md` "Part 2 coded": the interpretations other than erasure wait for the user's review.
 - Immediate (not nightly) clearing of talent pool notes needs a JobSeeker trigger.
 
 ## Items waiting for the user
@@ -34,7 +33,7 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins with limited roles through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review brief `docs/legal-review.md` (sensitive candidate-search filters stay off until answered).
+- Legal review brief `docs/legal-review.md`: brought up to date 2026-10-16, **not sent yet**; section 0 orders the questions (A before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`

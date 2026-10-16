@@ -21,7 +21,7 @@ Until now an interview had no questions: the team scores an application only wit
 - 2026-10-12: results show in the application detail and on the applicants list card, apart from the star ratings; the job seeker never sees kits or scorecards (Answers, 13).
 - 2026-10-12: **part 1 coded** (kits, job defaults, panel, copy; migration 000123, setting `recruitment.max_interview_kits`); five interpretations are recorded in section "Part 1 coded" and wait for the user's review.
 - 2026-10-12: part 1 interpretations 1, 2 and 5 **confirmed by the user** as coded (a new time carries the kit, edited questions and panel over; the scheduler, the main interviewer and a company admin edit the copy; bulk move uses the job default kit and no panel). Interpretation 3 **confirmed too**: `recruitment_job_stage_kits.job_id` is `CASCADE` (the Schema line above that says RESTRICT is overridden). 4 is only a note for part 2.
-- 2026-10-12: **part 2 coded** (scorecards, visibility lock, edits with revisions, results, reminder, erasure; migration 000124). Erasure decided by the user: an interview with a scorecard survives the applicant's erasure (see "Part 2 coded"). The other interpretations there wait for the user's review.
+- 2026-10-12: **part 2 coded** (scorecards, visibility lock, edits with revisions, results, reminder, erasure; migration 000124). Erasure decided by the user: an interview with a scorecard survives the applicant's erasure (see "Part 2 coded"). The other interpretations (1 to 4) and the panel change were confirmed by the user on 2026-10-12.
 
 ## Answers
 

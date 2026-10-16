@@ -1,11 +1,25 @@
-# Legal review brief: personal data and selection criteria
+# Legal review brief: personal data, selection criteria and psychological tests
 
-For the legal adviser of the job portal (Indonesia). It lists what the system does today with sensitive personal data and what we need answered before release.
-It is a factual inventory, not legal advice, and the legal references in the questions are unverified suggestions of where to look. Written 2026-10-09.
+For the legal adviser of **ONESIS ERP** (One Solutions Integrated System) and its job seeker site **ONESIS Career**, operated in Indonesia. The ERP's
+first module is talent acquisition (jobs, applications, interviews, psychological tests, offers); the job seeker site is public. The brief lists what the
+system does, or is designed to do, with sensitive personal data and what we need answered. It is a factual inventory, not legal advice, and the legal
+references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-16 (not sent yet).
+
+## 0. Priority of the answers
+
+The questions keep their numbers (the design documents refer to them). "Built" means the behaviour exists in the code, switched off or at a safe default
+where the question is open; "designed" means it is planned and waits for the answer before it is built.
+
+| Priority | Questions | Why | State |
+|---|---|---|---|
+| **A. Before go-live** | 1 to 7, 10 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then) | built |
+| **B. Blocks building a feature** | 12, 13, 15 | the online offer acceptance, restricted candidates and the applicant data retention per company are not built until answered | designed |
+| **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
+| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16 designed; 18 a plan |
 
 ## 1. What the system does
 
-| Area | Behaviour today |
+| Area | Behaviour (today, or designed where marked) |
 |---|---|
 | Data collected | A job seeker may give birth date, gender, marital status, religion and nationality (all optional), and a photo. The profile owner and the companies the person applied to can see them. |
 | Candidate search (R9) | A company member searches job seekers who opted in. A search can **filter** by religion, nationality, age range and gender. The values are never shown to the company in the search; they only narrow the results. **Switched off by default** (setting `job_seeker.candidate_sensitive_filters_enabled`, false until this review clears it): a search that uses one is refused with 422 `filter-not-available`. |
@@ -18,6 +32,13 @@ It is a factual inventory, not legal advice, and the legal references in the que
 | Company reviews | A job seeker who applied to a company may review it; an admin approves it first, and the author's **name is always shown** with a published review. A company may reply and may report a review. When the account is erased, the text of a published review is deleted and the ratings stay. |
 | Talent pool | A company member may save a candidate who can be found (opted in) into the company's talent pool with a category and a **free-text note of up to 500 characters**, seen by every member of that company only, never by the candidate. The entry and its note are hidden while the candidate cannot be found; the note is deleted by a nightly job after that (the entry stays), and the entry and note are deleted when the account is anonymised or a member removes the entry. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
+| Company team activity (Q10) | A company admin sees each member's activity, including the IP address and browser of their sign-ins, and one activity log of the whole company that can be exported as CSV; kept 12 months. |
+| Psychological tests (Q11, Q17 to Q19) | Licensed psychologists (STR and SILP) of a partner institution, or the customer's own in-house psychologists (designed), build test batteries and sign the reports; a company uses a battery only when the platform switches psychological tests on for it. The candidate consents before the test and gets a plain-language explanation. A provider may be allowed to issue reports automatically from its norms (off by default until question 11 is answered). |
+| Offers (Q12) | Designed: the job seeker accepts an offer letter online with a checkbox and their password; the time, IP address, browser and a hash of the letter are kept as evidence. |
+| Restricted candidates (Q13) | Designed: a company may mark a job seeker as restricted for a period with a reason; their applications are flagged and they are hidden from the company's search, without being told. |
+| Data download (Q14) | A job seeker can download their data; what companies and psychologists wrote about them is left out. |
+| Applicant data retention (Q15) | Designed: a final application is anonymised on the company's side after a period the company chooses (6 to 60 months, default 24). |
+| Reported chats (Q16) | Designed: a reported conversation keeps the reported message and up to 10 earlier ones for platform admins, deleted 180 days after the decision. |
 
 ## 2. Questions
 
@@ -79,3 +100,12 @@ It is a factual inventory, not legal advice, and the legal references in the que
 - Change the account age limits (admin settings `job_seeker.min_age`, `job_seeker.max_age`), or remove the upper limit (set it to 100).
 - Remove any of the six optional CV details (`CvInclusion`), or add a warning.
 - Change what the terms and the privacy policy say (versioned legal documents managed by an admin).
+- Q10: shorten the 12 months of the activity log, or hide IP address and browser from company admins.
+- Q11: keep automatic reports off for good (a per-provider switch, `auto_issue_allowed`), allow them per test kind, or drop the recommendation.
+- Q12: keep the checkbox and password, or add a certified e-signature (PSrE) or e-meterai step; drop the evidence at anonymisation.
+- Q13: tell the person, show the restriction in the data download, refuse reasons from a fixed list, or drop the feature.
+- Q14: add items (or a summary of them) to the data download.
+- Q15 and Q16: change the default and the limits of the periods (settings).
+- Q17: keep the raw data in a locked institution archive instead of deleting it on erasure.
+- Q18: keep the rule that reports never move to the employee record, or add a new consent step for the employee.
+- Q19: add safeguards (a second signer, a notice to the candidate) or allow partner psychologists only.
