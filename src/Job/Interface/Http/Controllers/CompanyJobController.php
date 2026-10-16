@@ -56,7 +56,7 @@ final class CompanyJobController extends ApiController
     public function store(SaveJobRequest $request, RequestContext $context, ActorResolver $actors, CreateJob $create, GetJob $get): JsonResponse
     {
         $actor = $actors->fromRequest($request);
-        $id = $create->execute($actor, $request->title(), $request->fields());
+        $id = $create->execute($actor, $request->title(), $request->fields(), $request->requisitionId());
 
         return (new JobDetailResource($get->execute($actor, $id, $context->language)))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
     }

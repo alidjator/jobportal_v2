@@ -67,6 +67,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'approval_instance_slots' => ['user_id', 'decided_by_user_id', 'on_behalf_of_user_id'],
             'approval_delegations' => ['approver_user_id', 'delegate_user_id'],
             'workforce_plans' => ['created_by_id'],
+            'workforce_requisitions' => ['requester_id', 'hiring_manager_user_id'],
+            'workforce_requisition_amendments' => ['requested_by_id'],
         ],
         'identity_admins' => [
             'organization_support_grants' => ['admin_id'],
@@ -90,6 +92,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
         ],
         'company_companies' => [
             'approval_instances' => ['company_id'],
+            'workforce_requisitions' => ['company_id'],
             'recruitment_interview_kits' => ['company_id'],
             'jobinvitation_invitations' => ['company_id'],
             'campaign_campaigns' => ['company_id'],

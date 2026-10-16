@@ -9,7 +9,9 @@ use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Domain\Exceptions\AccessDenied;
+use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
@@ -22,6 +24,7 @@ final readonly class CloneJob
         private JobAccess $access,
         private JobRepository $jobs,
         private JobAssignmentRepository $assignments,
+        private RequisitionGate $requisitions,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -37,6 +40,11 @@ final readonly class CloneJob
         $member = $this->access->member($actor);
         $this->access->require($member, CompanyPermission::JobsCreate);
         $source = $this->access->job($member, $jobId);
+
+        // A copy has no requisition of its own, so a tenant that opens jobs only for requisitions cannot clone.
+        if ($this->requisitions->isRequired($member->companyId)) {
+            throw new BusinessRuleViolation('This tenant opens its jobs from an approved requisition, so a job cannot be cloned.', 'requisition-required');
+        }
 
         return $this->transactions->run(function () use ($member, $source): int {
             $copy = $this->jobs->create(Job::draft($member->companyId, $source->slug, $source->content->with(['deadline' => null]), $member->userId));

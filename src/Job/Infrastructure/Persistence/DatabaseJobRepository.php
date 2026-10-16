@@ -136,6 +136,7 @@ final readonly class DatabaseJobRepository implements JobRepository
             'reviewed_at' => $job->reviewedAt?->format(self::TIME_FORMAT),
             'reviewed_by_admin_id' => $job->reviewedByAdminId,
             'report_hold_at' => $job->reportHoldAt?->format(self::TIME_FORMAT),
+            'requisition_id' => $job->requisitionId,
         ];
     }
 
@@ -221,6 +222,7 @@ final readonly class DatabaseJobRepository implements JobRepository
             $row->created_at === null ? null : $this->time((string) $row->created_at),
             $row->updated_at === null ? null : $this->time((string) $row->updated_at),
             $row->report_hold_at === null ? null : $this->time((string) $row->report_hold_at),
+            $this->nullableInt($row->requisition_id),
         );
     }
 

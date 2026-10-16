@@ -187,7 +187,7 @@ final class SettingsTest extends FeatureTestCase
             'jobs.approval_for_unverified', 'jobs.max_deadline_days', 'jobs.report_hold_threshold', 'jobs.require_approval', 'jobs.suspicious_phrases',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
-            'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.screening_enabled',
+            'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.requisition_required', 'recruitment.screening_enabled',
             'workforce.fiscal_year_start_month',
         ], $keys);
 

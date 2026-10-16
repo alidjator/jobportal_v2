@@ -13,6 +13,7 @@ use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -23,6 +24,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * field. A job waiting for review or taken down cannot be edited. A live job must stay complete (its deadline range is checked only when the deadline
  * changes); when the review policy asks for it (approval required, an unverified company, a suspicious text), a change to a core field sends it back to review. The job row is locked, so two edits of the
  * same job run one after the other. The slug follows the title. Once the job has applications its title, category, role, job type and level are locked.
+ * The vacancies of a job opened for a requisition cannot exceed what the requisition has left (`requisition-vacancies-exceeded`).
  */
 final readonly class UpdateJob
 {
@@ -34,6 +36,7 @@ final readonly class UpdateJob
         private JobRepository $jobs,
         private JobApplications $applications,
         private JobReviewPolicy $review,
+        private RequisitionGate $requisitions,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -60,6 +63,12 @@ final readonly class UpdateJob
 
             $content = $this->changes->apply($job->content, $changes, isNew: false);
             $this->assertPositionNotLocked($jobId, $content, $job->content);
+
+            // The vacancies of a job opened for a requisition stay inside the hires of that requisition.
+            if ($job->requisitionId !== null && $content->vacancies !== null && $content->vacancies !== $job->content->vacancies) {
+                $this->requisitions->claim($member->companyId, $job->requisitionId, $content->vacancies, $jobId);
+            }
+
             $live = $job->status === JobStatus::Active;
 
             if ($live) {

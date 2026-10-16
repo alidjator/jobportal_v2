@@ -8,21 +8,28 @@ use Src\Shared\Application\Approval\ApprovalRejected;
 use Src\Shared\Application\Approval\ApprovalReturned;
 use Src\Shared\Application\Approval\ApprovalSubjectCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Infrastructure\ContextServiceProvider;
+use Src\Workforce\Application\Requisition\RequisitionGateService;
 use Src\Workforce\Application\WorkforceApprovalSubjects;
 use Src\Workforce\Application\WorkforceSettings;
 use Src\Workforce\Domain\Events\PlanChanged;
+use Src\Workforce\Domain\Events\RequisitionChanged;
 use Src\Workforce\Domain\PlanRepository;
+use Src\Workforce\Domain\RequisitionRepository;
 use Src\Workforce\Infrastructure\Listeners\ApplyApprovalOutcome;
 use Src\Workforce\Infrastructure\Listeners\RecordWorkforceAuditEntries;
 use Src\Workforce\Infrastructure\Persistence\DatabasePlanRepository;
+use Src\Workforce\Infrastructure\Persistence\DatabaseRequisitionRepository;
 
-/** The Workforce context: manpower plans and, later, requisitions of the internal tenants (`docs/design/erp-requisitions.md`). */
+/** The Workforce context: manpower plans and requisitions of the internal tenants (`docs/design/erp-requisitions.md`). */
 final class WorkforceServiceProvider extends ContextServiceProvider
 {
     /** @var array<class-string, class-string> */
     public array $bindings = [
         PlanRepository::class => DatabasePlanRepository::class,
+        RequisitionRepository::class => DatabaseRequisitionRepository::class,
+        RequisitionGate::class => RequisitionGateService::class,
     ];
 
     public function register(): void
@@ -41,6 +48,7 @@ final class WorkforceServiceProvider extends ContextServiceProvider
         parent::boot();
 
         Event::listen(PlanChanged::class, [RecordWorkforceAuditEntries::class, 'onPlanChanged']);
+        Event::listen(RequisitionChanged::class, [RecordWorkforceAuditEntries::class, 'onRequisitionChanged']);
         Event::listen(ApprovalGranted::class, [ApplyApprovalOutcome::class, 'onGranted']);
         Event::listen(ApprovalRejected::class, [ApplyApprovalOutcome::class, 'onRejected']);
         Event::listen(ApprovalReturned::class, [ApplyApprovalOutcome::class, 'onReturned']);

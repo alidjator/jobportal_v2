@@ -10,6 +10,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * only while the status allows it. `publishedAt` is set once, when the job first goes live (directly, or by the first approval), and never changes.
  * An admin's decision stores when it was made and by whom (`reviewedAt`, `reviewedByAdminId`) and, for a rejection or a take-down, the reason.
  * `reportHoldAt` is set once when enough job seekers reported the job: while it is set the job is not live for the public, whatever its status.
+ * `requisitionId` names the requisition the job was opened for (ERP tenants; null for any other job).
  */
 final readonly class Job
 {
@@ -27,11 +28,12 @@ final readonly class Job
         public ?DateTimeImmutable $createdAt,
         public ?DateTimeImmutable $updatedAt,
         public ?DateTimeImmutable $reportHoldAt = null,
+        public ?int $requisitionId = null,
     ) {}
 
-    public static function draft(int $companyId, string $slug, JobContent $content, int $createdByUserId): self
+    public static function draft(int $companyId, string $slug, JobContent $content, int $createdByUserId, ?int $requisitionId = null): self
     {
-        return new self(null, $companyId, $slug, JobStatus::Draft, null, $content, $createdByUserId, null, null, null, null, null);
+        return new self(null, $companyId, $slug, JobStatus::Draft, null, $content, $createdByUserId, null, null, null, null, null, null, $requisitionId);
     }
 
     /** @throws StateConflict `job-not-editable` */

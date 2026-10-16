@@ -23,4 +23,12 @@ final readonly class FiscalCalendar
 
         return [$start, $start->modify('+1 year')->modify('-1 day')];
     }
+
+    /** The fiscal year (named by the calendar year it starts in) that holds the day. */
+    public function yearOf(DateTimeImmutable $day, ?int $companyId): int
+    {
+        $month = $this->settings->integer(WorkforceSettings::FISCAL_YEAR_START_MONTH, $companyId);
+
+        return (int) $day->format('Y') - ((int) $day->format('n') < $month ? 1 : 0);
+    }
 }

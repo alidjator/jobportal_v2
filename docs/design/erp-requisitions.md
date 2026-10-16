@@ -1,4 +1,4 @@
-# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A, B1 and B2 and Workforce plans coded 2026-10-16)
+# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A, B1 and B2, Workforce plans, and requisitions with the job rule coded 2026-10-16)
 
 Item #6 of `phase-8-index.md`. Builds on `erp-organization.md` (groups, legal entities, units, positions, grades, cost centres, internal tenants)
 and extends `phase-1-jobs.md` (job lifecycle). Offer approval of internal tenants (#12, `phase-8-offer-letters.md`) uses the approval workflow
@@ -212,4 +212,37 @@ requisitions and the job rule remain (next step). Interpretations, where the des
   saving it makes it a draft. Returned: a draft with the reason. The outcome listener runs at once.
 - **Audit.** `workforce.plan_created`, `_updated`, `_submitted`, `_revised`, `_approved`, `_rejected`, `_returned`, `_superseded`, with the tenant's `company_id` and the `group_id`.
 - **Left for the requisitions step:** the rule that a line's additions never drop below what requisitions already use, and the quota use by requisitions.
+
+## Coded: requisitions and the job rule (2026-10-16)
+
+Migration `000152` (`workforce_requisitions`, `workforce_requisition_amendments`, `job_jobs.requisition_id`; the keys are in `CrossContextForeignKeysTest` and `cross-context-foreign-keys.md`). This completes #6.
+Interpretations, where the design left room:
+
+- **Ports.** Organization provides `StructureDirectory` (grades, active cost centres, the default cost centre of a unit). Workforce provides `RequisitionGate` to Job (`isRequired`, `claim`); Job provides `RequisitionJobs`
+  (open vacancies, job count) and `RequisitionJobCreator` to Workforce.
+- **Content.** Written as in section 3, saved whole (`PUT`). The position's unit is copied when it is written; the fiscal year is the one of the target join date (the group's start month); the cost centre defaults to the
+  unit's and must be an active one of the entity; the requested grade, when named, must be an active grade of the group inside the position's grade range; a **contract** (job type slug `contract`) needs 1 to 120 months and
+  any other type keeps none; a replacement needs the leaver's name and leaving date and any other type keeps none; the target date cannot be in the past; the hiring manager must be a member of the tenant. All of it is
+  checked again at submission (422 `invalid-requisition-field`).
+- **Quota.** A `planned` requisition needs a line for its position in the plan in force of its fiscal year (422 `requisition-no-plan-line`) and its hires must fit what is left (422 `requisition-quota-exceeded`, with
+  `remaining`). Used = the hires of `planned` requisitions that are waiting, approved, in recruitment or filled, plus the extra hires of an amendment waiting for a decision; draft, rejected, cancelled and closed ones use none
+  (a closed requisition returns everything until hires are tracked in `phase-8-hiring.md`). The detail shows `quota`. A plan line cannot drop below what is used (422 `plan-below-requisitions`, checked when the lines are saved and at
+  submission).
+- **Who.** `company/requisitions`: `workforce.requisitions.view` or `.create` reads, `.create` drafts, edits, submits, amends, closes and cancels, `workforce.costs.view` shows the salary range; `organization/requisitions`
+  reads for a holder of `group.workforce.view` or `.manage`, salary included (as for plans, to be confirmed). Another tenant's requisition is 404.
+- **Approval.** Subject types `workforce.requisition` and `workforce.requisition_amendment`, facts `type`, `grade_rank` (0 without a grade), `hires` and `max_budget` (the highest salary, 0 without one), relative role
+  `hiring_manager`. The requester is the member who submits. Approved: `approved`; rejected: `rejected` with the reason (editable; saving makes it a draft); returned: a draft with the reason.
+- **Cancel and close.** Cancel (draft, rejected, waiting or approved, only while no job exists; 409 `requisition-has-jobs`) ends a running approval; close (approved or in recruitment, with a reason) is for the rest. Both
+  withdraw an amendment that waits. `filled` is reserved for the hires of the hiring phase.
+- **Amendments.** `POST .../amend` with the new `hires` and/or `salary_min`/`salary_max` (what is left out stays) and a reason. Raising the hires or the highest salary creates an amendment that goes through approval (one
+  at a time, 409 `amendment-pending`; `planned` ones must fit the quota); the new values apply when it is approved (an amendment approved after the requisition closed is marked rejected). Anything else only lowers and applies
+  at once, audited as `reduced`. The hires never drop below the vacancies of the open jobs (422 `requisition-hires-below-jobs`); no change at all is 422 `requisition-no-change`.
+- **Job rule.** Setting `recruitment.requisition_required` (default on, overridable per company) applies to an internal tenant only. `POST company/jobs` of such a tenant needs `requisition_id` (422 `requisition-required`),
+  and so does a clone (a copy has no requisition); the requisition must be the tenant's (422 `invalid-requisition`), approved or in recruitment (409 `requisition-not-open`), and the vacancies (required, 422 `invalid-job`)
+  plus those of its other open jobs must not exceed its hires (422 `requisition-vacancies-exceeded`, with `remaining`). The first job moves it to `in_recruitment`; the job takes the job role of the position; changing the
+  vacancies of such a job is checked the same way. Jobs that are closed or expired no longer count. `job_jobs.requisition_id` is shown as `requisition_id` in the job; the position, unit and cost centre are read from the
+  requisition, not copied. `POST company/requisitions/{id}/jobs` (optional `title`, `vacancies`; defaults the position's title and the hires still to open) opens a draft job through the same rule and needs `jobs.create`.
+- **Audit.** `workforce.requisition_` `created`, `updated`, `submitted`, `approved`, `rejected`, `returned`, `cancelled`, `closed`, `reduced`, `job_opened`, `amendment_requested`, `amendment_approved`,
+  `amendment_rejected`, `amendment_returned`, with the tenant's `company_id` and the `group_id`.
+- **Left out:** `filled` and hires counting (hiring phase), the requisition-to-hire reports (dashboards after the TA core).
 

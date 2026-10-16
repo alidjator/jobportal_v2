@@ -23,6 +23,7 @@ final readonly class SubmitPlan
     public function __construct(
         private PlanAccess $access,
         private PlanRepository $plans,
+        private PlanFloor $floor,
         private PlanViews $views,
         private PlanChangeRecorder $recorder,
         private Approvals $approvals,
@@ -35,7 +36,7 @@ final readonly class SubmitPlan
      * @throws AccessDenied
      * @throws EntityNotFound
      * @throws StateConflict `plan-not-editable`, `approval-flow-missing` or `approval-already-pending`
-     * @throws BusinessRuleViolation `plan-empty`, `plan-entity-without-tenant`, `approval-not-internal-tenant` or `approval-requester-only-approver`
+     * @throws BusinessRuleViolation `plan-empty`, `plan-below-requisitions`, `plan-entity-without-tenant`, `approval-not-internal-tenant` or `approval-requester-only-approver`
      */
     public function execute(Actor $actor, PlanSide $side, int $planId, ?string $ipAddress, ?string $userAgent): PlanView
     {
@@ -55,6 +56,8 @@ final readonly class SubmitPlan
             if ($plan->lines === []) {
                 throw new BusinessRuleViolation('A plan without lines cannot be submitted.', 'plan-empty');
             }
+
+            $this->floor->assertHolds($plan->legalEntityId, $plan->fiscalYear, $plan->lines);
 
             $tenantId = $this->tenants->tenantsOf([$plan->legalEntityId])[$plan->legalEntityId]
                 ?? throw new BusinessRuleViolation('The legal entity has no tenant that could take the plan through approval.', 'plan-entity-without-tenant');

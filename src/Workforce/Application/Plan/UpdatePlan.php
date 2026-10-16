@@ -19,6 +19,7 @@ final readonly class UpdatePlan
         private PlanAccess $access,
         private PlanRepository $plans,
         private PlanLineRules $rules,
+        private PlanFloor $floor,
         private PlanViews $views,
         private PlanChangeRecorder $recorder,
         private TransactionManager $transactions,
@@ -30,7 +31,7 @@ final readonly class UpdatePlan
      * @throws AccessDenied
      * @throws EntityNotFound
      * @throws StateConflict `plan-not-editable`
-     * @throws BusinessRuleViolation `invalid-plan-line`
+     * @throws BusinessRuleViolation `invalid-plan-line` or `plan-below-requisitions`
      */
     public function execute(Actor $actor, PlanSide $side, int $planId, array $lines, ?string $ipAddress, ?string $userAgent): PlanView
     {
@@ -47,7 +48,9 @@ final readonly class UpdatePlan
                 throw new StateConflict('Only a draft or a rejected plan can be changed.', 'plan-not-editable');
             }
 
-            $this->plans->replaceLines($planId, $this->rules->build($plan->legalEntityId, $lines, $scope->canSeeCosts, $plan->lines));
+            $built = $this->rules->build($plan->legalEntityId, $lines, $scope->canSeeCosts, $plan->lines);
+            $this->floor->assertHolds($plan->legalEntityId, $plan->fiscalYear, $built);
+            $this->plans->replaceLines($planId, $built);
 
             if ($plan->status === PlanStatus::Rejected) {
                 $this->plans->save($plan->with(['status' => PlanStatus::Draft]));

@@ -19,6 +19,7 @@ use Src\Job\Application\Browse\LiveJobProfileProvider;
 use Src\Job\Application\Browse\SearchThrottle;
 use Src\Job\Application\Export\SavedJobsDataExporter;
 use Src\Job\Application\Insight\SalaryInsightReader;
+use Src\Job\Application\JobFromRequisition;
 use Src\Job\Application\JobPermissions;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobSettings;
@@ -69,6 +70,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobRepository;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSearchReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
+use Src\Job\Infrastructure\Persistence\DatabaseRequisitionJobs;
 use Src\Job\Infrastructure\Persistence\DatabaseSavedJobRepository;
 use Src\Job\Interface\Console\ExpireDueJobsCommand;
 use Src\Job\Interface\Console\FoldJobViewsCommand;
@@ -80,6 +82,8 @@ use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
 use Src\Shared\Application\Job\LiveJobProfiles;
 use Src\Shared\Application\Job\PublishedJobs;
+use Src\Shared\Application\Job\RequisitionJobCreator;
+use Src\Shared\Application\Job\RequisitionJobs;
 use Src\Shared\Application\Matching\JobSignalSource;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
@@ -118,6 +122,8 @@ final class JobServiceProvider extends ContextServiceProvider
         JobSearchReader::class => DatabaseJobSearchReader::class,
         SearchThrottle::class => RateLimiterSearchThrottle::class,
         JobDirectory::class => RepositoryJobDirectory::class,
+        RequisitionJobs::class => DatabaseRequisitionJobs::class,
+        RequisitionJobCreator::class => JobFromRequisition::class,
         PublishedJobs::class => DatabasePublishedJobs::class,
         JobMatcher::class => AlertJobMatcher::class,
         LiveJobProfiles::class => LiveJobProfileProvider::class,

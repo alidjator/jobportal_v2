@@ -12,7 +12,7 @@ use Src\Job\Domain\WorkMode;
 /**
  * Create (`POST`, the title is required) or change (`PATCH`, only what is sent changes, a null clears an optional field) a job. This checks only the
  * shape of what arrived; whether the ids exist and the location is one chain is checked by the use case, and completeness when the job is published.
- * Field names are the API's snake case names.
+ * Field names are the API's snake case names. A new job of an ERP tenant may name the `requisition_id` it is opened for (required when the tenant's setting says so).
  */
 final class SaveJobRequest extends FormRequest
 {
@@ -29,6 +29,7 @@ final class SaveJobRequest extends FormRequest
 
         return [
             'title' => [...$sometimes, 'required', 'string', 'min:3', 'max:150'],
+            'requisition_id' => [$this->isMethod('POST') ? 'sometimes' : 'prohibited', 'integer', 'min:1'],
             'description' => ['sometimes', 'nullable', 'string', 'max:'.self::DESCRIPTION_MAX],
             'category_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'role_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
@@ -110,6 +111,11 @@ final class SaveJobRequest extends FormRequest
         }
 
         return $changes;
+    }
+
+    public function requisitionId(): ?int
+    {
+        return $this->has('requisition_id') ? $this->integer('requisition_id') : null;
     }
 
     public function title(): string
