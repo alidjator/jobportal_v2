@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Src\Organization\Interface\Http\Controllers\GroupRoleController;
 use Src\Organization\Interface\Http\Controllers\OrganizationController;
+use Src\Organization\Interface\Http\Controllers\PositionController;
+use Src\Organization\Interface\Http\Controllers\StructureCatalogController;
+use Src\Organization\Interface\Http\Controllers\UnitController;
 
 // The group of the signed-in company member. Every use case checks that the caller holds a group role in a group that is not suspended, and the permission the
 // action needs (`group.structure.manage` for the legal entities, `group.members.manage` for the group roles).
@@ -12,6 +15,26 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('organization/legal-entities/{id}', [OrganizationController::class, 'updateLegalEntity'])->whereNumber('id');
     Route::post('organization/legal-entities/{id}/deactivate', [OrganizationController::class, 'deactivateLegalEntity'])->whereNumber('id');
     Route::post('organization/legal-entities/{id}/reactivate', [OrganizationController::class, 'reactivateLegalEntity'])->whereNumber('id');
+
+    // The structure of the group (`erp-organization.md` sections 5 and 6): any group member reads, `group.structure.manage` changes. Units and positions are effective-dated:
+    // a change is a new version from `valid_from`, and reads take `as_of`.
+    foreach (['grades' => ['Grade', 'grades'], 'unit-types' => ['UnitType', 'unitTypes'], 'cost-centres' => ['CostCentre', 'costCentres']] as $path => [$name, $list]) {
+        Route::get("organization/{$path}", [StructureCatalogController::class, $list]);
+        Route::post("organization/{$path}", [StructureCatalogController::class, 'store'.$name]);
+        Route::patch("organization/{$path}/{id}", [StructureCatalogController::class, 'update'.$name])->whereNumber('id');
+        Route::post("organization/{$path}/{id}/deactivate", [StructureCatalogController::class, 'deactivate'.$name])->whereNumber('id');
+        Route::post("organization/{$path}/{id}/reactivate", [StructureCatalogController::class, 'reactivate'.$name])->whereNumber('id');
+    }
+
+    foreach (['units' => UnitController::class, 'positions' => PositionController::class] as $path => $controller) {
+        Route::get("organization/{$path}", [$controller, 'index']);
+        Route::post("organization/{$path}", [$controller, 'store']);
+        Route::get("organization/{$path}/{id}", [$controller, 'show'])->whereNumber('id');
+        Route::get("organization/{$path}/{id}/versions", [$controller, 'versions'])->whereNumber('id');
+        Route::patch("organization/{$path}/{id}", [$controller, 'update'])->whereNumber('id');
+        Route::post("organization/{$path}/{id}/deactivate", [$controller, 'deactivate'])->whereNumber('id');
+        Route::post("organization/{$path}/{id}/reactivate", [$controller, 'reactivate'])->whereNumber('id');
+    }
 
     Route::get('organization/members', [GroupRoleController::class, 'index']);
     Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');

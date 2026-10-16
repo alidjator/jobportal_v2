@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15; part A coded 2026-10-16)
+# ERP Organization context and internal tenants (designed 2026-10-15; parts A and B coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -171,3 +171,35 @@ Interpretations, where the design left room:
 - **Audit.** `group.created`, `group.suspended`, `group.restored`, `group.legal_entity_created`, `.updated`, `.deactivated`, `.reactivated`, `group.tenant_linked`,
   `.unlinked`, `group.role_granted`, `.changed`, `.removed` (subject `organization_group`, `group_id` in the metadata). They go in the platform audit log now; the group
   activity log and the `group_id` column come with part C.
+
+## Coded: part B (2026-10-16)
+
+Migration `000144` (`organization_grades`, `organization_unit_types`, `organization_cost_centres`, `organization_units`, `organization_unit_versions`, `organization_positions`,
+`organization_position_versions`; all keys stay inside the context except `reference_job_roles`). Interpretations, where the design left room:
+
+- **Who reads and who changes.** Any group member (any role, group not suspended) reads grades, unit types, cost centres, units and positions; `group.structure.manage` changes
+  them. A legal entity, unit, position or cost centre of another group is 404. Routes under `organization/`: `grades`, `unit-types`, `cost-centres` (`GET`, `POST`,
+  `PATCH {id}`, `POST {id}/deactivate`, `POST {id}/reactivate`; cost centres take `legal_entity_id` on create and list) and `units`, `positions` (the same plus
+  `GET {id}` and `GET {id}/versions`). The code never changes after creation (`code` on a `PATCH` is 422).
+- **Codes** are unique per owner whatever the letter case (409 `grade-code-taken`, `unit-type-code-taken`, `cost-centre-code-taken`, `unit-code-taken`, `position-code-taken`),
+  letters, digits, dot, dash and underscore only. Nothing is added to an inactive legal entity (409 `legal-entity-inactive`).
+- **Dating.** `valid_from` (a day, today by default) and `reason` on every create and change of a unit or position. A day before today needs a reason of 5 to 500 characters
+  (422 `reason-required`). A change copies the version that was valid on its day, applies the fields sent (null clears the parent, cost centre, grades, boss or job role) and
+  becomes a version from that day: the version it cuts into ends the day before, and it ends the day before the next version that already starts later, or stays open. A
+  change on the first day of an existing version replaces it. A day before the first version is 422 `before-first-version`; a `PATCH` with no field is 422 `no-changes`.
+  The timeline therefore has no gap and its last version stays open, so "valid over the whole period" of a reference means the referenced unit or position **exists from the
+  day the version starts** (422 `invalid-parent`, `invalid-unit`, `invalid-reports-to` otherwise).
+- **Rules per version.** Unit: unit type active in the group (`invalid-unit-type`), cost centre active in the entity (`invalid-cost-centre`), parent active in the same entity and
+  not the unit itself (`invalid-parent`), no loop on any day of the version's period, checked on its first day and on every day another version starts inside it
+  (`parent-cycle`). Position: unit active in the same entity (`invalid-unit`), grades active in the group (`invalid-grade`) with the lowest not above the highest by rank
+  (`invalid-grade-range`), job role active in the reference data (`invalid-job-role`), "reports to" as the parent rule (`invalid-reports-to`, `reports-to-cycle`).
+- **Reads.** `?as_of=<day>` (today by default) on `GET units`, `GET units/{id}` and the same for positions; a list leaves out what does not exist yet on that day, a single read is
+  404. `valid_from` and `valid_to` of the returned version say how long it lasts. `GET {id}/versions` is the whole history.
+- **Deactivating** never deletes: a grade used in the range of an active position, a unit type or cost centre used by an active unit, a unit that an active unit has as parent
+  or an active position as its unit, and a position that an active position reports to, each now or later, are refused (409 `grade-in-use`, `unit-type-in-use`,
+  `cost-centre-in-use`, `unit-in-use`, `position-in-use`); 409 `already-inactive` and `already-active`. A change to an inactive unit or position is 409 `unit-inactive`,
+  `position-inactive`.
+- **Audit and events.** `group.grade_*`, `group.unit_type_*`, `group.cost_centre_*` (created, updated, deactivated, reactivated), `group.unit_created`, `.unit_restructured`,
+  `.unit_deactivated`, `.unit_reactivated`, `group.position_created`, `.position_changed`, `.position_deactivated`, `.position_reactivated`. A dated change keeps `valid_from`,
+  `reason` and the version `before` and `after`. Events `StructureItemChanged`, `UnitRestructured`, `PositionChanged` (`LegalEntityCreated` and
+  `TenantLinkedToLegalEntity` exist from part A).

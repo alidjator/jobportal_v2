@@ -222,4 +222,44 @@ final class AuditAction
     public const string GROUP_ROLE_CHANGED = 'group.role_changed';
 
     public const string GROUP_ROLE_REMOVED = 'group.role_removed';
+
+    public const string GROUP_GRADE_CREATED = 'group.grade_created';
+
+    public const string GROUP_GRADE_UPDATED = 'group.grade_updated';
+
+    public const string GROUP_GRADE_DEACTIVATED = 'group.grade_deactivated';
+
+    public const string GROUP_GRADE_REACTIVATED = 'group.grade_reactivated';
+
+    public const string GROUP_UNIT_TYPE_CREATED = 'group.unit_type_created';
+
+    public const string GROUP_UNIT_TYPE_UPDATED = 'group.unit_type_updated';
+
+    public const string GROUP_UNIT_TYPE_DEACTIVATED = 'group.unit_type_deactivated';
+
+    public const string GROUP_UNIT_TYPE_REACTIVATED = 'group.unit_type_reactivated';
+
+    public const string GROUP_COST_CENTRE_CREATED = 'group.cost_centre_created';
+
+    public const string GROUP_COST_CENTRE_UPDATED = 'group.cost_centre_updated';
+
+    public const string GROUP_COST_CENTRE_DEACTIVATED = 'group.cost_centre_deactivated';
+
+    public const string GROUP_COST_CENTRE_REACTIVATED = 'group.cost_centre_reactivated';
+
+    public const string GROUP_UNIT_CREATED = 'group.unit_created';
+
+    public const string GROUP_UNIT_RESTRUCTURED = 'group.unit_restructured';
+
+    public const string GROUP_UNIT_DEACTIVATED = 'group.unit_deactivated';
+
+    public const string GROUP_UNIT_REACTIVATED = 'group.unit_reactivated';
+
+    public const string GROUP_POSITION_CREATED = 'group.position_created';
+
+    public const string GROUP_POSITION_CHANGED = 'group.position_changed';
+
+    public const string GROUP_POSITION_DEACTIVATED = 'group.position_deactivated';
+
+    public const string GROUP_POSITION_REACTIVATED = 'group.position_reactivated';
 }

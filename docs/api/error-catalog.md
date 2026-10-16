@@ -30,6 +30,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `auto-issue-not-allowed` | 422 | Assessment | The provider is not allowed to issue reports automatically. A platform admin allows it after review. |
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
+| `before-first-version` | 422 | Organization | The change is dated before the first version exists. |
 | `body-too-long` | 422 | Messaging |  |
 | `call-attempts-used` | 409 | Recruitment |  |
 | `call-in-progress` | 409 | Recruitment | The candidate is already being called. |
@@ -61,6 +62,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
+| `cost-centre-code-taken` | 409 | Organization | The legal entity already has a cost centre with this code. |
+| `cost-centre-in-use` | 409 | Organization | An active unit still uses this cost centre. |
 | `criteria-required` | 422 | JobAlert | An alert needs at least one filter, such as a keyword, a role or a place. |
 | `cv-limit` | 429 | JobSeeker | You have had too many CVs generated this hour. Try again later. |
 | `cv-template-required` | 409 | JobSeeker | The default CV template must be switched on. |
@@ -91,6 +94,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `forbidden` | 403 | Assessment, Company, Job, Organization, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
 | `google-sign-in-unavailable` | 401, 503 | Identity | This account cannot sign in with Google. |
+| `grade-code-taken` | 409 | Organization | The group already has a grade with this code. |
+| `grade-in-use` | 409 | Organization | An active position still uses this grade. |
 | `group-already-suspended` | 409 | Organization | The group is already suspended. |
 | `group-name-taken` | 409 | Organization | A group with this name already exists. |
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
@@ -113,6 +118,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-assignees` | 422 | Job | A job needs at least one assignee. |
 | `invalid-attachment` | 422 | Assessment, Messaging | The file must be a PDF, a JPEG or a PNG. |
 | `invalid-column` | 422 | Assessment |  |
+| `invalid-cost-centre` | 422 | Organization | The cost centre is not an active cost centre of the legal entity. |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
 | `invalid-cursor` | 422 | Messaging, Notification, Platform, Recruitment | The cursor is not valid. Start again without a cursor. |
@@ -123,6 +129,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
+| `invalid-grade` | 422 | Organization | The grade is not an active grade of the group. |
+| `invalid-grade-range` | 422 | Organization | The lowest grade ranks above the highest grade. |
 | `invalid-group-permissions` | 422 | Organization | A group role needs at least one permission. |
 | `invalid-ideal-answer` | 422 | Recruitment |  |
 | `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
@@ -131,6 +139,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-interviewer` | 422 | Recruitment |  |
 | `invalid-job` | 422 | Job | The job is not valid. |
 | `invalid-job-questions` | 422 | Recruitment | The questions of the job are not valid. |
+| `invalid-job-role` | 422 | Organization | The job role is not an active job role. |
 | `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
@@ -143,6 +152,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-offer` | 422 | Recruitment |  |
 | `invalid-offer-input` | 422 | Recruitment |  |
 | `invalid-order` | 422 | Assessment | The list must hold every question of the section exactly once. |
+| `invalid-parent` | 422 | Organization | The parent is not an active unit of the legal entity that exists from the day of the change. |
 | `invalid-password` | 422 | Company, Identity | The password is not correct. |
 | `invalid-phone` | 422 | Recruitment |  |
 | `invalid-profile` | 422 | JobSeeker |  |
@@ -154,6 +164,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-rejection` | 422 | Recruitment |  |
 | `invalid-report` | 422 | Assessment, Job | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
+| `invalid-reports-to` | 422 | Organization | The position it reports to is not an active position of the legal entity that exists from the day of the change. |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
 | `invalid-schedule` | 422 | Recruitment |  |
@@ -168,6 +179,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-stage-order` | 422 | Recruitment |  |
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
+| `invalid-unit` | 422 | Organization | The unit is not an active unit of the legal entity that exists from the day of the change. |
+| `invalid-unit-type` | 422 | Organization | The unit type is not an active unit type of the group. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
 | `invalid-video` | 422 | Assessment | No part of the recording was sent. |
 | `invalid-webhook-credentials` | 401 | Recruitment | The webhook credentials are wrong. |
@@ -230,6 +243,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-interview` | 409 | Recruitment | This application has no active interview. |
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-active-recording` | 409 | Recruitment | No recording is running. |
+| `no-changes` | 422 | Organization | Nothing to change: send at least one field. |
 | `no-live-call` | 409 | Recruitment | There is no call in progress. |
 | `no-open-reports` | 409 | Job | This job has no open reports. |
 | `no-phone-number` | 409 | Recruitment |  |
@@ -259,10 +273,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `owner-required` | 403 | Company | Only the owner of the company can hand the ownership over. |
 | `owner-target-not-company-admin` | 409 | Company | The owner must be an active company admin of the company. |
 | `page-out-of-range` | 422 | Job |  |
+| `parent-cycle` | 422 | Organization | The parent would make the unit its own ancestor. |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
 | `permission-requires-view` | 422 | Company |  |
 | `permissions-required` | 422 | Company, Identity | A member needs at least one permission. |
+| `position-code-taken` | 409 | Organization | The legal entity already has a position with this code. |
+| `position-in-use` | 409 | Organization | An active position still reports to this position. |
+| `position-inactive` | 409 | Organization | The position is inactive. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
@@ -276,6 +294,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `question-in-use` | 409 | Recruitment | This question is attached to a job or has answers, so it can only be archived. |
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
+| `reason-required` | 422 | Organization | A change dated in the past needs a reason of 5 to 500 characters. |
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
@@ -292,6 +311,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `report-not-open` | 409 | Review | This report was already handled. |
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
+| `reports-to-cycle` | 422 | Organization | The position would report to itself through the chain. |
 | `resume-limit-reached` | 409 | JobSeeker |  |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
@@ -344,6 +364,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `two-factor-not-started` | 409 | Identity | No enrolment is waiting for a code. Start one first. |
 | `two-factor-required` | 409 | Identity | The second factor is required for this account and cannot be switched off. |
 | `unauthenticated` | 401 | Platform | Authentication is required. |
+| `unit-code-taken` | 409 | Organization | The legal entity already has a unit with this code. |
+| `unit-in-use` | 409 | Organization | An active unit or position still depends on this unit. |
+| `unit-inactive` | 409 | Organization | The unit is inactive. |
+| `unit-type-code-taken` | 409 | Organization | The group already has a unit type with this code. |
+| `unit-type-in-use` | 409 | Organization | An active unit still uses this unit type. |
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |

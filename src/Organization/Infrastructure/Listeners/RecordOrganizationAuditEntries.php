@@ -10,8 +10,11 @@ use Src\Organization\Domain\Events\GroupRoleChanged;
 use Src\Organization\Domain\Events\GroupSuspended;
 use Src\Organization\Domain\Events\LegalEntityChanged;
 use Src\Organization\Domain\Events\LegalEntityCreated;
+use Src\Organization\Domain\Events\PositionChanged;
+use Src\Organization\Domain\Events\StructureItemChanged;
 use Src\Organization\Domain\Events\TenantLinkedToLegalEntity;
 use Src\Organization\Domain\Events\TenantUnlinkedFromLegalEntity;
+use Src\Organization\Domain\Events\UnitRestructured;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
@@ -88,6 +91,55 @@ final class RecordOrganizationAuditEntries implements ShouldQueue
         };
 
         $this->record($event->actorId, $event->actorIsAdmin, $action, $event->groupId, ['user_id' => $event->userId, 'permissions' => $event->permissions], $event->ipAddress, $event->userAgent, $event->occurredAt());
+    }
+
+    public function onStructureItemChanged(StructureItemChanged $event): void
+    {
+        $action = match ($event->kind) {
+            'grade' => ['created' => AuditAction::GROUP_GRADE_CREATED, 'updated' => AuditAction::GROUP_GRADE_UPDATED, 'deactivated' => AuditAction::GROUP_GRADE_DEACTIVATED, 'reactivated' => AuditAction::GROUP_GRADE_REACTIVATED],
+            'unit_type' => [
+                'created' => AuditAction::GROUP_UNIT_TYPE_CREATED, 'updated' => AuditAction::GROUP_UNIT_TYPE_UPDATED, 'deactivated' => AuditAction::GROUP_UNIT_TYPE_DEACTIVATED,
+                'reactivated' => AuditAction::GROUP_UNIT_TYPE_REACTIVATED,
+            ],
+            default => [
+                'created' => AuditAction::GROUP_COST_CENTRE_CREATED, 'updated' => AuditAction::GROUP_COST_CENTRE_UPDATED, 'deactivated' => AuditAction::GROUP_COST_CENTRE_DEACTIVATED,
+                'reactivated' => AuditAction::GROUP_COST_CENTRE_REACTIVATED,
+            ],
+        };
+
+        $this->record($event->actorId, false, $action[$event->change], $event->groupId, ['kind' => $event->kind, 'item_id' => $event->itemId], $event->ipAddress, $event->userAgent, $event->occurredAt());
+    }
+
+    public function onUnitRestructured(UnitRestructured $event): void
+    {
+        $action = match ($event->change) {
+            'created' => AuditAction::GROUP_UNIT_CREATED,
+            'deactivated' => AuditAction::GROUP_UNIT_DEACTIVATED,
+            'reactivated' => AuditAction::GROUP_UNIT_REACTIVATED,
+            default => AuditAction::GROUP_UNIT_RESTRUCTURED,
+        };
+
+        $this->record(
+            $event->actorId, false, $action, $event->groupId,
+            ['legal_entity_id' => $event->legalEntityId, 'unit_id' => $event->unitId, 'valid_from' => $event->validFrom, 'reason' => $event->reason, 'before' => $event->before, 'after' => $event->after],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
+    }
+
+    public function onPositionChanged(PositionChanged $event): void
+    {
+        $action = match ($event->change) {
+            'created' => AuditAction::GROUP_POSITION_CREATED,
+            'deactivated' => AuditAction::GROUP_POSITION_DEACTIVATED,
+            'reactivated' => AuditAction::GROUP_POSITION_REACTIVATED,
+            default => AuditAction::GROUP_POSITION_CHANGED,
+        };
+
+        $this->record(
+            $event->actorId, false, $action, $event->groupId,
+            ['legal_entity_id' => $event->legalEntityId, 'position_id' => $event->positionId, 'valid_from' => $event->validFrom, 'reason' => $event->reason, 'before' => $event->before, 'after' => $event->after],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
     }
 
     /** @param  array<string, mixed>  $metadata */
