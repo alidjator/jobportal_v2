@@ -27,7 +27,7 @@ final readonly class GetMyGroup
             $context->group,
             $this->views->of($this->entities->ofGroup((int) $context->group->id)),
             count($this->members->ofGroup((int) $context->group->id)),
-            array_map(static fn (GroupPermission $permission): string => $permission->value, $context->member->permissions),
+            array_map(static fn (GroupPermission $permission): string => $permission->value, $context->member?->permissions ?? []),
         );
     }
 }

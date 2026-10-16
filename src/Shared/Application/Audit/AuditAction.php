@@ -225,6 +225,12 @@ final class AuditAction
 
     public const string GROUP_SETTINGS_UPDATED = 'group.settings_updated';
 
+    public const string GROUP_SUPPORT_GRANTED = 'group.support_granted';
+
+    public const string GROUP_SUPPORT_REVOKED = 'group.support_revoked';
+
+    public const string GROUP_SUPPORT_READ = 'group.support_read';
+
     public const string GROUP_GRADE_CREATED = 'group.grade_created';
 
     public const string GROUP_GRADE_UPDATED = 'group.grade_updated';

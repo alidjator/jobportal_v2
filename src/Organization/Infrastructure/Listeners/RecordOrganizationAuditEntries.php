@@ -12,9 +12,12 @@ use Src\Organization\Domain\Events\LegalEntityChanged;
 use Src\Organization\Domain\Events\LegalEntityCreated;
 use Src\Organization\Domain\Events\PositionChanged;
 use Src\Organization\Domain\Events\StructureItemChanged;
+use Src\Organization\Domain\Events\SupportAccessChanged;
+use Src\Organization\Domain\Events\SupportRead;
 use Src\Organization\Domain\Events\TenantLinkedToLegalEntity;
 use Src\Organization\Domain\Events\TenantUnlinkedFromLegalEntity;
 use Src\Organization\Domain\Events\UnitRestructured;
+use Src\Shared\Application\Accounts\AdminAccounts;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
@@ -28,7 +31,7 @@ final class RecordOrganizationAuditEntries implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(private readonly AuditTrail $trail) {}
+    public function __construct(private readonly AuditTrail $trail, private readonly AdminAccounts $admins) {}
 
     public function viaQueue(): string
     {
@@ -140,6 +143,29 @@ final class RecordOrganizationAuditEntries implements ShouldQueue
             ['legal_entity_id' => $event->legalEntityId, 'position_id' => $event->positionId, 'valid_from' => $event->validFrom, 'reason' => $event->reason, 'before' => $event->before, 'after' => $event->after],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         );
+    }
+
+    public function onSupportAccessChanged(SupportAccessChanged $event): void
+    {
+        $this->record(
+            $event->actorId, false, $event->change === 'granted' ? AuditAction::GROUP_SUPPORT_GRANTED : AuditAction::GROUP_SUPPORT_REVOKED, $event->groupId,
+            ['grant_id' => $event->grantId, 'admin_id' => $event->adminId, 'admin_name' => $this->adminName($event->adminId), 'expires_at' => $event->expiresAt],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
+    }
+
+    /** A read under support access is the platform admin's action: the group sees which admin read what, never the admin's address. */
+    public function onSupportRead(SupportRead $event): void
+    {
+        $this->record(
+            $event->adminId, true, AuditAction::GROUP_SUPPORT_READ, $event->groupId, ['admin_name' => $this->adminName($event->adminId), 'request' => $event->request],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        );
+    }
+
+    private function adminName(int $adminId): ?string
+    {
+        return ($this->admins->summaries([$adminId])[$adminId] ?? null)?->name;
     }
 
     /** @param  array<string, mixed>  $metadata */

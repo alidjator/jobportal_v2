@@ -7,6 +7,7 @@ use Src\Organization\Interface\Http\Controllers\GroupSettingsController;
 use Src\Organization\Interface\Http\Controllers\OrganizationController;
 use Src\Organization\Interface\Http\Controllers\PositionController;
 use Src\Organization\Interface\Http\Controllers\StructureCatalogController;
+use Src\Organization\Interface\Http\Controllers\SupportGrantController;
 use Src\Organization\Interface\Http\Controllers\UnitController;
 
 // The group of the signed-in company member. Every use case checks that the caller holds a group role in a group that is not suspended, and the permission the
@@ -44,6 +45,12 @@ Route::middleware('auth:user')->group(function (): void {
     // The settings page of the group: any member reads, `group.settings.manage` changes the settings that belong to the group.
     Route::get('organization/settings', [GroupSettingsController::class, 'show']);
     Route::patch('organization/settings', [GroupSettingsController::class, 'update']);
+
+    // Temporary support access for a named platform admin (`group.members.manage`): who may receive it, who has it, give it for 1 to 72 hours, end it at once.
+    Route::get('organization/support-admins', [SupportGrantController::class, 'admins']);
+    Route::get('organization/support-grants', [SupportGrantController::class, 'index']);
+    Route::post('organization/support-grants', [SupportGrantController::class, 'store']);
+    Route::delete('organization/support-grants/{id}', [SupportGrantController::class, 'destroy'])->whereNumber('id');
 
     Route::get('organization/members', [GroupRoleController::class, 'index']);
     Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');

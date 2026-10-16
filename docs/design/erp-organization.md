@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and C1 to C2 coded 2026-10-16)
+# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and C coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -239,3 +239,22 @@ Migration `000146` lets `platform_setting_overrides.scope_type` hold `group` nex
   value saves and audits nothing. There is no "remove my value" call yet.
 - **Audit and events.** One `group.settings_updated` entry (subject `organization_group`) with the values before and after; a `GroupSettingChanged` event per changed key for the
   context that owns the setting. The platform admin's setting list shows `editable_per_group`.
+
+## Coded: part C3, temporary support access (2026-10-16)
+
+Decided with the user on 2026-10-16: support access covers **the structure and the group activity log** for now (each later ERP module adds its own reads when it is coded), and a
+platform admin must hold a new permission, **`groups.support`**, to receive it. Migration `000147` (`organization_support_grants`; the three keys to `identity_admins` and
+`identity_users` are in `CrossContextForeignKeysTest` and `cross-context-foreign-keys.md`). The rest follows `erp-governance.md` section 1.1:
+
+- **Grant.** A group member with `group.members.manage` gives one named platform admin access for 1 to 72 hours: `GET organization/support-admins` (active admins that hold
+  `groups.support`), `GET organization/support-grants` (the last 30 days, with `status` `active`, `revoked` or `expired`), `POST organization/support-grants`
+  (`admin_id`, `hours`; 422 `invalid-support-admin`, `invalid-support-duration`; 409 `support-grant-exists` while that admin's grant is running, so a duration is changed by
+  revoking first) and `DELETE organization/support-grants/{id}` (ends it at once; 409 `support-grant-not-active`). Audited as `group.support_granted` and
+  `group.support_revoked`.
+- **Read.** The platform admin (`auth:admin`, `groups.support`) lists the groups that granted access with `GET admin/support/groups` and reads with `GET admin/support/...?group_id=<group>`:
+  `group`, `activity`, `grades`, `unit-types`, `cost-centres`, `units`, `units/{id}`, `units/{id}/versions`, `positions`, `positions/{id}`, `positions/{id}/versions`. These are the same controllers
+  and use cases as the member's reads: `Actor::supportGroupId` (set by the `ActAsSupport` middleware) makes `GroupAccess` check the grant, and it carries no group permission except
+  `group.audit.view`, so every change is refused (`group-permission-required`) even if a write route were ever added; no write route exists under `admin/support`. Without an active grant: 403
+  `support-access-required`. A missing `group_id` is 422. A suspended group can still be read under a grant (nothing is changed and support may be needed most then).
+- **Audit.** Every successful read is `group.support_read` (actor type `admin`, metadata `admin_name` and `request`, the IP address stays with the platform) with the group's `group_id`, so it shows in
+  the group activity log (`group.audit.view`) and, for the group, names which platform admin read what. A refused read is not audited as a read.

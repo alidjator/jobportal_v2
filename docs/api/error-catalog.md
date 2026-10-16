@@ -99,7 +99,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `group-already-suspended` | 409 | Organization | The group is already suspended. |
 | `group-name-taken` | 409 | Organization | A group with this name already exists. |
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
-| `group-permission-required` | 403 | Organization |  |
+| `group-permission-required` | 403 | Organization | Support access is read only. |
 | `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
@@ -177,6 +177,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
 | `invalid-stage` | 422 | Recruitment | An application cannot be moved to this stage. |
 | `invalid-stage-order` | 422 | Recruitment |  |
+| `invalid-support-admin` | 422 | Organization | This platform admin cannot receive support access. |
+| `invalid-support-duration` | 422 | Organization |  |
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-unit` | 422 | Organization | The unit is not an active unit of the legal entity that exists from the day of the change. |
@@ -341,6 +343,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `stage-name-taken` | 409 | Recruitment | Another stage of this company already has this name. |
 | `stage-not-interview` | 422 | Recruitment |  |
 | `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, assessment, interview or offer. |
+| `support-access-required` | 403 | Organization | This group has not granted you support access, or the access has ended. |
+| `support-grant-exists` | 409 | Organization | This platform admin already has support access: revoke it first to change its duration. |
+| `support-grant-not-active` | 409 | Organization | The support access has already ended. |
 | `talent-pool-limit` | 422 | TalentPool |  |
 | `team-not-connected` | 409 | Recruitment | Join the call from your browser before you dial the candidate. |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |

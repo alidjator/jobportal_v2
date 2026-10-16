@@ -24,6 +24,11 @@ final readonly class ActorResolver
         }
 
         $actor = $account->toActor();
+        $supportGroup = $request->attributes->get('support_group_id');
+
+        if ($actor->kind === ActorKind::Admin && is_int($supportGroup)) {
+            return $actor->forSupport($supportGroup);
+        }
 
         return $actor->kind === ActorKind::CompanyMember && $actor->id !== null
             ? $actor->withMembership($this->memberships->forUser($actor->id))

@@ -44,6 +44,8 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 
 **Added with `erp-organization.md` (2026-10-16):** `company_companies.legal_entity_id` (unique, RESTRICT) to `organization_legal_entities`, and `organization_group_members.user_id` (unique, RESTRICT) to `identity_users`.
 
+**Added with support access (`erp-governance.md` section 1.1, 2026-10-16):** `organization_support_grants.admin_id` (RESTRICT) to `identity_admins`, and `granted_by_user_id`, `revoked_by_user_id` (RESTRICT) to `identity_users`.
+
 **To `job_jobs`:** `recruitment_applications.job_id`, `recruitment_job_questions.job_id` (`CASCADE`, see Decided), `jobinvitation_invitations.job_id`.
 
 **To `recruitment_applications`:** `jobinvitation_invitations.application_id` (nullable), `assessment_invitations.application_id`.

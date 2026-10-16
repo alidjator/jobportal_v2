@@ -96,6 +96,7 @@ use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentAdminRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentUserRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\EloquentVerificationCodeRepository;
 use Src\Identity\Infrastructure\Persistence\Eloquent\UserModel;
+use Src\Identity\Infrastructure\Persistence\EloquentAdminAccounts;
 use Src\Identity\Infrastructure\Persistence\EloquentSocialAccountRepository;
 use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Infrastructure\Privacy\AccountDataExporter;
@@ -116,6 +117,7 @@ use Src\Identity\Interface\Console\SetAdminRoleCommand;
 use Src\Identity\Interface\Console\SetAdminRolePermissionsCommand;
 use Src\Identity\Interface\Console\SuspendAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
+use Src\Shared\Application\Accounts\AdminAccounts;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureReceipts;
@@ -160,6 +162,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         MemberTwoFactor::class => IdentityMemberTwoFactor::class,
         TwoFactorNoticeSender::class => MailTwoFactorNoticeSender::class,
         AdminContacts::class => IdentityAdminContacts::class,
+        AdminAccounts::class => EloquentAdminAccounts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,
         AdminRbacWriter::class => SpatieAdminRbacWriter::class,
         AdminDirectory::class => SpatieAdminDirectory::class,
