@@ -68,6 +68,10 @@ It is a factual inventory, not legal advice, and the legal references in the que
     employee record of the ONESIS ERP (`erp-direction.md` section 3), the plan is **not** to carry the report or the results over
     (`phase-6-assessments.md`, "ERP later"). May the employer keep using the selection report for employment purposes (placement, promotion) under
     Law 23/2022 and UU 27/2022 (purpose limitation), and if so, what consent from the employee and what retention apply?
+19. **In-house psychologist signing for the employer's own applicants (added 2026-10-16).** A customer may register its own psychologist (an employee, with
+    STR and SILP) as the signer of psychological reports for that customer's applicants (`phase-8-provider-institutions.md` section 8). The report would
+    state that the signer is an in-house psychologist. Does Law 23/2022 (and the professional code of ethics) allow an employee to sign selection
+    reports for the employer's own applicants, what conflict-of-interest safeguards are required, and must the candidate be told?
 
 ## 3. What we can change after the answers
 
