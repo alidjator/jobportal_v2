@@ -34,7 +34,7 @@ final readonly class ApprovalNotifier
     {
         $ids = [];
 
-        foreach ($instance->currentStep()?->slots ?? [] as $slot) {
+        foreach ($instance->currentStep()->slots ?? [] as $slot) {
             if ($slot->status !== SlotStatus::Open) {
                 continue;
             }

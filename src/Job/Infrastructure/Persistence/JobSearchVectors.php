@@ -47,7 +47,7 @@ final readonly class JobSearchVectors
 
     private function companyName(int $companyId): string
     {
-        return ($this->companies->summaries([$companyId])[$companyId] ?? null)?->name ?? '';
+        return $this->companies->summaries([$companyId])[$companyId]->name ?? '';
     }
 
     private function write(int $jobId, string $title, string $description, string $companyName): void

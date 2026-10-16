@@ -102,8 +102,11 @@ final class Timeline
      * Whether the new version, placed in the timelines, closes a loop through the stable id `$rootId` at any day of its period. The days that matter are its start and every
      * day another version starts inside the period (the parent of a unit can change meanwhile).
      *
-     * @param  array<int, list<Versioned>>  $timelines  every timeline of the structure, the changed one already updated, by stable id
-     * @param  callable(Versioned): ?int  $parentOf  the stable id a version points at
+     * @template T of Versioned
+     *
+     * @param  array<int, list<T>>  $timelines  every timeline of the structure, the changed one already updated, by stable id
+     * @param  T  $version
+     * @param  callable(T): ?int  $parentOf  the stable id a version points at
      */
     public static function closesLoop(array $timelines, int $rootId, Versioned $version, callable $parentOf): bool
     {

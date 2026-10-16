@@ -71,7 +71,7 @@ final readonly class FlowRules
             ApprovalFact::BOOLEAN => is_bool($value) && $condition->operator === ConditionOperator::Eq,
             default => match ($condition->operator) {
                 ConditionOperator::Eq => is_string($value) && $this->allowed($fact, [$value]),
-                ConditionOperator::In => is_array($value) && $value !== [] && array_is_list($value) && array_filter($value, static fn (mixed $item): bool => ! is_string($item)) === [] && $this->allowed($fact, $value),
+                ConditionOperator::In => is_array($value) && $value !== [] && $this->allowed($fact, $value),
                 default => false,
             },
         };

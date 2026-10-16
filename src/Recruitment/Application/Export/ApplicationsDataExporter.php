@@ -82,7 +82,7 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
                     'at' => $entry->at->format(DateTimeInterface::ATOM),
                     'by' => $entry->by->value,
                     'rejection_reason' => $entry->reason?->value,
-                ], $detail?->history ?? []),
+                ], $detail->history ?? []),
                 'screening_answers' => array_map(static fn (ApplicationAnswerView $answer): array => [
                     'question' => $answer->questionText,
                     'type' => $answer->type->value,
@@ -90,8 +90,8 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
                     'number' => $answer->number,
                     'yes_no' => $answer->bool,
                     'chosen_options' => array_column($answer->options, 'label'),
-                ], $detail?->answers ?? []),
-                'profile_snapshot' => $application?->profileSnapshot ?? [],
+                ], $detail->answers ?? []),
+                'profile_snapshot' => $application->profileSnapshot ?? [],
                 'interviews' => array_map(static fn (Interview $interview): array => [
                     'starts_at' => $interview->startsAt->format(DateTimeInterface::ATOM),
                     'ends_at' => $interview->endsAt->format(DateTimeInterface::ATOM),

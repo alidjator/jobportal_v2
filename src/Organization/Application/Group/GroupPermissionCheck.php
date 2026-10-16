@@ -43,7 +43,7 @@ final readonly class GroupPermissionCheck implements GroupPermissions
 
         return [
             'group_id' => (int) $context->group->id,
-            'permissions' => array_map(static fn (GroupPermission $permission): string => $permission->value, $context->member?->permissions ?? []),
+            'permissions' => array_map(static fn (GroupPermission $permission): string => $permission->value, $context->member->permissions ?? []),
         ];
     }
 }

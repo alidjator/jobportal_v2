@@ -51,10 +51,9 @@ abstract class AdminNameChangeDecision
         $now = $this->clock->now();
 
         $event = $this->transactions->run(function () use ($requestId, $adminId, $note, $ipAddress, $userAgent, $now): CompanyNameChangeDecided {
-            $request = $this->requests->find($requestId) ?? throw EntityNotFound::of('Name change request', $requestId);
-            $this->companies->lock($request->companyId);
+            $this->companies->lock($this->load($requestId)->companyId);
             // Read again under the lock: another admin may have decided it meanwhile.
-            $request = $this->requests->find($requestId) ?? throw EntityNotFound::of('Name change request', $requestId);
+            $request = $this->load($requestId);
 
             $decided = $this->apply($request, $adminId, $note, $now);
             $this->requests->save($decided);
@@ -63,5 +62,11 @@ abstract class AdminNameChangeDecision
         });
 
         $this->events->dispatch([$event]);
+    }
+
+    /** @throws EntityNotFound */
+    private function load(int $requestId): NameChangeRequest
+    {
+        return $this->requests->find($requestId) ?? throw EntityNotFound::of('Name change request', $requestId);
     }
 }
