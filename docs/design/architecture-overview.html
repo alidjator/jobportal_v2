@@ -102,7 +102,7 @@ svg [data-k].sel>rect,svg [data-k]:focus-visible>rect{stroke:var(--border-accent
 <g class="c-gray"><rect x="40" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="94" y="42" text-anchor="middle" dominant-baseline="central">ONESIS admin</text><text class="ts" x="94" y="60" text-anchor="middle" dominant-baseline="central">Operator</text></g>
 <g class="c-gray"><rect x="163" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="217" y="42" text-anchor="middle" dominant-baseline="central">Group admin</text><text class="ts" x="217" y="60" text-anchor="middle" dominant-baseline="central">Customer HR</text></g>
 <g class="c-gray"><rect x="286" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="340" y="42" text-anchor="middle" dominant-baseline="central">Members</text><text class="ts" x="340" y="60" text-anchor="middle" dominant-baseline="central">Recruiting team</text></g>
-<g class="c-teal" data-k="Psychologists"><rect x="409" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="463" y="42" text-anchor="middle" dominant-baseline="central">Psychologist</text><text class="ts" x="463" y="60" text-anchor="middle" dominant-baseline="central">Partner</text></g>
+<g class="c-teal" data-k="Psychologists"><rect x="409" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="463" y="42" text-anchor="middle" dominant-baseline="central">Psychologist</text><text class="ts" x="463" y="60" text-anchor="middle" dominant-baseline="central">Partner, own</text></g>
 <g class="c-gray"><rect x="532" y="24" width="108" height="52" rx="8" stroke-width="0.5"/><text class="th" x="586" y="42" text-anchor="middle" dominant-baseline="central">Job seekers</text><text class="ts" x="586" y="60" text-anchor="middle" dominant-baseline="central">Public portal</text></g>
 <line x1="340" y1="76" x2="340" y2="96" class="arr" marker-end="url(#arrow)"/>
 <rect x="40" y="98" width="600" height="88" rx="16" class="box" stroke-width="0.5"/>
@@ -263,7 +263,7 @@ Career:{g:'ONESIS Career (job portal)',h:'The public site for job seekers.',f:[
 ['Job alerts and matching','Alerts, recommendation emails','c'],
 ['Reviews, newsletter, campaigns, training','Marketplace features, frozen for now','c'],
 ['Candidate experience','Rejection messages, status clarity','d']]},
-Psychologists:{g:'Partner psychologists and institutions',h:'Psychological tests are owned and signed by licensed partners (UU 23/2022); the platform never interprets results itself.',f:[
+Psychologists:{g:'Partner psychologists and institutions',h:'Psychological tests are owned and signed by licensed psychologists, partner or in-house (UU 23/2022); the platform never interprets results itself.',f:[
 ['Providers and accounts','Admin registers an institution and invites psychologists with STR and SILP','c'],
 ['Own sign-in and area','Third user type, required TOTP, endpoints under /provider','c'],
 ['Batteries, norms, templates','Authoring shared with company admins; granted per company','c'],
@@ -271,7 +271,11 @@ Psychologists:{g:'Partner psychologists and institutions',h:'Psychological tests
 ['Candidate consent and explanation','Consent before the test, right to an explanation','c'],
 ['Provider tools','Norms by group, claim a review, recommendation, report verification, register','d'],
 ['Institution self-management','Leads, licence renewals, signature image, revisions, review targets, questions','d'],
-['Switch-on','assessment.psychological_enabled per company; legal review pending','p']]},
+['In-house psychologist','A customer\'s own licensed psychologist; designed 2026-10-16, tables and routes not yet','d'],
+['Private provider per group','Only that group\'s tenants use its batteries; partner providers stay shared','d'],
+['Registration','Group admin registers the provider and invites psychologists; platform admin approves','d'],
+['Report note','The report states the signer is in-house; legal review question 19','d'],
+['Switch-on','Psychological tests add-on and assessment.psychological_enabled per company, for every provider; legal review pending','p']]},
 Employee:{g:'ONESIS Employee',h:'ERP phase 2. Not built; replaces the HRIS.',f:[
 ['Employee records','Employment data, replaces the HRIS','p'],
 ['Hand-off from hires','A hire becomes a pending employee record','p'],
