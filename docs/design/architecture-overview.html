@@ -76,6 +76,7 @@ svg .c-gray .th{fill:#d3d1c7}svg .c-gray .ts{fill:#b4b2a9}
 .stkc{border:0.5px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-1);padding:10px;font-size:12px;color:var(--text-secondary);cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .stkc b{font-size:14px;font-weight:500;color:var(--text-primary)}
 .stkc i{font-style:normal;align-self:flex-start;margin-top:6px}
+.stkc.wide{grid-column:1/-1;border-style:dashed}
 .stkc:hover{border-color:var(--border-stronger)}
 .stkc.sel{background:var(--bg-accent);border-color:var(--border-accent)}
 .stkc.sel b,.stkc.sel span{color:var(--text-accent)}
@@ -203,6 +204,7 @@ svg [data-k].sel>rect,svg [data-k]:focus-visible>rect{stroke:var(--border-accent
 <div class="stkc" data-k="StackData"><b>Data</b><span>PostgreSQL 16, Redis</span><span>Queue, private files</span><i class="tag c">Coded</i></div>
 <div class="stkc" data-k="StackRealtime"><b>Real-time and voice</b><span>Reverb, Janus, coturn</span><span>Asterisk (SIP)</span><i class="tag p">Pending</i></div>
 <div class="stkc" data-k="StackOps"><b>Runtime and delivery</b><span>nginx, Supervisor, cron</span><span>Docker Compose</span><i class="tag c">Coded</i></div>
+<div class="stkc wide" data-k="StackTarget"><b>Target stack (planned, after phase 1)</b><span>Backend migration Laravel to Spring Boot, incremental and ordered by feature complexity</span><i class="tag p">Planned</i></div>
 <div class="stkc" data-k="StackQuality"><b>Quality</b><span>PHPUnit 12, PHPStan</span><span>Pint, Paratest</span><i class="tag c">Coded</i></div>
 </div>
 
@@ -339,6 +341,13 @@ StackOps:{g:'Stack: runtime and delivery',h:'Today one Linux server (RHEL family
 ['Supervisor and cron','Queue workers and schedule:run every minute; crontab outside git','c'],
 ['Docker Compose for Janus and Asterisk','Files exist under deploy/','c'],
 ['Docker Compose for the whole app','Main path of the self-hosted edition','d']]},
+StackTarget:{g:'Target stack: Spring Boot (planned)',h:'Backend migration after the phase 1 release (spring-boot-migration.md). Current stack: PHP 8.3 and Laravel 13.',f:[
+['Incremental migration','Strangler fig: one feature or context per step, both back ends run side by side','p'],
+['Order','One simple pilot first, then by risk and value; how complexity is measured: open','p'],
+['The API stays the contract','/api/v1, RFC 9457 errors, OpenAPI; the front end is not affected','p'],
+['Coexistence','nginx routes by path; Spring verifies Sanctum tokens; one shared schema, migrations in Laravel','p'],
+['Still open','Queues, scheduler, events, files, versions, meaning of phase 1 release','p'],
+['Baseline','Java, Spring Boot and build tool versions: open','p']]},
 StackQuality:{g:'Stack: quality',h:'All checks are run on demand, separate from coding.',f:[
 ['PHPUnit 12 with Paratest','Tests in a separate database, parallel runs (2430 tests green at v0.2.0)','c'],
 ['Larastan (PHPStan)','Static analysis','c'],
