@@ -10,6 +10,7 @@ use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Shared\Domain\Exceptions\DomainException;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
 use Src\Shared\Interface\Http\ApiRootController;
+use Src\Shared\Interface\Http\ArchitectureOverviewController;
 use Src\Shared\Interface\Http\Middleware\ResolveRequestLanguage;
 use Src\Shared\Interface\Http\Middleware\SecurityHeaders;
 use Src\Shared\Interface\Http\Problem\ProblemDetailsRenderer;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             // No `web` group on purpose: this API has no sessions, cookies or CSRF, so `/` answers without setting any of them.
             Route::get('/', ApiRootController::class);
+            Route::get('/docs/architecture', ArchitectureOverviewController::class);
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
