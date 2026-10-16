@@ -72,6 +72,15 @@ svg .c-teal .th{fill:#9fe1cb}svg .c-teal .ts{fill:#5dcaa5}
 svg .c-purple .th{fill:#cecbf6}svg .c-purple .ts{fill:#afa9ec}
 svg .c-gray .th{fill:#d3d1c7}svg .c-gray .ts{fill:#b4b2a9}
 }
+.stk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stkc{border:0.5px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-1);padding:10px;font-size:12px;color:var(--text-secondary);cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.stkc b{font-size:14px;font-weight:500;color:var(--text-primary)}
+.stkc i{font-style:normal;align-self:flex-start;margin-top:6px}
+.stkc:hover{border-color:var(--border-stronger)}
+.stkc.sel{background:var(--bg-accent);border-color:var(--border-accent)}
+.stkc.sel b,.stkc.sel span{color:var(--text-accent)}
+.stkc:focus-visible{outline:2px solid var(--border-accent)}
+@media(max-width:560px){.stk{grid-template-columns:1fr 1fr}}
 svg [data-k]{cursor:pointer}
 svg [data-k]:hover>rect{stroke-width:1.5}
 svg [data-k]:focus{outline:none}
@@ -186,6 +195,17 @@ svg [data-k].sel>rect,svg [data-k]:focus-visible>rect{stroke:var(--border-accent
 <path d="M255 688 H135 V728" class="arr" marker-end="url(#arrow)"/>
 </svg>
 
+<h2 class="sec">Technology stack</h2>
+<p class="lead">What the system is built with. Click a card for the parts and their build status.</p>
+<div class="stk">
+<div class="stkc" data-k="StackFront"><b>Front end</b><span>Vue 3, TypeScript</span><span>Nuxt (public), Vite (admin)</span><i class="tag d">Designed</i></div>
+<div class="stkc" data-k="StackBack"><b>Back end</b><span>PHP 8.3, Laravel 13</span><span>Sanctum, DDD layout</span><i class="tag c">Coded</i></div>
+<div class="stkc" data-k="StackData"><b>Data</b><span>PostgreSQL 16, Redis</span><span>Queue, private files</span><i class="tag c">Coded</i></div>
+<div class="stkc" data-k="StackRealtime"><b>Real-time and voice</b><span>Reverb, Janus, coturn</span><span>Asterisk (SIP)</span><i class="tag p">Pending</i></div>
+<div class="stkc" data-k="StackOps"><b>Runtime and delivery</b><span>nginx, Supervisor, cron</span><span>Docker Compose</span><i class="tag c">Coded</i></div>
+<div class="stkc" data-k="StackQuality"><b>Quality</b><span>PHPUnit 12, PHPStan</span><span>Pint, Paratest</span><i class="tag c">Coded</i></div>
+</div>
+
 <h2 class="sec">Layers inside every context</h2>
 <div class="techbox">
 <p class="cap"><b>Interface</b> calls <b>Application</b>, Application uses <b>Domain</b>, <b>Infrastructure</b> implements the Domain ports.</p>
@@ -290,6 +310,40 @@ SelfHosted:{g:'Self-hosted edition',h:'One installation per customer, from the s
 ['Support','Shared session during a ticket, no permanent tunnel','d'],
 ['Version ping','Opt-in, off by default, version number only','d'],
 ['Prerequisite: separate the live site','Infrastructure names from configuration, setup moved into deploy/','p']]},
+StackFront:{g:'Stack: front end',h:'Designed in frontend.md (decided 2026-10-13); not coded for any module.',f:[
+['Vue 3 with TypeScript','One language family for the public site and the admin panel','d'],
+['Nuxt (server-side rendering)','Public application; the job seeker area renders in the browser only','d'],
+['Vite single-page application','Admin panel','d'],
+['UI kit','Vuetify 3 on the Able Pro Vue template','d'],
+['State and data','Pinia, useFetch, TanStack Vue Query; token in a sealed httpOnly cookie','d'],
+['Quality','ESLint, Prettier, vue-tsc, Vitest, Playwright','d']]},
+StackBack:{g:'Stack: back end',h:'A REST API only; web and mobile clients are built on it.',f:[
+['PHP 8.3 and Laravel 13','Layers Domain, Application, Infrastructure, Interface under src/<Context>','c'],
+['Authentication','Laravel Sanctum tokens, TOTP with pragmarx/google2fa, Google ID tokens','c'],
+['Authorization','spatie/laravel-permission behind an interface, plain policy classes','c'],
+['Translated text','spatie/laravel-translatable, languages id and en','c'],
+['API documentation','Scramble generates the OpenAPI document (api.json)','c'],
+['PDF','dompdf for CVs and signed reports','c']]},
+StackData:{g:'Stack: data',h:'One PostgreSQL database; the legacy MariaDB is only read by the import tool.',f:[
+['PostgreSQL 16','Extensions pg_trgm and unaccent; table prefix per context','c'],
+['Redis 6.2 with Predis','Cache, rate limiter, scheduler locks (production needs REDIS_CLIENT=predis)','c'],
+['Queue','Database driver, three queues (critical, default, bulk) under Supervisor','c'],
+['Private file storage','One private disk, switchable to S3-compatible storage','c'],
+['Legacy source','MariaDB, read only, used by the import tool','c']]},
+StackRealtime:{g:'Stack: real-time and voice',h:'The code exists; the servers are not set up yet.',f:[
+['Laravel Reverb','WebSocket server for chat; not deployed','p'],
+['Janus and coturn','Self-hosted WebRTC for video interviews; root setup pending','p'],
+['Asterisk','SIP calls for tele-interview; needs a SIP trunk','p']]},
+StackOps:{g:'Stack: runtime and delivery',h:'Today one Linux server (RHEL family).',f:[
+['nginx 1.20','Reverse proxy and TLS; config outside git','c'],
+['Supervisor and cron','Queue workers and schedule:run every minute; crontab outside git','c'],
+['Docker Compose for Janus and Asterisk','Files exist under deploy/','c'],
+['Docker Compose for the whole app','Main path of the self-hosted edition','d']]},
+StackQuality:{g:'Stack: quality',h:'All checks are run on demand, separate from coding.',f:[
+['PHPUnit 12 with Paratest','Tests in a separate database, parallel runs (2430 tests green at v0.2.0)','c'],
+['Larastan (PHPStan)','Static analysis','c'],
+['Laravel Pint','Code style','c'],
+['Laravel Pail','Log tailing in development','c']]},
 Infrastructure:{g:'Infrastructure',h:'Runs on one server today.',f:[
 ['PostgreSQL','jobportal_v2, migrated, reference data only','c'],
 ['Redis and queue workers','Three queues under Supervisor; production needs Redis cache','c'],
