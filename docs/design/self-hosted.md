@@ -30,6 +30,9 @@ orders, invoices and licence enforcement stay out of scope.
 - 2026-10-16: **entitlements apply to SaaS too, per group**, through the same signed file (decided by the user; section 8, question 4).
 - 2026-10-16: **entitlements cover modules and two add-ons: psychological tests and tele-interview** (decided by the user; section 8, questions 5 and 6).
   All questions of sections 6 and 8 are answered.
+- 2026-10-16: **the self-hosted edition is released only after the back end is fully Spring Boot** (`spring-boot-migration.md`, question 10); the packaging is
+  built for that runtime, and the steps of section 7 that do not depend on the runtime (separating the live site, `deploy/` templates, configuration audit) can
+  start earlier (decided by the user).
 - 2026-10-16: this session only designs; coding happens in other sessions after the open questions of sections 6 and 8 are answered (decided by the user).
 
 ## 1. Meaning
