@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Organization\Interface\Http\Controllers\GroupActivityController;
 use Src\Organization\Interface\Http\Controllers\GroupRoleController;
 use Src\Organization\Interface\Http\Controllers\OrganizationController;
 use Src\Organization\Interface\Http\Controllers\PositionController;
@@ -35,6 +36,9 @@ Route::middleware('auth:user')->group(function (): void {
         Route::post("organization/{$path}/{id}/deactivate", [$controller, 'deactivate'])->whereNumber('id');
         Route::post("organization/{$path}/{id}/reactivate", [$controller, 'reactivate'])->whereNumber('id');
     }
+
+    // The activity log of the group (`group.audit.view`): its own changes, its internal tenants' members and the platform's actions on it; no IP address.
+    Route::get('organization/activity', [GroupActivityController::class, 'index']);
 
     Route::get('organization/members', [GroupRoleController::class, 'index']);
     Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');

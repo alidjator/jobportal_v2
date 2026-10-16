@@ -21,5 +21,6 @@ final readonly class AuditLogRecord
         public ?string $userAgent,
         public DateTimeImmutable $occurredAt,
         public ?int $companyId = null,
+        public ?int $groupId = null,
     ) {}
 }

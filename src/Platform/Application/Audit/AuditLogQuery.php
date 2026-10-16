@@ -22,5 +22,7 @@ final readonly class AuditLogQuery
         public ?int $metadataUserId = null,
         /** Only the entries of the company activity log of this company. */
         public ?int $companyId = null,
+        /** Only the entries of the group activity log of this group. */
+        public ?int $groupId = null,
     ) {}
 }

@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15; parts A and B coded 2026-10-16)
+# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and the group activity log of C coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -203,3 +203,21 @@ Migration `000144` (`organization_grades`, `organization_unit_types`, `organizat
   `.unit_deactivated`, `.unit_reactivated`, `group.position_created`, `.position_changed`, `.position_deactivated`, `.position_reactivated`. A dated change keeps `valid_from`,
   `reason` and the version `before` and `after`. Events `StructureItemChanged`, `UnitRestructured`, `PositionChanged` (`LegalEntityCreated` and
   `TenantLinkedToLegalEntity` exist from part A).
+
+## Coded: part C1, the group activity log (2026-10-16)
+
+Part C is coded in three steps: **C1** `group_id` on audit entries and the group activity log (this step), **C2** the `group` scope of the settings with
+`group.settings.manage`, **C3** temporary support access (its details are still to be decided with the user). Migration `000145` adds `platform_audit_logs.group_id`
+(nullable, no foreign key, index `group_id, occurred_at`). Interpretations:
+
+- **Filling `group_id`.** `AuditEntry` gains `groupId`; `RecordAuditEntry` fills it when empty: the subject when it is an `organization_group`, otherwise the group of the entry's
+  company (the one the entry already got: the subject company or the acting member's company) through the new Shared port `GroupDirectory::groupOfCompany`, provided by
+  Organization. An external tenant has no group, so its entries stay without one. The migration backfills from the subject (`organization_group`) and from `company_id`
+  through the tenant link. An entry keeps the group it had when it was written: a company that joins a group later does not pull its older entries in, except through the
+  backfill of that day.
+- **The log.** `GET organization/activity` (`group.audit.view`, any other member 403 `group-permission-required`): newest first, cursor paginated like the company log, filters
+  `filter[user_id]`, `filter[company_id]`, `filter[action]`, `filter[from]`, `filter[to]`. It covers the group's own changes, what members of its internal tenants did
+  (every action the company log would show) and what the platform did to the group. No IP address or user agent in any row; each row carries `company_id` and
+  `company_name` (the tenant it belongs to), the actor name for members, and the audit `metadata` (the versions before and after for dated structure changes). `MemberActivity`
+  gains `ofGroupLog`. Reading the log is not itself audited, as for the company log. No export yet.
+- `GroupPermission` gains `group.audit.view` (the catalog is now `group.structure.manage`, `group.members.manage`, `group.recruitment.view`, `group.audit.view`).

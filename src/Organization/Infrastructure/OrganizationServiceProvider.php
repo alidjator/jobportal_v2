@@ -33,6 +33,8 @@ use Src\Organization\Infrastructure\Persistence\DatabaseLegalEntityRepository;
 use Src\Organization\Infrastructure\Persistence\DatabasePositionRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseUnitRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseUnitTypeRepository;
+use Src\Organization\Infrastructure\Persistence\RepositoryGroupDirectory;
+use Src\Shared\Application\Organization\GroupDirectory;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 /** The Organization context: customer groups, their legal entities, the link to the tenants of the portal and the group roles (`docs/design/erp-organization.md`). */
@@ -48,6 +50,7 @@ final class OrganizationServiceProvider extends ContextServiceProvider
         CostCentreRepository::class => DatabaseCostCentreRepository::class,
         UnitRepository::class => DatabaseUnitRepository::class,
         PositionRepository::class => DatabasePositionRepository::class,
+        GroupDirectory::class => RepositoryGroupDirectory::class,
     ];
 
     public function boot(): void
