@@ -13,6 +13,7 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - 2026-10-15: **this ERP replaces the existing HRIS**: a new Employee context is built in this project as ERP phase 2 (decided by the user; section 3).
 - 2026-10-15: **one tenant per legal entity**: each company of the PKP group is one internal tenant linked to one legal entity of a new
   Organization context; the holding sees across tenants through a group permission (decided by the user; section 4).
+- 2026-10-16: the ERP also ships as a **self-hosted edition** next to SaaS, from the same codebase (decided by the user; `self-hosted.md`).
 - 2026-10-15: go-live readiness stays first (agreement of 2026-10-13); none of the decisions above blocks it (section 5).
 - 2026-10-15: the new phase 8 order of section 6 is applied to `phase-8-index.md` (confirmed by the user).
 
