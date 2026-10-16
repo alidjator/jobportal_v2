@@ -16,6 +16,13 @@ interface GroupPermissions
     public function groupOf(Actor $actor, ?GroupPermission $permission = null): int;
 
     /**
+     * The accounts of the group that hold the permission (empty for a permission name that does not exist).
+     *
+     * @return list<int>
+     */
+    public function holders(int $groupId, string $permission): array;
+
+    /**
      * The group role of the actor as `group_id` and the permissions it holds; empty when the actor holds no role or the group is suspended.
      *
      * @return array{group_id: int, permissions: list<string>}|array{}

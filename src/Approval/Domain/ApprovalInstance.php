@@ -48,6 +48,14 @@ final class ApprovalInstance
         return null;
     }
 
+    /** Notes that the approvers of the step being decided were reminded. */
+    public function markReminded(DateTimeImmutable $now): void
+    {
+        if ($this->isPending() && $this->currentStep() !== null) {
+            $this->currentStep()->remindedAt = $now;
+        }
+    }
+
     /** Starts the approval: the first step becomes the one being decided, or, with no step, the approval is approved at once. */
     public function start(DateTimeImmutable $now): void
     {

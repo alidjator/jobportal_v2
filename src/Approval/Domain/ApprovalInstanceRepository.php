@@ -27,6 +27,9 @@ interface ApprovalInstanceRepository
      */
     public function pendingFor(array $userIds, ?int $groupId, array $permissions): array;
 
+    /** @return list<int> the ids of every running approval, oldest first */
+    public function pendingIds(): array;
+
     /** @return list<int> the ids of the approvals the account asked for, newest first */
     public function ofRequester(int $userId): array;
 

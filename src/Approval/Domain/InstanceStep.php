@@ -16,7 +16,16 @@ final class InstanceStep
         public array $slots,
         public ?DateTimeImmutable $activatedAt = null,
         public ?DateTimeImmutable $completedAt = null,
+        public ?DateTimeImmutable $remindedAt = null,
     ) {}
+
+    /** Whether a reminder is due: the step has waited `$days` days since it started or since the last reminder. */
+    public function reminderDue(DateTimeImmutable $now, int $days): bool
+    {
+        $since = $this->remindedAt ?? $this->activatedAt;
+
+        return $this->status === StepStatus::Pending && $since !== null && $since->modify("+{$days} days") <= $now;
+    }
 
     public function isSatisfied(): bool
     {

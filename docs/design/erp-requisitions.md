@@ -1,4 +1,4 @@
-# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A and B1 coded 2026-10-16)
+# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A, B1 and B2 coded 2026-10-16)
 
 Item #6 of `phase-8-index.md`. Builds on `erp-organization.md` (groups, legal entities, units, positions, grades, cost centres, internal tenants)
 and extends `phase-1-jobs.md` (job lifecycle). Offer approval of internal tenants (#12, `phase-8-offer-letters.md`) uses the approval workflow
@@ -176,3 +176,18 @@ reminders and the notifications are **B2** (next). Interpretations, where the de
   `invalid-approver`, 409 `approval-slot-not-vacant`). Telling the requester is part of B2.
 - **Audit.** `approval.submitted`, `.step_approved` (step and who it stood in for), `.granted`, `.rejected`, `.returned`, `.cancelled`, `.approver_vacated`, `.approver_replaced`, `.delegation_created`,
   `.delegation_removed`, all with the tenant's `company_id` and so in the group log.
+
+## Coded: Approval part B2, notifications and reminders (2026-10-16)
+
+Migration `000150` (`approval_instance_steps.reminded_at`). Interpretations, where the design left room:
+
+- **Who is told.** In-app notifications (always written; types `approval.requested`, `.reminder`, `.granted`, `.rejected`, `.returned`, `.approver_vacated`, data `approval_id`, `subject_type`, `subject_id`, `title`,
+  `reason`) and emails (templates `approval.*`, in the person's language). The approvers of the step being decided hear when it **reaches them** (a submission, or the step before was approved; a step that is only
+  partly approved in mode `all` tells nobody) and are reminded; they are the named accounts with an open place plus every holder of the group permission of a role place, never the requester. The requester hears the
+  outcome (approved, rejected or returned, with the reason) and that an approver left while their step waited. The delegates of an approver are not notified: they find the approval in their list.
+- **Email preferences.** Two new preferences, `approval_task` (approvals waiting for you and their reminders) and `approval_update` (what happened to your requests), email on by default; switching one off stops
+  the email, never the in-app notification. Only active accounts get email.
+- **Reminders.** The setting `approvals.reminder_days` (integer, 1 to 14, default 2, overridable per company) and the daily command `approvals:send-reminders` (08:00): an approval whose step has waited that many days since
+  it started, or since its last reminder, reminds its approvers again, until it is decided. A step whose every place is vacant is left alone until an admin names a replacement. The platform setting list shows
+  `approvals.reminder_days`.
+- **Delivery.** The notifications come from the `ApprovalChanged` event through a queued listener (`default` queue), written from the state of the approval when the job runs.

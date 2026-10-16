@@ -107,6 +107,7 @@ final readonly class DatabaseApprovalInstanceRepository implements ApprovalInsta
                     'status' => $step->status->value,
                     'activated_at' => $step->activatedAt?->format(self::TIME_FORMAT),
                     'completed_at' => $step->completedAt?->format(self::TIME_FORMAT),
+                    'reminded_at' => $step->remindedAt?->format(self::TIME_FORMAT),
                 ]);
 
                 foreach ($step->slots as $slot) {
@@ -139,6 +140,11 @@ final readonly class DatabaseApprovalInstanceRepository implements ApprovalInsta
             });
 
         return $query->orderByDesc('instance.id')->distinct()->pluck('instance.id')->map(static fn (mixed $id): int => (int) $id)->all();
+    }
+
+    public function pendingIds(): array
+    {
+        return $this->connection->table('approval_instances')->where('status', InstanceStatus::Pending->value)->orderBy('id')->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
     }
 
     public function ofRequester(int $userId): array
@@ -181,7 +187,7 @@ final readonly class DatabaseApprovalInstanceRepository implements ApprovalInsta
         $steps = $this->connection->table('approval_instance_steps')->where('instance_id', $id)->orderBy('position')->get()->map(
             static fn (stdClass $step): InstanceStep => new InstanceStep(
                 (int) $step->id, (int) $step->position, StepMode::from((string) $step->mode), StepStatus::from((string) $step->status), $slots[(int) $step->id] ?? [],
-                $time($step->activated_at), $time($step->completed_at),
+                $time($step->activated_at), $time($step->completed_at), $time($step->reminded_at),
             ),
         )->all();
 
