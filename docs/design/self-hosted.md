@@ -11,8 +11,9 @@ orders, invoices and licence enforcement stay out of scope.
   by the user; [Meaning](#1-meaning)).
 - 2026-10-16: **both packaging forms**: Docker Compose as the main path and a manual runbook for customers who refuse containers (decided by the user;
   [Packaging](#2-packaging)).
-- 2026-10-16: **all modules** are installed, including the public job portal ONESIS Career and the marketplace features (decided by the user;
-  [Meaning](#1-meaning)).
+- ~~2026-10-16: **all modules** are installed, including the public job portal ONESIS Career and the marketplace features~~ **changed 2026-10-16: the
+  modules of an installation follow the customer's purchased package (module entitlements)**; only the entitlement is designed, prices, billing, payments
+  and invoices stay out of scope (decided by the user; [Module entitlements](#8-module-entitlements)).
 - 2026-10-16: the platform admin role is **split**: the customer runs the daily operation of its installation; ONESIS enters only through audited
   support access (decided by the user; [Platform admin](#3-platform-admin)).
 - 2026-10-16: **one group per installation** (decided by the user; [Meaning](#1-meaning), question 1 of section 6 answered).
@@ -23,15 +24,21 @@ orders, invoices and licence enforcement stay out of scope.
 - 2026-10-16: **upgrades are release by release; a backup is required before migrating and is the rollback** (decided by the user; section 6, question 4).
 - 2026-10-16: **telemetry is an opt-in version ping, off by default, version number only** (decided by the user; section 6, question 5). All five open
   questions of section 6 are answered.
-- 2026-10-16: this session only designs; coding happens in other sessions after the open questions of section 6 are answered (decided by the user).
+- 2026-10-16: **ONESIS Core is in every package** (decided by the user; section 8, question 1).
+- 2026-10-16: **module dependencies are fixed and an entitlement that breaks them is refused** (decided by the user; section 8, question 2).
+- 2026-10-16: **entitlements come as a signed licence file verified offline** (decided by the user; section 8, question 3).
+- 2026-10-16: **entitlements apply to SaaS too, per group**, through the same signed file (decided by the user; section 8, question 4).
+- 2026-10-16: **entitlements cover modules and two add-ons: psychological tests and tele-interview** (decided by the user; section 8, questions 5 and 6).
+  All questions of sections 6 and 8 are answered.
+- 2026-10-16: this session only designs; coding happens in other sessions after the open questions of sections 6 and 8 are answered (decided by the user).
 
 ## 1. Meaning
 
 - **One installation = one customer.** The same repository, the same migrations and the same bounded contexts as SaaS; no second code line, no
-  edition flag that switches features off (all modules are installed).
+  separate build per package: the code of every module ships in every release and the entitlements of section 8 decide which modules are active.
 - The customer's installation holds its own database, files and secrets. No data goes to ONESIS unless the customer grants support access or switches on the opt-in version ping (version number only).
-- Because ONESIS Career is installed, the customer also runs a **public** site: it is the operator of that portal (terms, privacy notice, moderation,
-  contact). See section 4.
+- When the package includes ONESIS Career, the customer also runs a **public** site: it is the operator of that portal (terms, privacy notice,
+  moderation, contact). See section 4.
 - **One installation holds one group** (decided 2026-10-16); its legal entities and internal tenants work as in SaaS, and client companies of the portal
   stay external tenants. Creating a second group in a self-hosted installation is refused (how it is enforced is decided when coded).
 
@@ -98,3 +105,33 @@ orders, invoices and licence enforcement stay out of scope.
 6. Docker Compose, then the manual runbook generated from the same process list.
 7. Backup and restore guide; support-access procedure.
 8. Release pipeline (registry images and archive), the upgrade script with its mandatory backup, the one-group rule, and the opt-in version ping.
+
+## 8. Module entitlements
+
+Changed 2026-10-16 (user): the modules of an installation follow the **purchased package**, instead of "all modules installed". The common terms are
+*modular licensing* (or module-based licensing), a customer's right to a module is its **entitlement**, switching a module on or off is **module
+gating** (feature gating), and a named set of modules is an **edition**, **tier** or **bundle**. This document says "licensed modules" and "module
+entitlements".
+
+- **Scope (decided 2026-10-16):** only the entitlement, meaning which modules a customer has and how they are switched on. Prices, billing, payments,
+  orders and invoices stay out of scope (`CLAUDE.md`, rule 7). A package name is only a label for a set of modules.
+- **One codebase:** every release carries the code of every module; the entitlements switch routes, menus, permissions and scheduled tasks of a module
+  on or off, so the migrations and the schema are the same for every customer.
+- Replaces the note of `erp-direction.md` section 8 ("whether modules can be switched on per group is not decided").
+
+Open questions (to answer before coding, one at a time):
+
+1. ~~Is ONESIS Core always included~~ **answered 2026-10-16: yes, Core is in every package** (it holds the IAM, Organization, Approval, Platform and
+   Notification that the other modules need; it is not sold separately).
+2. ~~Dependencies between modules~~ **answered 2026-10-16: fixed dependencies, and an entitlement that breaks them is refused when it is set.** Workforce,
+   Talent and Employee need Core; Career needs Talent (jobs and applications); Employee needs Talent (hires). Talent without Workforce is valid
+   (`recruitment.requisition_required` is switched off, `erp-direction.md` section 8).
+3. ~~How an entitlement reaches an installation~~ **answered 2026-10-16: a licence file signed by ONESIS** (the list of modules and a validity period),
+   verified offline by the application with a public key. Whether SaaS uses the same file is question 4.
+4. ~~Does it apply to SaaS too~~ **answered 2026-10-16: yes, per group.** Each group of the SaaS installation has its own entitlement (a signed licence
+   file per group kept by the installation), so one layer of code serves both editions.
+5. ~~The granularity~~ **answered 2026-10-16: modules plus specific add-ons.** An add-on is a part of a module licensed separately; the entitlement file
+   lists modules and add-ons. Which parts are add-ons is question 6.
+6. ~~Which parts are add-ons~~ **answered 2026-10-16: psychological tests and tele-interview** (both of Talent). The marketplace features of Career and
+   candidate search with the talent pool stay inside their modules. Psychological tests keep their company setting `assessment.psychological_enabled`
+   on top of the add-on. All questions of section 8 are answered.

@@ -117,7 +117,8 @@ documentation. The code stays in `src/<Context>`; nothing moves.
   customer without Workforce turns `recruitment.requisition_required` off.
 - The ONESIS Career side of a Talent feature (the candidate taking a test, answering an offer, seeing their status) is a screen of Career over a
   Talent context, not a context of Career.
-- Whether modules can be switched on per group is not decided (plans and billing stay out of scope).
+- ~~Whether modules can be switched on per group is not decided~~ **changed 2026-10-16:** the modules of an installation follow the purchased package
+  (module entitlements, `self-hosted.md` section 8); prices and billing stay out of scope.
 
 ## 7. Still open
 
