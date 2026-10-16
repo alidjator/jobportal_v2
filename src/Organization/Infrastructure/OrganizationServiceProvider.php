@@ -4,6 +4,7 @@ namespace Src\Organization\Infrastructure;
 
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Organization\Application\Group\GroupPermissionCheck;
 use Src\Organization\Application\OrganizationPermissions;
 use Src\Organization\Application\OrganizationSettings;
 use Src\Organization\Domain\CostCentreRepository;
@@ -43,6 +44,7 @@ use Src\Organization\Infrastructure\Persistence\DatabaseUnitRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseUnitTypeRepository;
 use Src\Organization\Infrastructure\Persistence\RepositoryGroupDirectory;
 use Src\Shared\Application\Organization\GroupDirectory;
+use Src\Shared\Application\Organization\GroupPermissions;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\GroupSettingChanged;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -62,6 +64,7 @@ final class OrganizationServiceProvider extends ContextServiceProvider
         UnitRepository::class => DatabaseUnitRepository::class,
         PositionRepository::class => DatabasePositionRepository::class,
         GroupDirectory::class => RepositoryGroupDirectory::class,
+        GroupPermissions::class => GroupPermissionCheck::class,
         SupportGrantRepository::class => DatabaseSupportGrantRepository::class,
     ];
 

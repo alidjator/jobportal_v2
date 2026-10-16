@@ -1,4 +1,4 @@
-# ERP requisitions and a generic approval workflow (designed 2026-10-15, not coded)
+# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval part A coded 2026-10-16)
 
 Item #6 of `phase-8-index.md`. Builds on `erp-organization.md` (groups, legal entities, units, positions, grades, cost centres, internal tenants)
 and extends `phase-1-jobs.md` (job lifecycle). Offer approval of internal tenants (#12, `phase-8-offer-letters.md`) uses the approval workflow
@@ -128,3 +128,23 @@ designed here. Plans, billing, payments, orders and invoices stay out of scope.
 ## Still open
 
 - Reports (plan against actual per month, time from requisition to hire) are designed with the dashboards after the TA core.
+
+## Coded: Approval part A, the catalog and the flows (2026-10-16)
+
+#6 is coded in steps, each checked and committed on its own: **Approval A** the subject-type catalog and the flows (this step), **Approval B** instances, decisions, delegation, an approver who leaves and the
+reminders, **Workforce plans**, **requisitions and the job rule** (`recruitment.requisition_required`, `job_jobs.requisition_id`). Migration `000148` (`approval_flows`, `approval_flow_steps`,
+`approval_flow_step_approvers`; the owner column names either a group or a company, so it has no foreign key). Interpretations, where the design left room:
+
+- **Catalog.** `ApprovalSubjectCatalog` (Shared, a singleton like `SettingsCatalog`) holds `ApprovalSubjectType` rows: code (`area.name`), description, the **facts** a condition may read (`integer`,
+  `string` with optional allowed values, `boolean`) and the **relative roles** a step may name (`hiring_manager`). Contexts register theirs from their providers. None is registered yet:
+  Workforce registers `workforce.plan`, `workforce.requisition` and `workforce.requisition_amendment` when it is coded, Recruitment `recruitment.offer` (#12); the tests register their own.
+- **Flows.** One per owner and subject type, saved whole (`PUT` replaces the steps) and removed with `DELETE`. A step has a mode (`any`, `all`), 0 to 5 conditions (all must hold) and 1 to 10 approvers
+  (`member` account id, `group_role` a group permission name, `relative` a role of the subject type); a flow has 1 to 10 steps. Conditions compare a fact with `gte`, `lte`, `eq` (integer), `eq`
+  (boolean), `eq` or `in` (string, inside the allowed values); anything else is 422 `invalid-flow-condition`. A member approver must belong to the owner's tenant (any tenant of the group for a group
+  flow), no approver twice in a step, a relative role must be one the subject type names, a group role one of the group permissions (422 `invalid-flow-approver`); step count 422 `invalid-flow-steps`.
+- **Who.** `organization/approval-flows` (any group member reads, `group.approvals.manage` — new, the sixth group permission — saves and removes) and `company/approval-flows` (any member of an internal
+  tenant reads, the new company permission `approvals.manage` in a new group "Workforce" of the catalog saves and removes; not in the Recruiter preset; 403 `not-an-internal-tenant` for any other tenant).
+  The company page lists every subject type with the flow that applies and its `source` (`company`, `group` or `none`).
+- **Resolution.** `ApprovalFlows::resolve(companyId, groupId, subjectType)`: the tenant's own flow, else its group's, else null (the submission of part B refuses it with 409 `approval-flow-missing`).
+  A running approval is not touched by editing a flow (the snapshot of part B).
+- **Audit.** `approval.flow_saved` and `approval.flow_removed` (steps count in the metadata); a group flow belongs to the group log, a tenant flow to the tenant's log and so to its group's.

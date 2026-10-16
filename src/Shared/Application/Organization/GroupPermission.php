@@ -4,7 +4,7 @@ namespace Src\Shared\Application\Organization;
 
 /**
  * What a group member may do across the tenants of their group (`docs/design/erp-organization.md` section 4). The catalog is code, not a table a group edits.
- * Later designs add `group.workforce.*` and `group.approvals.manage`.
+ * Later designs add `group.workforce.*`.
  */
 enum GroupPermission: string
 {
@@ -13,6 +13,7 @@ enum GroupPermission: string
     case RecruitmentView = 'group.recruitment.view';
     case AuditView = 'group.audit.view';
     case SettingsManage = 'group.settings.manage';
+    case ApprovalsManage = 'group.approvals.manage';
 
     /** @return list<string> every permission name, in catalog order */
     public static function values(): array

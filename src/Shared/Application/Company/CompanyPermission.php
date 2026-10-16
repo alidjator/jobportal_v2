@@ -30,6 +30,7 @@ enum CompanyPermission: string
     case CampaignsManage = 'campaigns.manage';
     case ReviewsReply = 'reviews.reply';
     case AnalyticsView = 'analytics.view';
+    case ApprovalsManage = 'approvals.manage';
 
     /** The group the permission is listed under in the invitation and edit dialogs. */
     public function group(): string
@@ -41,6 +42,7 @@ enum CompanyPermission: string
             self::CandidatesSearch, self::TalentPoolManage, self::MessagesSend => 'sourcing',
             self::InterviewKitsManage, self::ScreeningQuestionsManage, self::AssessmentsAuthor, self::StagesManage => 'library',
             self::CompanyProfile, self::CampaignsManage, self::ReviewsReply, self::AnalyticsView => 'company',
+            self::ApprovalsManage => 'workforce',
         };
     }
 

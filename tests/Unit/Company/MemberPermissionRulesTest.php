@@ -44,7 +44,7 @@ final class MemberPermissionRulesTest extends TestCase
     {
         $this->assertCount(12, MemberPreset::Recruiter->permissions());
         $this->assertSame(['applications.view', 'interviews.manage'], MemberPreset::Interviewer->permissionNames());
-        $this->assertCount(21, MemberPreset::CompanyAdmin->permissions());
+        $this->assertCount(22, MemberPreset::CompanyAdmin->permissions());
         $this->assertContains('talent_pool.manage', MemberPreset::Recruiter->permissionNames());
         $this->assertNotContains('jobs.assign', MemberPreset::Recruiter->permissionNames());
         $this->assertNotContains('analytics.view', MemberPreset::Recruiter->permissionNames());

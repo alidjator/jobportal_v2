@@ -57,7 +57,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
 | `company-permission-required` | 403 | Shared |  |
-| `company-suspended` | 403 | Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
+| `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
@@ -128,6 +128,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
+| `invalid-flow-approver` | 422 | Approval |  |
+| `invalid-flow-condition` | 422 | Approval |  |
+| `invalid-flow-steps` | 422 | Approval |  |
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
 | `invalid-grade` | 422 | Organization | The grade is not an active grade of the group. |
 | `invalid-grade-range` | 422 | Organization | The lowest grade ranks above the highest grade. |
@@ -251,7 +254,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-phone-number` | 409 | Recruitment |  |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
-| `not-a-company-member` | 403 | Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
+| `not-a-company-member` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
 | `not-a-group-member` | 403 | Organization | This account holds no group role. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
@@ -259,6 +262,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-a-voice-interview` | 409 | Recruitment | This interview is not held by phone. |
 | `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
 | `not-an-author` | 403 | Assessment | Only a company member with the permission, a psychologist or an administrator can write tests. |
+| `not-an-internal-tenant` | 403 | Approval | Approvals belong to the tenants of an ERP group. |
 | `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |

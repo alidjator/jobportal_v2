@@ -179,8 +179,8 @@ final class CompanyTeamTest extends FeatureTestCase
     {
         $response = $this->api('GET', '/permissions', [], $this->recruiterToken)->assertOk();
 
-        $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company'], array_column($response->json('data.groups'), 'group'));
-        $this->assertSame(21, array_sum(array_map(fn (array $group): int => count($group['permissions']), $response->json('data.groups'))));
+        $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company', 'workforce'], array_column($response->json('data.groups'), 'group'));
+        $this->assertSame(22, array_sum(array_map(fn (array $group): int => count($group['permissions']), $response->json('data.groups'))));
         $this->assertSame(['company_admin', 'recruiter', 'interviewer'], array_column($response->json('data.presets'), 'preset'));
         $this->assertSame(['applications.view', 'interviews.manage'], $response->json('data.presets.2.permissions'));
         $this->assertSame(['member', 'member'], [$response->json('data.presets.1.role'), $response->json('data.presets.2.role')]);
@@ -190,7 +190,7 @@ final class CompanyTeamTest extends FeatureTestCase
     public function test_the_current_company_lists_the_effective_permissions(): void
     {
         $admin = $this->api('GET', '/me')->assertOk();
-        $this->assertCount(21, $admin->json('data.permissions'));
+        $this->assertCount(22, $admin->json('data.permissions'));
 
         $recruiter = $this->api('GET', '/me', [], $this->recruiterToken)->assertOk()->assertJsonPath('data.role', 'member');
         $this->assertContains('applications.view', $recruiter->json('data.permissions'));

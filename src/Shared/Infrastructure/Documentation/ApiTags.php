@@ -23,6 +23,7 @@ final class ApiTags
         $id = self::ID;
 
         return [
+            ['name' => 'Approvals', 'description' => 'The approval flows of a group (its default) and of an internal tenant (which replaces the default for itself), per subject type.', 'patterns' => ['^(organization|company)/approval-flows']],
             ['name' => 'Authentication', 'description' => 'Registering, signing in and out (job seekers, company members and admins), email verification, password reset, accepting a team invitation.', 'patterns' => ['^auth/', '^admin/auth/']],
             ['name' => 'Account', 'description' => 'The signed-in account: who am I, avatar, changing the password, the second factor of a company member, deleting the account, accepting the terms.', 'patterns' => ['^me$', '^me/avatar', '^me/password', '^me/deletion', '^me/terms-acceptance', '^company/me$', '^admin/me$', '^admin/me/(password|two-factor)', '^me/two-factor', '^me/data-export']],
             ['name' => 'Job seeker profile and CV', 'description' => 'The profile, experiences, educations, skills, languages, links, resumes and the generated CV.', 'patterns' => ['^me/(profile|experiences|educations|skills|languages|links|resumes|cv)']],

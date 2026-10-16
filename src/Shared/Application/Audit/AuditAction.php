@@ -233,6 +233,10 @@ final class AuditAction
 
     public const string GROUP_RECRUITMENT_READ = 'group.recruitment_read';
 
+    public const string APPROVAL_FLOW_SAVED = 'approval.flow_saved';
+
+    public const string APPROVAL_FLOW_REMOVED = 'approval.flow_removed';
+
     public const string GROUP_GRADE_CREATED = 'group.grade_created';
 
     public const string GROUP_GRADE_UPDATED = 'group.grade_updated';

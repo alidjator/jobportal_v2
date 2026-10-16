@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
 use Src\Identity\Infrastructure\Auth\ThrottledPersonalAccessToken;
 use Src\Shared\Application\Accounts\ErasureSteps;
+use Src\Shared\Application\Approval\ApprovalSubjectCatalog;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\EventDispatcher;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public array $singletons = [
         PermissionCatalog::class,
         SettingsCatalog::class,
+        ApprovalSubjectCatalog::class,
         EmailTemplateCatalog::class,
         NotificationPreferenceCatalog::class,
     ];

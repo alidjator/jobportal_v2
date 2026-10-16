@@ -10,10 +10,10 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 
 final class CompanyPermissionTest extends TestCase
 {
-    public function test_the_catalog_has_21_permissions_in_five_groups(): void
+    public function test_the_catalog_has_22_permissions_in_six_groups(): void
     {
-        $this->assertCount(21, CompanyPermission::cases());
-        $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company'], array_values(array_unique(array_map(fn (CompanyPermission $p): string => $p->group(), CompanyPermission::cases()))));
+        $this->assertCount(22, CompanyPermission::cases());
+        $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company', 'workforce'], array_values(array_unique(array_map(fn (CompanyPermission $p): string => $p->group(), CompanyPermission::cases()))));
     }
 
     public function test_nine_permissions_need_reading(): void

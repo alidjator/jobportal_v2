@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Src\Approval\Infrastructure\ApprovalServiceProvider;
 use Src\Assessment\Infrastructure\AssessmentServiceProvider;
 use Src\Campaign\Infrastructure\CampaignServiceProvider;
 use Src\Company\Infrastructure\CompanyServiceProvider;
@@ -33,6 +34,7 @@ return [
     ReferenceDataServiceProvider::class,
     CompanyServiceProvider::class,
     OrganizationServiceProvider::class,
+    ApprovalServiceProvider::class,
     JobServiceProvider::class,
     RecruitmentServiceProvider::class,
     MessagingServiceProvider::class,
