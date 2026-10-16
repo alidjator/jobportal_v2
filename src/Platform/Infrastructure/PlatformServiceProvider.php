@@ -13,6 +13,7 @@ use Src\Platform\Application\Email\PlatformAdHocEmails;
 use Src\Platform\Application\Email\PlatformEmailTemplates;
 use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\Settings\EditCompanySettings;
+use Src\Platform\Application\Settings\EditGroupSettings;
 use Src\Platform\Application\Settings\SettingsStore;
 use Src\Platform\Application\Settings\StoredSettings;
 use Src\Platform\Infrastructure\Dashboard\OperationsCard;
@@ -29,6 +30,7 @@ use Src\Shared\Application\Email\AdHocEmails;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\CompanySettingsEditor;
+use Src\Shared\Application\Settings\GroupSettingsEditor;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -42,6 +44,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         MemberActivity::class => AuditMemberActivity::class,
         Settings::class => StoredSettings::class,
         CompanySettingsEditor::class => EditCompanySettings::class,
+        GroupSettingsEditor::class => EditGroupSettings::class,
         EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
         EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,
         EmailTemplates::class => PlatformEmailTemplates::class,

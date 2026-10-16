@@ -4,6 +4,7 @@ namespace Src\Platform\Application\Settings;
 
 use InvalidArgumentException;
 use LogicException;
+use Src\Shared\Application\Organization\GroupDirectory;
 use Src\Shared\Application\Settings\SettingDefinition;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -11,7 +12,8 @@ use Src\Shared\Application\Settings\SettingType;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 
 /**
- * The reader other contexts use. A stored value that the setting's definition no longer accepts (the catalog changed after the
+ * The reader other contexts use: the company's own value (when the setting allows it), then the value of the company's group (when the setting allows it and the
+ * company is an internal tenant), then the global value, then the default. A stored value that the setting's definition no longer accepts (the catalog changed after the
  * value was saved) is ignored, so the next source, and finally the default, applies instead of breaking the feature.
  */
 final readonly class StoredSettings implements Settings
@@ -19,6 +21,7 @@ final readonly class StoredSettings implements Settings
     public function __construct(
         private SettingsCatalog $catalog,
         private SettingsStore $store,
+        private GroupDirectory $groups,
     ) {}
 
     public function integer(string $key, ?int $companyId = null): int
@@ -62,6 +65,14 @@ final readonly class StoredSettings implements Settings
 
         if ($companyId !== null && $definition->overridable && array_key_exists($companyId, $values->companyOverrides[$key] ?? [])) {
             $candidates[] = $values->companyOverrides[$key][$companyId];
+        }
+
+        if ($companyId !== null && $definition->groupEditable) {
+            $groupId = $this->groups->groupOfCompany($companyId);
+
+            if ($groupId !== null && array_key_exists($groupId, $values->groupValues[$key] ?? [])) {
+                $candidates[] = $values->groupValues[$key][$groupId];
+            }
         }
 
         if (isset($values->globals[$key])) {

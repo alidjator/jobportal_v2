@@ -18,4 +18,8 @@ interface SettingsStore
     public function setCompanyOverride(string $key, int $companyId, mixed $value, ?int $adminId): void;
 
     public function removeCompanyOverride(string $key, int $companyId): bool;
+
+    public function setGroupValue(string $key, int $groupId, mixed $value): void;
+
+    public function removeGroupValue(string $key, int $groupId): bool;
 }

@@ -30,6 +30,7 @@ final class AdminSettingResource extends JsonResource
             'value' => $this->resource->value,
             'is_default' => $this->resource->isDefault,
             'overridable_per_company' => $definition->overridable,
+            'editable_per_group' => $definition->groupEditable,
             /** @var array{min?: int|null, max?: int|null, max_length?: int|null, allowed_values?: list<string>, min_items?: int|null} */
             'constraints' => match ($definition->type) {
                 SettingType::Integer => ['min' => $definition->min, 'max' => $definition->max],

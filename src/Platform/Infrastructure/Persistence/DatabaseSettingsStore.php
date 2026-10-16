@@ -24,6 +24,8 @@ final class DatabaseSettingsStore implements SettingsStore
 
     private const string COMPANY_SCOPE = 'company';
 
+    private const string GROUP_SCOPE = 'group';
+
     private ?StoredValues $memo = null;
 
     private readonly Connection $connection;
@@ -74,6 +76,24 @@ final class DatabaseSettingsStore implements SettingsStore
         return $deleted;
     }
 
+    public function setGroupValue(string $key, int $groupId, mixed $value): void
+    {
+        $this->upsert('platform_setting_overrides', ['key' => $key, 'scope_type' => self::GROUP_SCOPE, 'scope_id' => $groupId], $value, null);
+
+        $this->invalidateAfterCommit();
+    }
+
+    public function removeGroupValue(string $key, int $groupId): bool
+    {
+        $deleted = $this->connection->table('platform_setting_overrides')
+            ->where('key', $key)->where('scope_type', self::GROUP_SCOPE)->where('scope_id', $groupId)
+            ->delete() > 0;
+
+        $this->invalidateAfterCommit();
+
+        return $deleted;
+    }
+
     /** @param  array<string, int|string>  $identity */
     private function upsert(string $table, array $identity, mixed $value, ?int $adminId): void
     {
@@ -98,7 +118,7 @@ final class DatabaseSettingsStore implements SettingsStore
         });
     }
 
-    /** @return array{globals: array<string, array{value: mixed, updated_at: string, admin: int|null}>, overrides: array<string, array<int, mixed>>} */
+    /** @return array{globals: array<string, array{value: mixed, updated_at: string, admin: int|null}>, overrides: array<string, array<int, mixed>>, groups: array<string, array<int, mixed>>} */
     private function load(): array
     {
         $globals = [];
@@ -112,15 +132,22 @@ final class DatabaseSettingsStore implements SettingsStore
         }
 
         $overrides = [];
+        $groupValues = [];
 
-        foreach ($this->connection->table('platform_setting_overrides')->where('scope_type', self::COMPANY_SCOPE)->get(['key', 'scope_id', 'value']) as $row) {
-            $overrides[(string) $row->key][(int) $row->scope_id] = json_decode((string) $row->value, true, 512, JSON_THROW_ON_ERROR);
+        foreach ($this->connection->table('platform_setting_overrides')->get(['key', 'scope_type', 'scope_id', 'value']) as $row) {
+            $value = json_decode((string) $row->value, true, 512, JSON_THROW_ON_ERROR);
+
+            if ($row->scope_type === self::GROUP_SCOPE) {
+                $groupValues[(string) $row->key][(int) $row->scope_id] = $value;
+            } else {
+                $overrides[(string) $row->key][(int) $row->scope_id] = $value;
+            }
         }
 
-        return ['globals' => $globals, 'overrides' => $overrides];
+        return ['globals' => $globals, 'overrides' => $overrides, 'groups' => $groupValues];
     }
 
-    /** @param  array{globals: array<string, array{value: mixed, updated_at: string, admin: int|null}>, overrides: array<string, array<int, mixed>>}  $raw */
+    /** @param  array{globals: array<string, array{value: mixed, updated_at: string, admin: int|null}>, overrides: array<string, array<int, mixed>>, groups?: array<string, array<int, mixed>>}  $raw */
     private function fromRaw(array $raw): StoredValues
     {
         $globals = [];
@@ -129,7 +156,7 @@ final class DatabaseSettingsStore implements SettingsStore
             $globals[$key] = new StoredSetting($stored['value'], new DateTimeImmutable($stored['updated_at'], new DateTimeZone('UTC')), $stored['admin']);
         }
 
-        return new StoredValues($globals, $raw['overrides']);
+        return new StoredValues($globals, $raw['overrides'], $raw['groups'] ?? []);
     }
 
     private function encode(mixed $value): string

@@ -1,4 +1,4 @@
-# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and the group activity log of C coded 2026-10-16)
+# ERP Organization context and internal tenants (designed 2026-10-15; parts A, B and C1 to C2 coded 2026-10-16)
 
 Item #5 of `phase-8-index.md`. Extends `erp-direction.md` (sections 1, 4 and 7) and `phase-1-company.md` (tenant = `company_companies`, one company
 per member account). Requisitions and approvals (#6) build on this design. Plans, billing, payments, orders and invoices stay out of scope, also
@@ -221,3 +221,21 @@ Part C is coded in three steps: **C1** `group_id` on audit entries and the group
   `company_name` (the tenant it belongs to), the actor name for members, and the audit `metadata` (the versions before and after for dated structure changes). `MemberActivity`
   gains `ofGroupLog`. Reading the log is not itself audited, as for the company log. No export yet.
 - `GroupPermission` gains `group.audit.view` (the catalog is now `group.structure.manage`, `group.members.manage`, `group.recruitment.view`, `group.audit.view`).
+
+## Coded: part C2, the group scope of the settings (2026-10-16)
+
+Migration `000146` lets `platform_setting_overrides.scope_type` hold `group` next to `company` (the group id is the `scope_id`). Interpretations:
+
+- **Allowed scopes.** `SettingDefinition` gains `groupEditable` next to the existing `overridable` (company scope) and `companyEditable`; a setting may allow either or both. The
+  design said "in place of the single `overridable` flag"; the flag stays for the company scope, so none of the 53 existing definitions changes. No production setting is
+  group-editable yet: `group.require_two_factor` (`erp-sso.md`) and `workforce.fiscal_year_start_month` (`erp-requisitions.md`) register with `groupEditable: true` when
+  their modules are coded (#7, #6). The tests register their own.
+- **Reading.** `StoredSettings` resolves company value (when `overridable`), then the group value (when `groupEditable` and the company is an internal tenant: the group comes from
+  `GroupDirectory::groupOfCompany`), then the global value, then the default. A group value the definition no longer accepts is ignored, like the others. Reading with no
+  company id never sees a group value.
+- **Group settings page.** `GET organization/settings` (any group member) lists the group-editable settings with `value` (what applies to the group's tenants without a value
+  of their own) and `default` (what applies without a group value: the global value, else the default). `PATCH organization/settings` (`group.settings.manage`, the new
+  fifth group permission) takes `{key: value}`, all or none, 422 `setting-not-editable` for a key the group may not set and `invalid-setting-value` with `errors`. An unchanged
+  value saves and audits nothing. There is no "remove my value" call yet.
+- **Audit and events.** One `group.settings_updated` entry (subject `organization_group`) with the values before and after; a `GroupSettingChanged` event per changed key for the
+  context that owns the setting. The platform admin's setting list shows `editable_per_group`.

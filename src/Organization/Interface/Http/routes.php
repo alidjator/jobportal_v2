@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\Organization\Interface\Http\Controllers\GroupActivityController;
 use Src\Organization\Interface\Http\Controllers\GroupRoleController;
+use Src\Organization\Interface\Http\Controllers\GroupSettingsController;
 use Src\Organization\Interface\Http\Controllers\OrganizationController;
 use Src\Organization\Interface\Http\Controllers\PositionController;
 use Src\Organization\Interface\Http\Controllers\StructureCatalogController;
@@ -39,6 +40,10 @@ Route::middleware('auth:user')->group(function (): void {
 
     // The activity log of the group (`group.audit.view`): its own changes, its internal tenants' members and the platform's actions on it; no IP address.
     Route::get('organization/activity', [GroupActivityController::class, 'index']);
+
+    // The settings page of the group: any member reads, `group.settings.manage` changes the settings that belong to the group.
+    Route::get('organization/settings', [GroupSettingsController::class, 'show']);
+    Route::patch('organization/settings', [GroupSettingsController::class, 'update']);
 
     Route::get('organization/members', [GroupRoleController::class, 'index']);
     Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');

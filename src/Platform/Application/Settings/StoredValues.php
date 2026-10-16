@@ -2,7 +2,7 @@
 
 namespace Src\Platform\Application\Settings;
 
-/** Everything the database holds: the global values and the company overrides, by setting key. Settings at their default have no entry. */
+/** Everything the database holds: the global values, the company overrides and the group values, by setting key. Settings at their default have no entry. */
 final readonly class StoredValues
 {
     /**
@@ -12,5 +12,7 @@ final readonly class StoredValues
     public function __construct(
         public array $globals = [],
         public array $companyOverrides = [],
+        /** @var array<string, array<int, mixed>> setting key, then group id, mapped to the value */
+        public array $groupValues = [],
     ) {}
 }

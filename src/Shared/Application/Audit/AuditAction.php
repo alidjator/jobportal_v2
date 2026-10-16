@@ -223,6 +223,8 @@ final class AuditAction
 
     public const string GROUP_ROLE_REMOVED = 'group.role_removed';
 
+    public const string GROUP_SETTINGS_UPDATED = 'group.settings_updated';
+
     public const string GROUP_GRADE_CREATED = 'group.grade_created';
 
     public const string GROUP_GRADE_UPDATED = 'group.grade_updated';
