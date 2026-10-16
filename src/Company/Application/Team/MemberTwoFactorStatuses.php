@@ -5,6 +5,8 @@ namespace Src\Company\Application\Team;
 use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Domain\CompanyMember;
 use Src\Shared\Application\Accounts\MemberTwoFactor;
+use Src\Shared\Application\Organization\GroupDirectory;
+use Src\Shared\Application\Organization\GroupSettingKeys;
 use Src\Shared\Application\Settings\Settings;
 
 /** The second factor of each member as the team page shows it: `on` (confirmed), `pending` (required, not enrolled yet) or `off`. */
@@ -19,6 +21,7 @@ final readonly class MemberTwoFactorStatuses
     public function __construct(
         private MemberTwoFactor $factors,
         private Settings $settings,
+        private GroupDirectory $groups,
     ) {}
 
     /**
@@ -28,7 +31,8 @@ final readonly class MemberTwoFactorStatuses
     public function of(int $companyId, array $members): array
     {
         $confirmed = $this->factors->confirmed(array_map(static fn (CompanyMember $member): int => $member->userId, $members));
-        $companyRequires = $this->settings->boolean(CompanySettings::REQUIRE_TWO_FACTOR, $companyId);
+        $companyRequires = $this->settings->boolean(CompanySettings::REQUIRE_TWO_FACTOR, $companyId)
+            || ($this->groups->groupOfCompany($companyId) !== null && $this->settings->boolean(GroupSettingKeys::REQUIRE_TWO_FACTOR, $companyId));
         $statuses = [];
 
         foreach ($members as $member) {

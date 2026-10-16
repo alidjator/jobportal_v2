@@ -15,6 +15,8 @@ final class IdentityEmailTemplates
 
     public const string TWO_FACTOR_REQUIRED = 'identity.two_factor_required';
 
+    public const string TENANT_INTERNAL = 'identity.tenant_internal';
+
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
@@ -53,6 +55,16 @@ final class IdentityEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nUntuk menjaga keamanan data pelamar, akun Anda kini wajib memakai verifikasi dua langkah. Sesi Anda yang sedang aktif telah diakhiri.\n\nSaat Anda masuk berikutnya, Anda akan diminta memasang aplikasi autentikator (misalnya Google Authenticator) di ponsel Anda. Siapkan ponsel Anda sebelum masuk.",
                     'en' => "Hello {{name}},\n\nTo keep applicant data safe, your account now needs two-step verification. Your active sessions have ended.\n\nThe next time you sign in you will be asked to set up an authenticator app (for example Google Authenticator) on your phone. Have your phone ready before you sign in.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TENANT_INTERNAL,
+                'Sent to a company member when their company became an internal tenant of an ERP group: their sessions ended and the next sign-in follows the internal rules.',
+                [new EmailVariable('name', 'The recipient\'s name', 'Budi')],
+                TranslatedText::fromArray(['id' => 'Aturan masuk akun Anda berubah', 'en' => 'The sign-in rules of your account changed']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPerusahaan Anda kini terhubung ke grup perusahaan Anda di ONESIS. Sesi Anda yang sedang aktif telah diakhiri.\n\nMulai sekarang sesi masuk berlaku 12 jam, dan grup Anda dapat mewajibkan verifikasi dua langkah. Saat Anda masuk berikutnya, Anda mungkin diminta memasang aplikasi autentikator di ponsel Anda.",
+                    'en' => "Hello {{name}},\n\nYour company is now linked to your company group on ONESIS. Your active sessions have ended.\n\nFrom now on a sign-in lasts 12 hours, and your group may require two-step verification. The next time you sign in you may be asked to set up an authenticator app on your phone.",
                 ]),
             ),
         ];

@@ -5,6 +5,7 @@ namespace Src\Organization\Infrastructure;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Organization\Application\OrganizationPermissions;
+use Src\Organization\Application\OrganizationSettings;
 use Src\Organization\Domain\CostCentreRepository;
 use Src\Organization\Domain\Events\GroupCreated;
 use Src\Organization\Domain\Events\GroupRecruitmentRead;
@@ -30,6 +31,7 @@ use Src\Organization\Domain\UnitRepository;
 use Src\Organization\Domain\UnitTypeRepository;
 use Src\Organization\Infrastructure\Listeners\RecordOrganizationAuditEntries;
 use Src\Organization\Infrastructure\Listeners\RemoveGroupRoleWhenMemberRemoved;
+use Src\Organization\Infrastructure\Listeners\RequireTwoFactorWhenGroupSwitchesItOn;
 use Src\Organization\Infrastructure\Persistence\DatabaseCostCentreRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseGradeRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseGroupMemberRepository;
@@ -42,6 +44,8 @@ use Src\Organization\Infrastructure\Persistence\DatabaseUnitTypeRepository;
 use Src\Organization\Infrastructure\Persistence\RepositoryGroupDirectory;
 use Src\Shared\Application\Organization\GroupDirectory;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Settings\GroupSettingChanged;
+use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 /** The Organization context: customer groups, their legal entities, the link to the tenants of the portal and the group roles (`docs/design/erp-organization.md`). */
@@ -63,6 +67,10 @@ final class OrganizationServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
+            $catalog->add(...OrganizationSettings::definitions());
+        });
+
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...OrganizationPermissions::definitions());
         });
@@ -73,6 +81,7 @@ final class OrganizationServiceProvider extends ContextServiceProvider
         parent::boot();
 
         Event::listen(CompanyMemberRemoved::class, RemoveGroupRoleWhenMemberRemoved::class);
+        Event::listen(GroupSettingChanged::class, RequireTwoFactorWhenGroupSwitchesItOn::class);
 
         Event::listen(GroupCreated::class, [RecordOrganizationAuditEntries::class, 'onGroupCreated']);
         Event::listen(GroupSuspended::class, [RecordOrganizationAuditEntries::class, 'onGroupSuspended']);

@@ -17,7 +17,7 @@ use Src\Shared\Domain\Exceptions\AuthenticationFailed;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
 /**
- * Signs a public user (job seeker or company member) in with email and password and issues a 30-day token. A company member who must pass a second factor
+ * Signs a public user (job seeker or company member) in with email and password and issues a 30-day token (12 hours for a member of an internal tenant). A company member who must pass a second factor
  * (or has one) gets a challenge instead: `POST auth/two-factor` finishes the sign-in.
  */
 final readonly class SignInUser
@@ -30,6 +30,7 @@ final readonly class SignInUser
         private AccessTokenIssuer $tokens,
         private MemberSignInGuard $memberships,
         private MemberTwoFactorGate $twoFactor,
+        private MemberTokenLifetime $lifetime,
         private SignInThrottle $throttle,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -72,7 +73,7 @@ final readonly class SignInUser
         }
 
         $now = $this->clock->now();
-        $expiresAt = $now->modify(self::TOKEN_LIFETIME);
+        $expiresAt = $now->modify($user->isCompanyMember() ? $this->lifetime->forUser((int) $user->id) : self::TOKEN_LIFETIME);
 
         $token = $this->transactions->run(function () use ($user, $command, $now, $expiresAt): string {
             $user->recordSignIn($now);

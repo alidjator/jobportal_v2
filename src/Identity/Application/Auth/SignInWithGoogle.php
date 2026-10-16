@@ -37,6 +37,7 @@ final readonly class SignInWithGoogle
         private SignInThrottle $throttle,
         private CampaignCodes $campaigns,
         private MemberTwoFactorGate $twoFactor,
+        private MemberTokenLifetime $lifetime,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -98,7 +99,7 @@ final readonly class SignInWithGoogle
         }
 
         $now = $this->clock->now();
-        $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
+        $expiresAt = $now->modify($user !== null && $user->isCompanyMember() ? $this->lifetime->forUser((int) $user->id) : SignInUser::TOKEN_LIFETIME);
 
         [$user, $token] = $this->transactions->run(function () use ($user, $identity, $email, $linkedUserId, $command, $now, $expiresAt): array {
             $user ??= User::registerWithGoogle($this->nameOf($identity, $email), $email, $command->language, $this->campaigns->activeCode($command->campaignCode), $now);

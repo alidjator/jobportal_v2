@@ -4,8 +4,8 @@ namespace Src\Identity\Application\Account;
 
 use RuntimeException;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
+use Src\Identity\Application\Auth\MemberTokenLifetime;
 use Src\Identity\Application\Auth\PasswordHasher;
-use Src\Identity\Application\Auth\SignInUser;
 use Src\Identity\Application\TwoFactor\MemberTwoFactorGate;
 use Src\Identity\Domain\AccountScope;
 use Src\Identity\Domain\Events\SignedIn;
@@ -27,6 +27,7 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         private PasswordHasher $hasher,
         private AccessTokenIssuer $tokens,
         private MemberTwoFactorGate $twoFactor,
+        private MemberTokenLifetime $lifetime,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -98,7 +99,7 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         }
 
         $now = $this->clock->now();
-        $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
+        $expiresAt = $now->modify($this->lifetime->forUser($userId));
 
         $user->recordSignIn($now);
         $user = $this->users->save($user);

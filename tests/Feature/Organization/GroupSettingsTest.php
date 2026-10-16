@@ -109,8 +109,8 @@ final class GroupSettingsTest extends FeatureTestCase
     {
         $page = $this->asMember($this->viewer, 'GET', 'settings')->assertOk();
 
-        $this->assertSame(['test.both_limit', 'test.group_limit'], array_column($page->json('data'), 'key'));
-        $page->assertJsonPath('data.1.value', 10)->assertJsonPath('data.1.default', 10)->assertJsonPath('data.1.type', 'integer')->assertJsonPath('data.1.min', 1)->assertJsonPath('data.1.max', 100);
+        $this->assertSame(['group.require_two_factor', 'test.both_limit', 'test.group_limit'], array_column($page->json('data'), 'key'));
+        $page->assertJsonPath('data.2.value', 10)->assertJsonPath('data.2.default', 10)->assertJsonPath('data.2.type', 'integer')->assertJsonPath('data.2.min', 1)->assertJsonPath('data.2.max', 100);
 
         $stranger = $this->member($this->companyRowId('pt-luar'), 'luar@example.test', 'company_admin');
         $this->asMember($stranger, 'GET', 'settings')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-group-member');
@@ -120,7 +120,7 @@ final class GroupSettingsTest extends FeatureTestCase
     {
         $outsider = $this->companyRowId('pt-luar');
 
-        $this->asMember($this->holdingAdmin, 'PATCH', 'settings', ['test.group_limit' => 25])->assertOk()->assertJsonPath('data.1.value', 25)->assertJsonPath('data.1.default', 10);
+        $this->asMember($this->holdingAdmin, 'PATCH', 'settings', ['test.group_limit' => 25])->assertOk()->assertJsonPath('data.2.value', 25)->assertJsonPath('data.2.default', 10);
 
         $this->assertSame(25, $this->limit('test.group_limit', $this->holding), 'a tenant of the group');
         $this->assertSame(10, $this->limit('test.group_limit', $outsider), 'an external tenant');
@@ -181,6 +181,6 @@ final class GroupSettingsTest extends FeatureTestCase
         $this->admin('PUT', "groups/{$other->json('data.id')}/members/{$user}", ['permissions' => ['group.settings.manage']])->assertOk();
 
         $this->assertSame(10, $this->limit('test.group_limit', $company));
-        $this->asMember($user, 'GET', 'settings')->assertOk()->assertJsonPath('data.1.value', 10);
+        $this->asMember($user, 'GET', 'settings')->assertOk()->assertJsonPath('data.2.value', 10);
     }
 }

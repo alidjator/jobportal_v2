@@ -5,8 +5,10 @@ namespace Src\Organization\Application\Admin;
 use Src\Organization\Domain\Events\TenantLinkedToLegalEntity;
 use Src\Organization\Domain\GroupRepository;
 use Src\Organization\Domain\LegalEntityRepository;
+use Src\Shared\Application\Accounts\MemberSessions;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -24,6 +26,8 @@ final readonly class LinkTenant
         private GroupRepository $groups,
         private LegalEntityRepository $entities,
         private TenantRegistry $tenants,
+        private CompanyTeam $team,
+        private MemberSessions $sessions,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -68,6 +72,9 @@ final readonly class LinkTenant
             }
 
             $this->tenants->link($companyId, $legalEntityId);
+
+            // The tenant is internal now: no 30-day token of its members may survive (`erp-sso.md` section 5).
+            $this->sessions->endForInternalTenant(array_keys($this->team->roles($companyId)));
         });
 
         $this->events->dispatch([new TenantLinkedToLegalEntity($groupId, $legalEntityId, $companyId, (int) $actor->id, true, $ipAddress, $userAgent, $this->clock->now())]);

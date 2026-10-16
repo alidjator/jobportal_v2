@@ -13,6 +13,7 @@ use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
 use Src\Identity\Application\Account\IdentityFirstSignIns;
+use Src\Identity\Application\Account\IdentityMemberSessions;
 use Src\Identity\Application\Account\IdentityMemberTwoFactor;
 use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
@@ -122,6 +123,7 @@ use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureReceipts;
 use Src\Shared\Application\Accounts\FirstSignIns;
+use Src\Shared\Application\Accounts\MemberSessions;
 use Src\Shared\Application\Accounts\MemberTwoFactor;
 use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
@@ -161,6 +163,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         FirstSignIns::class => IdentityFirstSignIns::class,
         MemberTwoFactor::class => IdentityMemberTwoFactor::class,
         TwoFactorNoticeSender::class => MailTwoFactorNoticeSender::class,
+        MemberSessions::class => IdentityMemberSessions::class,
         AdminContacts::class => IdentityAdminContacts::class,
         AdminAccounts::class => EloquentAdminAccounts::class,
         SocialAccountRepository::class => EloquentSocialAccountRepository::class,

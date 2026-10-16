@@ -50,6 +50,9 @@ final class GroupRecruitmentReadTest extends FeatureTestCase
         $this->group = (int) $created->json('data.id');
         $holdingEntity = (int) $created->json('data.legal_entities.0.id');
         $this->operator('PUT', "groups/{$this->group}/legal-entities/{$holdingEntity}/tenant", ['company_id' => $this->companyId])->assertOk();
+        // Linking the tenant ended every session of its members (`erp-sso.md` section 5): they sign in again.
+        $this->adminToken = $this->tokenFor($this->adminId);
+        $this->recruiterToken = $this->tokenFor($this->recruiterId);
         $this->operator('PUT', "groups/{$this->group}/members/{$this->adminId}", ['permissions' => ['group.structure.manage', 'group.recruitment.view', 'group.audit.view']])->assertOk();
         $sisterEntity = (int) $this->api('POST', '/organization/legal-entities', ['legal_name' => 'PT Sister', 'legal_form' => 'pt'])->assertCreated()->json('data.id');
         $this->operator('PUT', "groups/{$this->group}/legal-entities/{$sisterEntity}/tenant", ['company_id' => $this->sister])->assertOk();

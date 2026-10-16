@@ -45,13 +45,13 @@ final readonly class CompleteTwoFactorSignIn
     ) {}
 
     /**
-     * @param  string  $tokenLifetime  a `DateTimeImmutable::modify` interval for the token
+     * @param  string|callable(int): string  $tokenLifetime  a `DateTimeImmutable::modify` interval for the token, or a function of the account id that gives it
      *
      * @throws AuthenticationFailed `two-factor-challenge-expired` when the challenge is unknown, used, expired or of an account of another type; `invalid-two-factor-code` for a wrong code
      * @throws TooManyAttempts
      * @throws AccessDenied when the account was suspended or deactivated after the password step
      */
-    public function execute(CompleteTwoFactorSignInCommand $command, UserType $type, string $tokenLifetime): TwoFactorSignInResult
+    public function execute(CompleteTwoFactorSignInCommand $command, UserType $type, string|callable $tokenLifetime): TwoFactorSignInResult
     {
         $now = $this->clock->now();
         $challenge = $this->challenges->findUsable($this->twoFactorTokens->hash($command->challengeToken), $now);
@@ -89,7 +89,7 @@ final readonly class CompleteTwoFactorSignIn
             throw new AuthenticationFailed('The verification code is incorrect.', 'invalid-two-factor-code');
         }
 
-        $expiresAt = $now->modify($tokenLifetime);
+        $expiresAt = $now->modify(is_string($tokenLifetime) ? $tokenLifetime : $tokenLifetime($userId));
 
         [$token, $newRecoveryCodes] = $this->transactions->run(function () use ($user, $userId, $challenge, $command, $step, $enrolling, $now, $expiresAt): array {
             $this->challenges->consume($challenge->id, $now);

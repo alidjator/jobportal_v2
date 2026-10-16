@@ -1,4 +1,4 @@
-# ERP sign-in: the Identity context as the IAM of the ERP (designed 2026-10-15, not coded)
+# ERP sign-in: the Identity context as the IAM of the ERP (designed 2026-10-15, coded 2026-10-16)
 
 Item #7 of `phase-8-index.md`. Replaces the "central IdP" direction of `erp-direction.md` section 2. Builds on `architecture.md` 2.2 (Sanctum
 tokens with a lifetime per token), `phase-8-company-admin.md` section 1 (TOTP for company members, #2) and `erp-organization.md` (groups,
@@ -61,3 +61,21 @@ internal tenants). Plans, billing, payments, orders and invoices stay out of sco
 ## Still open
 
 - Coding order: sections 3 and 4 are coded with or after #2 (`phase-8-company-admin.md`), once `erp-organization.md` is coded.
+
+## Coded (2026-10-16)
+
+Item #7 of `phase-8-index.md`. No migration. Interpretations, where the design left room:
+
+- **Group setting.** `group.require_two_factor` is registered by the Organization context (`OrganizationSettings`, boolean, default `true`, `groupEditable`) with its key in the shared `GroupSettingKeys`, so Company can
+  read it without knowing Organization. A group admin with `group.settings.manage` changes it on `organization/settings`. It binds only the members of **internal** tenants; an external tenant keeps its own
+  `company.require_two_factor`. The effective rule of `CompanyTwoFactorPolicy`: company admin, or the company setting, or (internal tenant and the group setting). The team page (`MemberTwoFactorStatuses`) shows
+  `pending` for the same people.
+- **Token lifetime.** `MemberTokenLifetime` (Identity) gives `+12 hours` to a company member whose company is linked to a legal entity (asked through `CompanyMembershipResolver` and `GroupDirectory`) and
+  `+30 days` to everyone else. It applies at every place a company member's token is issued: password sign-in, Google sign-in, the end of the invitation accept and the second step of the two-factor
+  sign-in (`CompleteTwoFactorSignIn` takes the lifetime as a value or a function of the account). Job seekers register and sign in with 30 days as before.
+- **A tenant becomes internal.** `LinkTenant` ends every token of the tenant's members **inside the linking transaction** (new Shared port `MemberSessions`, provided by Identity) and queues the new email
+  `identity.tenant_internal` ("your active sessions have ended; sign-ins last 12 hours and your group may require two-step verification"). It is one email, not two: the two-factor requirement is met at the next sign-in.
+- **The group setting is switched on.** `RequireTwoFactorWhenGroupSwitchesItOn` (a synchronous listener of `GroupSettingChanged`) runs the "becoming required" rule of `phase-8-company-admin.md` section 1 for the
+  non-admin members of every internal tenant of the group: members without a confirmed factor lose their tokens and get `identity.two_factor_required`; those who have a factor keep their session.
+- **A tenant link is removed.** Nothing is revoked; new tokens follow the external rules (30 days, the company's own setting).
+- Not built, as designed: sign-in with a work account, and OpenID Connect for applications outside this codebase.
