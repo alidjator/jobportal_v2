@@ -64,4 +64,5 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/jobs/{id}/clone', [CompanyJobController::class, 'clone'])->whereNumber('id');
     Route::get('company/jobs/{id}/assignees', [CompanyJobController::class, 'assignees'])->whereNumber('id');
     Route::put('company/jobs/{id}/assignees', [CompanyJobController::class, 'replaceAssignees'])->whereNumber('id');
+    Route::put('company/jobs/{id}/hiring-manager-boundary', [CompanyJobController::class, 'setHiringManagerBoundary'])->whereNumber('id');
 });

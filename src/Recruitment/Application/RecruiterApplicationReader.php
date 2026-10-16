@@ -24,9 +24,11 @@ interface RecruiterApplicationReader
     /**
      * How many applications each stage of the job holds, keyed by stage id; a stage without applications is missing.
      *
+     * `$hiringManagerVisibleOnly` counts only the applications that carry the marker for hiring managers.
+     *
      * @return array<int, int>
      */
-    public function countByStage(int $jobId): array;
+    public function countByStage(int $jobId, bool $hiringManagerVisibleOnly = false): array;
 
     public function find(int $id): ?RecruiterApplicationDetailData;
 
@@ -39,11 +41,13 @@ interface RecruiterApplicationReader
 
     /**
      * How many other active (not rejected or withdrawn) applications of the same person to the same company each application has, keyed by application id; an application whose
-     * applicant was anonymised, or without others, is missing. `$visibleJobIds` limits the count to those jobs (null: every job).
+     * applicant was anonymised, or without others, is missing. `$visibleJobIds` limits the count to those jobs (null: every job); on the jobs of
+     * `$boundJobIds` (the member is a bound hiring manager) only applications that carry the marker count.
      *
      * @param  list<int>  $applicationIds
      * @param  list<int>|null  $visibleJobIds
+     * @param  list<int>  $boundJobIds
      * @return array<int, int>
      */
-    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds): array;
+    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds, array $boundJobIds = []): array;
 }

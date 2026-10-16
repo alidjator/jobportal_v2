@@ -57,6 +57,7 @@ final class JobDetailResource extends JsonResource
             // "Sedang ditinjau admin": set while the job is on a report hold. Never who reported it or why.
             'report_hold_at' => $job->reportHoldAt?->format(DateTimeInterface::ATOM),
             'requisition_id' => $job->requisitionId,
+            'hiring_manager_from_stage_id' => $job->hiringManagerFromStageId,
             'reviewed_at' => $job->reviewedAt?->format(DateTimeInterface::ATOM),
             'created_by_user_id' => $job->createdByUserId,
             'created_at' => $job->createdAt?->format(DateTimeInterface::ATOM),

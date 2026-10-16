@@ -15,6 +15,7 @@ enum CompanyPermission: string
     case JobsViewAll = 'jobs.view_all';
     case ApplicationsView = 'applications.view';
     case ApplicationsManage = 'applications.manage';
+    case ApplicationsReview = 'applications.review';
     case ApplicationsExport = 'applications.export';
     case InterviewsManage = 'interviews.manage';
     case OffersManage = 'offers.manage';
@@ -42,7 +43,7 @@ enum CompanyPermission: string
     {
         return match ($this) {
             self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll => 'jobs',
-            self::ApplicationsView, self::ApplicationsManage, self::ApplicationsExport, self::InterviewsManage, self::OffersManage,
+            self::ApplicationsView, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport, self::InterviewsManage, self::OffersManage,
             self::AssessmentsSend => 'applicants',
             self::CandidatesSearch, self::TalentPoolManage, self::MessagesSend => 'sourcing',
             self::InterviewKitsManage, self::ScreeningQuestionsManage, self::AssessmentsAuthor, self::StagesManage => 'library',
@@ -56,10 +57,16 @@ enum CompanyPermission: string
     public function requiresView(): bool
     {
         return match ($this) {
-            self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll, self::ApplicationsManage, self::ApplicationsExport,
+            self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport,
             self::InterviewsManage, self::OffersManage, self::AssessmentsSend => true,
             default => false,
         };
+    }
+
+    /** Whether holding the permission needs `applications.review` too: managing applicants includes rating and noting them (`phase-8-hiring-managers.md` section 1). */
+    public function requiresReview(): bool
+    {
+        return $this === self::ApplicationsManage;
     }
 
     /** @return list<string> every permission name, in catalog order */

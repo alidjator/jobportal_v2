@@ -12,7 +12,7 @@ final readonly class OtherApplications
 {
     public const int LIMIT = 10;
 
-    public function __construct(private RecruiterApplicationReader $reader, private JobDirectory $jobs) {}
+    public function __construct(private RecruiterApplicationReader $reader, private JobDirectory $jobs, private HiringManagerScope $scope) {}
 
     /** @return array{list<OtherApplicationView>, int} the visible ones, and how many are hidden */
     public function of(RecruitmentMember $member, RecruiterApplicationDetailData $data): array
@@ -23,11 +23,12 @@ final readonly class OtherApplications
 
         $others = $this->reader->otherApplications($data->id);
         $visible = $this->visibleJobIds($member);
+        $bound = $this->scope->boundJobIds($member);
         $shown = [];
         $hidden = 0;
 
         foreach ($others as $other) {
-            if ($visible !== null && ! in_array($other->jobId, $visible, true)) {
+            if (($visible !== null && ! in_array($other->jobId, $visible, true)) || (! $other->hiringManagerVisible && in_array($other->jobId, $bound, true))) {
                 $hidden++;
             } elseif (count($shown) < self::LIMIT) {
                 $shown[] = $other;
@@ -47,7 +48,7 @@ final readonly class OtherApplications
      */
     public function counts(RecruitmentMember $member, array $applicationIds): array
     {
-        return $this->reader->activeOtherCounts($applicationIds, $this->visibleJobIds($member));
+        return $this->reader->activeOtherCounts($applicationIds, $this->visibleJobIds($member), $this->scope->boundJobIds($member));
     }
 
     /** @return list<int>|null null when the member sees every job of the company */

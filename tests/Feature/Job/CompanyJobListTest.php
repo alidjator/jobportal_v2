@@ -183,7 +183,7 @@ final class CompanyJobListTest extends FeatureTestCase
         $this->assertSame('PHP (id)', $indonesian['skills'][0]['name']);
         $this->assertSame('PHP (en)', $english['skills'][0]['name']);
         $this->assertSame(
-            [['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin'], ['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member']],
+            [['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin', 'job_role' => 'recruiter'], ['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member', 'job_role' => 'recruiter']],
             $english['assignees'],
         );
     }

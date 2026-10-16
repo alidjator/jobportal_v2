@@ -6,6 +6,7 @@ use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageOrder;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -14,7 +15,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 /** A company admin replaces the whole order of the stages. The list must name every stage once and obey the order rules. */
 final readonly class ReorderStages
 {
-    public function __construct(private RecruitmentAccess $access, private StageRepository $stages, private TransactionManager $transactions) {}
+    public function __construct(private RecruitmentAccess $access, private StageRepository $stages, private HiringManagerVisibility $visibility, private TransactionManager $transactions, private Clock $clock) {}
 
     /**
      * @param  list<int>  $stageIds
@@ -38,6 +39,7 @@ final readonly class ReorderStages
             }
 
             $this->stages->savePositions($positions);
+            $this->visibility->refreshCompany($member->companyId, $this->clock->now());
         });
 
         return $this->stages->forCompany($member->companyId);

@@ -27,7 +27,7 @@ final readonly class UpdateApplicationNote
      */
     public function execute(Actor $actor, int $applicationId, int $noteId, string $body): NoteView
     {
-        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsManage);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsReview);
         $note = $this->notes->find($applicationId, $noteId) ?? throw EntityNotFound::of('Note', $noteId);
 
         if ($note->authorId !== $team->member->userId) {

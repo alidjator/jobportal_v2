@@ -7,6 +7,7 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Src\Recruitment\Application\HiringManagerVisibility;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswer;
 use Src\Recruitment\Domain\ApplicationRepository;
@@ -21,7 +22,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
 {
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
 
-    public function __construct(private ConnectionInterface $connection) {}
+    public function __construct(private ConnectionInterface $connection, private HiringManagerVisibility $visibility) {}
 
     public function hasLiveApplication(int $userId, int $jobId): bool
     {
@@ -121,6 +122,8 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             'note' => $note,
             'created_at' => $time,
         ]);
+
+        $this->visibility->refreshApplication((int) $before->id, $at);
     }
 
     public function moveStage(int $fromStageId, int $toStageId, StageType $type, DateTimeImmutable $at): int
@@ -134,7 +137,15 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
                 ->selectRaw('id, ?::bigint, ?::bigint, ?::varchar, ?::varchar, ?::varchar, NULL::bigint, NULL::varchar, NULL::varchar, ?::timestamp', [$fromStageId, $toStageId, $type->value, $type->value, StageMoveActor::System->value, $time]),
         );
 
-        return $this->connection->table('recruitment_applications')->where('stage_id', $fromStageId)->update(['stage_id' => $toStageId, 'stage_entered_at' => $time, 'updated_at' => $time]);
+        $moved = $this->connection->table('recruitment_applications')->where('stage_id', $fromStageId)->update(['stage_id' => $toStageId, 'stage_entered_at' => $time, 'updated_at' => $time]);
+
+        $companyId = $this->connection->table('recruitment_stages')->where('id', $toStageId)->value('company_id');
+
+        if ($moved > 0 && $companyId !== null) {
+            $this->visibility->refreshCompany((int) $companyId, $at);
+        }
+
+        return $moved;
     }
 
     public function add(Application $application, array $answers): Application
@@ -183,6 +194,8 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         foreach ($answers as $answer) {
             $this->addAnswer($id, $answer);
         }
+
+        $this->visibility->refreshApplication($id, $application->appliedAt);
 
         return new Application(
             $application->userId,

@@ -4,6 +4,7 @@ namespace Src\Job\Application;
 
 use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\JobAssignmentRepository;
+use Src\Job\Domain\JobAssignmentRole;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
@@ -17,7 +18,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
  * A company admin sets who works on a job: the whole set is replaced, it holds at least one member, and every member must belong to the company (an
- * admin or a recruiter). Nothing happens, and nothing is audited, when the set does not change. The job row is locked, so two changes run one after the other.
+ * admin or a recruiter), and each has a role on the job (recruiter or hiring manager). Nothing happens, and nothing is audited, when the set does not change. The job row is locked, so two changes run one after the other.
  */
 final readonly class ReplaceJobAssignees
 {
@@ -32,47 +33,65 @@ final readonly class ReplaceJobAssignees
     ) {}
 
     /**
-     * @param  list<int>  $userIds
+     * @param  array<int, ?JobAssignmentRole>  $assignees  the wanted roles by account id; null keeps the role of an assignee that stays (a new one is a recruiter)
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the job does not exist in the company
      * @throws BusinessRuleViolation `invalid-assignees` with `errors` on `user_ids`
      */
-    public function execute(Actor $actor, int $jobId, array $userIds, ?string $ipAddress, ?string $userAgent): void
+    public function execute(Actor $actor, int $jobId, array $assignees, ?string $ipAddress, ?string $userAgent): void
     {
         $member = $this->access->member($actor);
         $this->access->require($member, CompanyPermission::JobsAssign);
 
-        $wanted = array_values(array_unique($userIds));
         $now = $this->clock->now();
 
-        $changed = $this->transactions->run(function () use ($member, $jobId, $wanted, $now): ?array {
+        $changed = $this->transactions->run(function () use ($member, $jobId, $assignees, $now): ?array {
             $this->jobs->lock($jobId);
             $this->access->job($member, $jobId);
 
-            $this->assertMembers($member->companyId, $wanted);
+            $this->assertMembers($member->companyId, array_keys($assignees));
 
-            $current = $this->assignments->userIds($jobId);
-            $added = array_values(array_diff($wanted, $current));
-            $removed = array_values(array_diff($current, $wanted));
+            $current = [];
 
-            if ($added === [] && $removed === []) {
+            foreach ($this->assignments->assignees($jobId) as $assignee) {
+                $current[$assignee->userId] = $assignee->role;
+            }
+
+            $wanted = [];
+
+            foreach ($assignees as $userId => $role) {
+                $wanted[$userId] = $role ?? $current[$userId] ?? JobAssignmentRole::Recruiter;
+            }
+
+            $added = array_values(array_diff(array_keys($wanted), array_keys($current)));
+            $removed = array_values(array_diff(array_keys($current), array_keys($wanted)));
+            $rolesChanged = array_values(array_filter(
+                array_intersect(array_keys($wanted), array_keys($current)),
+                static fn (int $userId): bool => $wanted[$userId] !== $current[$userId],
+            ));
+
+            if ($added === [] && $removed === [] && $rolesChanged === []) {
                 return null;
             }
 
             foreach ($added as $userId) {
-                $this->assignments->add($jobId, $userId, $member->userId, $now);
+                $this->assignments->add($jobId, $userId, $member->userId, $now, $wanted[$userId]);
             }
 
             foreach ($removed as $userId) {
                 $this->assignments->remove($jobId, $userId);
             }
 
-            return [$added, $removed];
+            foreach ($rolesChanged as $userId) {
+                $this->assignments->changeRole($jobId, $userId, $wanted[$userId]);
+            }
+
+            return [$added, $removed, $rolesChanged];
         });
 
         if ($changed !== null) {
-            $this->events->dispatch([new JobAssigneesChanged($jobId, $member->companyId, $member->userId, $changed[0], $changed[1], $ipAddress, $userAgent, $now)]);
+            $this->events->dispatch([new JobAssigneesChanged($jobId, $member->companyId, $member->userId, $changed[0], $changed[1], $changed[2], $ipAddress, $userAgent, $now)]);
         }
     }
 

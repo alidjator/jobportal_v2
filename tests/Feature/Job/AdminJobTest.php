@@ -208,7 +208,7 @@ final class AdminJobTest extends FeatureTestCase
         $this->assertSame(['id' => $this->companyId, 'name' => 'PT-MAJU', 'slug' => 'pt-maju', 'status' => 'active'], $data['company']);
         $this->assertSame($body['title'], $data['title']);
         $this->assertCount(2, $data['skills']);
-        $this->assertSame([['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin']], $data['assignees']);
+        $this->assertSame([['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin', 'job_role' => 'recruiter']], $data['assignees']);
     }
 
     public function test_the_detail_works_for_every_status_and_a_suspended_company_and_an_unknown_job_is_404(): void

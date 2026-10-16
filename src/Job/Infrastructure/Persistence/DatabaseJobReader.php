@@ -50,6 +50,17 @@ final readonly class DatabaseJobReader implements JobReader
         return new Page(array_map(fn (stdClass $row): JobListItem => $this->toItem($row), $rows), $total, $request);
     }
 
+    public function hiringManagerBoundaries(int $companyId): array
+    {
+        $boundaries = [];
+
+        foreach ($this->connection->table('job_jobs')->where('company_id', $companyId)->whereNotNull('hiring_manager_from_stage_id')->get(['id', 'hiring_manager_from_stage_id']) as $row) {
+            $boundaries[(int) $row->id] = (int) $row->hiring_manager_from_stage_id;
+        }
+
+        return $boundaries;
+    }
+
     public function assignedTo(int $companyId, int $userId): array
     {
         $assigned = $this->connection->table('job_jobs')->where('job_jobs.company_id', $companyId);

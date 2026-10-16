@@ -92,6 +92,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->where('a.job_id', $query->jobId)
             ->when($query->stageId !== null, fn (Builder $b) => $b->where('a.stage_id', $query->stageId))
             ->when($query->stageType !== null, fn (Builder $b) => $b->where('a.stage_type', $query->stageType?->value))
+            ->when($query->hiringManagerVisibleOnly, fn (Builder $b) => $b->whereNotNull('a.hiring_manager_visible_at'))
             ->when($query->meetsMustHave !== null, fn (Builder $b) => $b->where('a.meets_must_have', $query->meetsMustHave === true ? 1 : 0));
 
         if ($query->staleOnly) {
@@ -131,11 +132,11 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         return $builder->leftJoinLateral($ratings, 'r');
     }
 
-    public function countByStage(int $jobId): array
+    public function countByStage(int $jobId, bool $hiringManagerVisibleOnly = false): array
     {
         $counts = [];
 
-        foreach ($this->connection->table('recruitment_applications')->where('job_id', $jobId)->groupBy('stage_id')->selectRaw('stage_id, COUNT(*) as total')->get() as $row) {
+        foreach ($this->connection->table('recruitment_applications')->where('job_id', $jobId)->when($hiringManagerVisibleOnly, fn (Builder $b) => $b->whereNotNull('hiring_manager_visible_at'))->groupBy('stage_id')->selectRaw('stage_id, COUNT(*) as total')->get() as $row) {
             $counts[(int) $row->stage_id] = (int) $row->total;
         }
 
@@ -180,12 +181,12 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')
             ->where('a.user_id', $own->user_id)->where('a.company_id', $own->company_id)->where('a.id', '!=', $applicationId)
             ->orderByDesc('a.applied_at')->orderByDesc('a.id')
-            ->get(['a.id', 'a.job_id', 'a.stage_type', 's.name as stage_name', 'a.applied_at'])
-            ->map(fn (stdClass $row): OtherApplicationRow => new OtherApplicationRow((int) $row->id, (int) $row->job_id, StageType::from($row->stage_type), (string) $row->stage_name, $this->time((string) $row->applied_at)))
+            ->get(['a.id', 'a.job_id', 'a.stage_type', 's.name as stage_name', 'a.applied_at', 'a.hiring_manager_visible_at'])
+            ->map(fn (stdClass $row): OtherApplicationRow => new OtherApplicationRow((int) $row->id, (int) $row->job_id, StageType::from($row->stage_type), (string) $row->stage_name, $this->time((string) $row->applied_at), $row->hiring_manager_visible_at !== null))
             ->all();
     }
 
-    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds): array
+    public function activeOtherCounts(array $applicationIds, ?array $visibleJobIds, array $boundJobIds = []): array
     {
         if ($applicationIds === [] || $visibleJobIds === []) {
             return [];
@@ -201,6 +202,11 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         if ($visibleJobIds !== null) {
             $query->whereIn('o.job_id', $visibleJobIds);
+        }
+
+        // On a job where the member is a bound hiring manager, only the applications that carry the marker count.
+        if ($boundJobIds !== []) {
+            $query->where(fn (Builder $b) => $b->whereNotIn('o.job_id', $boundJobIds)->orWhereNotNull('o.hiring_manager_visible_at'));
         }
 
         foreach ($query->groupBy('a.id')->selectRaw('a.id, COUNT(*) as total')->get() as $row) {

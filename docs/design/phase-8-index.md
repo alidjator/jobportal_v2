@@ -28,7 +28,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | Approval A (catalog, flows; migration `000148`) B1 (running approvals, decisions, delegation, vacant approvers; migration `000149`) and B2 (notifications, reminders; migration `000150`) coded 2026-10-16, so the Approval context is complete; Workforce plans (migration `000151`) and requisitions with the job rule (migration `000152`) coded 2026-10-16, so #6 is complete |
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | coded 2026-10-16 (see Coded); done before #6 |
 | 8 | `phase-8-recruiter-workday.md` | sections 2, 4 and 1 (without `unscheduled_interviews`) coded 2026-10-17 (migration `000153`); sections 3 and 5 wait for the interview calendar (#10: message defaults, logo); team preferences used by withdrawals and provider tools |
-| 9 | `phase-8-hiring-managers.md` | tasks and team preferences of the recruiter workday; requisitions are now in scope through #6 |
+| 9 | `phase-8-hiring-managers.md` | sections 1 and 2 coded 2026-10-17 (migration `000154`); section 3 (shortlist reviews) waits for the team preferences of the recruiter workday section 3 (after #10); requisitions are now in scope through #6 |
 | 10 | `phase-8-interview-calendar.md` | |
 | 11 | `phase-8-interviewers.md` | `.ics` of the interview calendar; shares the access rule of the hiring managers |
 | 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |

@@ -94,3 +94,6 @@ Everything read stays in the context for the rest of the session and is sent aga
 `https://api-karir.satu.solutions` is a **dev** domain served straight from this folder (nginx + system PHP-FPM, user `nginx`). `APP_DEBUG` must stay
 `false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/handoff-history.md`, section 5). Karir.pkp live-site accounts are
 never stored; ask the user when needed.
+
+- **API docs cache, MANDATORY (decided 2026-10-16):** `/docs/api` serves the cached OpenAPI document (Scramble). After every change to a route or to an API response (controller, FormRequest, API resource, response shape), run `php artisan scramble:clear` and then `php artisan scramble:cache`, in that order; otherwise the docs show the old version, and with an empty cache the page takes about 20 seconds.
+  The cache is only read back because `serializable_classes` in `config/cache.php` lists the Scramble classes; review that list after upgrading `dedoc/scramble` (a missing class makes the page slow again, without an error).

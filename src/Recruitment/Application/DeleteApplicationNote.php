@@ -19,7 +19,7 @@ final readonly class DeleteApplicationNote
      */
     public function execute(Actor $actor, int $applicationId, int $noteId): void
     {
-        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsManage);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsReview);
         $note = $this->notes->find($applicationId, $noteId) ?? throw EntityNotFound::of('Note', $noteId);
 
         if ($note->authorId !== $team->member->userId && ! $team->member->isCompanyAdmin()) {

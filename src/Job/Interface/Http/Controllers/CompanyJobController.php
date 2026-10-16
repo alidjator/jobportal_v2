@@ -17,11 +17,13 @@ use Src\Job\Application\ListJobs;
 use Src\Job\Application\PublishJob;
 use Src\Job\Application\ReopenJob;
 use Src\Job\Application\ReplaceJobAssignees;
+use Src\Job\Application\SetHiringManagerBoundary;
 use Src\Job\Application\UpdateJob;
 use Src\Job\Interface\Http\Requests\ListJobsRequest;
 use Src\Job\Interface\Http\Requests\ReopenJobRequest;
 use Src\Job\Interface\Http\Requests\ReplaceJobAssigneesRequest;
 use Src\Job\Interface\Http\Requests\SaveJobRequest;
+use Src\Job\Interface\Http\Requests\SetHiringManagerBoundaryRequest;
 use Src\Job\Interface\Http\Resources\JobDetailResource;
 use Src\Job\Interface\Http\Resources\JobListResource;
 use Src\Job\Interface\Http\Resources\JobPerformanceResource;
@@ -116,8 +118,15 @@ final class CompanyJobController extends ApiController
     public function replaceAssignees(ReplaceJobAssigneesRequest $request, int $id, ActorResolver $actors, ReplaceJobAssignees $replace, GetJobAssignees $get): JsonResponse
     {
         $actor = $actors->fromRequest($request);
-        $replace->execute($actor, $id, $request->userIds(), $request->ip(), $request->userAgent());
+        $replace->execute($actor, $id, $request->assignees(), $request->ip(), $request->userAgent());
 
         return new JsonResponse(['data' => $get->execute($actor, $id)]);
+    }
+
+    public function setHiringManagerBoundary(SetHiringManagerBoundaryRequest $request, int $id, ActorResolver $actors, SetHiringManagerBoundary $set): Response
+    {
+        $set->execute($actors->fromRequest($request), $id, $request->stageId());
+
+        return response()->noContent();
     }
 }

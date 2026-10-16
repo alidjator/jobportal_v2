@@ -10,6 +10,11 @@ use DateTimeImmutable;
  */
 final readonly class TaskScope
 {
-    /** @param  list<int>|null  $jobIds */
-    public function __construct(public int $userId, public int $companyId, public ?array $jobIds, public bool $isCompanyAdmin, public DateTimeImmutable $now) {}
+    /**
+     * `boundJobIds` are the jobs where the member is a hiring manager bound to the stage boundary: on those only the applications that reached the boundary count.
+     *
+     * @param  list<int>|null  $jobIds
+     * @param  list<int>  $boundJobIds
+     */
+    public function __construct(public int $userId, public int $companyId, public ?array $jobIds, public bool $isCompanyAdmin, public DateTimeImmutable $now, public array $boundJobIds = []) {}
 }

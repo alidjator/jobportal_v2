@@ -42,10 +42,11 @@ final readonly class GetCompanyTasks
 
         $userId = $actor->id;
         $permissions = $actor->membership->effectivePermissions();
+        $bound = $actor->can(CompanyPermission::JobsViewAll) ? [] : $this->jobs->hiringManagerJobIds($companyId, $userId);
 
-        return $this->cache->remember("tasks:company:{$companyId}:member:{$userId}:".md5(implode(',', $permissions)), self::CACHE_SECONDS, function () use ($actor, $companyId, $userId, $permissions): array {
+        return $this->cache->remember("tasks:company:{$companyId}:member:{$userId}:".md5(implode(',', $permissions).'|'.implode(',', $bound)), self::CACHE_SECONDS, function () use ($actor, $companyId, $userId, $permissions, $bound): array {
             $now = $this->clock->now();
-            $scope = new TaskScope($userId, $companyId, $actor->can(CompanyPermission::JobsViewAll) ? null : $this->jobs->assignedJobIds($companyId, $userId), $actor->isCompanyAdmin(), $now);
+            $scope = new TaskScope($userId, $companyId, $actor->can(CompanyPermission::JobsViewAll) ? null : $this->jobs->assignedJobIds($companyId, $userId), $actor->isCompanyAdmin(), $now, $bound);
 
             $items = array_map(
                 static fn (TaskProvider $provider): array => ['key' => $provider->key(), 'count' => $provider->count($scope), 'filter' => $provider->filter($scope)],

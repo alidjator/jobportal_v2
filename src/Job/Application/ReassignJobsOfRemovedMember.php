@@ -63,7 +63,7 @@ final readonly class ReassignJobsOfRemovedMember
             });
 
             if ($added !== null) {
-                $this->events->dispatch([new JobAssigneesChanged($jobId, $companyId, null, $added, [$userId], null, null, $at)]);
+                $this->events->dispatch([new JobAssigneesChanged($jobId, $companyId, null, $added, [$userId], [], null, null, $at)]);
             }
         }
     }

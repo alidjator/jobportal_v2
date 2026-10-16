@@ -7,6 +7,7 @@ use Illuminate\Database\Query\Builder;
 use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\ScorecardStatus;
 use Src\Recruitment\Domain\StageType;
+use Src\Recruitment\Infrastructure\Persistence\HiringManagerBound;
 use Src\Shared\Application\Tasks\TaskProvider;
 use Src\Shared\Application\Tasks\TaskScope;
 
@@ -40,8 +41,7 @@ final readonly class MyScorecardsTask implements TaskProvider
 
     public function count(TaskScope $scope): int
     {
-        return $this->connection->table('recruitment_interviews as i')
-            ->join('recruitment_applications as a', 'a.id', '=', 'i.application_id')
+        return HiringManagerBound::limit($this->connection->table('recruitment_interviews as i')->join('recruitment_applications as a', 'a.id', '=', 'i.application_id'), $scope->boundJobIds)
             ->where('a.company_id', $scope->companyId)
             ->when($scope->jobIds !== null, fn (Builder $query) => $query->whereIn('a.job_id', $scope->jobIds ?? []))
             ->whereNotIn('a.stage_type', [StageType::Rejected->value, StageType::Withdrawn->value, StageType::Hired->value])

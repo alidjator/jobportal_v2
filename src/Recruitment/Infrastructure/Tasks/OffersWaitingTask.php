@@ -4,6 +4,7 @@ namespace Src\Recruitment\Infrastructure\Tasks;
 
 use Illuminate\Database\ConnectionInterface;
 use Src\Recruitment\Domain\OfferStatus;
+use Src\Recruitment\Infrastructure\Persistence\HiringManagerBound;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Tasks\TaskProvider;
 use Src\Shared\Application\Tasks\TaskScope;
@@ -35,8 +36,7 @@ class OffersWaitingTask implements TaskProvider
 
     public function count(TaskScope $scope): int
     {
-        return $this->connection->table('recruitment_offers as o')
-            ->join('recruitment_applications as a', 'a.id', '=', 'o.application_id')
+        return HiringManagerBound::limit($this->connection->table('recruitment_offers as o')->join('recruitment_applications as a', 'a.id', '=', 'o.application_id'), $scope->boundJobIds)
             ->where('a.company_id', $scope->companyId)
             ->when($scope->jobIds !== null, fn ($query) => $query->whereIn('a.job_id', $scope->jobIds ?? []))
             ->where('o.status', OfferStatus::Pending->value)

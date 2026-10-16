@@ -14,6 +14,7 @@ final readonly class JobAssigneesChanged implements DomainEvent
     /**
      * @param  list<int>  $added
      * @param  list<int>  $removed
+     * @param  list<int>  $rolesChanged  the assignees that stay but whose role on the job changed
      */
     public function __construct(
         public int $jobId,
@@ -21,6 +22,7 @@ final readonly class JobAssigneesChanged implements DomainEvent
         public ?int $changedByUserId,
         public array $added,
         public array $removed,
+        public array $rolesChanged,
         public ?string $ipAddress,
         public ?string $userAgent,
         private DateTimeImmutable $occurredAt,

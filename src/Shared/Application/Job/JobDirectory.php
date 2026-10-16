@@ -19,6 +19,30 @@ interface JobDirectory
     public function assignedJobIds(int $companyId, int $userId): array;
 
     /**
+     * The ids of the jobs of the company where the account is assigned as a hiring manager: on those jobs they see applications only from the stage boundary.
+     *
+     * @return list<int>
+     */
+    public function hiringManagerJobIds(int $companyId, int $userId): array;
+
+    /**
+     * The accounts assigned to the job as hiring managers.
+     *
+     * @return list<int>
+     */
+    public function hiringManagerUserIds(int $jobId): array;
+
+    /** The stage of Recruitment from which the hiring managers of the job see applications; null when the job uses the default (the company's first interview stage). */
+    public function hiringManagerBoundary(int $jobId): ?int;
+
+    /**
+     * The explicit boundaries of the jobs of the company, for the jobs that have one.
+     *
+     * @return array<int, int> the stage id by job id
+     */
+    public function hiringManagerBoundaries(int $companyId): array;
+
+    /**
      * The jobs of the company that the account is assigned to, whatever their status, newest first.
      *
      * @return list<AssignedJob>

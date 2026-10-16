@@ -6,7 +6,9 @@ use Src\Job\Application\JobListItem;
 use Src\Job\Application\JobNotificationRecipients;
 use Src\Job\Application\JobReader;
 use Src\Job\Application\JobVisibility;
+use Src\Job\Domain\JobAssignee;
 use Src\Job\Domain\JobAssignmentRepository;
+use Src\Job\Domain\JobAssignmentRole;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Company\PublicCompanies;
@@ -46,6 +48,32 @@ final readonly class RepositoryJobDirectory implements JobDirectory
             $this->assignments->jobIdsOf($userId),
             fn (int $jobId): bool => $this->jobs->find($jobId)?->companyId === $companyId,
         ));
+    }
+
+    public function hiringManagerJobIds(int $companyId, int $userId): array
+    {
+        return array_values(array_filter(
+            $this->assignments->hiringManagerJobIdsOf($userId),
+            fn (int $jobId): bool => $this->jobs->find($jobId)?->companyId === $companyId,
+        ));
+    }
+
+    public function hiringManagerUserIds(int $jobId): array
+    {
+        return array_values(array_map(
+            static fn (JobAssignee $assignee): int => $assignee->userId,
+            array_filter($this->assignments->assignees($jobId), static fn (JobAssignee $assignee): bool => $assignee->role === JobAssignmentRole::HiringManager),
+        ));
+    }
+
+    public function hiringManagerBoundary(int $jobId): ?int
+    {
+        return $this->jobs->find($jobId)?->hiringManagerFromStageId;
+    }
+
+    public function hiringManagerBoundaries(int $companyId): array
+    {
+        return $this->reader->hiringManagerBoundaries($companyId);
     }
 
     public function assignedJobs(int $companyId, int $userId): array

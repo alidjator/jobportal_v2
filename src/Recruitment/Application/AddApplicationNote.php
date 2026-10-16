@@ -28,7 +28,7 @@ final readonly class AddApplicationNote
      */
     public function execute(Actor $actor, int $applicationId, string $body): NoteView
     {
-        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsManage);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::ApplicationsReview);
         $note = $this->notes->add(ApplicationNote::write($applicationId, $team->member->userId, $body, $this->clock->now()));
 
         return $this->views->of([$note])[0];

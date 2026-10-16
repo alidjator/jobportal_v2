@@ -13,7 +13,7 @@ final readonly class JobDetail
     /**
      * @param  list<array{id: int, name: string}>  $skills
      * @param  list<array{id: int, name: string}>  $benefits
-     * @param  list<array{user_id: int, name: string, role: string}>  $assignees
+     * @param  list<array{user_id: int, name: string, role: string, job_role: string}>  $assignees
      */
     public function __construct(
         public Job $job,

@@ -10,6 +10,7 @@ enum MemberPreset: string
     case CompanyAdmin = 'company_admin';
     case Recruiter = 'recruiter';
     case Interviewer = 'interviewer';
+    case HiringManager = 'hiring_manager';
 
     public function role(): CompanyRole
     {
@@ -23,11 +24,12 @@ enum MemberPreset: string
             self::CompanyAdmin => CompanyPermission::cases(),
             self::Recruiter => [
                 CompanyPermission::JobsCreate, CompanyPermission::JobsPublish, CompanyPermission::ApplicationsView,
-                CompanyPermission::ApplicationsManage, CompanyPermission::ApplicationsExport, CompanyPermission::InterviewsManage,
-                CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend, CompanyPermission::CandidatesSearch,
+                CompanyPermission::ApplicationsManage, CompanyPermission::ApplicationsReview, CompanyPermission::ApplicationsExport,
+                CompanyPermission::InterviewsManage, CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend, CompanyPermission::CandidatesSearch,
                 CompanyPermission::TalentPoolManage, CompanyPermission::MessagesSend, CompanyPermission::InterviewKitsManage,
             ],
             self::Interviewer => [CompanyPermission::ApplicationsView, CompanyPermission::InterviewsManage],
+            self::HiringManager => [CompanyPermission::ApplicationsView, CompanyPermission::ApplicationsReview, CompanyPermission::InterviewsManage],
         };
     }
 

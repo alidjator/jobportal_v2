@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -25,9 +26,11 @@ final readonly class UpdateInterviewPanel
         private TeamInterviewLookup $lookup,
         private InterviewScheduler $scheduler,
         private InterviewPanel $panel,
+        private HiringManagerVisibility $visibility,
         private ScorecardRepository $scorecards,
         private InterviewViews $views,
         private TransactionManager $transactions,
+        private Clock $clock,
     ) {}
 
     /**
@@ -63,6 +66,7 @@ final readonly class UpdateInterviewPanel
 
             $this->scorecards->deleteDrafts((int) $interview->id, array_values($left));
             $this->panel->replace((int) $interview->id, $ids);
+            $this->visibility->showToPanel((int) $team->application->id, $team->application->jobId, $ids, $this->clock->now());
 
             return $team;
         });

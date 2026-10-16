@@ -3,6 +3,7 @@
 namespace Src\Job\Application;
 
 use Src\Job\Domain\Job;
+use Src\Job\Domain\JobAssignee;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Company\CompanyTeam;
@@ -28,20 +29,22 @@ final readonly class JobDetailBuilder
         );
     }
 
-    /** @return list<array{user_id: int, name: string, role: string}> */
+    /** @return list<array{user_id: int, name: string, role: string, job_role: string}> `role` is the role in the company, `job_role` the role on this job */
     public function assignees(Job $job): array
     {
-        $userIds = $this->assignments->userIds((int) $job->id);
+        $assignees = $this->assignments->assignees((int) $job->id);
+        $userIds = array_map(static fn (JobAssignee $assignee): int => $assignee->userId, $assignees);
         $roles = $this->team->roles($job->companyId);
         $accounts = $this->accounts->summaries($userIds);
 
         return array_map(
-            static fn (int $userId): array => [
-                'user_id' => $userId,
-                'name' => isset($accounts[$userId]) ? $accounts[$userId]->name : '',
-                'role' => $roles[$userId] ?? '',
+            static fn (JobAssignee $assignee): array => [
+                'user_id' => $assignee->userId,
+                'name' => isset($accounts[$assignee->userId]) ? $accounts[$assignee->userId]->name : '',
+                'role' => $roles[$assignee->userId] ?? '',
+                'job_role' => $assignee->role->value,
             ],
-            $userIds,
+            $assignees,
         );
     }
 

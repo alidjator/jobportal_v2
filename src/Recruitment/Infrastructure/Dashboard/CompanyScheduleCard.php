@@ -5,6 +5,7 @@ namespace Src\Recruitment\Infrastructure\Dashboard;
 use Illuminate\Database\ConnectionInterface;
 use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\OfferStatus;
+use Src\Recruitment\Infrastructure\Persistence\HiringManagerBound;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Dashboard\DashboardAudience;
@@ -38,8 +39,7 @@ final readonly class CompanyScheduleCard implements DashboardCardProvider
     {
         $jobIds = $scope->jobIds;
 
-        $interviews = $this->connection->table('recruitment_interviews as i')
-            ->join('recruitment_applications as a', 'a.id', '=', 'i.application_id')
+        $interviews = HiringManagerBound::limit($this->connection->table('recruitment_interviews as i')->join('recruitment_applications as a', 'a.id', '=', 'i.application_id'), $scope->boundJobIds)
             ->where('a.company_id', $scope->companyId)
             ->when($jobIds !== null, fn ($query) => $query->whereIn('a.job_id', $jobIds ?? []))
             ->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])
@@ -48,8 +48,7 @@ final readonly class CompanyScheduleCard implements DashboardCardProvider
             ->limit(self::LIMIT)
             ->get(['i.id', 'i.application_id', 'a.job_id', 'i.starts_at', 'i.format', 'i.status', 'i.interviewer_id']);
 
-        $offers = $this->connection->table('recruitment_offers as o')
-            ->join('recruitment_applications as a', 'a.id', '=', 'o.application_id')
+        $offers = HiringManagerBound::limit($this->connection->table('recruitment_offers as o')->join('recruitment_applications as a', 'a.id', '=', 'o.application_id'), $scope->boundJobIds)
             ->where('a.company_id', $scope->companyId)
             ->when($jobIds !== null, fn ($query) => $query->whereIn('a.job_id', $jobIds ?? []))
             ->where('o.status', OfferStatus::Pending->value)

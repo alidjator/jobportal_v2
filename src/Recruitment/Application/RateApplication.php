@@ -56,7 +56,7 @@ final readonly class RateApplication
     private function change(Actor $actor, int $applicationId, callable $write): ApplicationRatingView
     {
         return $this->transactions->run(function () use ($actor, $applicationId, $write): ApplicationRatingView {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::ApplicationsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::ApplicationsReview);
 
             $type = $team->application->stageType;
 

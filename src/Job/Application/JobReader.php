@@ -16,4 +16,11 @@ interface JobReader
      * @return list<JobListItem>
      */
     public function assignedTo(int $companyId, int $userId): array;
+
+    /**
+     * The explicit stage boundary of the jobs of the company that have one (the other jobs use the default).
+     *
+     * @return array<int, int> the stage id by job id
+     */
+    public function hiringManagerBoundaries(int $companyId): array;
 }

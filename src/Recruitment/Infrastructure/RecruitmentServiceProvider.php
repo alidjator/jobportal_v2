@@ -17,6 +17,7 @@ use Src\Recruitment\Application\ApplicationNotificationType;
 use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\Export\ApplicationsDataExporter;
+use Src\Recruitment\Application\HiringManagerVisibility;
 use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\InterviewSettings;
@@ -99,6 +100,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseHiringManagerVisibility;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewKitRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewPanel;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewQuestionRepository;
@@ -151,6 +153,7 @@ use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
+use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -176,6 +179,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobApplications::class => DatabaseApplicationUsage::class,
         ApplicantRelations::class => DatabaseApplicantRelations::class,
         TeamApplications::class => TeamApplicationRefs::class,
+        HiringManagerVisibility::class => DatabaseHiringManagerVisibility::class,
+        HiringManagerBoundary::class => DatabaseHiringManagerVisibility::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,

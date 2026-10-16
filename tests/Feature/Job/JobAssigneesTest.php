@@ -57,7 +57,7 @@ final class JobAssigneesTest extends FeatureTestCase
         $id = $this->insertJob('Shared', 'draft', [$this->recruiterId, $this->adminId]);
 
         $this->assertSame(
-            [['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member'], ['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin']],
+            [['user_id' => $this->recruiterId, 'name' => 'Rina Rekruter', 'role' => 'member', 'job_role' => 'recruiter'], ['user_id' => $this->adminId, 'name' => 'Andi Admin', 'role' => 'company_admin', 'job_role' => 'recruiter']],
             $this->api('GET', "/company/jobs/{$id}/assignees")->json('data'),
         );
     }

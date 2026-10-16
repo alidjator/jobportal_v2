@@ -33,6 +33,7 @@ final readonly class InterviewScheduler
         private JobKitDefaults $defaults,
         private InterviewQuestionRepository $questions,
         private InterviewPanel $panel,
+        private HiringManagerVisibility $visibility,
         private CompanyTeam $team,
         private JobDirectory $jobs,
         private Settings $settings,
@@ -96,6 +97,9 @@ final readonly class InterviewScheduler
         } elseif ($previous instanceof Interview) {
             $this->panel->copy((int) $previous->id, $savedId);
         }
+
+        // A hiring manager on the panel sees the application, whatever its stage.
+        $this->visibility->showToPanel($applicationId, $application->jobId, [$input->interviewerId, ...($participants ?? [])], $now);
 
         return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now);
     }

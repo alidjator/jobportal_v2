@@ -40,8 +40,9 @@ final readonly class GetCompanyDashboard
 
         $jobIds = $actor->can(CompanyPermission::JobsViewAll) ? null : $this->jobs->assignedJobIds($companyId, $actor->id);
         $permissions = $actor->membership->effectivePermissions();
-        $scope = new DashboardScope(DashboardAudience::Company, $actor->id, $companyId, $jobIds, $permissions);
-        $key = $actor->isCompanyAdmin() ? "dashboard:company:{$companyId}:all" : "dashboard:company:{$companyId}:member:{$actor->id}:".md5(implode(',', $permissions));
+        $bound = $actor->can(CompanyPermission::JobsViewAll) ? [] : $this->jobs->hiringManagerJobIds($companyId, $actor->id);
+        $scope = new DashboardScope(DashboardAudience::Company, $actor->id, $companyId, $jobIds, $permissions, $bound);
+        $key = $actor->isCompanyAdmin() ? "dashboard:company:{$companyId}:all" : "dashboard:company:{$companyId}:member:{$actor->id}:".md5(implode(',', $permissions).'|'.implode(',', $bound));
 
         return $this->composer->compose($scope, $key, self::CACHE_SECONDS);
     }

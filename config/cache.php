@@ -129,8 +129,54 @@ return [
     | storage. By default, no PHP classes will be unserialized from your
     | cache to prevent gadget chain attacks if your APP_KEY is leaked.
     |
+    | Only the classes of the cached OpenAPI document (Scramble) are allowed;
+    | without them the document is rebuilt on every request to /docs/api.
+    | Review this list after upgrading dedoc/scramble.
+    |
     */
 
-    'serializable_classes' => false,
+    'serializable_classes' => [
+        Dedoc\Scramble\Diagnostics\ClassContext::class,
+        Dedoc\Scramble\Diagnostics\CodeLocation::class,
+        Dedoc\Scramble\Diagnostics\DiagnosticSeverity::class,
+        Dedoc\Scramble\Diagnostics\JsonResource\Jr001UnknownModelDiagnostic::class,
+        Dedoc\Scramble\Diagnostics\PhpDoc\Pd001RedundantTypeAnnotationDiagnostic::class,
+        Dedoc\Scramble\GeneratorResult::class,
+        Dedoc\Scramble\Support\Generator\Combined\AllOf::class,
+        Dedoc\Scramble\Support\Generator\Combined\AnyOf::class,
+        Dedoc\Scramble\Support\Generator\Components::class,
+        Dedoc\Scramble\Support\Generator\Header::class,
+        Dedoc\Scramble\Support\Generator\MissingValue::class,
+        Dedoc\Scramble\Support\Generator\OpenApi::class,
+        Dedoc\Scramble\Support\Generator\Operation::class,
+        Dedoc\Scramble\Support\Generator\Parameter::class,
+        Dedoc\Scramble\Support\Generator\Path::class,
+        Dedoc\Scramble\Support\Generator\Reference::class,
+        Dedoc\Scramble\Support\Generator\RequestBodyObject::class,
+        Dedoc\Scramble\Support\Generator\Response::class,
+        Dedoc\Scramble\Support\Generator\Schema::class,
+        Dedoc\Scramble\Support\Generator\SecurityRequirement::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\ApiKeySecurityScheme::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\HttpSecurityScheme::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\Oauth2SecurityScheme::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\OAuthFlow::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\OAuthFlows::class,
+        Dedoc\Scramble\Support\Generator\SecuritySchemes\OpenIdConnectUrlSecurityScheme::class,
+        Dedoc\Scramble\Support\Generator\Server::class,
+        Dedoc\Scramble\Support\Generator\Tag::class,
+        Dedoc\Scramble\Support\Generator\Types\ArrayType::class,
+        Dedoc\Scramble\Support\Generator\Types\BooleanType::class,
+        Dedoc\Scramble\Support\Generator\Types\IntegerType::class,
+        Dedoc\Scramble\Support\Generator\Types\MixedType::class,
+        Dedoc\Scramble\Support\Generator\Types\NullType::class,
+        Dedoc\Scramble\Support\Generator\Types\NumberType::class,
+        Dedoc\Scramble\Support\Generator\Types\ObjectType::class,
+        Dedoc\Scramble\Support\Generator\Types\StringType::class,
+        Dedoc\Scramble\Support\Generator\Types\UnknownType::class,
+        Dedoc\Scramble\Support\Generator\UniqueNameOptions::class,
+        Dedoc\Scramble\Support\ProNudge\ProNudgeCollector::class,
+        Illuminate\Support\Collection::class,
+        Src\Shared\Infrastructure\Documentation\InfoWithContact::class,
+    ],
 
 ];

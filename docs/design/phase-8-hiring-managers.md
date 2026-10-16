@@ -1,4 +1,4 @@
-# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14, not coded)
+# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14; sections 1 and 2 coded 2026-10-17)
 
 Gaps found from the hiring manager's point of view and against Mekari Talenta (help center articles 47603513135385 and 34576595122073: a "User"
 account role acting as hiring manager or interviewer, and a hiring team per job listing with Recruiter, Hiring Manager and Interviewer), chosen by
@@ -102,3 +102,26 @@ coding session, after the recruiter workday.
 | Tasks | `my_reviews`, `reviews_overdue` |
 | Errors | 422 `permission-requires-review`, `invalid-reviewers`, `reason-required`, `invalid-stage` |
 | Front end | roles in the hiring team of the job editor (C4) with the stage boundary; the Hiring Manager preset in the invitation and edit dialogs (C22); "Minta review" in the pipeline selection (C6); the review page (new C28) with the answer buttons; reviews on the application detail and cards |
+
+## Coded: sections 1 and 2 (2026-10-17)
+
+Migration `000154`: `job_assignments.role`, `job_jobs.hiring_manager_from_stage_id`, `recruitment_applications.hiring_manager_visible_at` (filled from the stage history with the default boundary) and `applications.review`
+for every member and pending invitation that held `applications.manage`. Section 3 (shortlist reviews) is not coded: it needs the team preference `team_reviews` of the recruiter workday section 3, which waits for #10.
+Interpretations, where the design left room:
+
+- **Role on the job.** `PUT company/jobs/{id}/assignees` takes `assignees: [{user_id, role?}]` (role `recruiter` by default) **or** the old `user_ids`, where an assignee that stays keeps its role (a new one is a recruiter); sending both is a 422.
+  The assignee rows (`GET company/jobs/{id}/assignees`, the job detail) keep `role` (the role in the company) and gain `job_role`. A change of role is audited in `job.assignees_changed` (`roles_changed`). The company job list has only `assignees_count`,
+  and the member's job list (`AssignedJob`) has no role yet.
+- **Permission.** Catalog of 28; `requires_review` in the catalog answer; `applications.manage` without `applications.review` is a 422 `permission-requires-review`. Ratings and notes (add, edit, delete) now need `applications.review`; the preset Hiring Manager
+  is `applications.view`, `applications.review`, `interviews.manage`, and Recruiter gains review.
+- **Boundary.** Its own endpoint, `PUT company/jobs/{id}/hiring-manager-boundary` with `{stage_id}` (`present`; null returns to the default), by `jobs.create`, in any status of the job (the design said "in the job editor"; the job content freezes after
+  publication, the boundary must not). A stage must belong to the company and not be `rejected` or `withdrawn` (422 `invalid-stage`). The job detail shows `hiring_manager_from_stage_id` (the raw value). A boundary stage that was deleted counts as "none".
+- **Marker.** `HiringManagerVisibility` (Recruitment) sets `hiring_manager_visible_at` when an application is submitted, moved, hired or merged into another stage (a stage deleted), when stages are reordered or deleted (the whole company is
+  re-evaluated), when the boundary of a job changes (the job), and when an interview is scheduled or its panel replaced with a hiring manager of the job as the interviewer or on the panel. It never clears. The legacy import sets it for applications at an
+  interview, offer or hired stage.
+- **Who is bound.** A member assigned as a hiring manager on a job and without `jobs.view_all` (a company admin always has it). On every other job the member keeps the assignee scope. `HiringManagerScope` is the one rule; `CompanyApplicationAccess` (detail, resume,
+  every `TeamApplications` caller: interviews, assessment, notes, ratings, move) answers 404, `ListJobApplications` and the export list only marked applications and count only those per stage, `other_applications` hides unmarked ones (`others_hidden`),
+  and the dashboard cards and the task counts of Recruitment (`stale_applications`, `my_scorecards`, `offers_*`) leave them out through `boundJobIds` of `DashboardScope` and `TaskScope`.
+- **Notifications.** `application.received` goes to the job's recipients except its bound hiring managers.
+- **Not covered yet:** conversations about an application (a hiring manager has no `messages.send`) and the applicant search (#19, not coded) must use the same rule when they read applications of a bound job.
+

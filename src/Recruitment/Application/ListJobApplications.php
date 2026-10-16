@@ -12,7 +12,8 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
  * The applications of one job for a member who may see the job: a company admin sees every job of the company, anyone else only the jobs assigned to them.
- * The counts per stage cover every application of the job, whatever the filters.
+ * The counts per stage cover every application of the job, whatever the filters; a hiring manager bound to the stage boundary of the job sees (and is counted)
+ * only the applications that carry the marker.
  */
 final readonly class ListJobApplications
 {
@@ -22,6 +23,7 @@ final readonly class ListJobApplications
         private InterviewResults $results,
         private StageRepository $stages,
         private OtherApplications $others,
+        private HiringManagerScope $scope,
         private Settings $settings,
     ) {}
 
@@ -33,9 +35,10 @@ final readonly class ListJobApplications
     {
         $member = $this->access->viewer($actor);
         $this->access->job($member, $query->jobId);
-        $query = $query->withStaleAfterDays($this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $member->companyId));
+        $bound = $this->scope->isBound($member, $query->jobId);
+        $query = $query->withStaleAfterDays($this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $member->companyId))->withHiringManagerScope($bound);
 
-        $counts = $this->reader->countByStage($query->jobId);
+        $counts = $this->reader->countByStage($query->jobId, $bound);
 
         $page = $this->reader->page($query, $request);
         $ids = array_map(static fn (RecruiterApplicationRow $row): int => $row->id, $page->items);

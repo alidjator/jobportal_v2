@@ -12,6 +12,7 @@ final readonly class DashboardScope
     /**
      * @param  list<int>|null  $jobIds
      * @param  list<string>  $permissions
+     * @param  list<int>  $boundJobIds  the jobs where the member is a hiring manager bound to the stage boundary: only applications that reached it count there
      */
     public function __construct(
         public DashboardAudience $audience,
@@ -19,6 +20,7 @@ final readonly class DashboardScope
         public ?int $companyId = null,
         public ?array $jobIds = null,
         public array $permissions = [],
+        public array $boundJobIds = [],
     ) {}
 
     public function isRestrictedToJobs(): bool

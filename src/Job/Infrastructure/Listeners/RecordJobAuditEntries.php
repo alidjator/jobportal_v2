@@ -93,7 +93,7 @@ final class RecordJobAuditEntries implements ShouldQueue
     {
         $this->trail->record(new AuditEntry(
             $event->changedByUserId === null ? AuditActorType::System : AuditActorType::User, $event->changedByUserId, AuditAction::JOB_ASSIGNEES_CHANGED,
-            self::SUBJECT_TYPE, $event->jobId, ['added' => $event->added, 'removed' => $event->removed],
+            self::SUBJECT_TYPE, $event->jobId, ['added' => $event->added, 'removed' => $event->removed, ...($event->rolesChanged === [] ? [] : ['roles_changed' => $event->rolesChanged])],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

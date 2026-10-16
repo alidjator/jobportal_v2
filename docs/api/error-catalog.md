@@ -17,6 +17,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `already-invited` | 409 | JobInvitation | This candidate was already invited to the job. |
 | `already-reported` | 409 | Job, Review | You have already reported this job. |
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
+| `amendment-pending` | 409 | Workforce | An amendment of this requisition is waiting for a decision. |
 | `application-final` | 409 | Recruitment | This application is final, so its ratings can no longer change. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
@@ -67,7 +68,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
 | `company-permission-required` | 403 | Shared |  |
-| `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | This company is suspended. |
+| `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
@@ -109,7 +110,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `group-already-suspended` | 409 | Organization | The group is already suspended. |
 | `group-name-taken` | 409 | Organization | A group with this name already exists. |
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
-| `group-permission-required` | 403 | Organization | Support access is read only. |
+| `group-permission-required` | 403 | Organization, Workforce | Support access is read only. |
 | `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
@@ -153,7 +154,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
 | `invalid-interview` | 422 | Recruitment | The proposed time must be in the future. |
 | `invalid-interviewer` | 422 | Recruitment |  |
-| `invalid-job` | 422 | Job | The job is not valid. |
+| `invalid-job` | 422 | Job | A job opened for a requisition names its vacancies. |
 | `invalid-job-questions` | 422 | Recruitment | The questions of the job are not valid. |
 | `invalid-job-role` | 422 | Organization | The job role is not an active job role. |
 | `invalid-kit` | 422 | Recruitment |  |
@@ -171,6 +172,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-parent` | 422 | Organization | The parent is not an active unit of the legal entity that exists from the day of the change. |
 | `invalid-password` | 422 | Company, Identity | The password is not correct. |
 | `invalid-phone` | 422 | Recruitment |  |
+| `invalid-plan-line` | 422 | Workforce | Name the legal entity of the plan. |
 | `invalid-profile` | 422 | JobSeeker |  |
 | `invalid-psychologist` | 422 | Assessment |  |
 | `invalid-question` | 422 | Assessment |  |
@@ -181,6 +183,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-report` | 422 | Assessment, Job | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
 | `invalid-reports-to` | 422 | Organization | The position it reports to is not an active position of the legal entity that exists from the day of the change. |
+| `invalid-requisition` | 422 | Workforce | The requisition does not exist for this tenant. |
+| `invalid-requisition-field` | 422 | Workforce | The minimum salary is above the maximum. |
 | `invalid-resume` | 422 | JobSeeker |  |
 | `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
 | `invalid-schedule` | 422 | Recruitment |  |
@@ -191,7 +195,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-setting-value` | 422 | Platform, Shared | Some values are not valid. |
 | `invalid-skills` | 422 | JobSeeker | The skills are not valid. |
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
-| `invalid-stage` | 422 | Recruitment | An application cannot be moved to this stage. |
+| `invalid-stage` | 422 | Job, Recruitment | The stage must be an active stage of the company. |
 | `invalid-stage-order` | 422 | Recruitment |  |
 | `invalid-support-admin` | 422 | Organization | This platform admin cannot receive support access. |
 | `invalid-support-duration` | 422 | Organization |  |
@@ -267,7 +271,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-phone-number` | 409 | Recruitment |  |
 | `no-proposal` | 409 | Recruitment | There is no proposed time to accept. |
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
-| `not-a-company-member` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool | Only a company member can do this. |
+| `not-a-company-member` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | Only a company member can do this. |
 | `not-a-group-member` | 403 | Organization | This account holds no group role. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
@@ -275,7 +279,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-a-voice-interview` | 409 | Recruitment | This interview is not held by phone. |
 | `not-an-assessor` | 403 | Assessment | Only an assessor of this test can score its answers. |
 | `not-an-author` | 403 | Assessment | Only a company member with the permission, a psychologist or an administrator can write tests. |
-| `not-an-internal-tenant` | 403 | Approval | Approvals belong to the tenants of an ERP group. |
+| `not-an-internal-tenant` | 403 | Approval, Workforce | Approvals belong to the tenants of an ERP group. |
 | `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
 | `not-found` | 404 | Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
@@ -295,8 +299,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `parent-cycle` | 422 | Organization | The parent would make the unit its own ancestor. |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
+| `permission-requires-review` | 422 | Company |  |
 | `permission-requires-view` | 422 | Company |  |
 | `permissions-required` | 422 | Company, Identity | A member needs at least one permission. |
+| `plan-below-requisitions` | 422 | Workforce |  |
+| `plan-empty` | 422 | Workforce | A plan without lines cannot be submitted. |
+| `plan-entity-without-tenant` | 422 | Workforce | The legal entity has no tenant that could take the plan through approval. |
+| `plan-exists` | 409 | Workforce | This legal entity already has a plan for this fiscal year: change its open version or revise the one in force. |
+| `plan-not-editable` | 409 | Workforce | Only a draft or a rejected plan can be submitted. |
+| `plan-not-in-force` | 409 | Workforce | Only the version in force can be revised. |
+| `plan-revision-open` | 409 | Workforce | This fiscal year already has a version being worked on. |
 | `position-code-taken` | 409 | Organization | The legal entity already has a position with this code. |
 | `position-in-use` | 409 | Organization | An active position still reports to this position. |
 | `position-inactive` | 409 | Organization | The position is inactive. |
@@ -331,6 +343,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
 | `reports-to-cycle` | 422 | Organization | The position would report to itself through the chain. |
+| `requisition-has-jobs` | 409 | Workforce | A requisition with jobs is closed, not cancelled. |
+| `requisition-hires-below-jobs` | 422 | Workforce | The hires cannot drop below the vacancies of the jobs already opened. |
+| `requisition-no-change` | 422 | Workforce | Nothing changes: name other hires or another salary range. |
+| `requisition-no-plan-line` | 422 | Workforce | The plan in force for this fiscal year has no line for the position. |
+| `requisition-not-cancellable` | 409 | Workforce | This requisition can no longer be cancelled. |
+| `requisition-not-editable` | 409 | Workforce | Only a draft or a rejected requisition can be submitted. |
+| `requisition-not-open` | 409 | Workforce | Only an approved requisition or one in recruitment can be amended. |
+| `requisition-quota-exceeded` | 422 | Workforce |  |
+| `requisition-required` | 422 | Job | This tenant opens its jobs from an approved requisition, so a job cannot be cloned. |
+| `requisition-vacancies-exceeded` | 422 | Workforce | All the hires of this requisition are already open in jobs. |
 | `resume-limit-reached` | 409 | JobSeeker |  |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |

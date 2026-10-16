@@ -15,7 +15,7 @@ final readonly class GetJobAssignees
     ) {}
 
     /**
-     * @return list<array{user_id: int, name: string, role: string}>
+     * @return list<array{user_id: int, name: string, role: string, job_role: string}>
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound when the member cannot see the job

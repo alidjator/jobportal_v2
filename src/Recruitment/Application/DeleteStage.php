@@ -22,6 +22,7 @@ final readonly class DeleteStage
         private RecruitmentAccess $access,
         private StageRepository $stages,
         private ApplicationRepository $applications,
+        private HiringManagerVisibility $visibility,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -73,6 +74,7 @@ final readonly class DeleteStage
             }
 
             $this->stages->savePositions($positions);
+            $this->visibility->refreshCompany($member->companyId, $this->clock->now());
         });
     }
 }

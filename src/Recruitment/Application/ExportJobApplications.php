@@ -33,6 +33,7 @@ final readonly class ExportJobApplications
         private Clock $clock,
         private Settings $settings,
         private ContactVisibility $contact,
+        private HiringManagerScope $scope,
     ) {}
 
     /**
@@ -44,6 +45,7 @@ final readonly class ExportJobApplications
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsExport);
         $this->access->job($member, $query->jobId);
+        $query = $query->withHiringManagerScope($this->scope->isBound($member, $query->jobId));
 
         $cap = $this->settings->integer(RecruitmentSettings::MAX_EXPORT_ROWS, $member->companyId);
         $total = $this->reader->count($query);

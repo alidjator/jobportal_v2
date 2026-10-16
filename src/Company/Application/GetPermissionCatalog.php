@@ -12,7 +12,7 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 final readonly class GetPermissionCatalog
 {
     /**
-     * @return array{groups: list<array{group: string, permissions: list<array{permission: string, requires_view: bool}>}>, presets: list<array{preset: string, role: string, permissions: list<string>}>}
+     * @return array{groups: list<array{group: string, permissions: list<array{permission: string, requires_view: bool, requires_review: bool}>}>, presets: list<array{preset: string, role: string, permissions: list<string>}>}
      *
      * @throws AccessDenied `not-a-company-member`
      */
@@ -25,7 +25,7 @@ final readonly class GetPermissionCatalog
         $groups = [];
 
         foreach (CompanyPermission::cases() as $permission) {
-            $groups[$permission->group()][] = ['permission' => $permission->value, 'requires_view' => $permission->requiresView()];
+            $groups[$permission->group()][] = ['permission' => $permission->value, 'requires_view' => $permission->requiresView(), 'requires_review' => $permission->requiresReview()];
         }
 
         return [
