@@ -24,6 +24,7 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - 2026-10-15: **questions about a signed report** from the company to the institution, routed to the signer and the leads (chosen by the user).
 - 2026-10-15: the retention of raw test data against the account erasure goes to the legal review (question 17).
 - 2026-10-15: the schema below (decided by the user).
+- 2026-10-16: **in-house psychologists** (a customer's own psychologist) are noted as an open design question; nothing is decided ([section 8](#8-in-house-psychologists-open-noted-2026-10-16)).
 
 ## 1. Leads and team self-management
 
@@ -102,6 +103,22 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - `docs/legal-review.md` question 17: how long an institution must keep the raw data of an examination (answers, drawings, stored report), and
   whether that duty overrides a candidate's account erasure. Until answered the erasure stays as it is. If retention is required, the assessment
   erasure step moves the data to a locked institution archive instead of deleting it (designed then).
+
+## 8. In-house psychologists (open, noted 2026-10-16)
+
+The design models a psychologist only as staff of a partner institution registered by the platform admin. A customer's **own psychologist** (for example
+the HR psychologist of a group) is not designed and not forbidden. The workaround is to register the customer's psychology unit as a provider and invite
+its psychologists; in the self-hosted edition the customer's platform admin does this itself (`self-hosted.md`). Questions to answer (one at a time) before
+any design:
+
+1. May a provider be **private to one group** (only that group's tenants may use its batteries), or is a provider always shared across companies?
+2. May an in-house psychologist see candidates of **other tenants of the same group**? Today a psychologist sees only the candidates who took their
+   provider's batteries.
+3. May an employee of the company sign reports for **its own applicants** (conflict of interest), and does the legal review (`docs/legal-review.md`) need
+   a question about it? The licence duty (STR and SILP, UU 23/2022) applies to the person, not to the institution.
+4. Does an in-house psychologist need the **"Psychological tests" add-on** of `self-hosted.md` section 8, and `assessment.psychological_enabled`, like a
+   partner provider?
+5. Who registers and approves them: the platform admin (as for partners) or the group admin?
 
 ## Changes in short
 
