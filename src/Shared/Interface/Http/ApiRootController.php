@@ -9,6 +9,6 @@ final class ApiRootController
 {
     public function __invoke(): JsonResponse
     {
-        return new JsonResponse(['name' => 'ONESIS API', 'version' => 'v1', 'status' => 'ok']);
+        return new JsonResponse(['name' => 'ONESIS ERP API', 'version' => 'v1', 'status' => 'ok']);
     }
 }

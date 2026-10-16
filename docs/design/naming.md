@@ -5,7 +5,10 @@ document records the names and when each place changes.
 
 ## Decisions
 
-- 2026-10-15: the **ERP platform** is named **ONESIS**, short for *One Solution Integrated System* (decided by the user).
+- ~~2026-10-15: the **ERP platform** is named **ONESIS**, short for *One Solution Integrated System*~~ **changed 2026-10-16: the platform is named
+  ONESIS ERP, ONESIS standing for *One Solutions Integrated System*** (decided by the user). "ONESIS" stays the short name and the technical
+  identifier (the problem `type`, the infrastructure names) until the user decides otherwise.
+- 2026-10-16: **no change to the technical identifiers or to ONESIS Career** for now (decided by the user: both stay `onesis` and "ONESIS Career" until a later decision).
 - 2026-10-15: the **portal for job seekers** follows the parent brand: **ONESIS Career** (decided by the user).
 - 2026-10-15: the problem `type` of the API changes from `urn:jobportal:error:<code>` to **`urn:onesis:error:<code>`**, **before go-live**
   (decided by the user; [API contract](#1-api-contract)).
@@ -22,7 +25,7 @@ document records the names and when each place changes.
 
 ## 2. Names people see (before go-live, configuration)
 
-- `APP_NAME=ONESIS` in `.env.example` and the production `.env` (the sender name of the emails reads it through `MAIL_FROM_NAME`).
+- `APP_NAME="ONESIS ERP"` in `.env.example` and the production `.env` (the sender name of the emails reads it through `MAIL_FROM_NAME`).
 - The job seeker site uses **ONESIS Career** as `{brand}` (`frontend.md` 11.4): page titles, emails to job seekers, structured data. Pages and
   emails of the ERP side (company members, group members, approvals) use **ONESIS**.
 - Email templates that name the product read the configured name; none hard-codes "JobPortal".
