@@ -25,7 +25,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | # | Document | Waits for |
 |---|---|---|
 | 5 | `erp-organization.md` (Organization context and internal tenants) | parts A and B and the group log (C1, migration `000145`) coded 2026-10-16 (see Coded); C2 (group settings, migration `000146`) coded 2026-10-16; C3 (support access, migration `000147`) coded 2026-10-16, so part C is complete; D (the group read rule in recruitment) coded 2026-10-16, so #5 is complete |
-| 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | Approval A (catalog, flows; migration `000148`) B1 (running approvals, decisions, delegation, vacant approvers; migration `000149`) and B2 (notifications, reminders; migration `000150`) coded 2026-10-16, so the Approval context is complete; Workforce plans and requisitions remain |
+| 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | Approval A (catalog, flows; migration `000148`) B1 (running approvals, decisions, delegation, vacant approvers; migration `000149`) and B2 (notifications, reminders; migration `000150`) coded 2026-10-16, so the Approval context is complete; Workforce plans (migration `000151`) coded 2026-10-16; requisitions and the job rule remain |
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | coded 2026-10-16 (see Coded); done before #6 |
 | 8 | `phase-8-recruiter-workday.md` | team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | tasks and team preferences of the recruiter workday; requisitions are now in scope through #6 |

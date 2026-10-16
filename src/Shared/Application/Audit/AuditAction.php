@@ -257,6 +257,22 @@ final class AuditAction
 
     public const string APPROVAL_DELEGATION_REMOVED = 'approval.delegation_removed';
 
+    public const string WORKFORCE_PLAN_CREATED = 'workforce.plan_created';
+
+    public const string WORKFORCE_PLAN_UPDATED = 'workforce.plan_updated';
+
+    public const string WORKFORCE_PLAN_SUBMITTED = 'workforce.plan_submitted';
+
+    public const string WORKFORCE_PLAN_REVISED = 'workforce.plan_revised';
+
+    public const string WORKFORCE_PLAN_APPROVED = 'workforce.plan_approved';
+
+    public const string WORKFORCE_PLAN_REJECTED = 'workforce.plan_rejected';
+
+    public const string WORKFORCE_PLAN_RETURNED = 'workforce.plan_returned';
+
+    public const string WORKFORCE_PLAN_SUPERSEDED = 'workforce.plan_superseded';
+
     public const string GROUP_GRADE_CREATED = 'group.grade_created';
 
     public const string GROUP_GRADE_UPDATED = 'group.grade_updated';

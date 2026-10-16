@@ -46,6 +46,8 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 
 **Added with the approval instances (`erp-requisitions.md` section 4, 2026-10-16):** `approval_instances.company_id` to `company_companies`; `approval_instances.requester_id`, `outcome_by_user_id`, `approval_instance_slots.user_id`, `decided_by_user_id`, `on_behalf_of_user_id` and `approval_delegations.approver_user_id`, `delegate_user_id` to `identity_users` (all RESTRICT). `approval_instances.group_id` and the owner of `approval_flows` are plain columns (one column names a group or a company).
 
+**Added with the manpower plans (`erp-requisitions.md` section 2, 2026-10-16):** `workforce_plans.created_by_id` (RESTRICT) to `identity_users`. The legal entity, the positions and the approval of a plan are plain columns (the structure is deactivated, never deleted).
+
 **Added with support access (`erp-governance.md` section 1.1, 2026-10-16):** `organization_support_grants.admin_id` (RESTRICT) to `identity_admins`, and `granted_by_user_id`, `revoked_by_user_id` (RESTRICT) to `identity_users`.
 
 **To `job_jobs`:** `recruitment_applications.job_id`, `recruitment_job_questions.job_id` (`CASCADE`, see Decided), `jobinvitation_invitations.job_id`.

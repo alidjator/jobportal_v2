@@ -24,6 +24,7 @@ use Src\ReferenceData\Infrastructure\ReferenceDataServiceProvider;
 use Src\Review\Infrastructure\ReviewServiceProvider;
 use Src\TalentPool\Infrastructure\TalentPoolServiceProvider;
 use Src\Training\Infrastructure\TrainingServiceProvider;
+use Src\Workforce\Infrastructure\WorkforceServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -50,4 +51,5 @@ return [
     ReviewServiceProvider::class,
     TalentPoolServiceProvider::class,
     AssessmentServiceProvider::class,
+    WorkforceServiceProvider::class,
 ];

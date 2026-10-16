@@ -31,6 +31,11 @@ enum CompanyPermission: string
     case ReviewsReply = 'reviews.reply';
     case AnalyticsView = 'analytics.view';
     case ApprovalsManage = 'approvals.manage';
+    case WorkforcePlansManage = 'workforce.plans.manage';
+    case WorkforcePlansView = 'workforce.plans.view';
+    case WorkforceCostsView = 'workforce.costs.view';
+    case WorkforceRequisitionsCreate = 'workforce.requisitions.create';
+    case WorkforceRequisitionsView = 'workforce.requisitions.view';
 
     /** The group the permission is listed under in the invitation and edit dialogs. */
     public function group(): string
@@ -42,7 +47,8 @@ enum CompanyPermission: string
             self::CandidatesSearch, self::TalentPoolManage, self::MessagesSend => 'sourcing',
             self::InterviewKitsManage, self::ScreeningQuestionsManage, self::AssessmentsAuthor, self::StagesManage => 'library',
             self::CompanyProfile, self::CampaignsManage, self::ReviewsReply, self::AnalyticsView => 'company',
-            self::ApprovalsManage => 'workforce',
+            self::ApprovalsManage, self::WorkforcePlansManage, self::WorkforcePlansView, self::WorkforceCostsView, self::WorkforceRequisitionsCreate,
+            self::WorkforceRequisitionsView => 'workforce',
         };
     }
 

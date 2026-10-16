@@ -109,7 +109,7 @@ final class GroupSettingsTest extends FeatureTestCase
     {
         $page = $this->asMember($this->viewer, 'GET', 'settings')->assertOk();
 
-        $this->assertSame(['group.require_two_factor', 'test.both_limit', 'test.group_limit'], array_column($page->json('data'), 'key'));
+        $this->assertSame(['group.require_two_factor', 'test.both_limit', 'test.group_limit', 'workforce.fiscal_year_start_month'], array_column($page->json('data'), 'key'));
         $page->assertJsonPath('data.2.value', 10)->assertJsonPath('data.2.default', 10)->assertJsonPath('data.2.type', 'integer')->assertJsonPath('data.2.min', 1)->assertJsonPath('data.2.max', 100);
 
         $stranger = $this->member($this->companyRowId('pt-luar'), 'luar@example.test', 'company_admin');

@@ -1,4 +1,4 @@
-# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A, B1 and B2 coded 2026-10-16)
+# ERP requisitions and a generic approval workflow (designed 2026-10-15; Approval parts A, B1 and B2 and Workforce plans coded 2026-10-16)
 
 Item #6 of `phase-8-index.md`. Builds on `erp-organization.md` (groups, legal entities, units, positions, grades, cost centres, internal tenants)
 and extends `phase-1-jobs.md` (job lifecycle). Offer approval of internal tenants (#12, `phase-8-offer-letters.md`) uses the approval workflow
@@ -191,3 +191,25 @@ Migration `000150` (`approval_instance_steps.reminded_at`). Interpretations, whe
   it started, or since its last reminder, reminds its approvers again, until it is decided. A step whose every place is vacant is left alone until an admin names a replacement. The platform setting list shows
   `approvals.reminder_days`.
 - **Delivery.** The notifications come from the `ApprovalChanged` event through a queued listener (`default` queue), written from the state of the approval when the job runs.
+
+## Coded: Workforce plans (2026-10-16)
+
+Migration `000151` (`workforce_plans`, `workforce_plan_lines`, `workforce_plan_line_months`; `created_by_id` is in `CrossContextForeignKeysTest`). The new `Workforce` context (`src/Workforce`) holds the plans;
+requisitions and the job rule remain (next step). Interpretations, where the design left room:
+
+- **Fiscal year.** Named by the calendar year it starts in; it starts on the first day of the group's `workforce.fiscal_year_start_month` (a group-editable setting, 1 to 12, default 1) and runs twelve months.
+  The month of a line is the month of the fiscal year (1 is the first). The days are worked out when a plan is read (read through the plan's tenant), so a later change of the start month moves the shown days only.
+- **Shared ports of Organization:** `LegalEntityDirectory` (group of an entity, the names of a group's entities) and `PositionDirectory` (the positions of an entity on a day with the data of the version in force).
+- **Who.** Company side `company/workforce/plans`: `workforce.plans.view` or `.manage` reads, `.manage` changes, `workforce.costs.view` shows the costs; an external tenant gets 403 `not-an-internal-tenant`. Group side
+  `organization/workforce/plans`: `group.workforce.view` or `.manage` reads, `.manage` drafts, edits, submits and revises for any legal entity of the group (the body names `legal_entity_id` when creating); a group
+  reader **sees the costs** (to be confirmed). A plan of another group or entity is 404. The five company and two group permissions are in the catalogs (the requisition ones are used by the next step).
+- **Lines.** Saved whole (`PUT` replaces them); at most 500; one per active position of the entity; target at least the opening headcount (no reductions in a plan); the twelve months add up to the additions
+  (422 `invalid-plan-line`). A member without `workforce.costs.view` never sees the costs and cannot change them: the costs they send are ignored and the ones a line has stay.
+- **Versions.** `POST` creates version 1 as a draft (409 `plan-exists` when the entity already has a plan for the year); `POST .../revise` on the version in force copies its lines into the next version as a draft (409
+  `plan-not-in-force`, `plan-revision-open`). One version in force and one open (draft, waiting or rejected) per entity and year: partial unique indexes.
+- **Approval.** Subject type `workforce.plan`, facts `additions`, `estimated_cost`, `lines` and `revision`. `POST .../submit` needs a draft or rejected plan with at least one line (422 `plan-empty`), and the legal entity
+  must have a tenant (422 `plan-entity-without-tenant`); the requester is the account that submits. Approved: the version in force before it becomes `superseded`. Rejected: status `rejected` with the reason, editable;
+  saving it makes it a draft. Returned: a draft with the reason. The outcome listener runs at once.
+- **Audit.** `workforce.plan_created`, `_updated`, `_submitted`, `_revised`, `_approved`, `_rejected`, `_returned`, `_superseded`, with the tenant's `company_id` and the `group_id`.
+- **Left for the requisitions step:** the rule that a line's additions never drop below what requisitions already use, and the quota use by requisitions.
+

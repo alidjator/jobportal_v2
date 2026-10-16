@@ -66,6 +66,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'approval_instances' => ['requester_id', 'outcome_by_user_id'],
             'approval_instance_slots' => ['user_id', 'decided_by_user_id', 'on_behalf_of_user_id'],
             'approval_delegations' => ['approver_user_id', 'delegate_user_id'],
+            'workforce_plans' => ['created_by_id'],
         ],
         'identity_admins' => [
             'organization_support_grants' => ['admin_id'],

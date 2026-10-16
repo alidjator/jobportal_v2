@@ -43,8 +43,12 @@ use Src\Organization\Infrastructure\Persistence\DatabaseSupportGrantRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseUnitRepository;
 use Src\Organization\Infrastructure\Persistence\DatabaseUnitTypeRepository;
 use Src\Organization\Infrastructure\Persistence\RepositoryGroupDirectory;
+use Src\Organization\Infrastructure\Persistence\RepositoryLegalEntityDirectory;
+use Src\Organization\Infrastructure\Persistence\RepositoryPositionDirectory;
 use Src\Shared\Application\Organization\GroupDirectory;
 use Src\Shared\Application\Organization\GroupPermissions;
+use Src\Shared\Application\Organization\LegalEntityDirectory;
+use Src\Shared\Application\Organization\PositionDirectory;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\GroupSettingChanged;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -65,6 +69,8 @@ final class OrganizationServiceProvider extends ContextServiceProvider
         PositionRepository::class => DatabasePositionRepository::class,
         GroupDirectory::class => RepositoryGroupDirectory::class,
         GroupPermissions::class => GroupPermissionCheck::class,
+        LegalEntityDirectory::class => RepositoryLegalEntityDirectory::class,
+        PositionDirectory::class => RepositoryPositionDirectory::class,
         SupportGrantRepository::class => DatabaseSupportGrantRepository::class,
     ];
 
