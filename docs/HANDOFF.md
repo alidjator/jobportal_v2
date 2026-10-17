@@ -9,13 +9,13 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 ## Current state (2026-10-17)
 
-- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green), `v0.3.0` (ERP TA core and phase 8 to 2026-10-17, 2933 tests green).
-- **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md` (#5, #6, #7 and #10 complete; #8, #9 and #11 partly, their rest waits for the team preferences).
-- **Git (2026-10-17):** `master` holds all work to date including #16 (tag `v0.3.0` is older); #8 section 3 parts A and B are coded on `master` (not tagged yet).
-- Real PostgreSQL `jobportal_v2`: migrated to `000158` (`000162` is applied), reference data only (0 accounts). Test database at `000158` too.
+- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green), `v0.3.0` (ERP TA core and phase 8 to 2026-10-17, 2933 tests green), `v0.4.0` (withdrawals, #16), `v0.5.0` (team notifications #8 section 3, interviewer workflow #11, shortlist reviews #9; 3017 tests green).
+- **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md` (#5 to #11 and #16 complete).
+- **Git (2026-10-17):** `master` is pushed to `origin` and tagged `v0.5.0`.
+- Real PostgreSQL `jobportal_v2`: migrated to `000162`, reference data only (0 accounts). Test database at `000162` too.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`, separating the live site from the working folder: the scheduler fails when code needing a new migration is live before `migrate`); since 2026-10-15 the ERP TA core (`docs/design/erp-direction.md`) is coded before the remaining hiring work.
 - **Name (changed 2026-10-16):** ONESIS ERP / ONESIS Career, `docs/design/naming.md`; `onesis` stays the technical identifier.
-- **Next coding:** #16 is coded (parts A to C, migration `000159`, branch `phase-8-withdrawals`, awaiting the user's `composer check`); #8 section 3 part A is coded (audiences, `team_daily_digest`, `company:send-team-digests`, `.env` `COMPANY_APP_URL`); part B (the `team_*` event emails) is coded too; the one-click opt-out is deferred; #11 sections 3 and 4 are coded and committed (`000160`); #11 is complete; #9 is complete (section 3 part B coded, awaiting the user's tests).
+- **Next coding:** #8, #9, #11 and #16 are complete (the one-click opt-out of team emails is deferred; the assessment summary on the review card and `provider_reviews`, which waits for #23, are not coded). Pick the next open item from `phase-8-index.md`; the location items #27 (needs a design session) and #28 come before the front end and the final import run.
 - **Locations (decided 2026-10-17):** new index items #27 (`company_locations`, needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run; employee data order in `erp-direction.md` section 9.
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
