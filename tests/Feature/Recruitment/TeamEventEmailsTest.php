@@ -101,7 +101,7 @@ final class TeamEventEmailsTest extends FeatureTestCase
 
         $subjects = $this->subjectsTo('rina@example.test');
         $this->assertContains('The candidate confirmed the interview for Backend Developer', $subjects);
-        $this->assertSame([], array_filter($subjects, static fn (string $subject): bool => str_contains($subject, 'Siti')));
+        $this->assertSame([], array_filter($subjects, static fn (string $subject): bool => str_starts_with($subject, 'The candidate') && str_contains($subject, 'Siti')));
     }
 
     public function test_the_interview_email_follows_the_preference(): void

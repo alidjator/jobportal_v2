@@ -83,7 +83,7 @@ final readonly class EmailPanelOfInterview
         $jobTitle = $this->jobs->titles([$event->jobId])[$event->jobId] ?? '';
         $company = $this->companies->summaries([$event->companyId])[$event->companyId] ?? null;
         $companyName = $company === null ? '' : $company->name;
-        $candidate = $this->contacts->contact($event->applicantUserId)?->name ?? '';
+        $candidate = $this->contacts->contact($event->applicantUserId)->name ?? '';
         $link = $this->page->to($event->applicationId);
         $now = $this->clock->now();
         $startsAt = $interview->startsAt->setTimezone(new DateTimeZone(self::ZONE))->format('Y-m-d H:i').' WIB';

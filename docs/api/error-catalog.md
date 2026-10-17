@@ -19,7 +19,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
 | `amendment-pending` | 409 | Workforce | An amendment of this requisition is waiting for a decision. |
 | `applicant-unavailable` | 409 | Recruitment | The applicant account is no longer available. |
-| `application-final` | 409 | Recruitment | This application is final, so its ratings can no longer change. |
+| `application-final` | 409 | Recruitment | This application is final, so the interview needs no answer. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
@@ -119,6 +119,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
 | `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be joined. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
+| `interview-started` | 409 | Recruitment | This interview has started, so the answer can no longer change. |
 | `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
