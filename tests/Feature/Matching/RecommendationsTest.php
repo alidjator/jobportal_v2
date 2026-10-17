@@ -455,7 +455,8 @@ final class RecommendationsTest extends FeatureTestCase
         $this->invite($invited, $this->seekerId);
 
         $this->assertSame(0, $this->runEmails());
-        Mail::assertNothingQueued();
+        // Applying queues the application received email; only recommendations matter here.
+        Mail::assertNotQueued(RecommendationMail::class);
         $this->assertSame(0, DB::table('matching_deliveries')->count());
     }
 

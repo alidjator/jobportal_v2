@@ -9,13 +9,15 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 ## Coded
 
+Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
+
 | Document | Status |
 |---|---|
 | `phase-8-admin-console.md` | coded 2026-10-13 (before go-live) |
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
 | `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` waits for #12, section 3 for #26 |
-| `erp-organization.md` (#5) | parts A and B (`000143`, `000144`), C1 to C3 (group log, group settings, support access; `000145`-`000147`) and D (group read rule) coded 2026-10-16; part A checked |
+| `erp-organization.md` (#5) | parts A and B (`000143`, `000144`), C1 to C3 (group log, group settings, support access; `000145`-`000147`) and D (group read rule) coded 2026-10-16 |
 | `naming.md` section 1 | coded 2026-10-15 (no migration; the problem `type` is now `urn:onesis:error:<code>`), checked |
 | `phase-8-job-discovery.md` sections 1 to 5 | coded and checked 2026-10-15 (migration `000142`); sections 6 and 7 wait (after go-live) |
 | `phase-8-platform-admin.md` sections 1 to 4 | coded and checked 2026-10-15 (migration `000141`), committed; the internal-tenant exemption of section 2 came with #5 (`erp-organization.md`, tenant link); sections 5 to 8 for #17 |
