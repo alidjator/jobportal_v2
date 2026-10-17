@@ -54,6 +54,12 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_SCORECARD_REMINDER = 'interview.scorecard_reminder';
 
+    /** The panel is told that the interview starts in about 30 minutes. */
+    public const string INTERVIEW_STARTING_SOON = 'interview.starting_soon';
+
+    /** The scheduler and the main interviewer are told, 72 hours after the interview, how many scorecards are still missing. */
+    public const string INTERVIEW_SCORECARDS_MISSING = 'interview.scorecards_missing';
+
     public const string OFFER_SENT = 'offer.sent';
 
     public const string OFFER_REVISED = 'offer.revised';

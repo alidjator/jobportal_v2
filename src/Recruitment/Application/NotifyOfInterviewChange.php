@@ -5,6 +5,7 @@ namespace Src\Recruitment\Application;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Interview;
+use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Applicant\ApplicantContacts;
@@ -17,7 +18,7 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
 
 /**
  * Tells the people involved that an interview changed. The job seeker hears what the team did (scheduled, rescheduled, cancelled, proposal accepted) and the
- * reminder; the team (the interviewer and who scheduled it) hears what the job seeker did (confirmed, proposed another time, declined, withdrew the recording consent) and the reminder.
+ * reminder; the team (the interviewer and who scheduled it, and the whole panel for the reminder) hears what the job seeker did (confirmed, proposed another time, declined, withdrew the recording consent) and the reminder.
  * In-app notifications are always written (ids and the start time only); the job seeker's email follows the preference `application_update`, and is sent for
  * scheduled, rescheduled, details updated, cancelled, declined by the job seeker (a cancellation of the calendar event) and the reminder; all but the reminder carry
  * the `.ics` file of the interview. The team gets no email. In-app and email are separate steps, so a retry of one never repeats the other.
@@ -29,6 +30,7 @@ final readonly class NotifyOfInterviewChange
         private JobDirectory $jobs,
         private CompanyDirectory $companies,
         private InterviewRepository $interviews,
+        private InterviewPanel $panel,
         private InAppNotifier $notifier,
         private NotificationPreferences $preferences,
         private InterviewEmailSender $emails,
@@ -60,7 +62,7 @@ final readonly class NotifyOfInterviewChange
         }
 
         if ($this->toTeam($event->change)) {
-            $this->notifier->send(array_values(array_unique([$event->interviewerId, $event->createdBy])), $type, $data);
+            $this->notifier->send($this->team($event), $type, $data);
         }
     }
 
@@ -86,6 +88,18 @@ final readonly class NotifyOfInterviewChange
         $calendar = $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now());
 
         $this->emails->send($contact, $key, $variables, $calendar, $method ?? InterviewCalendar::REQUEST);
+    }
+
+    /** The members told in-app: the main interviewer and who scheduled it; the day-before reminder goes to the whole panel too. @return list<int> */
+    private function team(InterviewChanged $event): array
+    {
+        $members = [$event->interviewerId, $event->createdBy];
+
+        if ($event->change === InterviewChange::Reminder) {
+            $members = [...$members, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])];
+        }
+
+        return array_values(array_unique($members));
     }
 
     /** The calendar file that goes with the email: a new or changed event, or its cancellation (also when the job seeker declined); none with the reminder. */

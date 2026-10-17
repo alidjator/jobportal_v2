@@ -52,6 +52,12 @@ final class RecruitmentEmailTemplates
     /** Sent to the members of a job when an application arrived (only for those who switched it on). */
     public const string TEAM_APPLICATION_RECEIVED = 'team.application_received';
 
+    /** Sent to every member of an interview's panel (and who scheduled it) the day before it. */
+    public const string TEAM_INTERVIEW_REMINDER = 'team.interview_reminder';
+
+    /** Sent to the panel members who have not sent their scorecard, a day and three days after the interview. */
+    public const string TEAM_SCORECARD_REMINDER = 'team.scorecard_reminder';
+
     public const string OFFER_SENT = 'recruitment.offer_sent';
 
     public const string OFFER_REVISED = 'recruitment.offer_revised';
@@ -399,6 +405,40 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nAda lamaran baru untuk posisi {{job_title}} ({{company_name}}).{{link}}",
                     'en' => "Hello {{name}},\n\nThere is a new application for {{job_title}} ({{company_name}}).{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_INTERVIEW_REMINDER,
+                'Sent the day before an interview to its main interviewer, its panel and the member who scheduled it. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('where', 'Where the interview is held: the place, the meeting link or the room of the platform', 'https://meet.example.test/abc'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Wawancara besok untuk {{job_title}}', 'en' => 'Interview tomorrow for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAnda ikut dalam wawancara untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}.\n\nTempat: {{where}}{{link}}",
+                    'en' => "Hello {{name}},\n\nYou take part in the interview for {{job_title}} ({{company_name}}) on {{starts_at}}.\n\nWhere: {{where}}{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_SCORECARD_REMINDER,
+                'Sent to a panel member whose scorecard of an interview is still missing, a day and three days after it. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('reminder', 'Empty for the first reminder, a mark of the second one, in the language of the email', ' (pengingat kedua)'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Scorecard wawancara {{job_title}} belum dikirim{{reminder}}', 'en' => 'Your scorecard for the {{job_title}} interview is missing{{reminder}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nScorecard Anda untuk wawancara posisi {{job_title}} ({{company_name}}) pada {{starts_at}} belum dikirim. Mohon isi dan kirim agar tim dapat memutuskan.{{link}}",
+                    'en' => "Hello {{name}},\n\nYour scorecard for the interview for {{job_title}} ({{company_name}}) on {{starts_at}} has not been sent. Please fill it in and send it so the team can decide.{{link}}",
                 ]),
             ),
         ];

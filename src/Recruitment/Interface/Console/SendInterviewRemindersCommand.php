@@ -10,7 +10,7 @@ final class SendInterviewRemindersCommand extends Command
 {
     protected $signature = 'recruitment:send-interview-reminders';
 
-    protected $description = 'Remind job seekers and teams of confirmed interviews that start within 24 hours, and panels of scorecards still missing a day after their interview';
+    protected $description = 'Remind job seekers and teams of confirmed interviews that start within 24 hours, and panels of scorecards still missing a day and three days after their interview';
 
     public function handle(SendInterviewReminders $remind, SendScorecardReminders $scorecards): int
     {
@@ -22,6 +22,12 @@ final class SendInterviewRemindersCommand extends Command
 
         if ($panels > 0) {
             $this->info("Reminded {$panels} panel".($panels === 1 ? '' : 's').' of missing scorecards.');
+        }
+
+        $escalated = $scorecards->escalate();
+
+        if ($escalated > 0) {
+            $this->info("Followed up on missing scorecards of {$escalated} interview".($escalated === 1 ? '' : 's').' a second time.');
         }
 
         return self::SUCCESS;

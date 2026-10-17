@@ -53,4 +53,24 @@ interface InterviewRepository
 
     /** Marks the interview's panel as reminded; false when another run did it first. */
     public function claimScorecardReminder(int $interviewId, DateTimeImmutable $at): bool;
+
+    /**
+     * Confirmed or completed interviews that ended after `$endedAfter` and no later than `$endedBefore` and whose panel was not followed up on the scorecards a second time yet.
+     *
+     * @return list<Interview>
+     */
+    public function dueForScorecardEscalation(DateTimeImmutable $endedBefore, DateTimeImmutable $endedAfter): array;
+
+    /** Marks the second follow-up of the interview as done; false when another run did it first. */
+    public function claimScorecardEscalation(int $interviewId, DateTimeImmutable $at): bool;
+
+    /**
+     * Confirmed interviews that start after `$from` and no later than `$until` and whose panel was not told they start soon.
+     *
+     * @return list<Interview>
+     */
+    public function dueForStartingReminder(DateTimeImmutable $from, DateTimeImmutable $until): array;
+
+    /** Marks the panel as told that the interview starts soon; false when another run did it first. */
+    public function claimStartingReminder(int $interviewId, DateTimeImmutable $at): bool;
 }

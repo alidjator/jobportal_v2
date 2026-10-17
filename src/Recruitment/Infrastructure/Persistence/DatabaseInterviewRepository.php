@@ -189,6 +189,42 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
         return $this->connection->table('recruitment_interviews')->where('id', $interviewId)->whereNull('scorecard_reminded_at')->update(['scorecard_reminded_at' => $this->format($at)]) > 0;
     }
 
+    public function dueForScorecardEscalation(DateTimeImmutable $endedBefore, DateTimeImmutable $endedAfter): array
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->whereIn('status', [InterviewStatus::Confirmed->value, InterviewStatus::Completed->value])
+            ->whereNull('scorecard_escalated_at')
+            ->where('ends_at', '<=', $this->format($endedBefore))
+            ->where('ends_at', '>', $this->format($endedAfter))
+            ->orderBy('ends_at')
+            ->get()
+            ->map(fn (stdClass $row): Interview => $this->toInterview($row))
+            ->all();
+    }
+
+    public function claimScorecardEscalation(int $interviewId, DateTimeImmutable $at): bool
+    {
+        return $this->connection->table('recruitment_interviews')->where('id', $interviewId)->whereNull('scorecard_escalated_at')->update(['scorecard_escalated_at' => $this->format($at)]) > 0;
+    }
+
+    public function dueForStartingReminder(DateTimeImmutable $from, DateTimeImmutable $until): array
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->where('status', InterviewStatus::Confirmed->value)
+            ->whereNull('starting_reminded_at')
+            ->where('starts_at', '>', $this->format($from))
+            ->where('starts_at', '<=', $this->format($until))
+            ->orderBy('starts_at')
+            ->get()
+            ->map(fn (stdClass $row): Interview => $this->toInterview($row))
+            ->all();
+    }
+
+    public function claimStartingReminder(int $interviewId, DateTimeImmutable $at): bool
+    {
+        return $this->connection->table('recruitment_interviews')->where('id', $interviewId)->whereNull('starting_reminded_at')->update(['starting_reminded_at' => $this->format($at)]) > 0;
+    }
+
     private function toInterview(stdClass $row): Interview
     {
         return new Interview(

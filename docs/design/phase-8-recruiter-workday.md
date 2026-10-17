@@ -155,4 +155,4 @@ All hold the job title and, when `COMPANY_APPLICATION_URL` is set, a link to the
 - **Interview answers** (confirmed, proposed another time, declined): to the interviewer and the member who scheduled it. The email of a withdrawal that cancels an interview (`recruitment.interview_cancelled_team`) now follows `team_interview_changes` too.
 - **Offer answers:** to the member who sent the offer. **New application:** to the job's notification recipients, without hiring managers who do not see it yet. **Test submitted:** to the assessors only (not the sender), `team_scoring`.
 - A suspended member (preference port) and an inactive account get none. Sent by queued listeners (`EmailTeamOfEventsListener`, `NotifyOfAttemptSubmissionListener::email`) after the change; a failure never undoes it.
-- **Not coded:** `provider_reviews` (waits for #23, provider tools), `team_scorecard_reminders` (#11), the one-click opt-out (deferred).
+- **Not coded:** `provider_reviews` (waits for #23, provider tools), `team_scorecard_reminders` (coded with #11 sections 3 and 4), the one-click opt-out (deferred).

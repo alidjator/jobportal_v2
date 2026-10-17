@@ -9,6 +9,8 @@ use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Interview;
+use Src\Recruitment\Domain\InterviewFormat;
+use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Company\CompanyDirectory;
@@ -31,6 +33,8 @@ final readonly class EmailTeamOfEvents
 
     public const string APPLICATION_PREFERENCE = 'team_new_applications';
 
+    public const string SCORECARD_PREFERENCE = 'team_scorecard_reminders';
+
     private const string ZONE = 'Asia/Jakarta';
 
     private const array INTERVIEW_WORDS = [
@@ -51,12 +55,19 @@ final readonly class EmailTeamOfEvents
         private CompanyMemberAccounts $accounts,
         private NotificationPreferences $preferences,
         private InterviewRepository $interviews,
+        private InterviewPanel $panel,
         private TeamEmailSender $emails,
         private TeamApplicationPageLink $page,
     ) {}
 
     public function interviewChanged(InterviewChanged $event): void
     {
+        if ($event->change === InterviewChange::Reminder) {
+            $this->interviewReminder($event);
+
+            return;
+        }
+
         $words = match ($event->change) {
             InterviewChange::Confirmed => self::INTERVIEW_WORDS['confirmed'],
             InterviewChange::Proposed => self::INTERVIEW_WORDS['proposed'],
@@ -69,11 +80,9 @@ final readonly class EmailTeamOfEvents
             return;
         }
 
-        $startsAt = $interview->startsAt->setTimezone(new DateTimeZone(self::ZONE))->format('Y-m-d H:i').' WIB';
-
         $this->send(
             array_values(array_unique([$event->interviewerId, $event->createdBy])), self::INTERVIEW_PREFERENCE, RecruitmentEmailTemplates::TEAM_INTERVIEW_CHANGED,
-            $event->companyId, $event->jobId, $event->applicationId, $words, ['starts_at' => $startsAt],
+            $event->companyId, $event->jobId, $event->applicationId, $words, ['starts_at' => $this->startsAt($interview)],
         );
     }
 
@@ -101,12 +110,59 @@ final readonly class EmailTeamOfEvents
         $this->send($recipients, self::APPLICATION_PREFERENCE, RecruitmentEmailTemplates::TEAM_APPLICATION_RECEIVED, $event->companyId, $event->jobId, $event->applicationId, null);
     }
 
+    /** The day-before reminder to the whole panel: the main interviewer, the extra members and who scheduled it (`team_interview_changes`). */
+    private function interviewReminder(InterviewChanged $event): void
+    {
+        $interview = $this->interviews->findById($event->interviewId);
+
+        if (! $interview instanceof Interview) {
+            return;
+        }
+
+        $members = array_values(array_unique([$event->interviewerId, $event->createdBy, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])]));
+
+        $this->send(
+            $members, self::INTERVIEW_PREFERENCE, RecruitmentEmailTemplates::TEAM_INTERVIEW_REMINDER,
+            $event->companyId, $event->jobId, $event->applicationId, null, ['starts_at' => $this->startsAt($interview)], static fn (string $language): array => ['where' => self::place($interview, $language)],
+        );
+    }
+
+    /**
+     * The email to the panel members whose scorecard is still missing (`team_scorecard_reminders`, on by default).
+     *
+     * @param  list<int>  $userIds
+     */
+    public function scorecardMissing(Interview $interview, int $companyId, int $jobId, array $userIds, bool $second): void
+    {
+        $this->send(
+            $userIds, self::SCORECARD_PREFERENCE, RecruitmentEmailTemplates::TEAM_SCORECARD_REMINDER,
+            $companyId, $jobId, $interview->applicationId, null, ['starts_at' => $this->startsAt($interview)],
+            static fn (string $language): array => ['reminder' => $second ? ($language === 'id' ? ' (pengingat kedua)' : ' (second reminder)') : ''],
+        );
+    }
+
+    private function startsAt(Interview $interview): string
+    {
+        return $interview->startsAt->setTimezone(new DateTimeZone(self::ZONE))->format('Y-m-d H:i').' WIB';
+    }
+
+    private static function place(Interview $interview, string $language): string
+    {
+        return match ($interview->format) {
+            InterviewFormat::Online => $interview->meetingUrl ?? '',
+            InterviewFormat::Onsite => $interview->location ?? '',
+            InterviewFormat::Video => $language === 'id' ? 'ruang video di platform' : 'the video room on the platform',
+            InterviewFormat::Voice => $language === 'id' ? 'panggilan telepon dari platform' : 'a phone call from the platform',
+        };
+    }
+
     /**
      * @param  list<int>  $userIds
      * @param  array{id: string, en: string}|null  $words  what happened, in each language; null when the template has no such variable
      * @param  array<string, string>  $extra
+     * @param  (callable(string): array<string, string>)|null  $byLanguage  more variables that depend on the recipient's language
      */
-    private function send(array $userIds, string $preference, string $template, int $companyId, int $jobId, int $applicationId, ?array $words, array $extra = []): void
+    private function send(array $userIds, string $preference, string $template, int $companyId, int $jobId, int $applicationId, ?array $words, array $extra = [], ?callable $byLanguage = null): void
     {
         $wanted = $this->preferences->enabledAmong($userIds, $preference, NotificationChannel::Email);
 
@@ -133,6 +189,7 @@ final readonly class EmailTeamOfEvents
                 'link' => $link === null ? '' : "\n\n".($language === 'id' ? 'Buka lamaran' : 'Open the application').': '.$link,
                 ...($words === null ? [] : ['what' => $words[$language]]),
                 ...$extra,
+                ...($byLanguage === null ? [] : $byLanguage($language)),
             ]);
         }
     }

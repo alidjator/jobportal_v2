@@ -1,4 +1,4 @@
-# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; section 1 coded 2026-10-17)
+# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; sections 1, 3 and 4 coded 2026-10-17)
 
 Gaps found from the interviewer's point of view and against Mekari Talenta (help center articles 47603513135385, 34576595122073: an Interviewer
 role limited to the jobs it is assigned to; 34781370644761 and 42469173015193: interviewers picked when scheduling, "Submit interview feedback"
@@ -115,3 +115,18 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
   (`main`, `panel`, null) and `scorecard` (`pending`, `sent`, `not_open`, null). `filter[rsvp]` and the own RSVP wait for section 2. Cancelled and declined interviews are not listed.
 - **Open:** the recruitment calendar still needs `applications.view`, so a panel-only member does not see their interviews there (the list above is their view until
   then); the `my_scorecard` task link of `phase-8-recruiter-workday.md` should point at this list.
+
+## Coded: sections 3 and 4 (2026-10-17, migration `000160`)
+
+- **Migration:** `recruitment_interviews.starting_reminded_at` and `scorecard_escalated_at` (once-only markers, claimed with an `UPDATE ... WHERE ... IS NULL`).
+- **Day before (section 3):** `NotifyOfInterviewChange` writes the in-app `interview.reminder` to the main interviewer, who scheduled it **and the whole panel**; `EmailTeamOfEvents`
+  emails the same members `team.interview_reminder` (job title, time in WIB, the place, the meeting link or "the video room on the platform", the application link; no candidate
+  name) by `team_interview_changes`.
+- **30 minutes before:** `SendStartingSoonReminders` (`recruitment:send-starting-soon-reminders`, every 5 minutes) writes `interview.starting_soon` in-app to the main interviewer and
+  the panel of a confirmed interview that starts within 30 minutes, once, with `meeting_url` for an online one. No email; a pending interview and a final application get none.
+  Skipping members who declined waits for the RSVP (section 2).
+- **Scorecards (section 4):** `SendScorecardReminders::execute()` (24 hours, as before) now also emails the missing members `team.scorecard_reminder`; `escalate()` (72 hours, run by the
+  same hourly command) writes `interview.scorecard_reminder` with `second: true` and the same email marked "(second reminder)" to the members still missing, and
+  `interview.scorecards_missing` (`missing` = how many) to who scheduled the interview and the main interviewer. The email follows the new preference `team_scorecard_reminders`
+  (on, company members); `team_scoring` keeps the assessor work only. The lookback of 7 days is counted from each step's hour.
+- **Not coded:** section 2 (invitations and RSVP), the `my_rsvp` and `panel_declined` tasks, pointing the `my_scorecards` task at `GET company/interviews`.

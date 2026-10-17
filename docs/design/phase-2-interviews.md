@@ -10,7 +10,7 @@ moving to `interview` (one by one); a bulk move to `interview` uses one base sch
 - **Bulk slots:** the recruiter gives a start time, a duration, a gap and the interviewer; slots are created one after another in the order of the selected applicants. A daily window
   (start and end of the working day) is part of the base schedule; a slot that would end after the window moves to the next working day.
 - **Access:** same as the application detail (assigned recruiters and company admins); the interviewer is chosen among the members who may see the job. No answer from the job seeker leaves the
-  schedule `pending` (no auto-confirm). A reminder email goes to the job seeker the day before a confirmed interview; the team gets it in-app (as coded; the team email is designed in `phase-8-interviewers.md`).
+  schedule `pending` (no auto-confirm). A reminder email goes to the job seeker the day before a confirmed interview; the whole panel gets it in-app and by email (`phase-8-interviewers.md` section 3).
 
 ## Details (approved 2026-10-08)
 

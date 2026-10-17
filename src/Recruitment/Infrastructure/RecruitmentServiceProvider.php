@@ -155,6 +155,7 @@ use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
+use Src\Recruitment\Interface\Console\SendStartingSoonRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Analytics\AnalyticsReports;
@@ -315,10 +316,11 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command(SendStartingSoonRemindersCommand::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVoiceSessionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
@@ -342,6 +344,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             ));
             $catalog->add(
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::INTERVIEW_PREFERENCE, 'Email when a job seeker confirms, declines or proposes another time for an interview you take part in, and when a withdrawal cancels one.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
+                new NotificationPreferenceDefinition(EmailTeamOfEvents::SCORECARD_PREFERENCE, 'Email when your scorecard of an interview is still missing a day and three days after it.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::OFFER_PREFERENCE, 'Email when a job seeker accepts or declines an offer you sent.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::APPLICATION_PREFERENCE, 'Email for each new application to a job assigned to you (the daily digest counts them anyway).', [NotificationChannel::Email->value => false], [ActorKind::CompanyMember->value]),
             );
