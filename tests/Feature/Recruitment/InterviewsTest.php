@@ -198,7 +198,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->mine('confirm')->assertOk()->assertJsonPath('data.status', 'confirmed');
         $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-pending');
 
-        $this->assertSame(['interview.confirmed'], $this->notificationTypes($this->recruiterId));
+        $this->assertSame(['interview.confirmed', 'interview.panel_invited'], $this->notificationTypes($this->recruiterId));
         $this->assertSame([], $this->notificationTypes($this->adminId));
     }
 
@@ -212,7 +212,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:proposal-pending');
 
         $this->team('accept-proposal')->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.starts_at', $this->utc($proposed))->assertJsonPath('data.proposed_starts_at', null);
-        $this->assertSame(['interview.proposed'], $this->notificationTypes($this->recruiterId));
+        $this->assertSame(['interview.panel_invited', 'interview.proposed'], $this->notificationTypes($this->recruiterId));
         $this->assertContains('interview.proposal_accepted', $this->notificationTypes($this->seekerId));
     }
 
@@ -225,7 +225,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->mine('propose', ['starts_at' => now()->subDay()->utc()->format('Y-m-d\TH:i:s\Z')])->assertStatus(409);
         $this->mine('propose', ['starts_at' => 'soon'])->assertStatus(422);
         $this->mine('decline')->assertOk()->assertJsonPath('data.status', 'declined');
-        $this->assertSame(['interview.declined'], $this->notificationTypes($this->recruiterId));
+        $this->assertSame(['interview.declined', 'interview.panel_invited'], $this->notificationTypes($this->recruiterId));
         $this->assertSame(0, DB::table('recruitment_interviews')->whereNotNull('active_key')->count());
     }
 
@@ -310,9 +310,10 @@ final class InterviewsTest extends FeatureTestCase
         $this->assertStringContainsString('WIB', (string) $scheduled->getTextBody());
 
         $this->api('PUT', '/me/notification-preferences/application_update/email', ['enabled' => false], $this->seekerToken)->assertNoContent();
-        $before = count($this->sentEmails());
+        $toSeeker = fn (): int => count(array_filter($this->sentEmails(), fn ($email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test'));
+        $before = $toSeeker();
         $this->schedule(['starts_at' => $this->inTheFuture(5)])->assertOk();
-        $this->assertCount($before, $this->sentEmails());
+        $this->assertSame($before, $toSeeker());
         $this->assertContains('interview.rescheduled', $this->notificationTypes($this->seekerId));
     }
 
@@ -450,7 +451,7 @@ final class InterviewsTest extends FeatureTestCase
 
         $this->mine('recording-consent/withdraw')->assertOk()->assertJsonPath('data.recording_consent', 'withdrawn')->assertJsonPath('data.status', 'confirmed');
         $this->mine('recording-consent/withdraw')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-recording-consent');
-        $this->assertSame(['interview.confirmed', 'interview.recording_withdrawn'], $this->notificationTypes($this->recruiterId));
+        $this->assertSame(['interview.confirmed', 'interview.panel_invited', 'interview.recording_withdrawn'], $this->notificationTypes($this->recruiterId));
         $this->assertSame([], $this->notificationTypes($this->adminId));
     }
 

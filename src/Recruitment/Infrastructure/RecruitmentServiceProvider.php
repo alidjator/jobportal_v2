@@ -55,6 +55,7 @@ use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
 use Src\Recruitment\Domain\Events\InterviewChanged;
+use Src\Recruitment\Domain\Events\InterviewPanelAnswered;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Events\RecordingConverted;
 use Src\Recruitment\Domain\Events\RecordingStopped;
@@ -63,6 +64,7 @@ use Src\Recruitment\Domain\InterviewKitRepository;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewQuestionRepository;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\InterviewRsvps;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
@@ -98,6 +100,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListene
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
+use Src\Recruitment\Infrastructure\Listeners\NotifyOfPanelAnswerListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfWithdrawalListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
@@ -119,6 +122,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewPanel;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewResults;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRsvps;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobKitDefaults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
@@ -208,6 +212,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobKitDefaults::class => DatabaseJobKitDefaults::class,
         InterviewQuestionRepository::class => DatabaseInterviewQuestionRepository::class,
         InterviewPanel::class => DatabaseInterviewPanel::class,
+        InterviewRsvps::class => DatabaseInterviewRsvps::class,
         MyInterviewReader::class => DatabaseMyInterviewReader::class,
         ScorecardRepository::class => DatabaseScorecardRepository::class,
         ScorecardEraser::class => DatabaseScorecardEraser::class,
@@ -364,10 +369,13 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(ApplicationSubmitted::class, EmailApplicantOfReceiptListener::class);
         Event::listen(ApplicationSubmitted::class, [EmailTeamOfEventsListener::class, 'applicationSubmitted']);
         Event::listen(InterviewChanged::class, [EmailTeamOfEventsListener::class, 'interviewChanged']);
+        Event::listen(InterviewChanged::class, [EmailTeamOfEventsListener::class, 'interviewPanel']);
         Event::listen(OfferChanged::class, [EmailTeamOfEventsListener::class, 'offerChanged']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);
+        Event::listen(InterviewPanelAnswered::class, [NotifyOfPanelAnswerListener::class, 'inApp']);
+        Event::listen(InterviewPanelAnswered::class, [NotifyOfPanelAnswerListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);

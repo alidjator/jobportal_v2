@@ -14,6 +14,9 @@ enum InterviewChange: string
     case Reminder = 'reminder';
     case RecordingWithdrawn = 'recording_withdrawn';
 
+    /** The extra members of the panel changed: `addedUserIds` are invited, `removedUserIds` lose the calendar event. */
+    case PanelChanged = 'panel_changed';
+
     /** Only the details (the note for the candidate) changed: the time and the confirmation stay. */
     case Updated = 'updated';
 }

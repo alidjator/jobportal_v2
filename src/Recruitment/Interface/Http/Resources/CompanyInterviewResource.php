@@ -22,7 +22,14 @@ final class CompanyInterviewResource extends JsonResource
         return [
             ...(new InterviewResource($this->resource))->toArray($request),
             'kit' => $interview->kitName === null ? null : ['id' => $interview->kitId, 'name' => $interview->kitName],
-            'participants' => $this->resource->participants,
+            /** The answer of the main interviewer to the invitation. */
+            'interviewer_rsvp' => $this->resource->interviewerRsvp === null ? null : (new InterviewRsvpResource($this->resource->interviewerRsvp))->toArray($request),
+            /** The extra panel members, each with the answer to the invitation (`rsvp`). */
+            'participants' => array_map(static fn (array $member): array => [
+                'id' => $member['id'],
+                'name' => $member['name'],
+                'rsvp' => (new InterviewRsvpResource($member['rsvp']))->toArray($request),
+            ], $this->resource->participants),
         ];
     }
 }

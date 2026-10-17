@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Src\Recruitment\Application\EmailPanelOfInterview;
 use Src\Recruitment\Application\EmailTeamOfEvents;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\InterviewChanged;
@@ -14,7 +15,7 @@ final class EmailTeamOfEventsListener implements ShouldQueue
 {
     public int $tries = 3;
 
-    public function __construct(private readonly EmailTeamOfEvents $emails) {}
+    public function __construct(private readonly EmailTeamOfEvents $emails, private readonly EmailPanelOfInterview $panel) {}
 
     public function viaQueue(): string
     {
@@ -40,5 +41,11 @@ final class EmailTeamOfEventsListener implements ShouldQueue
     public function applicationSubmitted(ApplicationSubmitted $event): void
     {
         $this->emails->applicationReceived($event);
+    }
+
+    /** Apart from the answers above, so a retry of one never repeats the other. */
+    public function interviewPanel(InterviewChanged $event): void
+    {
+        $this->panel->handle($event);
     }
 }

@@ -52,6 +52,15 @@ final class RecruitmentEmailTemplates
     /** Sent to the members of a job when an application arrived (only for those who switched it on). */
     public const string TEAM_APPLICATION_RECEIVED = 'team.application_received';
 
+    /** Sent to the main interviewer and the panel when an interview is scheduled, gets a new time or a member joins the panel; carries the `interview.ics` request. */
+    public const string TEAM_INTERVIEW_INVITATION = 'team.interview_invitation';
+
+    /** Sent to a member who left the panel and to the panel of an interview the team cancelled; carries the `interview.ics` cancel. */
+    public const string TEAM_INTERVIEW_REMOVED = 'team.interview_removed';
+
+    /** Sent to the member who scheduled an interview when a panel member answered that they cannot attend. */
+    public const string TEAM_INTERVIEW_PANEL_DECLINED = 'team.interview_panel_declined';
+
     /** Sent to every member of an interview's panel (and who scheduled it) the day before it. */
     public const string TEAM_INTERVIEW_REMINDER = 'team.interview_reminder';
 
@@ -88,7 +97,7 @@ final class RecruitmentEmailTemplates
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
             InterviewChange::Updated => self::INTERVIEW_UPDATED,
             InterviewChange::Declined => self::INTERVIEW_DECLINED,
-            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::RecordingWithdrawn => null,
+            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::RecordingWithdrawn, InterviewChange::PanelChanged => null,
         };
     }
 
@@ -439,6 +448,61 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nScorecard Anda untuk wawancara posisi {{job_title}} ({{company_name}}) pada {{starts_at}} belum dikirim. Mohon isi dan kirim agar tim dapat memutuskan.{{link}}",
                     'en' => "Hello {{name}},\n\nYour scorecard for the interview for {{job_title}} ({{company_name}}) on {{starts_at}} has not been sent. Please fill it in and send it so the team can decide.{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_INTERVIEW_INVITATION,
+                'Sent to the main interviewer and the panel when an interview is scheduled, gets a new time or they join the panel. The calendar file adds the event; the member answers in the application.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('candidate', 'The candidate\'s name', 'Siti Rahma'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('format', 'The format of the interview, in the language of the email', 'Online'),
+                    new EmailVariable('where', 'Where the interview is held: the place, the meeting link or the room of the platform', 'https://meet.example.test/abc'),
+                    new EmailVariable('kit', 'The question kit of the interview, on its own line with its label; empty without a kit', "\n\nKit pertanyaan: Backend round"),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Undangan wawancara {{candidate}} untuk {{job_title}}', 'en' => 'Invitation to interview {{candidate}} for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAnda diundang ke wawancara dengan {{candidate}} untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}.\n\nFormat: {{format}}\n\nTempat: {{where}}{{kit}}{{link}}\n\nFile kalender terlampir menambahkan acara ini ke kalender Anda. Mohon konfirmasi kehadiran Anda di aplikasi.",
+                    'en' => "Hello {{name}},\n\nYou are invited to the interview with {{candidate}} for {{job_title}} ({{company_name}}) on {{starts_at}}.\n\nFormat: {{format}}\n\nWhere: {{where}}{{kit}}{{link}}\n\nThe attached calendar file adds this event to your calendar. Please confirm in the application whether you can attend.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_INTERVIEW_REMOVED,
+                'Sent to a member who left the panel of an interview and to the panel of an interview the team cancelled. The calendar file removes the event they added.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('candidate', 'The candidate\'s name', 'Siti Rahma'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Anda tidak lagi di wawancara {{candidate}} untuk {{job_title}}', 'en' => 'You are no longer on the interview with {{candidate}} for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAnda tidak lagi berada di wawancara dengan {{candidate}} untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}: Anda dikeluarkan dari panel atau wawancara dibatalkan.{{link}}\n\nFile kalender terlampir menghapus acara ini dari kalender Anda.",
+                    'en' => "Hello {{name}},\n\nYou are no longer on the interview with {{candidate}} for {{job_title}} ({{company_name}}) on {{starts_at}}: you were taken off the panel or the interview was cancelled.{{link}}\n\nThe attached calendar file removes this event from your calendar.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_INTERVIEW_PANEL_DECLINED,
+                'Sent to the member who scheduled an interview when a panel member answered that they cannot attend. The panel stays as it is.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('member', 'The name of the member who cannot attend', 'Rina Rekruter'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('note', 'The reason the member gave, on its own line with its label; empty without a note', "\n\nCatatan: Ada rapat lain"),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => '{{member}} tidak bisa hadir di wawancara {{job_title}}', 'en' => '{{member}} cannot attend the {{job_title}} interview']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{member}} tidak bisa hadir di wawancara untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}.{{note}}{{link}}\n\nPanel tidak berubah; Anda dapat menggantinya di aplikasi.",
+                    'en' => "Hello {{name}},\n\n{{member}} cannot attend the interview for {{job_title}} ({{company_name}}) on {{starts_at}}.{{note}}{{link}}\n\nThe panel is unchanged; you can change it in the application.",
                 ]),
             ),
         ];

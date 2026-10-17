@@ -20,9 +20,17 @@ final readonly class InterviewChanged implements DomainEvent
         public int $interviewerId,
         public int $createdBy,
         private DateTimeImmutable $occurredAt,
+        /** @var list<int> the members newly on the panel (a panel change) */
+        public array $addedUserIds = [],
+        /** @var list<int> the members who left the panel, with a reschedule or a panel change */
+        public array $removedUserIds = [],
     ) {}
 
-    public static function of(InterviewChange $change, Application $application, Interview $interview, DateTimeImmutable $at): self
+    /**
+     * @param  list<int>  $addedUserIds
+     * @param  list<int>  $removedUserIds
+     */
+    public static function of(InterviewChange $change, Application $application, Interview $interview, DateTimeImmutable $at, array $addedUserIds = [], array $removedUserIds = []): self
     {
         return new self(
             $change,
@@ -34,6 +42,8 @@ final readonly class InterviewChanged implements DomainEvent
             $interview->interviewerId,
             $interview->createdBy,
             $at,
+            $addedUserIds,
+            $removedUserIds,
         );
     }
 

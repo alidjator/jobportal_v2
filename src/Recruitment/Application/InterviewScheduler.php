@@ -105,16 +105,20 @@ final readonly class InterviewScheduler
             $this->questions->replace($savedId, $kit->questions);
         }
 
+        $before = $previous instanceof Interview ? [$previous->interviewerId, ...($this->panel->forInterviews([(int) $previous->id])[(int) $previous->id] ?? [])] : [];
+
         if ($participants !== null) {
             $this->panel->replace($savedId, $participants);
         } elseif ($previous instanceof Interview) {
             $this->panel->copy((int) $previous->id, $savedId);
         }
 
+        $after = [$input->interviewerId, ...($this->panel->forInterviews([$savedId])[$savedId] ?? [])];
+
         // A hiring manager on the panel sees the application, whatever its stage.
         $this->visibility->showToPanel($applicationId, $application->jobId, [$input->interviewerId, ...($participants ?? [])], $now);
 
-        return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now);
+        return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now, removedUserIds: array_values(array_diff($before, $after)));
     }
 
     /** A random UUID (version 4) for the calendar event of a new chain. */

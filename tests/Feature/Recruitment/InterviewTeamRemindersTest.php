@@ -84,6 +84,12 @@ final class InterviewTeamRemindersTest extends FeatureTestCase
         return $subjects;
     }
 
+    /** @return list<string> */
+    private function scorecardSubjectsTo(string $address): array
+    {
+        return array_values(array_filter($this->subjectsTo($address), static fn (string $subject): bool => str_contains($subject, 'scorecard')));
+    }
+
     public function test_the_day_before_reminder_reaches_the_whole_panel_in_app_and_by_email(): void
     {
         $this->openInterview();
@@ -110,7 +116,7 @@ final class InterviewTeamRemindersTest extends FeatureTestCase
         $this->app->make(SendInterviewReminders::class)->execute();
 
         $this->assertSame(['interview.reminder'], $this->types($this->adminId, 'interview.reminder'));
-        $this->assertSame([], $this->subjectsTo('andi@example.test'));
+        $this->assertNotContains('Interview tomorrow for Backend Developer', $this->subjectsTo('andi@example.test'));
     }
 
     public function test_thirty_minutes_before_the_start_the_panel_is_told_in_app_once(): void
@@ -170,8 +176,8 @@ final class InterviewTeamRemindersTest extends FeatureTestCase
         $this->app->make(SendScorecardReminders::class)->execute();
 
         $this->assertSame(['interview.scorecard_reminder'], $this->types($this->adminId, 'interview.scorecard_reminder'));
-        $this->assertSame([], $this->subjectsTo('andi@example.test'));
-        $this->assertNotSame([], $this->subjectsTo('rina@example.test'));
+        $this->assertSame([], $this->scorecardSubjectsTo('andi@example.test'));
+        $this->assertNotSame([], $this->scorecardSubjectsTo('rina@example.test'));
     }
 
     public function test_after_72_hours_the_missing_members_are_reminded_again_and_the_scheduler_is_told_the_count(): void

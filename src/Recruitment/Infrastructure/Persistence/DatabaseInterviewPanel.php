@@ -28,12 +28,16 @@ final readonly class DatabaseInterviewPanel implements InterviewPanel
                 ->where('i.application_id', $applicationId)->where('p.user_id', $userId)->exists();
     }
 
+    /** Members who stay keep their answer to the invitation; a member who leaves and is added again starts `pending`. */
     public function replace(int $interviewId, array $userIds): void
     {
-        $this->connection->table('recruitment_interview_participants')->where('interview_id', $interviewId)->delete();
+        $this->connection->table('recruitment_interview_participants')->where('interview_id', $interviewId)->whereNotIn('user_id', $userIds)->delete();
 
-        if ($userIds !== []) {
-            $this->connection->table('recruitment_interview_participants')->insert(array_map(static fn (int $userId): array => ['interview_id' => $interviewId, 'user_id' => $userId], $userIds));
+        $kept = $this->connection->table('recruitment_interview_participants')->where('interview_id', $interviewId)->pluck('user_id')->map(static fn ($id): int => (int) $id)->all();
+        $added = array_values(array_diff($userIds, $kept));
+
+        if ($added !== []) {
+            $this->connection->table('recruitment_interview_participants')->insert(array_map(static fn (int $userId): array => ['interview_id' => $interviewId, 'user_id' => $userId], $added));
         }
     }
 

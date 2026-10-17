@@ -2,6 +2,8 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\Events\InterviewChange;
+use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewStatus;
 use Src\Recruitment\Domain\ScorecardRepository;
@@ -9,6 +11,7 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -18,7 +21,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 /**
  * Replaces the extra members of the panel of an existing interview (the main interviewer stays), for the member who scheduled it, its main interviewer or a
  * company admin, until the application is final. A member who leaves loses their draft scorecard; a scorecard they already sent stays and counts in the result.
- * A member who joins must send their own scorecard before seeing the others.
+ * A member who joins must send their own scorecard before seeing the others, and is invited by a notice and an email with the calendar file; a member who leaves gets the cancellation.
  */
 final readonly class UpdateInterviewPanel
 {
@@ -30,6 +33,7 @@ final readonly class UpdateInterviewPanel
         private ScorecardRepository $scorecards,
         private InterviewViews $views,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -43,7 +47,7 @@ final readonly class UpdateInterviewPanel
      */
     public function execute(Actor $actor, int $interviewId, array $participantIds): InterviewView
     {
-        $team = $this->transactions->run(function () use ($actor, $interviewId, $participantIds): TeamInterview {
+        [$team, $event] = $this->transactions->run(function () use ($actor, $interviewId, $participantIds): array {
             $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $team->interview;
 
@@ -62,14 +66,21 @@ final readonly class UpdateInterviewPanel
             }
 
             $ids = $this->scheduler->checkedParticipants($team->application->companyId, $interview->interviewerId, $participantIds);
-            $left = array_diff($this->panel->forInterviews([(int) $interview->id])[(int) $interview->id] ?? [], $ids);
+            $current = $this->panel->forInterviews([(int) $interview->id])[(int) $interview->id] ?? [];
+            $left = array_values(array_diff($current, $ids));
+            $added = array_values(array_diff($ids, $current));
 
-            $this->scorecards->deleteDrafts((int) $interview->id, array_values($left));
+            $this->scorecards->deleteDrafts((int) $interview->id, $left);
             $this->panel->replace((int) $interview->id, $ids);
-            $this->visibility->showToPanel((int) $team->application->id, $team->application->jobId, $ids, $this->clock->now());
+            $now = $this->clock->now();
+            $this->visibility->showToPanel((int) $team->application->id, $team->application->jobId, $ids, $now);
 
-            return $team;
+            return [$team, $left === [] && $added === [] ? null : InterviewChanged::of(InterviewChange::PanelChanged, $team->application, $interview, $now, $added, $left)];
         });
+
+        if ($event instanceof InterviewChanged) {
+            $this->events->dispatch([$event]);
+        }
 
         return $this->views->one($team->interview, withPanel: true);
     }

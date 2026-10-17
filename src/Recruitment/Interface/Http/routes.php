@@ -108,6 +108,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/interviews/{id}/questions', [InterviewQuestionController::class, 'update'])->whereNumber('id');
 
     Route::put('company/interviews/{id}/participants', [InterviewPanelController::class, 'update'])->whereNumber('id');
+    Route::post('company/interviews/{id}/rsvp', [InterviewPanelController::class, 'answer'])->whereNumber('id');
 
     Route::get('company/interviews/{id}/scorecard', [ScorecardController::class, 'show'])->whereNumber('id');
     Route::put('company/interviews/{id}/scorecard', [ScorecardController::class, 'update'])->whereNumber('id');

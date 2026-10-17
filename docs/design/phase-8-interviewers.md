@@ -1,4 +1,4 @@
-# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; sections 1, 3 and 4 coded 2026-10-17)
+# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; sections 1 to 4 coded 2026-10-17, section 2 in part)
 
 Gaps found from the interviewer's point of view and against Mekari Talenta (help center articles 47603513135385, 34576595122073: an Interviewer
 role limited to the jobs it is assigned to; 34781370644761 and 42469173015193: interviewers picked when scheduling, "Submit interview feedback"
@@ -124,9 +124,28 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
   name) by `team_interview_changes`.
 - **30 minutes before:** `SendStartingSoonReminders` (`recruitment:send-starting-soon-reminders`, every 5 minutes) writes `interview.starting_soon` in-app to the main interviewer and
   the panel of a confirmed interview that starts within 30 minutes, once, with `meeting_url` for an online one. No email; a pending interview and a final application get none.
-  Skipping members who declined waits for the RSVP (section 2).
+  Members who declined (section 2) are skipped.
 - **Scorecards (section 4):** `SendScorecardReminders::execute()` (24 hours, as before) now also emails the missing members `team.scorecard_reminder`; `escalate()` (72 hours, run by the
   same hourly command) writes `interview.scorecard_reminder` with `second: true` and the same email marked "(second reminder)" to the members still missing, and
   `interview.scorecards_missing` (`missing` = how many) to who scheduled the interview and the main interviewer. The email follows the new preference `team_scorecard_reminders`
   (on, company members); `team_scoring` keeps the assessor work only. The lookback of 7 days is counted from each step's hour.
-- **Not coded:** section 2 (invitations and RSVP), the `my_rsvp` and `panel_declined` tasks, pointing the `my_scorecards` task at `GET company/interviews`.
+- **Not coded:** pointing the `my_scorecards` task at `GET company/interviews` (see section 2 below for the rest of the RSVP work).
+
+## Coded: section 2, part A (2026-10-17, migration `000161`)
+
+- **Migration:** `recruitment_interviews.interviewer_rsvp`, `interviewer_rsvp_note` (500), `interviewer_rsvp_at` and `recruitment_interview_participants.rsvp`, `rsvp_note`, `rsvp_at` (`pending` default,
+  check `pending|accepted|declined`). Port `InterviewRsvps` (`DatabaseInterviewRsvps`), value `RsvpAnswer`, enum `Rsvp`. A new interview row (a reschedule) starts `pending`;
+  `DatabaseInterviewPanel::replace` now keeps the rows, and so the answers, of members who stay (it used to delete and insert all); a member removed and added again starts `pending`.
+- **Invitation:** `EmailPanelOfInterview` (a separate queued listener step, `EmailTeamOfEventsListener::interviewPanel`) sends `team.interview_invitation` with `interview.ics`
+  `METHOD:REQUEST` (attendee: the member) to the main interviewer and the extra members on a new interview or time, and to the added members on a panel change; and
+  `team.interview_removed` with `METHOD:CANCEL` to members who left (a new time without them, a panel change) and to the panel of an interview the team cancelled (rejection or
+  the cancel action). The job seeker declining and the withdrawal keep their own emails. All follow `team_interview_changes`. The in-app `interview.panel_invited` is always written
+  (`NotifyOfInterviewChange`): to everyone on the panel for a new interview or time, to the added members for a panel change. The scheduler is told too when they sit on the panel.
+- **Panel change event:** `UpdateInterviewPanel` dispatches `InterviewChanged` with the new case `InterviewChange::PanelChanged` (`addedUserIds`, `removedUserIds`) only when the
+  panel really changed; `InterviewChanged` has the two lists (reschedules carry `removedUserIds`).
+- **Answer:** `POST company/interviews/{id}/rsvp {answer: accepted|declined, note?}` (`AnswerInterviewRsvp`; main interviewer or extra member, 403 `not-on-panel`; 409 `interview-started`
+  from the start time, `interview-not-active` for a declined or cancelled interview, `application-final`; 422 for another answer or a note over 500). It returns `{answer, note, at}`.
+  "Tidak bisa" dispatches `InterviewPanelAnswered`: in-app `interview.panel_declined` and email `team.interview_panel_declined` (with the note, by `team_interview_changes`) to the member
+  who scheduled it; nobody is told when they decline their own interview or when the answer is `accepted`.
+- **Shown:** `participants[].rsvp` and `interviewer_rsvp` (`{answer, note, at}`) on the team's interview (`CompanyInterviewResource`). Only the answer to the invitation: the panel stays as it is.
+- **Not coded (part B):** the tasks `my_rsvp` and `panel_declined`, `filter[rsvp]=pending` and the own RSVP on `GET company/interviews`, the RSVP on the calendar event and the pipeline's interview badge.

@@ -9,13 +9,15 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\InterviewRsvps;
+use Src\Recruitment\Domain\Rsvp;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Application\TransactionManager;
 
 /**
- * Tells the main interviewer and the panel in-app that a confirmed interview starts within {@see self::MINUTES_AHEAD} minutes, once per interview, with the meeting link of an
+ * Tells the main interviewer and the panel in-app, but not the members who answered that they cannot attend, that a confirmed interview starts within {@see self::MINUTES_AHEAD} minutes, once per interview, with the meeting link of an
  * online one (a video or voice interview is joined from the platform). It runs every few minutes; an interview confirmed later than that is reminded on the next run while
  * it has not started. No email. An application that became final needs no interview any more and gets no reminder.
  */
@@ -27,6 +29,7 @@ final readonly class SendStartingSoonReminders
         private InterviewRepository $interviews,
         private ApplicationRepository $applications,
         private InterviewPanel $panel,
+        private InterviewRsvps $rsvps,
         private JobDirectory $jobs,
         private InAppNotifier $notifier,
         private TransactionManager $transactions,
@@ -60,8 +63,16 @@ final readonly class SendStartingSoonReminders
             return false;
         }
 
+        $answers = $this->rsvps->forInterviews([$id])[$id] ?? [];
+        $members = array_values(array_unique([$interview->interviewerId, ...($this->panel->forInterviews([$id])[$id] ?? [])]));
+        $coming = array_values(array_filter($members, static fn (int $userId): bool => ($answers[$userId]->rsvp ?? Rsvp::Pending) !== Rsvp::Declined));
+
+        if ($coming === []) {
+            return false;
+        }
+
         $this->notifier->send(
-            array_values(array_unique([$interview->interviewerId, ...($this->panel->forInterviews([$id])[$id] ?? [])])),
+            $coming,
             ApplicationNotificationType::INTERVIEW_STARTING_SOON,
             [
                 'application_id' => $interview->applicationId,

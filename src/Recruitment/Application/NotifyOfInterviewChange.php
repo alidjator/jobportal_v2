@@ -64,6 +64,12 @@ final readonly class NotifyOfInterviewChange
         if ($this->toTeam($event->change)) {
             $this->notifier->send($this->team($event), $type, $data);
         }
+
+        $invited = $this->invited($event);
+
+        if ($invited !== []) {
+            $this->notifier->send($invited, ApplicationNotificationType::INTERVIEW_PANEL_INVITED, $data);
+        }
     }
 
     public function email(InterviewChanged $event): void
@@ -88,6 +94,20 @@ final readonly class NotifyOfInterviewChange
         $calendar = $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now());
 
         $this->emails->send($contact, $key, $variables, $calendar, $method ?? InterviewCalendar::REQUEST);
+    }
+
+    /**
+     * The members invited to answer: the main interviewer and the panel with a new interview or a new time, the added members with a panel change.
+     *
+     * @return list<int>
+     */
+    private function invited(InterviewChanged $event): array
+    {
+        return match ($event->change) {
+            InterviewChange::Scheduled, InterviewChange::Rescheduled => array_values(array_unique([$event->interviewerId, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])])),
+            InterviewChange::PanelChanged => $event->addedUserIds,
+            default => [],
+        };
     }
 
     /** The members told in-app: the main interviewer and who scheduled it; the day-before reminder goes to the whole panel too. @return list<int> */

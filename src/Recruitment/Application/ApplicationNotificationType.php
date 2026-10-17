@@ -54,6 +54,12 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_SCORECARD_REMINDER = 'interview.scorecard_reminder';
 
+    /** A member was put on the panel of an interview (also with a new time): the invitation to answer. */
+    public const string INTERVIEW_PANEL_INVITED = 'interview.panel_invited';
+
+    /** A panel member answered "cannot attend": the member who scheduled the interview is told. */
+    public const string INTERVIEW_PANEL_DECLINED = 'interview.panel_declined';
+
     /** The panel is told that the interview starts in about 30 minutes. */
     public const string INTERVIEW_STARTING_SOON = 'interview.starting_soon';
 
@@ -99,6 +105,7 @@ final class ApplicationNotificationType
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
             InterviewChange::RecordingWithdrawn => self::INTERVIEW_RECORDING_WITHDRAWN,
             InterviewChange::Updated => self::INTERVIEW_UPDATED,
+            InterviewChange::PanelChanged => self::INTERVIEW_PANEL_INVITED,
         };
     }
 
