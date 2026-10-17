@@ -43,6 +43,15 @@ final class RecruitmentEmailTemplates
     /** Sent to the interviewers when a withdrawal cancelled their interview; carries the `interview.ics` cancel. */
     public const string INTERVIEW_CANCELLED_TEAM = 'recruitment.interview_cancelled_team';
 
+    /** Sent to the team when the job seeker answered an interview (confirmed, proposed another time or declined). */
+    public const string TEAM_INTERVIEW_CHANGED = 'team.interview_changed';
+
+    /** Sent to the member who sent an offer when the job seeker accepted or declined it. */
+    public const string TEAM_OFFER_ANSWERED = 'team.offer_answered';
+
+    /** Sent to the members of a job when an application arrived (only for those who switched it on). */
+    public const string TEAM_APPLICATION_RECEIVED = 'team.application_received';
+
     public const string OFFER_SENT = 'recruitment.offer_sent';
 
     public const string OFFER_REVISED = 'recruitment.offer_revised';
@@ -342,6 +351,54 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nWawancara dengan {{candidate}} untuk posisi {{job_title}} pada {{starts_at}} dibatalkan. Alasannya: lamaran ditarik.{{link}}\n\nFile kalender terlampir menghapus acara ini dari kalender Anda.",
                     'en' => "Hello {{name}},\n\nThe interview with {{candidate}} for {{job_title}} on {{starts_at}} was cancelled. Reason: the application was withdrawn.{{link}}\n\nThe attached calendar file removes this event from your calendar.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_INTERVIEW_CHANGED,
+                'Sent to the interviewer and the member who scheduled an interview when the job seeker confirmed it, proposed another time or declined it. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('what', 'What the job seeker did, in the language of the email', 'mengonfirmasi wawancara'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Pelamar {{what}} untuk {{job_title}}', 'en' => 'The candidate {{what}} for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPelamar {{what}} untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}.{{link}}",
+                    'en' => "Hello {{name}},\n\nThe candidate {{what}} for {{job_title}} ({{company_name}}) on {{starts_at}}.{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_OFFER_ANSWERED,
+                'Sent to the member who sent an offer when the job seeker accepted or declined it. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('what', 'What the job seeker did, in the language of the email', 'menerima penawaran'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Pelamar {{what}} untuk {{job_title}}', 'en' => 'The candidate {{what}} for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nPelamar {{what}} untuk posisi {{job_title}} ({{company_name}}).{{link}}",
+                    'en' => "Hello {{name}},\n\nThe candidate {{what}} for {{job_title}} ({{company_name}}).{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_APPLICATION_RECEIVED,
+                'Sent to a member of a job for each new application, when they switched this email on. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Lamaran baru untuk {{job_title}}', 'en' => 'New application for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAda lamaran baru untuk posisi {{job_title}} ({{company_name}}).{{link}}",
+                    'en' => "Hello {{name}},\n\nThere is a new application for {{job_title}} ({{company_name}}).{{link}}",
                 ]),
             ),
         ];

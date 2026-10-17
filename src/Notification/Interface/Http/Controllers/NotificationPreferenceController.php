@@ -22,6 +22,7 @@ final class NotificationPreferenceController extends ApiController
                 'key' => $view->key,
                 'description' => $view->description,
                 'channels' => (object) $view->channels,
+                'audiences' => $view->audiences,
             ],
             $list->execute($actors->fromRequest($request)),
         )]);

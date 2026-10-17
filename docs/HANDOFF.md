@@ -11,11 +11,11 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green), `v0.3.0` (ERP TA core and phase 8 to 2026-10-17, 2933 tests green).
 - **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md` (#5, #6, #7 and #10 complete; #8, #9 and #11 partly, their rest waits for the team preferences).
-- **Git (2026-10-17):** `master` holds all work to date (tag `v0.3.0`); #16 is coded on branch `phase-8-withdrawals` (not merged).
+- **Git (2026-10-17):** `master` holds all work to date including #16 (tag `v0.3.0` is older); #8 section 3 parts A and B are coded on `master` (not tagged yet).
 - Real PostgreSQL `jobportal_v2`: migrated to `000158` (`000159` is new: the user runs it), reference data only (0 accounts). Test database at `000158` too.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`, separating the live site from the working folder: the scheduler fails when code needing a new migration is live before `migrate`); since 2026-10-15 the ERP TA core (`docs/design/erp-direction.md`) is coded before the remaining hiring work.
 - **Name (changed 2026-10-16):** ONESIS ERP / ONESIS Career, `docs/design/naming.md`; `onesis` stays the technical identifier.
-- **Next coding:** #16 is coded (parts A to C, migration `000159`, branch `phase-8-withdrawals`, awaiting the user's `composer check`); next, #8 section 3 (the team preferences, now unblocked) per `phase-8-index.md`.
+- **Next coding:** #16 is coded (parts A to C, migration `000159`, branch `phase-8-withdrawals`, awaiting the user's `composer check`); #8 section 3 part A is coded (audiences, `team_daily_digest`, `company:send-team-digests`, `.env` `COMPANY_APP_URL`); part B (the `team_*` event emails) is coded too; the one-click opt-out is deferred; next #9 section 3 and #11 sections 2 to 4 (unblocked).
 - **Locations (decided 2026-10-17):** new index items #27 (`company_locations`, needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run; employee data order in `erp-direction.md` section 9.
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 

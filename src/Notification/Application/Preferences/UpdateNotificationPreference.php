@@ -17,13 +17,13 @@ final readonly class UpdateNotificationPreference
         private Clock $clock,
     ) {}
 
-    /** @throws BusinessRuleViolation `unknown-notification-preference` for a key that is not registered or a channel it does not support */
+    /** @throws BusinessRuleViolation `unknown-notification-preference` for a key that is not registered, is not meant for the actor's kind of account, or a channel it does not support */
     public function execute(Actor $actor, string $key, string $channel, bool $enabled): void
     {
         $definition = $this->catalog->find($key);
         $parsed = NotificationChannel::tryFrom($channel);
 
-        if ($definition === null || $parsed === null || ! $definition->supports($parsed)) {
+        if ($definition === null || $parsed === null || ! $definition->supports($parsed) || ! $definition->isFor($actor->kind)) {
             throw new BusinessRuleViolation('This notification setting does not exist.', 'unknown-notification-preference');
         }
 

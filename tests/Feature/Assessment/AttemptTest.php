@@ -3,12 +3,14 @@
 namespace Tests\Feature\Assessment;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Src\Assessment\Domain\ColumnDigits;
 use Src\Platform\Application\Settings\SettingsStore;
+use Symfony\Component\Mailer\Transport\TransportInterface;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\Concerns\BuildsAssessmentFixtures;
 use Tests\FeatureTestCase;
@@ -596,6 +598,30 @@ final class AttemptTest extends FeatureTestCase
         $this->assertSame(['assessment.submitted'], $this->notificationTypes($this->adminId));
         $this->assertSame(['assessment.invited'], $this->notificationTypes($this->seekerId));
         $this->assertSame(1, DB::table('assessment_results')->count());
+    }
+
+    public function test_an_assessor_is_emailed_about_a_submitted_test_only_after_switching_it_on(): void
+    {
+        $this->invite($this->skillTest([$this->choice()], title: 'Short'), ['assessor_ids' => [$this->adminId]]);
+        $this->start()->assertCreated();
+        [$question] = $this->questionIds();
+        $this->answer($question, ['option_positions' => [1]])->assertNoContent();
+        $this->api('PUT', '/me/notification-preferences/team_scoring/email', ['enabled' => true], $this->adminToken)->assertNoContent();
+
+        $this->take('POST', 'attempt/submit')->assertOk();
+
+        /** @var TransportInterface $transport */
+        $transport = $this->app->make(MailManager::class)->mailer()->getSymfonyTransport();
+        $subjects = [];
+
+        foreach ($transport->messages()->all() as $sent) {
+            foreach ($sent->getOriginalMessage()->getTo() as $to) {
+                $subjects[$to->getAddress()][] = (string) $sent->getOriginalMessage()->getSubject();
+            }
+        }
+
+        $this->assertContains('The test Short is waiting for your scoring', $subjects['andi@example.test'] ?? []);
+        $this->assertNotContains('The test Short is waiting for your scoring', $subjects['rina@example.test'] ?? []);
     }
 
     public function test_another_candidate_does_not_reach_the_attempt(): void

@@ -29,7 +29,7 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 
 | # | Document | Waits for |
 |---|---|---|
-| 8 | `phase-8-recruiter-workday.md` section 3 | sections 1, 2, 4 (`000153`) and 5 (with #10 section 6, `000157`) coded 2026-10-17; section 3 waits for the team preferences used by withdrawals and provider tools |
+| 8 | `phase-8-recruiter-workday.md` section 3 | sections 1, 2, 4 (`000153`) and 5 (with #10 section 6, `000157`) coded 2026-10-17; section 3 part A (audiences, `team_daily_digest`, the digest) coded 2026-10-17; part B (`team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`) coded 2026-10-17; `provider_reviews` waits for #23; the one-click opt-out is deferred; #9 section 3 and #11 sections 2 to 4 are unblocked |
 | 9 | `phase-8-hiring-managers.md` section 3 | sections 1 and 2 coded 2026-10-17 (`000154`); section 3 (shortlist reviews) waits for the team preferences of #8 section 3 |
 | 11 | `phase-8-interviewers.md` sections 2 to 4 | section 1 coded 2026-10-17 (`000158`); sections 2 to 4 wait for the team preferences of #8 section 3 (`team_interview_changes`, `team_scorecard_reminders`) |
 | 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |
@@ -37,6 +37,8 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
 | 16 | `phase-8-withdrawals.md` | **coded 2026-10-17** (`000159`, parts A to C); it unblocks the team preferences of #8 section 3 |
+| 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
+| 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
 | 17 | `phase-8-platform-admin.md` sections 5 to 8 | section 6 (email suppression) **before the reset emails to the imported accounts**, with the SMTP provider, whatever its place here |
 | 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |
@@ -47,8 +49,6 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
-| 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
-| 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 

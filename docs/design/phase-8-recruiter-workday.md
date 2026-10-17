@@ -15,6 +15,7 @@ them meanwhile), a full per-job email template library and a job widget for comp
 - 2026-10-14: an application shows the person's **other applications** to the company (chosen by the user).
 - 2026-10-14: an **"application received" email**, with the company's own text when set; no attachment (chosen by the user).
 - 2026-10-17: **coded in parts** (chosen by the user): sections 2, 4 and 1 first (the task list without `unscheduled_interviews`, which waits for the interview calendar #10); sections 3 and 5 follow.
+- 2026-10-17: section 3 **part A coded** (audiences and the daily digest); the event emails (`team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`, `provider_reviews`) follow with the code that sends them. The existing `approval_task` and `approval_update` are for company members, not job seekers (chosen by the user; corrects section 3's "existing keys are job_seeker").
 
 ## 1. Task list
 
@@ -132,3 +133,26 @@ they wait for the interview calendar (#10: message defaults, the logo, `intervie
 With #10 section 6 (migration `000157`: `company_message_defaults`). New template `recruitment.application_received` (job, company, the Jakarta date, the company's `applied` message, the link to the application page from `JOB_SEEKER_APPLICATION_URL`, empty when unset), sent by the queued listener
 `EmailApplicantOfReceiptListener` on `ApplicationSubmitted` by the preference `application_update`; no in-app notice, no attachment. It shows the company logo and the fixed anti-scam line like the interview, offer and test emails. Section 3 is not coded. The sender of offer emails was generalised
 for it: `ApplicantEmailSender`, `MailApplicantSender`, `ApplicantMail` (they were the offer ones).
+
+## Coded: section 3 part A, audiences and the daily digest (2026-10-17)
+
+No migration. `NotificationPreferenceDefinition` has `audiences` (`job_seeker` by default; `company_member`, `psychologist`); `GET me/notification-preferences` lists only the caller's kind and each row carries `audiences`;
+`PUT` of a key outside the caller's audience answers `unknown-notification-preference`. `approval_task` and `approval_update` are `company_member` (they were shown to job seekers by mistake). Key `team_daily_digest` (company member, email, on).
+
+- **Digest.** `company:send-team-digests` (Dashboard context, 07:00 Jakarta, Monday to Saturday): for every active company, each member with the preference on, an active account and a membership in that company gets one queued email, template `team.daily_digest`
+  (variables `name`, `company`, `date`, `summary`). Lines: new applications of the last 24 hours on the jobs **assigned** to the member, every task item with a count above zero (section 1, same use case), and the member's own interviews of the day
+  (calendar with `mine`, from `applications.view` only). Nothing is sent when no line is left. A member whose digest fails with an access or rule error is skipped. Suspended members are left out by the preference port.
+- **Links.** New `.env` value `COMPANY_APP_URL` (`app.company_app_url`); a line ends with `: <url>/<path>` where the path is the task item's `filter` (or `company/applications/{id}` for an interview). Empty: no links. Variable values are Markdown-escaped, so a link is plain text, not a Markdown link.
+  The lists those paths name do not exist yet (finding above), so the front end maps them.
+- **Opt-out deferred (decided by the user, 2026-10-17):** the one-click opt-out is not coded now.
+  (Original note:) the one-click opt-out. The design says the team emails share "the one-click opt-out of the existing emails", but no existing email has one (only the newsletter unsubscribes); it needs a signed-token endpoint and is **waiting for the user's decision**.
+
+## Coded: section 3 part B, the event emails (2026-10-17)
+
+No migration. Preferences (company member, email): `team_interview_changes` (on), `team_offer_answers` (on), `team_new_applications` (off), `team_scoring` (off). Templates `team.interview_changed`, `team.offer_answered`, `team.application_received` (Recruitment) and `team.test_submitted` (Assessment).
+All hold the job title and, when `COMPANY_APPLICATION_URL` is set, a link to the application, and **never the candidate's name** (the safe reading of "only where the member may see the application"); the existing withdrawal email keeps the name.
+
+- **Interview answers** (confirmed, proposed another time, declined): to the interviewer and the member who scheduled it. The email of a withdrawal that cancels an interview (`recruitment.interview_cancelled_team`) now follows `team_interview_changes` too.
+- **Offer answers:** to the member who sent the offer. **New application:** to the job's notification recipients, without hiring managers who do not see it yet. **Test submitted:** to the assessors only (not the sender), `team_scoring`.
+- A suspended member (preference port) and an inactive account get none. Sent by queued listeners (`EmailTeamOfEventsListener`, `NotifyOfAttemptSubmissionListener::email`) after the change; a failure never undoes it.
+- **Not coded:** `provider_reviews` (waits for #23, provider tools), `team_scorecard_reminders` (#11), the one-click opt-out (deferred).

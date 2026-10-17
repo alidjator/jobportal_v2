@@ -23,6 +23,7 @@ use Src\Approval\Infrastructure\Persistence\DatabaseDelegationRepository;
 use Src\Approval\Infrastructure\Persistence\DatabaseFlowRepository;
 use Src\Approval\Interface\Console\SendApprovalRemindersCommand;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
+use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Approval\Approvals;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -56,8 +57,8 @@ final class ApprovalServiceProvider extends ContextServiceProvider
         // Email only: the in-app notifications are always written. Both default to on.
         $this->callAfterResolving(NotificationPreferenceCatalog::class, function (NotificationPreferenceCatalog $catalog): void {
             $catalog->add(
-                new NotificationPreferenceDefinition(ApprovalNotificationType::TASK_PREFERENCE, 'Email when an approval is waiting for your decision, and reminders while it waits.', [NotificationChannel::Email->value => true]),
-                new NotificationPreferenceDefinition(ApprovalNotificationType::UPDATE_PREFERENCE, 'Email when a request you made is approved, rejected or returned for revision, or when one of its approvers left.', [NotificationChannel::Email->value => true]),
+                new NotificationPreferenceDefinition(ApprovalNotificationType::TASK_PREFERENCE, 'Email when an approval is waiting for your decision, and reminders while it waits.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
+                new NotificationPreferenceDefinition(ApprovalNotificationType::UPDATE_PREFERENCE, 'Email when a request you made is approved, rejected or returned for revision, or when one of its approvers left.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
             );
         });
 

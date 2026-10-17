@@ -7,7 +7,7 @@ use Src\Assessment\Application\Attempts\NotifyOfAttemptSubmission;
 use Src\Assessment\Domain\Events\AttemptSubmitted;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
-/** A queued step on the `default` queue, retried 3 times with a growing delay, after the submission was saved. A failure here never undoes the submission. */
+/** Two queued steps on the `default` queue, retried 3 times with a growing delay, after the submission was saved. A failure here never undoes the submission. */
 final class NotifyOfAttemptSubmissionListener implements ShouldQueue
 {
     public int $tries = 3;
@@ -25,8 +25,13 @@ final class NotifyOfAttemptSubmissionListener implements ShouldQueue
         return [10, 60, 300];
     }
 
-    public function handle(AttemptSubmitted $event): void
+    public function inApp(AttemptSubmitted $event): void
     {
         $this->notify->inApp($event);
+    }
+
+    public function email(AttemptSubmitted $event): void
+    {
+        $this->notify->email($event);
     }
 }

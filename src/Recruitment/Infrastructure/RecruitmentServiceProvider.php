@@ -16,6 +16,7 @@ use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicantEmailSender;
 use Src\Recruitment\Application\ApplicationNotificationType;
 use Src\Recruitment\Application\ApplicationPageLink;
+use Src\Recruitment\Application\EmailTeamOfEvents;
 use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\Export\ApplicationsDataExporter;
@@ -90,6 +91,7 @@ use Src\Recruitment\Infrastructure\Dashboard\CompanyTimeToFillCard;
 use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
 use Src\Recruitment\Infrastructure\Listeners\ConvertRecordingWhenStopped;
 use Src\Recruitment\Infrastructure\Listeners\EmailApplicantOfReceiptListener;
+use Src\Recruitment\Infrastructure\Listeners\EmailTeamOfEventsListener;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\EraseScorecardDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
@@ -154,6 +156,7 @@ use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
+use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Calendar\CalendarSources;
@@ -337,6 +340,11 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 'Email when the stage of one of your applications changes (interview, offer, hired or rejected), and when a test is sent, nearly due, expired or cancelled.',
                 [NotificationChannel::Email->value => true],
             ));
+            $catalog->add(
+                new NotificationPreferenceDefinition(EmailTeamOfEvents::INTERVIEW_PREFERENCE, 'Email when a job seeker confirms, declines or proposes another time for an interview you take part in, and when a withdrawal cancels one.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
+                new NotificationPreferenceDefinition(EmailTeamOfEvents::OFFER_PREFERENCE, 'Email when a job seeker accepts or declines an offer you sent.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
+                new NotificationPreferenceDefinition(EmailTeamOfEvents::APPLICATION_PREFERENCE, 'Email for each new application to a job assigned to you (the daily digest counts them anyway).', [NotificationChannel::Email->value => false], [ActorKind::CompanyMember->value]),
+            );
         });
     }
 
@@ -351,6 +359,9 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
         Event::listen(ApplicationSubmitted::class, NotifyAssigneesOfApplication::class);
         Event::listen(ApplicationSubmitted::class, EmailApplicantOfReceiptListener::class);
+        Event::listen(ApplicationSubmitted::class, [EmailTeamOfEventsListener::class, 'applicationSubmitted']);
+        Event::listen(InterviewChanged::class, [EmailTeamOfEventsListener::class, 'interviewChanged']);
+        Event::listen(OfferChanged::class, [EmailTeamOfEventsListener::class, 'offerChanged']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);

@@ -130,6 +130,9 @@ return [
     // Client page of an application for the company's team, with {application_id} in it; the emails to interviewers link to it. Empty: the email carries no link.
     'company_application_url' => env('COMPANY_APPLICATION_URL'),
 
+    // Base URL of the company app; the lines of the daily team digest link to its pages (the path is the one the task list gives). Empty: the digest carries no links.
+    'company_app_url' => env('COMPANY_APP_URL'),
+
     // Client page of an application for the job seeker, with {application_id} in it; the calendar file of an interview links to it. Empty: the file carries no link.
     'application_url' => env('JOB_SEEKER_APPLICATION_URL'),
 

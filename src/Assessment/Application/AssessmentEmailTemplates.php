@@ -12,6 +12,9 @@ final class AssessmentEmailTemplates
 {
     public const string PSYCHOLOGIST_INVITATION = 'assessment.psychologist_invitation';
 
+    /** Sent to an assessor when a test they score was submitted (the preference `team_scoring`). */
+    public const string TEAM_TEST_SUBMITTED = 'team.test_submitted';
+
     public const string TEST_INVITED = 'assessment.test_invited';
 
     public const string TEST_REMINDER = 'assessment.test_reminder';
@@ -38,7 +41,7 @@ final class AssessmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::psychologistDefinitions(), ...self::testDefinitions()];
+        return [...self::psychologistDefinitions(), ...self::testDefinitions(), ...self::teamDefinitions()];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -134,6 +137,28 @@ final class AssessmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nPsikolog merevisi laporan tes \"{{test_title}}\" untuk lamaran posisi {{job_title}} di {{company_name}}.\n\nBuka akun Anda untuk membaca penjelasan hasil tes yang sudah direvisi.",
                     'en' => "Hello {{name}},\n\nA psychologist revised the report of the test \"{{test_title}}\" for your application for {{job_title}} at {{company_name}}.\n\nOpen your account to read the revised explanation of your result.",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function teamDefinitions(): array
+    {
+        return [
+            new EmailTemplateDefinition(
+                self::TEAM_TEST_SUBMITTED,
+                'Sent to an assessor when a test they score was submitted, when they switched this email on. It holds no candidate name and no answers.',
+                [
+                    new EmailVariable('name', 'The assessor\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('test_title', 'The title of the test', 'Tes logika'),
+                ],
+                TranslatedText::fromArray(['id' => 'Tes {{test_title}} menunggu penilaian Anda', 'en' => 'The test {{test_title}} is waiting for your scoring']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nSeorang pelamar {{job_title}} ({{company_name}}) sudah mengirim tes **{{test_title}}**. Buka daftar tes untuk menilai jawabannya.",
+                    'en' => "Hello {{name}},\n\nA candidate for {{job_title}} ({{company_name}}) submitted the test **{{test_title}}**. Open your tests to score the answers.",
                 ]),
             ),
         ];

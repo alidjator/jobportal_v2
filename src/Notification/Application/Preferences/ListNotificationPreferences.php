@@ -5,7 +5,7 @@ namespace Src\Notification\Application\Preferences;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 
-/** The whole catalog with the actor's effective value per channel. Not paginated: the catalog is small and fixed by the code. */
+/** The part of the catalog meant for the actor's kind of account, with the effective value per channel. Not paginated: the catalog is small and fixed by the code. */
 final readonly class ListNotificationPreferences
 {
     public function __construct(
@@ -20,12 +20,16 @@ final readonly class ListNotificationPreferences
         $views = [];
 
         foreach ($this->catalog->all() as $definition) {
+            if (! $definition->isFor($actor->kind)) {
+                continue;
+            }
+
             $channels = [];
             foreach ($definition->defaults as $channel => $default) {
                 $own = $stored["{$definition->key}.{$channel}"] ?? null;
                 $channels[$channel] = ['enabled' => $own ?? $default, 'is_default' => $own === null];
             }
-            $views[] = new NotificationPreferenceView($definition->key, $definition->description, $channels);
+            $views[] = new NotificationPreferenceView($definition->key, $definition->description, $channels, $definition->audiences);
         }
 
         return $views;

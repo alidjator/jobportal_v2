@@ -14,13 +14,14 @@ use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Notifications\InAppNotifier;
+use Src\Shared\Application\Notifications\NotificationChannel;
+use Src\Shared\Application\Notifications\NotificationPreferences;
 
 /**
  * Tells the company's team that an application was withdrawn (`docs/design/phase-8-withdrawals.md` section 3). The job's notification recipients get an in-app
  * notice with ids and codes only (never a name), except the members the event leaves out and the hiring managers who do not see the application yet. When
  * the withdrawal cancelled an interview, its main interviewer and panel (the member who marked it left out) get an in-app notice and an email with the
- * `interview.ics` cancel, so the event they added to their calendar disappears. The email is sent whatever the member's preferences are until the preference
- * `team_interview_changes` exists. Every step stands alone, so a retry of one never repeats another.
+ * `interview.ics` cancel, so the event they added to their calendar disappears. The email follows the member's preference `team_interview_changes`. Every step stands alone, so a retry of one never repeats another.
  */
 final readonly class NotifyTeamOfWithdrawal
 {
@@ -35,6 +36,7 @@ final readonly class NotifyTeamOfWithdrawal
         private InterviewRepository $interviews,
         private InterviewPanel $panel,
         private InAppNotifier $notifier,
+        private NotificationPreferences $preferences,
         private TeamEmailSender $emails,
         private InterviewCalendar $calendar,
         private TeamApplicationPageLink $page,
@@ -77,7 +79,7 @@ final readonly class NotifyTeamOfWithdrawal
             return;
         }
 
-        $recipients = $this->interviewers($event, $interview);
+        $recipients = $this->preferences->enabledAmong($this->interviewers($event, $interview), EmailTeamOfEvents::INTERVIEW_PREFERENCE, NotificationChannel::Email);
         $accounts = $this->members->summaries($recipients);
         $jobTitle = $this->jobs->titles([$event->jobId])[$event->jobId] ?? '';
         $company = $this->companies->summaries([$event->companyId])[$event->companyId] ?? null;

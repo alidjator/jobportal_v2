@@ -8,6 +8,8 @@ use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Application\AssessmentPermissions;
 use Src\Assessment\Application\AssessmentSettings;
 use Src\Assessment\Application\Attempts\AttemptSessionToken;
+use Src\Assessment\Application\Attempts\NotifyOfAttemptSubmission;
+use Src\Assessment\Application\Attempts\TeamSubmissionSender;
 use Src\Assessment\Application\Delivery\AssessmentInvitationService;
 use Src\Assessment\Application\Delivery\TestEmailSender;
 use Src\Assessment\Application\EraseAssessmentData;
@@ -50,6 +52,7 @@ use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationDeclinedListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfReportSignedListener;
 use Src\Assessment\Infrastructure\Listeners\RecordAssessmentAuditEntries;
 use Src\Assessment\Infrastructure\Mail\MailInvitationSender;
+use Src\Assessment\Infrastructure\Mail\MailTeamSubmissionSender;
 use Src\Assessment\Infrastructure\Mail\MailTestSender;
 use Src\Assessment\Infrastructure\Pdf\DompdfReportRenderer;
 use Src\Assessment\Infrastructure\Persistence\DatabaseAnswerRepository;
@@ -76,9 +79,13 @@ use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Accounts\ErasureStep;
+use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\Notifications\NotificationChannel;
+use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
+use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -104,6 +111,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         InvitationRepository::class => DatabaseInvitationRepository::class,
         AssessmentInvitations::class => AssessmentInvitationService::class,
         TestEmailSender::class => MailTestSender::class,
+        TeamSubmissionSender::class => MailTeamSubmissionSender::class,
         AttemptRepository::class => DatabaseAttemptRepository::class,
         AnswerRepository::class => DatabaseAnswerRepository::class,
         VideoTakeRepository::class => DatabaseVideoTakeRepository::class,
@@ -146,6 +154,16 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
             $catalog->add(...AssessmentEmailTemplates::definitions());
         });
+
+        // Email only: the in-app notice is always written. Off until the assessor switches it on.
+        $this->callAfterResolving(NotificationPreferenceCatalog::class, function (NotificationPreferenceCatalog $catalog): void {
+            $catalog->add(new NotificationPreferenceDefinition(
+                NotifyOfAttemptSubmission::PREFERENCE,
+                'Email when a test you score as an assessor was submitted.',
+                [NotificationChannel::Email->value => false],
+                [ActorKind::CompanyMember->value],
+            ));
+        });
     }
 
     public function boot(): void
@@ -164,7 +182,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
         Event::listen(InvitationChanged::class, [NotifyOfInvitationChangeListener::class, 'inApp']);
         Event::listen(InvitationChanged::class, [NotifyOfInvitationChangeListener::class, 'email']);
-        Event::listen(AttemptSubmitted::class, NotifyOfAttemptSubmissionListener::class);
+        Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'inApp']);
+        Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'email']);
         Event::listen(InvitationDeclined::class, NotifyOfInvitationDeclinedListener::class);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'inApp']);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'candidateInApp']);
