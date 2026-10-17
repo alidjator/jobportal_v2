@@ -2,11 +2,9 @@
 
 namespace Src\Assessment\Application\Delivery;
 
-use DateTimeZone;
 use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\Invitation;
-use Src\Assessment\Domain\InvitationMode;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestRepository;
@@ -25,8 +23,6 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
  */
 final readonly class NotifyOfInvitationChange
 {
-    private const string EMAIL_ZONE = 'Asia/Jakarta';
-
     public function __construct(
         private ApplicantContacts $contacts,
         private JobDirectory $jobs,
@@ -72,15 +68,9 @@ final readonly class NotifyOfInvitationChange
             return;
         }
 
-        $this->emails->send($contact, AssessmentEmailTemplates::keyForChange($event->change), [
-            'company_id' => (string) $event->companyId,
-            'job_title' => $this->jobTitle($event),
-            'company_name' => $this->companyName($event),
-            'test_title' => $test->title(),
-            'due_at' => $invitation->dueAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
-            'location' => $invitation->mode === InvitationMode::Onsite ? ($contact->locale === 'id' ? 'Lokasi: ' : 'Location: ').$invitation->location : '',
-            'note' => $invitation->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$invitation->note,
-        ]);
+        $variables = InvitationEmailVariables::of($test->title(), $invitation->dueAt, $invitation->mode, $invitation->location, $invitation->note, $contact, $this->jobTitle($event), $this->companyName($event), $event->companyId);
+
+        $this->emails->send($contact, AssessmentEmailTemplates::keyForChange($event->change), $variables);
     }
 
     private function jobTitle(InvitationChanged $event): string

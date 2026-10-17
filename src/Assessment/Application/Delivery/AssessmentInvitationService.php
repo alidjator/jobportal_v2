@@ -2,10 +2,12 @@
 
 namespace Src\Assessment\Application\Delivery;
 
+use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Domain\Events\InvitationChange;
 use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
+use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Assessment\InvitedApplication;
@@ -24,6 +26,16 @@ final readonly class AssessmentInvitationService implements AssessmentInvitation
     public function assertCanInvite(int $companyId, int $jobId, AssessmentInvitationInput $input): void
     {
         $this->checks->check($companyId, $jobId, $input);
+    }
+
+    public function previewEmail(int $companyId, int $jobId, AssessmentInvitationInput $input, ApplicantContact $contact, string $jobTitle, string $companyName): array
+    {
+        $checked = $this->checks->check($companyId, $jobId, $input);
+
+        return [
+            'key' => AssessmentEmailTemplates::TEST_INVITED,
+            'variables' => InvitationEmailVariables::of($checked->test->title(), $checked->dueAt, $checked->mode, $checked->location, $checked->note, $contact, $jobTitle, $companyName, $companyId),
+        ];
     }
 
     public function invite(InvitedApplication $application, int $invitedByUserId, AssessmentInvitationInput $input): array

@@ -18,6 +18,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `already-reported` | 409 | Job, Review | You have already reported this job. |
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
 | `amendment-pending` | 409 | Workforce | An amendment of this requisition is waiting for a decision. |
+| `applicant-unavailable` | 409 | Recruitment | The applicant account is no longer available. |
 | `application-final` | 409 | Recruitment | This application is final, so its ratings can no longer change. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |

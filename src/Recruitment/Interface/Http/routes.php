@@ -9,6 +9,7 @@ use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
 use Src\Recruitment\Interface\Http\Controllers\BulkApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
+use Src\Recruitment\Interface\Http\Controllers\EmailPreviewController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewPanelController;
@@ -114,6 +115,8 @@ Route::middleware('auth:user')->group(function (): void {
 
     Route::get('company/applications/{id}/offers', [OfferController::class, 'index'])->whereNumber('id');
     Route::put('company/applications/{id}/offer', [OfferController::class, 'store'])->whereNumber('id');
+    // The email an interview, a test or an offer would send, shown before the recruiter sends it; nothing is saved or sent.
+    Route::post('company/applications/{id}/email-preview', EmailPreviewController::class)->whereNumber('id');
     Route::post('company/applications/{id}/offer/withdraw', [OfferController::class, 'withdraw'])->whereNumber('id');
 });
 

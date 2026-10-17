@@ -2,6 +2,7 @@
 
 namespace Src\Shared\Application\Assessment;
 
+use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Domain\DomainEvent;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -19,6 +20,15 @@ interface AssessmentInvitations
      * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
      */
     public function assertCanInvite(int $companyId, int $jobId, AssessmentInvitationInput $input): void;
+
+    /**
+     * The template and variables of the email that sending this test would send, for a preview: the request is checked like a real one and nothing is saved.
+     *
+     * @return array{key: string, variables: array<string, string>}
+     *
+     * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor` or `message-link-not-allowed`
+     */
+    public function previewEmail(int $companyId, int $jobId, AssessmentInvitationInput $input, ApplicantContact $contact, string $jobTitle, string $companyName): array;
 
     /**
      * Sends the test and cancels the active invitation it replaces.

@@ -1,4 +1,4 @@
-# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4, 3, 1 and 6 coded 2026-10-17)
+# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4, 3, 1, 6 and 5 coded 2026-10-17)
 
 Two gaps found against Mekari Talenta's interview flow (help center articles 34781370644761 and 42469173015193): Talenta has a recruitment calendar of
 every interview and lets the recruiter add a note for the candidate to the invitation. Extends `phase-2-interviews.md`, `phase-2-offers.md` and
@@ -214,3 +214,15 @@ Migration `000157`: the table `company_message_defaults` (one row per company wi
   (`recruitment.offer_sent` and `offer_revised`) now carry the offer note too (variable `note`).
 - **Logo and the fixed line.** The interview, offer and test emails and the received email are framed by the platform (`CompanyEmailFrame`, the trait `FramesCompanyEmail` of their mailables): the company logo above the text, from the public card of the company (the name in bold when it has no public logo, is hidden or
   suspended), and below it the line that the platform and its companies never charge a fee (Indonesian or English by the recipient's language). The sender passes `company_id` among the template variables; a template ignores it. The text of the template is unchanged by the company.
+
+## Coded: section 5, email preview (2026-10-17)
+
+No migration. `POST company/applications/{id}/email-preview` with `scenario` and the fields of the form, flat in the body: `interview_scheduled` and `interview_rescheduled` take the fields of `PUT .../interview` (the email shown is the one the application would get: a new time over an active interview is a
+reschedule), `interview_updated` takes `note` (required, may be null), `assessment_invited` the fields of `PUT company/assessment/applications/{id}/invitation`, `offer_sent` the fields of `PUT .../offer`. It answers `{template, subject, html, text, locale, email_enabled, calendar_attached}`. Interpretations:
+
+- **Same rules, same errors.** A new interview time and an offer run the real code (`InterviewScheduler`, `OfferPlacer`) inside a transaction that is rolled back (`PreviewApplicantEmail`, `PreviewRollback`), so every rule of saving them applies without a second copy; a test is checked by
+  `InvitationChecks` through the new port method `AssessmentInvitations::previewEmail`, and a note change by the link rule and `Interview::withNote`. Nothing is saved, sent, notified or audited (the tests compare the counts). A note change without an active interview is 409 `interview-not-active`; an applicant whose
+  account is gone is 409 `applicant-unavailable`.
+- **Access.** The permission of the action (`interviews.manage`, `assessments.send`, `offers.manage`) and the job in the member's scope, as for the real action (404 otherwise); the general API rate limit applies. A bulk move previews with the first selected application.
+- **The email as it is.** The variables are built by the same classes the sending code uses (`InterviewEmailVariables`, `OfferEmailVariables`, `InvitationEmailVariables`), the template comes through `EmailTemplates` (an admin override included) in the applicant's language, and the new Shared port `EmailPreviewer`
+  (Platform provides `ViewEmailPreviewer`) puts it through the same views as the mailables, with the company logo or name and the fixed line. `email_enabled` is false when the applicant turned `application_update` email off; `calendar_attached` says an `.ics` would go with it (the file is not rendered).

@@ -2,7 +2,6 @@
 
 namespace Src\Recruitment\Application;
 
-use DateTimeZone;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Offer;
@@ -22,8 +21,6 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
  */
 final readonly class NotifyOfOfferChange
 {
-    private const string EMAIL_ZONE = 'Asia/Jakarta';
-
     public function __construct(
         private ApplicantContacts $contacts,
         private JobDirectory $jobs,
@@ -76,16 +73,7 @@ final readonly class NotifyOfOfferChange
             return;
         }
 
-        $this->emails->send($contact, $key, [
-            'company_id' => (string) $event->companyId,
-            'job_title' => $this->jobTitle($event),
-            'company_name' => $this->companyName($event),
-            'position' => $offer->position,
-            'salary' => 'Rp '.number_format($offer->salary, 0, ',', '.'),
-            'start_date' => $offer->startDate->format('Y-m-d'),
-            'expires_at' => $offer->expiresAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
-            'note' => $offer->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$offer->note,
-        ]);
+        $this->emails->send($contact, $key, OfferEmailVariables::of($offer, $contact, $this->jobTitle($event), $this->companyName($event), $event->companyId));
     }
 
     private function toApplicant(OfferChange $change): bool

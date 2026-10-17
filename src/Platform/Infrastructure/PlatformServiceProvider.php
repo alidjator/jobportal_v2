@@ -27,12 +27,14 @@ use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Audit\MemberActivity;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\AdHocEmails;
+use Src\Shared\Application\Email\EmailPreviewer;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\CompanySettingsEditor;
 use Src\Shared\Application\Settings\GroupSettingsEditor;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Infrastructure\ContextServiceProvider;
+use Src\Shared\Infrastructure\Email\ViewEmailPreviewer;
 
 final class PlatformServiceProvider extends ContextServiceProvider
 {
@@ -48,6 +50,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
         EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,
         EmailTemplates::class => PlatformEmailTemplates::class,
+        EmailPreviewer::class => ViewEmailPreviewer::class,
         AdHocEmails::class => PlatformAdHocEmails::class,
     ];
 

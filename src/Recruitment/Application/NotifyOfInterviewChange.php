@@ -2,11 +2,9 @@
 
 namespace Src\Recruitment\Application;
 
-use DateTimeZone;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Interview;
-use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Applicant\ApplicantContacts;
@@ -26,8 +24,6 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
  */
 final readonly class NotifyOfInterviewChange
 {
-    private const string EMAIL_ZONE = 'Asia/Jakarta';
-
     public function __construct(
         private ApplicantContacts $contacts,
         private JobDirectory $jobs,
@@ -86,26 +82,10 @@ final readonly class NotifyOfInterviewChange
         $companyName = $this->companyName($event);
         $method = $this->calendarMethod($event->change);
 
-        $this->emails->send($contact, $key, [
-            'company_id' => (string) $event->companyId,
-            'job_title' => $jobTitle,
-            'company_name' => $companyName,
-            'note' => $interview->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$interview->note,
-            'starts_at' => $interview->startsAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
-            'format' => match ($interview->format) {
-                InterviewFormat::Online => 'Online',
-                InterviewFormat::Onsite => 'Onsite',
-                InterviewFormat::Video => 'Video in the platform',
-                InterviewFormat::Voice => 'Phone call',
-            },
-            'place' => match ($interview->format) {
-                InterviewFormat::Online => (string) $interview->meetingUrl,
-                InterviewFormat::Onsite => (string) $interview->location,
-                InterviewFormat::Video => 'In the platform: open your application to join',
-                InterviewFormat::Voice => 'We will call you on the number you confirmed',
-            },
-            'recording' => $interview->recorded ? 'Yes, only if you agree' : 'No',
-        ], $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now()), $method ?? InterviewCalendar::REQUEST);
+        $variables = InterviewEmailVariables::of($interview, $contact, $jobTitle, $companyName, $event->companyId);
+        $calendar = $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now());
+
+        $this->emails->send($contact, $key, $variables, $calendar, $method ?? InterviewCalendar::REQUEST);
     }
 
     /** The calendar file that goes with the email: a new or changed event, or its cancellation (also when the job seeker declined); none with the reminder. */
