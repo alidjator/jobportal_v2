@@ -29,6 +29,10 @@ final class RecruitmentEmailTemplates
 
     public const string INTERVIEW_CANCELLED = 'recruitment.interview_cancelled';
 
+    public const string INTERVIEW_UPDATED = 'recruitment.interview_updated';
+
+    public const string INTERVIEW_DECLINED = 'recruitment.interview_declined';
+
     public const string INTERVIEW_REMINDER = 'recruitment.interview_reminder';
 
     public const string OFFER_SENT = 'recruitment.offer_sent';
@@ -59,7 +63,9 @@ final class RecruitmentEmailTemplates
             InterviewChange::Rescheduled => self::INTERVIEW_RESCHEDULED,
             InterviewChange::Cancelled => self::INTERVIEW_CANCELLED,
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
-            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::Declined, InterviewChange::RecordingWithdrawn => null,
+            InterviewChange::Updated => self::INTERVIEW_UPDATED,
+            InterviewChange::Declined => self::INTERVIEW_DECLINED,
+            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::RecordingWithdrawn => null,
         };
     }
 
@@ -145,6 +151,7 @@ final class RecruitmentEmailTemplates
             new EmailVariable('format', 'Online, Onsite or Video in the platform', 'Online'),
             new EmailVariable('place', 'The meeting link, the place of the interview, or where to join a video interview', 'https://meet.example.com/abc'),
             new EmailVariable('recording', 'Whether the interview is recorded (only with the applicant\'s consent)', 'No'),
+            new EmailVariable('note', 'The recruiter\'s note for the applicant, on its own lines with its label; empty when there is none', "\n\nNote: Please bring your ID card."),
         ];
 
         return [
@@ -154,8 +161,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}}', 'en' => 'Interview scheduled for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} menjadwalkan wawancara untuk posisi {{job_title}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} scheduled an interview for {{job_title}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nOpen your account to confirm it or propose another time.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} menjadwalkan wawancara untuk posisi {{job_title}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} scheduled an interview for {{job_title}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nOpen your account to confirm it or propose another time.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -164,8 +171,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Jadwal wawancara untuk {{job_title}} berubah', 'en' => 'Your interview for {{job_title}} was rescheduled']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal wawancara untuk posisi {{job_title}}.\n\nWaktu baru: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} changed the interview for {{job_title}}.\n\nNew time: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nOpen your account to confirm it or propose another time.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal wawancara untuk posisi {{job_title}}.\n\nWaktu baru: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nBuka akun Anda untuk mengonfirmasi atau mengusulkan waktu lain.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} changed the interview for {{job_title}}.\n\nNew time: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nOpen your account to confirm it or propose another time.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -179,13 +186,33 @@ final class RecruitmentEmailTemplates
                 ]),
             ),
             new EmailTemplateDefinition(
+                self::INTERVIEW_UPDATED,
+                'Sent to an applicant when the details of their interview (the note) changed and the time stayed.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Detail wawancara untuk {{job_title}} diperbarui', 'en' => 'The details of your interview for {{job_title}} were updated']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} memperbarui detail wawancara untuk posisi {{job_title}}. Waktunya tidak berubah.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nBuka akun Anda untuk melihat jadwalnya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} updated the details of the interview for {{job_title}}. The time did not change.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nOpen your account to see the schedule.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_DECLINED,
+                'Sent to an applicant who declined their interview, so the calendar event is removed.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Anda menolak wawancara untuk {{job_title}}', 'en' => 'You declined the interview for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAnda menolak wawancara untuk posisi {{job_title}} di {{company_name}} yang dijadwalkan pada {{starts_at}}. Acara tersebut dihapus dari kalender Anda.",
+                    'en' => "Hello {{name}},\n\nYou declined the interview for {{job_title}} at {{company_name}} that was set for {{starts_at}}. The event is removed from your calendar.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
                 self::INTERVIEW_REMINDER,
                 'Sent to an applicant about a day before a confirmed interview.',
                 $variables,
                 TranslatedText::fromArray(['id' => 'Pengingat: wawancara untuk {{job_title}}', 'en' => 'Reminder: your interview for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}\n\nSemoga sukses!",
-                    'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}\n\nGood luck!",
+                    'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nSemoga sukses!",
+                    'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nGood luck!",
                 ]),
             ),
         ];

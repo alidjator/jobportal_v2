@@ -121,7 +121,7 @@ they wait for the interview calendar (#10: message defaults, the logo, `intervie
   participant, the interview is confirmed or completed and has started, the application is not final, and their scorecard is not sent. `my_scoring` counts submitted tests whose result waits for scoring and
   names the member as an assessor (the assessor is assigned to the invitation, so the job scope does not apply). `offers_expiring` is the offers expiring within 3 days. `jobs_closing` is active jobs with a
   deadline from today to 7 days ahead; `jobs_without_applicants` is active jobs published 7 or more days ago.
-- **Not coded: `unscheduled_interviews`** (waits for `interview_state` of #10).
+- **Not coded: `unscheduled_interviews`** (`interview_state` of #10 exists since 2026-10-17; the item is not added yet).
 - **Finding (reported to the user, 2026-10-17):** the lists the `filter` of an item points to do **not exist yet**: `company/applications` (the list across jobs, #19 applicant search), `company/interviews` and
   `company/assessment/invitations` have no list endpoint. The items still carry the filter text of this design; the front end links it once the list exists. On the `company/jobs` list the filters
   `filter[deadline_to]` (a day: deadline on or before it) and `filter[applications]=0` were added now, so the three job items already open a real list.

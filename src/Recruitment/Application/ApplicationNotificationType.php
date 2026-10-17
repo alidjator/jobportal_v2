@@ -25,6 +25,9 @@ final class ApplicationNotificationType
 
     public const string INTERVIEW_CANCELLED = 'interview.cancelled';
 
+    /** The details of the interview (its note) changed; the time and the confirmation stay. */
+    public const string INTERVIEW_UPDATED = 'interview.updated';
+
     public const string INTERVIEW_PROPOSAL_ACCEPTED = 'interview.proposal_accepted';
 
     public const string INTERVIEW_CONFIRMED = 'interview.confirmed';
@@ -80,6 +83,7 @@ final class ApplicationNotificationType
             InterviewChange::Declined => self::INTERVIEW_DECLINED,
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
             InterviewChange::RecordingWithdrawn => self::INTERVIEW_RECORDING_WITHDRAWN,
+            InterviewChange::Updated => self::INTERVIEW_UPDATED,
         };
     }
 

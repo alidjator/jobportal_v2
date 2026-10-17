@@ -18,6 +18,7 @@ use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\Export\ApplicationsDataExporter;
 use Src\Recruitment\Application\HiringManagerVisibility;
+use Src\Recruitment\Application\InterviewCalendar;
 use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\InterviewSettings;
@@ -236,6 +237,11 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
         ));
+        $this->app->bind(InterviewCalendar::class, function ($app): InterviewCalendar {
+            $config = $app->make(Repository::class);
+
+            return new InterviewCalendar((string) $config->get('mail.from.address'), $config->get('app.application_url'));
+        });
         $this->app->bind(JoinTokenFactory::class, fn ($app): JoinTokenFactory => new HmacJoinTokenFactory((string) $app->make(Repository::class)->get('app.key')));
         $this->app->bind(RecordingVolume::class, fn ($app): RecordingVolume => new LocalRecordingVolume(
             $this->service($app, 'janus.recordings_dir'),

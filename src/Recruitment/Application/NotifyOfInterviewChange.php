@@ -10,6 +10,7 @@ use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Notifications\InAppNotifier;
@@ -20,7 +21,8 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
  * Tells the people involved that an interview changed. The job seeker hears what the team did (scheduled, rescheduled, cancelled, proposal accepted) and the
  * reminder; the team (the interviewer and who scheduled it) hears what the job seeker did (confirmed, proposed another time, declined, withdrew the recording consent) and the reminder.
  * In-app notifications are always written (ids and the start time only); the job seeker's email follows the preference `application_update`, and is sent for
- * scheduled, rescheduled, cancelled and the reminder. The team gets no email. In-app and email are separate steps, so a retry of one never repeats the other.
+ * scheduled, rescheduled, details updated, cancelled, declined by the job seeker (a cancellation of the calendar event) and the reminder; all but the reminder carry
+ * the `.ics` file of the interview. The team gets no email. In-app and email are separate steps, so a retry of one never repeats the other.
  */
 final readonly class NotifyOfInterviewChange
 {
@@ -34,6 +36,8 @@ final readonly class NotifyOfInterviewChange
         private InAppNotifier $notifier,
         private NotificationPreferences $preferences,
         private InterviewEmailSender $emails,
+        private InterviewCalendar $calendar,
+        private Clock $clock,
     ) {}
 
     public function inApp(InterviewChanged $event): void
@@ -78,9 +82,14 @@ final readonly class NotifyOfInterviewChange
             return;
         }
 
+        $jobTitle = $this->jobTitle($event);
+        $companyName = $this->companyName($event);
+        $method = $this->calendarMethod($event->change);
+
         $this->emails->send($contact, $key, [
-            'job_title' => $this->jobTitle($event),
-            'company_name' => $this->companyName($event),
+            'job_title' => $jobTitle,
+            'company_name' => $companyName,
+            'note' => $interview->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$interview->note,
             'starts_at' => $interview->startsAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
             'format' => match ($interview->format) {
                 InterviewFormat::Online => 'Online',
@@ -95,12 +104,22 @@ final readonly class NotifyOfInterviewChange
                 InterviewFormat::Voice => 'We will call you on the number you confirmed',
             },
             'recording' => $interview->recorded ? 'Yes, only if you agree' : 'No',
-        ]);
+        ], $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now()), $method ?? InterviewCalendar::REQUEST);
+    }
+
+    /** The calendar file that goes with the email: a new or changed event, or its cancellation (also when the job seeker declined); none with the reminder. */
+    private function calendarMethod(InterviewChange $change): ?string
+    {
+        return match ($change) {
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Updated => InterviewCalendar::REQUEST,
+            InterviewChange::Cancelled, InterviewChange::Declined => InterviewCalendar::CANCEL,
+            default => null,
+        };
     }
 
     private function toApplicant(InterviewChange $change): bool
     {
-        return in_array($change, [InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Cancelled, InterviewChange::ProposalAccepted, InterviewChange::Reminder], true);
+        return in_array($change, [InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Cancelled, InterviewChange::ProposalAccepted, InterviewChange::Reminder, InterviewChange::Updated], true);
     }
 
     private function toTeam(InterviewChange $change): bool

@@ -127,6 +127,9 @@ return [
     // Client page of the job seeker's own profile, linked from the profile reminder email. Empty: the email carries no link.
     'profile_url' => env('JOB_SEEKER_PROFILE_URL'),
 
+    // Client page of an application for the job seeker, with {application_id} in it; the calendar file of an interview links to it. Empty: the file carries no link.
+    'application_url' => env('JOB_SEEKER_APPLICATION_URL'),
+
     // Client pages of the newsletter: URL templates where {token} stands for the token. Either empty means the newsletter is off (503 `newsletter-unavailable`).
     'newsletter_confirm_url' => env('NEWSLETTER_CONFIRM_URL'),
     'newsletter_unsubscribe_url' => env('NEWSLETTER_UNSUBSCRIBE_URL'),

@@ -6,10 +6,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Recruitment\Application\GetInterviewCalendarFile;
 use Src\Recruitment\Application\ListApplicationInterviews;
 use Src\Recruitment\Application\ManageInterview;
 use Src\Recruitment\Application\ScheduleInterview;
 use Src\Recruitment\Interface\Http\Requests\ScheduleInterviewRequest;
+use Src\Recruitment\Interface\Http\Requests\UpdateInterviewNoteRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyInterviewResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -28,6 +30,23 @@ final class InterviewController extends ApiController
         $result = $schedule->execute($actors->fromRequest($request), $id, $request->toInput());
 
         return (new CompanyInterviewResource($result['view']))->response()->setStatusCode($result['replaced'] ? Response::HTTP_OK : Response::HTTP_CREATED);
+    }
+
+    /** Changes only the note for the candidate; the interview is not rescheduled. */
+    public function updateNote(UpdateInterviewNoteRequest $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource
+    {
+        return new CompanyInterviewResource($manage->updateNote($actors->fromRequest($request), $id, $request->note()));
+    }
+
+    /** The calendar file of an interview, for the team. */
+    public function calendarFile(Request $request, int $id, ActorResolver $actors, GetInterviewCalendarFile $get): Response
+    {
+        return new Response($get->execute($actors->fromRequest($request), $id), Response::HTTP_OK, [
+            'Content-Type' => 'text/calendar; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="interview.ics"',
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function acceptProposal(Request $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource

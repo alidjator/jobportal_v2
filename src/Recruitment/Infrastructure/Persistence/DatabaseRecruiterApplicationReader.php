@@ -32,6 +32,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 {
     private const int EXPORT_CHUNK = 200;
 
+    private const string NOT_SCHEDULED = 'not_scheduled';
+
     private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
@@ -47,7 +49,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         $rows = $this->ordered($this->withRatings($filtered), $query, $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
-            ->get(self::ROW_COLUMNS)
+            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()])
             ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row, $query->staleAfterDays, $now))
             ->all();
 
@@ -70,7 +72,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
             $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))
-                ->get([...self::ROW_COLUMNS, 'a.job_id'])
+                ->get([...self::ROW_COLUMNS, 'a.job_id', $this->interviewStateColumn()])
                 ->keyBy('id');
 
             foreach ($chunk as $id) {
@@ -103,11 +105,45 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
                 ->whereRaw("(a.stage_entered_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date < ?::date", [StageClock::ZONE, $cutoff]);
         }
 
+        if ($query->interviewState !== null) {
+            $this->whereInterviewState($filtered, $query->interviewState);
+        }
+
         if ($query->search !== null && $query->search !== '') {
             TextSearch::contains($filtered, new Expression("a.profile_snapshot->>'name'"), $query->search);
         }
 
         return $filtered;
+    }
+
+    /**
+     * The state of the interview of an application in an interview stage: the pending or confirmed interview, else `completed` when one was held, else
+     * `not_scheduled` (no interview yet, or all cancelled or declined). Null outside an interview stage.
+     */
+    private function interviewStateColumn(): Expression
+    {
+        $latest = $this->connection->table('recruitment_interviews as i')
+            ->select('i.status')
+            ->whereColumn('i.application_id', 'a.id')
+            ->whereRaw("i.status IN ('pending', 'confirmed', 'completed')")
+            ->orderByRaw("(i.status = 'completed')")
+            ->orderByDesc('i.id')
+            ->limit(1);
+
+        return new Expression('('.$latest->toSql().') AS interview_state');
+    }
+
+    private function whereInterviewState(Builder $filtered, string $state): void
+    {
+        $filtered->where('a.stage_type', StageType::Interview->value);
+        $held = fn (array $statuses) => fn (Builder $interviews) => $interviews->selectRaw('1')->from('recruitment_interviews as i')->whereColumn('i.application_id', 'a.id')->whereIn('i.status', $statuses);
+
+        match ($state) {
+            self::NOT_SCHEDULED => $filtered->whereNotExists($held(['pending', 'confirmed', 'completed'])),
+            'pending', 'confirmed' => $filtered->whereExists($held([$state])),
+            'completed' => $filtered->whereExists($held(['completed']))->whereNotExists($held(['pending', 'confirmed'])),
+            default => $filtered->whereRaw('1 = 0'),
+        };
     }
 
     /** By the applied time, or by the time in stage: more days in the stage is an earlier `stage_entered_at`, so the direction is reversed. */
@@ -268,6 +304,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $entered,
             $days,
             StageClock::isStale($type, $days, $staleAfterDays),
+            0,
+            $type === StageType::Interview ? (string) ($row->interview_state ?? self::NOT_SCHEDULED) : null,
         );
     }
 

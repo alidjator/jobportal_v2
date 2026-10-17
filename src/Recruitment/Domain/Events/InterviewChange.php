@@ -13,4 +13,7 @@ enum InterviewChange: string
     case Declined = 'declined';
     case Reminder = 'reminder';
     case RecordingWithdrawn = 'recording_withdrawn';
+
+    /** Only the details (the note for the candidate) changed: the time and the confirmation stay. */
+    case Updated = 'updated';
 }

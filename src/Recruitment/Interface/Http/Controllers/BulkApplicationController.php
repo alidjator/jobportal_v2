@@ -15,7 +15,7 @@ final class BulkApplicationController extends ApiController
 {
     public function move(BulkMoveApplicationsRequest $request, int $id, ActorResolver $actors, BulkProcessApplications $bulk): AnonymousResourceCollection
     {
-        $results = $bulk->move($actors->fromRequest($request), $id, $request->applicationIds(), $request->stageId(), $request->interview(), $request->offer(), $request->assessment());
+        $results = $bulk->move($actors->fromRequest($request), $id, $request->applicationIds(), $request->stageId(), $request->interview(), $request->offer(), $request->assessment(), $request->scheduleLater());
 
         return BulkItemResultResource::collection($results);
     }

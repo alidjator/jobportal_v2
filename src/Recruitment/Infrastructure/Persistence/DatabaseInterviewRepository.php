@@ -70,6 +70,9 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'kit_name' => $interview->kitName,
             'recorded' => $interview->recorded,
             'candidate_phone' => $interview->candidatePhone,
+            'note' => $interview->note,
+            'calendar_uid' => $interview->calendarUid,
+            'calendar_sequence' => $interview->calendarSequence,
             'created_at' => $at,
             'updated_at' => $at,
         ]);
@@ -95,6 +98,9 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $interview->recordingConsentAt,
             $interview->candidatePhone,
             $id,
+            $interview->note,
+            $interview->calendarUid,
+            $interview->calendarSequence,
         );
     }
 
@@ -111,8 +117,18 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'recording_consent' => $interview->recordingConsent?->value,
             'recording_consent_at' => $interview->recordingConsentAt === null ? null : $this->format($interview->recordingConsentAt),
             'candidate_phone' => $interview->candidatePhone,
+            'note' => $interview->note,
+            'calendar_sequence' => $interview->calendarSequence,
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
+    }
+
+    public function calendarChain(int $applicationId): ?array
+    {
+        $row = $this->connection->table('recruitment_interviews')->where('application_id', $applicationId)
+            ->selectRaw('MIN(calendar_uid) as uid, MAX(calendar_sequence) as sequence')->first();
+
+        return $row === null || $row->uid === null ? null : ['uid' => (string) $row->uid, 'sequence' => (int) $row->sequence];
     }
 
     public function cancelActive(int $applicationId): ?Interview
@@ -196,6 +212,9 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $row->recording_consent_at === null ? null : $this->time((string) $row->recording_consent_at),
             $row->candidate_phone === null ? null : (string) $row->candidate_phone,
             (int) $row->id,
+            $row->note === null ? null : (string) $row->note,
+            (string) $row->calendar_uid,
+            (int) $row->calendar_sequence,
         );
     }
 

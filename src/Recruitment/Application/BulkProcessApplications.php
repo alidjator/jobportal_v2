@@ -58,7 +58,7 @@ final readonly class BulkProcessApplications
      * @throws EntityNotFound the member may not see the job
      * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input`, `invalid-offer`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
      */
-    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null): array
+    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null, bool $scheduleLater = false): array
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
         $this->access->job($member, $jobId);
@@ -66,7 +66,7 @@ final readonly class BulkProcessApplications
         $states = $this->selection($member, $jobId, $applicationIds);
         $stage = $this->process->movableStage($member->companyId, $stageId);
 
-        $this->assertInputFits($stage->type, $interview, $offer, $assessment);
+        $this->assertInputFits($stage->type, $interview, $offer, $assessment, $scheduleLater);
 
         $movable = array_keys(array_filter($states, static fn (Application $state): bool => ! $state->stageType->isTerminal() && $state->stageId !== $stageId));
         $inputs = $interview instanceof BulkInterviewInput ? $this->interviewInputs($member, $jobId, $interview, $movable) : [];
@@ -80,7 +80,7 @@ final readonly class BulkProcessApplications
         }
 
         return array_map(
-            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null, $assessment), $id),
+            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null, $assessment, $scheduleLater), $id),
             $applicationIds,
         );
     }
@@ -148,8 +148,16 @@ final readonly class BulkProcessApplications
     }
 
     /** A schedule only goes with an interview stage, an offer with an offer stage and a test with an assessment stage, as in the single move. */
-    private function assertInputFits(StageType $target, ?BulkInterviewInput $interview, ?OfferInput $offer, ?AssessmentInvitationInput $assessment): void
+    private function assertInputFits(StageType $target, ?BulkInterviewInput $interview, ?OfferInput $offer, ?AssessmentInvitationInput $assessment, bool $scheduleLater = false): void
     {
+        if ($scheduleLater && $interview instanceof BulkInterviewInput) {
+            $this->refuse('invalid-interview', 'Give a schedule or choose to schedule later, not both.', 'interview');
+        }
+
+        if ($scheduleLater && $target !== StageType::Interview) {
+            $this->refuse('invalid-schedule', 'An interview can only be scheduled later when moving to an interview stage.', 'interview');
+        }
+
         if ($interview instanceof BulkInterviewInput && $target !== StageType::Interview) {
             $this->refuse('invalid-schedule', 'An interview can only be scheduled when moving to an interview stage.', 'interview');
         }
@@ -174,7 +182,7 @@ final readonly class BulkProcessApplications
         $this->scheduler->assertInterviewer($member->companyId, $jobId, $base->interviewerId);
         $this->scheduler->assertFormatAvailable($member->companyId, $base->format);
 
-        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded);
+        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded, note: $base->note);
 
         if ($this->minutes($base->dayEnd) <= $this->minutes($base->dayStart)) {
             $this->refuse('invalid-interview', 'The working day must end after it starts.', 'day_end');
@@ -192,7 +200,7 @@ final readonly class BulkProcessApplications
         $inputs = [];
 
         foreach ($movable as $index => $id) {
-            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, recorded: $base->recorded);
+            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, recorded: $base->recorded, note: $base->note, noteGiven: $base->note !== null);
         }
 
         return $inputs;

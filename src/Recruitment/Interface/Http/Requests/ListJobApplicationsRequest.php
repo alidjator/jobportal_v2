@@ -9,7 +9,7 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
 /**
- * Allowed: `filter[stage_id]`, `filter[stage_type]`, `filter[meets_must_have]` (true or false), `filter[q]` (a piece of the name), `filter[stale]` (true: only the stale ones), `sort`
+ * Allowed: `filter[stage_id]`, `filter[stage_type]`, `filter[meets_must_have]` (true or false), `filter[q]` (a piece of the name), `filter[stale]` (true: only the stale ones), `filter[interview_state]` (`not_scheduled`, `pending`, `confirmed` or `completed`: applications in an interview stage in that state), `sort`
  * (`applied_at` or `-applied_at`, `days_in_stage` or `-days_in_stage`; newest first when left out, `-days_in_stage` is the longest wait first), `page` and `per_page`. Any other filter is refused with 422.
  */
 final class ListJobApplicationsRequest extends FormRequest
@@ -21,12 +21,13 @@ final class ListJobApplicationsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:stage_id,stage_type,meets_must_have,q,stale'],
+            'filter' => ['nullable', 'array:stage_id,stage_type,meets_must_have,q,stale,interview_state'],
             'filter.stage_id' => ['nullable', 'integer', 'min:1'],
             'filter.stage_type' => ['nullable', 'string', Rule::enum(StageType::class)],
             'filter.meets_must_have' => ['nullable', 'in:true,false,1,0'],
             'filter.q' => ['nullable', 'string', 'max:100'],
             'filter.stale' => ['nullable', 'in:true,false,1,0'],
+            'filter.interview_state' => ['nullable', 'in:not_scheduled,pending,confirmed,completed'],
             'sort' => ['nullable', 'in:applied_at,-applied_at,days_in_stage,-days_in_stage'],
         ];
     }
@@ -46,6 +47,8 @@ final class ListJobApplicationsRequest extends FormRequest
             $this->boolean('filter.stale'),
             7,
             ltrim($sort, '-'),
+            false,
+            $this->filled('filter.interview_state') ? $this->string('filter.interview_state')->toString() : null,
         );
     }
 }

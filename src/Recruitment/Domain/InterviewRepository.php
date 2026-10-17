@@ -20,6 +20,13 @@ interface InterviewRepository
     /** Saves the state of an interview that exists. */
     public function update(Interview $interview): void;
 
+    /**
+     * The calendar identity of the interviews of an application: their shared UID and the highest sequence used, or null when it never had an interview.
+     *
+     * @return array{uid: string, sequence: int}|null
+     */
+    public function calendarChain(int $applicationId): ?array;
+
     /** Cancels the active interview of the application and returns it, or null when it had none. */
     public function cancelActive(int $applicationId): ?Interview;
 

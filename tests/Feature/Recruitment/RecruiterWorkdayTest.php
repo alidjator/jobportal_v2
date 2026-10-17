@@ -45,6 +45,7 @@ final class RecruiterWorkdayTest extends FeatureTestCase
 
     protected function tearDown(): void
     {
+        Carbon::setTestNow();
         $this->tearDownApplicationFixtures();
 
         parent::tearDown();

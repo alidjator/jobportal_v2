@@ -12,7 +12,7 @@ use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Email\RenderedEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
-/** The email that tells a job seeker about their interview. The text comes from the email template, rendered when the mail is sent, in the recipient's language. Sent on the `default` queue, retried 3 times with a growing delay. */
+/** The email that tells a job seeker about their interview. The text comes from the email template, rendered when the mail is sent, in the recipient's language. It may carry the `interview.ics` calendar file. Sent on the `default` queue, retried 3 times with a growing delay. */
 final class InterviewMail extends Mailable implements ShouldQueue
 {
     use Queueable;
@@ -22,9 +22,18 @@ final class InterviewMail extends Mailable implements ShouldQueue
     private ?RenderedEmail $rendered = null;
 
     /** @param  array<string, string>  $variables */
-    public function __construct(private readonly string $templateKey, private readonly array $variables, private readonly string $language)
-    {
+    public function __construct(
+        private readonly string $templateKey,
+        private readonly array $variables,
+        private readonly string $language,
+        ?string $calendar = null,
+        string $calendarMethod = 'REQUEST',
+    ) {
         $this->onQueue(QueueName::Default->value);
+
+        if ($calendar !== null) {
+            $this->attachData($calendar, 'interview.ics', ['mime' => 'text/calendar; charset=UTF-8; method='.$calendarMethod]);
+        }
     }
 
     /** @return list<int> */

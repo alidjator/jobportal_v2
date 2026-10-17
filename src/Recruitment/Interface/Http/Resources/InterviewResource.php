@@ -32,6 +32,8 @@ final class InterviewResource extends JsonResource
             'format' => $interview->format->value,
             'location' => $interview->location,
             'meeting_url' => $interview->meetingUrl,
+            /** The note for the job seeker that goes with the invitation (plain text), or null. */
+            'note' => $interview->note,
             'recorded' => $interview->recorded,
             /** @var 'granted'|'refused'|'withdrawn'|null */
             'recording_consent' => $interview->recordingConsent?->value,

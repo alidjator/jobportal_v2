@@ -24,6 +24,8 @@ final readonly class Interview
 
     public const int URL_MAX = 500;
 
+    public const int NOTE_MAX = 1000;
+
     public function __construct(
         public int $applicationId,
         public DateTimeImmutable $startsAt,
@@ -45,6 +47,9 @@ final readonly class Interview
         public ?DateTimeImmutable $recordingConsentAt = null,
         public ?string $candidatePhone = null,
         public ?int $id = null,
+        public ?string $note = null,
+        public string $calendarUid = '',
+        public int $calendarSequence = 0,
     ) {}
 
     /**
@@ -66,9 +71,13 @@ final readonly class Interview
         ?int $kitId = null,
         ?string $kitName = null,
         bool $recorded = false,
+        ?string $note = null,
+        string $calendarUid = '',
+        int $calendarSequence = 0,
     ): self {
         $location = self::text($location);
         $meetingUrl = self::text($meetingUrl);
+        $note = self::text($note);
 
         $errors = match (true) {
             $startsAt <= $now => ['starts_at' => 'The interview must start in the future.'],
@@ -78,6 +87,7 @@ final readonly class Interview
             $location !== null && mb_strlen($location) > self::LOCATION_MAX => ['location' => 'The location can have at most '.self::LOCATION_MAX.' characters.'],
             $meetingUrl !== null && mb_strlen($meetingUrl) > self::URL_MAX => ['meeting_url' => 'The link can have at most '.self::URL_MAX.' characters.'],
             $recorded && ! $format->isHeldInPlatform() => ['recorded' => 'Only an interview held in the platform can be recorded.'],
+            $note !== null && mb_strlen($note) > self::NOTE_MAX => ['note' => 'The note can have at most '.self::NOTE_MAX.' characters.'],
             default => [],
         };
 
@@ -104,6 +114,9 @@ final readonly class Interview
             $kitId,
             $kitName,
             $recorded,
+            note: $note,
+            calendarUid: $calendarUid,
+            calendarSequence: $calendarSequence,
         );
     }
 
@@ -140,7 +153,7 @@ final readonly class Interview
     {
         $this->assertActive();
 
-        return $this->changed(status: InterviewStatus::Declined, proposedStartsAt: null);
+        return $this->changed(status: InterviewStatus::Declined, proposedStartsAt: null, calendarSequence: $this->calendarSequence + 1);
     }
 
     /**
@@ -197,7 +210,7 @@ final readonly class Interview
 
         $duration = $this->startsAt->diff($this->endsAt);
 
-        return $this->changed(startsAt: $this->proposedStartsAt, endsAt: $this->proposedStartsAt->add($duration), status: InterviewStatus::Confirmed, proposedStartsAt: null, remindedAt: null);
+        return $this->changed(startsAt: $this->proposedStartsAt, endsAt: $this->proposedStartsAt->add($duration), status: InterviewStatus::Confirmed, proposedStartsAt: null, remindedAt: null, calendarSequence: $this->calendarSequence + 1);
     }
 
     /** @throws StateConflict `interview-not-active` */
@@ -205,7 +218,7 @@ final readonly class Interview
     {
         $this->assertActive();
 
-        return $this->changed(status: InterviewStatus::Cancelled, proposedStartsAt: null);
+        return $this->changed(status: InterviewStatus::Cancelled, proposedStartsAt: null, calendarSequence: $this->calendarSequence + 1);
     }
 
     /** @throws StateConflict `interview-not-confirmed` */
@@ -216,6 +229,26 @@ final readonly class Interview
         }
 
         return $this->changed(status: InterviewStatus::Completed);
+    }
+
+    /**
+     * Only the note for the candidate changes: the status, the time and the proposals stay, and the calendar event is updated in place.
+     *
+     * @throws StateConflict `interview-not-active`
+     * @throws BusinessRuleViolation `invalid-interview`
+     */
+    public function withNote(?string $note): self
+    {
+        $this->assertActive();
+        $note = self::text($note);
+
+        if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
+            $message = 'The note can have at most '.self::NOTE_MAX.' characters.';
+
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]]);
+        }
+
+        return $this->changed(note: $note, noteChanged: true, calendarSequence: $this->calendarSequence + 1);
     }
 
     public function reminded(DateTimeImmutable $at): self
@@ -304,6 +337,9 @@ final readonly class Interview
         ?RecordingConsent $recordingConsent = null,
         ?DateTimeImmutable $recordingConsentAt = null,
         ?string $candidatePhone = null,
+        ?string $note = null,
+        bool $noteChanged = false,
+        ?int $calendarSequence = null,
     ): self {
         return new self(
             $this->applicationId,
@@ -326,6 +362,9 @@ final readonly class Interview
             $recordingConsentAt ?? $this->recordingConsentAt,
             $candidatePhone ?? $this->candidatePhone,
             $this->id,
+            $noteChanged ? $note : $this->note,
+            $this->calendarUid,
+            $calendarSequence ?? $this->calendarSequence,
         );
     }
 }

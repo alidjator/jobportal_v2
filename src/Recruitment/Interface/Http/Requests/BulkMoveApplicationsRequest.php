@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Src\Recruitment\Application\BulkInterviewInput;
 use Src\Recruitment\Application\OfferInput;
 use Src\Recruitment\Domain\InterviewFormat;
@@ -22,7 +23,8 @@ final class BulkMoveApplicationsRequest extends FormRequest
             ...BulkSelection::rules(),
             'stage_id' => ['required', 'integer', 'min:1'],
             'interview' => ['nullable', 'array'],
-            ...InterviewFields::rules('interview.', 'required_with:interview'),
+            'interview.schedule_later' => ['nullable', 'boolean'],
+            ...InterviewFields::rules('interview.', Rule::requiredIf(fn (): bool => InterviewFields::requiredUnlessLater($this->input('interview')))),
             'interview.gap_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
             'interview.day_start' => ['nullable', 'date_format:H:i'],
             'interview.day_end' => ['nullable', 'date_format:H:i'],
@@ -48,7 +50,7 @@ final class BulkMoveApplicationsRequest extends FormRequest
     {
         $data = $this->validated('interview');
 
-        if (! is_array($data) || $data === []) {
+        if (! InterviewFields::requiredUnlessLater($data) || ! is_array($data)) {
             return null;
         }
 
@@ -63,7 +65,14 @@ final class BulkMoveApplicationsRequest extends FormRequest
             isset($data['meeting_url']) ? (string) $data['meeting_url'] : null,
             (int) $data['interviewer_id'],
             (bool) ($data['recorded'] ?? false),
+            isset($data['note']) ? (string) $data['note'] : null,
         );
+    }
+
+    /** The request says the interview times come later: the moves need no schedule (`interview: {schedule_later: true}`). */
+    public function scheduleLater(): bool
+    {
+        return InterviewFields::scheduleLater($this->validated('interview'));
     }
 
     public function offer(): ?OfferInput

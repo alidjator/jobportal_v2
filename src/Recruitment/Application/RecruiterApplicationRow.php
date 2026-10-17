@@ -7,7 +7,8 @@ use Src\Recruitment\Domain\StageType;
 
 /**
  * One line of the recruiter's list: the applicant as the snapshot shows them, the must-have result and the stage. The applicant fields are null for an
- * applicant whose account was anonymised (`isDeleted`). Email and phone are left to the detail.
+ * applicant whose account was anonymised (`isDeleted`). Email and phone are left to the detail. `interviewState` is `not_scheduled`, `pending`, `confirmed`
+ * or `completed` for an application in an interview stage, null outside one.
  */
 final readonly class RecruiterApplicationRow
 {
@@ -36,25 +37,24 @@ final readonly class RecruiterApplicationRow
         public int $daysInStage = 0,
         public bool $stale = false,
         public int $otherApplicationsCount = 0,
+        public ?string $interviewState = null,
     ) {}
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */
     public function withInterviewResult(?InterviewResult $result): self
     {
-        return new self(
-            $this->id, $this->isDeleted, $this->name, $this->headline, $this->latestExperience, $this->city, $this->expectedSalary, $this->age,
-            $this->meetsMustHave, $this->stageId, $this->stageType, $this->stageName, $this->appliedAt, $this->ratingAverage, $this->ratingCount, $result,
-            $this->stageEnteredAt, $this->daysInStage, $this->stale, $this->otherApplicationsCount,
-        );
+        return $this->with(interviewResult: $result);
     }
 
     /** The row with the number of other active applications of the same person that the viewer may see. */
     public function withOtherApplications(int $count): self
     {
-        return new self(
-            $this->id, $this->isDeleted, $this->name, $this->headline, $this->latestExperience, $this->city, $this->expectedSalary, $this->age,
-            $this->meetsMustHave, $this->stageId, $this->stageType, $this->stageName, $this->appliedAt, $this->ratingAverage, $this->ratingCount, $this->interviewResult,
-            $this->stageEnteredAt, $this->daysInStage, $this->stale, $count,
-        );
+        return $this->with(otherApplicationsCount: $count);
+    }
+
+    /** A copy with some properties replaced (named arguments). */
+    private function with(mixed ...$changes): self
+    {
+        return new self(...[...get_object_vars($this), ...$changes]);
     }
 }

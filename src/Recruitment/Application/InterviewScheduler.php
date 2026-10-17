@@ -64,6 +64,11 @@ final readonly class InterviewScheduler
         // Without a flag in the request, a new video or voice time keeps the flag of the interview it replaces.
         $recorded = $input->recorded ?? ($input->format->isHeldInPlatform() && $previous instanceof Interview && $previous->recorded);
 
+        // One calendar event for the whole chain of an application: its UID is kept and every new interview raises the sequence past what was used.
+        $chain = $this->interviews->calendarChain($applicationId);
+        // Without a note in the request, a new time keeps the note of the interview it replaces; `note: null` clears it.
+        $note = $input->noteGiven ? $input->note : ($previous instanceof Interview ? $previous->note : null);
+
         $interview = Interview::schedule(
             $applicationId,
             $input->startsAt,
@@ -77,6 +82,9 @@ final readonly class InterviewScheduler
             $source instanceof Interview ? $source->kitId : $kit?->id,
             $source instanceof Interview ? $source->kitName : $kit?->name,
             $recorded,
+            $note,
+            $chain === null ? self::newUid() : $chain['uid'],
+            $chain === null ? 0 : $chain['sequence'] + 2,
         );
 
         if ($previous instanceof Interview) {
@@ -102,6 +110,16 @@ final readonly class InterviewScheduler
         $this->visibility->showToPanel($applicationId, $application->jobId, [$input->interviewerId, ...($participants ?? [])], $now);
 
         return InterviewChanged::of($previous instanceof Interview ? InterviewChange::Rescheduled : InterviewChange::Scheduled, $application, $saved, $now);
+    }
+
+    /** A random UUID (version 4) for the calendar event of a new chain. */
+    private static function newUid(): string
+    {
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
+
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
     /**

@@ -29,7 +29,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | coded 2026-10-16 (see Coded); done before #6 |
 | 8 | `phase-8-recruiter-workday.md` | sections 2, 4 and 1 (without `unscheduled_interviews`) coded 2026-10-17 (migration `000153`); sections 3 and 5 wait for the interview calendar (#10: message defaults, logo); team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | sections 1 and 2 coded 2026-10-17 (migration `000154`); section 3 (shortlist reviews) waits for the team preferences of the recruiter workday section 3 (after #10); requisitions are now in scope through #6 |
-| 10 | `phase-8-interview-calendar.md` | |
+| 10 | `phase-8-interview-calendar.md` | sections 2, 4 and 3 coded 2026-10-17 (migration `000155`); sections 1, 5 and 6 not coded; section 6 (message defaults, logo) opens #8 section 5 |
 | 11 | `phase-8-interviewers.md` | `.ics` of the interview calendar; shares the access rule of the hiring managers |
 | 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |
 | 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |

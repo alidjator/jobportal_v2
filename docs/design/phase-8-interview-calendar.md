@@ -1,4 +1,4 @@
-# Phase 8: recruitment calendar and interview note (designed 2026-10-14, not coded)
+# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4 and 3 coded 2026-10-17)
 
 Two gaps found against Mekari Talenta's interview flow (help center articles 34781370644761 and 42469173015193): Talenta has a recruitment calendar of
 every interview and lets the recruiter add a note for the candidate to the invitation. Extends `phase-2-interviews.md`, `phase-2-offers.md` and
@@ -164,3 +164,23 @@ interview stage whose time is not known yet.
 | Email | `.ics` on the interview emails; template `interview.updated` |
 | Errors | 422 `invalid-calendar-range`, `message-link-not-allowed` |
 | Front end | C26 Calendar; the note field (prefilled from the defaults) and the "Preview email" button in the schedule, test and offer dialogs; the job seeker's interview and test cards; a "Teks default pesan" section in the company settings |
+
+## Coded: sections 2, 4 and 3 (2026-10-17)
+
+Migration `000155`: `recruitment_interviews.note`, `calendar_uid` (one per application, filled for existing rows) and `calendar_sequence` (follows the order of the interviews of an application). Section 1 (the calendar), 5 (the preview) and 6 (default texts, logo,
+assessment note) are not coded. Interpretations, where the design left room:
+
+- **Note.** `note` (at most 1,000 characters, plain text, no link rule yet: that comes with section 6) in `PUT .../interview`, `interview.note` in the move and the bulk move (one note for every slot). A new time keeps the earlier note when the request does not
+  name one; `note: null` clears it. `PATCH company/applications/{id}/interview {note}` (`interviews.manage`, `note` required, may be null) changes only the note of the pending or confirmed interview: the status, the time and the proposals stay; 409 `interview-not-active` when none is
+  active. A note that really changed sends `interview.updated` (in-app, and email `recruitment.interview_updated` by `application_update`) with a new `.ics`; the same note again changes and sends nothing. The job seeker's interview, the team's interviews and the
+  scheduled, rescheduled, reminder and updated emails show it (the variable `note` of the templates holds the label and the text, or nothing).
+- **Calendar file.** `InterviewCalendar` writes it (RFC 5545 escaping, 75-octet folding by character). One UID for the whole chain of an application (kept when a new time replaces an interview or after a cancel), `SEQUENCE` rises with every change (new time, accepted
+  proposal, note, cancel, decline; a new interview takes the highest sequence of the chain plus two). Sent with scheduled, rescheduled and updated emails (`METHOD:REQUEST`) and the cancelled email (`METHOD:CANCEL`); **not** with the reminder. A job seeker who
+  **declines** gets a new email `recruitment.interview_declined` carrying the `CANCEL` file (the design said a cancel is sent; the cancelled template would say the company cancelled it). A rejection or a withdrawal already cancels the interview, so that email carries it.
+  The organizer is `mail.from.address`; the page link (`URL`, and in the description) needs the new env `JOB_SEEKER_APPLICATION_URL` (a client page with `{application_id}` in it; empty: no link). The accepted-proposal change has no email today, so no file
+  either. The team downloads `GET company/interviews/{id}/calendar.ics` (`METHOD:PUBLISH`, no attendee; 404 for an interview the member may not see).
+- **Schedule later.** `interview: {schedule_later: true}` in the move and the bulk move: no interview is created and nothing but the usual stage change is sent. Without it a move to an interview stage still needs a schedule or an active interview (422 `schedule-required`).
+  With schedule fields it is 422 `invalid-interview`; for any other stage 422 `invalid-schedule`; `schedule_later: false` asks for the schedule as before.
+- **Interview state.** Each row of `GET company/jobs/{id}/applications` has `interview_state` (`not_scheduled`, `pending`, `confirmed`, `completed`, null outside an interview stage): the pending or confirmed interview, else `completed` when one was held, else `not_scheduled`
+  (also after a cancel or a decline). `filter[interview_state]` takes the same four values. The `unscheduled_interviews` item of the task list (recruiter workday section 1) can now use it: not coded yet.
+

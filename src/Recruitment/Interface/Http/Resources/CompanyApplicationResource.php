@@ -39,6 +39,8 @@ final class CompanyApplicationResource extends JsonResource
             'stage_entered_at' => $row->stageEnteredAt?->format(DATE_ATOM),
             'days_in_stage' => $row->daysInStage,
             'stale' => $row->stale,
+            /** @var 'not_scheduled'|'pending'|'confirmed'|'completed'|null null outside an interview stage */
+            'interview_state' => $row->interviewState,
             'other_applications_count' => $row->otherApplicationsCount,
         ];
     }

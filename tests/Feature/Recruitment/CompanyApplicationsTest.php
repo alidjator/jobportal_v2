@@ -102,7 +102,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertSame([$this->secondId, $this->firstId], array_column($response->json('data'), 'id'));
 
         $row = $response->json('data.1');
-        $this->assertSame(['id', 'applicant', 'meets_must_have', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'stale', 'other_applications_count'], array_keys($row));
+        $this->assertSame(['id', 'applicant', 'meets_must_have', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'stale', 'interview_state', 'other_applications_count'], array_keys($row));
         $this->assertSame(['is_deleted', 'name', 'headline', 'latest_experience', 'city', 'expected_salary', 'age'], array_keys($row['applicant']));
         $this->assertFalse($row['applicant']['is_deleted']);
         $this->assertSame('Siti Rahma', $row['applicant']['name']);
