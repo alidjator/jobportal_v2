@@ -1,4 +1,4 @@
-# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14; sections 1 and 2 coded 2026-10-17)
+# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14; sections 1 and 2 coded 2026-10-17, section 3 in part)
 
 Gaps found from the hiring manager's point of view and against Mekari Talenta (help center articles 47603513135385 and 34576595122073: a "User"
 account role acting as hiring manager or interviewer, and a hiring team per job listing with Recruiter, Hiring Manager and Interviewer), chosen by
@@ -106,7 +106,7 @@ coding session, after the recruiter workday.
 ## Coded: sections 1 and 2 (2026-10-17)
 
 Migration `000154`: `job_assignments.role`, `job_jobs.hiring_manager_from_stage_id`, `recruitment_applications.hiring_manager_visible_at` (filled from the stage history with the default boundary) and `applications.review`
-for every member and pending invitation that held `applications.manage`. Section 3 (shortlist reviews) is not coded: it needs the team preference `team_reviews` of the recruiter workday section 3, which waits for #10.
+for every member and pending invitation that held `applications.manage`. The team preference `team_reviews` that section 3 needs now exists in the recruiter workday section 3 (part B below).
 Interpretations, where the design left room:
 
 - **Role on the job.** `PUT company/jobs/{id}/assignees` takes `assignees: [{user_id, role?}]` (role `recruiter` by default) **or** the old `user_ids`, where an assignee that stays keeps its role (a new one is a recruiter); sending both is a 422.
@@ -125,3 +125,21 @@ Interpretations, where the design left room:
 - **Notifications.** `application.received` goes to the job's recipients except its bound hiring managers.
 - **Not covered yet:** conversations about an application (a hiring manager has no `messages.send`) and the applicant search (#19, not coded) must use the same rule when they read applications of a bound job.
 
+
+## Coded: section 3, part A (2026-10-17, migration `000162`)
+
+- **Tables:** `recruitment_review_requests`, `_items`, `_reviewers` and `recruitment_application_reviews` as designed (checks on `status` and `decision`, unique pairs and triple).
+  Domain: `ReviewRequest`, `ReviewAnswer` (a `decline` needs a reason), `ReviewDecision`, `ReviewRequestStatus`, port `ReviewRequestRepository`.
+- **Create** `POST company/jobs/{id}/review-requests` (`CreateReviewRequest`, `applications.manage` and the job): `application_ids` (1 to 50, active applications of the job that the requester may see, else 422
+  `invalid-applications`), `reviewer_ids?` (hiring-manager assignees of the job, default all; none or a stranger 422 `invalid-reviewers`), `due_on` (a Jakarta day from today to 30 days ahead, else 422
+  `invalid-due-date`), `message?`. It sets the visibility marker on every item (`HiringManagerVisibility::showForReview`, never cleared). 201 with the request as the requester sees it.
+- **Lists:** `GET company/jobs/{id}/review-requests` (the requester's view with every answer; `applications.manage`, newest first, paginated) and `GET company/review-requests` (the caller as a reviewer,
+  `applications.review`, latest due first, paginated, `filter[state]=pending|answered`: `pending` is an open request with an active application the caller has not answered).
+- **Page:** `GET company/review-requests/{id}` (`GetReviewRequest`: a reviewer, who made it, or `applications.manage` with the job; anyone else 404) adds a `card` per candidate: name, headline, city,
+  experience level, latest experience, latest education, expected salary, `meets_must_have`, the screening answers, `interview_result` and `has_resume` (the resume is `company/applications/{id}/resume`).
+- **Answer:** `PUT company/review-requests/{id}/applications/{applicationId}/review` `{decision, reason?}` (`AnswerReview`, a reviewer with `applications.review`; 422 `reason-required`; 409 `review-request-closed`,
+  `application-final`; 404 for a stranger or another application). Changeable until the request is closed; it never moves the application. The request becomes `complete` when every reviewer answered every
+  active application. **Lock:** an item's `locked` is true while the reviewer has not answered it: the others' `decision` and `reason` are null (`answered` still shows); the requester sees all.
+- **Close:** `POST company/review-requests/{id}/close` (who made it or `applications.manage`; 204, also when already closed; answers stay).
+- **Not coded (part B):** the notifications and emails (`review.requested`, `team.review_requested`, the reminder, `review.overdue`, `review.completed`), the preference `team_reviews`, the scheduler step, the tasks
+  `my_reviews` and `reviews_overdue`, `reviews[]` on the application detail, `review_summary` on the pipeline rows, the erasure of reasons, and the assessment summary on the card.

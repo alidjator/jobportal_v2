@@ -68,6 +68,7 @@ use Src\Recruitment\Domain\InterviewRsvps;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferRepository;
+use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\ScorecardEraser;
 use Src\Recruitment\Domain\ScorecardRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
@@ -128,6 +129,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseReviewRequestRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
@@ -215,6 +217,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         InterviewQuestionRepository::class => DatabaseInterviewQuestionRepository::class,
         InterviewPanel::class => DatabaseInterviewPanel::class,
         InterviewRsvps::class => DatabaseInterviewRsvps::class,
+        ReviewRequestRepository::class => DatabaseReviewRequestRepository::class,
         MyInterviewReader::class => DatabaseMyInterviewReader::class,
         ScorecardRepository::class => DatabaseScorecardRepository::class,
         ScorecardEraser::class => DatabaseScorecardEraser::class,

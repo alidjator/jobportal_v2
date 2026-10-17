@@ -23,5 +23,8 @@ interface HiringManagerVisibility
      */
     public function showToPanel(int $applicationId, int $jobId, array $userIds, DateTimeImmutable $at): void;
 
+    /** Sets the marker of the application whatever its stage: it was sent for review to the hiring managers of its job (never cleared). */
+    public function showForReview(int $applicationId, DateTimeImmutable $at): void;
+
     public function isVisible(int $applicationId): bool;
 }

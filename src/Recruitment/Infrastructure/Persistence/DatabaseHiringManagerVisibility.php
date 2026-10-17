@@ -96,6 +96,12 @@ final readonly class DatabaseHiringManagerVisibility implements ApplicationVisib
             ->update(['hiring_manager_visible_at' => $at->setTimezone(new DateTimeZone('UTC'))->format(self::TIME_FORMAT)]);
     }
 
+    public function showForReview(int $applicationId, DateTimeImmutable $at): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $applicationId)->whereNull('hiring_manager_visible_at')
+            ->update(['hiring_manager_visible_at' => $at->setTimezone(new DateTimeZone('UTC'))->format(self::TIME_FORMAT)]);
+    }
+
     public function visibleAmong(array $applicationIds, array $boundJobIds): array
     {
         if ($applicationIds === [] || $boundJobIds === []) {

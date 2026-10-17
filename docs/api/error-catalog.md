@@ -141,6 +141,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-delegate` | 422 | Approval | The delegate must be another member of a tenant of the same group. |
 | `invalid-delegation-range` | 422 | Approval |  |
 | `invalid-document` | 422 | Company | The file must be a PDF or a JPEG, PNG or WebP image. |
+| `invalid-due-date` | 422 | Recruitment |  |
 | `invalid-education` | 422 | JobSeeker | The education level does not exist or is not active. |
 | `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
@@ -189,6 +190,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-requisition` | 422 | Workforce | The requisition does not exist for this tenant. |
 | `invalid-requisition-field` | 422 | Workforce | The minimum salary is above the maximum. |
 | `invalid-resume` | 422 | JobSeeker |  |
+| `invalid-reviewers` | 422 | Recruitment |  |
 | `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
 | `invalid-schedule` | 422 | Recruitment |  |
 | `invalid-score` | 422 | Assessment |  |
@@ -329,7 +331,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `question-in-use` | 409 | Recruitment | This question is attached to a job or has answers, so it can only be archived. |
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
-| `reason-required` | 422 | Organization | A change dated in the past needs a reason of 5 to 500 characters. |
+| `reason-required` | 422 | Organization, Recruitment | A change dated in the past needs a reason of 5 to 500 characters. |
 | `reason-too-long` | 422 | JobInvitation |  |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
@@ -362,6 +364,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
 | `review-not-published` | 409 | Review |  |
+| `review-request-closed` | 409 | Recruitment | This review request was closed. |
 | `review-requires-application` | 403 | Review | Only a job seeker who applied to this company can review it. |
 | `role-already-exists` | 409 | Identity |  |
 | `role-in-use` | 409 | Identity |  |

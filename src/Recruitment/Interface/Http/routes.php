@@ -22,6 +22,7 @@ use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
 use Src\Recruitment\Interface\Http\Controllers\MyVideoInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\OfferController;
+use Src\Recruitment\Interface\Http\Controllers\ReviewRequestController;
 use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\VideoInterviewController;
@@ -69,6 +70,13 @@ Route::middleware('auth:user')->group(function (): void {
     Route::delete('company/applications/{id}/notes/{noteId}', [ApplicationNoteController::class, 'destroy'])->whereNumber(['id', 'noteId']);
     Route::put('company/applications/{id}/rating', [ApplicationRatingController::class, 'update'])->whereNumber('id');
     Route::delete('company/applications/{id}/rating', [ApplicationRatingController::class, 'destroy'])->whereNumber('id');
+
+    Route::post('company/jobs/{id}/review-requests', [ReviewRequestController::class, 'store'])->whereNumber('id');
+    Route::get('company/jobs/{id}/review-requests', [ReviewRequestController::class, 'forJob'])->whereNumber('id');
+    Route::get('company/review-requests', [ReviewRequestController::class, 'mine']);
+    Route::get('company/review-requests/{id}', [ReviewRequestController::class, 'show'])->whereNumber('id');
+    Route::put('company/review-requests/{id}/applications/{applicationId}/review', [ReviewRequestController::class, 'answer'])->whereNumber(['id', 'applicationId']);
+    Route::post('company/review-requests/{id}/close', [ReviewRequestController::class, 'close'])->whereNumber('id');
 
     Route::get('company/applications/{id}/interviews', [InterviewController::class, 'index'])->whereNumber('id');
     Route::put('company/applications/{id}/interview', [InterviewController::class, 'store'])->whereNumber('id');
