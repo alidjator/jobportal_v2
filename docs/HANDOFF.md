@@ -16,7 +16,8 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`, separating the live site from the working folder: the scheduler fails when code needing a new migration is live before `migrate`); since 2026-10-15 the ERP TA core (`docs/design/erp-direction.md`) is coded before the remaining hiring work.
 - **Name (changed 2026-10-16):** ONESIS ERP / ONESIS Career, `docs/design/naming.md`; `onesis` stays the technical identifier.
 - **Next coding:** #16 is coded (parts A to C, migration `000159`, branch `phase-8-withdrawals`, awaiting the user's `composer check`); next, #8 section 3 (the team preferences, now unblocked) per `phase-8-index.md`.
-- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
+- **Locations (decided 2026-10-17):** new index items #27 (`company_locations`, needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run; employee data order in `erp-direction.md` section 9.
+- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 

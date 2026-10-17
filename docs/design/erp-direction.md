@@ -16,6 +16,9 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - 2026-10-16: the ERP also ships as a **self-hosted edition** next to SaaS, from the same codebase (decided by the user; `self-hosted.md`).
 - 2026-10-15: go-live readiness stays first (agreement of 2026-10-13); none of the decisions above blocks it (section 5).
 - 2026-10-15: the new phase 8 order of section 6 is applied to `phase-8-index.md` (confirmed by the user).
+- 2026-10-17: **several work locations per tenant** (`company_locations`) before the front end; contacts and addresses of users, job seekers,
+  companies and legal entities stay single; employee data (several addresses, contacts, family, bank accounts, with history) follows the
+  principles and the order of [section 9](#9-locations-and-employee-data-decided-2026-10-17) (decided by the user).
 
 ## 1. One codebase
 
@@ -130,3 +133,55 @@ documentation. The code stays in `src/<Context>`; nothing moves.
   **company members**; when Employee exists, a member account of an internal tenant may be linked 1:1 to an employee record (used later for
   "head of unit" approvers and inviting from the employee directory); one account, one sign-in.
 - ~~Scope of the holding's group permission~~ settled 2026-10-15: manage the structure, read across tenants (`erp-organization.md` section 4).
+
+## 9. Locations and employee data (decided 2026-10-17)
+
+Today every contact and address is a column of its parent: one email of a user, one phone and WhatsApp and one domicile of a job seeker, one
+contact email, phone and address of a company, one address of a legal entity, one province and city of a job. Only job seeker links are several.
+
+**What changes and what stays (user, 2026-10-17):**
+
+| Data | Decision |
+|---|---|
+| Work locations of a tenant (head office, branches, sites) | **several**, a new `company_locations` in Company for every tenant; the current company address becomes the main location (#27) |
+| Locations of a job | **several**, pointing to `company_locations` (no copied province and city); the API returns `locations` at once (#28), the full feature comes with #20 |
+| Address of a legal entity | one (its registered address) |
+| Contact email and phone of a company | one public contact; a phone per location may live on `company_locations` |
+| Email of a user | one (the sign-in identity) |
+| Domicile, phone and WhatsApp of a job seeker | one each |
+| ID card address and other HR data | never on the job seeker profile; they belong to Employee |
+
+**Employee data principles (for the Employee design):**
+
+- Several, by kind: addresses (`ktp`, `domicile`, `mailing`), phones, a personal email (the work email is the sign-in email of the linked
+  Identity account, not copied), emergency contacts in order, family and dependants (PTKP status, BPJS Kesehatan), payroll bank accounts (one
+  active), identity documents (NIK, KK, passport, driving licence, KITAS, with expiry), BPJS numbers, and placement (location, unit, position,
+  manager) as history.
+- One pattern for every list: `type`, `is_primary` and `valid_from` / `valid_to`; "one primary per kind" is a PostgreSQL partial unique index.
+- Effective dating for addresses, bank accounts, placement and family status: HR asks what was valid on a date (tax slips, audit, BPJS).
+- Tables owned by Employee, no shared polymorphic `addresses` table; only an `Address` value object in `src/Shared` and the reference regions are shared.
+- Single source of truth: a hire copies name, phone and domicile from the job seeker profile once; Employee owns them afterwards, no two-way sync;
+  sign-in stays with Identity, structure with Organization, work locations with Company.
+- Sensitive data (personal data protection law): NIK, KK, bank accounts, family and religion (needed for the THR date) encrypted at rest, a blind
+  index for NIK lookups, field-level permissions, masked in the API, every read logged; retention after leaving is a legal question.
+- Self-service changes (address, bank account, family) are requests approved by HR through the Approval context, effective from a date.
+- Indonesian validation: NIK of 16 digits, domestic addresses through the reference regions, foreign addresses as free text with a country.
+
+**Order:**
+
+| Step | Work | Depends on |
+|---|---|---|
+| A | #27 company locations, #28 job `locations` in the API (`phase-8-index.md`) | before the front end and the final legacy import run |
+| B | jobs with several locations inside #20 `phase-8-job-posting.md` | A; after go-live |
+| C1 | answer the open HRIS questions of section 7 (current HRIS, payroll scope, data migration) | the user |
+| C2 | benchmark the ERP actors (approver, workforce planner, group admin) and employee data: Mekari Talenta, SAP SuccessFactors, Workday | |
+| C3 | new legal questions in `legal-review.md`: retention of employee data, family data, religion | |
+| D1 | Employee core and the hand-off of #13: employee record, 1:1 link to the member account, one-time copy at hire, pending record by domain event | C1, A |
+| D2 | placement with history: location, unit, position, manager | D1 |
+| D3 | several addresses, phones, personal email, emergency contacts | D1 |
+| D4 | sensitive data: identity documents, family and dependants, payroll bank accounts, BPJS numbers, with the protections above | D1, C3 |
+| D5 | self-service changes through Approval | D3, D4 |
+| D6 | migration of the old HRIS data, if C1 says so (like `LegacyImport`) | D1 to D4 |
+| D7 | payroll as its own context, if C1 puts it in scope | D4, C1 |
+
+Each step is designed in one session and coded in another.
