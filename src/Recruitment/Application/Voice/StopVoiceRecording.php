@@ -33,7 +33,7 @@ final readonly class StopVoiceRecording
     public function execute(Actor $actor, int $applicationId): InterviewRecording
     {
         $stopped = $this->transactions->run(function () use ($actor, $applicationId): InterviewRecording {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $this->interviews->active($applicationId, forUpdate: true) ?? throw new StateConflict('This application has no active interview.', 'no-active-interview');
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

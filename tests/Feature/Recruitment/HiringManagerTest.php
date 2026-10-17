@@ -26,7 +26,7 @@ final class HiringManagerTest extends FeatureTestCase
         $this->buildApplicationFixtures();
         $this->verifyTheCompany();
 
-        $manager = $this->memberWith(['applications.view', 'applications.review', 'interviews.manage'], 'manager@example.test');
+        $manager = $this->memberWith(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate'], 'manager@example.test');
         $this->managerId = $manager['id'];
         $this->managerToken = $manager['token'];
 
@@ -96,12 +96,12 @@ final class HiringManagerTest extends FeatureTestCase
     {
         $catalog = $this->api('GET', '/company/permissions')->assertOk()->json('data');
         $applicants = collect($catalog['groups'])->firstWhere('group', 'applicants')['permissions'];
-        $this->assertSame(['applications.view', 'applications.manage', 'applications.review', 'applications.export', 'interviews.manage', 'offers.manage', 'assessments.send'], array_column($applicants, 'permission'));
+        $this->assertSame(['applications.view', 'applications.manage', 'applications.review', 'applications.export', 'interviews.manage', 'interviews.participate', 'offers.manage', 'assessments.send'], array_column($applicants, 'permission'));
         $this->assertTrue(collect($applicants)->firstWhere('permission', 'applications.manage')['requires_review']);
         $this->assertFalse(collect($applicants)->firstWhere('permission', 'applications.review')['requires_review']);
 
         $presets = collect($catalog['presets'])->keyBy('preset');
-        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage'], $presets['hiring_manager']['permissions']);
+        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate'], $presets['hiring_manager']['permissions']);
         $this->assertContains('applications.review', $presets['recruiter']['permissions']);
     }
 

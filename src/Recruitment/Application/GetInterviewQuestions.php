@@ -18,7 +18,7 @@ final readonly class GetInterviewQuestions
      */
     public function execute(Actor $actor, int $interviewId): InterviewQuestionList
     {
-        $interview = $this->lookup->find($actor, $interviewId)->interview;
+        $interview = $this->lookup->find($actor, $interviewId, panelOpens: true)->interview;
 
         return new InterviewQuestionList(
             (int) $interview->id,

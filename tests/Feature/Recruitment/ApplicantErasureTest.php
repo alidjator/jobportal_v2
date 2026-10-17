@@ -70,7 +70,7 @@ final class ApplicantErasureTest extends FeatureTestCase
     public function test_the_anonymisation_event_erases_the_personal_content_of_that_users_applications_only(): void
     {
         $fixture = $this->applyBoth();
-        $mine = DB::table('recruitment_applications')->where('user_id', $this->seekerId)->get();
+        $mine = DB::table('recruitment_applications')->where('user_id', $this->seekerId)->orderBy('id')->get();
         $paths = $mine->pluck('resume_path')->all();
         $this->assertCount(2, $paths);
 

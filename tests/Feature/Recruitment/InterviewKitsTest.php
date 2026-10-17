@@ -319,11 +319,18 @@ final class InterviewKitsTest extends FeatureTestCase
         $this->assertSame(0, DB::table('recruitment_interviews')->count());
     }
 
-    public function test_a_member_who_does_not_work_on_the_job_cannot_join_the_panel(): void
+    public function test_a_member_who_may_not_take_part_in_interviews_cannot_join_the_panel(): void
+    {
+        $viewer = $this->memberWith(['applications.view'], 'viewer@example.test')['id'];
+
+        $this->schedule(['participant_ids' => [$viewer]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+    }
+
+    public function test_a_member_who_does_not_work_on_the_job_can_join_the_panel(): void
     {
         DB::table('job_assignments')->where('job_id', $this->job)->where('user_id', $this->secondRecruiterId)->delete();
 
-        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertNoContent();
     }
 
     // ----- editing the copy -----

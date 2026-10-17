@@ -20,7 +20,7 @@ final readonly class ListApplicationInterviews
      */
     public function execute(Actor $actor, int $applicationId): array
     {
-        $this->lookup->find($actor, $applicationId);
+        $this->lookup->find($actor, $applicationId, panelOpens: true);
 
         return $this->views->of($this->interviews->forApplication($applicationId), withPanel: true);
     }

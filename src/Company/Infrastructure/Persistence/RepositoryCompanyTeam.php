@@ -34,6 +34,19 @@ final readonly class RepositoryCompanyTeam implements CompanyTeam
         return $ids;
     }
 
+    public function interviewerUserIds(int $companyId): array
+    {
+        $ids = [];
+
+        foreach ($this->members->ofCompany($companyId) as $member) {
+            if (in_array(CompanyPermission::InterviewsParticipate->value, $member->effectivePermissions(), true)) {
+                $ids[] = $member->userId;
+            }
+        }
+
+        return $ids;
+    }
+
     public function ownerUserId(int $companyId): ?int
     {
         return $this->members->ownerUserId($companyId);

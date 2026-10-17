@@ -3,7 +3,6 @@
 namespace Src\Recruitment\Application;
 
 use Psr\Log\LoggerInterface;
-use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
@@ -21,10 +20,8 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 final readonly class GetCompanyApplicationResume
 {
     public function __construct(
-        private RecruitmentAccess $access,
-        private CompanyApplicationAccess $applicationAccess,
+        private TeamApplicationLookup $lookup,
         private ContactVisibility $contact,
-        private ApplicationRepository $applications,
         private FileStorage $files,
         private AuditTrail $audit,
         private Clock $clock,
@@ -37,9 +34,7 @@ final readonly class GetCompanyApplicationResume
      */
     public function execute(Actor $actor, int $id, ?string $ipAddress = null, ?string $userAgent = null): ApplicationFile
     {
-        $member = $this->access->viewer($actor);
-        $application = $this->applications->find($id) ?? throw EntityNotFound::of('Application', $id);
-        $this->applicationAccess->assertCanSee($member, $id, $application->companyId, $application->jobId);
+        $application = $this->lookup->find($actor, $id, panelOpens: true)->application;
 
         $resume = $application->resume ?? throw EntityNotFound::of('Resume', $id);
 

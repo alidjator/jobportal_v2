@@ -20,6 +20,13 @@ interface CompanyTeam
      */
     public function viewAllUserIds(int $companyId): array;
 
+    /**
+     * The accounts of the company that may sit on an interview panel (`interviews.participate`, which every company admin holds).
+     *
+     * @return list<int>
+     */
+    public function interviewerUserIds(int $companyId): array;
+
     /** The account of the company's owner, or null when it has none. */
     public function ownerUserId(int $companyId): ?int;
 }

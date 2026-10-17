@@ -23,7 +23,7 @@ final readonly class ListInterviewCalls
      */
     public function execute(Actor $actor, int $interviewId): array
     {
-        $this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage);
+        $this->lookup->assertSatOn($this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage, panelOpens: true));
 
         return $this->calls->forInterview($interviewId);
     }

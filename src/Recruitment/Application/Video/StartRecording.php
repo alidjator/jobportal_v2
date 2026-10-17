@@ -38,7 +38,7 @@ final readonly class StartRecording
     public function execute(Actor $actor, int $applicationId): InterviewRecording
     {
         $recording = $this->transactions->run(function () use ($actor, $applicationId): InterviewRecording {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $this->sessions->joinable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

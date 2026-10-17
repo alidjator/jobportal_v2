@@ -16,7 +16,6 @@ use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyTeam;
-use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -37,7 +36,6 @@ final readonly class InterviewScheduler
         private HiringManagerVisibility $visibility,
         private CompanyTeam $team,
         private CandidateMessageRules $messageRules,
-        private JobDirectory $jobs,
         private Settings $settings,
         private Clock $clock,
     ) {}
@@ -50,7 +48,7 @@ final readonly class InterviewScheduler
     {
         $now = $this->clock->now();
         $applicationId = (int) $application->id;
-        $this->assertInterviewer($application->companyId, $application->jobId, $input->interviewerId);
+        $this->assertInterviewer($application->companyId, $input->interviewerId);
         $this->assertFormatAvailable($application->companyId, $input->format);
 
         if ($input->noteGiven) {
@@ -150,17 +148,17 @@ final readonly class InterviewScheduler
     }
 
     /**
-     * The interviewer is a member of the company who may see the job (an admin, or a recruiter the job is assigned to).
+     * The interviewer is a member of the company who may sit on a panel (`interviews.participate`, or a company admin); working on the job is not required.
      *
      * @throws BusinessRuleViolation `invalid-interviewer`
      */
-    public function assertInterviewer(int $companyId, int $jobId, int $interviewerId): void
+    public function assertInterviewer(int $companyId, int $interviewerId): void
     {
-        $this->assertWorksOnJob($companyId, $jobId, $interviewerId, 'interviewer_id');
+        $this->assertMayParticipate($companyId, $interviewerId, 'interviewer_id');
     }
 
     /**
-     * The extra panel members of the request: at most {@see InterviewPanel::EXTRA_MAX}, each a member who may see the job, none of them the main interviewer.
+     * The extra panel members of the request: at most {@see InterviewPanel::EXTRA_MAX}, each a member who may sit on a panel, none of them the main interviewer.
      * Null when the request named none.
      *
      * @return list<int>|null
@@ -169,11 +167,11 @@ final readonly class InterviewScheduler
      */
     private function participants(Application $application, InterviewInput $input): ?array
     {
-        return $input->participantIds === null ? null : $this->checkedParticipants($application->companyId, $application->jobId, $input->interviewerId, $input->participantIds);
+        return $input->participantIds === null ? null : $this->checkedParticipants($application->companyId, $input->interviewerId, $input->participantIds);
     }
 
     /**
-     * The extra members of a panel without duplicates, checked: at most {@see InterviewPanel::EXTRA_MAX}, each a member who may see the job, none of them the
+     * The extra members of a panel without duplicates, checked: at most {@see InterviewPanel::EXTRA_MAX}, each a member who may sit on a panel, none of them the
      * main interviewer.
      *
      * @param  list<int>  $participantIds
@@ -181,7 +179,7 @@ final readonly class InterviewScheduler
      *
      * @throws BusinessRuleViolation `invalid-interviewer`
      */
-    public function checkedParticipants(int $companyId, int $jobId, int $interviewerId, array $participantIds): array
+    public function checkedParticipants(int $companyId, int $interviewerId, array $participantIds): array
     {
         $ids = array_values(array_unique($participantIds));
 
@@ -194,7 +192,7 @@ final readonly class InterviewScheduler
                 $this->refuse('participant_ids', 'The main interviewer is already on the panel.');
             }
 
-            $this->assertWorksOnJob($companyId, $jobId, $userId, 'participant_ids');
+            $this->assertMayParticipate($companyId, $userId, 'participant_ids');
         }
 
         return $ids;
@@ -224,11 +222,10 @@ final readonly class InterviewScheduler
     }
 
     /** @throws BusinessRuleViolation `invalid-interviewer` */
-    private function assertWorksOnJob(int $companyId, int $jobId, int $userId, string $field): void
+    private function assertMayParticipate(int $companyId, int $userId, string $field): void
     {
-        if (! array_key_exists($userId, $this->team->roles($companyId))
-            || $this->jobs->visibleToMember($jobId, $companyId, $userId, in_array($userId, $this->team->viewAllUserIds($companyId), true)) === null) {
-            $this->refuse($field, 'Choose a member of your team who works on this job.');
+        if (! in_array($userId, $this->team->interviewerUserIds($companyId), true)) {
+            $this->refuse($field, 'Choose a member of your team who may take part in interviews.');
         }
     }
 

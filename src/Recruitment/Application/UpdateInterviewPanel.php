@@ -61,7 +61,7 @@ final readonly class UpdateInterviewPanel
                 throw new StateConflict('This interview is no longer active.', 'interview-not-active');
             }
 
-            $ids = $this->scheduler->checkedParticipants($team->application->companyId, $team->application->jobId, $interview->interviewerId, $participantIds);
+            $ids = $this->scheduler->checkedParticipants($team->application->companyId, $interview->interviewerId, $participantIds);
             $left = array_diff($this->panel->forInterviews([(int) $interview->id])[(int) $interview->id] ?? [], $ids);
 
             $this->scorecards->deleteDrafts((int) $interview->id, array_values($left));

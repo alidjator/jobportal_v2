@@ -211,7 +211,7 @@ final class BulkActionsTest extends FeatureTestCase
         $body = ['application_ids' => $this->ids, 'stage_id' => $this->stage('interview')];
 
         $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['starts_at' => '2026-10-01T02:00:00Z'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
-        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['interviewer_id' => $this->secondRecruiterId])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
+        $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['interviewer_id' => $this->memberWith(['applications.view'], 'viewer@example.test')['id']])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
         $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['duration_minutes' => 120, 'day_end' => '10:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
         $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['day_start' => '17:00', 'day_end' => '09:00'])])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
         $this->bulkMove([...$body, 'interview' => $this->baseSchedule(['gap_minutes' => 500])])->assertStatus(422);

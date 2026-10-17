@@ -26,7 +26,7 @@ final readonly class GetInterviewCalendarFile
      */
     public function execute(Actor $actor, int $interviewId): string
     {
-        $team = $this->lookup->find($actor, $interviewId);
+        $team = $this->lookup->find($actor, $interviewId, panelOpens: true);
         $jobId = $team->application->jobId;
         $company = $this->companies->summaries([$team->application->companyId])[$team->application->companyId] ?? null;
 

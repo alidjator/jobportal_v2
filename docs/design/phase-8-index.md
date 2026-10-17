@@ -30,7 +30,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | 8 | `phase-8-recruiter-workday.md` | sections 2, 4 and 1 (without `unscheduled_interviews`) coded 2026-10-17 (migration `000153`); section 5 (received email) coded 2026-10-17 with #10 section 6 (migration `000157`); section 3 waits for the team preferences used by withdrawals and provider tools |
 | 9 | `phase-8-hiring-managers.md` | sections 1 and 2 coded 2026-10-17 (migration `000154`); section 3 (shortlist reviews) waits for the team preferences of the recruiter workday section 3 (after #10); requisitions are now in scope through #6 |
 | 10 | `phase-8-interview-calendar.md` | sections 2, 4 and 3 coded 2026-10-17 (migration `000155`), section 1 (calendar) coded 2026-10-17 (migration `000156`); section 6 (message defaults, link rule, test note, logo; migration `000157`) coded 2026-10-17; section 5 (email preview) coded 2026-10-17 (no migration), so #10 is complete |
-| 11 | `phase-8-interviewers.md` | `.ics` of the interview calendar; shares the access rule of the hiring managers |
+| 11 | `phase-8-interviewers.md` | section 1 (permission, panel access, my interviews) coded 2026-10-17 (migration `000158`); sections 2 to 4 wait for the team preferences of the recruiter workday section 3 (`team_interview_changes`, `team_scorecard_reminders`) |
 | 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |
 | 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |

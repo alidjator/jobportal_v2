@@ -2,7 +2,7 @@
 
 namespace Src\Shared\Application\Recruitment;
 
-/** An application a company member may see, with the facts other contexts need: where it belongs, whether it sits in an assessment stage and whether its job was taken down. */
+/** An application a company member may see, with the facts other contexts need: where it belongs, whether it sits in an assessment stage whether its job was taken down and whether the member reaches it only through an interview panel (the reduced view). */
 final readonly class TeamApplicationRef
 {
     public function __construct(
@@ -12,5 +12,6 @@ final readonly class TeamApplicationRef
         public int $applicantUserId,
         public bool $inAssessmentStage,
         public bool $jobTakenDown,
+        public bool $panelOnly = false,
     ) {}
 }

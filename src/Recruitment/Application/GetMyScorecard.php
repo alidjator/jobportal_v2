@@ -24,7 +24,7 @@ final readonly class GetMyScorecard
      */
     public function execute(Actor $actor, int $interviewId): ScorecardView
     {
-        $team = $this->lookup->find($actor, $interviewId);
+        $team = $this->lookup->find($actor, $interviewId, panelOpens: true);
         $this->access->assertOnPanel($team);
 
         return $this->views->one($this->scorecards->find($interviewId, $team->member->userId) ?? Scorecard::blank($interviewId, $team->member->userId));

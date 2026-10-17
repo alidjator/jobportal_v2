@@ -18,6 +18,7 @@ enum CompanyPermission: string
     case ApplicationsReview = 'applications.review';
     case ApplicationsExport = 'applications.export';
     case InterviewsManage = 'interviews.manage';
+    case InterviewsParticipate = 'interviews.participate';
     case OffersManage = 'offers.manage';
     case AssessmentsSend = 'assessments.send';
     case CandidatesSearch = 'candidates.search';
@@ -43,8 +44,8 @@ enum CompanyPermission: string
     {
         return match ($this) {
             self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll => 'jobs',
-            self::ApplicationsView, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport, self::InterviewsManage, self::OffersManage,
-            self::AssessmentsSend => 'applicants',
+            self::ApplicationsView, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport, self::InterviewsManage, self::InterviewsParticipate,
+            self::OffersManage, self::AssessmentsSend => 'applicants',
             self::CandidatesSearch, self::TalentPoolManage, self::MessagesSend => 'sourcing',
             self::InterviewKitsManage, self::ScreeningQuestionsManage, self::AssessmentsAuthor, self::StagesManage => 'library',
             self::CompanyProfile, self::CampaignsManage, self::ReviewsReply, self::AnalyticsView => 'company',

@@ -29,7 +29,7 @@ final readonly class JoinVoiceInterview
     public function execute(Actor $actor, int $applicationId): VoiceCredentials
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VoiceCredentials {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $this->sessions->callable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

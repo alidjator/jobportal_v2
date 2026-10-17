@@ -21,7 +21,7 @@ final readonly class GetInvitation
     public function execute(Actor $actor, int $invitationId): InvitationView
     {
         $invitation = $this->invitations->find($invitationId) ?? throw EntityNotFound::of('Invitation', $invitationId);
-        $this->applications->find($actor, $invitation->applicationId, permission: CompanyPermission::AssessmentsSend);
+        $this->applications->find($actor, $invitation->applicationId, permission: CompanyPermission::AssessmentsSend, panelOpens: true);
 
         return $this->views->one($invitation);
     }

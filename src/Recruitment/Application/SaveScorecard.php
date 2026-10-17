@@ -43,7 +43,7 @@ final readonly class SaveScorecard
     public function execute(Actor $actor, int $interviewId, ?Recommendation $recommendation, ?string $note, array $answers): ScorecardView
     {
         $saved = $this->transactions->run(function () use ($actor, $interviewId, $recommendation, $note, $answers): Scorecard {
-            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $this->access->assertOnPanel($team);
             $now = $this->clock->now();
             $this->access->assertOpen($team, $now);

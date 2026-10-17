@@ -262,7 +262,7 @@ Proposed while designing and decided by the user on 2026-10-13:
 2. **No base access** (changed by the user): the proposal let a member without permissions read their assigned jobs and applicants; instead reading
    needs `applications.view` (one permission for jobs and applicants, chosen over separate `jobs.view` and `applications.view`), and the actions require
    it (rule 3).
-3. **Interviewers are assigned to the job** (agreed): being on an interview panel alone does not open the application; one scope rule for everyone.
+3. **Interviewers are assigned to the job** (agreed; replaced 2026-10-15 by `phase-8-interviewers.md` section 1: the panel opens the interview material without the assignment): being on an interview panel alone does not open the application; one scope rule for everyone.
 4. **Talent pool categories** (agreed): renaming and deleting a category is part of `talent_pool.manage`, so the Recruiter preset gains it.
 5. **Overrides on the role** (agreed): rule 7; a member with `jobs.view_all` sees every interview but cannot delete another panel's recording or another
    author's note, nor edit another scheduler's interview questions or panel.

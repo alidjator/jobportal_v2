@@ -41,7 +41,7 @@ final readonly class JoinVideoInterview
     public function asTeam(Actor $actor, int $applicationId): VideoJoinResult
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VideoJoinResult {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $this->sessions->joinable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

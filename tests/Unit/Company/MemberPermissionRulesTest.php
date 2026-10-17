@@ -43,7 +43,7 @@ final class MemberPermissionRulesTest extends TestCase
 
     public function test_the_hiring_manager_preset_reads_reviews_and_runs_interviews_only(): void
     {
-        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage'], MemberPreset::HiringManager->permissionNames());
+        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate'], MemberPreset::HiringManager->permissionNames());
     }
 
     public function test_permissions_that_need_no_reading_stand_alone_and_come_back_in_catalog_order_without_duplicates(): void
@@ -60,9 +60,9 @@ final class MemberPermissionRulesTest extends TestCase
 
     public function test_the_presets_match_the_design(): void
     {
-        $this->assertCount(13, MemberPreset::Recruiter->permissions());
-        $this->assertSame(['applications.view', 'interviews.manage'], MemberPreset::Interviewer->permissionNames());
-        $this->assertCount(28, MemberPreset::CompanyAdmin->permissions());
+        $this->assertCount(14, MemberPreset::Recruiter->permissions());
+        $this->assertSame(['interviews.participate'], MemberPreset::Interviewer->permissionNames());
+        $this->assertCount(29, MemberPreset::CompanyAdmin->permissions());
         $this->assertContains('talent_pool.manage', MemberPreset::Recruiter->permissionNames());
         $this->assertNotContains('jobs.assign', MemberPreset::Recruiter->permissionNames());
         $this->assertNotContains('analytics.view', MemberPreset::Recruiter->permissionNames());

@@ -19,23 +19,34 @@ final readonly class VisibleInvitations
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      * @throws EntityNotFound
      */
-    public function find(Actor $actor, int $invitationId, bool $forUpdate = false): Invitation
+    public function find(Actor $actor, int $invitationId, bool $forUpdate = false, bool $panelOpens = false): Invitation
     {
         $invitation = $this->invitations->find($invitationId, $forUpdate) ?? throw EntityNotFound::of('Invitation', $invitationId);
-        $this->applications->find($actor, $invitation->applicationId);
+        $this->applications->find($actor, $invitation->applicationId, panelOpens: $panelOpens);
 
         return $invitation;
     }
 
+    /** Whether the member reaches the application only through an interview panel (the reduced view). */
+    public function panelOnly(Actor $actor, Invitation $invitation): bool
+    {
+        return $this->applications->find($actor, $invitation->applicationId, panelOpens: true)->panelOnly;
+    }
+
     /**
-     * Like `find`, for reading results: also needs `assessments.send`, unless the member is an assessor of this invitation (assessors read what they score).
+     * Like `find`, for reading results: also needs `assessments.send`, unless the member is an assessor of this invitation (assessors read what they score)
+     * or sits on an interview panel of the application, which opens the results of the skill tests and not the psychological ones.
      *
      * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      */
-    public function findForResults(Actor $actor, int $invitationId): Invitation
+    public function findForResults(Actor $actor, int $invitationId, bool $panelOpens = false): Invitation
     {
-        $invitation = $this->find($actor, $invitationId);
+        $invitation = $this->find($actor, $invitationId, panelOpens: $panelOpens);
+
+        if ($panelOpens && $this->panelOnly($actor, $invitation)) {
+            return $invitation;
+        }
 
         if ($actor->id === null || ! in_array($actor->id, $invitation->assessorIds, true)) {
             $actor->membership?->require(CompanyPermission::AssessmentsSend);

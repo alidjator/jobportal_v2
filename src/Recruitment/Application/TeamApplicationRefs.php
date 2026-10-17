@@ -14,9 +14,10 @@ final readonly class TeamApplicationRefs implements TeamApplications
 {
     public function __construct(private TeamApplicationLookup $lookup, private JobDirectory $jobs) {}
 
-    public function find(Actor $actor, int $applicationId, bool $forUpdate = false, ?CompanyPermission $permission = null): TeamApplicationRef
+    public function find(Actor $actor, int $applicationId, bool $forUpdate = false, ?CompanyPermission $permission = null, bool $panelOpens = false): TeamApplicationRef
     {
-        $application = $this->lookup->find($actor, $applicationId, $forUpdate, $permission)->application;
+        $team = $this->lookup->find($actor, $applicationId, $forUpdate, $permission, $panelOpens);
+        $application = $team->application;
 
         return new TeamApplicationRef(
             $applicationId,
@@ -25,6 +26,7 @@ final readonly class TeamApplicationRefs implements TeamApplications
             $application->userId,
             $application->stageType === StageType::Assessment,
             $this->jobs->isTakenDown($application->jobId),
+            $team->panelOnly,
         );
     }
 }

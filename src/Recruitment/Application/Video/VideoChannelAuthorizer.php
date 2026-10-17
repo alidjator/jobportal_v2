@@ -38,7 +38,7 @@ final readonly class VideoChannelAuthorizer
         }
 
         try {
-            $member = $this->access->viewer($actor, CompanyPermission::InterviewsManage);
+            $member = $this->access->anyOf($actor, CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate);
 
             return $member->companyId === $application->companyId && $this->sessions->isOnPanel($interview, $member->userId);
         } catch (AccessDenied) {

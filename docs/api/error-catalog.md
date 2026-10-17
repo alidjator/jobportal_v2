@@ -68,7 +68,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
-| `company-permission-required` | 403 | Shared |  |
+| `company-permission-required` | 403 | Assessment, Shared | Psychological results are closed to the interview panel. |
 | `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |

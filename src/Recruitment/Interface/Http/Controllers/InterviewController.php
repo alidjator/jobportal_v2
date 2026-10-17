@@ -8,17 +8,29 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Recruitment\Application\GetInterviewCalendarFile;
 use Src\Recruitment\Application\ListApplicationInterviews;
+use Src\Recruitment\Application\ListMyInterviews;
 use Src\Recruitment\Application\ManageInterview;
 use Src\Recruitment\Application\ScheduleInterview;
+use Src\Recruitment\Interface\Http\Requests\ListMyInterviewsRequest;
 use Src\Recruitment\Interface\Http\Requests\ScheduleInterviewRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateInterviewNoteRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyInterviewResource;
+use Src\Recruitment\Interface\Http\Resources\MyInterviewResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
+use Src\Shared\Interface\Http\CursorResources;
 
 /** The interviews of an application, for the members who may see its job. */
 final class InterviewController extends ApiController
 {
+    /** The interviews of the caller: the ones they sit on, upcoming or past, or every interview of the jobs they may see. */
+    public function mine(ListMyInterviewsRequest $request, ActorResolver $actors, ListMyInterviews $list): AnonymousResourceCollection
+    {
+        $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->allOfCompany(), $request->cursorRequest());
+
+        return MyInterviewResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
+    }
+
     public function index(Request $request, int $id, ActorResolver $actors, ListApplicationInterviews $list): AnonymousResourceCollection
     {
         return CompanyInterviewResource::collection($list->execute($actors->fromRequest($request), $id));

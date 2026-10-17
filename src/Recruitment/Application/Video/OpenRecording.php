@@ -38,7 +38,7 @@ final readonly class OpenRecording
      */
     public function execute(Actor $actor, int $interviewId, int $recordingId, bool $firstRange = true, ?string $ipAddress = null, ?string $userAgent = null): StreamedFile
     {
-        $this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage);
+        $this->lookup->assertSatOn($this->lookup->find($actor, $interviewId, permission: CompanyPermission::InterviewsManage, panelOpens: true));
         $recording = $this->recordings->find($recordingId);
 
         if (! $recording instanceof InterviewRecording || $recording->interviewId !== $interviewId) {

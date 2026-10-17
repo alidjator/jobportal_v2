@@ -26,7 +26,7 @@ final readonly class ListScorecardRevisions
      */
     public function execute(Actor $actor, int $interviewId, int $scorecardId): array
     {
-        $team = $this->lookup->find($actor, $interviewId);
+        $team = $this->lookup->find($actor, $interviewId, panelOpens: true);
         $this->access->assertMayReadSent($team);
         $scorecard = $this->scorecards->findById($scorecardId);
 

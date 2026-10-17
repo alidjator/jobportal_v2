@@ -104,7 +104,7 @@ final class InterviewsTest extends FeatureTestCase
     {
         $this->toInterviewStage($this->interviewSchedule(['starts_at' => now()->subDay()->utc()->format('Y-m-d\TH:i:s\Z')]))
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interview');
-        $this->toInterviewStage($this->interviewSchedule(['interviewer_id' => $this->secondRecruiterId]))
+        $this->toInterviewStage($this->interviewSchedule(['interviewer_id' => $this->memberWith(['applications.view'], 'viewer@example.test')['id']]))
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
         $this->toInterviewStage($this->interviewSchedule(['interviewer_id' => $this->otherAdminId]))->assertStatus(422);
         $this->toInterviewStage(['starts_at' => 'tomorrow'])->assertStatus(422);

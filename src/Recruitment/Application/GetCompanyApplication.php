@@ -13,12 +13,11 @@ use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
-/** One application for a member who may see its job (see `CompanyApplicationAccess`); a group member reading it leaves it unmarked as viewed. The contact data is closed for an unverified company while the application is in `applied` (`ContactVisibility`). */
+/** One application for a member who may see its job (see `CompanyApplicationAccess`) or sits on one of its interview panels (reduced: no ratings, no other applications); a group member reading it leaves it unmarked as viewed. The contact data is closed for an unverified company while the application is in `applied` (`ContactVisibility`). */
 final readonly class GetCompanyApplication
 {
     public function __construct(
-        private RecruitmentAccess $access,
-        private CompanyApplicationAccess $applicationAccess,
+        private TeamApplicationLookup $lookup,
         private RecruiterApplicationReader $reader,
         private StageRepository $stages,
         private JobDirectory $jobs,
@@ -38,10 +37,12 @@ final readonly class GetCompanyApplication
      */
     public function execute(Actor $actor, int $id): CompanyApplicationView
     {
-        $member = $this->access->viewer($actor);
+        $team = $this->lookup->find($actor, $id, panelOpens: true);
+        $member = $team->member;
         $data = $this->reader->find($id) ?? throw EntityNotFound::of('Application', $id);
-        $this->applicationAccess->assertCanSee($member, $id, $data->companyId, $data->jobId);
-        if (! $actor->groupRead) {
+
+        // Someone who sits on the panel and does not see the job leaves no trace of having viewed it and sees no ratings and no other applications.
+        if (! $actor->groupRead && ! $team->panelOnly) {
             $this->applications->markViewed($id, $this->clock->now());
         }
 
@@ -69,7 +70,7 @@ final readonly class GetCompanyApplication
             $actorNames[$userId] = $summary->name;
         }
 
-        [$otherApplications, $othersHidden] = $this->others->of($member, $data);
+        [$otherApplications, $othersHidden] = $team->panelOnly ? [[], 0] : $this->others->of($member, $data);
         $days = StageClock::days($data->stageEnteredAt, $this->clock->now());
 
         return new CompanyApplicationView(
@@ -78,7 +79,7 @@ final readonly class GetCompanyApplication
             $stageNames[$data->stageId] ?? $data->stageType->defaultName(),
             $stageNames,
             $actorNames,
-            $this->ratings->view($id, $member->userId),
+            $team->panelOnly ? new ApplicationRatingView(null, 0, null, []) : $this->ratings->view($id, $member->userId),
             $this->interviewResults->forApplication($id, $member->userId),
             $days,
             StageClock::isStale($data->stageType, $days, $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $data->companyId)),

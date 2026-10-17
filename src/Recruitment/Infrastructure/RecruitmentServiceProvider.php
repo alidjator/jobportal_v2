@@ -25,6 +25,7 @@ use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\JobApplicationCheck;
+use Src\Recruitment\Application\MyInterviewReader;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
@@ -113,6 +114,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewResults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobKitDefaults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardEraser;
@@ -197,6 +199,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobKitDefaults::class => DatabaseJobKitDefaults::class,
         InterviewQuestionRepository::class => DatabaseInterviewQuestionRepository::class,
         InterviewPanel::class => DatabaseInterviewPanel::class,
+        MyInterviewReader::class => DatabaseMyInterviewReader::class,
         ScorecardRepository::class => DatabaseScorecardRepository::class,
         ScorecardEraser::class => DatabaseScorecardEraser::class,
         InterviewResults::class => DatabaseInterviewResults::class,

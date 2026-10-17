@@ -25,11 +25,13 @@ enum MemberPreset: string
             self::Recruiter => [
                 CompanyPermission::JobsCreate, CompanyPermission::JobsPublish, CompanyPermission::ApplicationsView,
                 CompanyPermission::ApplicationsManage, CompanyPermission::ApplicationsReview, CompanyPermission::ApplicationsExport,
-                CompanyPermission::InterviewsManage, CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend, CompanyPermission::CandidatesSearch,
-                CompanyPermission::TalentPoolManage, CompanyPermission::MessagesSend, CompanyPermission::InterviewKitsManage,
+                CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate, CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend,
+                CompanyPermission::CandidatesSearch, CompanyPermission::TalentPoolManage, CompanyPermission::MessagesSend, CompanyPermission::InterviewKitsManage,
             ],
-            self::Interviewer => [CompanyPermission::ApplicationsView, CompanyPermission::InterviewsManage],
-            self::HiringManager => [CompanyPermission::ApplicationsView, CompanyPermission::ApplicationsReview, CompanyPermission::InterviewsManage],
+            self::Interviewer => [CompanyPermission::InterviewsParticipate],
+            self::HiringManager => [
+                CompanyPermission::ApplicationsView, CompanyPermission::ApplicationsReview, CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate,
+            ],
         };
     }
 

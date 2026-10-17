@@ -35,7 +35,7 @@ final readonly class HangUpInterviewCall
      */
     public function execute(Actor $actor, int $applicationId): InterviewCall
     {
-        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage);
+        $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage, panelOpens: true);
         $interview = $this->interviews->active((int) $team->application->id) ?? throw new StateConflict('This application has no active interview.', 'no-active-interview');
 
         if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

@@ -45,7 +45,7 @@ final readonly class PlaceInterviewCall
     public function execute(Actor $actor, int $applicationId): InterviewCall
     {
         $call = $this->transactions->run(function () use ($actor, $applicationId): InterviewCall {
-            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $companyId = $team->application->companyId;
             $interview = $this->sessions->callable($team->application);
             $interviewId = (int) $interview->id;

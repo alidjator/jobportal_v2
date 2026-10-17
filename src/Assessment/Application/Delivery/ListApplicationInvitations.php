@@ -22,7 +22,7 @@ final readonly class ListApplicationInvitations
      */
     public function execute(Actor $actor, int $applicationId): array
     {
-        $this->applications->find($actor, $applicationId, permission: CompanyPermission::AssessmentsSend);
+        $this->applications->find($actor, $applicationId, permission: CompanyPermission::AssessmentsSend, panelOpens: true);
 
         return $this->views->many($this->invitations->ofApplication($applicationId));
     }

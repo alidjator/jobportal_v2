@@ -69,7 +69,7 @@ final readonly class BulkProcessApplications
         $this->assertInputFits($stage->type, $interview, $offer, $assessment, $scheduleLater);
 
         $movable = array_keys(array_filter($states, static fn (Application $state): bool => ! $state->stageType->isTerminal() && $state->stageId !== $stageId));
-        $inputs = $interview instanceof BulkInterviewInput ? $this->interviewInputs($member, $jobId, $interview, $movable) : [];
+        $inputs = $interview instanceof BulkInterviewInput ? $this->interviewInputs($member, $interview, $movable) : [];
 
         if ($offer instanceof OfferInput) {
             $this->assertOffer($member, $jobId, $offer);
@@ -177,9 +177,9 @@ final readonly class BulkProcessApplications
      * @param  list<int>  $movable
      * @return array<int, InterviewInput> by application id
      */
-    private function interviewInputs(RecruitmentMember $member, int $jobId, BulkInterviewInput $base, array $movable): array
+    private function interviewInputs(RecruitmentMember $member, BulkInterviewInput $base, array $movable): array
     {
-        $this->scheduler->assertInterviewer($member->companyId, $jobId, $base->interviewerId);
+        $this->scheduler->assertInterviewer($member->companyId, $base->interviewerId);
         $this->scheduler->assertFormatAvailable($member->companyId, $base->format);
 
         Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded, note: $base->note);

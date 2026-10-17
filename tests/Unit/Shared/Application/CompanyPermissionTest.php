@@ -12,7 +12,7 @@ final class CompanyPermissionTest extends TestCase
 {
     public function test_the_catalog_has_28_permissions_in_six_groups(): void
     {
-        $this->assertCount(28, CompanyPermission::cases());
+        $this->assertCount(29, CompanyPermission::cases());
         $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company', 'workforce'], array_values(array_unique(array_map(fn (CompanyPermission $p): string => $p->group(), CompanyPermission::cases()))));
     }
 

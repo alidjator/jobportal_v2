@@ -20,6 +20,14 @@ final readonly class DatabaseInterviewPanel implements InterviewPanel
         return $panels;
     }
 
+    public function includes(int $userId, int $applicationId): bool
+    {
+        return $this->connection->table('recruitment_interviews')->where('application_id', $applicationId)->where('interviewer_id', $userId)->exists()
+            || $this->connection->table('recruitment_interview_participants as p')
+                ->join('recruitment_interviews as i', 'i.id', '=', 'p.interview_id')
+                ->where('i.application_id', $applicationId)->where('p.user_id', $userId)->exists();
+    }
+
     public function replace(int $interviewId, array $userIds): void
     {
         $this->connection->table('recruitment_interview_participants')->where('interview_id', $interviewId)->delete();

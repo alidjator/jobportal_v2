@@ -40,7 +40,7 @@ final readonly class ViewVideoLobby
     public function asTeam(Actor $actor, int $applicationId): VideoLobby
     {
         return $this->transactions->run(function () use ($actor, $applicationId): VideoLobby {
-            $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $applicationId, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $this->sessions->joinable($team->application);
 
             if (! $this->sessions->isOnPanel($interview, $team->member->userId)) {

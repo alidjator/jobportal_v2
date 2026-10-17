@@ -1,4 +1,4 @@
-# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15, not coded)
+# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; section 1 coded 2026-10-17)
 
 Gaps found from the interviewer's point of view and against Mekari Talenta (help center articles 47603513135385, 34576595122073: an Interviewer
 role limited to the jobs it is assigned to; 34781370644761 and 42469173015193: interviewers picked when scheduling, "Submit interview feedback"
@@ -93,3 +93,25 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
 | Tasks | `my_rsvp`, `panel_declined` |
 | Errors | 409 `interview-started` |
 | Front end | "Wawancara saya" list; RSVP buttons in the interview, the email link and the calendar; RSVP badges on the panel; the Interviewer preset and the "preset lama" mark on the team page |
+
+## Coded: section 1 (2026-10-17, migration `000158`)
+
+- **Catalog and presets:** `interviews.participate` (group Applicants, no `applications.view` needed); the catalog has 29 permissions. Interviewer = it alone; Recruiter
+  and Hiring Manager gain it. The migration gives it to every member and pending invitation holding `interviews.manage`; members on the old Interviewer preset keep
+  their permissions and show as custom. `CompanyTeam::interviewerUserIds` lists who may sit on a panel.
+- **Choosing the panel:** `InterviewScheduler::assertMayParticipate` (422 `invalid-interviewer`): an active member holding the permission, or a company admin; the job
+  assignment no longer matters. This replaces the old rule "interviewers are assigned to the job" of `phase-8-company-permissions.md` section 5.
+- **Access:** `TeamApplicationLookup::find(..., panelOpens: true)` first tries the job rule; when it refuses, a member holding `interviews.participate` who sits on the
+  panel of any interview of the application (`InterviewPanel::includes`) gets `TeamApplication::panelOnly`. The refusal of the job rule is kept when the panel does not
+  open it (a member without a seat gets `company-permission-required` for `applications.view`, not a 404). Opened this way: the application detail (no rating, no other
+  applications, not marked as viewed), the resume, the application's interviews, the questions, the scorecards (the lock rule is unchanged), the calendar file, the video and
+  voice rooms (they already require a seat on that interview), recording start and stop, the lists of recordings, calls and attendance and the recording file (only for an
+  interview they sat on: `TeamInterviewLookup::assertSatOn`), the list and detail of the application's test invitations and the result of a skill test through the port
+  `TeamApplications` (`panelOpens`, `TeamApplicationRef::panelOnly`). Not opened: notes, ratings, stage moves, offers, conversations, exports, reviews, scheduling,
+  rescheduling, cancelling, the panel, deleting a recording, and the results of psychological tests (`assessments.send` stays required). Editing the questions still needs
+  the scheduler, the main interviewer or a company admin; the main interviewer now gets there without the job.
+- **My interviews:** `GET company/interviews` (any member): `filter[when]=upcoming|past`, `filter[my_scorecard]=pending`, `filter[mine]=0` (needs `interviews.manage`
+  and `applications.view`; the jobs the member sees and the hiring manager boundary apply), cursor-paginated. Each row: job, candidate, time, format, status, `role`
+  (`main`, `panel`, null) and `scorecard` (`pending`, `sent`, `not_open`, null). `filter[rsvp]` and the own RSVP wait for section 2. Cancelled and declined interviews are not listed.
+- **Open:** the recruitment calendar still needs `applications.view`, so a panel-only member does not see their interviews there (the list above is their view until
+  then); the `my_scorecard` task link of `phase-8-recruiter-workday.md` should point at this list.

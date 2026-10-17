@@ -13,6 +13,9 @@ interface InterviewPanel
      */
     public function forInterviews(array $interviewIds): array;
 
+    /** Whether the user is the main interviewer or an extra member of any interview of the application, past or present. */
+    public function includes(int $userId, int $applicationId): bool;
+
     /** @param  list<int>  $userIds */
     public function replace(int $interviewId, array $userIds): void;
 

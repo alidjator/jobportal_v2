@@ -37,7 +37,7 @@ final readonly class ReplaceInterviewQuestions
     {
         // The application row stays locked, so a scorecard cannot be started between the check below and the replacement.
         $this->transactions->run(function () use ($actor, $interviewId, $questions): void {
-            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
+            $team = $this->lookup->find($actor, $interviewId, forUpdate: true, permission: CompanyPermission::InterviewsManage, panelOpens: true);
             $interview = $team->interview;
 
             if (! $team->member->isCompanyAdmin() && $team->member->userId !== $interview->createdBy && $team->member->userId !== $interview->interviewerId) {
