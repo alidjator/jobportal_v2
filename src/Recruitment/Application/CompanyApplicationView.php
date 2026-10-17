@@ -13,6 +13,7 @@ final readonly class CompanyApplicationView
      * @param  array<int, string>  $actorNames
      * @param  list<ApplicationInterviewResult>  $interviews  newest first, with the results the viewer may see
      * @param  list<OtherApplicationView>  $otherApplications  the person's other applications to this company that the viewer may see, newest first
+     * @param  list<ApplicationReviewEntry>  $reviews  the answers of shortlist reviews about it that the viewer may see (the lock applies), newest request first
      */
     public function __construct(
         public RecruiterApplicationDetailData $data,
@@ -26,5 +27,6 @@ final readonly class CompanyApplicationView
         public bool $stale = false,
         public array $otherApplications = [],
         public int $othersHidden = 0,
+        public array $reviews = [],
     ) {}
 }

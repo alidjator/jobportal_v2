@@ -61,6 +61,12 @@ final class RecruitmentEmailTemplates
     /** Sent to the member who scheduled an interview when a panel member answered that they cannot attend. */
     public const string TEAM_INTERVIEW_PANEL_DECLINED = 'team.interview_panel_declined';
 
+    /** Sent to the reviewers of a shortlist review when it is requested (`team_reviews`). */
+    public const string TEAM_REVIEW_REQUESTED = 'team.review_requested';
+
+    /** Sent the day before a shortlist review is due to the reviewers with applications left to answer (`team_reviews`). */
+    public const string TEAM_REVIEW_REMINDER = 'team.review_reminder';
+
     /** Sent to every member of an interview's panel (and who scheduled it) the day before it. */
     public const string TEAM_INTERVIEW_REMINDER = 'team.interview_reminder';
 
@@ -503,6 +509,44 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\n{{member}} tidak bisa hadir di wawancara untuk posisi {{job_title}} ({{company_name}}) pada {{starts_at}}.{{note}}{{link}}\n\nPanel tidak berubah; Anda dapat menggantinya di aplikasi.",
                     'en' => "Hello {{name}},\n\n{{member}} cannot attend the interview for {{job_title}} ({{company_name}}) on {{starts_at}}.{{note}}{{link}}\n\nThe panel is unchanged; you can change it in the application.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_REVIEW_REQUESTED,
+                'Sent to a reviewer when a recruiter asks the hiring managers of a job to review applications. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The reviewer\'s name', 'Budi'),
+                    new EmailVariable('requester', 'The name of the member who asked for the review', 'Rina Rekruter'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('count', 'The number of applications to review', '3'),
+                    new EmailVariable('due_on', 'The due date (Jakarta time)', '2026-10-20'),
+                    new EmailVariable('message', 'The message of the requester, on its own line with its label; empty without a message', "\n\nPesan: Mohon dilihat"),
+                    new EmailVariable('link', 'The link to the review page, on its own line with its label; empty when the app is not configured', "\n\nBuka halaman review: https://example.test/review-requests/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Permintaan review untuk {{job_title}}', 'en' => 'Review requested for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{requester}} meminta Anda meninjau {{count}} kandidat untuk posisi {{job_title}} ({{company_name}}) sebelum {{due_on}}.{{message}}{{link}}",
+                    'en' => "Hello {{name}},\n\n{{requester}} asks you to review {{count}} candidate(s) for {{job_title}} ({{company_name}}) by {{due_on}}.{{message}}{{link}}",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TEAM_REVIEW_REMINDER,
+                'Sent to a reviewer the day before a shortlist review is due, with the number of candidates they have not answered. It holds no candidate name.',
+                [
+                    new EmailVariable('name', 'The reviewer\'s name', 'Budi'),
+                    new EmailVariable('requester', 'The name of the member who asked for the review', 'Rina Rekruter'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('count', 'The number of applications to review', '3'),
+                    new EmailVariable('due_on', 'The due date (Jakarta time)', '2026-10-20'),
+                    new EmailVariable('message', 'The message of the requester, on its own line with its label; empty without a message', "\n\nPesan: Mohon dilihat"),
+                    new EmailVariable('link', 'The link to the review page, on its own line with its label; empty when the app is not configured', "\n\nBuka halaman review: https://example.test/review-requests/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Review untuk {{job_title}} jatuh tempo besok', 'en' => 'Review for {{job_title}} is due tomorrow']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nReview untuk posisi {{job_title}} ({{company_name}}) jatuh tempo pada {{due_on}}. Anda masih punya {{count}} kandidat yang belum dijawab.{{message}}{{link}}",
+                    'en' => "Hello {{name}},\n\nThe review for {{job_title}} ({{company_name}}) is due on {{due_on}}. You still have {{count}} candidate(s) to answer.{{message}}{{link}}",
                 ]),
             ),
         ];

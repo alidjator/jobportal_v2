@@ -69,6 +69,13 @@ final readonly class DatabaseReviewRequestRepository implements ReviewRequestRep
             ->map(fn (stdClass $row): ReviewRequest => $this->toRequest($row))->all();
     }
 
+    public function forRequester(int $userId, int $companyId): array
+    {
+        return $this->connection->table('recruitment_review_requests')->where('requested_by_user_id', $userId)->where('company_id', $companyId)
+            ->orderByDesc('due_on')->orderByDesc('id')->get()
+            ->map(fn (stdClass $row): ReviewRequest => $this->toRequest($row))->all();
+    }
+
     public function applicationIds(array $requestIds): array
     {
         $ids = [];
@@ -131,6 +138,48 @@ final readonly class DatabaseReviewRequestRepository implements ReviewRequestRep
     public function setStatus(int $id, ReviewRequestStatus $status, DateTimeImmutable $at): void
     {
         $this->connection->table('recruitment_review_requests')->where('id', $id)->update(['status' => $status->value, 'updated_at' => $this->format($at)]);
+    }
+
+    public function findMany(array $ids): array
+    {
+        return $this->connection->table('recruitment_review_requests')->whereIn('id', $ids)->orderBy('id')->get()
+            ->map(fn (stdClass $row): ReviewRequest => $this->toRequest($row))->all();
+    }
+
+    public function requestIdsForApplications(array $applicationIds): array
+    {
+        $ids = [];
+
+        foreach ($this->connection->table('recruitment_review_request_items')->whereIn('application_id', $applicationIds)->orderBy('request_id')->get(['request_id', 'application_id']) as $row) {
+            $ids[(int) $row->application_id][] = (int) $row->request_id;
+        }
+
+        return $ids;
+    }
+
+    public function dueForReminder(DateTimeImmutable $firstDue, DateTimeImmutable $lastDue): array
+    {
+        return $this->connection->table('recruitment_review_requests')
+            ->where('status', ReviewRequestStatus::Open->value)->whereNull('reminded_at')
+            ->where('due_on', '>=', $firstDue->format('Y-m-d'))->where('due_on', '<=', $lastDue->format('Y-m-d'))
+            ->orderBy('id')->get()->map(fn (stdClass $row): ReviewRequest => $this->toRequest($row))->all();
+    }
+
+    public function claimReminder(int $id, DateTimeImmutable $at): bool
+    {
+        return $this->connection->table('recruitment_review_requests')->where('id', $id)->whereNull('reminded_at')->update(['reminded_at' => $this->format($at)]) > 0;
+    }
+
+    public function dueForOverdueNotice(DateTimeImmutable $today): array
+    {
+        return $this->connection->table('recruitment_review_requests')
+            ->where('status', ReviewRequestStatus::Open->value)->whereNull('overdue_notified_at')->where('due_on', '<', $today->format('Y-m-d'))
+            ->orderBy('id')->get()->map(fn (stdClass $row): ReviewRequest => $this->toRequest($row))->all();
+    }
+
+    public function claimOverdueNotice(int $id, DateTimeImmutable $at): bool
+    {
+        return $this->connection->table('recruitment_review_requests')->where('id', $id)->whereNull('overdue_notified_at')->update(['overdue_notified_at' => $this->format($at)]) > 0;
     }
 
     private function toRequest(stdClass $row): ReviewRequest

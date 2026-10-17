@@ -1,4 +1,4 @@
-# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14; sections 1 and 2 coded 2026-10-17, section 3 in part)
+# Phase 8: hiring managers: a role on the job, a review permission, a stage boundary and shortlist reviews (designed 2026-10-14; sections 1 and 2 coded 2026-10-17, section 3 coded)
 
 Gaps found from the hiring manager's point of view and against Mekari Talenta (help center articles 47603513135385 and 34576595122073: a "User"
 account role acting as hiring manager or interviewer, and a hiring team per job listing with Recruiter, Hiring Manager and Interviewer), chosen by
@@ -141,5 +141,20 @@ Interpretations, where the design left room:
   `application-final`; 404 for a stranger or another application). Changeable until the request is closed; it never moves the application. The request becomes `complete` when every reviewer answered every
   active application. **Lock:** an item's `locked` is true while the reviewer has not answered it: the others' `decision` and `reason` are null (`answered` still shows); the requester sees all.
 - **Close:** `POST company/review-requests/{id}/close` (who made it or `applications.manage`; 204, also when already closed; answers stay).
-- **Not coded (part B):** the notifications and emails (`review.requested`, `team.review_requested`, the reminder, `review.overdue`, `review.completed`), the preference `team_reviews`, the scheduler step, the tasks
-  `my_reviews` and `reviews_overdue`, `reviews[]` on the application detail, `review_summary` on the pipeline rows, the erasure of reasons, and the assessment summary on the card.
+
+## Coded: section 3, part B (2026-10-17, no migration)
+
+- **Preference:** `team_reviews` (email, on by default, company members). **Templates:** `team.review_requested` and `team.review_reminder` (job, requester, count, due date, message, link; no candidate name). The link is
+  `<COMPANY_APP_URL>/review-requests/<id>` (`ReviewPageLink`, config `app.company_app_url`, empty: no link). In-app types in `ReviewNotificationType`: `review.requested`, `review.reminder`, `review.overdue`, `review.completed`.
+- **Requested:** `CreateReviewRequest` dispatches `ReviewRequested`; `NotifyOfReviewsListener` (queued, two steps) writes `review.requested` to every reviewer and emails those who kept `team_reviews` on.
+- **Completed:** `AnswerReview` dispatches `ReviewCompleted` when the request turns `complete`; the requester gets `review.completed`.
+- **Time-driven:** `SendReviewNotices` (command `recruitment:send-review-notices`, hourly, `onOneServer`). The reminder (`review.reminder` and `team.review_reminder`, to reviewers with active applications left, once, `reminded_at`) goes from 08:00
+  Jakarta time of the day before the due day; a request made after that moment gets none. The overdue notice (`review.overdue`, with the number of answers awaited, to the requester, once, `overdue_notified_at`) goes after the due
+  day has passed. A closed or complete request, and one with nothing left to answer, notifies nobody.
+- **Tasks:** `my_reviews` (order 33, `applications.review`; the active applications of open requests the member has not answered; filter `company/review-requests?filter[state]=pending`) and `reviews_overdue` (order 34,
+  `applications.manage`; open requests the member made past their due day; filter `company/review-requests?filter[role]=requester&filter[state]=overdue`).
+- **Lists:** `GET company/review-requests` gets `filter[role]=requester` (the requests the caller made; `applications.manage`) and `filter[state]=overdue`.
+- **Shown elsewhere:** `reviews[]` on the application detail (`request {id, due_on, status}`, `reviewer`, `decision`, `reason`, `answered_at`; the lock applies: a reviewer who has not answered sees only their own; none for a panel-only
+  member) and `review_summary {advance, decline, maybe, pending}` on the pipeline rows (over the requests that are not closed, null when none names the application; a locked reviewer sees only their own pending answer counted).
+- **Erasure:** the reasons of reviews about an erased applicant are cleared with the other personal text; the decisions stay.
+- **Not coded:** the assessment summary on the review card, and a recruiter-facing "remind now" (not in the design).

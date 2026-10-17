@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\Events\ReviewCompleted;
 use Src\Recruitment\Domain\ReviewAnswer;
 use Src\Recruitment\Domain\ReviewDecision;
 use Src\Recruitment\Domain\ReviewRequestRepository;
@@ -12,6 +13,7 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -20,7 +22,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * A reviewer answers `advance`, `decline` (with a reason) or `maybe` about an application of a review request, and may change the answer while the request is not closed. An answer never
- * moves the application. The request becomes `complete` when every reviewer answered every application that is still active.
+ * moves the application. The request becomes `complete` when every reviewer answered every application that is still active, and the requester is told.
  */
 final readonly class AnswerReview
 {
@@ -30,6 +32,7 @@ final readonly class AnswerReview
         private ApplicationRepository $applications,
         private ReviewRequestViews $views,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -43,7 +46,7 @@ final readonly class AnswerReview
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsReview);
 
-        $this->transactions->run(function () use ($member, $requestId, $applicationId, $decision, $reason): void {
+        $completed = $this->transactions->run(function () use ($member, $requestId, $applicationId, $decision, $reason): ?ReviewCompleted {
             $request = $this->requests->find($requestId, forUpdate: true);
 
             if ($request === null || $request->companyId !== $member->companyId || ! in_array($member->userId, $this->requests->reviewerIds([$requestId])[$requestId] ?? [], true)) {
@@ -71,8 +74,16 @@ final readonly class AnswerReview
 
             if ($request->status === ReviewRequestStatus::Open && $this->isComplete($requestId, $items)) {
                 $this->requests->setStatus($requestId, ReviewRequestStatus::Complete, $now);
+
+                return new ReviewCompleted($requestId, $now);
             }
+
+            return null;
         });
+
+        if ($completed instanceof ReviewCompleted) {
+            $this->events->dispatch([$completed]);
+        }
 
         return $this->views->of([$this->requests->find($requestId) ?? throw EntityNotFound::of('ReviewRequest', $requestId)], $member->userId)[0];
     }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationInterviewResult;
+use Src\Recruitment\Application\ApplicationReviewEntry;
 use Src\Recruitment\Application\CompanyApplicationView;
 use Src\Recruitment\Application\OtherApplicationView;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
@@ -44,6 +45,14 @@ final class CompanyApplicationDetailResource extends JsonResource
                 'applied_at' => $other->application->appliedAt->format(DATE_ATOM),
             ], $view->otherApplications),
             'others_hidden' => $view->othersHidden,
+            /** @var list<array{request: array{id: int, due_on: string, status: string}, reviewer: array{id: int, name: string|null}, decision: 'advance'|'decline'|'maybe', reason: string|null, answered_at: string}> the answers of shortlist reviews about this application; a reviewer sees the others' only after sending their own */
+            'reviews' => array_map(static fn (ApplicationReviewEntry $entry): array => [
+                'request' => ['id' => $entry->requestId, 'due_on' => $entry->dueOn->format('Y-m-d'), 'status' => $entry->requestStatus->value],
+                'reviewer' => ['id' => $entry->reviewerId, 'name' => $entry->reviewerName],
+                'decision' => $entry->decision->value,
+                'reason' => $entry->reason,
+                'answered_at' => $entry->answeredAt->format(DATE_ATOM),
+            ], $view->reviews),
             /** @var array{average: float|null, count: int, mine: int|null, members: list<array{user_id: int, name: string, stars: int}>} */
             'rating' => (new ApplicationRatingResource($view->rating))->resolve($request),
             /** @var list<array{id: int, status: string, starts_at: string, format: string, result: array{score: float|null, scorecards_sent: int, panel_size: int, recommendations: array<string, int>}|null}> */

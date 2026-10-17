@@ -39,6 +39,7 @@ final readonly class RecruiterApplicationRow
         public int $otherApplicationsCount = 0,
         public ?string $interviewState = null,
         public ?array $interviewRsvp = null,
+        public ?array $reviewSummary = null,
     ) {}
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */
@@ -55,6 +56,16 @@ final readonly class RecruiterApplicationRow
     public function withInterviewRsvp(?array $counts): self
     {
         return $this->with(interviewRsvp: $counts);
+    }
+
+    /**
+     * The row with what the shortlist reviews say about it: the decisions given and the answers still awaited (null when no open review request names it).
+     *
+     * @param  ?array{advance: int, decline: int, maybe: int, pending: int}  $summary
+     */
+    public function withReviewSummary(?array $summary): self
+    {
+        return $this->with(reviewSummary: $summary);
     }
 
     /** The row with the number of other active applications of the same person that the viewer may see. */

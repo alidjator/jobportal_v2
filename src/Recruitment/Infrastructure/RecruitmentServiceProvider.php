@@ -31,6 +31,8 @@ use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
 use Src\Recruitment\Application\RecruitmentSettings;
+use Src\Recruitment\Application\ReviewNotificationType;
+use Src\Recruitment\Application\ReviewPageLink;
 use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
@@ -59,6 +61,8 @@ use Src\Recruitment\Domain\Events\InterviewPanelAnswered;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Events\RecordingConverted;
 use Src\Recruitment\Domain\Events\RecordingStopped;
+use Src\Recruitment\Domain\Events\ReviewCompleted;
+use Src\Recruitment\Domain\Events\ReviewRequested;
 use Src\Recruitment\Domain\Events\VoiceRecordingStopped;
 use Src\Recruitment\Domain\InterviewKitRepository;
 use Src\Recruitment\Domain\InterviewPanel;
@@ -102,6 +106,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfPanelAnswerListener;
+use Src\Recruitment\Infrastructure\Listeners\NotifyOfReviewsListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfWithdrawalListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
@@ -135,11 +140,13 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Infrastructure\Tasks\MyReviewsTask;
 use Src\Recruitment\Infrastructure\Tasks\MyRsvpTask;
 use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersExpiringTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersWaitingTask;
 use Src\Recruitment\Infrastructure\Tasks\PanelDeclinedTask;
+use Src\Recruitment\Infrastructure\Tasks\ReviewsOverdueTask;
 use Src\Recruitment\Infrastructure\Tasks\StaleApplicationsTask;
 use Src\Recruitment\Infrastructure\Video\BroadcastLobbySignal;
 use Src\Recruitment\Infrastructure\Video\BroadcastRecordingSignal;
@@ -163,6 +170,7 @@ use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
+use Src\Recruitment\Interface\Console\SendReviewNoticesCommand;
 use Src\Recruitment\Interface\Console\SendStartingSoonRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
@@ -267,6 +275,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
         ));
+        $this->app->bind(ReviewPageLink::class, fn ($app): ReviewPageLink => new ReviewPageLink($app->make(Repository::class)->get('app.company_app_url')));
         $this->app->bind(TeamApplicationPageLink::class, fn ($app): TeamApplicationPageLink => new TeamApplicationPageLink($app->make(Repository::class)->get('app.company_application_url')));
         $this->app->bind(ApplicationPageLink::class, fn ($app): ApplicationPageLink => new ApplicationPageLink($app->make(Repository::class)->get('app.application_url')));
         $this->app->bind(InterviewCalendar::class, function ($app): InterviewCalendar {
@@ -319,6 +328,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(MyScorecardsTask::class),
                 $this->app->make(MyRsvpTask::class),
                 $this->app->make(PanelDeclinedTask::class),
+                $this->app->make(MyReviewsTask::class),
+                $this->app->make(ReviewsOverdueTask::class),
                 $this->app->make(OffersWaitingTask::class),
                 $this->app->make(OffersExpiringTask::class),
             );
@@ -328,11 +339,12 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(SendStartingSoonRemindersCommand::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+            $schedule->command(SendReviewNoticesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVoiceSessionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
@@ -357,6 +369,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $catalog->add(
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::INTERVIEW_PREFERENCE, 'Email when a job seeker confirms, declines or proposes another time for an interview you take part in, and when a withdrawal cancels one.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::SCORECARD_PREFERENCE, 'Email when your scorecard of an interview is still missing a day and three days after it.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
+                new NotificationPreferenceDefinition(ReviewNotificationType::PREFERENCE, 'Email when you are asked to review candidates of a job and the day before the review is due.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::OFFER_PREFERENCE, 'Email when a job seeker accepts or declines an offer you sent.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(EmailTeamOfEvents::APPLICATION_PREFERENCE, 'Email for each new application to a job assigned to you (the daily digest counts them anyway).', [NotificationChannel::Email->value => false], [ActorKind::CompanyMember->value]),
             );
@@ -381,6 +394,9 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);
+        Event::listen(ReviewRequested::class, [NotifyOfReviewsListener::class, 'requestedInApp']);
+        Event::listen(ReviewRequested::class, [NotifyOfReviewsListener::class, 'requestedEmail']);
+        Event::listen(ReviewCompleted::class, [NotifyOfReviewsListener::class, 'completed']);
         Event::listen(InterviewPanelAnswered::class, [NotifyOfPanelAnswerListener::class, 'inApp']);
         Event::listen(InterviewPanelAnswered::class, [NotifyOfPanelAnswerListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);

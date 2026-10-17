@@ -27,6 +27,7 @@ final readonly class GetCompanyApplication
         private ApplicationRepository $applications,
         private ContactVisibility $contact,
         private OtherApplications $others,
+        private ApplicationReviews $reviews,
         private Settings $settings,
         private Clock $clock,
     ) {}
@@ -85,6 +86,7 @@ final readonly class GetCompanyApplication
             StageClock::isStale($data->stageType, $days, $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $data->companyId)),
             $otherApplications,
             $othersHidden,
+            $team->panelOnly ? [] : $this->reviews->forApplication($id, $member->userId),
         );
     }
 }

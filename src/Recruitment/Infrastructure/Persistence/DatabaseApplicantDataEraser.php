@@ -48,6 +48,12 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();
 
+        // The reason a reviewer gave about the candidate may quote them; the decisions stay (they hold no personal text).
+        $this->connection->table('recruitment_application_reviews')
+            ->whereIn('application_id', (clone $applications)->select('id'))
+            ->whereNotNull('reason')
+            ->update(['reason' => null]);
+
         // Recordings and attendance go with the applicant even when the interview stays for its scorecard (the files were deleted before).
         $this->connection->table('recruitment_interview_recordings')->whereIn('interview_id', $this->interviewIds($userId))->delete();
         $this->connection->table('recruitment_interview_attendances')->whereIn('interview_id', $this->interviewIds($userId))->delete();

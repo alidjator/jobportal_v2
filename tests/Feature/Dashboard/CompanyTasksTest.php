@@ -77,15 +77,15 @@ final class CompanyTasksTest extends FeatureTestCase
         $response = $this->tasks()->assertOk();
 
         $this->assertSame(
-            ['stale_applications', 'my_scorecards', 'my_rsvp', 'panel_declined', 'my_scoring', 'offers_waiting', 'offers_expiring', 'jobs_closing', 'jobs_draft', 'jobs_without_applicants'],
+            ['stale_applications', 'my_scorecards', 'my_rsvp', 'panel_declined', 'my_reviews', 'reviews_overdue', 'my_scoring', 'offers_waiting', 'offers_expiring', 'jobs_closing', 'jobs_draft', 'jobs_without_applicants'],
             array_column($response->json('data.items'), 'key'),
         );
         $this->assertSame('2026-10-14T09:00:00+00:00', $response->json('data.generated_at'));
         $this->assertSame('company/applications?filter[stale]=1', $response->json('data.items.0.filter'));
-        $this->assertSame('company/jobs?filter[status]=active&filter[deadline_to]=2026-10-21', $response->json('data.items.7.filter'));
+        $this->assertSame('company/jobs?filter[status]=active&filter[deadline_to]=2026-10-21', $response->json('data.items.9.filter'));
 
         $this->assertSame(
-            ['stale_applications' => 1, 'my_scorecards' => 0, 'my_rsvp' => 0, 'panel_declined' => 0, 'my_scoring' => 0, 'offers_waiting' => 0, 'offers_expiring' => 0, 'jobs_closing' => 1, 'jobs_draft' => 1, 'jobs_without_applicants' => 1],
+            ['stale_applications' => 1, 'my_scorecards' => 0, 'my_rsvp' => 0, 'panel_declined' => 0, 'my_reviews' => 0, 'reviews_overdue' => 0, 'my_scoring' => 0, 'offers_waiting' => 0, 'offers_expiring' => 0, 'jobs_closing' => 1, 'jobs_draft' => 1, 'jobs_without_applicants' => 1],
             $this->counts(),
         );
     }

@@ -7,6 +7,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\Events\ReviewRequested;
 use Src\Recruitment\Domain\ReviewRequest;
 use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\ReviewRequestStatus;
@@ -14,6 +15,7 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -36,6 +38,7 @@ final readonly class CreateReviewRequest
         private JobDirectory $jobs,
         private ReviewRequestViews $views,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -75,6 +78,8 @@ final readonly class CreateReviewRequest
 
             return $request;
         });
+
+        $this->events->dispatch([new ReviewRequested((int) $saved->id, $now)]);
 
         return $this->views->of([$saved], $member->userId)[0];
     }

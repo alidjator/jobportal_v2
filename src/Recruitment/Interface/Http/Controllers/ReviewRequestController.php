@@ -39,10 +39,10 @@ final class ReviewRequestController extends ApiController
         return ReviewRequestResource::collection(PaginatedResources::paginator($page, $request));
     }
 
-    /** The review requests where the caller is a reviewer. */
+    /** The review requests where the caller is a reviewer, or that the caller made (`filter[role]=requester`). */
     public function mine(ListMyReviewRequestsRequest $request, ActorResolver $actors, ListMyReviewRequests $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->state(), $request->pageRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->state(), $request->role(), $request->pageRequest());
 
         return ReviewRequestResource::collection(PaginatedResources::paginator($page, $request));
     }
