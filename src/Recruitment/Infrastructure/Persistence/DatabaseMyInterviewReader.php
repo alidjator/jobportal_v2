@@ -13,6 +13,7 @@ use Src\Recruitment\Application\MyInterviewReader;
 use Src\Recruitment\Application\MyInterviewRow;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewStatus;
+use Src\Recruitment\Domain\Rsvp;
 use Src\Recruitment\Domain\ScorecardStatus;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Pagination\CursorPage;
@@ -38,7 +39,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
             $builder->whereIn('a.job_id', $query->jobIds);
         }
 
-        if (! $query->allOfCompany || $query->scorecardPending) {
+        if ((! $query->allOfCompany && $query->rsvp !== 'declined') || $query->scorecardPending || $query->rsvp === 'pending') {
             $builder->where(fn (Builder $mine) => $mine->where('i.interviewer_id', $query->userId)->orWhereExists(
                 fn (Builder $panel) => $panel->selectRaw('1')->from('recruitment_interview_participants as p')->whereColumn('p.interview_id', 'i.id')->where('p.user_id', $query->userId),
             ));
@@ -58,6 +59,21 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
                     ->where('s.member_id', $query->userId)->where('s.status', ScorecardStatus::Submitted->value));
         }
 
+        if ($query->rsvp !== null) {
+            $builder->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])->where('i.starts_at', '>', $now)->whereNotIn('a.stage_type', $final);
+        }
+
+        if ($query->rsvp === 'pending') {
+            $builder->where(fn (Builder $owed) => $owed->where(fn (Builder $main) => $main->where('i.interviewer_id', $query->userId)->where('i.interviewer_rsvp', Rsvp::Pending->value))
+                ->orWhereExists(fn (Builder $panel) => $panel->selectRaw('1')->from('recruitment_interview_participants as p')->whereColumn('p.interview_id', 'i.id')
+                    ->where('p.user_id', $query->userId)->where('p.rsvp', Rsvp::Pending->value)));
+        }
+
+        if ($query->rsvp === 'declined') {
+            $builder->where('i.created_by', $query->userId)->where(fn (Builder $declined) => $declined->where('i.interviewer_rsvp', Rsvp::Declined->value)
+                ->orWhereExists(fn (Builder $panel) => $panel->selectRaw('1')->from('recruitment_interview_participants as p')->whereColumn('p.interview_id', 'i.id')->where('p.rsvp', Rsvp::Declined->value)));
+        }
+
         if ($request->cursor !== null) {
             [$time, $id] = $this->decode($request->cursor);
             $comparison = $query->upcoming ? '>' : '<';
@@ -68,7 +84,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
 
         $direction = $query->upcoming ? 'asc' : 'desc';
         $rows = $builder->orderBy('i.starts_at', $direction)->orderBy('i.id', $direction)->limit($request->perPage + 1)->get([
-            'i.id', 'i.application_id', 'a.job_id', 'a.stage_type', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.interviewer_id',
+            'i.id', 'i.application_id', 'a.job_id', 'a.stage_type', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.interviewer_id', 'i.interviewer_rsvp',
             new Expression("a.profile_snapshot->>'name' as candidate_name"),
         ])->all();
 
@@ -77,9 +93,10 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
         $last = $rows === [] ? null : $rows[array_key_last($rows)];
         $roles = $this->roles($rows, $query->userId);
         $sent = $this->sent($rows, $query->userId);
+        $answers = $this->answers($rows, $query->userId);
 
         return new CursorPage(
-            array_map(fn (stdClass $row): MyInterviewRow => $this->toRow($row, $roles[(int) $row->id] ?? null, in_array((int) $row->id, $sent, true), $query->now), $rows),
+            array_map(fn (stdClass $row): MyInterviewRow => $this->toRow($row, $roles[(int) $row->id] ?? null, in_array((int) $row->id, $sent, true), $query->now, $answers[(int) $row->id] ?? null), $rows),
             $hasMore && $last !== null ? $this->encode((string) $last->starts_at, (int) $last->id) : null,
             $request->perPage,
         );
@@ -110,6 +127,29 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
 
     /**
      * @param  list<stdClass>  $rows
+     * @return array<int, string> the member's own answer to the invitation by interview id, for the interviews they sit on
+     */
+    private function answers(array $rows, int $userId): array
+    {
+        $answers = [];
+
+        foreach ($rows as $row) {
+            if ((int) $row->interviewer_id === $userId) {
+                $answers[(int) $row->id] = (string) $row->interviewer_rsvp;
+            }
+        }
+
+        $ids = array_map(static fn (stdClass $row): int => (int) $row->id, $rows);
+
+        foreach ($this->connection->table('recruitment_interview_participants')->whereIn('interview_id', $ids)->where('user_id', $userId)->get(['interview_id', 'rsvp']) as $panel) {
+            $answers[(int) $panel->interview_id] ??= (string) $panel->rsvp;
+        }
+
+        return $answers;
+    }
+
+    /**
+     * @param  list<stdClass>  $rows
      * @return list<int> the interviews whose scorecard the member sent
      */
     private function sent(array $rows, int $userId): array
@@ -119,7 +159,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
             ->where('member_id', $userId)->where('status', ScorecardStatus::Submitted->value)->pluck('interview_id')->all());
     }
 
-    private function toRow(stdClass $row, ?string $role, bool $sent, DateTimeImmutable $now): MyInterviewRow
+    private function toRow(stdClass $row, ?string $role, bool $sent, DateTimeImmutable $now, ?string $rsvp): MyInterviewRow
     {
         $status = InterviewStatus::from((string) $row->status);
         $startsAt = $this->time((string) $row->starts_at);
@@ -138,6 +178,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
             InterviewFormat::from((string) $row->format),
             $role,
             $role === null ? null : ($sent ? 'sent' : ($open ? 'pending' : 'not_open')),
+            $role === null ? null : $rsvp,
         );
     }
 

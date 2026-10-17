@@ -133,9 +133,11 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Infrastructure\Tasks\MyRsvpTask;
 use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersExpiringTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersWaitingTask;
+use Src\Recruitment\Infrastructure\Tasks\PanelDeclinedTask;
 use Src\Recruitment\Infrastructure\Tasks\StaleApplicationsTask;
 use Src\Recruitment\Infrastructure\Video\BroadcastLobbySignal;
 use Src\Recruitment\Infrastructure\Video\BroadcastRecordingSignal;
@@ -312,6 +314,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $tasks->add(
                 $this->app->make(StaleApplicationsTask::class),
                 $this->app->make(MyScorecardsTask::class),
+                $this->app->make(MyRsvpTask::class),
+                $this->app->make(PanelDeclinedTask::class),
                 $this->app->make(OffersWaitingTask::class),
                 $this->app->make(OffersExpiringTask::class),
             );

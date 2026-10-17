@@ -41,6 +41,8 @@ final class CompanyApplicationResource extends JsonResource
             'stale' => $row->stale,
             /** @var 'not_scheduled'|'pending'|'confirmed'|'completed'|null null outside an interview stage */
             'interview_state' => $row->interviewState,
+            /** @var array{pending: int, declined: int}|null how many of the panel of the active interview have not answered the invitation and how many cannot attend; null without an active interview */
+            'interview_rsvp' => $row->interviewRsvp,
             'other_applications_count' => $row->otherApplicationsCount,
         ];
     }

@@ -29,6 +29,8 @@ final class MyInterviewResource extends JsonResource
             'role' => $this->resource->role,
             /** The member's scorecard: owed now (`pending`), `sent`, or `not_open` (the interview has not started or the application is final); null without a place on the panel. */
             'scorecard' => $this->resource->scorecard,
+            /** The member's own answer to the invitation: `pending`, `accepted` or `declined`; null without a place on the panel. */
+            'rsvp' => $this->resource->rsvp,
         ];
     }
 }

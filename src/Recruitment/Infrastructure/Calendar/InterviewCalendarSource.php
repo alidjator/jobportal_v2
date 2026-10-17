@@ -7,7 +7,9 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
+use Src\Recruitment\Domain\InterviewRsvps;
 use Src\Recruitment\Domain\InterviewStatus;
+use Src\Recruitment\Domain\RsvpAnswer;
 use Src\Recruitment\Infrastructure\Persistence\HiringManagerBound;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Calendar\CalendarEvent;
@@ -22,7 +24,7 @@ use Src\Shared\Application\Job\JobDirectory;
  */
 final readonly class InterviewCalendarSource implements CalendarSource
 {
-    public function __construct(private ConnectionInterface $connection, private JobDirectory $jobs, private CompanyMemberAccounts $accounts) {}
+    public function __construct(private ConnectionInterface $connection, private JobDirectory $jobs, private CompanyMemberAccounts $accounts, private InterviewRsvps $rsvps) {}
 
     public function types(): array
     {
@@ -60,6 +62,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
             $panels[(int) $participant->interview_id][] = (int) $participant->user_id;
         }
 
+        $answers = $this->rsvps->forInterviews($rows->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all());
         $userIds = $rows->pluck('interviewer_id')->map(static fn (mixed $id): int => (int) $id)->all();
 
         foreach ($panels as $members) {
@@ -74,7 +77,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
 
         $titles = $this->jobs->titles($rows->pluck('job_id')->map(static fn (mixed $id): int => (int) $id)->unique()->values()->all());
 
-        return $rows->map(function (object $row) use ($scope, $panels, $names, $titles): CalendarEvent {
+        return $rows->map(function (object $row) use ($scope, $panels, $names, $titles, $answers): CalendarEvent {
             $id = (int) $row->id;
             $interviewerId = (int) $row->interviewer_id;
             $panel = $panels[$id] ?? [];
@@ -102,8 +105,10 @@ final readonly class InterviewCalendarSource implements CalendarSource
                     'format' => (string) $row->format,
                     'location' => $row->location === null ? null : (string) $row->location,
                     'has_meeting_link' => $row->meeting_url !== null,
-                    'interviewer' => ['id' => $interviewerId, 'name' => $names[$interviewerId] ?? null],
-                    'panel' => array_map(static fn (int $userId): array => ['id' => $userId, 'name' => $names[$userId] ?? null], $panel),
+                    'interviewer' => ['id' => $interviewerId, 'name' => $names[$interviewerId] ?? null, 'rsvp' => ($answers[$id][$interviewerId] ?? RsvpAnswer::pending())->rsvp->value],
+                    'panel' => array_map(static fn (int $userId): array => ['id' => $userId, 'name' => $names[$userId] ?? null, 'rsvp' => ($answers[$id][$userId] ?? RsvpAnswer::pending())->rsvp->value], $panel),
+                    /** The answer of the member who asks to the invitation; null when they do not sit on the panel. */
+                    'my_rsvp' => $involved ? ($answers[$id][$scope->userId] ?? RsvpAnswer::pending())->rsvp->value : null,
                 ],
                 $involved,
                 $this->actions($scope, $status, $startsAt, $involved),

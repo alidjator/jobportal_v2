@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\InterviewRsvps;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Pagination\Page;
@@ -21,6 +22,7 @@ final readonly class ListJobApplications
         private RecruitmentAccess $access,
         private RecruiterApplicationReader $reader,
         private InterviewResults $results,
+        private InterviewRsvps $rsvps,
         private StageRepository $stages,
         private OtherApplications $others,
         private HiringManagerScope $scope,
@@ -44,9 +46,10 @@ final readonly class ListJobApplications
         $ids = array_map(static fn (RecruiterApplicationRow $row): int => $row->id, $page->items);
         $results = $this->results->latestForApplications($ids, $member->userId);
         $others = $this->others->counts($member, $ids);
+        $answers = $this->rsvps->countsForApplications($ids);
 
         return new JobApplicationList(
-            new Page(array_map(static fn (RecruiterApplicationRow $row): RecruiterApplicationRow => $row->withInterviewResult($results[$row->id] ?? null)->withOtherApplications($others[$row->id] ?? 0), $page->items), $page->total, $page->request),
+            new Page(array_map(static fn (RecruiterApplicationRow $row): RecruiterApplicationRow => $row->withInterviewResult($results[$row->id] ?? null)->withOtherApplications($others[$row->id] ?? 0)->withInterviewRsvp($answers[$row->id] ?? null), $page->items), $page->total, $page->request),
             array_map(
                 static fn ($stage): StageCount => new StageCount((int) $stage->id, $stage->type, $stage->name, $counts[(int) $stage->id] ?? 0),
                 $this->stages->forCompany($member->companyId),

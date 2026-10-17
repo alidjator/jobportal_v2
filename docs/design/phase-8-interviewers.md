@@ -1,4 +1,4 @@
-# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; sections 1 to 4 coded 2026-10-17, section 2 in part)
+# Phase 8: interviewers: access through the panel, invitations and RSVP, reminders and scorecard follow-up (designed 2026-10-15; sections 1 to 4 coded 2026-10-17)
 
 Gaps found from the interviewer's point of view and against Mekari Talenta (help center articles 47603513135385, 34576595122073: an Interviewer
 role limited to the jobs it is assigned to; 34781370644761 and 42469173015193: interviewers picked when scheduling, "Submit interview feedback"
@@ -129,7 +129,7 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
   same hourly command) writes `interview.scorecard_reminder` with `second: true` and the same email marked "(second reminder)" to the members still missing, and
   `interview.scorecards_missing` (`missing` = how many) to who scheduled the interview and the main interviewer. The email follows the new preference `team_scorecard_reminders`
   (on, company members); `team_scoring` keeps the assessor work only. The lookback of 7 days is counted from each step's hour.
-- **Not coded:** pointing the `my_scorecards` task at `GET company/interviews` (see section 2 below for the rest of the RSVP work).
+- **Not coded:** pointing the `my_scorecards` task at `GET company/interviews` (its `filter` already does: `company/interviews?filter[my_scorecard]=pending`; the task list of the recruiter workday needs nothing more).
 
 ## Coded: section 2, part A (2026-10-17, migration `000161`)
 
@@ -148,4 +148,14 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
   "Tidak bisa" dispatches `InterviewPanelAnswered`: in-app `interview.panel_declined` and email `team.interview_panel_declined` (with the note, by `team_interview_changes`) to the member
   who scheduled it; nobody is told when they decline their own interview or when the answer is `accepted`.
 - **Shown:** `participants[].rsvp` and `interviewer_rsvp` (`{answer, note, at}`) on the team's interview (`CompanyInterviewResource`). Only the answer to the invitation: the panel stays as it is.
-- **Not coded (part B):** the tasks `my_rsvp` and `panel_declined`, `filter[rsvp]=pending` and the own RSVP on `GET company/interviews`, the RSVP on the calendar event and the pipeline's interview badge.
+
+## Coded: section 2, part B (2026-10-17, no migration)
+
+- **List:** `GET company/interviews` gets `filter[rsvp]=pending` (upcoming pending or confirmed interviews whose application is not final, where the member sits on the panel and has not
+  answered) and `filter[rsvp]=declined` (upcoming interviews **the member scheduled** with a main interviewer or panel member who declined; not limited to a seat on the panel); each row has
+  the member's own `rsvp` (`pending`, `accepted`, `declined`; null without a seat). `ListMyInterviews::execute` takes the filter as a new argument after `scorecardPending`.
+- **Tasks** (`TaskProvider`, so on `GET company/tasks`): `my_rsvp` (order 31, no permission; filter `company/interviews?filter[rsvp]=pending`) and `panel_declined` (order 32, needs
+  `interviews.manage`; filter `company/interviews?filter[rsvp]=declined`), counted by the same rules; hiring manager boundary and job scope as the other interview tasks.
+- **Badges:** `interview_rsvp` on the rows of `GET company/jobs/{id}/applications` (`{pending, declined}` over the main interviewer and the extra members of the active interview, null without
+  one; port method `InterviewRsvps::countsForApplications`) for the pipeline ("1 belum menjawab", "1 tidak bisa"); the calendar event's `details` has `rsvp` on `interviewer` and on every `panel`
+  member and `my_rsvp` (the asking member's own answer, null without a seat).

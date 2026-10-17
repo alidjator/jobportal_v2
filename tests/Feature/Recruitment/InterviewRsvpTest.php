@@ -4,6 +4,7 @@ namespace Tests\Feature\Recruitment;
 
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\Recruitment\Application\SendStartingSoonReminders;
@@ -248,5 +249,100 @@ final class InterviewRsvpTest extends FeatureTestCase
 
         $this->assertSame(['interview.starting_soon'], $this->types($this->recruiterId, 'interview.starting_soon'));
         $this->assertSame([], $this->types($this->adminId, 'interview.starting_soon'));
+    }
+
+    // ----- part B: tasks, the list, the badges -----
+
+    /** @return array<string, int> */
+    private function counts(string $token): array
+    {
+        Cache::flush();
+        $items = $this->api('GET', '/company/tasks', token: $token)->assertOk()->json('data.items');
+
+        return array_combine(array_column($items, 'key'), array_column($items, 'count'));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function mine(string $token, string $query): array
+    {
+        return $this->api('GET', '/company/interviews?'.$query, token: $token)->assertOk()->json('data');
+    }
+
+    public function test_the_unanswered_invitations_are_a_task_and_a_filter_with_the_own_answer(): void
+    {
+        $this->openInterview();
+
+        $this->assertSame(1, $this->counts($this->adminToken)['my_rsvp']);
+        $this->assertSame(1, $this->counts($this->recruiterToken)['my_rsvp']);
+        $this->assertSame(0, $this->counts($this->secondRecruiterToken)['my_rsvp']);
+
+        $rows = $this->mine($this->adminToken, 'filter[rsvp]=pending');
+        $this->assertSame([$this->interview], array_column($rows, 'id'));
+        $this->assertSame('pending', $rows[0]['rsvp']);
+        $this->assertSame('panel', $rows[0]['role']);
+
+        $this->rsvp($this->adminToken, 'accepted')->assertOk();
+
+        $this->assertSame(0, $this->counts($this->adminToken)['my_rsvp']);
+        $this->assertSame([], $this->mine($this->adminToken, 'filter[rsvp]=pending'));
+        $this->assertSame('accepted', $this->mine($this->adminToken, 'filter[when]=upcoming')[0]['rsvp']);
+        $this->assertSame(1, $this->counts($this->recruiterToken)['my_rsvp'], 'The main interviewer has not answered.');
+    }
+
+    public function test_an_interview_that_started_needs_no_answer(): void
+    {
+        $this->openInterview();
+        $this->moveClockTo('2026-10-08 02:30:00');
+
+        $this->assertSame(0, $this->counts($this->adminToken)['my_rsvp']);
+        $this->assertSame([], $this->mine($this->adminToken, 'filter[rsvp]=pending'));
+    }
+
+    public function test_the_scheduler_has_a_task_and_a_list_for_the_members_who_cannot_attend(): void
+    {
+        $this->openInterview();
+        $this->assertSame(0, $this->counts($this->recruiterToken)['panel_declined']);
+        $this->assertSame([], $this->mine($this->recruiterToken, 'filter[rsvp]=declined'));
+
+        $this->rsvp($this->adminToken, 'declined')->assertOk();
+
+        $this->assertSame(1, $this->counts($this->recruiterToken)['panel_declined']);
+        $this->assertSame(0, $this->counts($this->adminToken)['panel_declined'], 'Only the member who scheduled it.');
+        $this->assertSame([$this->interview], array_column($this->mine($this->recruiterToken, 'filter[rsvp]=declined'), 'id'));
+
+        $this->rsvp($this->adminToken, 'accepted')->assertOk();
+        $this->assertSame(0, $this->counts($this->recruiterToken)['panel_declined']);
+    }
+
+    public function test_the_pipeline_shows_how_many_have_not_answered_and_how_many_cannot_attend(): void
+    {
+        $this->openInterview();
+        $row = fn (): mixed => $this->api('GET', "/company/jobs/{$this->job}/applications", [], $this->recruiterToken)->assertOk()->json('data.0.interview_rsvp');
+
+        $this->assertSame(['pending' => 2, 'declined' => 0], $row());
+
+        $this->rsvp($this->adminToken, 'declined')->assertOk();
+        $this->rsvp($this->recruiterToken, 'accepted')->assertOk();
+
+        $this->assertSame(['pending' => 0, 'declined' => 1], $row());
+    }
+
+    public function test_an_application_without_an_active_interview_has_no_badge(): void
+    {
+        $this->api('GET', "/company/jobs/{$this->job}/applications", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.0.interview_rsvp', null);
+    }
+
+    public function test_the_calendar_event_carries_the_answers_and_the_own_one(): void
+    {
+        $this->openInterview();
+        $this->rsvp($this->adminToken, 'declined')->assertOk();
+
+        $call = fn (string $token): mixed => collect($this->api('GET', '/company/calendar?'.http_build_query(['from' => '2026-10-01', 'to' => '2026-10-31']), token: $token)->assertOk()->json('data'))->firstWhere('id', "interview:{$this->interview}")['details'];
+
+        $details = $call($this->recruiterToken);
+        $this->assertSame('pending', $details['interviewer']['rsvp']);
+        $this->assertSame('declined', $details['panel'][0]['rsvp']);
+        $this->assertSame('pending', $details['my_rsvp']);
+        $this->assertSame('declined', $call($this->adminToken)['my_rsvp']);
     }
 }

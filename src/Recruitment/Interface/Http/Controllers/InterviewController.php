@@ -26,7 +26,7 @@ final class InterviewController extends ApiController
     /** The interviews of the caller: the ones they sit on, upcoming or past, or every interview of the jobs they may see. */
     public function mine(ListMyInterviewsRequest $request, ActorResolver $actors, ListMyInterviews $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->allOfCompany(), $request->cursorRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->rsvp(), $request->allOfCompany(), $request->cursorRequest());
 
         return MyInterviewResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }

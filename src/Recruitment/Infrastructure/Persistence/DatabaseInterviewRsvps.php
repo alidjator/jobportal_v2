@@ -30,6 +30,37 @@ final readonly class DatabaseInterviewRsvps implements InterviewRsvps
         return $answers;
     }
 
+    public function countsForApplications(array $applicationIds): array
+    {
+        $interviews = $this->connection->table('recruitment_interviews')->whereIn('application_id', $applicationIds)->whereIn('status', ['pending', 'confirmed'])
+            ->get(['id', 'application_id', 'interviewer_rsvp']);
+
+        $counts = [];
+        $applications = [];
+
+        foreach ($interviews as $row) {
+            $applications[(int) $row->id] = (int) $row->application_id;
+            $counts[(int) $row->application_id] = ['pending' => 0, 'declined' => 0];
+            $this->count($counts[(int) $row->application_id], (string) $row->interviewer_rsvp);
+        }
+
+        foreach ($this->connection->table('recruitment_interview_participants')->whereIn('interview_id', array_keys($applications))->get(['interview_id', 'rsvp']) as $row) {
+            $this->count($counts[$applications[(int) $row->interview_id]], (string) $row->rsvp);
+        }
+
+        return $counts;
+    }
+
+    /** @param  array{pending: int, declined: int}  $counts */
+    private function count(array &$counts, string $rsvp): void
+    {
+        if ($rsvp === Rsvp::Pending->value) {
+            $counts['pending']++;
+        } elseif ($rsvp === Rsvp::Declined->value) {
+            $counts['declined']++;
+        }
+    }
+
     public function answer(int $interviewId, int $userId, Rsvp $rsvp, ?string $note, DateTimeImmutable $at): void
     {
         $isInterviewer = $this->connection->table('recruitment_interviews')->where('id', $interviewId)->where('interviewer_id', $userId)->exists();

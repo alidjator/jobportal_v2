@@ -38,12 +38,23 @@ final readonly class RecruiterApplicationRow
         public bool $stale = false,
         public int $otherApplicationsCount = 0,
         public ?string $interviewState = null,
+        public ?array $interviewRsvp = null,
     ) {}
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */
     public function withInterviewResult(?InterviewResult $result): self
     {
         return $this->with(interviewResult: $result);
+    }
+
+    /**
+     * The row with the answers of the panel of its active interview to the invitation: how many have not answered and how many cannot attend (null without an active interview).
+     *
+     * @param  ?array{pending: int, declined: int}  $counts
+     */
+    public function withInterviewRsvp(?array $counts): self
+    {
+        return $this->with(interviewRsvp: $counts);
     }
 
     /** The row with the number of other active applications of the same person that the viewer may see. */
