@@ -31,8 +31,14 @@ interface ApplicationRepository
      */
     public function markViewed(int $id, DateTimeImmutable $at): void;
 
-    /** Stores the withdrawal of an application: the new stage, the freed key, the note, and the history entry (from the stage it was in, by the applicant). */
-    public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at): void;
+    /** Stores the withdrawal of an application: the new stage, the freed key, the note, the reason, and the history entry (from the stage it was in, by the applicant). */
+    public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at, ?WithdrawalReason $reason = null): void;
+
+    /**
+     * Stores a withdrawal marked by a team member: as `recordWithdrawal`, with the member as the actor and the team's own note on the history entry (the
+     * application's `withdrawn_note` stays the applicant's).
+     */
+    public function recordWithdrawalByTeam(Application $before, Application $after, int $actorId, WithdrawalReason $reason, ?string $note, DateTimeImmutable $at): void;
 
     /**
      * Stores a move by a recruiter: the new stage (the key stays, a rejected application still blocks applying again) and a history entry with the actor, the

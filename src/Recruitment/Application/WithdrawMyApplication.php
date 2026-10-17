@@ -3,14 +3,19 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
+use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\OfferRepository;
+use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
+use Src\Recruitment\Domain\WithdrawalReason;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Assessment\InvitedApplication;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -18,8 +23,8 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * The applicant withdraws an application from any active stage except `hired`, with an optional note. The application moves to the company's default
- * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again. An active interview and an active test are cancelled and a pending offer withdrawn.
+ * The applicant withdraws an application from any active stage except `hired`, with an optional reason (any but the team-only one) and note. The application moves to the company's default
+ * `withdrawn` stage and frees the "one live application per job" key, so the applicant may apply to that job again. An active interview and an active test are cancelled and a pending offer withdrawn. The job's team (and the interviewers of a cancelled interview) are told.
  */
 final readonly class WithdrawMyApplication
 {
@@ -33,6 +38,7 @@ final readonly class WithdrawMyApplication
         private OfferRepository $offers,
         private AssessmentInvitations $assessments,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -42,12 +48,13 @@ final readonly class WithdrawMyApplication
      * @throws StateConflict `application-not-withdrawable`, `applications-unavailable`
      * @throws BusinessRuleViolation `invalid-withdrawal`
      */
-    public function execute(Actor $actor, int $id, ?string $note): void
+    public function execute(Actor $actor, int $id, ?string $note, ?string $reason = null): void
     {
         $userId = $this->guard->userId($actor);
         $note = $this->note($note);
+        $reason = WithdrawalReason::fromRequest($reason, byTeam: false, code: 'invalid-withdrawal');
 
-        $this->transactions->run(function () use ($userId, $id, $note): void {
+        $event = $this->transactions->run(function () use ($userId, $id, $note, $reason): ApplicationWithdrawn {
             $application = $this->applications->findOfApplicant($userId, $id, forUpdate: true) ?? throw EntityNotFound::of('Application', $id);
 
             $withdrawnStage = null;
@@ -60,11 +67,17 @@ final readonly class WithdrawMyApplication
 
             $withdrawn = $application->withdraw($withdrawnStage->id ?? throw new StateConflict('This company cannot take applications right now.', 'applications-unavailable'), $note);
 
-            $this->applications->recordWithdrawal($application, $withdrawn, $this->clock->now());
-            $this->interviews->cancelActive($id);
+            $now = $this->clock->now();
+
+            $this->applications->recordWithdrawal($application, $withdrawn, $now, $reason);
+            $cancelled = $this->interviews->cancelActive($id);
             $this->offers->withdrawActive($id);
             $this->assessments->cancelActive(new InvitedApplication($id, $application->companyId, $application->jobId, $application->userId));
+
+            return new ApplicationWithdrawn($id, $application->jobId, $application->companyId, $userId, StageMoveActor::Applicant, $reason, null, [], $cancelled instanceof Interview ? (int) $cancelled->id : null, null, null, $now);
         });
+
+        $this->events->dispatch([$event]);
     }
 
     private function note(?string $note): ?string

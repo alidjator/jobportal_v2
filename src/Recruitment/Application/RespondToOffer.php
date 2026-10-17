@@ -5,13 +5,16 @@ namespace Src\Recruitment\Application;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
+use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\Stage;
+use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
+use Src\Recruitment\Domain\WithdrawalReason;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
@@ -54,7 +57,7 @@ final readonly class RespondToOffer
      * @throws StateConflict `no-active-offer`, `offer-expired` or `applications-unavailable`
      * @throws BusinessRuleViolation `invalid-answer`
      */
-    public function decline(Actor $actor, int $applicationId, ?string $note): OfferView
+    public function decline(Actor $actor, int $applicationId, ?string $note, ?string $reason = null): OfferView
     {
         $note = $note === null ? null : trim($note);
 
@@ -64,14 +67,16 @@ final readonly class RespondToOffer
             throw new BusinessRuleViolation($message, 'invalid-answer', extensions: ['errors' => ['note' => [$message]]]);
         }
 
-        return $this->apply($actor, $applicationId, OfferChange::Declined, StageType::Withdrawn, $note === '' ? null : $note);
+        $withdrawalReason = WithdrawalReason::fromRequest($reason, byTeam: false, code: 'invalid-answer');
+
+        return $this->apply($actor, $applicationId, OfferChange::Declined, StageType::Withdrawn, $note === '' ? null : $note, $withdrawalReason);
     }
 
-    private function apply(Actor $actor, int $applicationId, OfferChange $answer, StageType $target, ?string $note): OfferView
+    private function apply(Actor $actor, int $applicationId, OfferChange $answer, StageType $target, ?string $note, ?WithdrawalReason $reason = null): OfferView
     {
         $userId = $this->guard->userId($actor);
 
-        [$saved, $events] = $this->transactions->run(function () use ($userId, $applicationId, $answer, $target, $note): array {
+        [$saved, $events] = $this->transactions->run(function () use ($userId, $applicationId, $answer, $target, $note, $reason): array {
             $application = $this->applications->findOfApplicant($userId, $applicationId, forUpdate: true) ?? throw EntityNotFound::of('Application', $applicationId);
             $offer = $this->offers->active($applicationId, forUpdate: true) ?? throw new StateConflict('This application has no pending offer.', 'no-active-offer');
             $now = $this->clock->now();
@@ -85,12 +90,13 @@ final readonly class RespondToOffer
             if ($answer === OfferChange::Accepted) {
                 $this->applications->recordHire($application, $moved, $now);
             } else {
-                $this->applications->recordWithdrawal($application, $moved, $now);
+                $this->applications->recordWithdrawal($application, $moved, $now, $reason);
             }
 
             return [$saved, [
                 new ApplicationStageChanged($applicationId, $application->jobId, $application->companyId, $userId, $application->stageType, $moved->stageType, $now),
                 OfferChanged::of($answer, $application, $saved, $now),
+                ...($answer === OfferChange::Declined ? [new ApplicationWithdrawn($applicationId, $application->jobId, $application->companyId, $userId, StageMoveActor::Applicant, $reason, null, [$offer->createdBy], null, null, null, $now)] : []),
             ]];
         });
 

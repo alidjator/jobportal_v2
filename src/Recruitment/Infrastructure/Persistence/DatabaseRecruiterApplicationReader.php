@@ -18,6 +18,7 @@ use Src\Recruitment\Application\StageClock;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
+use Src\Recruitment\Domain\WithdrawalReason;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -270,6 +271,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
                 $entry->rejection_reason === null ? null : RejectionReason::from($entry->rejection_reason),
                 $entry->note,
                 $this->time((string) $entry->created_at),
+                $entry->withdrawal_reason === null ? null : WithdrawalReason::from($entry->withdrawal_reason),
             ))
             ->all();
     }

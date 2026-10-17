@@ -36,7 +36,7 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
-| 16 | `phase-8-withdrawals.md` | **next** (decided 2026-10-17): #8, #9, #11 and #12 are blocked, so coding continues here; it unblocks the team preferences of #8 section 3 |
+| 16 | `phase-8-withdrawals.md` | **coded 2026-10-17** (`000159`, parts A to C); it unblocks the team preferences of #8 section 3 |
 | 17 | `phase-8-platform-admin.md` sections 5 to 8 | section 6 (email suppression) **before the reset emails to the imported accounts**, with the SMTP provider, whatever its place here |
 | 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |

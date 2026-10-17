@@ -46,7 +46,7 @@ final class ApplicationController extends ApiController
 
     public function withdraw(WithdrawApplicationRequest $request, int $id, ActorResolver $actors, WithdrawMyApplication $withdraw): Response
     {
-        $withdraw->execute($actors->fromRequest($request), $id, $request->note());
+        $withdraw->execute($actors->fromRequest($request), $id, $request->note(), $request->reason());
 
         return response()->noContent();
     }

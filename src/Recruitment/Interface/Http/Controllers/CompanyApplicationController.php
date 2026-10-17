@@ -11,10 +11,12 @@ use Src\Recruitment\Application\GetCompanyApplicationResume;
 use Src\Recruitment\Application\ListJobApplications;
 use Src\Recruitment\Application\ProcessApplication;
 use Src\Recruitment\Application\StageCount;
+use Src\Recruitment\Application\WithdrawApplicationByTeam;
 use Src\Recruitment\Interface\Http\CsvDownload;
 use Src\Recruitment\Interface\Http\PdfDownload;
 use Src\Recruitment\Interface\Http\Requests\ExportJobApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\ListJobApplicationsRequest;
+use Src\Recruitment\Interface\Http\Requests\MarkApplicationWithdrawnRequest;
 use Src\Recruitment\Interface\Http\Requests\MoveApplicationRequest;
 use Src\Recruitment\Interface\Http\Requests\RejectApplicationRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationDetailResource;
@@ -61,6 +63,13 @@ final class CompanyApplicationController extends ApiController
     public function reject(RejectApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
     {
         $process->reject($actors->fromRequest($request), $id, $request->reason(), $request->note());
+
+        return response()->noContent();
+    }
+
+    public function withdraw(MarkApplicationWithdrawnRequest $request, int $id, ActorResolver $actors, WithdrawApplicationByTeam $withdraw): Response
+    {
+        $withdraw->execute($actors->fromRequest($request), $id, $request->reason(), $request->note(), $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

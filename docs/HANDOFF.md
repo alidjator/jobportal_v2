@@ -11,11 +11,11 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 
 - Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green), `v0.3.0` (ERP TA core and phase 8 to 2026-10-17, 2933 tests green).
 - **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md` (#5, #6, #7 and #10 complete; #8, #9 and #11 partly, their rest waits for the team preferences).
-- **Git (2026-10-17):** `master` holds all work to date (tag `v0.3.0`); #16 is coded on branch `phase-8-withdrawals`.
-- Real PostgreSQL `jobportal_v2`: migrated to `000158` (the latest), reference data only (0 accounts). Test database at `000158` too.
+- **Git (2026-10-17):** `master` holds all work to date (tag `v0.3.0`); #16 is coded on branch `phase-8-withdrawals` (not merged).
+- Real PostgreSQL `jobportal_v2`: migrated to `000158` (`000159` is new: the user runs it), reference data only (0 accounts). Test database at `000158` too.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`, separating the live site from the working folder: the scheduler fails when code needing a new migration is live before `migrate`); since 2026-10-15 the ERP TA core (`docs/design/erp-direction.md`) is coded before the remaining hiring work.
 - **Name (changed 2026-10-16):** ONESIS ERP / ONESIS Career, `docs/design/naming.md`; `onesis` stays the technical identifier.
-- **Next coding (decided 2026-10-17):** #16 `phase-8-withdrawals.md`, the first item without a wait; it also unblocks the team preferences (#8 section 3) that the rest of #8, #9 and #11 wait for.
+- **Next coding:** #16 is coded (parts A to C, migration `000159`, branch `phase-8-withdrawals`, awaiting the user's `composer check`); next, #8 section 3 (the team preferences, now unblocked) per `phase-8-index.md`.
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)

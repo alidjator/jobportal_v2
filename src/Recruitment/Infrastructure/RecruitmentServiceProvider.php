@@ -33,7 +33,9 @@ use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
+use Src\Recruitment\Application\TeamApplicationPageLink;
 use Src\Recruitment\Application\TeamApplicationRefs;
+use Src\Recruitment\Application\TeamEmailSender;
 use Src\Recruitment\Application\Video\IceServerProvider;
 use Src\Recruitment\Application\Video\JoinTokenFactory;
 use Src\Recruitment\Application\Video\LobbySignal;
@@ -50,6 +52,7 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
+use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Events\RecordingConverted;
@@ -93,12 +96,14 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListene
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
+use Src\Recruitment\Infrastructure\Listeners\NotifyOfWithdrawalListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
 use Src\Recruitment\Infrastructure\Listeners\StoreVoiceRecordingWhenStopped;
 use Src\Recruitment\Infrastructure\Mail\MailApplicantSender;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
+use Src\Recruitment\Infrastructure\Mail\MailTeamSender;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantRelations;
@@ -204,6 +209,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ScorecardEraser::class => DatabaseScorecardEraser::class,
         InterviewResults::class => DatabaseInterviewResults::class,
         InterviewEmailSender::class => MailInterviewSender::class,
+        TeamEmailSender::class => MailTeamSender::class,
         OfferRepository::class => DatabaseOfferRepository::class,
         ApplicantEmailSender::class => MailApplicantSender::class,
         ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
@@ -247,6 +253,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
         ));
+        $this->app->bind(TeamApplicationPageLink::class, fn ($app): TeamApplicationPageLink => new TeamApplicationPageLink($app->make(Repository::class)->get('app.company_application_url')));
         $this->app->bind(ApplicationPageLink::class, fn ($app): ApplicationPageLink => new ApplicationPageLink($app->make(Repository::class)->get('app.application_url')));
         $this->app->bind(InterviewCalendar::class, function ($app): InterviewCalendar {
             $config = $app->make(Repository::class);
@@ -350,6 +357,12 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
+        Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'applicantInApp']);
+        Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'applicantEmail']);
+        Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'assignees']);
+        Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'interviewersInApp']);
+        Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'interviewersEmail']);
+        Event::listen(ApplicationWithdrawn::class, [RecordRecruitmentAuditEntries::class, 'onApplicationWithdrawn']);
         Event::listen(RecordingStopped::class, ConvertRecordingWhenStopped::class);
         Event::listen(RecordingConverted::class, StoreRecordingWhenConverted::class);
         Event::listen(VoiceRecordingStopped::class, StoreVoiceRecordingWhenStopped::class);

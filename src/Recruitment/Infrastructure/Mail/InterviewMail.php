@@ -13,7 +13,7 @@ use Src\Shared\Application\Email\RenderedEmail;
 use Src\Shared\Infrastructure\Email\FramesCompanyEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
-/** The email that tells a job seeker about their interview. The text comes from the email template, rendered when the mail is sent, in the recipient's language. It may carry the `interview.ics` calendar file. Sent on the `default` queue, retried 3 times with a growing delay. */
+/** The email that tells a job seeker (or, for a cancellation, a member of the team) about an interview. The text comes from the email template, rendered when the mail is sent, in the recipient's language. It may carry the `interview.ics` calendar file. Sent on the `default` queue, retried 3 times with a growing delay. */
 final class InterviewMail extends Mailable implements ShouldQueue
 {
     use FramesCompanyEmail;

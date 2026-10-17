@@ -82,6 +82,7 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
                     'at' => $entry->at->format(DateTimeInterface::ATOM),
                     'by' => $entry->by->value,
                     'rejection_reason' => $entry->reason?->value,
+                    'withdrawal_reason' => $entry->withdrawalReason?->value,
                 ], $detail->history ?? []),
                 'screening_answers' => array_map(static fn (ApplicationAnswerView $answer): array => [
                     'question' => $answer->questionText,

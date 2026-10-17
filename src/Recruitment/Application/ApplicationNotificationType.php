@@ -19,11 +19,20 @@ final class ApplicationNotificationType
 
     public const string REJECTED = 'application.rejected';
 
+    /** The team marked the application withdrawn: the job seeker is told. */
+    public const string WITHDRAWN_BY_COMPANY = 'application.withdrawn_by_company';
+
+    /** An application of the job was withdrawn (by the job seeker, by an offer decline or by a team member): the job's team is told. */
+    public const string WITHDRAWN = 'application.withdrawn';
+
     public const string INTERVIEW_SCHEDULED = 'interview.scheduled';
 
     public const string INTERVIEW_RESCHEDULED = 'interview.rescheduled';
 
     public const string INTERVIEW_CANCELLED = 'interview.cancelled';
+
+    /** A withdrawal cancelled the interview: its interviewer and panel are told. */
+    public const string INTERVIEW_CANCELLED_FOR_TEAM = 'interview.cancelled_for_team';
 
     /** The details of the interview (its note) changed; the time and the confirmation stay. */
     public const string INTERVIEW_UPDATED = 'interview.updated';

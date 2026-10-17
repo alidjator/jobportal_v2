@@ -61,6 +61,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('company/applications/{id}/move', [CompanyApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/applications/{id}/reject', [CompanyApplicationController::class, 'reject'])->whereNumber('id');
+    Route::post('company/applications/{id}/withdraw', [CompanyApplicationController::class, 'withdraw'])->whereNumber('id');
 
     Route::get('company/applications/{id}/notes', [ApplicationNoteController::class, 'index'])->whereNumber('id');
     Route::post('company/applications/{id}/notes', [ApplicationNoteController::class, 'store'])->whereNumber('id');

@@ -16,6 +16,7 @@ use Src\Recruitment\Domain\ApplicationSource;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
+use Src\Recruitment\Domain\WithdrawalReason;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 final readonly class DatabaseApplicationRepository implements ApplicationRepository
@@ -75,11 +76,18 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         );
     }
 
-    public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at): void
+    public function recordWithdrawal(Application $before, Application $after, DateTimeImmutable $at, ?WithdrawalReason $reason = null): void
     {
-        $this->connection->table('recruitment_applications')->where('id', $before->id)->update(['withdrawn_note' => $after->withdrawnNote]);
+        $this->connection->table('recruitment_applications')->where('id', $before->id)->update(['withdrawn_note' => $after->withdrawnNote, 'withdrawal_reason' => $reason?->value]);
 
-        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at);
+        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at, $reason);
+    }
+
+    public function recordWithdrawalByTeam(Application $before, Application $after, int $actorId, WithdrawalReason $reason, ?string $note, DateTimeImmutable $at): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $before->id)->update(['withdrawal_reason' => $reason->value]);
+
+        $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, null, $note, $at, $reason);
     }
 
     public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
@@ -98,7 +106,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
     }
 
     /** The new stage, the key (freed by a withdrawal) and one history entry. */
-    private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
+    private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?WithdrawalReason $withdrawalReason = null): void
     {
         $time = $this->utc($at);
 
@@ -119,6 +127,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             'actor_kind' => $by->value,
             'actor_id' => $actorId,
             'rejection_reason' => $reason?->value,
+            'withdrawal_reason' => $withdrawalReason?->value,
             'note' => $note,
             'created_at' => $time,
         ]);

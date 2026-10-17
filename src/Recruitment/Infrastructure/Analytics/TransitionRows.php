@@ -36,7 +36,7 @@ final readonly class TransitionRows
                 ->orderBy('h.id')
                 ->limit(self::CHUNK)
                 ->get([
-                    'h.id', 'h.application_id', 'h.actor_kind', 'h.actor_id', 'h.from_type', 'h.to_type', 'h.rejection_reason', 'h.created_at',
+                    'h.id', 'h.application_id', 'h.actor_kind', 'h.actor_id', 'h.from_type', 'h.to_type', 'h.rejection_reason', 'h.withdrawal_reason', 'h.created_at',
                     'a.company_id', 'a.job_id', 'a.source', 'a.match_score', 'a.applied_at',
                 ]);
 
@@ -57,7 +57,8 @@ final readonly class TransitionRows
                     'actor_id' => $row->actor_kind === StageMoveActor::Recruiter->value ? (int) $row->actor_id : 0,
                     'from_type' => (string) $row->from_type,
                     'to_type' => (string) $row->to_type,
-                    'reason' => $row->rejection_reason === null ? 'none' : (string) $row->rejection_reason,
+                    // A move into `rejected` carries a rejection reason, one into `withdrawn` a withdrawal reason: the stage type tells them apart.
+                    'reason' => (string) ($row->rejection_reason ?? $row->withdrawal_reason ?? 'none'),
                     'source' => $row->source === null ? 'unknown' : (string) $row->source,
                     'band' => MatchBand::of($row->match_score === null ? null : (int) $row->match_score)->value,
                     'created_at' => (string) $row->created_at,

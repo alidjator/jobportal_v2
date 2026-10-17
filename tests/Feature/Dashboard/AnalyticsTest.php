@@ -261,7 +261,7 @@ final class AnalyticsTest extends FeatureTestCase
         $this->scenario();
 
         $tables = $this->company('funnel')->assertOk()->json('data.tables');
-        $this->assertSame(['stages', 'speed', 'offers', 'by_job', 'by_recruiter'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'by_job', 'by_recruiter'], array_keys($tables));
         $this->assertSame(['stage', 'next_stage', 'entered', 'average_days_in_stage', 'median_days_in_stage', 'conversion'], $tables['stages']['columns']);
 
         $applied = $this->row($tables['stages']['rows'], 'stage', 'applied');
@@ -325,7 +325,7 @@ final class AnalyticsTest extends FeatureTestCase
 
         $tables = $this->platform('funnel', $this->adminAccountToken(['analytics.view']))->assertOk()->json('data.tables');
 
-        $this->assertSame(['stages', 'speed', 'offers'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason'], array_keys($tables));
         $this->assertSame(7, $this->row($tables['stages']['rows'], 'stage', 'applied')['entered']);
         $this->assertSame(6, $this->row($tables['stages']['rows'], 'stage', 'screening')['entered']);
     }

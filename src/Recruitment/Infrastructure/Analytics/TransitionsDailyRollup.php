@@ -6,7 +6,10 @@ use Illuminate\Database\ConnectionInterface;
 use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Analytics\AnalyticsRollup;
 
-/** Stage moves per day, job, recruiter, stage pair, rejection reason, source and match band, with the seconds spent. */
+/**
+ * Stage moves per day, job, recruiter, stage pair, reason, source and match band, with the seconds spent. The reason column (`rejection_reason`) holds the rejection
+ * reason of a move into `rejected` and the withdrawal reason of a move into `withdrawn`; `none` when there is none.
+ */
 final readonly class TransitionsDailyRollup implements AnalyticsRollup
 {
     public function __construct(private ConnectionInterface $connection, private TransitionRows $transitions) {}

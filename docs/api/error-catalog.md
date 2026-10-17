@@ -208,7 +208,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
 | `invalid-video` | 422 | Assessment | No part of the recording was sent. |
 | `invalid-webhook-credentials` | 401 | Recruitment | The webhook credentials are wrong. |
-| `invalid-withdrawal` | 422 | Recruitment |  |
+| `invalid-withdrawal` | 422 | Recruitment | The reason is required. |
 | `invitation-closed` | 409 | JobInvitation | This invitation expired because the job is not live. |
 | `invitation-cooldown` | 429 | Assessment, Company | Wait a moment before sending another invitation to this email. |
 | `invitation-in-progress` | 409 | Assessment | The candidate already started the test. Cancel it before sending another. |

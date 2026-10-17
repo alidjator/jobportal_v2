@@ -1,4 +1,4 @@
-# Phase 8: withdrawals marked by the team, withdrawal reasons and team notices (designed 2026-10-14, not coded)
+# Phase 8: withdrawals marked by the team, withdrawal reasons and team notices (designed 2026-10-14, coded 2026-10-17)
 
 Gaps found against Mekari Talenta's "Mark as withdrawn" (help center articles 34633532438169 and 34773101103385). Talenta lets only the recruiter
 mark a withdrawal; our job seekers keep their own withdraw button. Not taken now: Talenta's archive and "move to another job listing" (reopening a
@@ -55,7 +55,7 @@ and `phase-8-interview-calendar.md` (`.ics`). Coded in a coding session.
   candidate name, the time (Jakarta), "Lamaran ditarik" and a link to the application, with `interview.ics` as `METHOD:CANCEL` (the interview's
   `calendar_uid`, `calendar_sequence` raised) so an event they added from `GET company/interviews/{id}/calendar.ics` disappears. The member who
   marked the withdrawal is left out.
-- The email follows the member's preference `team_interview_changes` (`phase-8-recruiter-workday.md` section 3; on by default).
+- The email follows the member's preference `team_interview_changes` (`phase-8-recruiter-workday.md` section 3; on by default). **Decided 2026-10-17:** the preference does not exist yet, so the email is sent unconditionally; the check is added when #8 section 3 is coded.
 - Both run as queued listeners after commit (event `ApplicationWithdrawn` with `by`, `reason` and the cancelled interview id), retried like
   `NotifyAssigneesOfApplication`; a failure never undoes the withdrawal.
 
@@ -71,3 +71,9 @@ and `phase-8-interview-calendar.md` (`.ics`). Coded in a coding session.
 | Audit | `recruitment.application_withdrawn_by_company` |
 | Errors | 422 `invalid-withdrawal` gains `errors.reason`; 409 `application-not-withdrawable`, `rejection-pending` for the team action |
 | Front end | reason choices in the job seeker's withdraw and decline dialogs; "Tandai mengundurkan diri" with reason and note (C6, C7); reason and actor on the team's application detail |
+
+## Coded
+
+- **Part A (2026-10-17, migration `000159`):** `WithdrawalReason` (with `fromRequest`), both `withdrawal_reason` columns with CHECK, `reason?` on the job seeker's withdraw and offer decline (error codes `invalid-withdrawal` and `invalid-answer`, both with `errors.reason`), `recordWithdrawalByTeam` on the repository (not used yet), and `withdrawal` on both application details (the job seeker's holds `reason`, `by`, `at`, never the team's note; the team's adds `actor` and `note`, the note being the history entry's for a team move and `withdrawn_note` otherwise). The history entries carry `withdrawal_reason`. Tests: `WithdrawalReasonTest`.
+- **Part B (2026-10-17, no migration):** `POST company/applications/{id}/withdraw` (`WithdrawApplicationByTeam`), event `ApplicationWithdrawn` (also raised by the job seeker's withdraw and by an offer decline; `excludedUserIds` holds the marker, or the sender of a declined offer), five queued steps in `NotifyOfWithdrawalListener` (job seeker in-app and email, assignees, interviewers in-app and email), templates `recruitment.application_withdrawn_by_company` and `recruitment.interview_cancelled_team`, the `TeamEmailSender` port (first email to the team, reusing `InterviewMail`), the audit entry `recruitment.application_withdrawn_by_company` (`reason` and `company_id`, no note). Interpretations: (1) the "company contact shown on the job" is not read; the email says "hubungi {company}"; (2) the link in the interviewer email comes from the new `COMPANY_APPLICATION_URL` (`app.company_application_url`, empty = no link); (3) the "rejection pending" check (409 `rejection-pending`) waits for `phase-8-rejections.md`, which is not coded; (4) a withdrawal by the job seeker also cancels no interview beyond what it did before, but now tells the interviewers; an offer decline cancels none. Tests: `TeamWithdrawalTest`.
+- **Part C (2026-10-17, no migration):** the funnel report gains the table `by_reason` (reason, `count`, `by_applicant`, `by_team`; small groups suppressed like the other tables; a withdrawal without a reason is `unknown`) for the platform and for a company. The daily table keeps one reason column (`rejection_reason`): it holds the withdrawal reason for a move into `withdrawn`, the stage type tells them apart; who marked it is `actor_id` (0 = job seeker). Anonymisation clears the `note` of every history entry of the applicant's applications (the team's note of a withdrawal and, **decided 2026-10-17, the existing gap closed**, the note of a rejection) and keeps the reason codes. The job seeker's data export lists `withdrawal_reason` on each history entry. Legacy imports keep `null` (nothing to code). Tests: `TeamWithdrawalTest`, `AnalyticsTest`.

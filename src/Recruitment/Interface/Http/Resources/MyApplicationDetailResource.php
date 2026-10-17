@@ -8,6 +8,7 @@ use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationView;
 use Src\Recruitment\Domain\RejectionReason;
+use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 
 /**
@@ -35,6 +36,8 @@ final class MyApplicationDetailResource extends JsonResource
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,
+            /** @var array{reason: string|null, by: string, at: string}|null */
+            'withdrawal' => $row->status === StageType::Withdrawn ? $this->withdrawal($data->history) : null,
             /** @var list<array{status: string, at: string, by: string}> */
             'history' => array_map(static fn (ApplicationHistoryEntry $entry): array => [
                 'status' => $entry->status->value,
@@ -58,6 +61,27 @@ final class MyApplicationDetailResource extends JsonResource
         foreach (array_reverse($history) as $entry) {
             if ($entry->status === StageType::Rejected) {
                 return $entry->reason;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The last move into `withdrawn`: its reason (the applicant's own or the team's), who marked it and when. The team's note is never part of it.
+     *
+     * @param  list<ApplicationHistoryEntry>  $history
+     * @return array{reason: string|null, by: string, at: string}|null
+     */
+    private function withdrawal(array $history): ?array
+    {
+        foreach (array_reverse($history) as $entry) {
+            if ($entry->status === StageType::Withdrawn) {
+                return [
+                    'reason' => $entry->withdrawalReason?->value,
+                    'by' => $entry->by === StageMoveActor::Recruiter ? 'recruiter' : 'applicant',
+                    'at' => $entry->at->format(DATE_ATOM),
+                ];
             }
         }
 

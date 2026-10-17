@@ -78,6 +78,7 @@ final readonly class FunnelReport implements AnalyticsReportProvider
             new AnalyticsTable('stages', ['stage', 'next_stage'], ['entered', 'average_days_in_stage', 'median_days_in_stage', 'conversion'], $stages, 'entered'),
             new AnalyticsTable('speed', ['milestone'], ['count', 'average_days', 'median_days'], $this->speed($scope, $durations['since_applied']), 'count'),
             new AnalyticsTable('offers', [], ['offers_sent', 'accepted', 'acceptance_rate'], [$this->offers($scope, $entered['offer'] ?? 0)], 'offers_sent'),
+            $this->withdrawals($scope),
         ];
 
         if ($scope->companyId !== null) {
@@ -117,6 +118,29 @@ final readonly class FunnelReport implements AnalyticsReportProvider
         $accepted = (int) $this->summaries->transitions($scope)->where('from_type', 'offer')->where('to_type', 'hired')->sum('transitions');
 
         return ['offers_sent' => $sent, 'accepted' => $accepted, 'acceptance_rate' => Figures::ratio($accepted, $sent)];
+    }
+
+    /** The withdrawn applications by reason and by who marked them: the job seeker (or an offer decline) or a team member. A withdrawal without a reason counts as `unknown`. */
+    private function withdrawals(AnalyticsScope $scope): AnalyticsTable
+    {
+        $rows = [];
+
+        foreach ($this->summaries->transitions($scope)->where('to_type', 'withdrawn')->groupBy('rejection_reason')->get([
+            'rejection_reason',
+            $this->connection->raw('SUM(transitions) as total'),
+            $this->connection->raw('SUM(CASE WHEN actor_id > 0 THEN transitions ELSE 0 END) as by_team'),
+        ]) as $row) {
+            $rows[] = [
+                'reason' => $row->rejection_reason === 'none' ? 'unknown' : (string) $row->rejection_reason,
+                'count' => (int) $row->total,
+                'by_applicant' => (int) $row->total - (int) $row->by_team,
+                'by_team' => (int) $row->by_team,
+            ];
+        }
+
+        usort($rows, fn (array $a, array $b): int => [$b['count'], $a['reason']] <=> [$a['count'], $b['reason']]);
+
+        return new AnalyticsTable('by_reason', ['reason'], ['count', 'by_applicant', 'by_team'], $rows, 'count');
     }
 
     private function byJob(AnalyticsScope $scope): AnalyticsTable

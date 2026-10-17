@@ -127,6 +127,9 @@ return [
     // Client page of the job seeker's own profile, linked from the profile reminder email. Empty: the email carries no link.
     'profile_url' => env('JOB_SEEKER_PROFILE_URL'),
 
+    // Client page of an application for the company's team, with {application_id} in it; the emails to interviewers link to it. Empty: the email carries no link.
+    'company_application_url' => env('COMPANY_APPLICATION_URL'),
+
     // Client page of an application for the job seeker, with {application_id} in it; the calendar file of an interview links to it. Empty: the file carries no link.
     'application_url' => env('JOB_SEEKER_APPLICATION_URL'),
 

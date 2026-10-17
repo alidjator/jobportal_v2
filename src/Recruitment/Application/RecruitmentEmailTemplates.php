@@ -37,6 +37,12 @@ final class RecruitmentEmailTemplates
 
     public const string INTERVIEW_REMINDER = 'recruitment.interview_reminder';
 
+    /** Sent to the job seeker when the team marked the application withdrawn; carries the `interview.ics` cancel when an interview was active. */
+    public const string APPLICATION_WITHDRAWN_BY_COMPANY = 'recruitment.application_withdrawn_by_company';
+
+    /** Sent to the interviewers when a withdrawal cancelled their interview; carries the `interview.ics` cancel. */
+    public const string INTERVIEW_CANCELLED_TEAM = 'recruitment.interview_cancelled_team';
+
     public const string OFFER_SENT = 'recruitment.offer_sent';
 
     public const string OFFER_REVISED = 'recruitment.offer_revised';
@@ -86,7 +92,7 @@ final class RecruitmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::receivedDefinitions(), ...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions()];
+        return [...self::receivedDefinitions(), ...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions(), ...self::withdrawalDefinitions()];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -297,6 +303,45 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nPenawaran kerja dari {{company_name}} untuk {{job_title}} berlaku sampai {{expires_at}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\n\nBuka akun Anda untuk menerima atau menolaknya sebelum waktunya habis.",
                     'en' => "Hello {{name}},\n\nThe job offer from {{company_name}} for {{job_title}} is valid until {{expires_at}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\n\nOpen your account to accept or decline it before time runs out.",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function withdrawalDefinitions(): array
+    {
+        return [
+            new EmailTemplateDefinition(
+                self::APPLICATION_WITHDRAWN_BY_COMPANY,
+                'Sent to an applicant when the company marks their application as withdrawn (they backed out outside the platform). The calendar file cancels an interview that was scheduled.',
+                [
+                    new EmailVariable('name', 'The applicant\'s name', 'Siti'),
+                    new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('reason', 'The reason the company recorded, on its own lines with its label', "\n\nAlasan: Gaji"),
+                ],
+                TranslatedText::fromArray(['id' => 'Lamaran Anda untuk {{job_title}} dicatat sebagai mengundurkan diri', 'en' => 'Your application for {{job_title}} was recorded as withdrawn']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} mencatat bahwa Anda mengundurkan diri dari lamaran untuk posisi {{job_title}}.{{reason}}\n\nJika ini tidak benar, hubungi {{company_name}}.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} recorded that you withdrew your application for {{job_title}}.{{reason}}\n\nIf this is not right, contact {{company_name}}.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_CANCELLED_TEAM,
+                'Sent to the interviewer and the panel when a withdrawn application cancels their interview. The calendar file removes the event they added.',
+                [
+                    new EmailVariable('name', 'The team member\'s name', 'Budi'),
+                    new EmailVariable('job_title', 'The title of the job', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('candidate', 'The candidate\'s name', 'Siti Rahma'),
+                    new EmailVariable('starts_at', 'The start of the interview (Jakarta time)', '2026-10-20 10:00 WIB'),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nBuka lamaran: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Wawancara {{candidate}} untuk {{job_title}} dibatalkan', 'en' => 'The interview with {{candidate}} for {{job_title}} was cancelled']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nWawancara dengan {{candidate}} untuk posisi {{job_title}} pada {{starts_at}} dibatalkan. Alasannya: lamaran ditarik.{{link}}\n\nFile kalender terlampir menghapus acara ini dari kalender Anda.",
+                    'en' => "Hello {{name}},\n\nThe interview with {{candidate}} for {{job_title}} on {{starts_at}} was cancelled. Reason: the application was withdrawn.{{link}}\n\nThe attached calendar file removes this event from your calendar.",
                 ]),
             ),
         ];

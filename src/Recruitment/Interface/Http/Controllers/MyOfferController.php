@@ -28,6 +28,6 @@ final class MyOfferController extends ApiController
 
     public function decline(DeclineOfferRequest $request, int $id, ActorResolver $actors, RespondToOffer $respond): OfferResource
     {
-        return new OfferResource($respond->decline($actors->fromRequest($request), $id, $request->note()));
+        return new OfferResource($respond->decline($actors->fromRequest($request), $id, $request->note(), $request->reason()));
     }
 }
