@@ -75,6 +75,8 @@ use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
 use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
 use Src\Recruitment\Infrastructure\Analytics\RejectionsReport;
 use Src\Recruitment\Infrastructure\Analytics\TransitionsDailyRollup;
+use Src\Recruitment\Infrastructure\Calendar\InterviewCalendarSource;
+use Src\Recruitment\Infrastructure\Calendar\OfferCalendarSource;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantApplicationsCard;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantInterviewsCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyApplicationsCard;
@@ -145,6 +147,7 @@ use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
+use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -153,6 +156,7 @@ use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
+use Src\Shared\Application\Recruitment\ApplicationVisibility;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
@@ -182,6 +186,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         TeamApplications::class => TeamApplicationRefs::class,
         HiringManagerVisibility::class => DatabaseHiringManagerVisibility::class,
         HiringManagerBoundary::class => DatabaseHiringManagerVisibility::class,
+        ApplicationVisibility::class => DatabaseHiringManagerVisibility::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
@@ -288,6 +293,10 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(OffersWaitingTask::class),
                 $this->app->make(OffersExpiringTask::class),
             );
+        });
+
+        $this->callAfterResolving(CalendarSources::class, function (CalendarSources $sources): void {
+            $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
         $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);

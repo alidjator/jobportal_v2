@@ -69,7 +69,7 @@ final class DashboardTest extends FeatureTestCase
 
         DB::table('recruitment_interviews')->insert([
             'application_id' => $applicationId, 'starts_at' => $start, 'ends_at' => $start->copy()->addHour(), 'format' => 'online', 'interviewer_id' => $this->recruiterId,
-            'created_by' => $this->recruiterId, 'status' => $status, 'active_key' => null, 'created_at' => now(), 'updated_at' => now(),
+            'created_by' => $this->recruiterId, 'status' => $status, 'active_key' => null, 'calendar_uid' => (string) Str::uuid(), 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 

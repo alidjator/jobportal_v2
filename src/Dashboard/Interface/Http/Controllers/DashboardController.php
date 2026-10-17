@@ -6,10 +6,14 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Src\Dashboard\Application\GetAdminDashboard;
+use Src\Dashboard\Application\GetCompanyCalendar;
 use Src\Dashboard\Application\GetCompanyDashboard;
 use Src\Dashboard\Application\GetCompanyTasks;
 use Src\Dashboard\Application\GetJobSeekerDashboard;
+use Src\Dashboard\Interface\Http\Requests\CompanyCalendarRequest;
+use Src\Dashboard\Interface\Http\Resources\CalendarEventResource;
 use Src\Dashboard\Interface\Http\Resources\DashboardResource;
+use Src\Shared\Application\Calendar\CalendarEvent;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -31,6 +35,17 @@ final class DashboardController extends ApiController
     public function tasks(Request $request, ActorResolver $actors, GetCompanyTasks $get): JsonResponse
     {
         return response()->json(['data' => $get->execute($actors->fromRequest($request))]);
+    }
+
+    /** The recruitment calendar: interviews, test due times, offer deadlines and offer start dates in a range of at most 42 days. */
+    public function calendar(CompanyCalendarRequest $request, ActorResolver $actors, GetCompanyCalendar $get): JsonResponse
+    {
+        $result = $get->execute($actors->fromRequest($request), $request->string('from')->toString(), $request->string('to')->toString(), $request->types(), $request->jobId(), $request->mine());
+
+        return response()->json([
+            'data' => array_map(static fn (CalendarEvent $event): array => (new CalendarEventResource($event))->toArray($request), $result['events']),
+            'meta' => ['truncated' => $result['truncated']],
+        ]);
     }
 
     public function admin(Request $request, ActorResolver $actors, Gate $gate, DashboardCards $cards, GetAdminDashboard $get): DashboardResource

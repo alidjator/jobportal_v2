@@ -10,6 +10,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/dashboard', [DashboardController::class, 'company']);
     // What waits for the member (stale applications, scorecards, offers, jobs closing ...), each item with the query that opens its list.
     Route::get('company/tasks', [DashboardController::class, 'tasks']);
+    // Interviews, test due times, offer deadlines and start dates of the jobs the member may see, in a range of at most 42 days.
+    Route::get('company/calendar', [DashboardController::class, 'calendar']);
 
     // The analyses of the company; only a company admin may read them (the use case checks it).
     Route::get('company/analytics/{report}', [AnalyticsController::class, 'show'])->where('report', '[a-z_]+');

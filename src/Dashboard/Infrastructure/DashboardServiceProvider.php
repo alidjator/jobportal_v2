@@ -10,6 +10,7 @@ use Src\Dashboard\Application\DashboardPermissions;
 use Src\Dashboard\Interface\Console\RollUpAnalyticsCommand;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
+use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -27,6 +28,7 @@ final class DashboardServiceProvider extends ContextServiceProvider
     public array $singletons = [
         DashboardCards::class => DashboardCards::class,
         TaskProviders::class => TaskProviders::class,
+        CalendarSources::class => CalendarSources::class,
         AnalyticsReports::class => AnalyticsReports::class,
         AnalyticsRollups::class => AnalyticsRollups::class,
     ];

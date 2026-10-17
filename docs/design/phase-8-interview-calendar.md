@@ -1,4 +1,4 @@
-# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4 and 3 coded 2026-10-17)
+# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4 and 3, then 1 coded 2026-10-17)
 
 Two gaps found against Mekari Talenta's interview flow (help center articles 34781370644761 and 42469173015193): Talenta has a recruitment calendar of
 every interview and lets the recruiter add a note for the candidate to the invitation. Extends `phase-2-interviews.md`, `phase-2-offers.md` and
@@ -183,4 +183,19 @@ assessment note) are not coded. Interpretations, where the design left room:
   With schedule fields it is 422 `invalid-interview`; for any other stage 422 `invalid-schedule`; `schedule_later: false` asks for the schedule as before.
 - **Interview state.** Each row of `GET company/jobs/{id}/applications` has `interview_state` (`not_scheduled`, `pending`, `confirmed`, `completed`, null outside an interview stage): the pending or confirmed interview, else `completed` when one was held, else `not_scheduled`
   (also after a cancel or a decline). `filter[interview_state]` takes the same four values. The `unscheduled_interviews` item of the task list (recruiter workday section 1) can now use it: not coded yet.
+
+## Coded: section 1, the calendar (2026-10-17)
+
+Migration `000156`: one index, `recruitment_offers (status, start_date)`; the other reads were indexed already (`recruitment_interviews (status, starts_at)`, `recruitment_offers (status, expires_at)`, `assessment_invitations (status, due_at)`). Sections 5 and 6 are not coded.
+Interpretations, where the design left room:
+
+- **Registry.** `Shared/Application/Calendar` (`CalendarSource`, `CalendarSources`, `CalendarScope`, `CalendarEvent`), filled by Recruitment (`InterviewCalendarSource`, `OfferCalendarSource`) and Assessment (`AssessmentDueCalendarSource`) from their service providers; the Dashboard
+  context serves `GET company/calendar` (`GetCompanyCalendar`). Assessment asks Recruitment, through the new port `ApplicationVisibility`, which applications a bound hiring manager may see.
+- **Endpoint.** `from` and `to` are required Jakarta days (`Y-m-d`, a plain 422 when malformed); a range that ends before it starts or covers more than 42 days is 422 `invalid-calendar-range` (errors on `to`). `filter[type]` is a comma list (an unknown type is a 422),
+  `filter[job_id]`, `filter[mine]`. The answer is `{data: [event], meta: {truncated}}`, earliest first, at most 1,000 events (each source reads one more than that, so `truncated` is exact). It needs `applications.view`; the scope is the member's jobs and, for a hiring manager
+  bound to the stage boundary of a job, the applications that reached it. Anonymised applicants do not appear.
+- **Events.** An interview shows while it overlaps the window (so one that began the evening before still shows), whatever its status among pending, confirmed and completed. A pending offer shows its answer deadline; an accepted one its start date as a whole day (`all_day: true`,
+  `starts_at` is the Jakarta day `Y-m-d`). A test shows its due time while invited or started. `title` is "candidate - job"; `details` holds the format, the place (onsite), `has_meeting_link` (never the link), the interviewer and the panel of an interview, the position of an offer.
+  `involves_me`: the interviewer or a panel member; the member who sent the offer; the member who sent the test or scores it.
+- **Actions.** `view_application` always; `edit`, `edit_note` and `cancel` for a pending or confirmed interview when the member holds `interviews.manage`; `scorecard` for the interviewer and the panel once a non-pending interview has started; `download_ics` for every interview.
 

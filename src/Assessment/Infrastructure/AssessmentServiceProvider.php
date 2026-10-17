@@ -42,6 +42,7 @@ use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Assessment\Domain\VideoTakeRepository;
+use Src\Assessment\Infrastructure\Calendar\AssessmentDueCalendarSource;
 use Src\Assessment\Infrastructure\Listeners\EraseAssessmentDataWhenUserAnonymized;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfAttemptSubmissionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationChangeListener;
@@ -76,6 +77,7 @@ use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
+use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
@@ -117,6 +119,10 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(TaskProviders::class, function (TaskProviders $tasks): void {
             $tasks->add($this->app->make(MyScoringTask::class));
+        });
+
+        $this->callAfterResolving(CalendarSources::class, function (CalendarSources $sources): void {
+            $sources->add($this->app->make(AssessmentDueCalendarSource::class));
         });
 
         $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);

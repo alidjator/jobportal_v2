@@ -11,6 +11,7 @@ use Src\Recruitment\Application\HiringManagerVisibility;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\Recruitment\ApplicationVisibility;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 
 /**
@@ -18,7 +19,7 @@ use Src\Shared\Application\Recruitment\HiringManagerBoundary;
  * order is the line, and every stage at or after it (the final stages `rejected` and `withdrawn` excepted) shows the application. A job without a boundary,
  * or whose boundary stage was deleted, uses the first interview stage of the company; a company without one shows nothing by position.
  */
-final readonly class DatabaseHiringManagerVisibility implements HiringManagerBoundary, HiringManagerVisibility
+final readonly class DatabaseHiringManagerVisibility implements ApplicationVisibility, HiringManagerBoundary, HiringManagerVisibility
 {
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
 
@@ -93,6 +94,17 @@ final readonly class DatabaseHiringManagerVisibility implements HiringManagerBou
 
         $this->connection->table('recruitment_applications')->where('id', $applicationId)->whereNull('hiring_manager_visible_at')
             ->update(['hiring_manager_visible_at' => $at->setTimezone(new DateTimeZone('UTC'))->format(self::TIME_FORMAT)]);
+    }
+
+    public function visibleAmong(array $applicationIds, array $boundJobIds): array
+    {
+        if ($applicationIds === [] || $boundJobIds === []) {
+            return $applicationIds;
+        }
+
+        $hidden = $this->connection->table('recruitment_applications')->whereIn('id', $applicationIds)->whereIn('job_id', $boundJobIds)->whereNull('hiring_manager_visible_at')->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
+
+        return array_values(array_diff($applicationIds, $hidden));
     }
 
     public function isVisible(int $applicationId): bool
