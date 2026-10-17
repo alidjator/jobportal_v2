@@ -22,6 +22,8 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 6. **Do not re-summarize changes.** Do not recap what was edited or repeat a change list the user can already see in the diff; report only the outcome
    and what needs a decision.
 7. **Out of scope for now:** plans, billing, payments, invoices, pay-per-job and featured promotion.
+8. **Terms in user stories (decided 2026-10-13):** "Admin" in a user story means the company admin, not the platform admin.
+9. **Front-end builds** on the server are run by the user (decided 2026-10-13): give the commands, never run them.
 
 ## Code standard
 
@@ -82,7 +84,7 @@ Everything read stays in the context for the rest of the session and is sent aga
   never run `php artisan test` (not even with `--filter`), `composer check`, Pint, PHPStan, `test:database:migrate` or any other check on your own, and never report a check as passed unless the
   user's own run showed it. Run one only when the user asks, or pastes failures to fix. When asked, run `composer check` once (not Pint, PHPStan and the suite as three separate steps), or only
   the tests of the folder or file the user names. This overrides every other line in this file that mentions running or passing a check; if a task seems to need one, stop and tell the user.
-  **Two levels (decided 2026-10-11):** after each coding step or part the user checks only what the change touches (`php artisan test <changed and related tests>`, `vendor/bin/pint --test <changed files>`); `composer check` runs once, at the end of the whole coding stage (for phase 6: after part 6), not after each part. After coding, give the user the exact targeted commands; do not propose the full `composer check` before the last part.
+  **Two levels (decided 2026-10-11):** after each coding step or part the user checks only what the change touches (`php artisan test <changed and related tests>`, `vendor/bin/pint --test <changed files>`); `composer check` runs once, at the end of the whole coding stage (the last part of a design document or index item), not after each part. After coding, give the user the exact targeted commands in the **last message of the turn**, one `bash` block per command (decided 2026-10-17); do not propose the full `composer check` before the last part.
 - **Command output:** cut it to what is needed: test runs and `composer check` with `2>&1 | tail -n 40 | cut -c1-4000` (inside Claude Code
   Pint, PHPStan and PHPUnit print one JSON line, so `tail` alone does not cut a long failure report; on a failure, rerun only the failing test with `--filter`), the legacy schema one
   table at a time (`SHOW CREATE TABLE <table>`), never a whole dump into the context.
@@ -92,7 +94,7 @@ Everything read stays in the context for the rest of the session and is sent aga
 ## Live site
 
 `https://api-karir.satu.solutions` is a **dev** domain served straight from this folder (nginx + system PHP-FPM, user `nginx`). `APP_DEBUG` must stay
-`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/handoff-history.md`, section 5). Karir.pkp live-site accounts are
+`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/handoff-history.md`, `grep -n 'POSIX ACLs'`). Karir.pkp live-site accounts are
 never stored; ask the user when needed.
 
 - **API docs cache, MANDATORY (decided 2026-10-16):** `/docs/api` serves the cached OpenAPI document (Scramble). After every change to a route or to an API response (controller, FormRequest, API resource, response shape), run `php artisan scramble:clear` and then `php artisan scramble:cache`, in that order; otherwise the docs show the old version, and with an empty cache the page takes about 20 seconds.

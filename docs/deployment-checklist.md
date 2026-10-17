@@ -46,7 +46,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] Languages created by the import carry a **placeholder code** made from their name (the legacy list has no codes); set ISO codes by hand where they are needed.
 - [ ] Legacy data is kept as it is, so some migrated profiles exceed the rules of the new API (skills over 30, links that are not https, a GPA over 4, long texts); editing them is allowed as long as the list does not grow and a text or GPA is not changed (`phase-1-migration.md`). Jobs incomplete at import are `draft`; applications of an unmapped group sit in the default stage.
 - [ ] Accounts with a non-bcrypt password (841 in the rehearsal) need the reset email below before they can sign in.
-- [ ] Password reset emails for the accounts that have no password (list in `docs/HANDOFF.md`): dry run first, ask before sending, only after SMTP works.
+- [ ] Password reset emails for the accounts that have no usable password (761 in the 2026-10-13 copy): dry run first, ask before sending, only after SMTP works and the email suppression of `phase-8-platform-admin.md` section 6 is coded.
 
 ## 4. Processes
 

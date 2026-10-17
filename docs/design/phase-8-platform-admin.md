@@ -169,7 +169,7 @@ Checked by the user. Interpretations, where the design left room:
   "Verified" is read from `company_companies.verified_at` through the new `CompanyDirectory::isVerified` (the public card is null for a hidden company, and a hidden
   company still publishes). The scanner reads the **title and the description** (the summary and the salary note do not exist yet; they join with
   `phase-8-job-discovery.md`). A phrase matches whatever the letter case, on word boundaries, with any run of spaces for a space; a contact flag is the first email
-  address and the first phone number (Indonesian mobile or landline, or `+` international) of the description. The internal tenant exemption waits for #5.
+  address and the first phone number (Indonesian mobile or landline, or `+` international) of the description. The internal tenant exemption came with #5 (2026-10-16): an internal tenant counts as verified through its tenant link (`erp-organization.md`, coded section of part A).
   The unverified rule means every job is reviewed until at least one required document type exists (`docs/deployment-checklist.md` says so).
 - **Admin view.** `GET admin/jobs/{id}` gains `company_verified` and `flags [{kind, value, field}]`; the list gains `flagged` (true or false in the review queue,
   `filter[status]=pending_review`, null in any other list). In the queue the flagged jobs come first: the whole queue is scanned in memory (it is short) and the page is

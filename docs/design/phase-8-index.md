@@ -15,27 +15,26 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
 | `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` waits for #12, section 3 for #26 |
-| `erp-organization.md` part A (groups, legal entities, tenant link, group roles, group status) | coded and checked 2026-10-16 (migration `000143`); part B (structure) coded 2026-10-16 (migration `000144`); C (governance), D (group read rule) follow as #5c and #5d |
+| `erp-organization.md` (#5) | parts A and B (`000143`, `000144`), C1 to C3 (group log, group settings, support access; `000145`-`000147`) and D (group read rule) coded 2026-10-16; part A checked |
 | `naming.md` section 1 | coded 2026-10-15 (no migration; the problem `type` is now `urn:onesis:error:<code>`), checked |
 | `phase-8-job-discovery.md` sections 1 to 5 | coded and checked 2026-10-15 (migration `000142`); sections 6 and 7 wait (after go-live) |
-| `phase-8-platform-admin.md` sections 1 to 4 | coded and checked 2026-10-15 (migration `000141`), committed; the internal-tenant exemption of section 2 waits for #5, sections 5 to 8 for #17 |
+| `phase-8-platform-admin.md` sections 1 to 4 | coded and checked 2026-10-15 (migration `000141`), committed; the internal-tenant exemption of section 2 came with #5 (`erp-organization.md`, tenant link); sections 5 to 8 for #17 |
+| `erp-sso.md` (#7) | coded 2026-10-16 (no migration) |
+| `erp-requisitions.md` (#6) | Approval context A, B1, B2 (`000148`-`000150`), workforce plans (`000151`) and requisitions with the job rule (`000152`) coded 2026-10-16 |
+| `phase-8-interview-calendar.md` (#10) | sections 1 to 6 coded 2026-10-17 (`000155`-`000157`; section 5 no migration) |
 
 ## Next coding (in this order)
 
 | # | Document | Waits for |
 |---|---|---|
-| 5 | `erp-organization.md` (Organization context and internal tenants) | parts A and B and the group log (C1, migration `000145`) coded 2026-10-16 (see Coded); C2 (group settings, migration `000146`) coded 2026-10-16; C3 (support access, migration `000147`) coded 2026-10-16, so part C is complete; D (the group read rule in recruitment) coded 2026-10-16, so #5 is complete |
-| 6 | `erp-requisitions.md` (manpower planning, requisitions, generic approvals) | Approval A (catalog, flows; migration `000148`) B1 (running approvals, decisions, delegation, vacant approvers; migration `000149`) and B2 (notifications, reminders; migration `000150`) coded 2026-10-16, so the Approval context is complete; Workforce plans (migration `000151`) and requisitions with the job rule (migration `000152`) coded 2026-10-16, so #6 is complete |
-| 7 | `erp-sso.md` (Identity as the IAM of the ERP: two-factor and token lifetime of internal tenants) | coded 2026-10-16 (see Coded); done before #6 |
-| 8 | `phase-8-recruiter-workday.md` | sections 2, 4 and 1 (without `unscheduled_interviews`) coded 2026-10-17 (migration `000153`); section 5 (received email) coded 2026-10-17 with #10 section 6 (migration `000157`); section 3 waits for the team preferences used by withdrawals and provider tools |
-| 9 | `phase-8-hiring-managers.md` | sections 1 and 2 coded 2026-10-17 (migration `000154`); section 3 (shortlist reviews) waits for the team preferences of the recruiter workday section 3 (after #10); requisitions are now in scope through #6 |
-| 10 | `phase-8-interview-calendar.md` | sections 2, 4 and 3 coded 2026-10-17 (migration `000155`), section 1 (calendar) coded 2026-10-17 (migration `000156`); section 6 (message defaults, link rule, test note, logo; migration `000157`) coded 2026-10-17; section 5 (email preview) coded 2026-10-17 (no migration), so #10 is complete |
-| 11 | `phase-8-interviewers.md` | section 1 (permission, panel access, my interviews) coded 2026-10-17 (migration `000158`); sections 2 to 4 wait for the team preferences of the recruiter workday section 3 (`team_interview_changes`, `team_scorecard_reminders`) |
+| 8 | `phase-8-recruiter-workday.md` section 3 | sections 1, 2, 4 (`000153`) and 5 (with #10 section 6, `000157`) coded 2026-10-17; section 3 waits for the team preferences used by withdrawals and provider tools |
+| 9 | `phase-8-hiring-managers.md` section 3 | sections 1 and 2 coded 2026-10-17 (`000154`); section 3 (shortlist reviews) waits for the team preferences of #8 section 3 |
+| 11 | `phase-8-interviewers.md` sections 2 to 4 | section 1 coded 2026-10-17 (`000158`); sections 2 to 4 wait for the team preferences of #8 section 3 (`team_interview_changes`, `team_scorecard_reminders`) |
 | 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |
 | 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
-| 16 | `phase-8-withdrawals.md` | |
+| 16 | `phase-8-withdrawals.md` | **next** (decided 2026-10-17): #8, #9, #11 and #12 are blocked, so coding continues here; it unblocks the team preferences of #8 section 3 |
 | 17 | `phase-8-platform-admin.md` sections 5 to 8 | section 6 (email suppression) **before the reset emails to the imported accounts**, with the SMTP provider, whatever its place here |
 | 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |
