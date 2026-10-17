@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 
@@ -20,14 +21,16 @@ final readonly class OfferPlacer
     public function __construct(
         private OfferRepository $offers,
         private JobDirectory $jobs,
+        private CandidateMessageRules $messageRules,
         private Clock $clock,
     ) {}
 
-    /** @throws BusinessRuleViolation `invalid-offer` */
+    /** @throws BusinessRuleViolation `invalid-offer` or `message-link-not-allowed` */
     public function place(RecruitmentMember $member, Application $application, OfferInput $input): OfferChanged
     {
         $now = $this->clock->now();
         $applicationId = (int) $application->id;
+        $this->messageRules->assertAllowed($application->companyId, $input->note, 'offer.note');
 
         $offer = Offer::make(
             $applicationId,

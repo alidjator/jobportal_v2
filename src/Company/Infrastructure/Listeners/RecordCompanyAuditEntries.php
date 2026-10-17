@@ -22,6 +22,7 @@ use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
 use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
+use Src\Company\Domain\Events\CompanyMessageDefaultsChanged;
 use Src\Company\Domain\Events\CompanyNameChangeCancelled;
 use Src\Company\Domain\Events\CompanyNameChangeDecided;
 use Src\Company\Domain\Events\CompanyNameChangeDocumentViewed;
@@ -205,6 +206,14 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
             ['before' => $event->before, 'after' => $event->after], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyMessageDefaultsChanged(CompanyMessageDefaultsChanged $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_MESSAGE_DEFAULTS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
+            ['scenarios' => $event->scenarios], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

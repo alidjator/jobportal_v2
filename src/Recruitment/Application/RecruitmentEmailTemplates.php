@@ -11,10 +11,12 @@ use Src\Shared\Domain\TranslatedText;
 
 /**
  * The email templates of the Recruitment context, registered in the shared catalog by its service provider: one per outcome the applicant is told about.
- * Bodies are Markdown with `{{variable}}` placeholders. They never carry the rejection reason or note, and carry no link (no client page exists yet).
+ * Bodies are Markdown with `{{variable}}` placeholders. They never carry the rejection reason or note. Only the receipt of an application carries a link (to the application page, when the client page is configured).
  */
 final class RecruitmentEmailTemplates
 {
+    public const string RECEIVED = 'recruitment.application_received';
+
     public const string INTERVIEW = 'recruitment.application_interview';
 
     public const string OFFER = 'recruitment.application_offer';
@@ -84,7 +86,31 @@ final class RecruitmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions()];
+        return [...self::receivedDefinitions(), ...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions()];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function receivedDefinitions(): array
+    {
+        return [
+            new EmailTemplateDefinition(
+                self::RECEIVED,
+                'Sent to an applicant right after they apply, to confirm the company received the application.',
+                [
+                    new EmailVariable('name', 'The applicant\'s name', 'Siti'),
+                    new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
+                    new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+                    new EmailVariable('date', 'The date of the application (Jakarta time)', '2026-10-17'),
+                    new EmailVariable('message', 'The company\'s own message (its default text for received applications), on its own lines with its label; empty when it has none', "\n\nPesan dari perusahaan: Kami akan menghubungi Anda dalam 7 hari."),
+                    new EmailVariable('link', 'The link to the application page, on its own line with its label; empty when the page is not configured', "\n\nLihat lamaran Anda: https://example.test/applications/1"),
+                ],
+                TranslatedText::fromArray(['id' => 'Lamaran Anda untuk {{job_title}} sudah diterima', 'en' => 'We received your application for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nLamaran Anda untuk posisi {{job_title}} di {{company_name}} sudah kami terima pada {{date}}.{{message}}{{link}}\n\nBila ada perkembangan, kami akan mengabari Anda lewat akun Anda.",
+                    'en' => "Hello {{name}},\n\nWe received your application for {{job_title}} at {{company_name}} on {{date}}.{{message}}{{link}}\n\nIf anything changes, we will tell you through your account.",
+                ]),
+            ),
+        ];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -229,6 +255,7 @@ final class RecruitmentEmailTemplates
             new EmailVariable('salary', 'The monthly salary offered', 'Rp 12.000.000'),
             new EmailVariable('start_date', 'The start date', '2026-11-02'),
             new EmailVariable('expires_at', 'The deadline to answer (Jakarta time)', '2026-10-20 17:00 WIB'),
+            new EmailVariable('note', 'The company\'s note on the offer, on its own lines with its label; empty when there is none', "\n\nCatatan: Harap konfirmasi sebelum batas waktu."),
         ];
 
         return [
@@ -238,8 +265,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}}', 'en' => 'Job offer for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} mengirim penawaran kerja untuk {{job_title}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} sent you a job offer for {{job_title}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}\n\nOpen your account to accept or decline the offer.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengirim penawaran kerja untuk {{job_title}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}{{note}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} sent you a job offer for {{job_title}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}{{note}}\n\nOpen your account to accept or decline the offer.",
                 ]),
             ),
             new EmailTemplateDefinition(
@@ -248,8 +275,8 @@ final class RecruitmentEmailTemplates
                 $variables,
                 TranslatedText::fromArray(['id' => 'Penawaran kerja untuk {{job_title}} diperbarui', 'en' => 'Your job offer for {{job_title}} was updated']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\n{{company_name}} memperbarui penawaran kerja untuk {{job_title}}. Penawaran sebelumnya tidak berlaku lagi.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
-                    'en' => "Hello {{name}},\n\n{{company_name}} updated the job offer for {{job_title}}. The earlier offer no longer applies.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}\n\nOpen your account to accept or decline the offer.",
+                    'id' => "Halo {{name}},\n\n{{company_name}} memperbarui penawaran kerja untuk {{job_title}}. Penawaran sebelumnya tidak berlaku lagi.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\nBerlaku sampai: {{expires_at}}{{note}}\n\nBuka akun Anda untuk menerima atau menolak penawaran ini.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} updated the job offer for {{job_title}}. The earlier offer no longer applies.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\nValid until: {{expires_at}}{{note}}\n\nOpen your account to accept or decline the offer.",
                 ]),
             ),
             new EmailTemplateDefinition(

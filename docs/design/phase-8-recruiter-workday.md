@@ -126,3 +126,9 @@ they wait for the interview calendar (#10: message defaults, the logo, `intervie
   `company/assessment/invitations` have no list endpoint. The items still carry the filter text of this design; the front end links it once the list exists. On the `company/jobs` list the filters
   `filter[deadline_to]` (a day: deadline on or before it) and `filter[applications]=0` were added now, so the three job items already open a real list.
 
+
+## Coded: section 5, the received email (2026-10-17)
+
+With #10 section 6 (migration `000157`: `company_message_defaults`). New template `recruitment.application_received` (job, company, the Jakarta date, the company's `applied` message, the link to the application page from `JOB_SEEKER_APPLICATION_URL`, empty when unset), sent by the queued listener
+`EmailApplicantOfReceiptListener` on `ApplicationSubmitted` by the preference `application_update`; no in-app notice, no attachment. It shows the company logo and the fixed anti-scam line like the interview, offer and test emails. Section 3 is not coded. The sender of offer emails was generalised
+for it: `ApplicantEmailSender`, `MailApplicantSender`, `ApplicantMail` (they were the offer ones).

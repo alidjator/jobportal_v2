@@ -14,6 +14,7 @@ use Src\Recruitment\Domain\InterviewQuestionRepository;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -35,13 +36,14 @@ final readonly class InterviewScheduler
         private InterviewPanel $panel,
         private HiringManagerVisibility $visibility,
         private CompanyTeam $team,
+        private CandidateMessageRules $messageRules,
         private JobDirectory $jobs,
         private Settings $settings,
         private Clock $clock,
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer`, `video-not-enabled` or `voice-not-enabled`
+     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer`, `video-not-enabled`, `voice-not-enabled` or `message-link-not-allowed`
      * @throws EntityNotFound the named kit is not one of the company's
      */
     public function schedule(RecruitmentMember $member, Application $application, InterviewInput $input): InterviewChanged
@@ -50,6 +52,11 @@ final readonly class InterviewScheduler
         $applicationId = (int) $application->id;
         $this->assertInterviewer($application->companyId, $application->jobId, $input->interviewerId);
         $this->assertFormatAvailable($application->companyId, $input->format);
+
+        if ($input->noteGiven) {
+            $this->messageRules->assertAllowed($application->companyId, $input->note, 'interview.note');
+        }
+
         $participants = $this->participants($application, $input);
         $kit = $input->kitGiven ? $this->chosenKit($application->companyId, $input->kitId) : null;
 

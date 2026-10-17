@@ -24,6 +24,7 @@ final class AssessmentInvitationFields
             $prefix.'assessor_ids.*' => ['integer', 'min:1'],
             $prefix.'mode' => ['nullable', 'string', 'in:online,onsite'],
             $prefix.'location' => ['nullable', 'string', 'max:255'],
+            $prefix.'note' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -40,6 +41,7 @@ final class AssessmentInvitationFields
             array_map(intval(...), $assessors),
             isset($data['mode']) ? (string) $data['mode'] : 'online',
             isset($data['location']) && trim((string) $data['location']) !== '' ? trim((string) $data['location']) : null,
+            isset($data['note']) && trim((string) $data['note']) !== '' ? trim((string) $data['note']) : null,
         );
     }
 

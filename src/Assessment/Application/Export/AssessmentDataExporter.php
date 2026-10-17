@@ -79,6 +79,7 @@ final readonly class AssessmentDataExporter implements PersonalDataExporter
             'status' => $invitation->status->value,
             'mode' => $invitation->mode->value,
             'location' => $invitation->location,
+            'note' => $invitation->note,
             'starts_at' => $invitation->startsAt->format(DateTimeInterface::ATOM),
             'due_at' => $invitation->dueAt->format(DateTimeInterface::ATOM),
             'closed_at' => $invitation->closedAt?->format(DateTimeInterface::ATOM),

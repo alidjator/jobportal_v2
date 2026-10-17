@@ -254,6 +254,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
 | `membership-suspended` | 403 | Company | Your access to the company was suspended by a company admin. |
+| `message-link-not-allowed` | 422 | Company | A message to a candidate cannot carry a link or an email address, except one of your own website. |
 | `method-not-allowed` | 405 | Platform | The HTTP method is not allowed for this resource. |
 | `name-change-not-pending` | 409 | Company | This name change request has already been decided. |
 | `name-change-pending` | 409 | Company | A name change request of this company is already waiting for a decision. |

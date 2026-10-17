@@ -15,6 +15,8 @@ use Src\Company\Application\Images\CompanySettings;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
+use Src\Company\Application\Messages\CompanyCandidateMessageRules;
+use Src\Company\Application\Messages\RepositoryCompanyMessageTexts;
 use Src\Company\Application\Team\CompanyTwoFactorPolicy;
 use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
 use Src\Company\Application\Team\MemberNoticeSender;
@@ -42,6 +44,7 @@ use Src\Company\Domain\Events\CompanyMemberRenamed;
 use Src\Company\Domain\Events\CompanyMemberRoleChanged;
 use Src\Company\Domain\Events\CompanyMemberSuspended;
 use Src\Company\Domain\Events\CompanyMemberTwoFactorReset;
+use Src\Company\Domain\Events\CompanyMessageDefaultsChanged;
 use Src\Company\Domain\Events\CompanyNameChangeCancelled;
 use Src\Company\Domain\Events\CompanyNameChangeDecided;
 use Src\Company\Domain\Events\CompanyNameChangeDocumentViewed;
@@ -54,6 +57,7 @@ use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
 use Src\Company\Domain\Events\DocumentTypeCreated;
 use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
 use Src\Company\Domain\InvitationRepository;
+use Src\Company\Domain\MessageDefaultsRepository;
 use Src\Company\Domain\NameChangeRequestRepository;
 use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
@@ -72,6 +76,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
 use Src\Company\Infrastructure\Persistence\DatabaseDocumentTypeRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
+use Src\Company\Infrastructure\Persistence\DatabaseMessageDefaultsRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
@@ -83,9 +88,11 @@ use Src\Company\Infrastructure\Persistence\RepositoryTenantRegistry;
 use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
 use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
+use Src\Shared\Application\Company\CompanyMessageTexts;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\MemberSignInGuard;
 use Src\Shared\Application\Company\MemberTwoFactorPolicy;
@@ -93,6 +100,7 @@ use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Company\SuspendedMembers;
 use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\Dashboard\DashboardCards;
+use Src\Shared\Application\Email\CompanyEmailFrame;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\CompanySettingChanged;
@@ -129,11 +137,16 @@ final class CompanyServiceProvider extends ContextServiceProvider
         CompanyDocumentRepository::class => DatabaseCompanyDocumentRepository::class,
         NameChangeRequestRepository::class => DatabaseNameChangeRequestRepository::class,
         CompanyVerificationBadge::class => DatabaseCompanyVerificationBadge::class,
+        MessageDefaultsRepository::class => DatabaseMessageDefaultsRepository::class,
+        CandidateMessageRules::class => CompanyCandidateMessageRules::class,
+        CompanyMessageTexts::class => RepositoryCompanyMessageTexts::class,
     ];
 
     public function register(): void
     {
         $this->commands([PurgeEndedInvitationsCommand::class, PurgeNameChangeDocumentsCommand::class]);
+
+        $this->app->bind(CompanyEmailFrame::class, fn ($app): CompanyEmailFrame => new CompanyEmailFrame($app->make(PublicCompanies::class), (string) $app->make('config')->get('app.name')));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(PurgeEndedInvitationsCommand::class)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
@@ -193,6 +206,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyInvitationUpdated::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationUpdated']);
         Event::listen(CompanyInvitationResent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationResent']);
         Event::listen(CompanyEmailDomainsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyEmailDomainsChanged']);
+        Event::listen(CompanyMessageDefaultsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMessageDefaultsChanged']);
         Event::listen(CompanyDocumentSubmitted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentSubmitted']);
         Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);

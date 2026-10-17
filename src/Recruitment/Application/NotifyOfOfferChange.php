@@ -31,7 +31,7 @@ final readonly class NotifyOfOfferChange
         private OfferRepository $offers,
         private InAppNotifier $notifier,
         private NotificationPreferences $preferences,
-        private OfferEmailSender $emails,
+        private ApplicantEmailSender $emails,
     ) {}
 
     public function inApp(OfferChanged $event): void
@@ -77,12 +77,14 @@ final readonly class NotifyOfOfferChange
         }
 
         $this->emails->send($contact, $key, [
+            'company_id' => (string) $event->companyId,
             'job_title' => $this->jobTitle($event),
             'company_name' => $this->companyName($event),
             'position' => $offer->position,
             'salary' => 'Rp '.number_format($offer->salary, 0, ',', '.'),
             'start_date' => $offer->startDate->format('Y-m-d'),
             'expires_at' => $offer->expiresAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
+            'note' => $offer->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$offer->note,
         ]);
     }
 

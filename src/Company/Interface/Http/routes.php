@@ -10,6 +10,7 @@ use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CompanySettingsController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
+use Src\Company\Interface\Http\Controllers\MessageDefaultsController;
 use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
 use Src\Company\Interface\Http\Controllers\PublicCompanyController;
 use Src\Company\Interface\Http\Controllers\TeamInvitationController;
@@ -79,6 +80,10 @@ Route::middleware('auth:user')->group(function (): void {
     // The company settings page: any member reads, a company admin changes the settings that belong to the company.
     Route::get('company/settings', [CompanySettingsController::class, 'show']);
     Route::patch('company/settings', [CompanySettingsController::class, 'update']);
+
+    // The default texts that prefill the note of an interview, a test and an offer: any member reads them, a member who may change the profile sets them.
+    Route::get('company/message-defaults', [MessageDefaultsController::class, 'show']);
+    Route::put('company/message-defaults', [MessageDefaultsController::class, 'update']);
 
     // The activity log of the company: the entries of its members and of the platform about it; the export is a CSV, limited per hour.
     Route::get('company/activity', [CompanyActivityController::class, 'index']);

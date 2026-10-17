@@ -61,6 +61,7 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             'status' => $invitation->status->value,
             'mode' => $invitation->mode->value,
             'location' => $invitation->location,
+            'note' => $invitation->note,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -178,6 +179,7 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
             InvitationMode::from((string) $row->mode),
             $row->location,
             $row->attachment_path === null ? null : new InvitationAttachment((string) $row->attachment_path, (string) $row->attachment_name, (string) $row->attachment_mime, (int) $row->attachment_size_bytes),
+            $row->note,
         ), $rows));
     }
 

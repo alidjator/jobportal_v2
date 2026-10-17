@@ -73,11 +73,13 @@ final readonly class NotifyOfInvitationChange
         }
 
         $this->emails->send($contact, AssessmentEmailTemplates::keyForChange($event->change), [
+            'company_id' => (string) $event->companyId,
             'job_title' => $this->jobTitle($event),
             'company_name' => $this->companyName($event),
             'test_title' => $test->title(),
             'due_at' => $invitation->dueAt->setTimezone(new DateTimeZone(self::EMAIL_ZONE))->format('Y-m-d H:i').' WIB',
             'location' => $invitation->mode === InvitationMode::Onsite ? ($contact->locale === 'id' ? 'Lokasi: ' : 'Location: ').$invitation->location : '',
+            'note' => $invitation->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$invitation->note,
         ]);
     }
 

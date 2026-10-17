@@ -10,11 +10,13 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Email\RenderedEmail;
+use Src\Shared\Infrastructure\Email\FramesCompanyEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /** The email that tells a job seeker about their interview. The text comes from the email template, rendered when the mail is sent, in the recipient's language. It may carry the `interview.ics` calendar file. Sent on the `default` queue, retried 3 times with a growing delay. */
 final class InterviewMail extends Mailable implements ShouldQueue
 {
+    use FramesCompanyEmail;
     use Queueable;
 
     public int $tries = 3;
@@ -51,7 +53,7 @@ final class InterviewMail extends Mailable implements ShouldQueue
     {
         $rendered = $this->renderTemplate();
 
-        return new Content(view: 'emails.rendered-html', text: 'emails.rendered-text', with: ['html' => $rendered->html, 'text' => $rendered->text]);
+        return new Content(view: 'emails.rendered-html', text: 'emails.rendered-text', with: ['html' => $rendered->html, 'text' => $rendered->text, 'frame' => $this->companyFrame($this->variables, $this->language)]);
     }
 
     private function renderTemplate(): RenderedEmail

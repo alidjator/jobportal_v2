@@ -183,7 +183,9 @@ query inside the reader's own Infrastructure layer, kept because a port would co
 | Reader (under `src/`) | Reads | Columns | Why |
 |---|---|---|---|
 | `Campaign/.../DatabaseCampaignStatistics` | `identity_users`, `recruitment_applications` | `id`, `created_at`, `registration_campaign_code`; `id`, `user_id`, `company_id` | One reporting query per campaign (decided 2026-10-10). |
+| `Job/.../DatabaseJobReader` | `recruitment_applications` | `id`, `job_id` | The job list filter "without applicants" (`filter[applications]=0`) is one `NOT EXISTS` in the list query; a port would cost a query per row (decided 2026-10-17). |
 | `Job/.../DatabaseJobSignalReader` | `reference_job_roles`, `reference_experience_levels`, `reference_education_levels` | `id`, `name`; `id`, `slug`, `min_years`, `max_years`; `id`, `rank` | Matching signals of many jobs in one query. |
+| `Job/.../JobsWithoutApplicantsTask` | `recruitment_applications` | `id`, `job_id` | The task item "jobs without applicants" counts them with one `NOT EXISTS` (decided 2026-10-17). |
 | `JobSeeker/.../CompleteProfiles` | `identity_users` | `id`, `type`, `status`, `anonymized_at` | Which profiles are complete, active and not anonymised. |
 | `JobSeeker/.../DatabaseAccountPictures` | `identity_users` | `id`, `avatar_path` | The picture path, as the candidate search reads it. |
 | `JobSeeker/.../DatabaseCandidateReader` | `identity_users`, `reference_education_levels` | `id`, `name`, `avatar_path`, `anonymized_at`; `id`, `rank` | Candidate search rows and the minimum education filter. |

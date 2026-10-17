@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Psr\Log\LoggerInterface;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Recruitment\Application\ApplicantApplicationReader;
+use Src\Recruitment\Application\ApplicantEmailSender;
 use Src\Recruitment\Application\ApplicationNotificationType;
+use Src\Recruitment\Application\ApplicationPageLink;
 use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\Export\ApplicationsDataExporter;
@@ -23,7 +25,6 @@ use Src\Recruitment\Application\InterviewEmailSender;
 use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\JobApplicationCheck;
-use Src\Recruitment\Application\OfferEmailSender;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
@@ -84,6 +85,7 @@ use Src\Recruitment\Infrastructure\Dashboard\CompanyScheduleCard;
 use Src\Recruitment\Infrastructure\Dashboard\CompanyTimeToFillCard;
 use Src\Recruitment\Infrastructure\Dashboard\PlatformApplicationsCard;
 use Src\Recruitment\Infrastructure\Listeners\ConvertRecordingWhenStopped;
+use Src\Recruitment\Infrastructure\Listeners\EmailApplicantOfReceiptListener;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\EraseScorecardDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
@@ -93,8 +95,8 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
 use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
 use Src\Recruitment\Infrastructure\Listeners\StoreVoiceRecordingWhenStopped;
+use Src\Recruitment\Infrastructure\Mail\MailApplicantSender;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
-use Src\Recruitment\Infrastructure\Mail\MailOfferSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
@@ -200,7 +202,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         InterviewResults::class => DatabaseInterviewResults::class,
         InterviewEmailSender::class => MailInterviewSender::class,
         OfferRepository::class => DatabaseOfferRepository::class,
-        OfferEmailSender::class => MailOfferSender::class,
+        ApplicantEmailSender::class => MailApplicantSender::class,
         ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
         StageChangeEmailSender::class => MailStageChangeSender::class,
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,
@@ -242,6 +244,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
         ));
+        $this->app->bind(ApplicationPageLink::class, fn ($app): ApplicationPageLink => new ApplicationPageLink($app->make(Repository::class)->get('app.application_url')));
         $this->app->bind(InterviewCalendar::class, function ($app): InterviewCalendar {
             $config = $app->make(Repository::class);
 
@@ -337,6 +340,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         RateLimiter::for(self::EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::EXPORTS_PER_HOUR)->by('applicant-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         Event::listen(ApplicationSubmitted::class, NotifyAssigneesOfApplication::class);
+        Event::listen(ApplicationSubmitted::class, EmailApplicantOfReceiptListener::class);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);

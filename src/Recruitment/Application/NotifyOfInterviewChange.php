@@ -87,6 +87,7 @@ final readonly class NotifyOfInterviewChange
         $method = $this->calendarMethod($event->change);
 
         $this->emails->send($contact, $key, [
+            'company_id' => (string) $event->companyId,
             'job_title' => $jobTitle,
             'company_name' => $companyName,
             'note' => $interview->note === null ? '' : "\n\n".($contact->locale === 'id' ? 'Catatan' : 'Note').': '.$interview->note,

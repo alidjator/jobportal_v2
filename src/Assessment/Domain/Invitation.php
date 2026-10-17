@@ -31,6 +31,7 @@ final readonly class Invitation
         public InvitationMode $mode = InvitationMode::Online,
         public ?string $location = null,
         public ?InvitationAttachment $attachment = null,
+        public ?string $note = null,
     ) {}
 
     /** @param  list<int>  $assessorIds */
@@ -46,10 +47,11 @@ final readonly class Invitation
         array $assessorIds,
         InvitationMode $mode = InvitationMode::Online,
         ?string $location = null,
+        ?string $note = null,
     ): self {
         return new self(
             null, $applicationId, $companyId, $jobId, $applicantUserId, $testId, $startsAt, $dueAt, InvitationStatus::Invited, $invitedByUserId, $assessorIds,
-            mode: $mode, location: $mode === InvitationMode::Onsite ? $location : null,
+            mode: $mode, location: $mode === InvitationMode::Onsite ? $location : null, note: $note,
         );
     }
 
@@ -136,7 +138,7 @@ final readonly class Invitation
 
         return new self(
             $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
-            $this->status, $this->invitedByUserId, $this->assessorIds, $this->remindedAt, $this->closedAt, $this->createdAt, $this->mode, $this->location, $attachment,
+            $this->status, $this->invitedByUserId, $this->assessorIds, $this->remindedAt, $this->closedAt, $this->createdAt, $this->mode, $this->location, $attachment, $this->note,
         );
     }
 
@@ -149,7 +151,7 @@ final readonly class Invitation
     {
         return new self(
             $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
-            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt, $this->mode, $this->location, $this->attachment,
+            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt, $this->mode, $this->location, $this->attachment, $this->note,
         );
     }
 }

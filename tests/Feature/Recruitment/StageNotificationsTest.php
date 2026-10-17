@@ -75,10 +75,10 @@ final class StageNotificationsTest extends FeatureTestCase
         return array_values(array_map(fn ($sent): Email => $sent->getOriginalMessage(), $transport->messages()->all()));
     }
 
-    /** The emails that went to the applicant (the application itself sends none to them). */
+    /** The emails that went to the applicant about the stage of their application (not the receipt of it, the interview or the offer). */
     private function emailsToApplicant(): array
     {
-        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test' && ! preg_match('/Interview scheduled|Your interview for|Reminder: your interview|Jadwal wawancara|Wawancara untuk|Pengingat|Job offer for|Your job offer for|Penawaran kerja untuk/', $email->getSubject() ?? '')));
+        return array_values(array_filter($this->emails(), fn (Email $email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test' && ! preg_match('/Interview scheduled|Your interview for|Reminder: your interview|Jadwal wawancara|Wawancara untuk|Pengingat|Job offer for|Your job offer for|Penawaran kerja untuk|We received your application|sudah diterima/', $email->getSubject() ?? '')));
     }
 
     // ----- the four outcomes -----

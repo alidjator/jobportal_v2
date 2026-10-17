@@ -89,6 +89,8 @@ final class AuditAction
 
     public const string COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED = 'company.invitation_email_domains_changed';
 
+    public const string COMPANY_MESSAGE_DEFAULTS_CHANGED = 'company.message_defaults_changed';
+
     public const string COMPANY_DOCUMENT_SUBMITTED = 'company.document_submitted';
 
     public const string COMPANY_DOCUMENT_DELETED = 'company.document_deleted';

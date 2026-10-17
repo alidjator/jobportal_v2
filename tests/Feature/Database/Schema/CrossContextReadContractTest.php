@@ -27,10 +27,16 @@ final class CrossContextReadContractTest extends FeatureTestCase
             'identity_users' => ['id', 'created_at', 'registration_campaign_code'],
             'recruitment_applications' => ['id', 'user_id', 'company_id'],
         ],
+        'Job/Infrastructure/Persistence/DatabaseJobReader.php' => [
+            'recruitment_applications' => ['id', 'job_id'],
+        ],
         'Job/Infrastructure/Persistence/DatabaseJobSignalReader.php' => [
             'reference_job_roles' => ['id', 'name'],
             'reference_experience_levels' => ['id', 'slug', 'min_years', 'max_years'],
             'reference_education_levels' => ['id', 'rank'],
+        ],
+        'Job/Infrastructure/Tasks/JobsWithoutApplicantsTask.php' => [
+            'recruitment_applications' => ['id', 'job_id'],
         ],
         'JobSeeker/Infrastructure/Persistence/CompleteProfiles.php' => [
             'identity_users' => ['id', 'type', 'status', 'anonymized_at'],

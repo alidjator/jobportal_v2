@@ -13,6 +13,7 @@ use Src\Assessment\Domain\TestKind;
 use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -36,11 +37,12 @@ final readonly class InvitationChecks
         private CompanyTeam $team,
         private JobDirectory $jobs,
         private Settings $settings,
+        private CandidateMessageRules $messageRules,
         private Clock $clock,
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor` or `invalid-assessment-input`
+     * @throws BusinessRuleViolation `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor`, `invalid-assessment-input` or `message-link-not-allowed`
      */
     public function check(int $companyId, int $jobId, AssessmentInvitationInput $input): CheckedInvitation
     {
@@ -58,7 +60,9 @@ final readonly class InvitationChecks
             $this->refuse('invalid-assessment-input', 'location', 'Name the place where the test is taken: an onsite test needs a location.');
         }
 
-        return new CheckedInvitation($test, $startsAt, $input->dueAt, $assessors, $mode, $mode === InvitationMode::Onsite ? $input->location : null);
+        $this->messageRules->assertAllowed($companyId, $input->note, 'note');
+
+        return new CheckedInvitation($test, $startsAt, $input->dueAt, $assessors, $mode, $mode === InvitationMode::Onsite ? $input->location : null, $input->note);
     }
 
     /** A published test of the company, of the library, or a granted battery of an active provider when the company may use batteries. */

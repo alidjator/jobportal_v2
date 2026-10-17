@@ -9,6 +9,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
@@ -27,6 +28,7 @@ final readonly class ManageInterview
         private TeamApplicationLookup $lookup,
         private InterviewRepository $interviews,
         private InterviewViews $views,
+        private CandidateMessageRules $messageRules,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -69,13 +71,14 @@ final readonly class ManageInterview
      * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required`
      * @throws EntityNotFound
      * @throws StateConflict `interview-not-active`
-     * @throws BusinessRuleViolation `invalid-interview` when the note is too long
+     * @throws BusinessRuleViolation `invalid-interview` when the note is too long, or `message-link-not-allowed`
      */
     public function updateNote(Actor $actor, int $applicationId, ?string $note): InterviewView
     {
         [$saved, $event] = $this->transactions->run(function () use ($actor, $applicationId, $note): array {
             $team = $this->lookup->find($actor, $applicationId, forUpdate: true, permission: CompanyPermission::InterviewsManage);
             $interview = $this->interviews->active($applicationId, forUpdate: true) ?? throw new StateConflict('This interview is no longer active.', 'interview-not-active');
+            $this->messageRules->assertAllowed($team->application->companyId, $note);
             $changed = $interview->withNote($note);
 
             if ($changed->note === $interview->note) {

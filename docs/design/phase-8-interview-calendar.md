@@ -1,4 +1,4 @@
-# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4 and 3, then 1 coded 2026-10-17)
+# Phase 8: recruitment calendar and interview note (designed 2026-10-14; sections 2, 4, 3, 1 and 6 coded 2026-10-17)
 
 Two gaps found against Mekari Talenta's interview flow (help center articles 34781370644761 and 42469173015193): Talenta has a recruitment calendar of
 every interview and lets the recruiter add a note for the candidate to the invitation. Extends `phase-2-interviews.md`, `phase-2-offers.md` and
@@ -167,10 +167,10 @@ interview stage whose time is not known yet.
 
 ## Coded: sections 2, 4 and 3 (2026-10-17)
 
-Migration `000155`: `recruitment_interviews.note`, `calendar_uid` (one per application, filled for existing rows) and `calendar_sequence` (follows the order of the interviews of an application). Section 1 (the calendar), 5 (the preview) and 6 (default texts, logo,
-assessment note) are not coded. Interpretations, where the design left room:
+Migration `000155`: `recruitment_interviews.note`, `calendar_uid` (one per application, filled for existing rows) and `calendar_sequence` (follows the order of the interviews of an application). Sections 1 (the calendar), 5 (the preview) and 6 (default texts, logo,
+assessment note) were not coded then. Interpretations, where the design left room:
 
-- **Note.** `note` (at most 1,000 characters, plain text, no link rule yet: that comes with section 6) in `PUT .../interview`, `interview.note` in the move and the bulk move (one note for every slot). A new time keeps the earlier note when the request does not
+- **Note.** `note` (at most 1,000 characters, plain text; the link rule of section 6 came later) in `PUT .../interview`, `interview.note` in the move and the bulk move (one note for every slot). A new time keeps the earlier note when the request does not
   name one; `note: null` clears it. `PATCH company/applications/{id}/interview {note}` (`interviews.manage`, `note` required, may be null) changes only the note of the pending or confirmed interview: the status, the time and the proposals stay; 409 `interview-not-active` when none is
   active. A note that really changed sends `interview.updated` (in-app, and email `recruitment.interview_updated` by `application_update`) with a new `.ics`; the same note again changes and sends nothing. The job seeker's interview, the team's interviews and the
   scheduled, rescheduled, reminder and updated emails show it (the variable `note` of the templates holds the label and the text, or nothing).
@@ -199,3 +199,18 @@ Interpretations, where the design left room:
   `involves_me`: the interviewer or a panel member; the member who sent the offer; the member who sent the test or scores it.
 - **Actions.** `view_application` always; `edit`, `edit_note` and `cancel` for a pending or confirmed interview when the member holds `interviews.manage`; `scorecard` for the interviewer and the panel once a non-pending interview has started; `download_ics` for every interview.
 
+
+## Coded: section 6, default texts (2026-10-17)
+
+Migration `000157`: the table `company_message_defaults` (one row per company with `interview`, `assessment`, `offer` and `applied`, plus who changed it) and `assessment_invitations.note`. Section 5 (the preview) is not coded. Interpretations, where the design left room:
+
+- **Defaults.** `GET company/message-defaults` (any member) and `PUT company/message-defaults` (`company.profile`) with `interview`, `assessment`, `offer` (at most 2,000) and `applied`, each at most 1,000 characters. `PUT` changes only the scenarios named in the request (a missing one stays; null or a blank text
+  clears it) and answers all four. Saving what is already set changes and audits nothing; the audit `company.message_defaults_changed` names the scenarios, never the texts. The server never applies `interview`, `assessment` and `offer`: the dialogs prefill them. `applied` is sent: it is the company's
+  message in the received email.
+- **Link rule.** `CandidateMessageRules` (Shared port, Company implements it with `MessageLinkRule`): a URL (with a scheme or `www.`), an email address, or a bare domain with a common ending (`.com`, `.co`, `.id`, `.ly`, ...) is refused with 422 `message-link-not-allowed` (the error names the field and the text found)
+  unless its host is the company's website host or a subdomain of it; a company without a website may send none. Phone numbers pass. The rule runs when saving a default and on every note sent to a candidate: `interview.note` or `note` of a schedule (only when the request names a note, so a kept note is not checked
+  again), the note of `PATCH .../interview`, the note of an offer, and the note of a test invitation. A bulk move fails each item with the same code.
+- **Test note.** `note` (at most 1,000, nullable) in `PUT company/assessment/applications/{id}/invitation`, `assessment.note` in the move and the bulk move; in the team's and the candidate's invitation, the export of the candidate's data, and the test invited and reminder emails (the variable `note`, with its label). The offer emails
+  (`recruitment.offer_sent` and `offer_revised`) now carry the offer note too (variable `note`).
+- **Logo and the fixed line.** The interview, offer and test emails and the received email are framed by the platform (`CompanyEmailFrame`, the trait `FramesCompanyEmail` of their mailables): the company logo above the text, from the public card of the company (the name in bold when it has no public logo, is hidden or
+  suspended), and below it the line that the platform and its companies never charge a fee (Indonesian or English by the recipient's language). The sender passes `company_id` among the template variables; a template ignores it. The text of the template is unchanged by the company.
