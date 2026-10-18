@@ -7,19 +7,14 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 1. This file.
 2. The design document of the step (`docs/design/`: `decisions.md` cross-phase, `architecture.md`, `phase-0-schema.md`, `phase-8-index.md` for the order of phase 8, one `phase-N-*.md` or `erp-*.md` per step whose "coded" sections hold interpretations, migrations and `.env` values). `docs/analysis/`: legacy flow, benchmarks, gaps; `docs/api/`: API-document rules, error catalog; `docs/deployment-checklist.md`: go-live list.
 
-## Current state (2026-10-17)
+## Current state (2026-10-18)
 
-- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. Tags `v0.1.0` (phase 0 + Company), `v0.2.0` (phases 1-7, 2430 tests green), `v0.3.0` (ERP TA core and phase 8 to 2026-10-17, 2933 tests green), `v0.4.0` (withdrawals, #16), `v0.5.0` (team notifications #8 section 3, interviewer workflow #11, shortlist reviews #9; 3017 tests green).
-- **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md` (#5 to #11 and #16 complete).
-- **Git (2026-10-17):** `master` is pushed to `origin` and tagged `v0.5.0`.
-- Real PostgreSQL `jobportal_v2`: migrated to `000162`, reference data only (0 accounts). Test database at `000162` too.
-- **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`, separating the live site from the working folder: the scheduler fails when code needing a new migration is live before `migrate`); since 2026-10-15 the ERP TA core (`docs/design/erp-direction.md`) is coded before the remaining hiring work.
-- **Name (changed 2026-10-16):** ONESIS ERP / ONESIS Career, `docs/design/naming.md`; `onesis` stays the technical identifier.
-- **#13 in progress (2026-10-17):** `phase-8-hiring.md` sections 1 (`000163`, `000164`) and 2 are checked and committed; section 3 (hires export) is committed and gained its terms columns with #12; then the Employee hand-off (needs a design session).
-- **#12 coded 2026-10-18, waits for the user's check:** `phase-8-offer-letters.md` sections 1, 2, 4 (migration `000165`). Not coded: section 3 (legal question 12) and offer approval of internal tenants (needs a design).
-- **#17 coded 2026-10-18, waits for the user's check:** `phase-8-platform-admin.md` sections 5 to 8 (`000166` to `000169`, branch `phase-8-platform-admin-5-8`); the reset emails to the imported accounts now have `identity:send-imported-password-resets`.
-- **Next coding:** #8, #9, #11 and #16 are complete (the one-click opt-out of team emails is deferred; the assessment summary on the review card and `provider_reviews`, which waits for #23, are not coded). Pick the next open item from `phase-8-index.md`; the location items #27 (needs a design session) and #28 come before the front end and the final import run.
-- **Locations (decided 2026-10-17):** new index items #27 (`company_locations`, needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run; employee data order in `erp-direction.md` section 9.
+- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. `master` is pushed and tagged `v0.6.0` (3145 tests green); earlier tags in `git tag` (`v0.5.0`: team notifications, interviewer workflow, shortlist reviews).
+- **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md`; coded: #5 to #12, #16, #17 and #13 sections 1 to 3.
+- Real PostgreSQL `jobportal_v2` and the test database are at `000169`; reference data only (0 accounts) until the final import.
+- **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
+- **Not coded inside coded items:** #13 Employee hand-off (needs a design session); #12 section 3 (legal question 12) and offer approval of internal tenants (needs a design); #8 one-click opt-out of team emails; #9 assessment summary on the review card and `provider_reviews` (waits for #23); #17 front end and the SMTP provider's webhook parser (`EmailEventParser`, waits for the provider). #14 waits for legal question 13, #15 for #14.
+- **Next coding:** pick the next open item of `phase-8-index.md`; #27 `company_locations` (needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
@@ -32,7 +27,8 @@ Entry point for a new session; rules, code standard, Git workflow and commands: 
 ## Items waiting for the user
 
 - Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`, checklist section 3); the **freeze date** for the final run is not set.
-- SMTP; then the reset emails to the imported accounts (`docs/deployment-checklist.md` section 3).
+- SMTP provider (then its webhook parser); then the reset emails to the imported accounts: `identity:send-imported-password-resets` (dry run first, batches of 200; `docs/deployment-checklist.md` section 3).
+- Admin setting `platform.operations_email` (scheduler alerts) and an outside uptime monitor on `GET /api/v1/health/scheduler`.
 - `CORS_ALLOWED_ORIGINS` (front-end origin); `JOB_SEEKER_PROFILE_URL` and `JOB_SEEKER_APPLICATION_URL` (links in emails); consider nginx `limit_req` for unknown paths.
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
