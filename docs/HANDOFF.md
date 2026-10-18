@@ -1,20 +1,24 @@
 # Handoff
 
-Entry point for a new session; rules, code standard, Git workflow and commands: `CLAUDE.md`. Keep this file **under about 5 KB**: replace the status, do not append; decisions belong in `docs/design/`, per-item coding status in `docs/design/phase-8-index.md`. History: `docs/handoff-history.md` (to 2026-10-08), then `git log -p docs/HANDOFF.md`; search, do not read whole.
+Entry point for a new session. Keep it **under about 5 KB**: replace the status, do not append.
 
-## Read order
-
-1. This file.
-2. The design document of the step (`docs/design/`: `decisions.md` cross-phase, `architecture.md`, `phase-0-schema.md`, `phase-8-index.md` for the order of phase 8, one `phase-N-*.md` or `erp-*.md` per step whose "coded" sections hold interpretations, migrations and `.env` values). `docs/analysis/`: legacy flow, benchmarks, gaps; `docs/api/`: API-document rules, error catalog; `docs/deployment-checklist.md`: go-live list.
+| What | Where |
+|---|---|
+| Rules, code standard, Git workflow, commands | `CLAUDE.md` |
+| Decisions | `docs/design/` (`decisions.md` cross-phase, `architecture.md`, `phase-0-schema.md`, one `phase-N-*.md` or `erp-*.md` per step; its "coded" sections hold interpretations, migrations and `.env` values) |
+| Phase 8 order and per-item status (coded, open parts, waits) | `docs/design/phase-8-index.md` |
+| Go-live list | `docs/deployment-checklist.md` |
+| Legacy flow, benchmarks, gaps | `docs/analysis/` |
+| API-document rules, error catalog | `docs/api/` |
+| History | `docs/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
 
 ## Current state (2026-10-18)
 
-- Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`); **the user pushes**, a session only gives the commands. `master` is pushed and tagged `v0.6.0` (3145 tests green); earlier tags in `git tag` (`v0.5.0`: team notifications, interviewer workflow, shortlist reviews).
-- **Phases 0 to 7 coded and committed.** Phase 8: done and open items in `phase-8-index.md`; coded: #5 to #12, #16, #17 and #13 sections 1 to 3.
+- `master` is tagged `v0.6.0` (3145 tests green); earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
+- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16, #17 coded, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
 - Real PostgreSQL `jobportal_v2` and the test database are at `000169`; reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
-- **Not coded inside coded items:** #13 Employee hand-off (needs a design session); #12 section 3 (legal question 12) and offer approval of internal tenants (needs a design); #8 one-click opt-out of team emails; #9 assessment summary on the review card and `provider_reviews` (waits for #23); #17 front end and the SMTP provider's webhook parser (`EmailEventParser`, waits for the provider). #14 waits for legal question 13, #15 for #14.
-- **Next coding:** pick the next open item of `phase-8-index.md`; #27 `company_locations` (needs a design session) and #28 (job `locations` in the API) come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
+- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions), so the next item is **#27 `company_locations` (needs a design session)**, then #28 (job `locations` in the API); both come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)

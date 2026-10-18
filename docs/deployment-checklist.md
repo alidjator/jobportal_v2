@@ -1,6 +1,6 @@
 # Go-live deployment checklist
 
-One list for the day the API goes to production (architecture review finding 13, decided 2026-10-11). Every item is a thing **the user** does or approves (root, the real database, `.env` secrets); nothing here is run by a coding session on its own. Tick an item only after checking it on the server. Status as of 2026-10-11 is in `docs/HANDOFF.md`; this file does not repeat it.
+One list for the day the API goes to production (architecture review finding 13, decided 2026-10-11). Every item is a thing **the user** does or approves (root, the real database, `.env` secrets); nothing here is run by a coding session on its own. Tick an item only after checking it on the server. The current status is in `docs/HANDOFF.md`; this file does not repeat it.
 
 Why it is mandatory: until the items in sections 2 and 3 are done, the hardening of the security review and the performance audit is **not active**. The rate limiter on a file cache is not atomic (throttles can be passed under concurrency), and `QUEUE_CONNECTION=sync` runs queued work (erasure listeners, bulk sends, recommendation batches) inside the HTTP request.
 

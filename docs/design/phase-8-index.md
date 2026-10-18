@@ -9,7 +9,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 ## Coded
 
-Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
+Everything below passed the full `composer check` of tag `v0.6.0` (2026-10-18). Parts still open inside a coded item are listed under "Next coding".
 
 | Document | Status |
 |---|---|
@@ -24,22 +24,24 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | `erp-sso.md` (#7) | coded 2026-10-16 (no migration) |
 | `erp-requisitions.md` (#6) | Approval context A, B1, B2 (`000148`-`000150`), workforce plans (`000151`) and requisitions with the job rule (`000152`) coded 2026-10-16 |
 | `phase-8-interview-calendar.md` (#10) | sections 1 to 6 coded 2026-10-17 (`000155`-`000157`; section 5 no migration) |
+| `phase-8-recruiter-workday.md` (#8) | sections 1, 2, 4 (`000153`), 5 (with #10 section 6, `000157`) and section 3 parts A (audiences, `team_daily_digest`, the digest) and B (`team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`) coded 2026-10-17; open: `provider_reviews` (waits for #23), the one-click opt-out of team emails (deferred) |
+| `phase-8-hiring-managers.md` (#9) | sections 1 and 2 (`000154`) and 3 (`000162`; part A: requests, lists, page, answers, lock, close; part B: notifications, `team_reviews`, scheduler, tasks, `reviews[]`, `review_summary`, erasure) coded 2026-10-17; open: the assessment summary on the review card (waits for #23) |
+| `phase-8-interviewers.md` (#11) | complete: section 1 (`000158`), sections 3 and 4 (`000160`) and section 2 (`000161`: invitations with `.ics`, the answer, the cancellation; tasks `my_rsvp` and `panel_declined`, `filter[rsvp]`, calendar and pipeline badges) coded 2026-10-17 |
+| `phase-8-offer-letters.md` (#12) | sections 1 (terms), 2 (letter PDF, own PDF) and 4 (one email per move) coded 2026-10-18 (`000165`), with the terms columns of the hires export; open: see #12 below |
+| `phase-8-hiring.md` (#13) | sections 1 (`000163`, `000164`), 2 (filled jobs) and 3 (hires export, the bridge to the existing HRIS) coded 2026-10-17; open: see #13 below |
+| `phase-8-withdrawals.md` (#16) | complete: parts A to C coded 2026-10-17 (`000159`) |
+| `phase-8-platform-admin.md` sections 5 to 8 (#17) | coded 2026-10-18 (`000166` to `000169`), with the admin account view (`users.view`) and the mass reset command; section 6 (email suppression) is in before the reset emails to the imported accounts; open: the front end and the SMTP provider's webhook parser `EmailEventParser` (waits for the provider) |
 
 ## Next coding (in this order)
 
 | # | Document | Waits for |
 |---|---|---|
-| 8 | `phase-8-recruiter-workday.md` section 3 | sections 1, 2, 4 (`000153`) and 5 (with #10 section 6, `000157`) coded 2026-10-17; section 3 part A (audiences, `team_daily_digest`, the digest) coded 2026-10-17; part B (`team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`) coded 2026-10-17; `provider_reviews` waits for #23; the one-click opt-out is deferred; #9 section 3 and #11 sections 2 to 4 are unblocked |
-| 9 | `phase-8-hiring-managers.md` section 3 | sections 1 and 2 coded 2026-10-17 (`000154`); section 3 coded 2026-10-17 (`000162`; part A: requests, lists, page, answers, lock, close; part B: notifications, `team_reviews`, scheduler, tasks, `reviews[]`, `review_summary`, erasure); **#9 is complete** |
-| 11 | `phase-8-interviewers.md` sections 2 to 4 | section 1 coded 2026-10-17 (`000158`); sections 3 and 4 coded 2026-10-17 (`000160`); section 2 coded 2026-10-17 (`000161`: invitations with `.ics`, the answer, the cancellation; part B: the tasks `my_rsvp` and `panel_declined`, `filter[rsvp]`, calendar and pipeline badges); **#11 is complete** |
-| 12 | `phase-8-offer-letters.md` | sections 1 (terms), 2 (letter PDF, own PDF) and 4 (one email per move) coded 2026-10-18 (`000165`), with the terms columns of the hires export; **waits:** section 3 (acceptance evidence: `legal-review.md` question 12) and offer approval of internal tenants through #6 (needs a design) |
-| 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | sections 1 (`000163`, `000164`), 2 (filled jobs) and 3 (hires export) coded 2026-10-17, no migration in 2 and 3; the terms columns of the hires export came with #12 (2026-10-18); the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
+| 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |
+| 13 | **new** hand-off to Employee (after `phase-8-hiring.md`) | a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
-| 15 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
-| 16 | `phase-8-withdrawals.md` | **coded 2026-10-17** (`000159`, parts A to C); it unblocks the team preferences of #8 section 3 |
+| 15 | `phase-8-candidate-experience.md` | #14: the pending rejections of the rejections design carry the candidate message |
 | 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
 | 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
-| 17 | `phase-8-platform-admin.md` sections 5 to 8 | **coded 2026-10-18** (`000166` to `000169`), waits for the user's check; section 6 (email suppression) is in before the reset emails to the imported accounts (the SMTP provider's webhook parser is not written until the provider is chosen); it also added the admin account view (`users.view`) and the mass reset command |
 | 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
