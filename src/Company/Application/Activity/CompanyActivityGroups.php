@@ -19,7 +19,7 @@ final class CompanyActivityGroups
             AuditAction::APPLICATION_RESUME_DOWNLOADED, AuditAction::CANDIDATE_RESUME_DOWNLOADED, AuditAction::ASSESSMENT_REPORT_DOWNLOADED,
             AuditAction::INTERVIEW_RECORDING_DOWNLOADED,
         ],
-        'export' => [AuditAction::EXPORT_APPLICANTS, AuditAction::COMPANY_ACTIVITY_EXPORTED],
+        'export' => [AuditAction::EXPORT_APPLICANTS, AuditAction::EXPORT_HIRES, AuditAction::COMPANY_ACTIVITY_EXPORTED],
         'team' => [
             AuditAction::COMPANY_MEMBER_JOINED, AuditAction::COMPANY_MEMBER_REMOVED, AuditAction::COMPANY_MEMBER_ROLE_CHANGED,
             AuditAction::COMPANY_MEMBER_PERMISSIONS_CHANGED, AuditAction::COMPANY_MEMBER_RENAMED, AuditAction::COMPANY_MEMBER_SUSPENDED,

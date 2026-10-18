@@ -20,6 +20,7 @@ use Src\Recruitment\Application\EmailTeamOfEvents;
 use Src\Recruitment\Application\EraseApplicantData;
 use Src\Recruitment\Application\EraseScorecardData;
 use Src\Recruitment\Application\Export\ApplicationsDataExporter;
+use Src\Recruitment\Application\HireExportReader;
 use Src\Recruitment\Application\HiringManagerVisibility;
 use Src\Recruitment\Application\InterviewCalendar;
 use Src\Recruitment\Application\InterviewEmailSender;
@@ -57,6 +58,7 @@ use Src\Recruitment\Domain\Events\ApplicationHireUpdated;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
+use Src\Recruitment\Domain\Events\HiresExported;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\InterviewPanelAnswered;
 use Src\Recruitment\Domain\Events\JobFilled;
@@ -127,6 +129,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseHireExportReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseHiringManagerVisibility;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewKitRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewPanel;
@@ -245,6 +248,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         StageChangeEmailSender::class => MailStageChangeSender::class,
         ApplicantApplicationReader::class => DatabaseApplicantApplicationReader::class,
         RecruiterApplicationReader::class => DatabaseRecruiterApplicationReader::class,
+        HireExportReader::class => DatabaseHireExportReader::class,
         JobQuestionRepository::class => DatabaseJobQuestionRepository::class,
         VideoRoomRepository::class => DatabaseVideoRoomRepository::class,
         LobbySignal::class => BroadcastLobbySignal::class,
@@ -386,6 +390,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         Event::listen(ApplicantsExported::class, [RecordRecruitmentAuditEntries::class, 'onApplicantsExported']);
+        Event::listen(HiresExported::class, [RecordRecruitmentAuditEntries::class, 'onHiresExported']);
         RecruitmentChannels::register();
 
         parent::boot();

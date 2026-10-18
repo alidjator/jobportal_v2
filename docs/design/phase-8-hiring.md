@@ -1,4 +1,4 @@
-# Phase 8: hire details, filled jobs and the hires export (designed 2026-10-14; sections 1 and 2 coded 2026-10-17)
+# Phase 8: hire details, filled jobs and the hires export (designed 2026-10-14; sections 1, 2 and 3 coded 2026-10-17)
 
 Gaps found against Mekari Talenta's "Move to hired" (help center article 36986013467033), adapted to a job portal: Talenta's new joiner form,
 payroll registration and manpower planning are HRIS features and stay **out of scope** (collecting NIK and bank accounts would also add a large
@@ -83,7 +83,7 @@ Coded in a coding session.
 
 ## Coded, section 1 (2026-10-17)
 
-Migrations `000163` (`recruitment_applications.join_date`, `hire_note`) and `000164` (`company_message_defaults.hired`); both new. Section 3 is not coded.
+Migrations `000163` (`recruitment_applications.join_date`, `hire_note`) and `000164` (`company_message_defaults.hired`); both new.
 
 - **Move and bulk move:** `hire: {join_date, note?}` (`HireInput`, `HireFields`); `ProcessApplication::hireFor` checks it (`HireDetails::make`: window of 90 days back to one year ahead in Jakarta days, note at most 1,000 characters, the link rule `message-link-not-allowed`). A move to another stage with `hire` is 422 `invalid-hire-input` (same pattern as `offer` and `interview`). The bulk move checks the shared details once before moving anyone. A move out of `hired` clears both columns; a move between two hired stages stores the new details.
 - **Offer accepted:** `join_date` is the offer's start date (never refused for the window), the note is the company's `hired` default (`CompanyMessageTexts::hired`).
@@ -102,3 +102,14 @@ No migration. Answers of the user (2026-10-17): the single move answers **200 wi
 - **Move responses:** `ProcessApplication::move` returns whether the job was filled; `POST company/applications/{id}/move` answers 200 `{meta: {job_filled}}`; `bulk-move` adds `meta.job_filled` (true when any item crossed the line). The offer acceptance answers the candidate as before.
 - **`POST company/jobs/{id}/fill`** (`FillJob`, `BulkApplicationController::fill`): `close` required, `reject_application_ids` required (may be empty, at most `recruitment.max_bulk_applications`, else 422 `too-many-applications`), optional `note` (rules of a rejection, 422 `invalid-rejection`). Needs `applications.manage`, except a request that only closes the job, which needs only `jobs.publish` (checked by the close itself). The job is closed first through the port `JobCloser` (Job: `CloseJobForCaller` over `CloseJob`); then each application goes through `ProcessApplication::reject` with `position_filled`, so it keeps the rules, history and notifications of a bulk reject. `reject(..., sparePendingOffer: true)` checks the pending offer under the application's row lock (a race with a new offer is safe). Audit `job.filled` (`closed`, `rejected`, `skipped`, `company_id`; never the note) through the event `JobFillHandled`, written in the request.
 - **Also:** `JobDirectory` gained `vacancies()` and `statusOf()`. The API docs cache was rebuilt and the error catalog regenerated (`offer-pending` is new).
+
+## Coded, section 3 (2026-10-17)
+
+No migration. **Deferred to #12:** the offer terms columns (employment type, contract months, probation months, work mode, work location, salary basis, allowances and their total, benefits) are not in the file, because `recruitment_offers` has no terms yet (decided by the user, 2026-10-17); the columns are added when #12 codes the offer terms. The offer columns of the file are the position, the salary, the start date and the accepted-at moment, from the latest accepted offer of the application; they are empty for a hire without an accepted offer.
+
+- **`GET company/hires/export?from=&to=`** (`ExportHires`, `CompanyApplicationController::exportHires`, `ExportHiresRequest`): `from` and `to` are required `YYYY-MM-DD` Jakarta days (a missing or malformed one is the ordinary 422 validation error); `to` before `from`, or more than 366 days counting both ends, is 422 `invalid-export-range` (new code, error catalog regenerated). Optional `filter[job_id]` (any other filter is 422; a job the member may not see is 404). Needs `applications.view` and `applications.export`.
+- **Which hires:** applications of the company **now** in `hired` whose last move into `hired` from another stage type (`recruitment_application_stage_history`, `to_type = hired` and `from_type` null or not `hired`) falls in `[from 00:00, to + 1 day 00:00)` Jakarta time. Oldest hire first. The jobs: every job of the company with `jobs.view_all`, else the jobs assigned to the member; on a job where the member is a bound hiring manager only the applications that carry the marker (`HiringManagerScope`, as the pipeline list).
+- **Columns:** application id, hired at (ISO 8601 UTC), join date, name, email, phone, city, job id, job title, offer position, offer salary (IDR), offer start date, offer accepted at. Contact data is always open here (a hired application is past `applied`, see `ContactVisibility`). An anonymised hire keeps its row: name `Deleted account`, email, phone and city empty.
+- **Reused from the applicants export:** `CsvResponse` (byte order mark, formula guard), the row cap `recruitment.max_export_rows` (422 `export-too-large` before the audit), the limiter `EXPORT_LIMITER` (10 per member per hour; it is the same limiter, so applicant exports and hires exports share the 10), the non-queued audit listener. Audit `export.hires` (`from`, `to`, `job_id`, `row_count`, `company_id`; subject the company) through the event `HiresExported`, written before the file is sent; `export.hires` is in the "export" group of the company activity log. File name `hires-{from}-{to}.csv`.
+- **Port:** `HireExportReader` (Application) read by `DatabaseHireExportReader` (ids first, then chunks of 200, offers read per chunk).
+- Tests: `HiresExportTest` (14).

@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Recruitment\Application\ExportHires;
 use Src\Recruitment\Application\ExportJobApplications;
 use Src\Recruitment\Application\GetCompanyApplication;
 use Src\Recruitment\Application\GetCompanyApplicationResume;
@@ -16,6 +17,7 @@ use Src\Recruitment\Application\UpdateApplicationHire;
 use Src\Recruitment\Application\WithdrawApplicationByTeam;
 use Src\Recruitment\Interface\Http\CsvDownload;
 use Src\Recruitment\Interface\Http\PdfDownload;
+use Src\Recruitment\Interface\Http\Requests\ExportHiresRequest;
 use Src\Recruitment\Interface\Http\Requests\ExportJobApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\ListJobApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\MarkApplicationWithdrawnRequest;
@@ -44,6 +46,12 @@ final class CompanyApplicationController extends ApiController
     public function export(ExportJobApplicationsRequest $request, int $id, ActorResolver $actors, ExportJobApplications $export): StreamedResponse
     {
         return CsvDownload::of($export->execute($actors->fromRequest($request), $request->toQuery($id), $request->ip(), $request->userAgent()));
+    }
+
+    /** The hires of a period across the jobs the member may see, as a CSV (`docs/design/phase-8-hiring.md` section 3). */
+    public function exportHires(ExportHiresRequest $request, ActorResolver $actors, ExportHires $export): StreamedResponse
+    {
+        return CsvDownload::ofHires($export->execute($actors->fromRequest($request), $request->fromDay(), $request->toDay(), $request->jobId(), $request->ip(), $request->userAgent()));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetCompanyApplication $get): CompanyApplicationDetailResource

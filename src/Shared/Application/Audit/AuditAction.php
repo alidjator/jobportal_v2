@@ -127,6 +127,8 @@ final class AuditAction
 
     public const string EXPORT_APPLICANTS = 'export.applicants';
 
+    public const string EXPORT_HIRES = 'export.hires';
+
     public const string APPLICATION_WITHDRAWN_BY_COMPANY = 'recruitment.application_withdrawn_by_company';
 
     public const string HIRE_UPDATED = 'recruitment.hire_updated';

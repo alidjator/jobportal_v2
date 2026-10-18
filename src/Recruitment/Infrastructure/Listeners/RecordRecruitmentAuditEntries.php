@@ -5,6 +5,7 @@ namespace Src\Recruitment\Infrastructure\Listeners;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
 use Src\Recruitment\Domain\Events\ApplicationHireUpdated;
 use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
+use Src\Recruitment\Domain\Events\HiresExported;
 use Src\Recruitment\Domain\Events\JobFillHandled;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
@@ -12,7 +13,7 @@ use Src\Shared\Application\Audit\AuditEntry;
 use Src\Shared\Application\Audit\AuditTrail;
 
 /**
- * Writes the audit entries for the Recruitment context: the export of a job's applicants and a withdrawal marked by the team (the application and the reason, never the note) and a change to the hire details (the old and the new join date, and whether the note changed, never the note, which may name the candidate and could not be erased from the audit) and "mark as filled" on a job (whether it was closed, the counts of rejected and skipped applications). Unlike the other audit listeners it runs in the request, not on a
+ * Writes the audit entries for the Recruitment context: the export of a job's applicants, the export of the hires of a period (the days, the job filter and the row count) and a withdrawal marked by the team (the application and the reason, never the note) and a change to the hire details (the old and the new join date, and whether the note changed, never the note, which may name the candidate and could not be erased from the audit) and "mark as filled" on a job (whether it was closed, the counts of rejected and skipped applications). Unlike the other audit listeners it runs in the request, not on a
  * queue, because an export that cannot be audited must not be sent. The entry holds the filters and the row count, never a name, an email or the search text.
  */
 final readonly class RecordRecruitmentAuditEntries
@@ -24,6 +25,15 @@ final readonly class RecordRecruitmentAuditEntries
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::EXPORT_APPLICANTS, 'job', $event->jobId,
             ['filters' => $event->filters, 'row_count' => $event->rowCount, 'company_id' => $event->companyId],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onHiresExported(HiresExported $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->userId, AuditAction::EXPORT_HIRES, 'company', $event->companyId,
+            ['from' => $event->from, 'to' => $event->to, 'job_id' => $event->jobId, 'row_count' => $event->rowCount, 'company_id' => $event->companyId],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

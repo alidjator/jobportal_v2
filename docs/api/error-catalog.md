@@ -147,6 +147,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
+| `invalid-export-range` | 422 | Recruitment | The period must run from one day to a later or the same day, and last at most 366 days. |
 | `invalid-flow-approver` | 422 | Approval |  |
 | `invalid-flow-condition` | 422 | Approval |  |
 | `invalid-flow-steps` | 422 | Approval |  |
