@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Src\TalentPool\Application\CreateCategory;
 use Src\TalentPool\Application\EraseTalentEntries;
-use Src\TalentPool\Application\SaveCandidate;
+use Src\TalentPool\Application\NewEntries;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\FeatureTestCase;
 
@@ -272,7 +272,7 @@ final class TalentPoolTest extends FeatureTestCase
 
         $rows = [];
 
-        for ($index = 0; $index < SaveCandidate::MAX_ENTRIES; $index++) {
+        for ($index = 0; $index < NewEntries::MAX_ENTRIES; $index++) {
             $user = $this->seeker("pool{$index}@example.test", name: "Pool {$index}");
             $rows[] = ['company_id' => $this->companyId, 'candidate_user_id' => $user, 'created_at' => now(), 'updated_at' => now()];
         }

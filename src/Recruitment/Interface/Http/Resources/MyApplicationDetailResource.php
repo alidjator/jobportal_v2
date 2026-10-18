@@ -38,6 +38,8 @@ final class MyApplicationDetailResource extends JsonResource
             'withdrawn_note' => $data->withdrawnNote,
             /** @var array{join_date: string, note: string|null}|null the join date and the company's note once hired */
             'hire' => HirePayload::of($data->hire),
+            /** Whether the company may keep the applicant's profile in its talent pool for other jobs; `PUT`/`DELETE me/applications/{id}/talent-pool-consent` changes it. */
+            'talent_pool_consent' => $data->talentPoolConsent,
             /** @var array{reason: string|null, by: string, at: string}|null */
             'withdrawal' => $row->status === StageType::Withdrawn ? $this->withdrawal($data->history) : null,
             /** @var list<array{status: string, at: string, by: string}> */

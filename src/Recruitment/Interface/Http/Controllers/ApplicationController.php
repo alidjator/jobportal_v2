@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Recruitment\Application\ApplyToJob;
+use Src\Recruitment\Application\ChangeTalentPoolConsent;
 use Src\Recruitment\Application\GetMyApplication;
 use Src\Recruitment\Application\GetMyApplicationResume;
 use Src\Recruitment\Application\ListMyApplications;
@@ -47,6 +48,22 @@ final class ApplicationController extends ApiController
     public function withdraw(WithdrawApplicationRequest $request, int $id, ActorResolver $actors, WithdrawMyApplication $withdraw): Response
     {
         $withdraw->execute($actors->fromRequest($request), $id, $request->note(), $request->reason());
+
+        return response()->noContent();
+    }
+
+    /** Lets the company keep the applicant's profile in its talent pool for other jobs; giving it again changes nothing. */
+    public function giveTalentPoolConsent(Request $request, int $id, ActorResolver $actors, ChangeTalentPoolConsent $change): Response
+    {
+        $change->give($actors->fromRequest($request), $id);
+
+        return response()->noContent();
+    }
+
+    /** Takes the consent back; the company's talent pool entry that rested on it is removed. */
+    public function revokeTalentPoolConsent(Request $request, int $id, ActorResolver $actors, ChangeTalentPoolConsent $change): Response
+    {
+        $change->revoke($actors->fromRequest($request), $id);
 
         return response()->noContent();
     }

@@ -51,7 +51,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'review_reviews' => ['user_id'],
             'review_replies' => ['written_by_user_id'],
             'job_saved_jobs' => ['user_id'],
-            'talentpool_entries' => ['candidate_user_id'],
+            'talentpool_entries' => ['candidate_user_id', 'saved_by_user_id'],
             'assessment_psychologists' => ['user_id'],
             'assessment_tests' => ['created_by_user_id'],
             'assessment_invitations' => ['applicant_user_id', 'invited_by_user_id'],

@@ -29,6 +29,30 @@ interface CandidateReader
     public function findableUserIds(array $userIds): array;
 
     /**
+     * The candidates among these accounts who can be found now (the rule of `findBySlug`), as the search reads them.
+     *
+     * @param  list<int>  $userIds
+     * @return list<CandidateRow>
+     */
+    public function findableRows(array $userIds): array;
+
+    /**
+     * The current or latest position of each of these accounts (the order of the profile's experience list); an account without one is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, array{title: string, employer: string}> by account id
+     */
+    public function latestPositions(array $userIds): array;
+
+    /**
+     * The first skills of each of these accounts in the order the candidate gave them, at most `$perUser`; an account without skills is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, list<int>> skill ids by account id
+     */
+    public function skillIdsOf(array $userIds, int $perUser): array;
+
+    /**
      * The most recently updated candidates who can be found, in the province (anywhere when it is null), at most `$limit`: the pool a job's recommendations
      * are scored from.
      *

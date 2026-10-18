@@ -1,10 +1,10 @@
-# Phase 8: applicants in the talent pool, inviting from the pool and a richer pool list (designed 2026-10-14, not coded)
+# Phase 8: applicants in the talent pool, inviting from the pool and a richer pool list (designed 2026-10-14, coded 2026-10-18)
 
 Gaps found against Mekari Talenta's talent pool (help center article 54505692565529). Not copied on purpose: uploading CVs of passive candidates
 (the company would hold personal data of people who are not our users, without their consent), moving a pool candidate into a pipeline without an
 application (it skips the candidate's consent; we invite instead) and the company editing a candidate's profile (the profile belongs to the
 candidate). Extends `phase-4-saved-jobs-and-talent-pool.md` (TalentPool), `phase-3-invitations.md` (JobInvitation) and `phase-1-applications.md`.
-Coded in a coding session.
+Coded in a coding session (see "Coded" at the end).
 
 ## Decisions
 
@@ -14,6 +14,8 @@ Coded in a coding session.
 - 2026-10-14: an applicant can be saved from **every stage except `hired`** (decided by the user).
 - 2026-10-14: pool candidates can be **invited in bulk** to one job (decided by the user).
 - 2026-10-14: a pool entry that rests on an application is kept **24 months after the last consenting application** (decided by the user).
+- 2026-10-18: coded in one go (consent, saving, invitations, richer list); the interpretations are under "Coded" (migrations `000170`, `000171`).
+- 2026-10-18: the entry page of a findable person gives `candidate.slug` and the client opens the live profile with `GET company/candidates/{slug}`; it does not embed the profile (decided by the user; "Coded").
 
 ## 1. Saving applicants
 
@@ -97,3 +99,34 @@ A note for the ONESIS ERP (`erp-direction.md`, `erp-organization.md`); nothing c
 | Scheduler | nightly deletion of consent-only entries past 24 months |
 | Errors | 409 `application-hired`, `talent-pool-consent-missing`; skip codes `entry-unavailable`, `already-invited`, `already-applied`, `candidate-restricted`, `invitation-limit` |
 | Front end | consent checkbox on the apply form and switch on the job seeker's application; "Simpan ke talent pool" on applications; pool list with summaries, search, sort and bulk invite; pool entry page |
+
+## Coded (2026-10-18)
+
+Migrations `000170` (`recruitment_applications.talent_pool_consent_at` plus a partial index on the consenting rows) and `000171` (`talentpool_entries.source`
+with a check, `application_id` without a foreign key, `saved_by_user_id` with a `RESTRICT` key to `identity_users`; older rows read as `search` and no saver).
+Command `talentpool:purge-lapsed-consent` runs nightly at 04:10 Jakarta time after `talentpool:clear-hidden-notes` (04:00). Error codes `application-hired`,
+`talent-pool-consent-missing`, `entry-unavailable` are in `docs/api/error-catalog.md`. Interpretations the design left open:
+
+- **What "rests on consent" means.** `application_id` is set only when the application carried a consent still inside the 24 months at the time. An entry saved from
+  the application of a findable person who gave no consent has `source: application` and no `application_id`: it rests on being findable. The nightly purge and the
+  removal after a revocation only touch entries with an `application_id` (and only when the person is not findable and no other consenting application of that
+  company is inside the window); an entry found in the search is never purged.
+- **Revocation** is the event `TalentPoolConsentRevoked` (Recruitment) and a queued TalentPool listener, so the removal follows the revocation within the queue delay
+  (at once with the `sync` driver). Anonymisation clears `talent_pool_consent_at` with the snapshot.
+- **Who is available** is computed by `EntryBasis` for every list, entry page, invitation and nightly job: findable (`CandidateDirectory`) or a consenting
+  application of the company submitted within 24 months (`PoolApplications`). Notes are cleared only when neither holds.
+- **Summaries** come from ports (`CandidateDirectory::summaries`, `PoolApplications`, `LatestInvitations`); nothing personal is copied into TalentPool. The names of
+  master values follow `Accept-Language`. A findable person who also has a consent shows the live search summary. `candidate.slug` is null for a person kept through
+  consent alone (there is no profile to open).
+- **The entry page** (`GET company/talent-pool/{id}`) gives, for a findable person, `candidate.slug` so the client opens the live profile with
+  `GET company/candidates/{slug}` (its own contact rules and its view log) instead of repeating the profile; for a person kept through consent alone it gives
+  `profile`, the whole snapshot without email, phone, WhatsApp, links and street address. `applications` holds at most 20 applications of the person to the company
+  that the member may see (the rule of "other applications"). This replaces "the full candidate-search profile" of section 3 (decided by the user 2026-10-18).
+- **The list** pages first when there is no `filter[q]` and the sort is `saved_at`; otherwise it loads the summaries of all entries (at most 1,000) and filters, sorts
+  and pages in memory. `filter[q]` matches only available entries. `last_activity` is the latest of the last application, the last invitation and the day it was saved.
+- **Saving from an application** needs `talent_pool.manage` and `applications.view` and a job the member sees (`TeamApplications`); order of the refusals: 404, 409
+  `application-hired`, 409 `talent-pool-consent-missing`, then the usual 409 `already-in-talent-pool`, 422 `talent-pool-limit`.
+- **Inviting from the pool** needs `candidates.search` as every invitation does. The single endpoint takes `candidate` or `talent_pool_entry_id` (never both); an entry
+  that is not the company's is 404, one that is not available is 422 `entry-unavailable`. The bulk answer skips (not fails) `entry-unavailable` (also for an entry of
+  another company or a missing id), `already-invited`, `already-applied` and `invitation-limit`; a job that is not live, a missing job and a note that is too long fail
+  the whole request first. The skip code `candidate-restricted` waits for `phase-8-rejections.md` (#14), which has no restricted candidates yet.

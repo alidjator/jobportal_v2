@@ -25,6 +25,9 @@ interface ApplicationRepository
      */
     public function findOfApplicant(int $userId, int $id, bool $forUpdate = false): ?Application;
 
+    /** Gives (a moment) or revokes (null) the applicant's consent to the company's talent pool; `updated_at` stays, the consent is not a change of the application. */
+    public function changeTalentPoolConsent(int $id, ?DateTimeImmutable $at): void;
+
     /**
      * Records that a recruiter opened the application, once: a single conditional update that keeps the first time and leaves `updated_at` alone, so two
      * recruiters opening it together need no lock.

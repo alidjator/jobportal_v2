@@ -5,12 +5,14 @@ namespace Src\TalentPool\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\StateConflict;
 use Src\TalentPool\Domain\Entry;
 use Src\TalentPool\Domain\EntryRepository;
+use Src\TalentPool\Domain\EntrySource;
 use stdClass;
 
 final readonly class DatabaseEntryRepository implements EntryRepository
@@ -27,6 +29,9 @@ final readonly class DatabaseEntryRepository implements EntryRepository
                 'candidate_user_id' => $entry->candidateUserId,
                 'category_id' => $entry->categoryId,
                 'note' => $entry->note,
+                'source' => $entry->source->value,
+                'application_id' => $entry->applicationId,
+                'saved_by_user_id' => $entry->savedByUserId,
                 'created_at' => $this->format($entry->createdAt),
                 'updated_at' => $this->format($entry->createdAt),
             ]);
@@ -34,7 +39,7 @@ final readonly class DatabaseEntryRepository implements EntryRepository
             throw new StateConflict('This candidate is already in your talent pool.', 'already-in-talent-pool');
         }
 
-        return new Entry($entry->companyId, $entry->candidateUserId, $entry->categoryId, $entry->createdAt, $id, $entry->note);
+        return new Entry($entry->companyId, $entry->candidateUserId, $entry->categoryId, $entry->createdAt, $id, $entry->note, $entry->source, $entry->applicationId, $entry->savedByUserId);
     }
 
     public function find(int $companyId, int $id): ?Entry
@@ -75,18 +80,41 @@ final readonly class DatabaseEntryRepository implements EntryRepository
         $this->connection->table('talentpool_entries')->where('company_id', $companyId)->where('id', $id)->delete();
     }
 
-    public function ofCompany(int $companyId, ?int $categoryId, PageRequest $request): Page
+    public function allOfCompany(int $companyId, ?int $categoryId = null, ?EntrySource $source = null): array
     {
-        $query = $this->connection->table('talentpool_entries')->where('company_id', $companyId);
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->scoped($companyId, $categoryId, $source)->orderByDesc('created_at')->orderByDesc('id')->get()->all(),
+        );
+    }
 
-        if ($categoryId !== null) {
-            $query->where('category_id', $categoryId);
-        }
+    public function pageOfCompany(int $companyId, ?int $categoryId, ?EntrySource $source, PageRequest $request): Page
+    {
+        $query = $this->scoped($companyId, $categoryId, $source);
 
         $total = (clone $query)->count();
         $rows = $total === 0 ? [] : $query->orderByDesc('created_at')->orderByDesc('id')->offset($request->offset())->limit($request->perPage)->get()->all();
 
         return new Page(array_map(fn (stdClass $row): Entry => $this->toEntry($row), $rows), $total, $request);
+    }
+
+    public function findMany(int $companyId, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->connection->table('talentpool_entries')->where('company_id', $companyId)->whereIn('id', $ids)->get()->all(),
+        );
+    }
+
+    public function findOfCandidate(int $companyId, int $candidateUserId): ?Entry
+    {
+        $row = $this->connection->table('talentpool_entries')->where('company_id', $companyId)->where('candidate_user_id', $candidateUserId)->first();
+
+        return $row === null ? null : $this->toEntry($row);
     }
 
     public function countsByCategory(int $companyId): array
@@ -127,6 +155,34 @@ final readonly class DatabaseEntryRepository implements EntryRepository
         return $ids === [] ? 0 : $this->connection->table('talentpool_entries')->whereIn('id', $ids)->whereNotNull('note')->update(['note' => null, 'updated_at' => $this->format(new DateTimeImmutable)]);
     }
 
+    public function restingOnConsentAfter(int $afterId, int $limit): array
+    {
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->connection->table('talentpool_entries')->where('source', EntrySource::Application->value)->whereNotNull('application_id')->where('id', '>', $afterId)->orderBy('id')->limit($limit)->get()->all(),
+        );
+    }
+
+    public function removeMany(array $ids): int
+    {
+        return $ids === [] ? 0 : $this->connection->table('talentpool_entries')->whereIn('id', $ids)->delete();
+    }
+
+    private function scoped(int $companyId, ?int $categoryId, ?EntrySource $source): Builder
+    {
+        $query = $this->connection->table('talentpool_entries')->where('company_id', $companyId);
+
+        if ($categoryId !== null) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($source !== null) {
+            $query->where('source', $source->value);
+        }
+
+        return $query;
+    }
+
     private function toEntry(stdClass $row): Entry
     {
         return new Entry(
@@ -136,6 +192,9 @@ final readonly class DatabaseEntryRepository implements EntryRepository
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
             (int) $row->id,
             $row->note === null ? null : (string) $row->note,
+            EntrySource::from((string) $row->source),
+            $row->application_id === null ? null : (int) $row->application_id,
+            $row->saved_by_user_id === null ? null : (int) $row->saved_by_user_id,
         );
     }
 

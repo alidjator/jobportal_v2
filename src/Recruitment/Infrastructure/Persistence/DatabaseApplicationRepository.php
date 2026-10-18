@@ -74,6 +74,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             (int) $row->id,
             $row->source === null ? null : ApplicationSource::from($row->source),
             $row->match_score === null ? null : (int) $row->match_score,
+            $row->talent_pool_consent_at === null ? null : new DateTimeImmutable((string) $row->talent_pool_consent_at, new DateTimeZone('UTC')),
         );
     }
 
@@ -94,6 +95,11 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
     public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?HireDetails $hire = null): void
     {
         $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at, hire: $hire);
+    }
+
+    public function changeTalentPoolConsent(int $id, ?DateTimeImmutable $at): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $id)->update(['talent_pool_consent_at' => $at === null ? null : $this->utc($at)]);
     }
 
     public function markViewed(int $id, DateTimeImmutable $at): void
@@ -195,6 +201,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
                 'meets_must_have' => $application->meetsMustHave,
                 'source' => $application->source?->value,
                 'match_score' => $application->matchScore,
+                'talent_pool_consent_at' => $application->talentPoolConsentAt === null ? null : $this->utc($application->talentPoolConsentAt),
                 'withdrawn_note' => $application->withdrawnNote,
                 'applied_at' => $appliedAt,
                 'stage_entered_at' => $appliedAt,
@@ -239,6 +246,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             $id,
             $application->source,
             $application->matchScore,
+            $application->talentPoolConsentAt,
         );
     }
 

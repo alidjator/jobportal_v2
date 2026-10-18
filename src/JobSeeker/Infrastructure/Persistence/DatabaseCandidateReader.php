@@ -50,6 +50,53 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return array_map('intval', $this->searchable()->whereIn('p.user_id', $userIds)->pluck('p.user_id')->all());
     }
 
+    public function findableRows(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return $this->candidates($this->searchable()->whereIn('p.user_id', $userIds)->get($this->columns())->all());
+    }
+
+    public function latestPositions(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $positions = [];
+
+        // The same order as the experience list of the profile: the current job first, then the one that ended last.
+        foreach ($this->connection->table('jobseeker_experiences')->whereIn('user_id', $userIds)
+            ->selectRaw('DISTINCT ON (user_id) user_id, job_title, company_name')
+            ->orderBy('user_id')->orderByDesc('is_current')->orderByRaw('end_date is null desc')->orderByDesc('end_date')->orderByDesc('start_date')->orderByDesc('id')
+            ->get() as $row) {
+            $positions[(int) $row->user_id] = ['title' => (string) $row->job_title, 'employer' => (string) $row->company_name];
+        }
+
+        return $positions;
+    }
+
+    public function skillIdsOf(array $userIds, int $perUser): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $skills = [];
+
+        foreach ($this->connection->table('jobseeker_skills')->whereIn('user_id', $userIds)->orderBy('user_id')->orderBy('position')->orderBy('id')->get(['user_id', 'skill_id']) as $row) {
+            $userId = (int) $row->user_id;
+
+            if (count($skills[$userId] ?? []) < $perUser) {
+                $skills[$userId][] = (int) $row->skill_id;
+            }
+        }
+
+        return $skills;
+    }
+
     public function pool(?int $provinceId, int $limit): array
     {
         $builder = $this->searchable();

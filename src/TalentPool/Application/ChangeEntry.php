@@ -27,13 +27,13 @@ final readonly class ChangeEntry
      * @throws EntityNotFound the entry or the category (missing or another company's)
      * @throws BusinessRuleViolation `note-too-long`
      */
-    public function execute(Actor $actor, int $entryId, EntryChanges $changes): EntryView
+    public function execute(Actor $actor, int $entryId, EntryChanges $changes, string $language): EntryView
     {
         $member = $this->access->member($actor);
         $note = $changes->changesNote ? Entry::cleanNote($changes->note) : null;
 
         $entry = $this->transactions->run(function () use ($member, $entryId, $changes, $note): Entry {
-            $entry = $this->entries->find($member->companyId, $entryId) ?? throw EntityNotFound::of('Talent pool entry', $entryId);
+            $this->entries->find($member->companyId, $entryId) ?? throw EntityNotFound::of('Talent pool entry', $entryId);
 
             if ($changes->changesCategory) {
                 if ($changes->categoryId !== null) {
@@ -47,16 +47,9 @@ final readonly class ChangeEntry
                 $this->entries->changeNote($member->companyId, $entryId, $note);
             }
 
-            return new Entry(
-                $entry->companyId,
-                $entry->candidateUserId,
-                $changes->changesCategory ? $changes->categoryId : $entry->categoryId,
-                $entry->createdAt,
-                $entry->id,
-                $changes->changesNote ? $note : $entry->note,
-            );
+            return $this->entries->find($member->companyId, $entryId) ?? throw EntityNotFound::of('Talent pool entry', $entryId);
         });
 
-        return $this->views->views($member->companyId, [$entry])[0];
+        return $this->views->views($actor, $member, [$entry], $language)[0];
     }
 }

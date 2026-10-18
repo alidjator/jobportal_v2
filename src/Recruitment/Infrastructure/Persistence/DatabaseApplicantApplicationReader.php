@@ -73,6 +73,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
             $this->history($id),
             $this->answers->forApplication($id, (int) $row->job_id),
             $row->join_date === null ? null : new HireDetails(new DateTimeImmutable((string) $row->join_date, new DateTimeZone('UTC')), $row->hire_note),
+            $row->talent_pool_consent_at !== null,
         );
     }
 

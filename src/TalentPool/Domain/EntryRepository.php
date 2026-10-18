@@ -25,9 +25,29 @@ interface EntryRepository
     public function remove(int $companyId, int $id): void;
 
     /**
-     * @return Page<Entry> the most recently saved first
+     * Every entry of the company (at most 1,000), the most recently saved first, optionally of one category and one source.
+     *
+     * @return list<Entry>
      */
-    public function ofCompany(int $companyId, ?int $categoryId, PageRequest $request): Page;
+    public function allOfCompany(int $companyId, ?int $categoryId = null, ?EntrySource $source = null): array;
+
+    /**
+     * The most recently saved entries of the company, one page, optionally of one category and one source.
+     *
+     * @return Page<Entry>
+     */
+    public function pageOfCompany(int $companyId, ?int $categoryId, ?EntrySource $source, PageRequest $request): Page;
+
+    /**
+     * The entries of the company with these ids; an id that is not the company's is missing.
+     *
+     * @param  list<int>  $ids
+     * @return list<Entry>
+     */
+    public function findMany(int $companyId, array $ids): array;
+
+    /** The company's entry for the candidate, or null. */
+    public function findOfCandidate(int $companyId, int $candidateUserId): ?Entry;
 
     /**
      * How many entries each category holds.
@@ -44,6 +64,20 @@ interface EntryRepository
     public function ofCandidate(int $candidateUserId): array;
 
     public function deleteOfCandidate(int $candidateUserId): void;
+
+    /**
+     * Entries saved from a consenting application (they rest on the consent), in id order, starting after `$afterId`.
+     *
+     * @return list<Entry>
+     */
+    public function restingOnConsentAfter(int $afterId, int $limit): array;
+
+    /**
+     * Deletes these entries and returns how many were deleted.
+     *
+     * @param  list<int>  $ids
+     */
+    public function removeMany(array $ids): int;
 
     /**
      * Entries that carry a note, in id order, starting after `$afterId`.

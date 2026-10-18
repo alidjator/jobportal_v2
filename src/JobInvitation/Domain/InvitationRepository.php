@@ -20,6 +20,14 @@ interface InvitationRepository
 
     public function findForJobAndUser(int $jobId, int $userId, bool $forUpdate = false): ?Invitation;
 
+    /**
+     * The latest invitation the company sent to each of these job seekers; one never invited is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, Invitation> by job seeker id
+     */
+    public function latestOfCompany(int $companyId, array $userIds): array;
+
     /** How many invitations the company has sent since the moment. */
     public function countOfCompanySince(int $companyId, DateTimeImmutable $since): int;
 

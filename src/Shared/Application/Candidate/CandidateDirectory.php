@@ -17,6 +17,14 @@ interface CandidateDirectory
     public function findableIds(array $userIds): array;
 
     /**
+     * The summaries of those of these accounts that can be found right now (the rule of `findable`), with the names of master values in `$language`; one read for the whole list.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, CandidateSummary> by account id
+     */
+    public function summaries(array $userIds, string $language): array;
+
+    /**
      * The slug and name of these accounts, found or not (a company keeps seeing whom it invited); an account without a profile slug or that was anonymised is missing.
      *
      * @param  list<int>  $userIds

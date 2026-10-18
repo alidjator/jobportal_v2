@@ -21,6 +21,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `amendment-pending` | 409 | Workforce | An amendment of this requisition is waiting for a decision. |
 | `applicant-unavailable` | 409 | Recruitment | The applicant account is no longer available. |
 | `application-final` | 409 | Recruitment | This application is final, so the interview needs no answer. |
+| `application-hired` | 409 | TalentPool | A hired applicant cannot be saved to the talent pool. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
 | `application-not-hired` | 409 | Recruitment | Only a hired application has hire details. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
@@ -100,6 +101,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `email-domain-not-allowed` | 422 | Company | This company only invites email addresses of its allowed domains. |
 | `email-not-verified` | 403, 409 | Identity, Job, Training | Verify your email address before continuing. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
+| `entry-unavailable` | 422 | JobInvitation | This candidate cannot be invited right now. |
 | `experience-limit-reached` | 409 | JobSeeker |  |
 | `explanation-required` | 422 | Assessment | Write the explanation for the candidate. |
 | `export-too-large` | 422 | Recruitment |  |
@@ -409,6 +411,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `support-access-required` | 403 | Organization | This group has not granted you support access, or the access has ended. |
 | `support-grant-exists` | 409 | Organization | This platform admin already has support access: revoke it first to change its duration. |
 | `support-grant-not-active` | 409 | Organization | The support access has already ended. |
+| `talent-pool-consent-missing` | 409 | TalentPool | The applicant did not allow the company to keep their profile in a talent pool. |
 | `talent-pool-limit` | 422 | TalentPool |  |
 | `team-not-connected` | 409 | Recruitment | Join the call from your browser before you dial the candidate. |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |

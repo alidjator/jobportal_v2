@@ -205,6 +205,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->time((string) $row->applied_at),
             $this->time((string) $row->stage_entered_at),
             hire: $this->hire($row),
+            talentPoolConsent: $row->talent_pool_consent_at !== null,
         );
     }
 

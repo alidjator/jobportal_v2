@@ -35,13 +35,25 @@ final readonly class Invitation
     /** @throws BusinessRuleViolation `note-too-long` */
     public static function send(int $companyId, int $jobId, int $userId, int $invitedByUserId, ?string $note, DateTimeImmutable $now): self
     {
+        $note = self::checkedNote($note);
+
+        return new self($companyId, $jobId, $userId, $invitedByUserId, $note, InvitationStatus::Sent, null, null, null, null, $now, $now);
+    }
+
+    /**
+     * The note as it is stored: trimmed, and null when it is empty.
+     *
+     * @throws BusinessRuleViolation `note-too-long`
+     */
+    public static function checkedNote(?string $note): ?string
+    {
         $note = self::clean($note);
 
         if ($note !== null && mb_strlen($note) > self::MAX_NOTE_LENGTH) {
             throw new BusinessRuleViolation('The note may have at most '.self::MAX_NOTE_LENGTH.' characters.', 'note-too-long');
         }
 
-        return new self($companyId, $jobId, $userId, $invitedByUserId, $note, InvitationStatus::Sent, null, null, null, null, $now, $now);
+        return $note;
     }
 
     /** The first opening by the candidate; later ones change nothing. */

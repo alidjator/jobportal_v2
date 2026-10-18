@@ -31,6 +31,7 @@ Everything below passed the full `composer check` of tag `v0.6.0` (2026-10-18). 
 | `phase-8-hiring.md` (#13) | sections 1 (`000163`, `000164`), 2 (filled jobs) and 3 (hires export, the bridge to the existing HRIS) coded 2026-10-17; open: see #13 below |
 | `phase-8-withdrawals.md` (#16) | complete: parts A to C coded 2026-10-17 (`000159`) |
 | `phase-8-platform-admin.md` sections 5 to 8 (#17) | coded 2026-10-18 (`000166` to `000169`), with the admin account view (`users.view`) and the mass reset command; section 6 (email suppression) is in before the reset emails to the imported accounts; open: the front end and the SMTP provider's webhook parser `EmailEventParser` (waits for the provider) |
+| `phase-8-talent-pool.md` (#18) | coded 2026-10-18 (`000170`, `000171`): consent when applying, saving applicants, invitations from the pool (single and bulk), the richer list and the entry page; checked (`composer check` green, 3182 tests); open: the skip code `candidate-restricted` (waits for #14) |
 
 ## Next coding (in this order)
 
@@ -42,7 +43,6 @@ Everything below passed the full `composer check` of tag `v0.6.0` (2026-10-18). 
 | 15 | `phase-8-candidate-experience.md` | #14: the pending rejections of the rejections design carry the candidate message |
 | 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
 | 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
-| 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
 | 21 | `phase-8-interview-results.md` | |

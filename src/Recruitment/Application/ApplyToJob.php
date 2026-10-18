@@ -142,6 +142,7 @@ final readonly class ApplyToJob
                         $this->clock->now(),
                         $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation,
                         $this->matchScores->percent($userId, $jobId),
+                        $input->talentPoolConsent ? $this->clock->now() : null,
                     ),
                     $checked->answers,
                 );

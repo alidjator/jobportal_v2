@@ -19,5 +19,6 @@ final readonly class ApplicationDetailData
         public array $history,
         public array $answers,
         public ?HireDetails $hire = null,
+        public bool $talentPoolConsent = false,
     ) {}
 }

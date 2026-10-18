@@ -25,6 +25,7 @@ final readonly class Application
         public ?int $id = null,
         public ?ApplicationSource $source = null,
         public ?int $matchScore = null,
+        public ?DateTimeImmutable $talentPoolConsentAt = null,
     ) {}
 
     /**
@@ -44,6 +45,7 @@ final readonly class Application
         DateTimeImmutable $now,
         ?ApplicationSource $source = null,
         ?int $matchScore = null,
+        ?DateTimeImmutable $talentPoolConsentAt = null,
     ): self {
         return new self(
             $userId,
@@ -60,6 +62,7 @@ final readonly class Application
             null,
             $source,
             $matchScore,
+            $talentPoolConsentAt,
         );
     }
 
@@ -70,6 +73,12 @@ final readonly class Application
     public function activeKey(): ?string
     {
         return $this->stageType === StageType::Withdrawn ? null : $this->userId.'-'.$this->jobId;
+    }
+
+    /** Whether the applicant allowed the company to keep their profile in its talent pool for other jobs. */
+    public function hasTalentPoolConsent(): bool
+    {
+        return $this->talentPoolConsentAt !== null;
     }
 
     public function canBeWithdrawn(): bool
@@ -99,6 +108,7 @@ final readonly class Application
             $this->id,
             $this->source,
             $this->matchScore,
+            $this->talentPoolConsentAt,
         );
     }
 
@@ -161,6 +171,7 @@ final readonly class Application
             $this->id,
             $this->source,
             $this->matchScore,
+            $this->talentPoolConsentAt,
         );
     }
 }

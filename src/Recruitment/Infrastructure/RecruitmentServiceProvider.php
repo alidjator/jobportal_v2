@@ -30,9 +30,11 @@ use Src\Recruitment\Application\JobApplicationCheck;
 use Src\Recruitment\Application\MyInterviewReader;
 use Src\Recruitment\Application\OfferLetterRenderer;
 use Src\Recruitment\Application\OfferLetters;
+use Src\Recruitment\Application\PoolApplicationReader;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
+use Src\Recruitment\Application\RecruitmentPoolApplications;
 use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\ReviewNotificationType;
 use Src\Recruitment\Application\ReviewPageLink;
@@ -146,6 +148,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferLetterUploadRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabasePoolApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseReviewRequestRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardEraser;
@@ -209,6 +212,7 @@ use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Recruitment\JobHires;
+use Src\Shared\Application\Recruitment\PoolApplications;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\Tasks\TaskProviders;
@@ -234,6 +238,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobHires::class => DatabaseJobHires::class,
         ApplicantRelations::class => DatabaseApplicantRelations::class,
         TeamApplications::class => TeamApplicationRefs::class,
+        PoolApplications::class => RecruitmentPoolApplications::class,
+        PoolApplicationReader::class => DatabasePoolApplicationReader::class,
         HiringManagerVisibility::class => DatabaseHiringManagerVisibility::class,
         HiringManagerBoundary::class => DatabaseHiringManagerVisibility::class,
         ApplicationVisibility::class => DatabaseHiringManagerVisibility::class,

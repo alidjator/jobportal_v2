@@ -18,6 +18,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('company/talent-pool/categories/{id}', [CategoryController::class, 'update'])->whereNumber('id')->middleware($write);
     Route::delete('company/talent-pool/categories/{id}', [CategoryController::class, 'destroy'])->whereNumber('id')->middleware($write);
 
+    Route::get('company/talent-pool/{id}', [TalentPoolController::class, 'show'])->whereNumber('id');
     Route::patch('company/talent-pool/{id}', [TalentPoolController::class, 'update'])->whereNumber('id')->middleware($write);
     Route::delete('company/talent-pool/{id}', [TalentPoolController::class, 'destroy'])->whereNumber('id')->middleware($write);
 });

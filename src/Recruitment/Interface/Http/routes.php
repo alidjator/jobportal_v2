@@ -147,6 +147,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('me/applications/{id}', [ApplicationController::class, 'show'])->whereNumber('id');
     Route::get('me/applications/{id}/resume', [ApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('me/applications/{id}/withdraw', [ApplicationController::class, 'withdraw'])->whereNumber('id');
+    Route::put('me/applications/{id}/talent-pool-consent', [ApplicationController::class, 'giveTalentPoolConsent'])->whereNumber('id');
+    Route::delete('me/applications/{id}/talent-pool-consent', [ApplicationController::class, 'revokeTalentPoolConsent'])->whereNumber('id');
 
     Route::get('me/applications/{id}/interview', [MyInterviewController::class, 'show'])->whereNumber('id');
     Route::post('me/applications/{id}/interview/confirm', [MyInterviewController::class, 'confirm'])->whereNumber('id');

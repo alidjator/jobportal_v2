@@ -92,6 +92,18 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
         return $this->connection->table('jobinvitation_invitations')->where('company_id', $companyId)->where('created_at', '>=', $this->format($since))->count();
     }
 
+    public function latestOfCompany(int $companyId, array $userIds): array
+    {
+        $latest = [];
+
+        foreach ($this->connection->table('jobinvitation_invitations')->where('company_id', $companyId)->whereIn('user_id', $userIds)
+            ->selectRaw('DISTINCT ON (user_id) *')->orderBy('user_id')->orderByDesc('created_at')->orderByDesc('id')->get() as $row) {
+            $latest[(int) $row->user_id] = $this->toInvitation($row);
+        }
+
+        return $latest;
+    }
+
     public function ofJob(int $jobId, ?InvitationStatus $status, PageRequest $request): Page
     {
         $query = $this->connection->table('jobinvitation_invitations')->where('job_id', $jobId);

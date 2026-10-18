@@ -10,6 +10,7 @@ use Src\JobInvitation\Application\InvitationEmailSender;
 use Src\JobInvitation\Application\InvitationEmailTemplates;
 use Src\JobInvitation\Application\InvitationNotificationType;
 use Src\JobInvitation\Application\InvitationSettings;
+use Src\JobInvitation\Application\LatestInvitationsOfCompany;
 use Src\JobInvitation\Domain\InvitationRepository;
 use Src\JobInvitation\Infrastructure\Dashboard\PendingInvitationsCard;
 use Src\JobInvitation\Infrastructure\Listeners\EraseInvitationsWhenUserAnonymized;
@@ -22,6 +23,7 @@ use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\JobInvitation\InvitedCandidates;
+use Src\Shared\Application\JobInvitation\LatestInvitations;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
@@ -36,6 +38,7 @@ final class JobInvitationServiceProvider extends ContextServiceProvider
         InvitationRepository::class => DatabaseInvitationRepository::class,
         InvitationEmailSender::class => MailInvitationSender::class,
         InvitedCandidates::class => DatabaseInvitedCandidates::class,
+        LatestInvitations::class => LatestInvitationsOfCompany::class,
     ];
 
     public function register(): void

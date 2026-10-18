@@ -7,7 +7,7 @@ use Src\Recruitment\Application\ApplyToJobInput;
 use Src\Shared\Application\Applicant\GeneratedCvSpec;
 
 /**
- * The resume (or a CV to generate instead: exactly one of `resume_id` and `cv`, which the use case enforces: `cv: {}` is a CV with the default choices), the optional cover letter and the answers of an application. Whether the
+ * The resume (or a CV to generate instead: exactly one of `resume_id` and `cv`, which the use case enforces: `cv: {}` is a CV with the default choices), the optional cover letter, the optional `talent_pool_consent` (default false) and the answers of an application. Whether the
  * answers fit the job's questions is a use case rule.
  */
 final class ApplyToJobRequest extends FormRequest
@@ -24,6 +24,7 @@ final class ApplyToJobRequest extends FormRequest
             'cv.include.*' => ['boolean'],
             'cover_letter' => ['nullable', 'string'],
             'source' => ['nullable', 'string', 'max:30'],
+            'talent_pool_consent' => ['nullable', 'boolean'],
             'answers' => ['nullable', 'array', 'max:50'],
             'answers.*.question_id' => ['required', 'integer', 'min:1', 'distinct'],
             'answers.*.value' => ['present'],
@@ -49,6 +50,7 @@ final class ApplyToJobRequest extends FormRequest
             $answers,
             is_array($cv) ? $this->cvSpec($cv) : null,
             is_string($source = $this->input('source')) ? $source : null,
+            $this->boolean('talent_pool_consent'),
         );
     }
 
