@@ -5,6 +5,7 @@ namespace Src\Messaging\Interface\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Src\Messaging\Application\BlockConversation;
 use Src\Messaging\Application\CloseConversation;
 use Src\Messaging\Application\CountUnreadConversations;
 use Src\Messaging\Application\GetConversation;
@@ -14,6 +15,7 @@ use Src\Messaging\Application\ReopenConversation;
 use Src\Messaging\Application\StartCompanyConversation;
 use Src\Messaging\Application\StartedConversation;
 use Src\Messaging\Application\StartSeekerConversation;
+use Src\Messaging\Application\UnblockConversation;
 use Src\Messaging\Interface\Http\Requests\ListMessagingPageRequest;
 use Src\Messaging\Interface\Http\Requests\StartCompanyConversationRequest;
 use Src\Messaging\Interface\Http\Requests\StartSeekerConversationRequest;
@@ -68,6 +70,16 @@ final class ConversationController extends ApiController
     public function reopen(Request $request, int $id, ActorResolver $actors, ReopenConversation $reopen): ConversationResource
     {
         return new ConversationResource($reopen->execute($actors->fromRequest($request), $id));
+    }
+
+    public function block(Request $request, int $id, ActorResolver $actors, BlockConversation $block): ConversationResource
+    {
+        return new ConversationResource($block->execute($actors->fromRequest($request), $id));
+    }
+
+    public function unblock(Request $request, int $id, ActorResolver $actors, UnblockConversation $unblock): ConversationResource
+    {
+        return new ConversationResource($unblock->execute($actors->fromRequest($request), $id));
     }
 
     /** 201 for a new conversation, 200 when the pair already had one and the message went into it. */

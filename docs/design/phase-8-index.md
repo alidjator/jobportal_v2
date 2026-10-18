@@ -39,7 +39,7 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | 16 | `phase-8-withdrawals.md` | **coded 2026-10-17** (`000159`, parts A to C); it unblocks the team preferences of #8 section 3 |
 | 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
 | 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
-| 17 | `phase-8-platform-admin.md` sections 5 to 8 | section 6 (email suppression) **before the reset emails to the imported accounts**, with the SMTP provider, whatever its place here |
+| 17 | `phase-8-platform-admin.md` sections 5 to 8 | **coded 2026-10-18** (`000166` to `000169`), waits for the user's check; section 6 (email suppression) is in before the reset emails to the imported accounts (the SMTP provider's webhook parser is not written until the provider is chosen); it also added the admin account view (`users.view`) and the mass reset command |
 | 18 | `phase-8-talent-pool.md` | |
 | 19 | `phase-8-applicant-search.md` | |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |

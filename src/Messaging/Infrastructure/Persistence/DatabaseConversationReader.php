@@ -133,6 +133,7 @@ final readonly class DatabaseConversationReader implements ConversationReader
             $row->last_message_at === null ? null : new DateTimeImmutable((string) $row->last_message_at, $utc),
             (bool) $row->unread,
             $lastMessages[(int) $row->id] ?? null,
+            $row->blocked_by_seeker_at === null ? null : new DateTimeImmutable((string) $row->blocked_by_seeker_at, $utc),
         ), $found);
     }
 }

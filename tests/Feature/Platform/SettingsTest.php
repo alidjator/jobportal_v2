@@ -186,6 +186,7 @@ final class SettingsTest extends FeatureTestCase
             'jobalert.max_alerts_per_user',
             'jobs.approval_for_unverified', 'jobs.max_deadline_days', 'jobs.report_hold_threshold', 'jobs.require_approval', 'jobs.suspicious_phrases',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
+            'platform.operations_email',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
             'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
             'workforce.fiscal_year_start_month',

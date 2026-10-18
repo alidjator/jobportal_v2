@@ -2,18 +2,20 @@
 
 namespace Src\Identity\Application\Account;
 
-use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Email\EmailSuppressions;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 final readonly class GetCurrentUser
 {
-    public function __construct(private UserRepository $users) {}
+    public function __construct(private UserRepository $users, private EmailSuppressions $suppressions) {}
 
     /** @throws EntityNotFound when the actor's account no longer exists */
-    public function execute(Actor $actor): User
+    public function execute(Actor $actor): CurrentUserView
     {
-        return $this->users->findById((int) $actor->id) ?? throw EntityNotFound::of('User', $actor->id);
+        $user = $this->users->findById((int) $actor->id) ?? throw EntityNotFound::of('User', $actor->id);
+
+        return new CurrentUserView($user, $this->suppressions->reasons([$user->email()]) === []);
     }
 }

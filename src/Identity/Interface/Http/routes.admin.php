@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Identity\Application\IdentityPermissions;
+use Src\Identity\Interface\Http\Controllers\AdminUserController;
 use Src\Identity\Interface\Http\Controllers\ChangePasswordController;
 use Src\Identity\Interface\Http\Controllers\CurrentAdminController;
 use Src\Identity\Interface\Http\Controllers\RecoveryCodesController;
@@ -19,5 +21,10 @@ Route::prefix('admin')->group(function (): void {
         Route::put('me/password', ChangePasswordController::class);
         Route::post('me/two-factor/recovery-codes', RecoveryCodesController::class);
         Route::get('me', CurrentAdminController::class);
+
+        Route::middleware('can:'.IdentityPermissions::USERS_VIEW)->group(function (): void {
+            Route::get('users', [AdminUserController::class, 'index']);
+            Route::get('users/{id}', [AdminUserController::class, 'show'])->whereNumber('id');
+        });
     });
 });

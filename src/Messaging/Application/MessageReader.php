@@ -15,4 +15,11 @@ interface MessageReader
     public function page(int $conversationId, CursorRequest $request): CursorPage;
 
     public function one(int $messageId): ?MessageRow;
+
+    /**
+     * Up to `$limit` messages of the conversation, newest first, starting at `$upToMessageId` (the latest message when null).
+     *
+     * @return list<MessageRow>
+     */
+    public function upTo(int $conversationId, ?int $upToMessageId, int $limit): array;
 }

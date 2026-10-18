@@ -84,7 +84,7 @@ final readonly class MessageComposer
 
     /**
      * @throws AccessDenied `company-suspended`
-     * @throws StateConflict `conversation-closed` or `recipient-unavailable`
+     * @throws StateConflict `conversation-closed`, `conversation-blocked` or `recipient-unavailable`
      * @throws TooManyAttempts `daily-limit`
      */
     public function assertMayWrite(Participant $sender, Conversation $conversation): void
@@ -92,6 +92,8 @@ final readonly class MessageComposer
         $conversation->assertOpen();
 
         if ($sender->isCompany()) {
+            $conversation->assertNotBlockedForCompany();
+
             if (! $this->contacts->isActiveJobSeeker($conversation->jobSeekerUserId)) {
                 throw new StateConflict('This job seeker no longer has an account that can receive messages.', 'recipient-unavailable');
             }

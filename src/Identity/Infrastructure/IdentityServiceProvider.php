@@ -30,6 +30,7 @@ use Src\Identity\Application\Auth\VerificationCodeHasher;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Identity\Application\Erasure\ErasureLedger;
 use Src\Identity\Application\IdentityEmailTemplates;
+use Src\Identity\Application\IdentityPermissions;
 use Src\Identity\Application\IdentitySettings;
 use Src\Identity\Application\TwoFactor\RecoveryCodes;
 use Src\Identity\Application\TwoFactor\TwoFactorAuthenticator;
@@ -114,6 +115,7 @@ use Src\Identity\Interface\Console\ReconcileErasureCommand;
 use Src\Identity\Interface\Console\ResetAdminPasswordCommand;
 use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
 use Src\Identity\Interface\Console\ResetUserTwoFactorCommand;
+use Src\Identity\Interface\Console\SendImportedPasswordResetsCommand;
 use Src\Identity\Interface\Console\SetAdminRoleCommand;
 use Src\Identity\Interface\Console\SetAdminRolePermissionsCommand;
 use Src\Identity\Interface\Console\SuspendAdminCommand;
@@ -129,6 +131,7 @@ use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -184,6 +187,10 @@ final class IdentityServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
+            $catalog->add(...IdentityPermissions::definitions());
+        });
+
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
             $cards->add(
                 $this->app->make(PlatformJobSeekersCard::class),
@@ -207,7 +214,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, SendImportedPasswordResetsCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
             ListAdminPermissionsCommand::class, ListAdminRolesCommand::class, ListAdminsCommand::class, CreateAdminRoleCommand::class, SetAdminRolePermissionsCommand::class,
             DeleteAdminRoleCommand::class, SetAdminRoleCommand::class, SuspendAdminCommand::class, ReactivateAdminCommand::class, ResetAdminPasswordCommand::class]);
 

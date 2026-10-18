@@ -9,8 +9,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Email\RenderedEmail;
+use Src\Shared\Infrastructure\Email\EssentialEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -47,6 +49,12 @@ abstract class VerificationCodeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(subject: $this->renderTemplate()->subject);
+    }
+
+    /** Sent even to a suppressed address: the person needs it to use or protect the account. */
+    public function headers(): Headers
+    {
+        return EssentialEmail::headers();
     }
 
     public function content(): Content

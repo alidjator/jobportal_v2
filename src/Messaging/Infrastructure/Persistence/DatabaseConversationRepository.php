@@ -50,6 +50,7 @@ final readonly class DatabaseConversationRepository implements ConversationRepos
             'closed_at' => $conversation->closedAt === null ? null : $this->format($conversation->closedAt),
             'closed_by_user_id' => $conversation->closedByUserId,
             'last_message_at' => $conversation->lastMessageAt === null ? null : $this->format($conversation->lastMessageAt),
+            'blocked_by_seeker_at' => $conversation->blockedBySeekerAt === null ? null : $this->format($conversation->blockedBySeekerAt),
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
     }
@@ -76,6 +77,7 @@ final readonly class DatabaseConversationRepository implements ConversationRepos
             $row->closed_by_user_id === null ? null : (int) $row->closed_by_user_id,
             $row->last_message_at === null ? null : $this->time((string) $row->last_message_at),
             (int) $row->id,
+            $row->blocked_by_seeker_at === null ? null : $this->time((string) $row->blocked_by_seeker_at),
         );
     }
 

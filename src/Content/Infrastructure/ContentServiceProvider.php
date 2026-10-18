@@ -2,10 +2,14 @@
 
 namespace Src\Content\Infrastructure;
 
+use Src\Content\Application\Announcements\LiveAnnouncements;
 use Src\Content\Application\ContentPermissions;
+use Src\Content\Domain\AnnouncementRepository;
 use Src\Content\Domain\FaqCategoryRepository;
 use Src\Content\Domain\FaqRepository;
 use Src\Content\Domain\LegalDocumentRepository;
+use Src\Content\Infrastructure\Persistence\CachedLiveAnnouncements;
+use Src\Content\Infrastructure\Persistence\DatabaseAnnouncementRepository;
 use Src\Content\Infrastructure\Persistence\Eloquent\DatabaseActiveLegalVersions;
 use Src\Content\Infrastructure\Persistence\Eloquent\EloquentFaqCategoryRepository;
 use Src\Content\Infrastructure\Persistence\Eloquent\EloquentFaqRepository;
@@ -22,6 +26,8 @@ final class ContentServiceProvider extends ContextServiceProvider
         FaqCategoryRepository::class => EloquentFaqCategoryRepository::class,
         FaqRepository::class => EloquentFaqRepository::class,
         ActiveLegalVersions::class => DatabaseActiveLegalVersions::class,
+        AnnouncementRepository::class => DatabaseAnnouncementRepository::class,
+        LiveAnnouncements::class => CachedLiveAnnouncements::class,
     ];
 
     public function register(): void

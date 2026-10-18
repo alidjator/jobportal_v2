@@ -8,8 +8,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Email\RenderedEmail;
+use Src\Shared\Infrastructure\Email\EssentialEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /** A notice about the account (not a code). The text comes from the email template of the given key, rendered when the mail is sent. Sent on the `default` queue, retried 3 times with a growing delay. */
@@ -39,6 +41,12 @@ final class AccountNoticeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(subject: $this->renderTemplate()->subject);
+    }
+
+    /** Sent even to a suppressed address: the person needs it to use or protect the account. */
+    public function headers(): Headers
+    {
+        return EssentialEmail::headers();
     }
 
     public function content(): Content

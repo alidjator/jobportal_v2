@@ -3,12 +3,17 @@
 namespace Src\Identity\Infrastructure\Persistence\Eloquent;
 
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Identity\Domain\AccountStatus;
 use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Identity\Domain\UserType;
+use Src\Shared\Application\Pagination\Page;
+use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\StateConflict;
+use Src\Shared\Infrastructure\Persistence\TextSearch;
 
 final class EloquentUserRepository implements UserRepository
 {
@@ -71,6 +76,37 @@ final class EloquentUserRepository implements UserRepository
             ->limit($limit)
             ->pluck('id')
             ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
+    public function search(?string $search, PageRequest $request): Page
+    {
+        $query = UserModel::query()->whereNull('anonymized_at');
+
+        if ($search !== null) {
+            $query->where(fn (Builder $match) => TextSearch::contains(TextSearch::contains($match->getQuery(), 'name', $search), 'email', $search, 'or'));
+        }
+
+        $total = (clone $query)->count();
+        $models = $query->orderByDesc('id')->offset($request->offset())->limit($request->perPage)->get();
+
+        return new Page($models->map(fn (UserModel $model): User => $this->toDomain($model))->values()->all(), $total, $request);
+    }
+
+    public function findWithoutPassword(int $afterId, int $limit): array
+    {
+        return UserModel::query()
+            ->where('type', '!=', UserType::Psychologist->value)
+            ->where('status', AccountStatus::Active->value)
+            ->whereNull('anonymized_at')
+            ->whereNull('password')
+            ->whereNotExists(fn (QueryBuilder $links) => $links->selectRaw('1')->from('identity_social_accounts')->whereColumn('identity_social_accounts.user_id', 'identity_users.id'))
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (UserModel $model): User => $this->toDomain($model))
+            ->values()
             ->all();
     }
 

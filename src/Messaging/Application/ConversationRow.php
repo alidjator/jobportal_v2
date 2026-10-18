@@ -16,5 +16,6 @@ final readonly class ConversationRow
         public ?DateTimeImmutable $lastMessageAt,
         public bool $unread,
         public ?MessageRow $lastMessage,
+        public ?DateTimeImmutable $blockedBySeekerAt = null,
     ) {}
 }

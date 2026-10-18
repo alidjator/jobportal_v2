@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Interface\Http\Controllers\AdminCompanySettingController;
+use Src\Platform\Interface\Http\Controllers\AdminEmailSuppressionController;
 use Src\Platform\Interface\Http\Controllers\AdminEmailTemplateController;
 use Src\Platform\Interface\Http\Controllers\AdminSettingController;
 use Src\Platform\Interface\Http\Controllers\AuditLogController;
@@ -24,6 +25,10 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::get('settings', [AdminSettingController::class, 'index']);
         Route::put('settings/{key}', [AdminSettingController::class, 'update'])->where('key', '[a-z][a-z0-9_.]*');
         Route::delete('settings/{key}', [AdminSettingController::class, 'destroy'])->where('key', '[a-z][a-z0-9_.]*');
+
+        Route::get('email-suppressions', [AdminEmailSuppressionController::class, 'index']);
+        Route::post('email-suppressions', [AdminEmailSuppressionController::class, 'store']);
+        Route::delete('email-suppressions/{id}', [AdminEmailSuppressionController::class, 'destroy'])->whereNumber('id');
 
         // The company's own values of the overridable settings (the company must exist: checked through the shared company directory).
         Route::get('companies/{id}/settings', [AdminCompanySettingController::class, 'index'])->whereNumber('id');

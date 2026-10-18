@@ -35,4 +35,15 @@ final readonly class DatabaseMessageReader implements MessageReader
 
         return $row === null ? null : $this->rows->make([$row])[0];
     }
+
+    public function upTo(int $conversationId, ?int $upToMessageId, int $limit): array
+    {
+        $query = $this->connection->table('messaging_messages')->where('conversation_id', $conversationId);
+
+        if ($upToMessageId !== null) {
+            $query->where('id', '<=', $upToMessageId);
+        }
+
+        return $this->rows->make($query->orderByDesc('id')->limit($limit)->get()->all());
+    }
 }

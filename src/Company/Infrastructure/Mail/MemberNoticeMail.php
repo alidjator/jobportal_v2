@@ -8,8 +8,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
+use Src\Company\Application\CompanyEmailTemplates;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Email\RenderedEmail;
+use Src\Shared\Infrastructure\Email\EssentialEmail;
 use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
@@ -42,6 +45,12 @@ final class MemberNoticeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(subject: $this->renderTemplate()->subject);
+    }
+
+    /** The suspension notice is sent even to a suppressed address; the other notices are not. */
+    public function headers(): Headers
+    {
+        return $this->templateKey === CompanyEmailTemplates::MEMBER_SUSPENDED ? EssentialEmail::headers() : new Headers;
     }
 
     public function content(): Content

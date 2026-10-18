@@ -21,6 +21,9 @@ final class ConversationResource extends JsonResource
             'job_seeker' => ['id' => $row->jobSeekerUserId, 'name' => $this->resource->jobSeekerName],
             'closed' => $row->closedAt !== null,
             'closed_at' => $row->closedAt?->format(DATE_ATOM),
+            // The job seeker closed the conversation: the company cannot send until they unblock it (the job seeker still reads).
+            'blocked' => $row->blockedBySeekerAt !== null,
+            'blocked_at' => $row->blockedBySeekerAt?->format(DATE_ATOM),
             'last_message_at' => $row->lastMessageAt?->format(DATE_ATOM),
             'unread' => $row->unread,
             'last_message' => $this->resource->lastMessage === null ? null : MessagePayload::of($this->resource->lastMessage),

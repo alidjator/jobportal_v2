@@ -15,8 +15,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
 | `already-in-talent-pool` | 409 | TalentPool | This candidate is already in your talent pool. |
 | `already-invited` | 409 | JobInvitation | This candidate was already invited to the job. |
-| `already-reported` | 409 | Job, Review | You have already reported this job. |
+| `already-reported` | 409 | Job, Messaging, Review | You have already reported this job. |
 | `already-reviewed` | 409 | Review | You already reviewed this company. |
+| `already-suppressed` | 409 | Platform | This address is already suppressed. |
 | `amendment-pending` | 409 | Workforce | An amendment of this requisition is waiting for a decision. |
 | `applicant-unavailable` | 409 | Recruitment | The applicant account is no longer available. |
 | `application-final` | 409 | Recruitment | This application is final, so the interview needs no answer. |
@@ -74,6 +75,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
 | `contract-too-long` | 422 | Recruitment |  |
+| `conversation-blocked` | 409 | Messaging | The candidate closed this conversation. You cannot send messages in it. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `cost-centre-code-taken` | 409 | Organization | The legal entity already has a cost centre with this code. |
@@ -105,7 +107,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
 | `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging, Recruitment | A chunk is larger than the allowed 5 MB. |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
-| `forbidden` | 403 | Assessment, Company, Job, Organization, Platform | You are not allowed to perform this action. |
+| `forbidden` | 403 | Assessment, Company, Content, Identity, Job, Messaging, Organization, Platform, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
 | `google-sign-in-unavailable` | 401, 503 | Identity | This account cannot sign in with Google. |
 | `grade-code-taken` | 409 | Organization | The group already has a grade with this code. |
@@ -122,6 +124,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be joined. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
 | `interview-started` | 409 | Recruitment | This interview has started, so the answer can no longer change. |
+| `invalid-announcement` | 422 | Content |  |
 | `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
@@ -140,6 +143,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
 | `invalid-cursor` | 422 | Messaging, Notification, Platform, Recruitment | The cursor is not valid. Start again without a cursor. |
 | `invalid-cv` | 422 | JobSeeker | The language of a CV is id or en. |
+| `invalid-decision` | 422 | Messaging |  |
 | `invalid-delegate` | 422 | Approval | The delegate must be another member of a tenant of the same group. |
 | `invalid-delegation-range` | 422 | Approval |  |
 | `invalid-document` | 422 | Company | The file must be a PDF or a JPEG, PNG or WebP image. |
@@ -191,7 +195,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
-| `invalid-report` | 422 | Assessment, Job | The report text cannot be empty. |
+| `invalid-report` | 422 | Assessment, Job, Messaging | The report text cannot be empty. |
 | `invalid-report-template` | 422 | Assessment |  |
 | `invalid-reports-to` | 422 | Organization | The position it reports to is not an active position of the legal entity that exists from the day of the change. |
 | `invalid-requisition` | 422 | Workforce | The requisition does not exist for this tenant. |
@@ -205,6 +209,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
 | `invalid-setting-value` | 422 | Platform, Shared | Some values are not valid. |
+| `invalid-signature` | 403 | Platform | The webhook signature is not valid. |
 | `invalid-skills` | 422 | JobSeeker | The skills are not valid. |
 | `invalid-slug` | 422 | Company | The slug must be 3 to 60 characters: lower case letters, digits and single hyphens, not starting or ending with a hyphen. |
 | `invalid-stage` | 422 | Job, Recruitment | The stage must be an active stage of the company. |
@@ -295,7 +300,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-an-author` | 403 | Assessment | Only a company member with the permission, a psychologist or an administrator can write tests. |
 | `not-an-internal-tenant` | 403 | Approval, Workforce | Approvals belong to the tenants of an ERP group. |
 | `not-an-interview-participant` | 403 | Recruitment | You are not on the panel of this interview. |
-| `not-found` | 404 | Platform | The requested resource was not found. |
+| `not-found` | 404 | Platform, Platform | The requested resource was not found. |
 | `not-in-assessment-stage` | 409 | Assessment | Move the application to an assessment stage before sending a test. |
 | `not-in-interview-stage` | 409 | Recruitment | Move the application to an interview stage before scheduling an interview. |
 | `not-in-offer-stage` | 409 | Recruitment | Move the application to an offer stage before sending an offer. |
@@ -355,6 +360,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reference-value-taken` | 409 | ReferenceData |  |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
+| `report-decided` | 409 | Messaging | This report was already decided. |
 | `report-not-auto-issued` | 409 | Assessment | Only a report that was issued automatically can be marked reviewed or revised. |
 | `report-not-open` | 409 | Review | This report was already handled. |
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |

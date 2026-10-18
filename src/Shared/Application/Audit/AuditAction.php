@@ -324,4 +324,20 @@ final class AuditAction
     public const string GROUP_POSITION_DEACTIVATED = 'group.position_deactivated';
 
     public const string GROUP_POSITION_REACTIVATED = 'group.position_reactivated';
+
+    public const string EMAIL_SUPPRESSION_ADDED = 'platform.email_suppression_added';
+
+    public const string EMAIL_SUPPRESSION_REMOVED = 'platform.email_suppression_removed';
+
+    public const string USER_VIEWED = 'user.viewed';
+
+    public const string ANNOUNCEMENT_CREATED = 'content.announcement_created';
+
+    public const string ANNOUNCEMENT_UPDATED = 'content.announcement_updated';
+
+    public const string ANNOUNCEMENT_DELETED = 'content.announcement_deleted';
+
+    public const string MESSAGE_REPORT_DISMISSED = 'messaging.report_dismissed';
+
+    public const string MESSAGE_REPORT_ACTIONED = 'messaging.report_actioned';
 }

@@ -1,4 +1,4 @@
-# Phase 8: platform admin: job reports, approval for unverified companies, name lock, two-factor reset, chat reports, email suppression, announcements and scheduler watch (designed 2026-10-15; sections 1 to 4 coded 2026-10-15)
+# Phase 8: platform admin: job reports, approval for unverified companies, name lock, two-factor reset, chat reports, email suppression, announcements and scheduler watch (designed 2026-10-15; sections 1 to 4 coded 2026-10-15, 5 to 8 coded 2026-10-18)
 
 Gaps found from the platform admin's point of view, against Mekari Talenta (help center articles 9518591606041: in-app support chat;
 9324824732953: targeted announcements; 61590778970649: queue activity; 9096990286233: two-factor on promotion to admin) and against the job portals
@@ -28,6 +28,7 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 - 2026-10-15: an **email suppression list** fed by hard bounces and complaints.
 - 2026-10-15: **platform announcements** shown as a banner.
 - 2026-10-15: a **scheduler watch** on the operations card with an email to an operations address (chosen by the user).
+- 2026-10-18: the **admin account view** (`GET admin/users`, `users.view`) shows the suppression flag; the **mass reset email** is a console command, `identity:send-imported-password-resets` (decided by the user, see "Coded: sections 5 to 8").
 
 ## 1. Job reports (before go-live)
 
@@ -147,7 +148,7 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 
 ## Coded: sections 1 to 4 (2026-10-15)
 
-Migration `000141` (`job_reports`, `job_jobs.report_hold_at`, `company_name_change_requests`). Section 4 was coded with `phase-8-company-admin.md`. Sections 5 to 8 wait (#17).
+Migration `000141` (`job_reports`, `job_jobs.report_hold_at`, `company_name_change_requests`). Section 4 was coded with `phase-8-company-admin.md`. Sections 5 to 8: see "Coded: sections 5 to 8".
 Checked by the user. Interpretations, where the design left room:
 
 - **Job reports (section 1).** `POST jobs/{id}/reports` answers 201 with the report (`id`, `job_id`, `reason`, `status`, `created_at`); it never says whether the job went on
@@ -187,3 +188,56 @@ Checked by the user. Interpretations, where the design left room:
   `company:purge-name-change-documents` (03:30 daily) deletes the file 90 days after the decision and keeps the request.
 - **Tests.** `FeatureTestCase` wraps `Settings` so `jobs.approval_for_unverified` reads off unless a test sets `$unverifiedReview = true` (the companies of the older tests
   are unverified and their jobs must still go live).
+
+## Coded: sections 5 to 8 (2026-10-18, #17; waits for the user's check)
+
+Migrations `000166` (`platform_email_suppressions`), `000167` (`content_announcements`), `000168` (`platform_scheduled_task_runs`), `000169` (`messaging_reports`,
+`messaging_conversations.blocked_by_seeker_at`). Two decisions the user took before coding, beyond the design: (1) the design said "the admin user and member views show the flag",
+but the platform admin had no account view at all, so **`GET admin/users` (`q`, paginated) and `GET admin/users/{id}`** were added under a new permission `users.view`
+(id, type, name, email, verified, status, locale, first and last sign-in, deletion request, `email_suppressed`, `email_suppression_reason`; opening one account is audited as `user.viewed`,
+the list is not); (2) the import's reset email run did not exist in code, so the console command **`identity:send-imported-password-resets`** was written (below). Interpretations:
+
+- **Email suppression (section 6).** The list is read through the shared port `EmailSuppressions::reasons(emails)` (Platform implements it; Identity reads it). The `MessageSending` listener
+  (`DropSuppressedRecipients`) drops suppressed addresses from To, Cc and Bcc, cancels a message left with none, and matches whatever the letter case. A message carrying `X-Essential`
+  (`EssentialEmail::headers()`) is sent as it is and the header is removed before sending. Essential: `VerificationCodeMail` (verification code and password reset), `AccountNoticeMail` (two-factor
+  required and the internal-tenant notice, the only two uses), the member **suspension** notice (`MemberNoticeMail` with `company.member_suspended`; reactivation and ownership notices are not essential)
+  and the scheduler alert to the operations address. Newsletters, digests, recommendations, reminders and chat emails are filtered. Webhook: `POST webhooks/email/{provider}` answers 404 until a parser
+  is registered in the `EmailEventParsers` singleton (`EmailEventParser::provider()` and `parse(body, headers)`, throwing `InvalidWebhookSignature` for a bad signature, answered as 403
+  `invalid-signature`); the body and headers go to the parser untouched, the webhook has no other limit than the baseline per-IP `api` limit. An address already listed keeps its first entry. Admin
+  (`settings.manage`): `GET admin/email-suppressions` (`q`, paginated, newest first), `POST` (`email`, `details`; 409 `already-suppressed`), `DELETE .../{id}`; audit `platform.email_suppression_added`
+  and `_removed` hold the entry id and reason, never the address. `GET me` gains `email_deliverable` (a new `CurrentUserResource`; the sign-in responses keep `UserResource`); a changed address starts clean
+  because the list is keyed by the address.
+- **Mass reset email.** `identity:send-imported-password-resets` (`--write` to send, default dry run; `--limit=200` emails per run; `--delay=1` second after each email). Target: accounts that are not
+  psychologists, active, not anonymised, **without a password and without a social sign-in** (a Google-only account has no password too and must not get one). The dry run reports, over the whole pool:
+  without a password, **suppressed (skipped)**, already issued a reset code (skipped), left to send. An account that was **ever** issued a password reset code (this command, an earlier run or its own
+  request) is skipped, so a repeated run sends nothing twice and no new column was needed. The email is the normal password reset code (queue `critical`, essential, valid as long as the reset flow's
+  code, 15 minutes by default), not a long-lived link: a person who misses the window asks again through "forgot password".
+- **Chat reports and block (section 5).** `POST me/conversations/{id}/report` and `POST company/conversations/{id}/report` share one use case (the caller decides the side; a conversation the caller may not see is
+  404); 201 with `{id, conversation_id, reason, status, created_at}`; 10 per hour per account (limiter `chat-report`, 429); 409 `already-reported` while the reporter's own report of that conversation is open
+  (the other side may report); 422 `invalid-report` with `errors` (`other` needs a note, note at most 1,000, `message_id` must belong to the conversation). A closed or blocked conversation can be
+  reported. The snapshot is the reported message and up to 10 earlier ones (without `message_id`: the latest 11, none marked), oldest first: `message_id`, `side` (`job_seeker`/`company`), `sent_at`, `text`
+  (null once deleted), `attachments` (names only), `deleted`, `reported`. `reporter_user_id` and `message_id` are plain nullable columns (the reporter is cleared by the erasure, the message FK is `SET NULL`).
+  **Block:** `POST`/`DELETE me/conversations/{id}/block` (job seeker only, idempotent, 403 `job-seeker-only` for others); `blocked` and `blocked_at` are in every conversation view of both sides. The company's
+  sends, new messages into the pair and bulk sends stop with 409 `conversation-blocked` (bulk: skipped with that code). **Not restricted: the job seeker's own sending** (the design only stops the
+  company); say so if a block should also stop the seeker writing. **Admin** (`messages.moderate`, new `MessagingPermissions`): `GET admin/message-reports` (`filter[status]`; open ones oldest first, then the
+  decided newest first; no names or text), `GET .../{id}` (company, job seeker, note, snapshot, decision; never the live thread), `POST .../{id}/dismiss {note?}`, `POST .../{id}/action {note}` (note required,
+  at most 1,000: 422 `invalid-decision`; 409 `report-decided`). The reporter gets `report.reviewed` with the conversation id only. Audit `messaging.report_dismissed` and `_actioned` hold the report id, reason
+  and conversation id. `messaging:purge-report-snapshots` (04:15 daily) clears snapshots 180 days after the decision (open reports keep theirs); the erasure step `messaging-data` also clears the reporter, the note
+  and the snapshot of the erased account's reports, and the snapshots of the reports about conversations where the erased user is the job seeker. Reading a snapshot is not audited (the design did not
+  ask for it): consider `messaging.report_viewed` once legal question 16 is answered.
+- **Announcements (section 7).** `Announcement` (Content): title at most 120, body 500, `link_url` https (500), audience, level, window; the form request checks the shapes (422), the domain checks that the
+  window ends after it starts and is at most 90 days (422 `invalid-announcement`). Admin (`announcements.manage`): list (paginated, newest start first, with `status` `scheduled`/`live`/`ended`), show, create, replace
+  (`PUT`), delete; audit `content.announcement_created`, `_updated`, `_deleted` hold the id, audience and level, never the text. `GET announcements` (no sign-in): the live banners, important first then newest
+  start, at most 20: `id, title, body, link_url, level, starts_at, ends_at`. The reader is the owner of the `user` token (job seeker or company member adds their audience; anonymous, psychologists and admins
+  see `all`). Cached 60 seconds per audience (plain arrays in the cache): a new, changed or deleted banner reaches the public within a minute, no flush on write.
+- **Scheduler watch (section 8).** Task name: `ScheduledTaskName::of` (the artisan command; a closure task would use its `->name()`; no call site changed); a test checks they are distinct and none is `unnamed-`.
+  Listeners fill `platform_scheduled_task_runs` from `ScheduledTaskStarting`, `Finished` and `Failed` (a command exiting with a failure code raises both a finish and a failure event: only the failure counts;
+  a failure message is `Class: message`, 1,000 characters; a problem in the recording is logged and never stops the scheduler). The **heartbeat** is a new hidden command `platform:record-scheduler-tick`
+  that does nothing every minute: `last_tick_at` is its last finish. **Late**: no finish within two intervals plus 5 minutes counted from the last finish (or first start if it never finished); the interval is
+  the longest gap among the next 8 runs of the expression (so a weekday task is not late over a weekend). Rows of tasks no longer scheduled are ignored and deleted by the check. The operations card gains
+  `scheduler {last_tick_at, tasks [{task, last_finished_at, late, failing}]}`, late and failing first. `platform:check-scheduled-tasks` (every 5 minutes) emails the new setting
+  `platform.operations_email` (empty = nothing): one email per check for the tasks that turned late or failing (task, reasons, last failure), one for the tasks that recovered; with no address nothing is marked, so
+  an alert goes out once an address is set while the problem lasts. The alert is an essential email (a suppressed operations address still gets it) in English, templates `platform.scheduler_alert` and
+  `platform.scheduler_recovered`. `GET health/scheduler` (no sign-in) answers `{status: ok}` 200 while the heartbeat is under 5 minutes old, else `{status: down}` 503, and nothing else.
+- **Not coded / for later.** The front end pages. A parser for the chosen SMTP provider (`EmailEventParser`) and its webhook secret wait for the SMTP provider. The one-click opt-out is unrelated.
+- **Docs.** `ApiTags` gained the group `Operations` (webhooks and health) and patterns for the new admin routes; `docs/api/error-catalog.md` regenerated.

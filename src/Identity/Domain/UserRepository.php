@@ -3,6 +3,8 @@
 namespace Src\Identity\Domain;
 
 use DateTimeImmutable;
+use Src\Shared\Application\Pagination\Page;
+use Src\Shared\Application\Pagination\PageRequest;
 
 interface UserRepository
 {
@@ -31,6 +33,21 @@ interface UserRepository
      * @return list<int>
      */
     public function findJobSeekerIdsFirstSignedInBefore(DateTimeImmutable $cutoff, int $afterId, int $limit): array;
+
+    /**
+     * The accounts that are not anonymised, newest first; the search text matches part of the name or the email.
+     *
+     * @return Page<User>
+     */
+    public function search(?string $search, PageRequest $request): Page;
+
+    /**
+     * Active accounts of the public sign-in (not psychologists, not anonymised) that have no password and no link to a social provider, so
+     * they can only get in through a password reset; ascending id after the cursor.
+     *
+     * @return list<User>
+     */
+    public function findWithoutPassword(int $afterId, int $limit): array;
 
     /** Inserts a new user or updates an existing one, and returns the stored aggregate (with its id). */
     public function save(User $user): User;
