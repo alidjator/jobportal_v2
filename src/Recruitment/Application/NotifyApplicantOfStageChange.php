@@ -75,7 +75,7 @@ final readonly class NotifyApplicantOfStageChange
 
     private function announcedType(ApplicationStageChanged $event): ?string
     {
-        return $event->fromType === $event->toType ? null : ApplicationNotificationType::forStage($event->toType);
+        return $event->fromType === $event->toType || $event->noticeCovered ? null : ApplicationNotificationType::forStage($event->toType);
     }
 
     /** @return array{string, string} */

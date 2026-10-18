@@ -48,9 +48,10 @@ final class StageNotificationsTest extends FeatureTestCase
     {
         $body = ['stage_id' => $this->stage($type)];
 
-        // A move to an interview stage comes with its schedule and one to an offer stage with its offer; the notifications below are about the stage only.
+        // A move to an interview stage says it schedules later (so its stage notice is the only one) and one to an offer stage comes with its offer, whose own email and
+        // notice replace the stage ones (see the tests about one message per move at the end).
         if ($type === 'interview') {
-            $body['interview'] = $this->interviewSchedule();
+            $body['interview'] = ['schedule_later' => true];
         }
 
         if ($type === 'offer') {
@@ -104,20 +105,19 @@ final class StageNotificationsTest extends FeatureTestCase
         $notifications = $this->notifications();
         $types = array_column($notifications, 'type');
         sort($types);
-        $this->assertSame(['application.hired', 'application.moved_to_interview', 'application.moved_to_offer', 'application.rejected'], $types);
+        $this->assertSame(['application.hired', 'application.moved_to_interview', 'application.rejected'], $types);
 
         $data = json_decode(collect($notifications)->firstWhere('type', 'application.moved_to_interview')->data, true);
         $this->assertSame(['application_id' => $this->applicationId, 'job_id' => $this->job, 'job_title' => 'Backend Developer', 'company_name' => DB::table('company_companies')->where('id', $this->companyId)->value('name')], $data);
 
         $emails = $this->emailsToApplicant();
-        $this->assertCount(4, $emails);
+        $this->assertCount(3, $emails);
         $this->assertStringContainsString('interview stage', $emails[0]->getSubject() ?? '');
         $this->assertStringContainsString('Backend Developer', $emails[0]->getSubject() ?? '');
         $this->assertStringContainsString('Siti Rahma', (string) $emails[0]->getTextBody());
         $this->assertStringContainsString((string) DB::table('company_companies')->where('id', $this->companyId)->value('name'), (string) $emails[0]->getTextBody());
-        $this->assertStringContainsString('offer stage', $emails[1]->getSubject() ?? '');
-        $this->assertStringContainsString('Congratulations', $emails[2]->getSubject() ?? '');
-        $this->assertStringContainsString('update on your application', strtolower($emails[3]->getSubject() ?? ''));
+        $this->assertStringContainsString('Congratulations', $emails[1]->getSubject() ?? '');
+        $this->assertStringContainsString('update on your application', strtolower($emails[2]->getSubject() ?? ''));
     }
 
     public function test_the_notification_never_carries_the_rejection_reason_the_note_or_the_recruiter(): void
@@ -129,6 +129,35 @@ final class StageNotificationsTest extends FeatureTestCase
         foreach (['Secret internal note', 'salary_expectation_mismatch', 'Salary', 'Rina', 'Rekruter'] as $leak) {
             $this->assertStringNotContainsString($leak, $everything);
         }
+    }
+
+    // ----- one message per move -----
+
+    public function test_a_move_that_sends_an_offer_sends_the_offer_email_and_notice_only(): void
+    {
+        $this->move('offer');
+
+        $this->assertSame([], $this->notifications());
+        $this->assertSame([], $this->emailsToApplicant());
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'offer.sent')->count());
+        $this->assertCount(1, array_filter($this->emails(), fn (Email $email): bool => str_contains((string) $email->getSubject(), 'Job offer for')));
+    }
+
+    public function test_a_move_that_schedules_an_interview_sends_the_interview_email_and_notice_only(): void
+    {
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertOk();
+
+        $this->assertSame([], $this->notifications());
+        $this->assertSame([], $this->emailsToApplicant());
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'interview.scheduled')->count());
+    }
+
+    public function test_a_move_that_schedules_later_still_sends_the_stage_email_and_notice(): void
+    {
+        $this->move('interview');
+
+        $this->assertSame(['application.moved_to_interview'], array_column($this->notifications(), 'type'));
+        $this->assertCount(1, $this->emailsToApplicant());
     }
 
     // ----- when nobody is told -----
@@ -143,7 +172,7 @@ final class StageNotificationsTest extends FeatureTestCase
         $this->assertSame([], $this->emailsToApplicant());
 
         $this->move('interview');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $extra], $this->recruiterToken)->assertOk();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $extra, 'interview' => ['schedule_later' => true]], $this->recruiterToken)->assertOk();
 
         // Only the move into `interview` told the applicant; the move to the other interview stage did not.
         $this->assertCount(1, $this->notifications());

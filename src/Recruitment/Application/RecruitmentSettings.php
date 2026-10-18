@@ -23,6 +23,8 @@ final class RecruitmentSettings
 
     public const string STALE_AFTER_DAYS = 'recruitment.stale_after_days';
 
+    public const string OFFER_LABOR_RULES = 'recruitment.offer_labor_rules';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -65,6 +67,11 @@ final class RecruitmentSettings
                 self::STALE_AFTER_DAYS, 7, 1, 60,
                 'After how many days in the applied or screening stage an application is marked stale. The company admin sets it on the company settings page.',
                 companyEditable: true,
+            ),
+            SettingDefinition::boolean(
+                self::OFFER_LABOR_RULES, true,
+                'Whether an offer follows the labour-law limits (PP 35/2021): probation only for a permanent employee and at most 3 months, an internship at most 12 months. While off, only the field limits apply.',
+                overridable: true,
             ),
         ];
     }

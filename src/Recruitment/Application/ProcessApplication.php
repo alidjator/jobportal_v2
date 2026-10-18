@@ -160,12 +160,33 @@ final readonly class ProcessApplication
 
             $filled = $this->fill->afterMove($before, $after, $now);
 
-            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now, $hire), ...$extra, ...($filled instanceof JobFilled ? [$filled] : [])];
+            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now, $hire, $this->noticeCovered($after->stageType, $extra)), ...$extra, ...($filled instanceof JobFilled ? [$filled] : [])];
         });
 
         $this->events->dispatch($events);
 
         return array_filter($events, static fn (DomainEvent $event): bool => $event instanceof JobFilled) !== [];
+    }
+
+    /**
+     * Whether the offer or the interview of this move already tells the applicant, so the stage email and notice would be a second message: a new offer
+     * (sent or revised) for a move into an offer stage, a newly scheduled interview for a move into an interview stage.
+     *
+     * @param  list<DomainEvent>  $extra
+     */
+    private function noticeCovered(StageType $target, array $extra): bool
+    {
+        foreach ($extra as $event) {
+            if ($target === StageType::Offer && $event instanceof OfferChanged && in_array($event->change, [OfferChange::Sent, OfferChange::Revised], true)) {
+                return true;
+            }
+
+            if ($target === StageType::Interview && $event instanceof InterviewChanged && in_array($event->change, [InterviewChange::Scheduled, InterviewChange::Rescheduled], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @throws StateConflict `offer-pending` */

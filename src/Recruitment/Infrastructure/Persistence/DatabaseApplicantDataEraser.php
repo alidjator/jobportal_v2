@@ -19,6 +19,16 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->all());
     }
 
+    public function letterPaths(int $userId): array
+    {
+        $applicationIds = $this->connection->table('recruitment_applications')->select('id')->where('user_id', $userId);
+
+        return array_map('strval', [
+            ...$this->connection->table('recruitment_offers')->whereIn('application_id', (clone $applicationIds))->whereNotNull('letter_path')->pluck('letter_path')->all(),
+            ...$this->connection->table('recruitment_offer_letter_uploads')->whereIn('application_id', $applicationIds)->pluck('path')->all(),
+        ]);
+    }
+
     public function recordingPaths(int $userId): array
     {
         return array_map('strval', $this->connection->table('recruitment_interview_recordings')
@@ -68,7 +78,11 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
         (clone $interviews)->whereNotIn('id', $this->connection->table('recruitment_interview_scorecards')->select('interview_id'))->delete();
         $interviews->update(['location' => null, 'meeting_url' => null]);
 
-        // Offers carry the applicant's answer note, so they go too.
+        // Offers carry the applicant's answer note (and the letter that names them), so they go too, with the letters nobody used yet.
+        $this->connection->table('recruitment_offer_letter_uploads')
+            ->whereIn('application_id', (clone $applications)->select('id'))
+            ->delete();
+
         $this->connection->table('recruitment_offers')
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();

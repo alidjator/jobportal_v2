@@ -23,6 +23,13 @@ interface ApplicantDataEraser
      */
     public function recordingPaths(int $userId): array;
 
+    /**
+     * The paths of the offer letters (they carry the applicant's name) and of the letter uploads still waiting for an offer.
+     *
+     * @return list<string>
+     */
+    public function letterPaths(int $userId): array;
+
     /** Clears the personal content of every application of the user. Running it again changes nothing. */
     public function clearPersonalData(int $userId): void;
 }

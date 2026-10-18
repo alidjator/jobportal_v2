@@ -92,7 +92,7 @@ final class HiresExportTest extends FeatureTestCase
 
         // The second job's hire comes from an accepted offer.
         $this->moveClockTo('2026-10-07 03:00:00');
-        $this->api('POST', "/company/applications/{$this->cici}/move", ['stage_id' => $this->stage('offer'), 'offer' => $this->offerDetails(['position' => 'Senior Analyst', 'salary' => 15_000_000, 'start_date' => '2026-11-02'])], $this->adminToken)->assertOk();
+        $this->api('POST', "/company/applications/{$this->cici}/move", ['stage_id' => $this->stage('offer'), 'offer' => $this->offerDetails(['position' => 'Senior Analyst', 'salary' => 15_000_000, 'start_date' => '2026-11-02', 'benefit_ids' => [$this->benefitId('health-insurance'), $this->benefitId('annual-bonus')]])], $this->adminToken)->assertOk();
         $this->moveClockTo('2026-10-07 04:30:00');
         $this->api('POST', "/me/applications/{$this->cici}/offer/accept", token: $this->tokenFor((int) DB::table('recruitment_applications')->where('id', $this->cici)->value('user_id')))->assertOk();
 
@@ -146,15 +146,30 @@ final class HiresExportTest extends FeatureTestCase
         $this->assertSame([
             'Application ID', 'Hired at', 'Join date', 'Name', 'Email', 'Phone', 'City', 'Job ID', 'Job title',
             'Offer position', 'Offer salary (IDR)', 'Offer start date', 'Offer accepted at',
+            'Employment type', 'Contract months', 'Probation months', 'Work mode', 'Work location', 'Salary basis', 'Allowances total (IDR)', 'Allowances', 'Benefits',
         ], $lines[0]);
         $this->assertCount(5, $lines);
         $this->assertSame([(string) $this->siti, (string) $this->budi, (string) $this->cici, (string) $this->ani], array_column(array_slice($lines, 1), 0));
 
         $this->assertSame([(string) $this->siti, '2026-10-05T10:00:00Z', '2026-10-26', 'Siti Rahma', 'siti@example.test'], array_slice($lines[1], 0, 5));
-        $this->assertSame([(string) $this->jobA, 'Backend Developer', '', '', '', ''], array_slice($lines[1], 7));
+        $this->assertSame([(string) $this->jobA, 'Backend Developer', ...array_fill(0, 13, '')], array_slice($lines[1], 7));
 
         $this->assertSame([(string) $this->cici, '2026-10-07T04:30:00Z', '2026-11-02', 'Cici Hartono'], [$lines[3][0], $lines[3][1], $lines[3][2], $lines[3][3]]);
-        $this->assertSame([(string) $this->jobB, 'Data Analyst', 'Senior Analyst', '15000000', '2026-11-02', '2026-10-07T04:30:00Z'], array_slice($lines[3], 7));
+        $this->assertSame([
+            (string) $this->jobB, 'Data Analyst', 'Senior Analyst', '15000000', '2026-11-02', '2026-10-07T04:30:00Z',
+            'permanent', '', '3', 'hybrid', 'Jakarta Selatan', 'gross', '500000', 'Transport: 500000', 'health-insurance; annual-bonus',
+        ], array_slice($lines[3], 7));
+    }
+
+    public function test_an_accepted_offer_without_terms_leaves_the_terms_columns_empty(): void
+    {
+        $this->hireAll();
+        DB::table('recruitment_offers')->where('application_id', $this->cici)->update(['employment_type' => null, 'work_mode' => null, 'salary_basis' => null, 'allowances' => null, 'benefits' => null]);
+
+        $lines = $this->lines($this->export()->assertOk());
+
+        $this->assertSame(['Senior Analyst', '15000000', '2026-11-02'], array_slice($lines[3], 9, 3));
+        $this->assertSame(array_fill(0, 9, ''), array_slice($lines[3], 13));
     }
 
     public function test_the_days_are_jakarta_days(): void

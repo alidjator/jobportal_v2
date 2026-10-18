@@ -8,7 +8,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A job offer of one application: position, monthly salary in Rupiah, start date and a note, open for an answer until its deadline. The job seeker accepts or
+ * A job offer of one application: position, monthly salary in Rupiah, start date, note and terms (the offers sent before the terms existed have none), open for an answer until its deadline. The job seeker accepts or
  * declines it; the team may withdraw it, and the hourly command expires it. An application has at most one pending offer.
  */
 final readonly class Offer
@@ -38,6 +38,8 @@ final readonly class Offer
         public ?DateTimeImmutable $answeredAt,
         public DateTimeImmutable $createdAt,
         public ?DateTimeImmutable $remindedAt = null,
+        public ?OfferTerms $terms = null,
+        public ?OfferLetter $letter = null,
         public ?int $id = null,
     ) {}
 
@@ -55,6 +57,7 @@ final readonly class Offer
         DateTimeImmutable $expiresAt,
         int $createdBy,
         DateTimeImmutable $now,
+        ?OfferTerms $terms = null,
     ): self {
         $position = trim($position);
         $note = self::text($note);
@@ -77,7 +80,7 @@ final readonly class Offer
             throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string $text): array => [$text], $errors)]);
         }
 
-        return new self($applicationId, $position, $salary, $startDate->setTime(0, 0), $note, $expiresAt, $createdBy, OfferStatus::Pending, null, null, $now);
+        return new self($applicationId, $position, $salary, $startDate->setTime(0, 0), $note, $expiresAt, $createdBy, OfferStatus::Pending, null, null, $now, terms: $terms);
     }
 
     /** The status as of `$now`: a pending offer past its deadline is expired even before the hourly command marks it. */
@@ -127,6 +130,12 @@ final readonly class Offer
         return $this->changed(remindedAt: $at);
     }
 
+    /** The offer with its letter (made once the offer has an id, so the file can be kept under it). */
+    public function withLetter(OfferLetter $letter): self
+    {
+        return $this->changed(letter: $letter);
+    }
+
     /** @throws StateConflict */
     private function assertOpen(DateTimeImmutable $now): void
     {
@@ -149,6 +158,7 @@ final readonly class Offer
         mixed $answerNote = false,
         mixed $answeredAt = false,
         mixed $remindedAt = false,
+        ?OfferLetter $letter = null,
     ): self {
         return new self(
             $this->applicationId,
@@ -163,6 +173,8 @@ final readonly class Offer
             $answeredAt === false ? $this->answeredAt : $answeredAt,
             $this->createdAt,
             $remindedAt === false ? $this->remindedAt : $remindedAt,
+            $this->terms,
+            $letter ?? $this->letter,
             $this->id,
         );
     }

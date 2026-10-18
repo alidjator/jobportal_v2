@@ -5,9 +5,13 @@ namespace Src\Recruitment\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Src\Recruitment\Domain\LetterSource;
 use Src\Recruitment\Domain\Offer;
+use Src\Recruitment\Domain\OfferAllowance;
+use Src\Recruitment\Domain\OfferLetter;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\OfferStatus;
+use Src\Recruitment\Domain\OfferTerms;
 use stdClass;
 
 final readonly class DatabaseOfferRepository implements OfferRepository
@@ -61,6 +65,8 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             'created_by' => $offer->createdBy,
             'status' => $offer->status->value,
             'active_key' => $offer->status->isActive() ? $offer->applicationId : null,
+            ...$this->termColumns($offer->terms),
+            ...$this->letterColumns($offer->letter),
             'created_at' => $at,
             'updated_at' => $at,
         ]);
@@ -78,6 +84,8 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             null,
             $offer->createdAt,
             null,
+            $offer->terms,
+            $offer->letter,
             $id,
         );
     }
@@ -90,6 +98,7 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             'answered_at' => $offer->answeredAt === null ? null : $this->format($offer->answeredAt),
             'active_key' => $offer->status->isActive() ? $offer->applicationId : null,
             'reminded_at' => $offer->remindedAt === null ? null : $this->format($offer->remindedAt),
+            ...$this->letterColumns($offer->letter),
             'updated_at' => $this->format(new DateTimeImmutable),
         ]);
     }
@@ -147,8 +156,31 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             $row->answered_at === null ? null : $this->time((string) $row->answered_at),
             $this->time((string) $row->created_at),
             $row->reminded_at === null ? null : $this->time((string) $row->reminded_at),
+            OfferTermsRow::terms($row),
+            $row->letter_path === null ? null : new OfferLetter((string) $row->letter_path, LetterSource::from((string) $row->letter_source), (string) $row->letter_sha256),
             (int) $row->id,
         );
+    }
+
+    /** @return array<string, mixed> */
+    private function termColumns(?OfferTerms $terms): array
+    {
+        return [
+            'employment_type' => $terms?->employmentType->value,
+            'contract_months' => $terms?->contractMonths,
+            'probation_months' => $terms?->probationMonths,
+            'work_mode' => $terms?->workMode->value,
+            'work_location' => $terms?->workLocation,
+            'salary_basis' => $terms?->salaryBasis->value,
+            'allowances' => $terms === null ? null : json_encode(array_map(static fn (OfferAllowance $line): array => ['name' => $line->name, 'amount' => $line->amount], $terms->allowances), JSON_THROW_ON_ERROR),
+            'benefits' => $terms === null ? null : json_encode($terms->benefits, JSON_THROW_ON_ERROR),
+        ];
+    }
+
+    /** @return array<string, string|null> */
+    private function letterColumns(?OfferLetter $letter): array
+    {
+        return ['letter_path' => $letter?->path, 'letter_source' => $letter?->source->value, 'letter_sha256' => $letter?->sha256];
     }
 
     private function format(DateTimeImmutable $time): string

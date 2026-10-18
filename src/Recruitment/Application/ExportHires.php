@@ -5,6 +5,8 @@ namespace Src\Recruitment\Application;
 use DateTimeImmutable;
 use DateTimeZone;
 use Src\Recruitment\Domain\Events\HiresExported;
+use Src\Recruitment\Domain\OfferAllowance;
+use Src\Recruitment\Domain\OfferTerms;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
@@ -27,6 +29,7 @@ final readonly class ExportHires
     private const array HEADERS = [
         'Application ID', 'Hired at', 'Join date', 'Name', 'Email', 'Phone', 'City', 'Job ID', 'Job title',
         'Offer position', 'Offer salary (IDR)', 'Offer start date', 'Offer accepted at',
+        'Employment type', 'Contract months', 'Probation months', 'Work mode', 'Work location', 'Salary basis', 'Allowances total (IDR)', 'Allowances', 'Benefits',
     ];
 
     public function __construct(
@@ -121,6 +124,32 @@ final readonly class ExportHires
             $offer === null ? '' : (string) $offer->salary,
             $offer === null ? '' : $offer->startDate->format('Y-m-d'),
             $offer === null ? '' : $offer->acceptedAt->format('Y-m-d\TH:i:s\Z'),
+            ...$this->termCells($offer?->terms),
+        ];
+    }
+
+    /**
+     * The terms of the accepted offer; all empty for a hire without an accepted offer and for an offer sent before the terms existed. The allowances read
+     * `Name: amount` and the benefits show their English names, both separated by `; `.
+     *
+     * @return list<string>
+     */
+    private function termCells(?OfferTerms $terms): array
+    {
+        if (! $terms instanceof OfferTerms) {
+            return array_fill(0, 9, '');
+        }
+
+        return [
+            $terms->employmentType->value,
+            (string) $terms->contractMonths,
+            (string) $terms->probationMonths,
+            $terms->workMode->value,
+            (string) $terms->workLocation,
+            $terms->salaryBasis->value,
+            (string) $terms->allowancesTotal(),
+            implode('; ', array_map(static fn (OfferAllowance $line): string => $line->name.': '.$line->amount, $terms->allowances)),
+            implode('; ', array_map(static fn (array $benefit): string => $benefit['name']['en'], $terms->benefits)),
         ];
     }
 }

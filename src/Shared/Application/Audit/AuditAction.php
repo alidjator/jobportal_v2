@@ -109,6 +109,8 @@ final class AuditAction
 
     public const string INTERVIEW_RECORDING_DOWNLOADED = 'interview.recording_downloaded';
 
+    public const string OFFER_LETTER_DOWNLOADED = 'offer.letter_downloaded';
+
     public const string JOB_ASSIGNEES_CHANGED = 'job.assignees_changed';
 
     public const string JOB_PUBLISHED = 'job.published';

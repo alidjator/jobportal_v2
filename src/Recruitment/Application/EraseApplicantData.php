@@ -27,7 +27,7 @@ final readonly class EraseApplicantData implements ErasureStep
 
     public function execute(int $userId): void
     {
-        foreach ([...$this->eraser->resumePaths($userId), ...$this->eraser->recordingPaths($userId)] as $path) {
+        foreach ([...$this->eraser->resumePaths($userId), ...$this->eraser->recordingPaths($userId), ...$this->eraser->letterPaths($userId)] as $path) {
             $this->files->delete($path);
         }
 

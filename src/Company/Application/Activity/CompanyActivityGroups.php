@@ -17,7 +17,7 @@ final class CompanyActivityGroups
         ],
         'data_access' => [
             AuditAction::APPLICATION_RESUME_DOWNLOADED, AuditAction::CANDIDATE_RESUME_DOWNLOADED, AuditAction::ASSESSMENT_REPORT_DOWNLOADED,
-            AuditAction::INTERVIEW_RECORDING_DOWNLOADED,
+            AuditAction::INTERVIEW_RECORDING_DOWNLOADED, AuditAction::OFFER_LETTER_DOWNLOADED,
         ],
         'export' => [AuditAction::EXPORT_APPLICANTS, AuditAction::EXPORT_HIRES, AuditAction::COMPANY_ACTIVITY_EXPORTED],
         'team' => [

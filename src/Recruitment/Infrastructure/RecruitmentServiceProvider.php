@@ -28,6 +28,8 @@ use Src\Recruitment\Application\InterviewResults;
 use Src\Recruitment\Application\InterviewSettings;
 use Src\Recruitment\Application\JobApplicationCheck;
 use Src\Recruitment\Application\MyInterviewReader;
+use Src\Recruitment\Application\OfferLetterRenderer;
+use Src\Recruitment\Application\OfferLetters;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
@@ -76,6 +78,7 @@ use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\InterviewRsvps;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
+use Src\Recruitment\Domain\OfferLetterUploadRepository;
 use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\ScorecardEraser;
@@ -122,6 +125,7 @@ use Src\Recruitment\Infrastructure\Mail\MailApplicantSender;
 use Src\Recruitment\Infrastructure\Mail\MailInterviewSender;
 use Src\Recruitment\Infrastructure\Mail\MailStageChangeSender;
 use Src\Recruitment\Infrastructure\Mail\MailTeamSender;
+use Src\Recruitment\Infrastructure\Pdf\DompdfOfferLetterRenderer;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantRelations;
@@ -140,6 +144,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewRsvps;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobKitDefaults;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferLetterUploadRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseReviewRequestRepository;
@@ -177,16 +182,22 @@ use Src\Recruitment\Interface\Console\ListenToVoiceServerCommand;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
+use Src\Recruitment\Interface\Console\PurgeOfferLetterUploadsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
 use Src\Recruitment\Interface\Console\SendReviewNoticesCommand;
 use Src\Recruitment\Interface\Console\SendStartingSoonRemindersCommand;
+use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
+use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Calendar\CalendarSources;
+use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyLetterheads;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
+use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
@@ -243,6 +254,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         InterviewEmailSender::class => MailInterviewSender::class,
         TeamEmailSender::class => MailTeamSender::class,
         OfferRepository::class => DatabaseOfferRepository::class,
+        OfferLetterUploadRepository::class => DatabaseOfferLetterUploadRepository::class,
+        OfferLetterRenderer::class => DompdfOfferLetterRenderer::class,
         ApplicantEmailSender::class => MailApplicantSender::class,
         ApplicantDataEraser::class => DatabaseApplicantDataEraser::class,
         StageChangeEmailSender::class => MailStageChangeSender::class,
@@ -285,6 +298,18 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_url'),
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
+        ));
+        $this->app->bind(OfferLetters::class, fn ($app): OfferLetters => new OfferLetters(
+            $app->make(OfferRepository::class),
+            $app->make(OfferLetterUploadRepository::class),
+            $app->make(OfferLetterRenderer::class),
+            $app->make(CompanyLetterheads::class),
+            $app->make(CompanyMemberAccounts::class),
+            $app->make(ApplicantContacts::class),
+            $app->make(FileStorage::class),
+            $app->make(Clock::class),
+            $app->make(LoggerInterface::class),
+            (string) $app->make(Repository::class)->get('app.name'),
         ));
         $this->app->bind(ReviewPageLink::class, fn ($app): ReviewPageLink => new ReviewPageLink($app->make(Repository::class)->get('app.company_app_url')));
         $this->app->bind(TeamApplicationPageLink::class, fn ($app): TeamApplicationPageLink => new TeamApplicationPageLink($app->make(Repository::class)->get('app.company_application_url')));
@@ -350,13 +375,14 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(SendStartingSoonRemindersCommand::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command(SendReviewNoticesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeOfferLetterUploadsCommand::class)->daily()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVoiceSessionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeExpiredRecordingsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();

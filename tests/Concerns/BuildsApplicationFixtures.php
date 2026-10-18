@@ -63,7 +63,8 @@ trait BuildsApplicationFixtures
     }
 
     /**
-     * The offer a recruiter sends with a move to an offer stage: valid for ten days, starting in three weeks.
+     * The offer a recruiter sends with a move to an offer stage: valid for ten days, starting in three weeks, for a permanent employee with a probation, a hybrid
+     * work mode and one allowance (the benefits are left out; the tests of the terms add their own).
      *
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
@@ -76,6 +77,12 @@ trait BuildsApplicationFixtures
             'start_date' => now()->addDays(21)->format('Y-m-d'),
             'note' => 'Welcome aboard.',
             'expires_at' => now()->addDays(10)->utc()->format('Y-m-d\TH:i:s\Z'),
+            'employment_type' => 'permanent',
+            'probation_months' => 3,
+            'work_mode' => 'hybrid',
+            'work_location' => 'Jakarta Selatan',
+            'salary_basis' => 'gross',
+            'allowances' => [['name' => 'Transport', 'amount' => 500_000]],
         ], ...$overrides];
     }
 

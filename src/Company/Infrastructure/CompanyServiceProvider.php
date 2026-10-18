@@ -80,6 +80,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseMessageDefaultsRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
+use Src\Company\Infrastructure\Persistence\RepositoryCompanyLetterheads;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
 use Src\Company\Infrastructure\Persistence\RepositoryMemberSignInGuard;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
@@ -90,6 +91,7 @@ use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Company\CompanyLetterheads;
 use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyMessageTexts;
@@ -123,6 +125,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         CompanyTeam::class => RepositoryCompanyTeam::class,
         CompanyMemberDeletionGuard::class => LastCompanyAdminDeletionGuard::class,
         PublicCompanies::class => RepositoryPublicCompanies::class,
+        CompanyLetterheads::class => RepositoryCompanyLetterheads::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
         MemberTwoFactorPolicy::class => CompanyTwoFactorPolicy::class,

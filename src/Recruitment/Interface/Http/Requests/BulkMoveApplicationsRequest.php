@@ -31,6 +31,8 @@ final class BulkMoveApplicationsRequest extends FormRequest
             'interview.day_end' => ['nullable', 'date_format:H:i'],
             'offer' => ['nullable', 'array'],
             ...OfferFields::rules('offer.', 'required_with:offer'),
+            // One company letter belongs to one application, so a bulk move always generates the letters.
+            'offer.letter_upload_id' => ['prohibited'],
             'assessment' => ['nullable', 'array'],
             ...AssessmentInvitationFields::rules('assessment.', 'required_with:assessment'),
             'hire' => ['nullable', 'array'],

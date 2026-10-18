@@ -51,7 +51,8 @@ final class PipelineJourneyTest extends FeatureTestCase
         // 3. The recruiter moves it to the interview: the applicant is told and sees the status, not the company's stage names.
         $this->api('POST', "/company/applications/{$id}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertOk();
         $this->api('GET', "/me/applications/{$id}", token: $this->seekerToken)->assertOk()->assertJsonPath('data.status', 'interview');
-        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.moved_to_interview')->count());
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'interview.scheduled')->count());
+        $this->assertSame(0, DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'application.moved_to_interview')->count());
         $this->assertSame([0, 0, 0, 1, 0, 0, 0, 0], array_column($this->api('GET', "/company/jobs/{$job}/applications", token: $this->recruiterToken)->json('stages'), 'count'));
 
         // 4. The recruiter rejects it with a reason; the applicant sees the status and the reason code, not the note.

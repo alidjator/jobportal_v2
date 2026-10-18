@@ -3,8 +3,11 @@
 namespace Src\Recruitment\Interface\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Src\Recruitment\Application\GetMyOffer;
+use Src\Recruitment\Application\GetMyOfferLetter;
 use Src\Recruitment\Application\RespondToOffer;
+use Src\Recruitment\Interface\Http\PdfDownload;
 use Src\Recruitment\Interface\Http\Requests\DeclineOfferRequest;
 use Src\Recruitment\Interface\Http\Resources\OfferResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -19,6 +22,12 @@ final class MyOfferController extends ApiController
         $view = $get->execute($actors->fromRequest($request), $id);
 
         return $view === null ? ['data' => null] : new OfferResource($view);
+    }
+
+    /** The letter PDF of the offer the job seeker can answer or has accepted, as a download. */
+    public function letter(Request $request, int $id, ActorResolver $actors, GetMyOfferLetter $get): Response
+    {
+        return PdfDownload::of($get->execute($actors->fromRequest($request), $id));
     }
 
     public function accept(Request $request, int $id, ActorResolver $actors, RespondToOffer $respond): OfferResource

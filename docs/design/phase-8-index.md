@@ -16,7 +16,7 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | `phase-8-admin-console.md` | coded 2026-10-13 (before go-live) |
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
 | `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
-| `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` waits for #12, section 3 for #26 |
+| `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` coded with #12, section 3 waits for #26 |
 | `erp-organization.md` (#5) | parts A and B (`000143`, `000144`), C1 to C3 (group log, group settings, support access; `000145`-`000147`) and D (group read rule) coded 2026-10-16 |
 | `naming.md` section 1 | coded 2026-10-15 (no migration; the problem `type` is now `urn:onesis:error:<code>`), checked |
 | `phase-8-job-discovery.md` sections 1 to 5 | coded and checked 2026-10-15 (migration `000142`); sections 6 and 7 wait (after go-live) |
@@ -32,8 +32,8 @@ Everything below passed the full `composer check` of tag `v0.3.0` (2026-10-17).
 | 8 | `phase-8-recruiter-workday.md` section 3 | sections 1, 2, 4 (`000153`) and 5 (with #10 section 6, `000157`) coded 2026-10-17; section 3 part A (audiences, `team_daily_digest`, the digest) coded 2026-10-17; part B (`team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`) coded 2026-10-17; `provider_reviews` waits for #23; the one-click opt-out is deferred; #9 section 3 and #11 sections 2 to 4 are unblocked |
 | 9 | `phase-8-hiring-managers.md` section 3 | sections 1 and 2 coded 2026-10-17 (`000154`); section 3 coded 2026-10-17 (`000162`; part A: requests, lists, page, answers, lock, close; part B: notifications, `team_reviews`, scheduler, tasks, `reviews[]`, `review_summary`, erasure); **#9 is complete** |
 | 11 | `phase-8-interviewers.md` sections 2 to 4 | section 1 coded 2026-10-17 (`000158`); sections 3 and 4 coded 2026-10-17 (`000160`); section 2 coded 2026-10-17 (`000161`: invitations with `.ics`, the answer, the cancellation; part B: the tasks `my_rsvp` and `panel_declined`, `filter[rsvp]`, calendar and pipeline badges); **#11 is complete** |
-| 12 | `phase-8-offer-letters.md` | acceptance evidence: `legal-review.md` question 12; offer approval of internal tenants through #6 |
-| 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | sections 1 (`000163`, `000164`), 2 (filled jobs) and 3 (hires export) coded 2026-10-17, no migration in 2 and 3; the offer terms columns of the export wait for #12; the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
+| 12 | `phase-8-offer-letters.md` | sections 1 (terms), 2 (letter PDF, own PDF) and 4 (one email per move) coded 2026-10-18 (`000165`), with the terms columns of the hires export; **waits:** section 3 (acceptance evidence: `legal-review.md` question 12) and offer approval of internal tenants through #6 (needs a design) |
+| 13 | `phase-8-hiring.md`, then **new** hand-off to Employee | sections 1 (`000163`, `000164`), 2 (filled jobs) and 3 (hires export) coded 2026-10-17, no migration in 2 and 3; the terms columns of the hires export came with #12 (2026-10-18); the hires export is the bridge to the existing HRIS; the hand-off needs a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | the pending rejections of the rejections design carry the candidate message |
 | 16 | `phase-8-withdrawals.md` | **coded 2026-10-17** (`000159`, parts A to C); it unblocks the team preferences of #8 section 3 |

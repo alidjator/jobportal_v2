@@ -167,7 +167,8 @@ final class BulkActionsTest extends FeatureTestCase
             fn (object $row): array => [(int) $row->application_id => (new \DateTimeImmutable($row->starts_at.' UTC'))->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('H:i')],
         )->all();
         $this->assertEquals([$order[0] => '09:00', $order[1] => '10:15', $order[2] => '11:30'], $times);
-        $this->assertSame(3, DB::table('notifications')->where('type', 'application.moved_to_interview')->count());
+        // The interview notice replaces the stage notice: one message per move.
+        $this->assertSame(0, DB::table('notifications')->where('type', 'application.moved_to_interview')->count());
         $this->assertSame(3, DB::table('notifications')->where('type', 'interview.scheduled')->count());
     }
 

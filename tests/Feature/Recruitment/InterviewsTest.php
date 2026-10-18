@@ -303,7 +303,7 @@ final class InterviewsTest extends FeatureTestCase
         $this->toInterviewStage($this->interviewSchedule(['meeting_url' => 'https://meet.example.test/secret-room']))->assertOk();
 
         $emails = $this->sentEmails();
-        $this->assertCount(3, array_filter($emails, fn ($email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test'));
+        $this->assertCount(2, array_filter($emails, fn ($email): bool => $email->getTo()[0]->getAddress() === 'siti@example.test'));
         $scheduled = collect($emails)->first(fn ($email): bool => str_contains($email->getSubject() ?? '', 'Interview scheduled'));
         $this->assertNotNull($scheduled);
         $this->assertStringContainsString('https://meet.example.test/secret-room', (string) $scheduled->getTextBody());

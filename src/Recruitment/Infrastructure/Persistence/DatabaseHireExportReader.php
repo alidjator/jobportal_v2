@@ -91,12 +91,13 @@ final readonly class DatabaseHireExportReader implements HireExportReader
             ->where('status', 'accepted')
             ->whereNotNull('answered_at')
             ->orderByDesc('answered_at')->orderByDesc('id')
-            ->get(['application_id', 'position', 'salary', 'start_date', 'answered_at']) as $offer) {
+            ->get(['application_id', 'position', 'salary', 'start_date', 'answered_at', ...OfferTermsRow::COLUMNS]) as $offer) {
             $offers[(int) $offer->application_id] ??= new HireExportOffer(
                 (string) $offer->position,
                 (int) $offer->salary,
                 new DateTimeImmutable((string) $offer->start_date, new DateTimeZone('UTC')),
                 $this->time((string) $offer->answered_at),
+                OfferTermsRow::terms($offer),
             );
         }
 

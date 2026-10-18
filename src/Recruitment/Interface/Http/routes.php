@@ -129,6 +129,8 @@ Route::middleware('auth:user')->group(function (): void {
 
     Route::get('company/applications/{id}/offers', [OfferController::class, 'index'])->whereNumber('id');
     Route::put('company/applications/{id}/offer', [OfferController::class, 'store'])->whereNumber('id');
+    Route::post('company/applications/{id}/offer-letter-uploads', [OfferController::class, 'uploadLetter'])->whereNumber('id');
+    Route::get('company/applications/{id}/offers/{offerId}/letter.pdf', [OfferController::class, 'letter'])->whereNumber(['id', 'offerId']);
     // The email an interview, a test or an offer would send, shown before the recruiter sends it; nothing is saved or sent.
     Route::post('company/applications/{id}/email-preview', EmailPreviewController::class)->whereNumber('id');
     Route::post('company/applications/{id}/offer/withdraw', [OfferController::class, 'withdraw'])->whereNumber('id');
@@ -155,6 +157,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('me/applications/{id}/interview/recording-consent/withdraw', [MyInterviewController::class, 'withdrawRecordingConsent'])->whereNumber('id');
 
     Route::get('me/applications/{id}/offer', [MyOfferController::class, 'show'])->whereNumber('id');
+    Route::get('me/applications/{id}/offer/letter.pdf', [MyOfferController::class, 'letter'])->whereNumber('id');
     Route::post('me/applications/{id}/offer/accept', [MyOfferController::class, 'accept'])->whereNumber('id');
     Route::post('me/applications/{id}/offer/decline', [MyOfferController::class, 'decline'])->whereNumber('id');
 });

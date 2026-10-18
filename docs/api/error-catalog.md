@@ -73,6 +73,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
+| `contract-too-long` | 422 | Recruitment |  |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
 | `cost-centre-code-taken` | 409 | Organization | The legal entity already has a cost centre with this code. |
@@ -102,7 +103,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `export-too-large` | 422 | Recruitment |  |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
-| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging | A chunk is larger than the allowed 5 MB. |
+| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging, Recruitment | A chunk is larger than the allowed 5 MB. |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
 | `forbidden` | 403 | Assessment, Company, Job, Organization, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
@@ -168,6 +169,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-join-date` | 422 | Recruitment |  |
 | `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
+| `invalid-letter` | 422 | Recruitment | The letter must be a PDF file. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker, Organization | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-name` | 422 | JobAlert |  |
@@ -175,7 +177,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-navigation` | 422 | Assessment |  |
 | `invalid-norms` | 422 | Assessment |  |
 | `invalid-note` | 422 | Recruitment |  |
-| `invalid-offer` | 422 | Recruitment |  |
+| `invalid-offer` | 422 | Recruitment | An offer needs its terms before a letter can be made. |
 | `invalid-offer-input` | 422 | Recruitment |  |
 | `invalid-order` | 422 | Assessment | The list must hold every question of the section exactly once. |
 | `invalid-parent` | 422 | Organization | The parent is not an active unit of the legal entity that exists from the day of the change. |
@@ -325,6 +327,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `position-code-taken` | 409 | Organization | The legal entity already has a position with this code. |
 | `position-in-use` | 409 | Organization | An active position still reports to this position. |
 | `position-inactive` | 409 | Organization | The position is inactive. |
+| `probation-not-allowed` | 422 | Recruitment | A probation period is only allowed for a permanent employee. |
+| `probation-too-long` | 422 | Recruitment |  |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
 | `proposal-limit` | 409 | Recruitment |  |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
