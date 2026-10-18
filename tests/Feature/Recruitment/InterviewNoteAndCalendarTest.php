@@ -105,7 +105,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_the_note_is_saved_with_the_schedule_and_the_job_seeker_sees_it(): void
     {
-        $this->toInterviewStage($this->interviewSchedule(['note' => 'Please bring your ID card.']))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['note' => 'Please bring your ID card.']))->assertOk();
 
         $this->assertSame('Please bring your ID card.', $this->interviewRow()->note);
         $this->mine()->assertOk()->assertJsonPath('data.note', 'Please bring your ID card.');
@@ -116,7 +116,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_a_new_time_keeps_the_note_unless_the_request_names_one(): void
     {
-        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring your ID.']))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring your ID.']))->assertOk();
 
         $this->schedule(['starts_at' => now()->addDays(5)->utc()->format('Y-m-d\TH:i:s\Z')])->assertOk()->assertJsonPath('data.note', 'Bring your ID.');
         $this->schedule(['starts_at' => now()->addDays(6)->utc()->format('Y-m-d\TH:i:s\Z'), 'note' => 'Come to the lobby.'])->assertOk()->assertJsonPath('data.note', 'Come to the lobby.');
@@ -126,7 +126,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_changing_only_the_note_updates_the_interview_in_place_and_tells_the_job_seeker(): void
     {
-        $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
         $this->mine('confirm', 'POST')->assertOk();
         $before = $this->interviewRow();
         $emailsBefore = count($this->emailsToSeeker());
@@ -150,7 +150,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_the_same_note_again_sends_nothing_and_a_null_note_clears_it(): void
     {
-        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring your ID.']))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring your ID.']))->assertOk();
         $emails = count($this->emailsToSeeker());
         $sequence = $this->interviewRow()->calendar_sequence;
 
@@ -167,7 +167,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
     {
         $this->patchNote('Hello')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-active');
 
-        $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
         $this->api('PATCH', "/company/applications/{$this->applicationId}/interview", [], $this->recruiterToken)->assertStatus(422)->assertJsonValidationErrors(['note']);
         $this->patchNote(str_repeat('a', 1001))->assertStatus(422)->assertJsonValidationErrors(['note']);
 
@@ -183,7 +183,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_the_emails_carry_one_event_whose_uid_stays_and_whose_sequence_rises(): void
     {
-        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring, your ID; thanks']))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['note' => 'Bring, your ID; thanks']))->assertOk();
         $first = $this->calendarOf(collect($this->emailsWithCalendar())->first());
 
         $this->assertStringContainsString("BEGIN:VCALENDAR\r\n", (string) $first);
@@ -211,7 +211,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_a_cancellation_and_a_decline_send_a_cancel_file(): void
     {
-        $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
         $this->api('POST', "/company/applications/{$this->applicationId}/interview/cancel", [], $this->recruiterToken)->assertOk();
 
         $cancel = $this->calendarOf(collect($this->emailsWithCalendar())->last());
@@ -232,7 +232,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_the_reminder_carries_no_calendar_file(): void
     {
-        $this->toInterviewStage($this->interviewSchedule(['starts_at' => now()->addHours(5)->utc()->format('Y-m-d\TH:i:s\Z')]))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['starts_at' => now()->addHours(5)->utc()->format('Y-m-d\TH:i:s\Z')]))->assertOk();
         $this->mine('confirm', 'POST')->assertOk();
         $this->app->make(SendInterviewReminders::class)->execute();
 
@@ -243,7 +243,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_the_team_downloads_a_published_file_without_the_attendee(): void
     {
-        $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
         $id = (int) $this->interviewRow()->id;
 
         $response = $this->api('GET', "/company/interviews/{$id}/calendar.ics", token: $this->recruiterToken)->assertOk();
@@ -262,7 +262,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
     public function test_a_long_line_is_folded_at_75_octets_without_breaking_a_character(): void
     {
         $note = str_repeat('Jalan Sudirman nomor 1, Jakarta Pusat — lantai 5 ', 6);
-        $this->toInterviewStage($this->interviewSchedule(['note' => $note]))->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule(['note' => $note]))->assertOk();
         $file = (string) $this->calendarOf(collect($this->emailsWithCalendar())->first());
 
         foreach (explode("\r\n", $file) as $line) {
@@ -284,7 +284,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:schedule-required');
         $this->pipeline()->assertOk()->assertJsonPath('data.0.interview_state', null);
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => ['schedule_later' => true]], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => ['schedule_later' => true]], $this->recruiterToken)->assertOk();
 
         $this->assertSame(0, DB::table('recruitment_interviews')->count());
         $this->assertSame([], $this->types($this->seekerId));
@@ -308,7 +308,7 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
 
     public function test_a_cancelled_interview_leaves_the_application_not_scheduled(): void
     {
-        $this->toInterviewStage($this->interviewSchedule())->assertNoContent();
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
         $this->api('POST', "/company/applications/{$this->applicationId}/interview/cancel", [], $this->recruiterToken)->assertOk();
 
         $this->pipeline()->assertJsonPath('data.0.interview_state', 'not_scheduled');

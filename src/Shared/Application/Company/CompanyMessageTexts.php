@@ -7,4 +7,7 @@ interface CompanyMessageTexts
 {
     /** The company's own message for the email that confirms a received application, or null when it set none. */
     public function applied(int $companyId): ?string;
+
+    /** The company's own note for a candidate who accepted an offer (the hire note), or null when it set none. */
+    public function hired(int $companyId): ?string;
 }

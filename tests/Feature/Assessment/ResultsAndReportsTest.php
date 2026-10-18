@@ -63,7 +63,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $due = Carbon::now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z');
         $assessment = ['test_id' => $testId, 'due_at' => $due, ...$overrides];
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('assessment'), 'assessment' => $assessment], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('assessment'), 'assessment' => $assessment], $this->recruiterToken)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 
@@ -264,7 +264,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $written = (int) DB::table('assessment_questions')->where('type', 'long_text')->value('id');
         $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 4])->assertOk();
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 5])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:scoring-locked');
         $this->assertEquals(4, DB::table('assessment_answers')->where('question_id', $written)->value('score'));

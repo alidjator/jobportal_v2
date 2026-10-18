@@ -13,6 +13,7 @@ use Src\Recruitment\Domain\ApplicationAnswer;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
 use Src\Recruitment\Domain\ApplicationSource;
+use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
@@ -90,9 +91,9 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, null, $note, $at, $reason);
     }
 
-    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void
+    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?HireDetails $hire = null): void
     {
-        $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at);
+        $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at, hire: $hire);
     }
 
     public function markViewed(int $id, DateTimeImmutable $at): void
@@ -100,13 +101,29 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         $this->connection->table('recruitment_applications')->where('id', $id)->whereNull('viewed_at')->update(['viewed_at' => $this->utc($at)]);
     }
 
-    public function recordHire(Application $before, Application $after, DateTimeImmutable $at): void
+    public function recordHire(Application $before, Application $after, DateTimeImmutable $at, ?HireDetails $hire = null): void
     {
-        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at);
+        $this->recordTransition($before, $after, StageMoveActor::Applicant, $before->userId, null, null, $at, hire: $hire);
     }
 
-    /** The new stage, the key (freed by a withdrawal) and one history entry. */
-    private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?WithdrawalReason $withdrawalReason = null): void
+    public function hireOf(int $id): ?HireDetails
+    {
+        $row = $this->connection->table('recruitment_applications')->where('id', $id)->first(['join_date', 'hire_note']);
+
+        return $row === null || $row->join_date === null ? null : new HireDetails(new DateTimeImmutable((string) $row->join_date, new DateTimeZone('UTC')), $row->hire_note);
+    }
+
+    public function updateHire(int $id, HireDetails $hire, DateTimeImmutable $at): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $id)->update([
+            'join_date' => $hire->joinDate->format('Y-m-d'),
+            'hire_note' => $hire->note,
+            'updated_at' => $this->utc($at),
+        ]);
+    }
+
+    /** The new stage, the key (freed by a withdrawal), the hire details (set on entering `hired`, cleared on leaving it) and one history entry. */
+    private function recordTransition(Application $before, Application $after, StageMoveActor $by, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?WithdrawalReason $withdrawalReason = null, ?HireDetails $hire = null): void
     {
         $time = $this->utc($at);
 
@@ -116,6 +133,7 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             'active_key' => $after->activeKey(),
             'stage_entered_at' => $time,
             'updated_at' => $time,
+            ...($after->stageType === StageType::Hired ? ['join_date' => $hire?->joinDate->format('Y-m-d'), 'hire_note' => $hire?->note] : ($before->stageType === StageType::Hired ? ['join_date' => null, 'hire_note' => null] : [])),
         ]);
 
         $this->connection->table('recruitment_application_stage_history')->insert([

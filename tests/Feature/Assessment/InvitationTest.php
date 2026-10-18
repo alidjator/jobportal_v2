@@ -130,7 +130,7 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:assessment-required');
         $this->assertSame('applied', $this->stageType());
 
-        $this->moveToAssessment($this->invitation(['assessor_ids' => [$this->adminId]]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['assessor_ids' => [$this->adminId]]))->assertOk();
 
         $this->assertSame('assessment', $this->stageType());
         $row = DB::table('assessment_invitations')->first();
@@ -143,7 +143,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_invitation_email_follows_the_preference_and_names_the_test(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
         $emails = array_values(array_filter($this->emails(), fn (Email $email): bool => str_contains((string) $email->getSubject(), 'A test for your application')));
         $this->assertCount(1, $emails);
@@ -200,7 +200,7 @@ final class InvitationTest extends FeatureTestCase
 
         $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(5))]))->assertStatus(422)->assertJsonPath('errors.due_at.0', 'The due time must be at least 6 hours from now.');
         $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addDays(3))]))->assertStatus(422)->assertJsonPath('errors.due_at.0', 'The due time can be at most 2 days from now.');
-        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addDay())]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addDay())]))->assertOk();
     }
 
     public function test_a_test_with_long_text_answers_needs_assessors(): void
@@ -208,7 +208,7 @@ final class InvitationTest extends FeatureTestCase
         $essay = $this->publishedTest('Essay', ['type' => 'long_text', 'text' => 'Describe your last project.', 'points' => 10]);
 
         $this->moveToAssessment($this->invitation(['test_id' => $essay]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
-        $this->moveToAssessment($this->invitation(['test_id' => $essay, 'assessor_ids' => [$this->adminId, $this->recruiterId]]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['test_id' => $essay, 'assessor_ids' => [$this->adminId, $this->recruiterId]]))->assertOk();
     }
 
     public function test_at_most_five_assessors_are_allowed(): void
@@ -246,7 +246,7 @@ final class InvitationTest extends FeatureTestCase
 
         $this->overrideSetting('assessment.psychological_enabled', true);
         $this->moveToAssessment($this->invitation(['test_id' => $battery, 'assessor_ids' => [$this->adminId]]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
-        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['test_id' => $battery]))->assertOk();
 
         $this->send(['test_id' => $library])->assertOk();
         $this->assertSame(['cancelled', 'invited'], $this->invitationStatuses());
@@ -257,9 +257,9 @@ final class InvitationTest extends FeatureTestCase
     public function test_moving_between_assessment_stages_keeps_the_active_test_and_needs_no_new_one(): void
     {
         $extra = (int) $this->api('POST', '/company/stages', ['name' => 'Second test', 'type' => 'assessment'], $this->adminToken)->assertCreated()->json('data.id');
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
-        $this->moveToAssessment(stage: $extra)->assertNoContent();
+        $this->moveToAssessment(stage: $extra)->assertOk();
 
         $this->assertSame(['invited'], $this->invitationStatuses());
     }
@@ -267,7 +267,7 @@ final class InvitationTest extends FeatureTestCase
     public function test_a_move_between_assessment_stages_without_an_active_test_needs_one(): void
     {
         $extra = (int) $this->api('POST', '/company/stages', ['name' => 'Second test', 'type' => 'assessment'], $this->adminToken)->assertCreated()->json('data.id');
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $this->company('POST', 'invitations/'.DB::table('assessment_invitations')->value('id').'/cancel')->assertOk();
 
         $this->moveToAssessment(stage: $extra)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:assessment-required');
@@ -275,9 +275,9 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_moving_out_of_the_stage_cancels_the_active_test_and_tells_the_candidate(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $this->assertSame(['cancelled'], $this->invitationStatuses());
         $this->assertNotNull(DB::table('assessment_invitations')->value('closed_at'));
@@ -286,7 +286,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_rejection_cancels_the_active_test(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
         $this->api('POST', "/company/applications/{$this->applicationId}/reject", ['reason' => 'failed_screening'], $this->recruiterToken)->assertNoContent();
 
@@ -295,7 +295,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_withdrawal_cancels_the_active_test(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
         $this->api('POST', "/me/applications/{$this->applicationId}/withdraw", [], $this->seekerToken)->assertNoContent();
 
@@ -304,10 +304,10 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_submitted_test_stays_when_the_application_moves_on(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         DB::table('assessment_invitations')->update(['status' => 'submitted']);
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $this->assertSame(['submitted'], $this->invitationStatuses());
     }
@@ -318,7 +318,7 @@ final class InvitationTest extends FeatureTestCase
     {
         $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-in-assessment-stage');
 
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $this->company('POST', 'invitations/'.DB::table('assessment_invitations')->value('id').'/cancel')->assertOk();
 
         $this->send(['starts_at' => $this->at(now()->addDay()), 'due_at' => $this->at(now()->addDays(5))])->assertCreated()
@@ -332,7 +332,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_test_the_candidate_started_cannot_be_replaced(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         DB::table('assessment_invitations')->update(['status' => 'started']);
 
         $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:invitation-in-progress');
@@ -343,7 +343,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_taken_down_job_sends_nothing(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         DB::table('job_jobs')->where('id', $this->job)->update(['status' => 'taken_down']);
 
         $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:job-taken-down');
@@ -351,7 +351,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_only_members_who_see_the_job_send_tests(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
         $this->send([], $this->secondRecruiterToken)->assertNotFound();
         $this->send([], $this->otherAdminToken)->assertNotFound();
@@ -363,7 +363,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_team_reads_the_tests_of_an_application_and_cancels_the_active_one(): void
     {
-        $this->moveToAssessment($this->invitation(['assessor_ids' => [$this->adminId]]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['assessor_ids' => [$this->adminId]]))->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
 
         $this->company('GET', "applications/{$this->applicationId}/invitations", [], $this->adminToken)->assertOk()
@@ -411,7 +411,7 @@ final class InvitationTest extends FeatureTestCase
         $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => str_repeat('x', 256)]))->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
         $this->assertSame('applied', $this->stageType());
 
-        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Head office, floor 3, room 301']))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Head office, floor 3, room 301']))->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
 
         $this->company('GET', "invitations/{$id}")->assertOk()->assertJsonPath('data.mode', 'onsite')->assertJsonPath('data.location', 'Head office, floor 3, room 301')->assertJsonPath('data.attachment', null);
@@ -423,7 +423,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_an_online_test_has_no_location_and_an_online_email_has_no_location_line(): void
     {
-        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => 'Ignored']))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['mode' => 'online', 'location' => 'Ignored']))->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $this->company('GET', "invitations/{$id}")->assertOk()->assertJsonPath('data.mode', 'online')->assertJsonPath('data.location', null);
 
@@ -433,7 +433,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_reminder_of_an_onsite_test_shows_the_location(): void
     {
-        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Branch office Surabaya']))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['mode' => 'onsite', 'location' => 'Branch office Surabaya']))->assertOk();
 
         Carbon::setTestNow(now()->addHours(49));
         $this->artisan('assessment:send-invitation-reminders')->assertSuccessful();
@@ -444,7 +444,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_team_puts_one_file_on_an_invitation_and_the_candidate_downloads_it(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n";
 
@@ -475,7 +475,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_file_is_checked_by_its_content_and_its_size(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
 
         $this->upload($id, 'notes.pdf', 'just some text')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-attachment');
@@ -488,7 +488,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_erasing_the_candidate_deletes_the_file_of_the_invitation(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
         $this->assertCount(1, Storage::allFiles('assessment/invitation-files'));
@@ -502,7 +502,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_file_changes_only_while_the_candidate_has_not_started(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
 
@@ -515,7 +515,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_only_who_may_send_the_test_changes_the_file_and_only_its_candidate_downloads_it(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $this->upload($id, 'map.pdf', '%PDF-1.4')->assertOk();
 
@@ -535,7 +535,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_an_unstarted_test_expires_at_its_due_time(): void
     {
-        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(2))]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(2))]))->assertOk();
 
         $this->artisan('assessment:expire-invitations')->expectsOutput('Expired 0 invitations.')->assertSuccessful();
         $this->assertSame(['invited'], $this->invitationStatuses());
@@ -551,7 +551,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_started_test_does_not_expire_here(): void
     {
-        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(2))]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(2))]))->assertOk();
         DB::table('assessment_invitations')->update(['status' => 'started']);
 
         Carbon::setTestNow(now()->addHours(3));
@@ -562,7 +562,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_candidate_is_reminded_once_a_day_before_the_due_time(): void
     {
-        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addDays(3))]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addDays(3))]))->assertOk();
 
         $this->artisan('assessment:send-invitation-reminders')->expectsOutput('Reminded 0 invitations.')->assertSuccessful();
 
@@ -576,7 +576,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_cancelled_or_expired_test_is_not_reminded(): void
     {
-        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(10))]))->assertNoContent();
+        $this->moveToAssessment($this->invitation(['due_at' => $this->at(now()->addHours(10))]))->assertOk();
         $this->company('POST', 'invitations/'.DB::table('assessment_invitations')->value('id').'/cancel')->assertOk();
 
         $this->artisan('assessment:send-invitation-reminders')->expectsOutput('Reminded 0 invitations.')->assertSuccessful();
@@ -614,7 +614,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_a_bulk_move_reports_the_application_whose_test_is_in_progress(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         DB::table('assessment_invitations')->update(['status' => 'started']);
         $second = $this->secondApplication();
         $extra = (int) $this->api('POST', '/company/stages', ['name' => 'Second test', 'type' => 'assessment'], $this->adminToken)->assertCreated()->json('data.id');
@@ -638,7 +638,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_the_candidate_lists_and_reads_their_invitations_without_any_question(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
 
         $this->mine()->assertOk()->assertJsonCount(1, 'data')
@@ -657,7 +657,7 @@ final class InvitationTest extends FeatureTestCase
 
     public function test_another_candidate_or_a_company_member_does_not_see_the_invitation(): void
     {
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
         $id = (int) DB::table('assessment_invitations')->value('id');
         $other = $this->tokenFor($this->seeker('other.candidate@example.test'));
 
@@ -676,7 +676,7 @@ final class InvitationTest extends FeatureTestCase
         $questionId = (int) DB::table('assessment_questions')->where('section_id', $sectionId)->value('id');
         $this->company('PUT', "tests/{$this->testId}", ['title' => 'Before', 'measured_capabilities' => ['Logic']])->assertOk();
 
-        $this->moveToAssessment($this->invitation())->assertNoContent();
+        $this->moveToAssessment($this->invitation())->assertOk();
 
         foreach ([
             ['PUT', "tests/{$this->testId}", ['title' => 'After', 'measured_capabilities' => ['Logic']]],

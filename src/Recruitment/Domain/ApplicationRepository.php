@@ -42,12 +42,18 @@ interface ApplicationRepository
 
     /**
      * Stores a move by a recruiter: the new stage (the key stays, a rejected application still blocks applying again) and a history entry with the actor, the
-     * rejection reason and the note.
+     * rejection reason and the note. A move into `hired` stores the hire details; a move out of `hired` clears them.
      */
-    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at): void;
+    public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?HireDetails $hire = null): void;
 
-    /** Stores the acceptance of a job offer: the application moves to `hired`, with a history entry by the applicant. */
-    public function recordHire(Application $before, Application $after, DateTimeImmutable $at): void;
+    /** Stores the acceptance of a job offer: the application moves to `hired` with its hire details, and a history entry by the applicant. */
+    public function recordHire(Application $before, Application $after, DateTimeImmutable $at, ?HireDetails $hire = null): void;
+
+    /** The hire details of an application, or null when it has none (not hired, or hired before they existed). */
+    public function hireOf(int $id): ?HireDetails;
+
+    /** Replaces the hire details of a hired application. */
+    public function updateHire(int $id, HireDetails $hire, DateTimeImmutable $at): void;
 
     /**
      * Moves every application in one stage to another stage of the same type (used when an extra stage is deleted), recording one history entry

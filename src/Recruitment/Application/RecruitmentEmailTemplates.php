@@ -23,6 +23,9 @@ final class RecruitmentEmailTemplates
 
     public const string HIRED = 'recruitment.application_hired';
 
+    /** Sent to the job seeker when the team changed the join date or the note of a hired application. */
+    public const string HIRE_UPDATED = 'recruitment.hire_updated';
+
     public const string REJECTED = 'recruitment.application_rejected';
 
     public const string INTERVIEW_SCHEDULED = 'recruitment.interview_scheduled';
@@ -149,6 +152,15 @@ final class RecruitmentEmailTemplates
         ];
     }
 
+    /** @return list<EmailVariable> */
+    private static function hireVariables(): array
+    {
+        return [
+            new EmailVariable('join_date', 'The join date, on its own line with its label; empty when the application has none', "\n\nTanggal bergabung: 2026-11-02"),
+            new EmailVariable('note', 'The company\'s note for the candidate, on its own lines with its label; empty when it has none', "\n\nCatatan dari perusahaan: Harap membawa dokumen asli."),
+        ];
+    }
+
     /** @return list<EmailTemplateDefinition> */
     private static function stageDefinitions(): array
     {
@@ -181,12 +193,22 @@ final class RecruitmentEmailTemplates
             ),
             new EmailTemplateDefinition(
                 self::HIRED,
-                'Sent to an applicant when their application is marked as hired.',
-                $variables,
+                'Sent to an applicant when their application is marked as hired (or they accept an offer). It shows the join date and the company\'s note when there are any.',
+                [...$variables, ...self::hireVariables()],
                 TranslatedText::fromArray(['id' => 'Selamat! Anda diterima untuk {{job_title}}', 'en' => 'Congratulations! You were hired for {{job_title}}']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\nSelamat! {{company_name}} menandai lamaran Anda untuk posisi {{job_title}} sebagai diterima.\n\nBuka akun Anda untuk melihat statusnya.",
-                    'en' => "Hello {{name}},\n\nCongratulations! {{company_name}} marked your application for {{job_title}} as hired.\n\nOpen your account to see its status.",
+                    'id' => "Halo {{name}},\n\nSelamat! {{company_name}} menandai lamaran Anda untuk posisi {{job_title}} sebagai diterima.{{join_date}}{{note}}\n\nBuka akun Anda untuk melihat statusnya.",
+                    'en' => "Hello {{name}},\n\nCongratulations! {{company_name}} marked your application for {{job_title}} as hired.{{join_date}}{{note}}\n\nOpen your account to see its status.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::HIRE_UPDATED,
+                'Sent to an applicant when the company changes the join date or the note of their hired application.',
+                [...$variables, ...self::hireVariables()],
+                TranslatedText::fromArray(['id' => 'Detail bergabung Anda untuk {{job_title}} diperbarui', 'en' => 'The joining details for {{job_title}} were updated']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} memperbarui detail bergabung Anda untuk posisi {{job_title}}.{{join_date}}{{note}}\n\nBuka akun Anda untuk melihat detailnya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} updated your joining details for {{job_title}}.{{join_date}}{{note}}\n\nOpen your account to see the details.",
                 ]),
             ),
             new EmailTemplateDefinition(

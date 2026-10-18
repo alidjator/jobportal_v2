@@ -58,11 +58,13 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/jobs/{id}/applications/export', [CompanyApplicationController::class, 'export'])->whereNumber('id')->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
     Route::post('company/jobs/{id}/applications/bulk-move', [BulkApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/jobs/{id}/applications/bulk-reject', [BulkApplicationController::class, 'reject'])->whereNumber('id');
+    Route::post('company/jobs/{id}/fill', [BulkApplicationController::class, 'fill'])->whereNumber('id');
     Route::get('company/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
     Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
     Route::post('company/applications/{id}/move', [CompanyApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/applications/{id}/reject', [CompanyApplicationController::class, 'reject'])->whereNumber('id');
     Route::post('company/applications/{id}/withdraw', [CompanyApplicationController::class, 'withdraw'])->whereNumber('id');
+    Route::patch('company/applications/{id}/hire', [CompanyApplicationController::class, 'updateHire'])->whereNumber('id');
 
     Route::get('company/applications/{id}/notes', [ApplicationNoteController::class, 'index'])->whereNumber('id');
     Route::post('company/applications/{id}/notes', [ApplicationNoteController::class, 'store'])->whereNumber('id');

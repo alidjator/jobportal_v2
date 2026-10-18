@@ -129,6 +129,10 @@ final class AuditAction
 
     public const string APPLICATION_WITHDRAWN_BY_COMPANY = 'recruitment.application_withdrawn_by_company';
 
+    public const string HIRE_UPDATED = 'recruitment.hire_updated';
+
+    public const string JOB_FILLED = 'job.filled';
+
     public const string JOB_TAKEN_DOWN = 'job.taken_down';
 
     public const string JOB_RESTORED = 'job.restored';

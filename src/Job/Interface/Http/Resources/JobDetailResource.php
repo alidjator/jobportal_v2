@@ -37,6 +37,8 @@ final class JobDetailResource extends JsonResource
             'experience_level_id' => $content->experienceLevelId,
             'education_level_id' => $content->educationLevelId,
             'vacancies' => $content->vacancies,
+            'hires_count' => $this->resource->hiresCount,
+            'filled' => $this->resource->filled(),
             'deadline' => $content->deadline?->format('Y-m-d'),
             'salary_min' => $content->salaryMin,
             'salary_max' => $content->salaryMax,

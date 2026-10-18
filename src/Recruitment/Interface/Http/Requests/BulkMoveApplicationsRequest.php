@@ -5,6 +5,7 @@ namespace Src\Recruitment\Interface\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Src\Recruitment\Application\BulkInterviewInput;
+use Src\Recruitment\Application\HireInput;
 use Src\Recruitment\Application\OfferInput;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
@@ -12,7 +13,7 @@ use Src\Shared\Interface\Http\Requests\AssessmentInvitationFields;
 
 /**
  * The selection and the stage of a bulk move, with the base schedule for an interview stage (the daily window defaults to 09:00 to 17:00) and the one shared
- * offer for an offer stage and the one shared test (`assessment`) for an assessment stage. The cap on the selection, the stage and every range are use case rules.
+ * offer for an offer stage, the one shared test (`assessment`) for an assessment stage and the one shared hire details for a hired stage. The cap on the selection, the stage and every range are use case rules.
  */
 final class BulkMoveApplicationsRequest extends FormRequest
 {
@@ -32,6 +33,8 @@ final class BulkMoveApplicationsRequest extends FormRequest
             ...OfferFields::rules('offer.', 'required_with:offer'),
             'assessment' => ['nullable', 'array'],
             ...AssessmentInvitationFields::rules('assessment.', 'required_with:assessment'),
+            'hire' => ['nullable', 'array'],
+            ...HireFields::rules('hire.'),
         ];
     }
 
@@ -85,5 +88,10 @@ final class BulkMoveApplicationsRequest extends FormRequest
     public function assessment(): ?AssessmentInvitationInput
     {
         return AssessmentInvitationFields::inputOrNull($this->validated('assessment'));
+    }
+
+    public function hire(): ?HireInput
+    {
+        return HireFields::inputOrNull($this->validated('hire'));
     }
 }

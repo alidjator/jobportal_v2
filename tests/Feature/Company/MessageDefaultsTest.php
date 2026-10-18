@@ -33,7 +33,7 @@ final class MessageDefaultsTest extends FeatureTestCase
 
     public function test_a_company_starts_without_defaults_and_any_member_reads_them(): void
     {
-        $empty = ['interview' => null, 'assessment' => null, 'offer' => null, 'applied' => null];
+        $empty = ['interview' => null, 'assessment' => null, 'offer' => null, 'applied' => null, 'hired' => null];
 
         $this->api('GET', '/company/message-defaults', token: $this->adminToken)->assertOk()->assertExactJson(['data' => $empty]);
         $this->api('GET', '/company/message-defaults', token: $this->recruiterToken)->assertOk()->assertExactJson(['data' => $empty]);
@@ -43,12 +43,12 @@ final class MessageDefaultsTest extends FeatureTestCase
     public function test_the_admin_sets_the_texts_and_only_the_scenarios_in_the_request_change(): void
     {
         $this->api('PUT', '/company/message-defaults', ['interview' => '  Please bring your ID card.  ', 'offer' => 'Welcome aboard.'], $this->adminToken)
-            ->assertOk()->assertExactJson(['data' => ['interview' => 'Please bring your ID card.', 'assessment' => null, 'offer' => 'Welcome aboard.', 'applied' => null]]);
+            ->assertOk()->assertExactJson(['data' => ['interview' => 'Please bring your ID card.', 'assessment' => null, 'offer' => 'Welcome aboard.', 'applied' => null, 'hired' => null]]);
         $this->assertSame(['scenarios' => ['interview', 'offer']], json_decode((string) DB::table('platform_audit_logs')->where('action', 'company.message_defaults_changed')->value('metadata'), true));
 
         // A scenario that is missing stays; a blank text or null clears one.
         $this->api('PUT', '/company/message-defaults', ['assessment' => 'Use a quiet room.', 'offer' => '   '], $this->adminToken)
-            ->assertOk()->assertExactJson(['data' => ['interview' => 'Please bring your ID card.', 'assessment' => 'Use a quiet room.', 'offer' => null, 'applied' => null]]);
+            ->assertOk()->assertExactJson(['data' => ['interview' => 'Please bring your ID card.', 'assessment' => 'Use a quiet room.', 'offer' => null, 'applied' => null, 'hired' => null]]);
         $this->api('PUT', '/company/message-defaults', ['interview' => null], $this->adminToken)->assertOk()->assertJsonPath('data.interview', null);
         $this->api('GET', '/company/message-defaults', token: $this->recruiterToken)->assertOk()->assertJsonPath('data.assessment', 'Use a quiet room.');
         $this->assertSame(3, $this->actionCount());
@@ -73,6 +73,7 @@ final class MessageDefaultsTest extends FeatureTestCase
         $this->api('PUT', '/company/message-defaults', ['interview' => str_repeat('a', 1001)], $this->adminToken)->assertStatus(422)->assertJsonValidationErrors(['interview']);
         $this->api('PUT', '/company/message-defaults', ['assessment' => str_repeat('a', 1001)], $this->adminToken)->assertStatus(422)->assertJsonValidationErrors(['assessment']);
         $this->api('PUT', '/company/message-defaults', ['applied' => str_repeat('a', 1001)], $this->adminToken)->assertStatus(422)->assertJsonValidationErrors(['applied']);
+        $this->api('PUT', '/company/message-defaults', ['hired' => str_repeat('a', 1001)], $this->adminToken)->assertStatus(422)->assertJsonValidationErrors(['hired']);
         $this->api('PUT', '/company/message-defaults', ['offer' => str_repeat('a', 2001)], $this->adminToken)->assertStatus(422)->assertJsonValidationErrors(['offer']);
 
         $this->api('PUT', '/company/message-defaults', ['interview' => str_repeat('a', 1000), 'offer' => str_repeat('b', 2000)], $this->adminToken)->assertOk();

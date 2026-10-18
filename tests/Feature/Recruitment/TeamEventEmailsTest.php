@@ -76,7 +76,7 @@ final class TeamEventEmailsTest extends FeatureTestCase
 
     public function test_the_member_who_sent_the_offer_is_emailed_when_it_is_accepted_or_declined(): void
     {
-        $this->move('offer', $this->offerDetails())->assertNoContent();
+        $this->move('offer', $this->offerDetails())->assertOk();
 
         $this->answer('offer', 'decline')->assertOk();
 
@@ -86,7 +86,7 @@ final class TeamEventEmailsTest extends FeatureTestCase
     public function test_the_offer_email_follows_the_preference(): void
     {
         $this->preference('team_offer_answers', false);
-        $this->move('offer', $this->offerDetails())->assertNoContent();
+        $this->move('offer', $this->offerDetails())->assertOk();
 
         $this->answer('offer', 'accept')->assertOk();
 
@@ -95,7 +95,7 @@ final class TeamEventEmailsTest extends FeatureTestCase
 
     public function test_the_interviewer_is_emailed_when_the_candidate_confirms_and_the_email_holds_no_name(): void
     {
-        $this->move('interview', $this->interviewSchedule())->assertNoContent();
+        $this->move('interview', $this->interviewSchedule())->assertOk();
 
         $this->answer('interview', 'confirm')->assertOk();
 
@@ -107,7 +107,7 @@ final class TeamEventEmailsTest extends FeatureTestCase
     public function test_the_interview_email_follows_the_preference(): void
     {
         $this->preference('team_interview_changes', false);
-        $this->move('interview', $this->interviewSchedule())->assertNoContent();
+        $this->move('interview', $this->interviewSchedule())->assertOk();
 
         $this->answer('interview', 'confirm')->assertOk();
 

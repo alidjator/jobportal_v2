@@ -2,6 +2,8 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\HireDetails;
+
 /** Everything stored about one application for its applicant, before the job and company names are added. */
 final readonly class ApplicationDetailData
 {
@@ -16,5 +18,6 @@ final readonly class ApplicationDetailData
         public ?string $withdrawnNote,
         public array $history,
         public array $answers,
+        public ?HireDetails $hire = null,
     ) {}
 }

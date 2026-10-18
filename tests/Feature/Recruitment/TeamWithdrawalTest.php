@@ -50,7 +50,7 @@ final class TeamWithdrawalTest extends FeatureTestCase
 
     private function toInterviewStage(): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertOk();
     }
 
     private function row(): object
@@ -143,10 +143,10 @@ final class TeamWithdrawalTest extends FeatureTestCase
 
     public function test_a_final_or_hired_application_cannot_be_marked(): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('hired')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('hired'), 'hire' => ['join_date' => now()->addDays(30)->format('Y-m-d')]], $this->recruiterToken)->assertOk();
         $this->withdraw(['reason' => 'salary'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-not-withdrawable');
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
         $this->withdraw(['reason' => 'salary'])->assertNoContent();
         $this->withdraw(['reason' => 'salary'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-not-withdrawable');
     }

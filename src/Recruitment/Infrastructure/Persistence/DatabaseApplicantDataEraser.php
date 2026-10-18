@@ -37,6 +37,9 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereNotNull('answer_text')
             ->update(['answer_text' => null]);
 
+        // The note for the candidate of a hire is free text of the team and may name the applicant; the join date stays.
+        (clone $applications)->whereNotNull('hire_note')->update(['hire_note' => null]);
+
         // The team's free note of a rejection or of a withdrawal it marked sits on the history entry and may name the applicant; the reason codes stay (they are not personal text).
         $this->connection->table('recruitment_application_stage_history')
             ->whereIn('application_id', (clone $applications)->select('id'))

@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use DateTimeImmutable;
+use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\StageType;
 
 /**
@@ -40,6 +41,7 @@ final readonly class RecruiterApplicationRow
         public ?string $interviewState = null,
         public ?array $interviewRsvp = null,
         public ?array $reviewSummary = null,
+        public ?HireDetails $hire = null,
     ) {}
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */

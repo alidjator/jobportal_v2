@@ -56,7 +56,7 @@ final class InterviewerPanelAccessTest extends FeatureTestCase
 
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'interview')->where('is_default', 1)->value('id');
         $schedule = $this->interviewSchedule(['kit_id' => $kit, ...($asMain ? ['interviewer_id' => $this->interviewerId] : ['participant_ids' => [$this->interviewerId]])]);
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
         $this->interview = (int) DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->value('id');
     }
@@ -225,6 +225,6 @@ final class InterviewerPanelAccessTest extends FeatureTestCase
 
         $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $this->interviewSchedule(['participant_ids' => [$viewer]])], $this->recruiterToken)
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-interviewer');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $this->interviewSchedule(['interviewer_id' => $this->interviewerId])], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $this->interviewSchedule(['interviewer_id' => $this->interviewerId])], $this->recruiterToken)->assertOk();
     }
 }

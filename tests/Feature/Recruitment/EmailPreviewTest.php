@@ -111,7 +111,7 @@ final class EmailPreviewTest extends FeatureTestCase
 
     public function test_a_new_time_over_an_active_interview_is_shown_as_a_reschedule_and_the_interview_stays(): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule(['note' => 'Bring your ID.'])], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule(['note' => 'Bring your ID.'])], $this->recruiterToken)->assertOk();
         $row = DB::table('recruitment_interviews')->first();
         $before = $this->footprint();
 
@@ -138,7 +138,7 @@ final class EmailPreviewTest extends FeatureTestCase
     {
         $this->preview(['scenario' => 'interview_updated', 'note' => 'Use the lobby door.'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-active');
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule(['note' => 'Old note.'])], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule(['note' => 'Old note.'])], $this->recruiterToken)->assertOk();
         $before = $this->footprint();
 
         $data = $this->preview(['scenario' => 'interview_updated', 'note' => 'Use the lobby door.'])->assertOk()->json('data');
@@ -189,7 +189,7 @@ final class EmailPreviewTest extends FeatureTestCase
         $this->assertStringContainsString('Note: Welcome aboard.', $data['text']);
         $this->assertSame($before, $this->footprint());
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('offer'), 'offer' => $this->offerDetails()], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('offer'), 'offer' => $this->offerDetails()], $this->recruiterToken)->assertOk();
         $this->preview($body)->assertOk()->assertJsonPath('data.template', 'recruitment.offer_revised');
         $this->assertSame(1, DB::table('recruitment_offers')->count());
         $this->assertSame('pending', DB::table('recruitment_offers')->value('status'));

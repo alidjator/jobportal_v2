@@ -50,7 +50,7 @@ final class HiringManagerTest extends FeatureTestCase
 
     private function move(string $type, array $extra = []): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage($type), ...$extra], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage($type), ...$extra], $this->recruiterToken)->assertOk();
     }
 
     private function moveToInterview(array $schedule = []): void

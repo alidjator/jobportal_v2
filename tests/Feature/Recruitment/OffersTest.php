@@ -93,7 +93,7 @@ final class OffersTest extends FeatureTestCase
         $this->toOfferStage()->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:offer-required');
         $this->assertSame('applied', $this->applicationType());
 
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->assertSame('offer', $this->applicationType());
         $this->assertSame('pending', DB::table('recruitment_offers')->value('status'));
         $this->assertSame(12_000_000, (int) DB::table('recruitment_offers')->value('salary'));
@@ -108,7 +108,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_the_position_defaults_to_the_job_title_and_the_values_are_checked(): void
     {
-        $this->toOfferStage($this->offerDetails(['position' => null]))->assertNoContent();
+        $this->toOfferStage($this->offerDetails(['position' => null]))->assertOk();
         $this->assertSame('Backend Developer', DB::table('recruitment_offers')->value('position'));
 
         $this->send(['salary' => 0])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-offer');
@@ -126,7 +126,7 @@ final class OffersTest extends FeatureTestCase
     {
         $this->send()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-in-offer-stage');
 
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->send(['salary' => 15_000_000])->assertOk()->assertJsonPath('data.salary', 15_000_000)->assertJsonPath('data.status', 'pending');
 
         $this->assertSame(['pending', 'withdrawn'], DB::table('recruitment_offers')->orderByDesc('id')->pluck('status')->all());
@@ -137,7 +137,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_a_first_offer_sent_after_moving_with_an_existing_one_answers_201(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertOk();
 
         $this->send()->assertCreated();
@@ -145,7 +145,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_the_team_withdraws_the_offer_and_the_application_stays_in_its_stage(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertOk()->assertJsonPath('data.status', 'withdrawn');
         $this->api('POST', "/company/applications/{$this->applicationId}/offer/withdraw", token: $this->recruiterToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-offer');
 
@@ -156,7 +156,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_only_the_team_that_sees_the_job_manages_offers(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->send(token: $this->otherAdminToken)->assertStatus(404);
         $this->api('GET', "/company/applications/{$this->applicationId}/offers", token: $this->otherAdminToken)->assertStatus(404);
@@ -165,8 +165,8 @@ final class OffersTest extends FeatureTestCase
 
     public function test_moving_out_of_the_offer_stage_withdraws_the_offer(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $this->assertSame('withdrawn', DB::table('recruitment_offers')->value('status'));
         $this->assertContains('offer.withdrawn', $this->notificationTypes($this->seekerId));
@@ -176,7 +176,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_accepting_hires_the_applicant_and_tells_the_sender(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->mine('accept')->assertOk()->assertJsonPath('data.status', 'accepted');
 
@@ -189,7 +189,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_declining_withdraws_the_application_with_the_note_and_frees_the_job(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->mine('decline', ['note' => 'I took another job.'])->assertOk()->assertJsonPath('data.status', 'declined')->assertJsonPath('data.answer_note', 'I took another job.');
 
@@ -201,7 +201,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_a_long_decline_note_is_refused_and_a_blank_one_is_dropped(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->mine('decline', ['note' => str_repeat('a', 1001)])->assertStatus(422);
         $this->assertSame('offer', $this->applicationType());
@@ -216,7 +216,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_only_the_applicant_answers_and_only_their_own_application(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->api('POST', "/me/applications/{$this->applicationId}/offer/accept", token: $this->recruiterToken)->assertStatus(403);
         $other = $this->tokenFor($this->seeker('lain@example.test'));
@@ -228,7 +228,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_rejecting_or_withdrawing_withdraws_the_pending_offer(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->api('POST', "/company/applications/{$this->applicationId}/reject", ['reason' => 'position_filled'], $this->recruiterToken)->assertNoContent();
 
         $this->assertSame('withdrawn', DB::table('recruitment_offers')->value('status'));
@@ -237,7 +237,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_withdrawing_the_application_withdraws_the_pending_offer(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/withdraw", token: $this->seekerToken)->assertNoContent();
 
         $this->assertSame('withdrawn', DB::table('recruitment_offers')->value('status'));
@@ -247,7 +247,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_an_offer_past_its_deadline_cannot_be_answered_and_the_team_may_send_a_new_one(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         // The deadline passes (the clock is not moved: the access tokens would expire with it).
         DB::table('recruitment_offers')->update(['expires_at' => now()->subHour()->utc()->format('Y-m-d H:i:s')]);
@@ -263,7 +263,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_the_hourly_run_expires_and_warns_once(): void
     {
-        $this->toOfferStage($this->offerDetails(['expires_at' => now()->addDays(2)->utc()->format('Y-m-d\TH:i:s\Z')]))->assertNoContent();
+        $this->toOfferStage($this->offerDetails(['expires_at' => now()->addDays(2)->utc()->format('Y-m-d\TH:i:s\Z')]))->assertOk();
         $deadlines = $this->app->make(ProcessOfferDeadlines::class);
 
         $this->assertSame(['expired' => 0, 'reminded' => 0], $deadlines->execute());
@@ -288,7 +288,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_the_job_seeker_is_emailed_about_the_offer_and_follows_the_preference(): void
     {
-        $this->toOfferStage($this->offerDetails(['salary' => 12_500_000]))->assertNoContent();
+        $this->toOfferStage($this->offerDetails(['salary' => 12_500_000]))->assertOk();
 
         $offer = collect($this->sentEmails())->first(fn ($email): bool => str_contains($email->getSubject() ?? '', 'Job offer for'));
         $this->assertNotNull($offer);
@@ -304,7 +304,7 @@ final class OffersTest extends FeatureTestCase
 
     public function test_erasing_the_applicant_deletes_their_offers(): void
     {
-        $this->toOfferStage($this->offerDetails())->assertNoContent();
+        $this->toOfferStage($this->offerDetails())->assertOk();
 
         $this->app->make(EraseApplicantData::class)->execute($this->seekerId);
 

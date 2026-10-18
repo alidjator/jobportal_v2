@@ -68,7 +68,7 @@ final class AttemptTest extends FeatureTestCase
     {
         $assessment = ['test_id' => $testId, 'due_at' => $this->at(now()->addDays(3)), ...$overrides];
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('assessment'), 'assessment' => $assessment], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage('assessment'), 'assessment' => $assessment], $this->recruiterToken)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 

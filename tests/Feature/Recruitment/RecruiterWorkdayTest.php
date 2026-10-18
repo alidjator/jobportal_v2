@@ -93,7 +93,7 @@ final class RecruiterWorkdayTest extends FeatureTestCase
         $this->assertSame(9, $siti['days_in_stage']);
         $this->assertSame('2026-10-05T09:00:00+00:00', $siti['stage_entered_at']);
 
-        $this->api('POST', "/company/applications/{$this->sitiId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->sitiId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $moved = collect($this->list()->json('data'))->firstWhere('id', $this->sitiId);
         $this->assertSame(0, $moved['days_in_stage']);
@@ -109,7 +109,7 @@ final class RecruiterWorkdayTest extends FeatureTestCase
         $this->list()->assertOk()->assertJsonPath('data.0.stale', true)->assertJsonPath('data.1.stale', true);
         $this->list(['filter' => ['stale' => 'true']])->assertOk()->assertJsonCount(2, 'data');
 
-        $this->api('POST', "/company/applications/{$this->sitiId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->sitiId}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
         $this->list(['filter' => ['stale' => 'true']])->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $this->budiId);
         $this->list(['filter' => ['stale' => 'false']])->assertOk()->assertJsonCount(2, 'data');
     }

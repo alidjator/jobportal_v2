@@ -222,7 +222,7 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         $kit = $this->createKit();
 
-        $this->schedule(['kit_id' => $kit])->assertNoContent();
+        $this->schedule(['kit_id' => $kit])->assertOk();
         $interview = $this->activeInterviewId();
 
         $this->api('GET', "/company/interviews/{$interview}/questions")->assertOk()
@@ -246,7 +246,7 @@ final class InterviewKitsTest extends FeatureTestCase
         $kit = $this->createKit();
         $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('interview')}", ['kit_id' => $kit])->assertOk();
 
-        $this->schedule()->assertNoContent();
+        $this->schedule()->assertOk();
 
         $this->assertCount(2, $this->copiedTexts($this->activeInterviewId()));
         $this->assertSame($kit, (int) DB::table('recruitment_interviews')->where('id', $this->activeInterviewId())->value('kit_id'));
@@ -256,7 +256,7 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         $this->api('PUT', "/company/jobs/{$this->job}/interview-kits/{$this->stage('interview')}", ['kit_id' => $this->createKit()])->assertOk();
 
-        $this->schedule(['kit_id' => null])->assertNoContent();
+        $this->schedule(['kit_id' => null])->assertOk();
 
         $this->assertSame([], $this->copiedTexts($this->activeInterviewId()));
         $this->api('GET', "/company/applications/{$this->applicationId}/interviews")->assertJsonPath('data.0.kit', null);
@@ -273,7 +273,7 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_a_new_time_keeps_the_edited_questions_and_the_panel_unless_the_request_changes_them(): void
     {
-        $this->schedule(['kit_id' => $this->createKit(), 'participant_ids' => [$this->adminId]])->assertNoContent();
+        $this->schedule(['kit_id' => $this->createKit(), 'participant_ids' => [$this->adminId]])->assertOk();
         $first = $this->activeInterviewId();
         $this->api('PUT', "/company/interviews/{$first}/questions", ['questions' => [['text' => 'Edited question.', 'weight' => 4]]])->assertOk();
 
@@ -298,7 +298,7 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_the_panel_is_stored_and_shown_to_the_team_only(): void
     {
-        $this->schedule(['participant_ids' => [$this->adminId, $this->secondRecruiterId]])->assertNoContent();
+        $this->schedule(['participant_ids' => [$this->adminId, $this->secondRecruiterId]])->assertOk();
 
         $this->api('GET', "/company/applications/{$this->applicationId}/interviews")->assertOk()
             ->assertJsonPath('data.0.participants.0.id', $this->adminId)
@@ -330,14 +330,14 @@ final class InterviewKitsTest extends FeatureTestCase
     {
         DB::table('job_assignments')->where('job_id', $this->job)->where('user_id', $this->secondRecruiterId)->delete();
 
-        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertNoContent();
+        $this->schedule(['participant_ids' => [$this->secondRecruiterId]])->assertOk();
     }
 
     // ----- editing the copy -----
 
     public function test_the_scheduler_the_interviewer_and_an_admin_edit_the_copy_and_other_members_cannot(): void
     {
-        $this->schedule(['kit_id' => $this->createKit(), 'interviewer_id' => $this->adminId])->assertNoContent();
+        $this->schedule(['kit_id' => $this->createKit(), 'interviewer_id' => $this->adminId])->assertOk();
         $interview = $this->activeInterviewId();
         $body = ['questions' => [['text' => 'Edited.', 'guidance' => 'Be kind.', 'weight' => 2]]];
 
@@ -351,7 +351,7 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_the_copy_is_checked_like_a_kit_but_may_be_empty(): void
     {
-        $this->schedule()->assertNoContent();
+        $this->schedule()->assertOk();
         $interview = $this->activeInterviewId();
 
         $this->api('PUT', "/company/interviews/{$interview}/questions", ['questions' => [['text' => '', 'weight' => 3]]])->assertStatus(422);
@@ -362,7 +362,7 @@ final class InterviewKitsTest extends FeatureTestCase
 
     public function test_an_interview_of_another_company_does_not_exist_for_the_caller(): void
     {
-        $this->schedule()->assertNoContent();
+        $this->schedule()->assertOk();
         $interview = $this->activeInterviewId();
 
         $this->api('GET', "/company/interviews/{$interview}/questions", [], $this->otherAdminToken)->assertNotFound();

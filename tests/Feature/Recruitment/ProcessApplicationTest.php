@@ -59,6 +59,11 @@ final class ProcessApplicationTest extends FeatureTestCase
             $body['offer'] = $this->offerDetails();
         }
 
+        // A move to a hired stage comes with its join date.
+        if (DB::table('recruitment_stages')->where('id', $stageId)->value('type') === 'hired') {
+            $body['hire'] = ['join_date' => now()->addDays(30)->format('Y-m-d')];
+        }
+
         return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $token ?? $this->recruiterToken);
     }
 
@@ -99,7 +104,7 @@ final class ProcessApplicationTest extends FeatureTestCase
         $this->assertSame(1, $this->historyCount());
         $this->assertSame([], $this->events);
 
-        $this->move($this->stage('interview'), $this->adminToken)->assertNoContent();
+        $this->move($this->stage('interview'), $this->adminToken)->assertOk();
         $this->assertSame('interview', $this->row()->stage_type);
     }
 
@@ -119,7 +124,7 @@ final class ProcessApplicationTest extends FeatureTestCase
         $interview = $this->stage('interview');
         $applied = $this->stage('applied');
 
-        $this->move($interview)->assertNoContent();
+        $this->move($interview)->assertOk();
 
         $row = $this->row();
         $this->assertSame($interview, (int) $row->stage_id);
@@ -145,7 +150,7 @@ final class ProcessApplicationTest extends FeatureTestCase
     public function test_a_recruiter_moves_forward_backward_and_skipping_and_hired_can_be_moved_back(): void
     {
         foreach (['offer', 'screening', 'hired', 'applied', 'interview'] as $type) {
-            $this->move($this->stage($type))->assertNoContent();
+            $this->move($this->stage($type))->assertOk();
             $this->assertSame($type, $this->row()->stage_type);
         }
 
@@ -156,8 +161,8 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         $extra = (int) $this->api('POST', '/company/stages', ['name' => 'HR interview', 'type' => 'interview'], $this->adminToken)->assertCreated()->json('data.id');
 
-        $this->move($this->stage('interview'))->assertNoContent();
-        $this->move($extra)->assertNoContent();
+        $this->move($this->stage('interview'))->assertOk();
+        $this->move($extra)->assertOk();
 
         $this->assertSame($extra, (int) $this->row()->stage_id);
         $this->assertSame('interview', $this->row()->stage_type);
@@ -236,7 +241,7 @@ final class ProcessApplicationTest extends FeatureTestCase
 
     public function test_an_application_can_be_rejected_from_hired_too(): void
     {
-        $this->move($this->stage('hired'))->assertNoContent();
+        $this->move($this->stage('hired'))->assertOk();
         $this->reject(['reason' => 'position_filled'])->assertNoContent();
 
         $this->assertSame('rejected', $this->row()->stage_type);
@@ -269,7 +274,7 @@ final class ProcessApplicationTest extends FeatureTestCase
 
     public function test_the_applicant_can_still_withdraw_after_a_move_and_the_history_keeps_both(): void
     {
-        $this->move($this->stage('offer'))->assertNoContent();
+        $this->move($this->stage('offer'))->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/withdraw", token: $this->seekerToken)->assertNoContent();
 
         $this->assertSame(['applied', 'offer', 'withdrawn'], DB::table('recruitment_application_stage_history')->where('application_id', $this->applicationId)->orderBy('id')->pluck('to_type')->all());
@@ -296,8 +301,8 @@ final class ProcessApplicationTest extends FeatureTestCase
         foreach (['draft', 'pending_review', 'closed', 'expired', 'rejected'] as $status) {
             DB::table('job_jobs')->where('id', $this->job)->update(['status' => $status]);
 
-            $this->move($this->stage($status === 'closed' ? 'screening' : 'interview'))->assertNoContent();
-            $this->move($this->stage('applied'))->assertNoContent();
+            $this->move($this->stage($status === 'closed' ? 'screening' : 'interview'))->assertOk();
+            $this->move($this->stage('applied'))->assertOk();
         }
 
         $this->assertSame('applied', $this->row()->stage_type);
@@ -309,7 +314,7 @@ final class ProcessApplicationTest extends FeatureTestCase
     {
         DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['profile_snapshot' => null]);
 
-        $this->move($this->stage('interview'))->assertNoContent();
+        $this->move($this->stage('interview'))->assertOk();
         $this->reject(['reason' => 'position_filled'])->assertNoContent();
 
         $this->assertSame('rejected', $this->row()->stage_type);

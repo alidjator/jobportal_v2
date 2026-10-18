@@ -98,7 +98,7 @@ final class CompanyJobListTest extends FeatureTestCase
         $row = $this->api('GET', '/company/jobs')->assertOk()->json('data.0');
 
         $this->assertSame([
-            'id' => $id, 'title' => 'Backend Developer', 'status' => 'active', 'deadline' => '2026-12-31', 'vacancies' => 3, 'assignees_count' => 2,
+            'id' => $id, 'title' => 'Backend Developer', 'status' => 'active', 'deadline' => '2026-12-31', 'vacancies' => 3, 'hires_count' => 0, 'filled' => false, 'assignees_count' => 2,
             'published_at' => '2026-10-02T08:00:00+00:00', 'created_at' => '2026-10-01T07:00:00+00:00', 'updated_at' => '2026-10-03T06:00:00+00:00',
         ], $row);
     }

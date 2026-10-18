@@ -19,6 +19,12 @@ final class ApplicationNotificationType
 
     public const string REJECTED = 'application.rejected';
 
+    /** A hire brought the job's hires up to its vacancies: the job's assignees are told, and the client opens the "mark as filled" dialog (team, in-app only). */
+    public const string JOB_FILLED = 'job.filled';
+
+    /** The team changed the join date or the note of a hired application: the job seeker is told. */
+    public const string HIRE_UPDATED = 'application.hire_updated';
+
     /** The team marked the application withdrawn: the job seeker is told. */
     public const string WITHDRAWN_BY_COMPANY = 'application.withdrawn_by_company';
 

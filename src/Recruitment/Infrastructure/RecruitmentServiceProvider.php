@@ -53,11 +53,14 @@ use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
+use Src\Recruitment\Domain\Events\ApplicationHireUpdated;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\InterviewPanelAnswered;
+use Src\Recruitment\Domain\Events\JobFilled;
+use Src\Recruitment\Domain\Events\JobFillHandled;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Events\RecordingConverted;
 use Src\Recruitment\Domain\Events\RecordingStopped;
@@ -101,8 +104,10 @@ use Src\Recruitment\Infrastructure\Listeners\EmailApplicantOfReceiptListener;
 use Src\Recruitment\Infrastructure\Listeners\EmailTeamOfEventsListener;
 use Src\Recruitment\Infrastructure\Listeners\EraseApplicantDataWhenUserAnonymized;
 use Src\Recruitment\Infrastructure\Listeners\EraseScorecardDataWhenUserAnonymized;
+use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfHireUpdateListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
+use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfJobFilled;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfPanelAnswerListener;
@@ -189,6 +194,7 @@ use Src\Shared\Application\Recruitment\ApplicationVisibility;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
+use Src\Shared\Application\Recruitment\JobHires;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\Tasks\TaskProviders;
@@ -211,6 +217,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ScreeningQuestionUsage::class => DatabaseApplicationUsage::class,
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
+        JobHires::class => DatabaseJobHires::class,
         ApplicantRelations::class => DatabaseApplicantRelations::class,
         TeamApplications::class => TeamApplicationRefs::class,
         HiringManagerVisibility::class => DatabaseHiringManagerVisibility::class,
@@ -393,6 +400,11 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(OfferChanged::class, [EmailTeamOfEventsListener::class, 'offerChanged']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'inApp']);
         Event::listen(ApplicationStageChanged::class, [NotifyApplicantOfStageChangeListener::class, 'email']);
+        Event::listen(ApplicationHireUpdated::class, [NotifyApplicantOfHireUpdateListener::class, 'inApp']);
+        Event::listen(ApplicationHireUpdated::class, [NotifyApplicantOfHireUpdateListener::class, 'email']);
+        Event::listen(ApplicationHireUpdated::class, [RecordRecruitmentAuditEntries::class, 'onHireUpdated']);
+        Event::listen(JobFilled::class, NotifyAssigneesOfJobFilled::class);
+        Event::listen(JobFillHandled::class, [RecordRecruitmentAuditEntries::class, 'onJobFillHandled']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);
         Event::listen(ReviewRequested::class, [NotifyOfReviewsListener::class, 'requestedInApp']);
         Event::listen(ReviewRequested::class, [NotifyOfReviewsListener::class, 'requestedEmail']);

@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
+use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Company\CompanyDirectory;
@@ -16,6 +17,7 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
  * move back into one of them, except a move between two stages of the same type. The in-app notification is always written; the email only when the
  * applicant's preference `application_update` allows it. Nothing is sent to an account that no longer exists or was anonymised. The in-app notification
  * and the email are separate steps, so a retry of one never repeats the other. Neither carries the rejection reason, the note or the recruiter's name.
+ * The hired email is the exception: it carries the join date and the note for the candidate of the hire, under the company's logo and the anti-scam line.
  */
 final readonly class NotifyApplicantOfStageChange
 {
@@ -26,6 +28,7 @@ final readonly class NotifyApplicantOfStageChange
         private InAppNotifier $notifier,
         private NotificationPreferences $preferences,
         private StageChangeEmailSender $emails,
+        private ApplicantEmailSender $framedEmails,
     ) {}
 
     public function inApp(ApplicationStageChanged $event): void
@@ -55,6 +58,17 @@ final readonly class NotifyApplicantOfStageChange
         }
 
         [$jobTitle, $companyName] = $this->names($event);
+
+        if ($event->toType === StageType::Hired) {
+            $this->framedEmails->send($contact, RecruitmentEmailTemplates::HIRED, [
+                'company_id' => (string) $event->companyId,
+                'job_title' => $jobTitle,
+                'company_name' => $companyName,
+                ...HireEmailVariables::for($event->hire, $contact->locale),
+            ]);
+
+            return;
+        }
 
         $this->emails->send($contact, $event->toType, $jobTitle, $companyName);
     }

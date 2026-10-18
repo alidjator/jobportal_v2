@@ -98,7 +98,7 @@ final class VideoAssessmentTest extends FeatureTestCase
 
     private function invite(int $testId): void
     {
-        $this->moveToAssessment($testId)->assertNoContent();
+        $this->moveToAssessment($testId)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 
@@ -238,7 +238,7 @@ final class VideoAssessmentTest extends FeatureTestCase
         $this->moveToAssessment($id, ['assessor_ids' => []])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-assessor');
         $this->assertSame(0, DB::table('assessment_invitations')->count());
 
-        $this->moveToAssessment($id)->assertNoContent();
+        $this->moveToAssessment($id)->assertOk();
     }
 
     // ----- taking -----

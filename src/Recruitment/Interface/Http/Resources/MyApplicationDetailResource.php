@@ -36,6 +36,8 @@ final class MyApplicationDetailResource extends JsonResource
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
             'withdrawn_note' => $data->withdrawnNote,
+            /** @var array{join_date: string, note: string|null}|null the join date and the company's note once hired */
+            'hire' => HirePayload::of($data->hire),
             /** @var array{reason: string|null, by: string, at: string}|null */
             'withdrawal' => $row->status === StageType::Withdrawn ? $this->withdrawal($data->history) : null,
             /** @var list<array{status: string, at: string, by: string}> */

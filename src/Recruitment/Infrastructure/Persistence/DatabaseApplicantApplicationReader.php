@@ -11,6 +11,7 @@ use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationDetailData;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationRow;
+use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
@@ -71,6 +72,7 @@ final readonly class DatabaseApplicantApplicationReader implements ApplicantAppl
             $row->withdrawn_note,
             $this->history($id),
             $this->answers->forApplication($id, (int) $row->job_id),
+            $row->join_date === null ? null : new HireDetails(new DateTimeImmutable((string) $row->join_date, new DateTimeZone('UTC')), $row->hire_note),
         );
     }
 

@@ -1,4 +1,4 @@
-# Phase 8: hire details, filled jobs and the hires export (designed 2026-10-14, not coded)
+# Phase 8: hire details, filled jobs and the hires export (designed 2026-10-14; sections 1 and 2 coded 2026-10-17)
 
 Gaps found against Mekari Talenta's "Move to hired" (help center article 36986013467033), adapted to a job portal: Talenta's new joiner form,
 payroll registration and manpower planning are HRIS features and stay **out of scope** (collecting NIK and bank accounts would also add a large
@@ -14,6 +14,11 @@ Coded in a coding session.
 - 2026-10-14: in that dialog the **recruiter chooses** whom to reject: early stages are preselected, later stages are not, a pending offer is never
   rejected (decided by the user).
 - 2026-10-14: a **new export of hires across jobs** for the company's HRIS (decided by the user).
+- 2026-10-17: the audit `recruitment.hire_updated` holds the old and new join date and `note_changed`, **never the note text** (it may name the candidate and the audit cannot be erased); decided by the user (section 1).
+- 2026-10-17: coded in parts, **section 1 first**, then 2 and 3 (decided by the user). The export's offer columns use only what `recruitment_offers`
+  has today (position, salary, start date, accepted at); the terms columns (employment type, contract, probation, work mode, location, salary basis,
+  allowances, benefits) are added when #12 codes the offer terms (decided by the user; section 3).
+- 2026-10-17: the single move always answers 200 `{meta: {job_filled}}` (was 204); `fill` with `close: true` on a job that is not live is 409 `job-not-active` and changes nothing; `fill` answers `{data, meta: {job_status}}` with the skip codes `offer-pending`, `application-final`, `application-not-found` (decided by the user; "Coded, section 2").
 
 ## 1. Hire details
 
@@ -75,3 +80,25 @@ Coded in a coding session.
 | Audit | `recruitment.hire_updated`, `job.filled`, `export.hires` |
 | Errors | 422 `join-date-required`, `invalid-join-date`, `invalid-export-range`; 409 `application-not-hired` |
 | Front end | hire dialog (C6, C7); "Tandai terpenuhi" dialog (C5, C6); hires export button; join date and note on the job seeker's application |
+
+## Coded, section 1 (2026-10-17)
+
+Migrations `000163` (`recruitment_applications.join_date`, `hire_note`) and `000164` (`company_message_defaults.hired`); both new. Section 3 is not coded.
+
+- **Move and bulk move:** `hire: {join_date, note?}` (`HireInput`, `HireFields`); `ProcessApplication::hireFor` checks it (`HireDetails::make`: window of 90 days back to one year ahead in Jakarta days, note at most 1,000 characters, the link rule `message-link-not-allowed`). A move to another stage with `hire` is 422 `invalid-hire-input` (same pattern as `offer` and `interview`). The bulk move checks the shared details once before moving anyone. A move out of `hired` clears both columns; a move between two hired stages stores the new details.
+- **Offer accepted:** `join_date` is the offer's start date (never refused for the window), the note is the company's `hired` default (`CompanyMessageTexts::hired`).
+- **`PATCH company/applications/{id}/hire`** (`UpdateApplicationHire`, `applications.manage`): only the parts given change; a date that is not changed is not checked against the window again (a note can still be corrected on an old hire); no change sends and audits nothing; `job-taken-down` also applies, as for moves; a hire from before the details existed needs a `join_date` first. Event `ApplicationHireUpdated`: notification `application.hire_updated` (data: ids, job title, company name, `join_date`) and email `recruitment.hire_updated` by `application_update`.
+- **Hired email** (`recruitment.application_hired`) now goes through the framed applicant mail (company logo, anti-scam line) and has the variables `join_date` and `note`, each an optional block with its label (empty without a value), as in the receipt email. The event `ApplicationStageChanged` carries the details.
+- **Shown:** `hire: {join_date, note}|null` on the candidate's application detail (`/me/applications/{id}`), the team's detail and the pipeline card; also in the candidate's data export.
+- **Message defaults:** `hired` (at most 1,000 characters) next to the other scenarios.
+- **Audit (confirmed by the user, 2026-10-17):** the entry `recruitment.hire_updated` holds the old and new join date and `note_changed`, not the note text; the design's "old and new values" is read that way. Also: `hire_note` is cleared by the applicant erasure (the date stays); the extra errors `invalid-hire-note` and `invalid-hire-input`.
+
+## Coded, section 2 (2026-10-17)
+
+No migration. Answers of the user (2026-10-17): the single move answers **200 with `{meta: {job_filled}}` always** (it was 204; the existing tests were adjusted); `fill` with `close: true` on a job that is not live is **409 `job-not-active` and changes nothing**; the answer of `fill` is `{data: [...], meta: {job_status}}` and the skip codes are `offer-pending`, `application-final` and `application-not-found` (not of this job, or not visible to the member).
+
+- **`hires_count` and `filled`** on the job list and the job detail (also inside the admin console's detail): the port `JobHires` (Shared, provided by Recruitment) counts the applications in a hired stage per job; `FilledJob::is` derives `filled` (vacancies stated and hires at least vacancies).
+- **Crossing the line:** `WatchJobFill` runs in the transaction of every move into `hired` (from a stage that is not `hired`; a move between two hired stages is not a hire), of recruiter moves, bulk moves and the offer acceptance. It locks the job row first, then the job is filled by this hire when its hires **equal** its vacancies, so two simultaneous hires give exactly one prompt. The event `JobFilled` (after commit) goes to `NotifyAssigneesOfJobFilled` (queued, in-app only): notification `job.filled` to the job's `notificationRecipients` (its assignees, or the company admins when all are suspended) with `job_id`, `job_title`, `hires`, `vacancies`.
+- **Move responses:** `ProcessApplication::move` returns whether the job was filled; `POST company/applications/{id}/move` answers 200 `{meta: {job_filled}}`; `bulk-move` adds `meta.job_filled` (true when any item crossed the line). The offer acceptance answers the candidate as before.
+- **`POST company/jobs/{id}/fill`** (`FillJob`, `BulkApplicationController::fill`): `close` required, `reject_application_ids` required (may be empty, at most `recruitment.max_bulk_applications`, else 422 `too-many-applications`), optional `note` (rules of a rejection, 422 `invalid-rejection`). Needs `applications.manage`, except a request that only closes the job, which needs only `jobs.publish` (checked by the close itself). The job is closed first through the port `JobCloser` (Job: `CloseJobForCaller` over `CloseJob`); then each application goes through `ProcessApplication::reject` with `position_filled`, so it keeps the rules, history and notifications of a bulk reject. `reject(..., sparePendingOffer: true)` checks the pending offer under the application's row lock (a race with a new offer is safe). Audit `job.filled` (`closed`, `rejected`, `skipped`, `company_id`; never the note) through the event `JobFillHandled`, written in the request.
+- **Also:** `JobDirectory` gained `vacancies()` and `statusOf()`. The API docs cache was rebuilt and the error catalog regenerated (`offer-pending` is new).

@@ -107,7 +107,7 @@ final class VideoRecordingsTest extends FeatureTestCase
     {
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'interview')->where('is_default', 1)->value('id');
         $schedule = $this->interviewSchedule(['format' => 'video', 'meeting_url' => null, 'starts_at' => $this->minutesFromNow(5), 'recorded' => true, 'participant_ids' => [$this->adminId]]);
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", ['recording_consent' => $consent], $this->seekerToken)->assertOk();
     }
 
@@ -230,7 +230,7 @@ final class VideoRecordingsTest extends FeatureTestCase
     {
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'interview')->where('is_default', 1)->value('id');
         $schedule = $this->interviewSchedule(['format' => 'video', 'meeting_url' => null, 'starts_at' => $this->minutesFromNow(5)]);
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
         $this->join()->assertOk();
 

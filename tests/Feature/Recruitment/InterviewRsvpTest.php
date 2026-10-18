@@ -47,7 +47,7 @@ final class InterviewRsvpTest extends FeatureTestCase
     {
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'interview')->where('is_default', 1)->value('id');
         $schedule = $this->interviewSchedule(['starts_at' => '2026-10-08T02:00:00Z', 'participant_ids' => [$this->adminId]]);
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
 
         $this->interview = (int) DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->orderByDesc('id')->value('id');
     }

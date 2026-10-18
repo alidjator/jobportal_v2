@@ -88,6 +88,12 @@ interface JobDirectory
     /** Whether an admin took the job down: its applications stay readable but are no longer processed. A job that does not exist is not taken down. */
     public function isTakenDown(int $jobId): bool;
 
+    /** The vacancies the job states, or null when it states none or does not exist. */
+    public function vacancies(int $jobId): ?int;
+
+    /** The status value of the job (`active`, `closed`, ...), or null when it does not exist. */
+    public function statusOf(int $jobId): ?string;
+
     /** Locks the job row until the transaction ends, so two changes to what hangs on the job run one after the other. */
     public function lock(int $jobId): void;
 }

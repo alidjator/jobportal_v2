@@ -57,7 +57,11 @@ final class StageNotificationsTest extends FeatureTestCase
             $body['offer'] = $this->offerDetails();
         }
 
-        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $this->recruiterToken)->assertNoContent();
+        if ($type === 'hired') {
+            $body['hire'] = ['join_date' => now()->addDays(30)->format('Y-m-d')];
+        }
+
+        return $this->api('POST', '/company/applications/'.($id ?? $this->applicationId).'/move', $body, $this->recruiterToken)->assertOk();
     }
 
     /** @return list<object> the in-app notifications of the applicant, oldest first */
@@ -139,7 +143,7 @@ final class StageNotificationsTest extends FeatureTestCase
         $this->assertSame([], $this->emailsToApplicant());
 
         $this->move('interview');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $extra], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $extra], $this->recruiterToken)->assertOk();
 
         // Only the move into `interview` told the applicant; the move to the other interview stage did not.
         $this->assertCount(1, $this->notifications());
@@ -219,7 +223,7 @@ final class StageNotificationsTest extends FeatureTestCase
             $template = $catalog->find($key);
 
             $this->assertNotNull($template, $key);
-            $this->assertSame(['name', 'job_title', 'company_name'], $template->variableNames());
+            $this->assertSame($key === RecruitmentEmailTemplates::HIRED ? ['name', 'job_title', 'company_name', 'join_date', 'note'] : ['name', 'job_title', 'company_name'], $template->variableNames());
             $this->assertSame([], $template->requiredVariableNames());
             $this->assertTrue($template->defaultSubject->isCompleteInAllLanguages());
             $this->assertTrue($template->defaultBody->isCompleteInAllLanguages());

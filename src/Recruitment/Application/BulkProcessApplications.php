@@ -31,7 +31,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  *
  * A bulk move to an interview stage hands out slots from the base schedule in the order of the selection, skipping the interviewer's other interviews; the
  * slots are planned for the applications that can still be moved, so a skipped one leaves no hole (one that fails later leaves its slot unused). A bulk move
- * to an assessment stage sends the same test, window and assessors to every application.
+ * to an assessment stage sends the same test, window and assessors to every application, and a bulk move to a hired stage gives every application the same join date and note.
  */
 final readonly class BulkProcessApplications
 {
@@ -56,9 +56,9 @@ final readonly class BulkProcessApplications
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the member may not see the job
-     * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input`, `invalid-offer`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
+     * @throws BusinessRuleViolation `invalid-applications`, `too-many-applications`, `invalid-stage`, `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `invalid-offer-input`, `invalid-offer`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor`, `invalid-hire-input`, `join-date-required`, `invalid-join-date`, `invalid-hire-note` or `message-link-not-allowed`
      */
-    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null, bool $scheduleLater = false): array
+    public function move(Actor $actor, int $jobId, array $applicationIds, int $stageId, ?BulkInterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null, bool $scheduleLater = false, ?HireInput $hire = null): array
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
         $this->access->job($member, $jobId);
@@ -67,6 +67,7 @@ final readonly class BulkProcessApplications
         $stage = $this->process->movableStage($member->companyId, $stageId);
 
         $this->assertInputFits($stage->type, $interview, $offer, $assessment, $scheduleLater);
+        $this->process->hireFor($member, $stage->type, $hire);
 
         $movable = array_keys(array_filter($states, static fn (Application $state): bool => ! $state->stageType->isTerminal() && $state->stageId !== $stageId));
         $inputs = $interview instanceof BulkInterviewInput ? $this->interviewInputs($member, $interview, $movable) : [];
@@ -80,7 +81,7 @@ final readonly class BulkProcessApplications
         }
 
         return array_map(
-            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null, $assessment, $scheduleLater), $id),
+            fn (int $id): BulkItemResult => $this->run(fn () => $this->process->move($actor, $id, $stageId, $inputs[$id] ?? null, $offer instanceof OfferInput && $stage->type === StageType::Offer ? $offer : null, $assessment, $scheduleLater, $hire), $id),
             $applicationIds,
         );
     }
@@ -104,18 +105,18 @@ final readonly class BulkProcessApplications
         return array_map(fn (int $id): BulkItemResult => $this->run(fn () => $this->process->reject($actor, $id, $reason, $note), $id), $applicationIds);
     }
 
-    /** @param  callable(): void  $action */
+    /** @param  callable(): (bool|void)  $action  true when the action filled the job */
     private function run(callable $action, int $applicationId): BulkItemResult
     {
         try {
-            $action();
+            $filled = $action() === true;
         } catch (StateConflict|BusinessRuleViolation $error) {
             return new BulkItemResult($applicationId, $error->errorCode());
         } catch (EntityNotFound) {
             return new BulkItemResult($applicationId, 'application-not-found');
         }
 
-        return new BulkItemResult($applicationId);
+        return new BulkItemResult($applicationId, jobFilled: $filled);
     }
 
     /**

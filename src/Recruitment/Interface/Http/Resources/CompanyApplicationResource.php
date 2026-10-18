@@ -46,6 +46,8 @@ final class CompanyApplicationResource extends JsonResource
             /** @var array{advance: int, decline: int, maybe: int, pending: int}|null the decisions of shortlist reviews and the answers still awaited; null when no open review request names the application */
             'review_summary' => $row->reviewSummary,
             'other_applications_count' => $row->otherApplicationsCount,
+            /** @var array{join_date: string, note: string|null}|null the join date and the note of a hired application */
+            'hire' => HirePayload::of($row->hire),
         ];
     }
 }

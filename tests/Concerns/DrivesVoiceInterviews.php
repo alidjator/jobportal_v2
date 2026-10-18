@@ -101,7 +101,7 @@ trait DrivesVoiceInterviews
         if (DB::table('recruitment_interviews')->exists()) {
             $this->api('PUT', "/company/applications/{$this->applicationId}/interview", $schedule, $this->recruiterToken)->assertSuccessful();
         } else {
-            $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+            $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
         }
 
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", $confirm ?? ['phone' => '0812-3456-7890'], $this->seekerToken)->assertOk();

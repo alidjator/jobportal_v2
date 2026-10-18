@@ -15,6 +15,7 @@ use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruiterApplicationRow;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
 use Src\Recruitment\Application\StageClock;
+use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
@@ -35,7 +36,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
     private const string NOT_SCHEDULED = 'not_scheduled';
 
-    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
 
@@ -203,6 +204,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->history($id),
             $this->time((string) $row->applied_at),
             $this->time((string) $row->stage_entered_at),
+            hire: $this->hire($row),
         );
     }
 
@@ -308,7 +310,13 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             StageClock::isStale($type, $days, $staleAfterDays),
             0,
             $type === StageType::Interview ? (string) ($row->interview_state ?? self::NOT_SCHEDULED) : null,
+            hire: $this->hire($row),
         );
+    }
+
+    private function hire(stdClass $row): ?HireDetails
+    {
+        return $row->join_date === null ? null : new HireDetails(new DateTimeImmutable((string) $row->join_date, new DateTimeZone('UTC')), $row->hire_note);
     }
 
     /** @return array<string, mixed>|null null when there is no snapshot (the account was anonymised) */

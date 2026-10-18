@@ -7,8 +7,10 @@ use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\InterviewChanged;
+use Src\Recruitment\Domain\Events\JobFilled;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\Events\OfferChanged;
+use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\Offer;
@@ -22,6 +24,7 @@ use Src\Shared\Application\Assessment\AssessmentInvitationInput;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Assessment\InvitedApplication;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
@@ -43,6 +46,10 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  *
  * A move to an assessment stage needs a test to send (the one in the request, or an active one the application already has); a move to any other stage, and a
  * rejection, cancels the active test.
+ *
+ * A move to a hired stage needs the hire details (join date, optional note for the candidate), saved with the move; they are cleared when the application
+ * moves out of `hired` again (`docs/design/phase-8-hiring.md` section 1). A move that brings the job's hires up to its vacancies also dispatches
+ * {@see JobFilled} and says so in its return value (section 2).
  */
 final readonly class ProcessApplication
 {
@@ -62,24 +69,28 @@ final readonly class ProcessApplication
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
+        private CandidateMessageRules $messageRules,
+        private WatchJobFill $fill,
     ) {}
 
     /**
+     * @return bool whether this hire filled the job (its hires reached its vacancies), so the team can be offered to close it
+     *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
      * @throws StateConflict `application-final`, `already-in-stage`, `job-taken-down` or `invitation-in-progress`
-     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-interview` (a schedule and "later" together), `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input`, `invalid-offer`, `assessment-required`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule` or `invalid-assessor`
+     * @throws BusinessRuleViolation `invalid-stage`, `schedule-required`, `invalid-interview` (a schedule and "later" together), `invalid-schedule`, `invalid-interview`, `invalid-interviewer`, `offer-required`, `invalid-offer-input`, `invalid-offer`, `assessment-required`, `invalid-assessment-input`, `invalid-assessment-test`, `invalid-assessment-schedule`, `invalid-assessor`, `invalid-hire-input`, `join-date-required`, `invalid-join-date`, `invalid-hire-note` or `message-link-not-allowed`
      */
-    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null, bool $scheduleLater = false): void
+    public function move(Actor $actor, int $applicationId, int $stageId, ?InterviewInput $interview = null, ?OfferInput $offer = null, ?AssessmentInvitationInput $assessment = null, bool $scheduleLater = false, ?HireInput $hire = null): bool
     {
-        $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer, $assessment, $scheduleLater): array {
+        return $this->process($actor, $applicationId, function (Application $application, RecruitmentMember $member) use ($stageId, $interview, $offer, $assessment, $scheduleLater, $hire): array {
             $stage = $this->movableStage($application->companyId, $stageId);
 
             $moved = $application->moveTo($stageId, $stage->type);
 
             $extra = [...$this->interviewFor($member, $moved, $stage->type, $interview, $scheduleLater), ...$this->offerFor($member, $moved, $stage->type, $offer), ...$this->assessmentFor($member, $moved, $stage->type, $assessment)];
 
-            return [$moved, null, null, $extra];
+            return [$moved, null, null, $extra, $this->hireFor($member, $stage->type, $hire)];
         });
     }
 
@@ -104,28 +115,33 @@ final readonly class ProcessApplication
     /**
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound the application is not one the member may see
-     * @throws StateConflict `application-final` or `job-taken-down`
+     * @throws StateConflict `application-final`, `job-taken-down`, or `offer-pending` when `$sparePendingOffer` is set and the application has a pending offer
      * @throws BusinessRuleViolation `invalid-rejection`
      */
-    public function reject(Actor $actor, int $applicationId, RejectionReason $reason, ?string $note): void
+    public function reject(Actor $actor, int $applicationId, RejectionReason $reason, ?string $note, bool $sparePendingOffer = false): void
     {
         $note = $this->rejectionNote($reason, $note);
 
-        $this->process($actor, $applicationId, function (Application $application) use ($reason, $note): array {
+        $this->process($actor, $applicationId, function (Application $application) use ($reason, $note, $sparePendingOffer): array {
+            if ($sparePendingOffer) {
+                $this->assertNoPendingOffer($application);
+            }
+
             $rejected = $this->defaultStage($application->companyId, StageType::Rejected)
                 ?? throw new StateConflict('This company cannot reject applications right now.', 'applications-unavailable');
 
             $cancelled = $this->interviews->cancelActive((int) $application->id);
             $extra = $cancelled instanceof Interview ? [InterviewChanged::of(InterviewChange::Cancelled, $application, $cancelled, $this->clock->now())] : [];
 
-            return [$application->reject((int) $rejected->id), $reason, $note, [...$extra, ...$this->withdrawOffer($application), ...$this->assessments->cancelActive($this->invited($application))]];
+            return [$application->reject((int) $rejected->id), $reason, $note, [...$extra, ...$this->withdrawOffer($application), ...$this->assessments->cancelActive($this->invited($application))], null];
         });
     }
 
     /**
-     * @param  callable(Application, RecruitmentMember): array{0: Application, 1: ?RejectionReason, 2: ?string, 3: list<DomainEvent>}  $change
+     * @param  callable(Application, RecruitmentMember): array{0: Application, 1: ?RejectionReason, 2: ?string, 3: list<DomainEvent>, 4: ?HireDetails}  $change
+     * @return bool whether the change filled the job
      */
-    private function process(Actor $actor, int $applicationId, callable $change): void
+    private function process(Actor $actor, int $applicationId, callable $change): bool
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsManage);
 
@@ -137,15 +153,29 @@ final readonly class ProcessApplication
                 throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');
             }
 
-            [$after, $reason, $note, $extra] = $change($before, $member);
+            [$after, $reason, $note, $extra, $hire] = $change($before, $member);
             $now = $this->clock->now();
 
-            $this->applications->recordMove($before, $after, $member->userId, $reason, $note, $now);
+            $this->applications->recordMove($before, $after, $member->userId, $reason, $note, $now, $hire);
 
-            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now), ...$extra];
+            $filled = $this->fill->afterMove($before, $after, $now);
+
+            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $after->stageType, $now, $hire), ...$extra, ...($filled instanceof JobFilled ? [$filled] : [])];
         });
 
         $this->events->dispatch($events);
+
+        return array_filter($events, static fn (DomainEvent $event): bool => $event instanceof JobFilled) !== [];
+    }
+
+    /** @throws StateConflict `offer-pending` */
+    private function assertNoPendingOffer(Application $application): void
+    {
+        $offer = $this->offers->active((int) $application->id);
+
+        if ($offer instanceof Offer && $offer->isOpenAt($this->clock->now())) {
+            throw new StateConflict('This application has a pending offer.', 'offer-pending');
+        }
     }
 
     /**
@@ -233,6 +263,27 @@ final readonly class ProcessApplication
         }
 
         return [];
+    }
+
+    /**
+     * The hire details of a move: a move to a hired stage needs them (the date is checked here, the note by the link rule); a move to any other stage refuses them.
+     *
+     * @throws BusinessRuleViolation `invalid-hire-input`, `join-date-required`, `invalid-join-date`, `invalid-hire-note` or `message-link-not-allowed`
+     */
+    public function hireFor(RecruitmentMember $member, StageType $target, ?HireInput $input): ?HireDetails
+    {
+        if ($target !== StageType::Hired) {
+            if ($input instanceof HireInput) {
+                $this->refuse('invalid-hire-input', 'Hire details can only be given when moving to a hired stage.', 'hire');
+            }
+
+            return null;
+        }
+
+        $details = HireDetails::make($input?->joinDate, $input?->note, $this->clock->now(), 'hire.');
+        $this->messageRules->assertAllowed($member->companyId, $details->note, 'hire.note');
+
+        return $details;
     }
 
     private function invited(Application $application): InvitedApplication

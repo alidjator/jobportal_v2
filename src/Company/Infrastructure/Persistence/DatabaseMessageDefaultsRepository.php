@@ -18,7 +18,7 @@ final readonly class DatabaseMessageDefaultsRepository implements MessageDefault
     {
         $row = $this->connection->table(self::TABLE)->where('company_id', $companyId)->first();
 
-        return $row === null ? new MessageDefaults : new MessageDefaults($row->interview, $row->assessment, $row->offer, $row->applied);
+        return $row === null ? new MessageDefaults : new MessageDefaults($row->interview, $row->assessment, $row->offer, $row->applied, $row->hired);
     }
 
     public function save(int $companyId, MessageDefaults $defaults, int $changedByUserId): void

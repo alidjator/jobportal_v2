@@ -133,7 +133,7 @@ final class AutoIssueTest extends FeatureTestCase
     {
         $due = Carbon::now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z');
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'assessment')->where('is_default', 1)->value('id');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => ['test_id' => $battery, 'due_at' => $due]], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => ['test_id' => $battery, 'due_at' => $due]], $this->recruiterToken)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
 
         if ($afterInvitation !== null) {

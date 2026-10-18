@@ -5,7 +5,7 @@ namespace Src\Job\Application;
 use Src\Job\Domain\Job;
 
 /**
- * A job as its company sees it: the job itself, the skills and benefits with their names (in the request language), and who is assigned. The tags are
+ * A job as its company sees it: the job itself, the skills and benefits with their names (in the request language), and who is assigned and how many hires it has. The tags are
  * part of the job content as text.
  */
 final readonly class JobDetail
@@ -20,5 +20,11 @@ final readonly class JobDetail
         public array $skills,
         public array $benefits,
         public array $assignees,
+        public int $hiresCount = 0,
     ) {}
+
+    public function filled(): bool
+    {
+        return FilledJob::is($this->job->content->vacancies, $this->hiresCount);
+    }
 }

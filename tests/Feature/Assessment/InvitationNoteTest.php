@@ -67,7 +67,7 @@ final class InvitationNoteTest extends FeatureTestCase
     private function inAssessmentStage(): void
     {
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'assessment')->where('is_default', 1)->value('id');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => $this->invitation()], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => $this->invitation()], $this->recruiterToken)->assertOk();
     }
 
     private function inviteEmail(): ?Email
@@ -136,7 +136,7 @@ final class InvitationNoteTest extends FeatureTestCase
         $move('Go to https://evil.example')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
         $this->assertSame('applied', DB::table('recruitment_applications')->where('id', $this->applicationId)->value('stage_type'));
 
-        $move('Bring your ID.')->assertNoContent();
+        $move('Bring your ID.')->assertOk();
         $this->assertSame('Bring your ID.', DB::table('assessment_invitations')->value('note'));
     }
 }

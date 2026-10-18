@@ -7,9 +7,10 @@ use Src\Job\Domain\JobAssignee;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Company\CompanyTeam;
+use Src\Shared\Application\Recruitment\JobHires;
 use Src\Shared\Application\References\ReferenceValues;
 
-/** Adds what a client needs to show a job: the names of its skills and benefits in the request language, and its assignees with their name and role. */
+/** Adds what a client needs to show a job: the names of its skills and benefits in the request language, its assignees with their name and role, and its number of hires. */
 final readonly class JobDetailBuilder
 {
     public function __construct(
@@ -17,6 +18,7 @@ final readonly class JobDetailBuilder
         private JobAssignmentRepository $assignments,
         private CompanyTeam $team,
         private CompanyMemberAccounts $accounts,
+        private JobHires $hires,
     ) {}
 
     public function build(Job $job, string $language): JobDetail
@@ -26,6 +28,7 @@ final readonly class JobDetailBuilder
             $this->named('skills', $job->content->skillIds, $language),
             $this->named('benefits', $job->content->benefitIds, $language),
             $this->assignees($job),
+            $this->hires->countPerJob([(int) $job->id])[(int) $job->id] ?? 0,
         );
     }
 

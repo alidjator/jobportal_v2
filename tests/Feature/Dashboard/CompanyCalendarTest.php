@@ -57,7 +57,7 @@ final class CompanyCalendarTest extends FeatureTestCase
         $token = $applicationId === $this->applicationId ? $this->recruiterToken : $this->adminToken;
         $this->api('POST', "/company/applications/{$applicationId}/move", [
             'stage_id' => $this->stage('interview'), 'interview' => $this->interviewSchedule(['starts_at' => $startsAt, 'interviewer_id' => $applicationId === $this->applicationId ? $this->recruiterId : $this->adminId, ...$extra]),
-        ], $token)->assertNoContent();
+        ], $token)->assertOk();
 
         return (int) DB::table('recruitment_interviews')->where('application_id', $applicationId)->orderByDesc('id')->value('id');
     }

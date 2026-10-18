@@ -188,7 +188,7 @@ final class ApplicationNotesTest extends FeatureTestCase
     public function test_ratings_are_locked_on_a_hired_application(): void
     {
         $hired = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'hired')->where('is_default', 1)->value('id');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $hired], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $hired, 'hire' => ['join_date' => now()->addDays(30)->format('Y-m-d')]], $this->recruiterToken)->assertOk();
 
         $this->rate(5)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:application-final');
         $this->note('Welcome aboard.')->assertCreated();

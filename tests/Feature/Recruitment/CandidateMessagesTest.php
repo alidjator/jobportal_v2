@@ -82,7 +82,7 @@ final class CandidateMessagesTest extends FeatureTestCase
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
         $this->assertSame(0, DB::table('recruitment_interviews')->count());
 
-        $this->move($id, 'interview', ['interview' => $this->interviewSchedule(['note' => 'Read https://www.maju.example/careers or call 021 555 0100'])])->assertNoContent();
+        $this->move($id, 'interview', ['interview' => $this->interviewSchedule(['note' => 'Read https://www.maju.example/careers or call 021 555 0100'])])->assertOk();
 
         $this->api('PATCH', "/company/applications/{$id}/interview", ['note' => 'Mail hr@gmail.com'], $this->recruiterToken)
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
@@ -94,7 +94,7 @@ final class CandidateMessagesTest extends FeatureTestCase
     public function test_a_rescheduled_interview_keeps_its_note_without_checking_it_again(): void
     {
         $id = $this->applied();
-        $this->move($id, 'interview', ['interview' => $this->interviewSchedule(['note' => 'Read https://www.maju.example/careers'])])->assertNoContent();
+        $this->move($id, 'interview', ['interview' => $this->interviewSchedule(['note' => 'Read https://www.maju.example/careers'])])->assertOk();
 
         // The company changed its website later; a new time without a note keeps the old note and is not refused for it.
         DB::table('company_companies')->where('id', $this->companyId)->update(['website' => 'https://other.example']);
@@ -109,7 +109,7 @@ final class CandidateMessagesTest extends FeatureTestCase
             ->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
         $this->assertSame(0, DB::table('recruitment_offers')->count());
 
-        $this->move($id, 'offer', ['offer' => $this->offerDetails(['note' => 'Welcome aboard, mail hr@maju.example.'])])->assertNoContent();
+        $this->move($id, 'offer', ['offer' => $this->offerDetails(['note' => 'Welcome aboard, mail hr@maju.example.'])])->assertOk();
 
         $email = $this->emailWithSubject('Job offer for Backend Developer');
         $this->assertNotNull($email);
@@ -121,7 +121,7 @@ final class CandidateMessagesTest extends FeatureTestCase
     public function test_company_emails_carry_the_company_name_or_logo_and_the_fixed_line(): void
     {
         $id = $this->applied();
-        $this->move($id, 'interview', ['interview' => $this->interviewSchedule()])->assertNoContent();
+        $this->move($id, 'interview', ['interview' => $this->interviewSchedule()])->assertOk();
 
         $email = $this->emailWithSubject('Interview scheduled for Backend Developer');
         $this->assertNotNull($email);

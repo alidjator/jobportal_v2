@@ -17,6 +17,7 @@ use Src\Job\Application\Browse\JobProfileReader;
 use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\LiveJobProfileProvider;
 use Src\Job\Application\Browse\SearchThrottle;
+use Src\Job\Application\CloseJobForCaller;
 use Src\Job\Application\Export\SavedJobsDataExporter;
 use Src\Job\Application\Insight\SalaryInsightReader;
 use Src\Job\Application\JobFromRequisition;
@@ -81,6 +82,7 @@ use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Dashboard\DashboardCards;
+use Src\Shared\Application\Job\JobCloser;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobMatcher;
 use Src\Shared\Application\Job\LiveJobProfiles;
@@ -128,6 +130,7 @@ final class JobServiceProvider extends ContextServiceProvider
         JobDirectory::class => RepositoryJobDirectory::class,
         RequisitionJobs::class => DatabaseRequisitionJobs::class,
         RequisitionJobCreator::class => JobFromRequisition::class,
+        JobCloser::class => CloseJobForCaller::class,
         PublishedJobs::class => DatabasePublishedJobs::class,
         JobMatcher::class => AlertJobMatcher::class,
         LiveJobProfiles::class => LiveJobProfileProvider::class,

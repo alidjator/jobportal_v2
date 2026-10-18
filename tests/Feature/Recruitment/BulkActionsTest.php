@@ -130,7 +130,7 @@ final class BulkActionsTest extends FeatureTestCase
     public function test_a_bulk_move_moves_each_application_and_skips_the_one_already_there(): void
     {
         $screening = $this->stage('screening');
-        $this->api('POST', "/company/applications/{$this->ids[1]}/move", ['stage_id' => $screening], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->ids[1]}/move", ['stage_id' => $screening], $this->recruiterToken)->assertOk();
 
         $this->bulkMove(['application_ids' => [$this->ids[1], $this->ids[0], $this->ids[2]], 'stage_id' => $screening])
             ->assertOk()
@@ -196,8 +196,8 @@ final class BulkActionsTest extends FeatureTestCase
     public function test_an_application_with_an_active_interview_needs_none_and_the_others_need_a_schedule(): void
     {
         $interview = $this->stage('interview');
-        $this->api('POST', "/company/applications/{$this->ids[0]}/move", ['stage_id' => $interview, 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertNoContent();
-        $this->api('POST', "/company/applications/{$this->ids[0]}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->ids[0]}/move", ['stage_id' => $interview, 'interview' => $this->interviewSchedule()], $this->recruiterToken)->assertOk();
+        $this->api('POST', "/company/applications/{$this->ids[0]}/move", ['stage_id' => $this->stage('screening')], $this->recruiterToken)->assertOk();
 
         $this->bulkMove(['application_ids' => $this->ids, 'stage_id' => $interview])
             ->assertOk()

@@ -135,7 +135,7 @@ final class VideoInterviewsTest extends FeatureTestCase
     /** A video interview of the first application that starts in five minutes (so the room is open) and that the job seeker confirmed. */
     private function confirmedVideoInterview(array $overrides = []): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5), $overrides)], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5), $overrides)], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
     }
 
@@ -227,7 +227,7 @@ final class VideoInterviewsTest extends FeatureTestCase
     {
         $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:no-active-interview');
 
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5))], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5))], $this->recruiterToken)->assertOk();
         $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-confirmed');
         $this->mine('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:interview-not-confirmed');
 
@@ -239,7 +239,7 @@ final class VideoInterviewsTest extends FeatureTestCase
 
     public function test_an_interview_that_is_not_video_has_no_room(): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->interviewSchedule(['starts_at' => $this->minutesFromNow(5)])], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stage(), 'interview' => $this->interviewSchedule(['starts_at' => $this->minutesFromNow(5)])], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
 
         $this->team('join')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:not-a-video-interview');
@@ -252,7 +252,7 @@ final class VideoInterviewsTest extends FeatureTestCase
         $this->confirmedVideoInterview();
         $secondJob = $this->insertJob('Frontend Developer', 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);
         $second = (int) $this->apply($secondJob)->assertCreated()->json('data.id');
-        $this->api('POST', "/company/applications/{$second}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5))], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$second}/move", ['stage_id' => $this->stage(), 'interview' => $this->videoAt($this->minutesFromNow(5))], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$second}/interview/confirm", [], $this->seekerToken)->assertOk();
 
         $this->team('join')->assertOk();

@@ -37,6 +37,8 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),
             'days_in_stage' => $view->daysInStage,
             'stale' => $view->stale,
+            /** @var array{join_date: string, note: string|null}|null the join date and the note for the candidate of a hired application */
+            'hire' => HirePayload::of($data->hire),
             /** @var list<array{id: int, job: array{id: int, title: string|null}, stage: array{type: string, name: string}, applied_at: string}> */
             'other_applications' => array_map(static fn (OtherApplicationView $other): array => [
                 'id' => $other->application->id,

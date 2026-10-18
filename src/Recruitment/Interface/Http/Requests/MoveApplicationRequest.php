@@ -4,6 +4,7 @@ namespace Src\Recruitment\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Src\Recruitment\Application\HireInput;
 use Src\Recruitment\Application\InterviewInput;
 use Src\Recruitment\Application\OfferInput;
 use Src\Shared\Application\Assessment\AssessmentInvitationInput;
@@ -11,7 +12,7 @@ use Src\Shared\Interface\Http\Requests\AssessmentInvitationFields;
 
 /**
  * The stage to move an application to, and the interview to schedule with the move (needed for an interview stage unless the application already has an
- * active one or the request says `interview.schedule_later`), and likewise the offer for an offer stage and the test (`assessment`) for an assessment stage. Whether it is an active stage of the company is a use case rule.
+ * active one or the request says `interview.schedule_later`), and likewise the offer for an offer stage, the test (`assessment`) for an assessment stage and the hire details (`hire`: join date, note) for a hired stage. Whether it is an active stage of the company is a use case rule.
  */
 final class MoveApplicationRequest extends FormRequest
 {
@@ -27,6 +28,8 @@ final class MoveApplicationRequest extends FormRequest
             ...OfferFields::rules('offer.', 'required_with:offer'),
             'assessment' => ['nullable', 'array'],
             ...AssessmentInvitationFields::rules('assessment.', 'required_with:assessment'),
+            'hire' => ['nullable', 'array'],
+            ...HireFields::rules('hire.'),
         ];
     }
 
@@ -53,6 +56,11 @@ final class MoveApplicationRequest extends FormRequest
     public function assessment(): ?AssessmentInvitationInput
     {
         return AssessmentInvitationFields::inputOrNull($this->validated('assessment'));
+    }
+
+    public function hire(): ?HireInput
+    {
+        return HireFields::inputOrNull($this->validated('hire'));
     }
 
     public function stageId(): int

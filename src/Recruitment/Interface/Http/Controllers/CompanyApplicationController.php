@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Interface\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -11,6 +12,7 @@ use Src\Recruitment\Application\GetCompanyApplicationResume;
 use Src\Recruitment\Application\ListJobApplications;
 use Src\Recruitment\Application\ProcessApplication;
 use Src\Recruitment\Application\StageCount;
+use Src\Recruitment\Application\UpdateApplicationHire;
 use Src\Recruitment\Application\WithdrawApplicationByTeam;
 use Src\Recruitment\Interface\Http\CsvDownload;
 use Src\Recruitment\Interface\Http\PdfDownload;
@@ -19,6 +21,7 @@ use Src\Recruitment\Interface\Http\Requests\ListJobApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\MarkApplicationWithdrawnRequest;
 use Src\Recruitment\Interface\Http\Requests\MoveApplicationRequest;
 use Src\Recruitment\Interface\Http\Requests\RejectApplicationRequest;
+use Src\Recruitment\Interface\Http\Requests\UpdateApplicationHireRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationDetailResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -53,16 +56,24 @@ final class CompanyApplicationController extends ApiController
         return PdfDownload::of($get->execute($actors->fromRequest($request), $id, $request->ip(), $request->userAgent()));
     }
 
-    public function move(MoveApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
+    /** Answers `meta.job_filled`: true when this hire brought the job's hires up to its vacancies, so the client offers to close the job and reject the rest. */
+    public function move(MoveApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): JsonResponse
     {
-        $process->move($actors->fromRequest($request), $id, $request->stageId(), $request->interview(), $request->offer(), $request->assessment(), $request->scheduleLater());
+        $filled = $process->move($actors->fromRequest($request), $id, $request->stageId(), $request->interview(), $request->offer(), $request->assessment(), $request->scheduleLater(), $request->hire());
 
-        return response()->noContent();
+        return response()->json(['meta' => ['job_filled' => $filled]]);
     }
 
     public function reject(RejectApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
     {
         $process->reject($actors->fromRequest($request), $id, $request->reason(), $request->note());
+
+        return response()->noContent();
+    }
+
+    public function updateHire(UpdateApplicationHireRequest $request, int $id, ActorResolver $actors, UpdateApplicationHire $update): Response
+    {
+        $update->execute($actors->fromRequest($request), $id, $request->change(), $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

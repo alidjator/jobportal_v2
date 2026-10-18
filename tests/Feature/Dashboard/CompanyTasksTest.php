@@ -146,7 +146,7 @@ final class CompanyTasksTest extends FeatureTestCase
 
     public function test_offers_waiting_and_expiring(): void
     {
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stageId('offer'), 'offer' => $this->offerDetails(['expires_at' => '2026-10-20T09:00:00Z'])], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $this->stageId('offer'), 'offer' => $this->offerDetails(['expires_at' => '2026-10-20T09:00:00Z'])], $this->recruiterToken)->assertOk();
         DB::table('recruitment_offers')->where('application_id', $this->applicationId)->update(['expires_at' => '2026-10-20 09:00:00', 'status' => 'pending']);
         Cache::flush();
 
@@ -168,7 +168,7 @@ final class CompanyTasksTest extends FeatureTestCase
         $this->moveClockTo('2026-10-05 09:00:00');
         $stage = $this->stageId('interview');
         $schedule = $this->interviewSchedule(['participant_ids' => [$this->adminId]]);
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertNoContent();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'interview' => $schedule], $this->recruiterToken)->assertOk();
         $this->api('POST', "/me/applications/{$this->applicationId}/interview/confirm", [], $this->seekerToken)->assertOk();
         $interview = (int) DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->value('id');
 

@@ -23,6 +23,8 @@ final class JobListResource extends JsonResource
             'status' => $this->resource->status->value,
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'vacancies' => $this->resource->vacancies,
+            'hires_count' => $this->resource->hiresCount,
+            'filled' => $this->resource->filled(),
             'assignees_count' => $this->resource->assigneesCount,
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),
             'created_at' => $this->resource->createdAt->format(DateTimeInterface::ATOM),

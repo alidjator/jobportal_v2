@@ -21,6 +21,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `applicant-unavailable` | 409 | Recruitment | The applicant account is no longer available. |
 | `application-final` | 409 | Recruitment | This application is final, so the interview needs no answer. |
 | `application-limit-reached` | 429 | Recruitment | You have reached the daily limit of applications. Try again tomorrow. |
+| `application-not-hired` | 409 | Recruitment | Only a hired application has hire details. |
 | `application-not-withdrawable` | 409 | Recruitment | This application can no longer be withdrawn. |
 | `applications-unavailable` | 409 | Recruitment | This company cannot take applications right now. |
 | `approval-already-pending` | 409 | Approval | This subject is already in approval. |
@@ -153,6 +154,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-grade` | 422 | Organization | The grade is not an active grade of the group. |
 | `invalid-grade-range` | 422 | Organization | The lowest grade ranks above the highest grade. |
 | `invalid-group-permissions` | 422 | Organization | A group role needs at least one permission. |
+| `invalid-hire-input` | 422 | Recruitment |  |
+| `invalid-hire-note` | 422 | Recruitment |  |
 | `invalid-ideal-answer` | 422 | Recruitment |  |
 | `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
 | `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
@@ -161,6 +164,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-job` | 422 | Job | A job opened for a requisition names its vacancies. |
 | `invalid-job-questions` | 422 | Recruitment | The questions of the job are not valid. |
 | `invalid-job-role` | 422 | Organization | The job role is not an active job role. |
+| `invalid-join-date` | 422 | Recruitment |  |
 | `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
@@ -237,6 +241,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
 | `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
 | `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
+| `join-date-required` | 422 | Recruitment |  |
 | `kit-limit-reached` | 409 | Recruitment | The company has reached its limit of interview kits. |
 | `kit-name-taken` | 409 | Recruitment | Another kit of this company already has this name. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
@@ -297,6 +302,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `note-too-long` | 422 | JobInvitation, TalentPool |  |
 | `offer-expired` | 409 | Recruitment | This offer has expired. |
 | `offer-not-pending` | 409 | Recruitment | This offer is no longer pending. |
+| `offer-pending` | 409 | Recruitment | This application has a pending offer. |
 | `offer-required` | 422 | Recruitment |  |
 | `own-review` | 403 | Review | You cannot report your own review. |
 | `owner-required` | 403 | Company | Only the owner of the company can hand the ownership over. |

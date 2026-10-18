@@ -77,6 +77,7 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
                 'resume_name' => $detail?->resumeName,
                 'resume_file' => $resumeFile === null ? null : 'files/applications/'.$resumeFile,
                 'withdrawn_note' => $detail?->withdrawnNote,
+                'hire' => $detail?->hire === null ? null : ['join_date' => $detail->hire->joinDate->format('Y-m-d'), 'note' => $detail->hire->note],
                 'history' => array_map(static fn (ApplicationHistoryEntry $entry): array => [
                     'status' => $entry->status->value,
                     'at' => $entry->at->format(DateTimeInterface::ATOM),

@@ -37,7 +37,7 @@ trait RecordsVideoAnswers
         $this->api('POST', "/company/applications/{$this->applicationId}/move", [
             'stage_id' => $stage,
             'assessment' => ['test_id' => $id, 'due_at' => now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z'), 'assessor_ids' => [$this->adminId]],
-        ], $this->recruiterToken)->assertNoContent();
+        ], $this->recruiterToken)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
 
         $this->take('POST', 'start', ['consent' => true, 'video_consent' => true])->assertCreated();

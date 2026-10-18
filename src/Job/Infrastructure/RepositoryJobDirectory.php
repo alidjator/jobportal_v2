@@ -127,6 +127,16 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return $this->jobs->find($jobId)?->status === JobStatus::TakenDown;
     }
 
+    public function vacancies(int $jobId): ?int
+    {
+        return $this->jobs->find($jobId)?->content->vacancies;
+    }
+
+    public function statusOf(int $jobId): ?string
+    {
+        return $this->jobs->find($jobId)?->status->value;
+    }
+
     public function lock(int $jobId): void
     {
         $this->jobs->lock($jobId);
