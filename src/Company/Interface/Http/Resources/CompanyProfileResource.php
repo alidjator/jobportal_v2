@@ -7,24 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
 use Src\Company\Application\Images\CompanyImageFile;
-use Src\Company\Domain\Company;
+use Src\Company\Application\Profile\CompanyProfileView;
 
 /**
- * A company's own profile, as stored: ids for the classifications and the location, Markdown as written.
+ * A company's own profile, as stored: ids for the classifications, Markdown as written, and the main location in place of the address.
  *
- * @property Company $resource
+ * @property CompanyProfileView $resource
  */
 final class CompanyProfileResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        $profile = $this->resource->profile();
+        $company = $this->resource->company;
+        $profile = $company->profile();
 
         return [
-            'id' => $this->resource->id,
-            'slug' => $this->resource->slug(),
-            'status' => $this->resource->status()->value,
+            'id' => $company->id,
+            'slug' => $company->slug(),
+            'status' => $company->status()->value,
             'name' => $profile->name,
             'website' => $profile->website,
             'established_on' => $profile->establishedOn?->format('Y-m-d'),
@@ -33,18 +34,13 @@ final class CompanyProfileResource extends JsonResource
             'industry_id' => $profile->industryId,
             'organization_type_id' => $profile->organizationTypeId,
             'team_size_id' => $profile->teamSizeId,
-            'address_line' => $profile->addressLine,
-            'province_id' => $profile->provinceId,
-            'city_id' => $profile->cityId,
-            'subdistrict_id' => $profile->subdistrictId,
-            'village_id' => $profile->villageId,
-            'postal_code_id' => $profile->postalCodeId,
             'contact_email' => $profile->contactEmail,
             'contact_phone' => $profile->contactPhone,
             'is_visible' => $profile->isVisible,
-            'verified_at' => $this->resource->verifiedAt()?->format(DateTimeInterface::ATOM),
-            'logo_url' => $this->imageUrl('logo', $this->resource->logoPath()),
-            'banner_url' => $this->imageUrl('banner', $this->resource->bannerPath()),
+            'main_location' => $this->resource->mainLocation === null ? null : (new CompanyLocationResource($this->resource->mainLocation))->toArray($request),
+            'verified_at' => $company->verifiedAt()?->format(DateTimeInterface::ATOM),
+            'logo_url' => $this->imageUrl('logo', $company->logoPath()),
+            'banner_url' => $this->imageUrl('banner', $company->bannerPath()),
         ];
     }
 

@@ -183,7 +183,9 @@ final readonly class BulkProcessApplications
         $this->scheduler->assertInterviewer($member->companyId, $base->interviewerId);
         $this->scheduler->assertFormatAvailable($member->companyId, $base->format);
 
-        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded, note: $base->note);
+        [$location, $locationId] = $this->scheduler->place($member->companyId, $base->format, $base->location, $base->locationId);
+
+        Interview::schedule(0, $base->startsAt, $base->durationMinutes, $base->format, $location, $base->meetingUrl, $base->interviewerId, $member->userId, $this->clock->now(), recorded: $base->recorded, note: $base->note);
 
         if ($this->minutes($base->dayEnd) <= $this->minutes($base->dayStart)) {
             $this->refuse('invalid-interview', 'The working day must end after it starts.', 'day_end');
@@ -201,7 +203,7 @@ final readonly class BulkProcessApplications
         $inputs = [];
 
         foreach ($movable as $index => $id) {
-            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $base->location, $base->meetingUrl, $base->interviewerId, recorded: $base->recorded, note: $base->note, noteGiven: $base->note !== null);
+            $inputs[$id] = new InterviewInput($slots[$index][0], $base->durationMinutes, $base->format, $location, $base->meetingUrl, $base->interviewerId, recorded: $base->recorded, note: $base->note, noteGiven: $base->note !== null, locationId: $locationId);
         }
 
         return $inputs;

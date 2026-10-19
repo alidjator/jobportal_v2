@@ -158,6 +158,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
+use Src\Recruitment\Infrastructure\Persistence\InterviewLocationUsage;
 use Src\Recruitment\Infrastructure\Tasks\MyReviewsTask;
 use Src\Recruitment\Infrastructure\Tasks\MyRsvpTask;
 use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
@@ -201,6 +202,7 @@ use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyLetterheads;
+use Src\Shared\Application\Company\CompanyLocationUsages;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\FileStorage;
@@ -379,6 +381,10 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(OffersWaitingTask::class),
                 $this->app->make(OffersExpiringTask::class),
             );
+        });
+
+        $this->callAfterResolving(CompanyLocationUsages::class, function (CompanyLocationUsages $usages): void {
+            $usages->add($this->app->make(InterviewLocationUsage::class));
         });
 
         $this->callAfterResolving(CalendarSources::class, function (CalendarSources $sources): void {

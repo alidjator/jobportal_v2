@@ -267,6 +267,66 @@ final class RequisitionTest extends FeatureTestCase
         $this->as($this->requester, 'GET', '/company/requisitions?status=draft')->assertJsonCount(2, 'data');
     }
 
+    // ----- work location -----
+
+    private function location(string $name = 'Pabrik Jawa Timur', string $status = 'active', ?int $companyId = null): int
+    {
+        return (int) DB::table('company_locations')->insertGetId([
+            'company_id' => $companyId ?? $this->holding, 'name' => $name, 'type' => 'site', 'is_main' => false, 'status' => $status, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
+    public function test_a_requisition_may_name_an_active_work_location_of_its_tenant(): void
+    {
+        $location = $this->location();
+
+        $id = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['location_id' => $location]))->assertCreated()->assertJsonPath('data.location_id', $location)->json('data.id');
+        $this->as($this->requester, 'POST', '/company/requisitions', $this->body())->assertCreated()->assertJsonPath('data.location_id', null);
+
+        $listed = collect($this->as($this->requester, 'GET', '/company/requisitions?status=draft')->assertOk()->json('data'));
+        $this->assertSame($location, $listed->firstWhere('id', $id)['location_id']);
+        $this->assertCount(1, $listed->whereNull('location_id'));
+    }
+
+    public function test_a_location_that_is_not_an_active_location_of_the_tenant_is_refused(): void
+    {
+        $bad = fn (int $id) => $this->error($this->as($this->requester, 'POST', '/company/requisitions', $this->body(['location_id' => $id])), 422, 'invalid-location');
+
+        $bad($this->location('Tutup', 'inactive'));
+        $bad($this->location('Milik lain', 'active', $this->companyRowId('pt-luar')));
+        $bad(999999);
+        $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['location_id' => 'x']))->assertStatus(422)->assertJsonValidationErrors(['location_id']);
+    }
+
+    public function test_the_location_changes_with_the_draft_and_blocks_the_submit_once_it_is_deactivated(): void
+    {
+        $first = $this->location('Satu');
+        $second = $this->location('Dua');
+        $id = $this->draft(['location_id' => $first]);
+
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['location_id' => $second]))->assertOk()->assertJsonPath('data.location_id', $second);
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['location_id' => $first]))->assertOk()->assertJsonPath('data.location_id', $first);
+
+        $this->flows();
+        DB::table('company_locations')->where('id', $first)->update(['status' => 'inactive', 'deactivated_at' => now()]);
+
+        $this->error($this->as($this->requester, 'POST', "/company/requisitions/{$id}/submit"), 422, 'invalid-location');
+        // Without the location the requisition can still be submitted, and the inactive location still shows on what already points to it until it is changed.
+        $this->as($this->requester, 'GET', "/company/requisitions/{$id}")->assertJsonPath('data.location_id', $first);
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body())->assertOk()->assertJsonPath('data.location_id', null);
+        $this->as($this->requester, 'POST', "/company/requisitions/{$id}/submit")->assertOk();
+    }
+
+    public function test_a_location_that_a_requisition_refers_to_can_only_be_deactivated(): void
+    {
+        $location = $this->location();
+        $this->draft(['location_id' => $location]);
+
+        $this->error($this->as($this->admin, 'DELETE', "/company/locations/{$location}"), 409, 'location-in-use');
+        $this->as($this->admin, 'POST', "/company/locations/{$location}/deactivate")->assertOk();
+        $this->assertSame(1, DB::table('company_locations')->where('id', $location)->count());
+    }
+
     // ----- quota and approval -----
 
     public function test_a_planned_requisition_needs_a_line_in_the_plan_in_force_and_fits_its_quota(): void

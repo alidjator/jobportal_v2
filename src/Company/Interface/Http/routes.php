@@ -5,6 +5,7 @@ use Src\Company\Infrastructure\CompanyServiceProvider;
 use Src\Company\Interface\Http\Controllers\CompanyActivityController;
 use Src\Company\Interface\Http\Controllers\CompanyDocumentController;
 use Src\Company\Interface\Http\Controllers\CompanyImageController;
+use Src\Company\Interface\Http\Controllers\CompanyLocationController;
 use Src\Company\Interface\Http\Controllers\CompanyNameChangeController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CompanySettingsController;
@@ -60,6 +61,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/profile', [CompanyProfileController::class, 'show']);
     Route::patch('company/profile', [CompanyProfileController::class, 'update']);
     Route::put('company/slug', [CompanyProfileController::class, 'changeSlug']);
+
+    // The work locations of the own company: any member reads them (the interview and requisition pickers), a member who may change the profile manages them.
+    Route::get('company/locations', [CompanyLocationController::class, 'index']);
+    Route::post('company/locations', [CompanyLocationController::class, 'store']);
+    Route::patch('company/locations/{id}', [CompanyLocationController::class, 'update'])->whereNumber('id');
+    Route::post('company/locations/{id}/main', [CompanyLocationController::class, 'makeMain'])->whereNumber('id');
+    Route::post('company/locations/{id}/deactivate', [CompanyLocationController::class, 'deactivate'])->whereNumber('id');
+    Route::post('company/locations/{id}/activate', [CompanyLocationController::class, 'activate'])->whereNumber('id');
+    Route::delete('company/locations/{id}', [CompanyLocationController::class, 'destroy'])->whereNumber('id');
 
     // The team of the caller's own company; every use case checks that the caller is a company admin.
     // Open invitations are rows of the team list (`GET company/members`), so there is no list of invitations.

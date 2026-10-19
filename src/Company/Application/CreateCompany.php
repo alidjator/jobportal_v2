@@ -5,6 +5,8 @@ namespace Src\Company\Application;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Domain\Company;
+use Src\Company\Domain\CompanyLocation;
+use Src\Company\Domain\CompanyLocationRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\CompanyRole;
 use Src\Company\Domain\Events\CompanyCreated;
@@ -24,7 +26,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * An admin creates a company and invites its first company admin. The admin gives only the required minimum; the company completes its
+ * An admin creates a company (with its main work location) and invites its first company admin. The admin gives only the required minimum; the company completes its
  * own profile. The admin never sees a password: the invitee sets it when accepting.
  */
 final readonly class CreateCompany
@@ -33,6 +35,7 @@ final readonly class CreateCompany
 
     public function __construct(
         private CompanyRepository $companies,
+        private CompanyLocationRepository $locations,
         private InvitationRepository $invitations,
         private CompanyMemberAccounts $accounts,
         private ReferenceValues $references,
@@ -79,6 +82,8 @@ final readonly class CreateCompany
             $company = $this->companies->save(Company::create(
                 $command->name, $this->uniqueSlug($command->name), $command->industryId, $command->organizationTypeId, (int) $actor->id,
             ));
+            // Every company has one main work location from the start; the company fills in its address.
+            $this->locations->add(CompanyLocation::main((int) $company->id));
             $invitation = $this->invitations->save(Invitation::issue(
                 (int) $company->id, $email, CompanyRole::CompanyAdmin, null, null, $token->hash(), null, (int) $actor->id, $now,
             ));

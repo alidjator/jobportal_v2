@@ -3,7 +3,6 @@
 namespace Src\Company\Application\Profile;
 
 use DateTimeImmutable;
-use Src\Shared\Application\References\LocationNames;
 
 /** What anyone may see of a company. It holds no contact data (email, phone), and the names are in the language of the request. */
 final readonly class PublicCompanyView
@@ -18,8 +17,8 @@ final readonly class PublicCompanyView
         public ?string $industry,
         public ?string $organizationType,
         public ?string $teamSize,
-        public ?string $addressLine,
-        public LocationNames $location,
+        /** @var list<PublicCompanyLocation> the active work locations, the main one first */
+        public array $locations,
         public ?DateTimeImmutable $verifiedAt,
         public ?string $logoVersion,
         public ?string $bannerVersion,

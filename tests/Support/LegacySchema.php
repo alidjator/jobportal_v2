@@ -71,7 +71,7 @@ final class LegacySchema
         $schema = Schema::connection('legacy');
 
         // A table made by an older version of this schema (the village code needs a big integer) is made again.
-        if ($schema->hasTable('companies') && $schema->getColumnType('companies', 'kelurahan') !== 'bigint') {
+        if ($schema->hasTable('companies') && ($schema->getColumnType('companies', 'kelurahan') !== 'bigint' || ! $schema->hasColumn('companies', 'lat'))) {
             $schema->drop('companies');
         }
 
@@ -241,6 +241,8 @@ final class LegacySchema
                 $table->integer('subdistrict')->nullable();
                 $table->bigInteger('kelurahan')->nullable();
                 $table->string('postcode')->nullable();
+                $table->string('lat')->nullable();
+                $table->string('long')->nullable();
                 $table->boolean('is_profile_verified')->default(false);
                 $table->dateTime('document_verified_at')->nullable();
             });

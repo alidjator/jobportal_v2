@@ -16,10 +16,10 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 
 - Latest tag `v0.8.0` (#19 and #21; #19 checked with 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
 - **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16 to #19 and #21 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
-- Real PostgreSQL `jobportal_v2` and the test database are at `000173` (2026-10-19); reference data only (0 accounts) until the final import.
+- Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
-- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions), so the next item is **#27 `company_locations` (designed 2026-10-19 in `docs/design/company-locations.md`, ready for a coding session)**, then #28 (job `locations` in the API); both come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
-- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
+- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions); the next item is **#28** (job `locations` array, `company-locations.md` decision 12), before the front end and the final import run. **#27 `company_locations` is coded and checked (migrations `000174`, `000175`).**
+- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #28 and `frontend.md` 11.5, 11.6 (#27 is coded); open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 

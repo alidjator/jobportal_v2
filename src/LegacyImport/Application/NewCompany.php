@@ -18,6 +18,8 @@ final readonly class NewCompany
         public ?int $teamSizeId,
         public ?string $addressLine,
         public ResolvedLocation $location,
+        public ?float $latitude,
+        public ?float $longitude,
         public bool $isVisible,
         public ?string $verifiedAt,
         public string $createdAt,

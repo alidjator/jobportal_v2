@@ -1,4 +1,4 @@
-# Company locations: several work locations per tenant (#27, designed 2026-10-19, not coded)
+# Company locations: several work locations per tenant (#27, designed 2026-10-19, coded 2026-10-19)
 
 Step A of `erp-direction.md` section 9: every tenant gets its work locations (head office, branches, sites) in a new `company_locations` table of
 the Company context. The current company address becomes the main location. Interview places and requisitions may point to a location. The job
@@ -134,3 +134,39 @@ with names, `coordinates`. No phone.
 - A location's own time zone in the calendar, the emails and the scheduler.
 - Location-level contacts beyond one phone, opening hours, and a regional minimum wage per location (payroll, `erp-direction.md` D7).
 - Employee placement (`erp-direction.md` D2).
+
+## Coded (2026-10-19)
+
+Migrations `000174` (table, main location per company, the six address columns dropped from `company_companies`) and `000175` (`location_id` on `recruitment_interviews` and
+`workforce_requisitions`, RESTRICT). The two migrations are new for the test database and the real one. Checked: the targeted tests and `composer check` are green.
+
+- **Company context.** `CompanyLocation` entity with `LocationType` and `LocationStatus`; `Address` and `Coordinates` are in `src/Shared/Domain` (the bounding box of decision 11 lives in
+  `Coordinates`, which the legacy import also uses). Use cases in `Application/Locations`: list, create, update, set main, deactivate, activate, delete. Create, set main, deactivate and delete lock the company row
+  (the limit, the one-main rule and the usage check hold for two requests at once). `CompanyProfile` lost its six address fields; `GET company/profile` returns `main_location`, `PATCH company/profile` ignores
+  the old address fields (not validated any more). `CreateCompany` adds the main location in its transaction.
+- **API.** `GET/POST company/locations`, `PATCH/DELETE company/locations/{id}`, `POST .../{id}/main|deactivate|activate`, as section 3. The row has `address` with `{id, name}` objects (a postal code has
+  `{id, code}`), `coordinates` and `time_zone`. The public page has `locations` in place of `location` (active, main first, no phone). The admin company detail has `locations` (all, read only) and no address fields.
+  Error codes: `location-not-found` 404, `location-in-use`, `location-is-main` and `location-inactive` 409, `location-name-taken`, `location-limit-reached`, `invalid-location-name`, `invalid-location`, `invalid-coordinates` 422.
+- **Interviews.** `location_id` in the schedule fields, the move and the bulk move. `InterviewScheduler::place()` resolves it through the Shared port `CompanyLocations` (street, village, subdistrict, city, province, cut to
+  255): the sent `location` is ignored, a location without an address is 422 `invalid-location`, and another format drops both. The company interview resource and the calendar return `location_id`.
+- **Requisitions.** `location_id` in `SaveRequisitionRequest`, `RequisitionRules` (active location of the tenant, 422 `invalid-location`) and the summary resource. It is re-checked at submit, so a location deactivated
+  after the draft was written blocks the submit until the draft changes. Amendments do not touch it.
+- **Usage check.** `CompanyLocationUsages` (Shared) is filled by `InterviewLocationUsage` (Recruitment) and `RequisitionLocationUsage` (Workforce); delete asks it, the foreign keys are the safety net.
+- **Audit.** One action `company.location_changed` (metadata `location_id`, `change`: `created`, `updated`, `main_set`, `deactivated`, `activated`, `deleted`, and `fields` for an edit), in the `settings`
+  group of the company activity log. Repeating a change (the same values, deactivating an inactive location, making the main one main) audits nothing.
+- **Legacy import.** `DatabaseCompanyWriter` writes the one address as the main location; `CompaniesImporter` reads the legacy `lat` and `long` and keeps both only inside the bounding box (note `coordinates-dropped`
+  otherwise). The synthetic legacy schema of the tests (`tests/Support/LegacySchema.php`) gained the two columns.
+- **Settings.** `company.max_locations` (integer, 100, 1 to 1000, admin only; `SettingsTest` lists it).
+- **Time zone.** `LocationTimeZones` maps the first two digits of the province BPS code (WITA: 51-53, 63-65, 71-76; WIT: 81, 82, 91-96; the rest WIB); `LocationReferences::provinceCodes()` is new.
+
+**Interpretations to confirm:**
+
+1. **Group read rule (section 3) is not coded.** Part D of `erp-organization.md` has no route that reads a tenant's profile, so there is nothing for a group member to read yet; the locations join the group read paths when
+   a group route for the profile exists.
+2. **The legacy columns `companies.lat` and `companies.long`** come from the design; the code reads them as `$row->lat ?? null`, so a missing column imports without coordinates. Whether the production table has these
+   names has not been checked against the read-only schema (decision gate).
+3. **`location_id` is returned to the team only** (company interview resource and calendar), not to the job seeker's interview views.
+4. **Requisition location error code** is `invalid-location`, not `invalid-requisition-field`, as the design says.
+5. **Breaking change for clients:** `address_line` and the five region ids left `GET company/profile` (now `main_location`), the public page `location` became `locations`, and `PATCH company/profile` no longer takes the address.
+6. **Existing rows of interviews** keep `location_id` null; only new interviews with a chosen location carry it.
+

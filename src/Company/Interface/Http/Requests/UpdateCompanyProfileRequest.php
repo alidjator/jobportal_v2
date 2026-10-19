@@ -26,12 +26,6 @@ final class UpdateCompanyProfileRequest extends FormRequest
             'industry_id' => ['sometimes', 'required', 'integer', 'min:1'],
             'organization_type_id' => ['sometimes', 'required', 'integer', 'min:1'],
             'team_size_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'address_line' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'province_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'city_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'subdistrict_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'village_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'postal_code_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'contact_email' => ['sometimes', 'nullable', 'string', 'email', 'max:255'],
             'contact_phone' => ['sometimes', 'nullable', 'string', 'regex:/^[0-9+()\-\s]{6,32}$/'],
             'is_visible' => ['sometimes', 'required', 'boolean'],
@@ -49,7 +43,7 @@ final class UpdateCompanyProfileRequest extends FormRequest
         $changes = [];
 
         foreach ([
-            'name' => 'name', 'website' => 'website', 'bio' => 'bio', 'vision' => 'vision', 'address_line' => 'addressLine',
+            'name' => 'name', 'website' => 'website', 'bio' => 'bio', 'vision' => 'vision',
             'contact_email' => 'contactEmail', 'contact_phone' => 'contactPhone',
         ] as $field => $property) {
             if (array_key_exists($field, $validated)) {
@@ -58,8 +52,7 @@ final class UpdateCompanyProfileRequest extends FormRequest
         }
 
         foreach ([
-            'industry_id' => 'industryId', 'organization_type_id' => 'organizationTypeId', 'team_size_id' => 'teamSizeId', 'province_id' => 'provinceId',
-            'city_id' => 'cityId', 'subdistrict_id' => 'subdistrictId', 'village_id' => 'villageId', 'postal_code_id' => 'postalCodeId',
+            'industry_id' => 'industryId', 'organization_type_id' => 'organizationTypeId', 'team_size_id' => 'teamSizeId',
         ] as $field => $property) {
             if (array_key_exists($field, $validated)) {
                 $changes[$property] = $validated[$field] === null ? null : (int) $validated[$field];

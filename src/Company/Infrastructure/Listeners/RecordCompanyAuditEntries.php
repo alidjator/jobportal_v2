@@ -14,6 +14,7 @@ use Src\Company\Domain\Events\CompanyInvitationResent;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyInvitationUpdated;
+use Src\Company\Domain\Events\CompanyLocationChanged;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberPermissionsChanged;
 use Src\Company\Domain\Events\CompanyMemberReactivated;
@@ -206,6 +207,14 @@ final class RecordCompanyAuditEntries implements ShouldQueue
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED, self::SUBJECT_TYPE, $event->companyId,
             ['before' => $event->before, 'after' => $event->after], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onCompanyLocationChanged(CompanyLocationChanged $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->changedByUserId, AuditAction::COMPANY_LOCATION_CHANGED, self::SUBJECT_TYPE, $event->companyId,
+            ['location_id' => $event->locationId, 'change' => $event->change, 'fields' => $event->fields], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

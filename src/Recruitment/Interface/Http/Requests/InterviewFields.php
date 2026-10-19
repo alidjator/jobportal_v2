@@ -25,6 +25,8 @@ final class InterviewFields
             $prefix.'duration_minutes' => [$presence, 'integer'],
             $prefix.'format' => [$presence, Rule::enum(InterviewFormat::class)],
             $prefix.'location' => ['nullable', 'string', 'max:'.Interview::LOCATION_MAX],
+            // An active work location of the company (`GET company/locations`) for an onsite interview: its address replaces `location`.
+            $prefix.'location_id' => ['nullable', 'integer', 'min:1'],
             $prefix.'meeting_url' => ['nullable', 'string', 'url:http,https', 'max:'.Interview::URL_MAX],
             $prefix.'interviewer_id' => [$presence, 'integer', 'min:1'],
             // Omitted: the job's default kit (or the kit of the interview this one replaces); null: no kit.
@@ -58,7 +60,7 @@ final class InterviewFields
             return true;
         }
 
-        foreach (['starts_at', 'duration_minutes', 'format', 'interviewer_id', 'location', 'meeting_url'] as $field) {
+        foreach (['starts_at', 'duration_minutes', 'format', 'interviewer_id', 'location', 'location_id', 'meeting_url'] as $field) {
             if (isset($interview[$field])) {
                 return true;
             }
@@ -88,6 +90,7 @@ final class InterviewFields
             isset($data['recorded']) ? (bool) $data['recorded'] : null,
             isset($data['note']) ? (string) $data['note'] : null,
             array_key_exists('note', $data),
+            isset($data['location_id']) ? (int) $data['location_id'] : null,
         );
     }
 }

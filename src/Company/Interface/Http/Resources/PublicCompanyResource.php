@@ -6,10 +6,11 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
+use Src\Company\Application\Profile\PublicCompanyLocation;
 use Src\Company\Application\Profile\PublicCompanyView;
 
 /**
- * The public company page. No contact data, no ids of other contexts; the classifications and places are names.
+ * The public company page. No contact data, no ids of other contexts; the classifications and places are names. The active work locations are listed, the main one first.
  *
  * @property PublicCompanyView $resource
  */
@@ -30,14 +31,20 @@ final class PublicCompanyResource extends JsonResource
             'industry' => $view->industry,
             'organization_type' => $view->organizationType,
             'team_size' => $view->teamSize,
-            'location' => [
-                'address_line' => $view->addressLine,
-                'village' => $view->location->village,
-                'subdistrict' => $view->location->subdistrict,
-                'city' => $view->location->city,
-                'province' => $view->location->province,
-                'postal_code' => $view->location->postalCode,
-            ],
+            'locations' => array_map(static fn (PublicCompanyLocation $location): array => [
+                'name' => $location->name,
+                'type' => $location->type->value,
+                'is_main' => $location->isMain,
+                'address' => [
+                    'address_line' => $location->addressLine,
+                    'village' => $location->names->village,
+                    'subdistrict' => $location->names->subdistrict,
+                    'city' => $location->names->city,
+                    'province' => $location->names->province,
+                    'postal_code' => $location->names->postalCode,
+                ],
+                'coordinates' => $location->coordinates === null ? null : ['latitude' => $location->coordinates->latitude, 'longitude' => $location->coordinates->longitude],
+            ], $view->locations),
             'verified' => $view->verifiedAt !== null || $view->internal,
             'verified_at' => $view->verifiedAt?->format(DateTimeInterface::ATOM),
             'logo_url' => $this->imageUrl($view->slug, 'logo', $view->logoVersion),

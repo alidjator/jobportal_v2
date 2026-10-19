@@ -15,6 +15,7 @@ use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CandidateMessageRules;
+use Src\Shared\Application\Company\CompanyLocations;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -36,12 +37,13 @@ final readonly class InterviewScheduler
         private HiringManagerVisibility $visibility,
         private CompanyTeam $team,
         private CandidateMessageRules $messageRules,
+        private CompanyLocations $places,
         private Settings $settings,
         private Clock $clock,
     ) {}
 
     /**
-     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer`, `video-not-enabled`, `voice-not-enabled` or `message-link-not-allowed`
+     * @throws BusinessRuleViolation `invalid-interview`, `invalid-interviewer`, `invalid-location`, `video-not-enabled`, `voice-not-enabled` or `message-link-not-allowed`
      * @throws EntityNotFound the named kit is not one of the company's
      */
     public function schedule(RecruitmentMember $member, Application $application, InterviewInput $input): InterviewChanged
@@ -50,6 +52,7 @@ final readonly class InterviewScheduler
         $applicationId = (int) $application->id;
         $this->assertInterviewer($application->companyId, $input->interviewerId);
         $this->assertFormatAvailable($application->companyId, $input->format);
+        [$location, $locationId] = $this->place($application->companyId, $input->format, $input->location, $input->locationId);
 
         if ($input->noteGiven) {
             $this->messageRules->assertAllowed($application->companyId, $input->note, 'interview.note');
@@ -79,7 +82,7 @@ final readonly class InterviewScheduler
             $input->startsAt,
             $input->durationMinutes,
             $input->format,
-            $input->location,
+            $location,
             $input->meetingUrl,
             $input->interviewerId,
             $member->userId,
@@ -90,6 +93,7 @@ final readonly class InterviewScheduler
             $note,
             $chain === null ? self::newUid() : $chain['uid'],
             $chain === null ? 0 : $chain['sequence'] + 2,
+            $locationId,
         );
 
         if ($previous instanceof Interview) {
@@ -149,6 +153,38 @@ final readonly class InterviewScheduler
 
             throw new BusinessRuleViolation($message, 'voice-not-enabled', extensions: ['errors' => ['format' => [$message]]]);
         }
+    }
+
+    /**
+     * The place of an onsite interview. With a work location the text is its address (cut to the length of an interview location) and the free text is ignored; without one the
+     * free text stays. Another format keeps neither (the interview drops them).
+     *
+     * @return array{0: ?string, 1: ?int} the text and the id of the work location
+     *
+     * @throws BusinessRuleViolation `invalid-location` when the location is not an active location of the company or has no address yet
+     */
+    public function place(int $companyId, InterviewFormat $format, ?string $location, ?int $locationId): array
+    {
+        if ($format !== InterviewFormat::Onsite || $locationId === null) {
+            return [$location, null];
+        }
+
+        $place = $this->places->activeLocation($companyId, $locationId);
+
+        if ($place === null) {
+            throw $this->invalidPlace('The location is not an active location of this company.');
+        }
+
+        if ($place->addressText === '') {
+            throw $this->invalidPlace('The location has no address yet.');
+        }
+
+        return [mb_substr($place->addressText, 0, Interview::LOCATION_MAX), $place->id];
+    }
+
+    private function invalidPlace(string $message): BusinessRuleViolation
+    {
+        return new BusinessRuleViolation($message, 'invalid-location', extensions: ['errors' => ['location_id' => [$message]]]);
     }
 
     /**

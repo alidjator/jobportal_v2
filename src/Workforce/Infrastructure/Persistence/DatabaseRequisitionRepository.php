@@ -160,6 +160,7 @@ final readonly class DatabaseRequisitionRepository implements RequisitionReposit
             'replacement_name' => $requisition->replacementName,
             'replacement_leaving_date' => $requisition->replacementLeavingDate?->format(self::DAY_FORMAT),
             'hiring_manager_user_id' => $requisition->hiringManagerUserId,
+            'location_id' => $requisition->locationId,
             'approval_id' => $requisition->approvalId,
             'decision_reason' => $requisition->decisionReason,
             'closed_reason' => $requisition->closedReason,
@@ -178,6 +179,7 @@ final readonly class DatabaseRequisitionRepository implements RequisitionReposit
             $this->nullableInt($row->salary_max), $row->justification, $row->replacement_name, $this->nullableTime($row->replacement_leaving_date),
             (int) $row->hiring_manager_user_id, (int) $row->requester_id, $this->nullableInt($row->approval_id), $row->decision_reason, $row->closed_reason,
             $this->nullableTime($row->submitted_at), $this->nullableTime($row->decided_at), $this->nullableTime($row->closed_at), new DateTimeImmutable($row->created_at),
+            $this->nullableInt($row->location_id),
         );
     }
 

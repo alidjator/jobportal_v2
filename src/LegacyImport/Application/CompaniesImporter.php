@@ -7,6 +7,7 @@ use DateTimeZone;
 use Src\Company\Domain\CompanySlug;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\TransactionManager;
+use Src\Shared\Domain\Coordinates;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use stdClass;
 
@@ -118,6 +119,8 @@ final readonly class CompaniesImporter implements Importer
         $usedSlugs[$slug] = true;
         $createdAt = $this->time($row->created_at, $context);
 
+        [$latitude, $longitude] = $this->coordinates($row->lat ?? null, $row->long ?? null, $context);
+
         $company = new NewCompany(
             $name,
             $slug,
@@ -131,6 +134,8 @@ final readonly class CompaniesImporter implements Importer
             $teamSize,
             LegacyText::limit(LegacyText::clean($row->address), 255),
             $this->locations->resolve($this->text($row->region), $this->text($row->district), $this->text($row->subdistrict), $this->text($row->kelurahan), $this->text($row->postcode)),
+            $latitude,
+            $longitude,
             (int) $row->visibility === 1,
             $this->verifiedAt($row, $context),
             $createdAt,
@@ -223,6 +228,28 @@ final readonly class CompaniesImporter implements Importer
         }
 
         return (int) $row->is_profile_verified === 1 ? $this->time(null, $context) : null;
+    }
+
+    /**
+     * The legacy coordinates, kept when both are numbers inside the bounding box of Indonesia; otherwise both are left empty, with a note when something was there.
+     *
+     * @return array{0: ?float, 1: ?float}
+     */
+    private function coordinates(mixed $latitude, mixed $longitude, ImportContext $context): array
+    {
+        $given = static fn (mixed $value): bool => $value !== null && trim((string) $value) !== '';
+
+        if (! $given($latitude) && ! $given($longitude)) {
+            return [null, null];
+        }
+
+        if ($given($latitude) && $given($longitude) && is_numeric($latitude) && is_numeric($longitude) && Coordinates::fits((float) $latitude, (float) $longitude)) {
+            return [(float) $latitude, (float) $longitude];
+        }
+
+        $context->report->note(self::ENTITY, 'coordinates-dropped');
+
+        return [null, null];
     }
 
     private function text(mixed $value): ?string

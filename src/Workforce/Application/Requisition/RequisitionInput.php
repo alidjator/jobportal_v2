@@ -24,6 +24,7 @@ final readonly class RequisitionInput
         public ?string $replacementName,
         public ?DateTimeImmutable $replacementLeavingDate,
         public int $hiringManagerUserId,
+        public ?int $locationId = null,
     ) {}
 
     public static function of(Requisition $requisition): self
@@ -31,7 +32,7 @@ final readonly class RequisitionInput
         return new self(
             $requisition->type, $requisition->positionId, $requisition->requestedGradeId, $requisition->hires, $requisition->jobTypeId, $requisition->contractMonths,
             $requisition->targetJoinDate, $requisition->costCentreId, $requisition->salaryMin, $requisition->salaryMax, $requisition->justification, $requisition->replacementName,
-            $requisition->replacementLeavingDate, $requisition->hiringManagerUserId,
+            $requisition->replacementLeavingDate, $requisition->hiringManagerUserId, $requisition->locationId,
         );
     }
 }

@@ -9,27 +9,22 @@ use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A company admin changes some fields of the company profile. `$changes` holds only what changes, keyed by profile property name; a null
- * clears an optional field. Only a changed classification is checked against the masters (an item an admin deactivated later does not
- * block unrelated edits), and the location is always checked as one chain together with the part that is not changing. The name of a verified company
- * is locked (409 `name-locked`); it changes through a name change request (`RequestNameChange`).
+ * A company admin changes some fields of the company profile. `$changes` holds only what changes, keyed by profile property name; a null clears an optional field. Only a changed
+ * classification is checked against the masters (an item an admin deactivated later does not block unrelated edits). The name of a verified company is locked (409 `name-locked`);
+ * it changes through a name change request (`RequestNameChange`). The address is not part of the profile: it is the main work location, edited through the location use cases.
  */
 final readonly class UpdateCompanyProfile
 {
-    private const array LOCATION_FIELDS = ['provinceId', 'cityId', 'subdistrictId', 'villageId', 'postalCodeId'];
-
     public function __construct(
         private CompanyAdminGuard $guard,
         private CompanyRepository $companies,
         private ReferenceValues $references,
-        private LocationReferences $locations,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -39,7 +34,7 @@ final readonly class UpdateCompanyProfile
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws StateConflict `name-locked` when a verified company changes its name
-     * @throws BusinessRuleViolation `unknown-industry`, `unknown-organization-type`, `unknown-team-size` or `invalid-location`
+     * @throws BusinessRuleViolation `unknown-industry`, `unknown-organization-type` or `unknown-team-size`
      */
     public function execute(Actor $actor, array $changes): void
     {
@@ -54,14 +49,6 @@ final readonly class UpdateCompanyProfile
         $this->assertActive($changes, 'teamSizeId', 'team-sizes', 'unknown-team-size', 'The team size does not exist or is not active.');
 
         $profile = $company->profile()->with($changes);
-
-        if (array_intersect(self::LOCATION_FIELDS, array_keys($changes)) !== []
-            && ! $this->locations->isValidChain($profile->provinceId, $profile->cityId, $profile->subdistrictId, $profile->villageId, $profile->postalCodeId)) {
-            throw new BusinessRuleViolation(
-                'The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it.',
-                'invalid-location',
-            );
-        }
 
         $renamed = isset($changes['name']) && $changes['name'] !== $company->name();
 

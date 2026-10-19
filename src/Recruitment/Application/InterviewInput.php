@@ -10,7 +10,8 @@ use Src\Recruitment\Domain\InterviewFormat;
  * a first interview gets the job's default kit for the stage and a new time keeps the kit, the questions and the panel of the interview it replaces.
  * `$participantIds` are the extra panel members, or null when the request did not name any. `$recorded` is null when the request did not say: a new time
  * keeps the flag of the video interview it replaces, and a first interview is not recorded. `$note` is the note for the candidate; `$noteGiven` tells whether the request
- * named one (`$note` null then clears it), and when it did not a new time keeps the note of the interview it replaces.
+ * named one (`$note` null then clears it), and when it did not a new time keeps the note of the interview it replaces. `$locationId` is a work location of the company for an
+ * onsite interview: its address replaces `$location`.
  */
 final readonly class InterviewInput
 {
@@ -28,5 +29,6 @@ final readonly class InterviewInput
         public ?bool $recorded = null,
         public ?string $note = null,
         public bool $noteGiven = false,
+        public ?int $locationId = null,
     ) {}
 }

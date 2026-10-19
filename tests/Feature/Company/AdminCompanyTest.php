@@ -231,6 +231,10 @@ final class AdminCompanyTest extends FeatureTestCase
             'logo_path' => 'company/logos/abc.jpg', 'created_by_admin_id' => $this->seededAdminId(), 'created_at' => '2026-09-01 10:00:00',
         ]);
         $this->member($id, 'andi@example.test', 'company_admin');
+        DB::table('company_locations')->insert([
+            ['company_id' => $id, 'name' => 'Kantor Pusat', 'type' => 'head_office', 'is_main' => true, 'status' => 'active', 'address_line' => 'Jl. Merdeka 1', 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $id, 'name' => 'Pabrik Lama', 'type' => 'site', 'is_main' => false, 'status' => 'inactive', 'address_line' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
         $invitation = fn (string $email, string $hash, string $sent, string $expires, array $state = []) => DB::table('company_invitations')->insert([
             'company_id' => $id, 'email' => $email, 'role' => 'member', 'token_hash' => str_repeat($hash, 64), 'sent_at' => $sent, 'expires_at' => $expires,
             'accepted_at' => null, 'revoked_at' => null, 'created_at' => now(), 'updated_at' => now(), ...$state,
@@ -256,7 +260,13 @@ final class AdminCompanyTest extends FeatureTestCase
             ->assertJsonPath('data.created_by_admin_id', $this->seededAdminId())
             ->assertJsonPath('data.created_at', '2026-09-01T10:00:00+00:00')
             ->assertJsonPath('data.suspended_at', null)
-            ->assertJsonPath('data.suspension_reason', null);
+            ->assertJsonPath('data.suspension_reason', null)
+            // The work locations are read only here: the active ones first, the main one first among them.
+            ->assertJsonPath('data.locations.0.name', 'Kantor Pusat')
+            ->assertJsonPath('data.locations.0.address.address_line', 'Jl. Merdeka 1')
+            ->assertJsonPath('data.locations.1.name', 'Pabrik Lama')
+            ->assertJsonPath('data.locations.1.status', 'inactive');
+        $this->assertArrayNotHasKey('main_location', $response->json('data'));
         $this->assertArrayNotHasKey('logo_url', $response->json('data'));
         $this->assertArrayNotHasKey('banner_url', $response->json('data'));
     }

@@ -101,6 +101,8 @@ final class AuditAction
 
     public const string COMPANY_SETTINGS_UPDATED = 'company.settings_updated';
 
+    public const string COMPANY_LOCATION_CHANGED = 'company.location_changed';
+
     public const string APPLICATION_RESUME_DOWNLOADED = 'application.resume_downloaded';
 
     public const string CANDIDATE_RESUME_DOWNLOADED = 'candidate.resume_downloaded';

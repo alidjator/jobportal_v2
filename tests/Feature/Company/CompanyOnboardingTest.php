@@ -148,6 +148,11 @@ final class CompanyOnboardingTest extends FeatureTestCase
         $this->assertSame($this->organizationTypeId, (int) $company->organization_type_id);
         $this->assertNotNull($company->created_by_admin_id);
 
+        // Every company starts with one main work location, without an address.
+        $locations = DB::table('company_locations')->where('company_id', $company->id)->get();
+        $this->assertCount(1, $locations);
+        $this->assertSame(['Kantor Pusat', 'head_office', true, 'active', null], [$locations[0]->name, $locations[0]->type, (bool) $locations[0]->is_main, $locations[0]->status, $locations[0]->address_line]);
+
         $invitation = DB::table('company_invitations')->first();
         $this->assertSame($company->id, $invitation->company_id);
         $this->assertSame('owner@example.test', $invitation->email);

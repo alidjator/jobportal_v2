@@ -103,6 +103,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_invitations' => ['company_id'],
             'assessment_company_batteries' => ['company_id'],
         ],
+        'company_locations' => ['recruitment_interviews' => ['location_id'], 'workforce_requisitions' => ['location_id']],
         'organization_legal_entities' => ['company_companies' => ['legal_entity_id']],
         'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id'], 'job_reports' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],

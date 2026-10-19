@@ -22,6 +22,7 @@ use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
 use Src\Company\Application\Team\MemberNoticeSender;
 use Src\Company\Application\Verification\CompanyVerificationBadge;
 use Src\Company\Domain\CompanyDocumentRepository;
+use Src\Company\Domain\CompanyLocationRepository;
 use Src\Company\Domain\CompanyMemberRepository;
 use Src\Company\Domain\CompanyRepository;
 use Src\Company\Domain\DocumentTypeRepository;
@@ -36,6 +37,7 @@ use Src\Company\Domain\Events\CompanyInvitationResent;
 use Src\Company\Domain\Events\CompanyInvitationRevoked;
 use Src\Company\Domain\Events\CompanyInvitationSent;
 use Src\Company\Domain\Events\CompanyInvitationUpdated;
+use Src\Company\Domain\Events\CompanyLocationChanged;
 use Src\Company\Domain\Events\CompanyMemberJoined;
 use Src\Company\Domain\Events\CompanyMemberPermissionsChanged;
 use Src\Company\Domain\Events\CompanyMemberReactivated;
@@ -71,6 +73,7 @@ use Src\Company\Infrastructure\Mail\MailInvitationSender;
 use Src\Company\Infrastructure\Mail\MailMemberNoticeSender;
 use Src\Company\Infrastructure\Persistence\DatabaseAdminCompanyReader;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyDocumentRepository;
+use Src\Company\Infrastructure\Persistence\DatabaseCompanyLocationRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
@@ -81,6 +84,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyLetterheads;
+use Src\Company\Infrastructure\Persistence\RepositoryCompanyLocations;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyTeam;
 use Src\Company\Infrastructure\Persistence\RepositoryMemberSignInGuard;
 use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
@@ -92,6 +96,8 @@ use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyLetterheads;
+use Src\Shared\Application\Company\CompanyLocations;
+use Src\Shared\Application\Company\CompanyLocationUsages;
 use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyMessageTexts;
@@ -126,6 +132,8 @@ final class CompanyServiceProvider extends ContextServiceProvider
         CompanyMemberDeletionGuard::class => LastCompanyAdminDeletionGuard::class,
         PublicCompanies::class => RepositoryPublicCompanies::class,
         CompanyLetterheads::class => RepositoryCompanyLetterheads::class,
+        CompanyLocationRepository::class => DatabaseCompanyLocationRepository::class,
+        CompanyLocations::class => RepositoryCompanyLocations::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
         CompanyMembershipResolver::class => MemberRepositoryMembershipResolver::class,
         MemberTwoFactorPolicy::class => CompanyTwoFactorPolicy::class,
@@ -143,6 +151,11 @@ final class CompanyServiceProvider extends ContextServiceProvider
         MessageDefaultsRepository::class => DatabaseMessageDefaultsRepository::class,
         CandidateMessageRules::class => CompanyCandidateMessageRules::class,
         CompanyMessageTexts::class => RepositoryCompanyMessageTexts::class,
+    ];
+
+    /** @var array<class-string, class-string> One list of the contexts that point to work locations; each adds its own (`CompanyLocationUsage`). */
+    public array $singletons = [
+        CompanyLocationUsages::class => CompanyLocationUsages::class,
     ];
 
     public function register(): void
@@ -210,6 +223,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyInvitationResent::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationResent']);
         Event::listen(CompanyEmailDomainsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyEmailDomainsChanged']);
         Event::listen(CompanyMessageDefaultsChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyMessageDefaultsChanged']);
+        Event::listen(CompanyLocationChanged::class, [RecordCompanyAuditEntries::class, 'onCompanyLocationChanged']);
         Event::listen(CompanyDocumentSubmitted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentSubmitted']);
         Event::listen(CompanyDocumentDeleted::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentDeleted']);
         Event::listen(CompanyDocumentApproved::class, [RecordCompanyAuditEntries::class, 'onCompanyDocumentApproved']);

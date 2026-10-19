@@ -44,6 +44,10 @@ final class CompanyProfileTest extends FeatureTestCase
             'name' => 'PT Maju Bersama', 'slug' => 'pt-maju-bersama', 'status' => 'active', 'industry_id' => $this->industryId,
             'organization_type_id' => $this->organizationTypeId, 'created_at' => now(), 'updated_at' => now(),
         ]);
+        // Every company has a main work location; the address lives there.
+        DB::table('company_locations')->insert([
+            'company_id' => $this->companyId, 'name' => 'Kantor Pusat', 'type' => 'head_office', 'is_main' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
         $admin = $this->makeMember('Andi Admin', 'andi@example.test', 'company_admin');
         $recruiter = $this->makeMember('Rina Rekruter', 'rina@example.test', 'recruiter');
         $this->adminToken = $admin->createToken('phone', ['*'], now()->addDay())->plainTextToken;
@@ -135,9 +139,10 @@ final class CompanyProfileTest extends FeatureTestCase
     {
         DB::table('company_companies')->update([
             'website' => 'https://maju.example', 'established_on' => '2015-03-17', 'bio' => "**Maju** bersama\n\n- satu", 'vision' => 'Jadi yang terbaik',
-            'team_size_id' => $this->teamSizeId, 'address_line' => 'Jl. Merdeka 1', 'province_id' => $this->place['province'], 'city_id' => $this->place['city'],
+            'team_size_id' => $this->teamSizeId,
             'contact_email' => 'hr@maju.example', 'contact_phone' => '+62 21 555 0100', 'is_visible' => false, 'verified_at' => '2026-10-01 08:30:00',
         ]);
+        DB::table('company_locations')->update(['address_line' => 'Jl. Merdeka 1', 'province_id' => $this->place['province'], 'city_id' => $this->place['city']]);
 
         foreach ([$this->adminToken, $this->recruiterToken] as $token) {
             $this->api('GET', '/profile', [], $token)->assertOk()
@@ -150,8 +155,12 @@ final class CompanyProfileTest extends FeatureTestCase
                 ->assertJsonPath('data.bio', "**Maju** bersama\n\n- satu")
                 ->assertJsonPath('data.industry_id', $this->industryId)
                 ->assertJsonPath('data.team_size_id', $this->teamSizeId)
-                ->assertJsonPath('data.province_id', $this->place['province'])
-                ->assertJsonPath('data.village_id', null)
+                ->assertJsonPath('data.main_location.name', 'Kantor Pusat')
+                ->assertJsonPath('data.main_location.is_main', true)
+                ->assertJsonPath('data.main_location.address.address_line', 'Jl. Merdeka 1')
+                ->assertJsonPath('data.main_location.address.province', ['id' => $this->place['province'], 'name' => 'ACEH'])
+                ->assertJsonPath('data.main_location.address.village', null)
+                ->assertJsonPath('data.main_location.time_zone', 'Asia/Jakarta')
                 ->assertJsonPath('data.contact_email', 'hr@maju.example')
                 ->assertJsonPath('data.contact_phone', '+62 21 555 0100')
                 ->assertJsonPath('data.is_visible', false)
@@ -198,7 +207,7 @@ final class CompanyProfileTest extends FeatureTestCase
 
         $this->update([
             'name' => '  PT Maju Jaya ', 'bio' => "Line one\n\nLine two", 'vision' => 'Vision', 'established_on' => '2015-03-17', 'team_size_id' => $this->teamSizeId,
-            'address_line' => 'Jl. Merdeka 1', 'contact_email' => 'hr@maju.example', 'is_visible' => false,
+            'contact_email' => 'hr@maju.example', 'is_visible' => false,
         ])->assertNoContent();
 
         $row = $this->row();
@@ -247,7 +256,6 @@ final class CompanyProfileTest extends FeatureTestCase
             'vision too long' => [['vision' => str_repeat('a', 5001)], 'vision'],
             'industry cleared' => [['industry_id' => null], 'industry_id'],
             'organization type not a number' => [['organization_type_id' => 'x'], 'organization_type_id'],
-            'address too long' => [['address_line' => str_repeat('a', 256)], 'address_line'],
             'contact email invalid' => [['contact_email' => 'not-an-email'], 'contact_email'],
             'phone with letters' => [['contact_phone' => '021-ABC-0100'], 'contact_phone'],
             'phone too short' => [['contact_phone' => '12345'], 'contact_phone'],
@@ -298,62 +306,16 @@ final class CompanyProfileTest extends FeatureTestCase
         $this->update(['industry_id' => $this->industryId, 'bio' => 'Same industry again'])->assertStatus(422);
     }
 
-    // ----- location -----
+    // ----- the address is the main location -----
 
-    public function test_a_matching_location_chain_is_stored_and_can_be_cleared(): void
+    public function test_the_profile_no_longer_changes_the_address(): void
     {
-        $this->update($this->fullLocation())->assertNoContent();
+        $this->update(['address_line' => 'Jl. Baru 2', ...$this->fullLocation(), 'bio' => 'New'])->assertNoContent();
 
-        $row = $this->row();
-        $this->assertSame($this->place['province'], (int) $row->province_id);
-        $this->assertSame($this->place['postal'], (int) $row->postal_code_id);
-
-        $this->update(['province_id' => null, 'city_id' => null, 'subdistrict_id' => null, 'village_id' => null, 'postal_code_id' => null])->assertNoContent();
-        $this->assertNull($this->row()->province_id);
-        $this->assertNull($this->row()->postal_code_id);
-    }
-
-    public function test_a_chain_that_does_not_match_is_refused(): void
-    {
-        $other = $this->makePlace('12', 'SUMATERA UTARA', 'MEDAN', 'MEDAN BARAT', 'KARANG BEROMBAK', '20118');
-
-        // The city belongs to another province.
-        $this->update(['province_id' => $this->place['province'], 'city_id' => $other['city']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        // A village of another city.
-        $this->update([...$this->fullLocation(), 'village_id' => $other['village']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        // A postal code of another village.
-        $this->update([...$this->fullLocation(), 'postal_code_id' => $other['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        // Ids that do not exist.
-        $this->update(['province_id' => 999999])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-
-        $this->assertNull($this->row()->province_id);
-    }
-
-    public function test_a_level_needs_the_levels_above_it(): void
-    {
-        $this->update(['city_id' => $this->place['city']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        $this->update(['province_id' => $this->place['province'], 'subdistrict_id' => $this->place['subdistrict']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        $this->update(['postal_code_id' => $this->place['postal']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-
-        $this->update(['province_id' => $this->place['province'], 'city_id' => $this->place['city']])->assertNoContent();
-    }
-
-    public function test_a_partial_location_change_is_checked_together_with_the_stored_rest(): void
-    {
-        $this->update($this->fullLocation())->assertNoContent();
-        $other = $this->makePlace('12', 'SUMATERA UTARA', 'MEDAN', 'MEDAN BARAT', 'KARANG BEROMBAK', '20118');
-
-        // Changing only the province leaves the stored city under the wrong province.
-        $this->update(['province_id' => $other['province']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-location');
-        // Sending the whole new chain works.
-        $this->update([
-            'province_id' => $other['province'], 'city_id' => $other['city'], 'subdistrict_id' => $other['subdistrict'],
-            'village_id' => $other['village'], 'postal_code_id' => $other['postal'],
-        ])->assertNoContent();
-
-        $this->assertSame($other['city'], (int) $this->row()->city_id);
-        // The street address is not part of the chain.
-        $this->update(['address_line' => 'Jl. Baru 2'])->assertNoContent();
+        $main = DB::table('company_locations')->where('company_id', $this->companyId)->first();
+        $this->assertNull($main->address_line);
+        $this->assertNull($main->province_id);
+        $this->assertSame('New', $this->row()->bio);
     }
 
     // ----- slug -----
@@ -447,9 +409,10 @@ final class CompanyProfileTest extends FeatureTestCase
     {
         $this->update([
             'website' => 'https://maju.example', 'established_on' => '2015-03-17', 'bio' => 'Bio **bold**', 'vision' => 'Vision', 'team_size_id' => $this->teamSizeId,
-            'address_line' => 'Jl. Merdeka 1', ...$this->fullLocation(), 'contact_email' => 'hr@maju.example', 'contact_phone' => '+62 21 555 0100',
+            'contact_email' => 'hr@maju.example', 'contact_phone' => '+62 21 555 0100',
         ])->assertNoContent();
         DB::table('company_companies')->update(['verified_at' => '2026-10-01 08:30:00']);
+        DB::table('company_locations')->update(['address_line' => 'Jl. Merdeka 1', 'phone' => '021 000 111', ...$this->fullLocation(), 'latitude' => 5.55, 'longitude' => 95.32]);
 
         $english = $this->publicPage()->assertOk();
         $english->assertJsonPath('data.name', 'PT Maju Bersama')
@@ -461,12 +424,16 @@ final class CompanyProfileTest extends FeatureTestCase
             ->assertJsonPath('data.industry', 'Technology')
             ->assertJsonPath('data.organization_type', 'Private company')
             ->assertJsonPath('data.team_size', '11-50 people')
-            ->assertJsonPath('data.location.address_line', 'Jl. Merdeka 1')
-            ->assertJsonPath('data.location.village', 'LAMBUNG')
-            ->assertJsonPath('data.location.subdistrict', 'MEURAXA')
-            ->assertJsonPath('data.location.city', 'BANDA ACEH')
-            ->assertJsonPath('data.location.province', 'ACEH')
-            ->assertJsonPath('data.location.postal_code', '23116')
+            ->assertJsonPath('data.locations.0.name', 'Kantor Pusat')
+            ->assertJsonPath('data.locations.0.type', 'head_office')
+            ->assertJsonPath('data.locations.0.is_main', true)
+            ->assertJsonPath('data.locations.0.address.address_line', 'Jl. Merdeka 1')
+            ->assertJsonPath('data.locations.0.address.village', 'LAMBUNG')
+            ->assertJsonPath('data.locations.0.address.subdistrict', 'MEURAXA')
+            ->assertJsonPath('data.locations.0.address.city', 'BANDA ACEH')
+            ->assertJsonPath('data.locations.0.address.province', 'ACEH')
+            ->assertJsonPath('data.locations.0.address.postal_code', '23116')
+            ->assertJsonPath('data.locations.0.coordinates', ['latitude' => 5.55, 'longitude' => 95.32])
             ->assertJsonPath('data.verified', true)
             ->assertJsonPath('data.verified_at', '2026-10-01T08:30:00+00:00');
 
@@ -477,6 +444,7 @@ final class CompanyProfileTest extends FeatureTestCase
         $body = json_encode($english->json());
         $this->assertStringNotContainsString('hr@maju.example', $body);
         $this->assertStringNotContainsString('555 0100', $body);
+        $this->assertStringNotContainsString('021 000 111', $body);
         $this->assertArrayNotHasKey('contact_email', $english->json('data'));
         $this->assertArrayNotHasKey('contact_phone', $english->json('data'));
         $this->assertArrayNotHasKey('id', $english->json('data'));
@@ -487,8 +455,10 @@ final class CompanyProfileTest extends FeatureTestCase
         $this->publicPage()->assertOk()
             ->assertJsonPath('data.bio', null)
             ->assertJsonPath('data.team_size', null)
-            ->assertJsonPath('data.location.province', null)
-            ->assertJsonPath('data.location.postal_code', null)
+            ->assertJsonPath('data.locations.0.name', 'Kantor Pusat')
+            ->assertJsonPath('data.locations.0.address.province', null)
+            ->assertJsonPath('data.locations.0.address.postal_code', null)
+            ->assertJsonPath('data.locations.0.coordinates', null)
             ->assertJsonPath('data.verified', false)
             ->assertJsonPath('data.verified_at', null)
             ->assertJsonPath('data.industry', 'Technology');

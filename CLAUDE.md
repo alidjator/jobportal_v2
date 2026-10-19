@@ -44,7 +44,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   old `test_` table prefix), with the same table names and no prefix; credentials are only in the git-ignored `.env.testing`. A guard aborts any test run or test migration whose
   database is not `jobportal_v2_test`.
 - **Foreign keys** (decided by the user, 2026-10-05, widened 2026-10-10 in `docs/design/cross-context-foreign-keys.md`): a column that references `reference_*`, `company_companies`,
-  `identity_users`, `identity_admins` or `job_jobs` has a `RESTRICT` foreign key, also across contexts (only `recruitment_job_questions.job_id` is `CASCADE`). Never on logs, audit,
+  `company_locations`, `identity_users`, `identity_admins` or `job_jobs` has a `RESTRICT` foreign key, also across contexts (only `recruitment_job_questions.job_id` is `CASCADE`). Never on logs, audit,
   notifications, `*_daily` tables, the legacy id map, match deliveries or polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).
 - A new migration runs **twice**, both by the user (see the hard rule on checks): `php artisan test:database:migrate --env=testing` (test database), then `php artisan migrate` (real tables, run by the user, no approval is asked). Tell the user when a migration is new.
 - The production karir.pkp database is reachable only through the read-only account (`KARIR_PKP_DB_*`): **schema only, never read data** without explicit approval.

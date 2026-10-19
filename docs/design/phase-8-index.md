@@ -34,6 +34,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | `phase-8-talent-pool.md` (#18) | coded 2026-10-18 (`000170`, `000171`): consent when applying, saving applicants, invitations from the pool (single and bulk), the richer list and the entry page; checked (`composer check` green, 3182 tests); open: the skip code `candidate-restricted` (waits for #14) |
 | `phase-8-applicant-search.md` (#19) | coded 2026-10-19 (`000172`), committed `f760853` on `master`, checked (`composer check` green, 3205 tests): facet table and its command, keyword search, filters and sorts on both lists, `GET company/applications`; open: run `recruitment:build-application-facets` after the final import; interpretations to confirm are in its "Coded" section |
 | `phase-8-interview-results.md` (#21) | coded 2026-10-19 (`000173`), committed `b06a4e9` on `master`, checked (`composer check`: the suite green apart from the flaky `'42'` assertion of `TestAuthoringTest`, which passes on rerun): scale anchors, duplicating a kit, the comparison `GET company/jobs/{id}/interview-results` and the interview columns of the applicant export; open: the assessment field of a comparison row (waits for #23); interpretations to confirm are in its "Coded" section |
+| `company-locations.md` (#27) | coded and checked 2026-10-19 (`000174`, `000175`; `composer check` green): `company_locations` with the main location per company, the locations API, `location_id` on interviews and requisitions, the legacy import of address and coordinates; open: the group read rule (no group route reads a profile yet); interpretations to confirm are in its "Coded" section |
 
 ## Next coding (in this order)
 
@@ -43,7 +44,6 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 13 | **new** hand-off to Employee (after `phase-8-hiring.md`) | a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | #14: the pending rejections of the rejections design carry the candidate message |
-| 27 | `company-locations.md` (designed 2026-10-19): `company_locations` per tenant (main location from the company address, whose columns are dropped), the locations API, optional `location_id` on interviews and requisitions; migrations `000174`, `000175` | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
 | 28 | job `locations` array in the API, filled with one item from today's province and city (shape: `company-locations.md` decision 12) | after #27, before the front end; jobs with several locations come with #20 |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
 | 22 | `phase-8-assessment-automation.md` | |

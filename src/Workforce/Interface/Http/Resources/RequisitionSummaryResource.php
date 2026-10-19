@@ -33,6 +33,7 @@ class RequisitionSummaryResource extends JsonResource
             'target_join_date' => $requisition->targetJoinDate->format('Y-m-d'),
             'fiscal_year' => $requisition->fiscalYear,
             'cost_centre_id' => $requisition->costCentreId,
+            'location_id' => $requisition->locationId,
             ...($this->resource->showCosts ? ['salary_min' => $requisition->salaryMin, 'salary_max' => $requisition->salaryMax] : []),
             'justification' => $requisition->justification,
             'replacement' => $requisition->replacementName === null ? null : ['name' => $requisition->replacementName, 'leaving_date' => $requisition->replacementLeavingDate?->format('Y-m-d')],

@@ -29,14 +29,27 @@ final readonly class DatabaseCompanyWriter implements CompanyWriter
             'industry_id' => $company->industryId,
             'organization_type_id' => $company->organizationTypeId,
             'team_size_id' => $company->teamSizeId,
+            'is_visible' => $company->isVisible,
+            'verified_at' => $company->verifiedAt,
+            'created_at' => $company->createdAt,
+            'updated_at' => $company->updatedAt,
+        ]);
+
+        // The legacy company has one address: it becomes the main work location ("Kantor Pusat"), written the way a new company gets it.
+        $this->connection->table('company_locations')->insert([
+            'company_id' => $id,
+            'name' => 'Kantor Pusat',
+            'type' => 'head_office',
+            'is_main' => true,
+            'status' => 'active',
             'address_line' => $company->addressLine,
             'province_id' => $company->location->provinceId,
             'city_id' => $company->location->cityId,
             'subdistrict_id' => $company->location->subdistrictId,
             'village_id' => $company->location->villageId,
             'postal_code_id' => $company->location->postalCodeId,
-            'is_visible' => $company->isVisible,
-            'verified_at' => $company->verifiedAt,
+            'latitude' => $company->latitude,
+            'longitude' => $company->longitude,
             'created_at' => $company->createdAt,
             'updated_at' => $company->updatedAt,
         ]);

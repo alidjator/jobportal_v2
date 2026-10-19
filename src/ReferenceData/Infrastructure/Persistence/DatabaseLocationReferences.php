@@ -69,6 +69,21 @@ final readonly class DatabaseLocationReferences implements LocationReferences
         return $this->namesOf('reference_provinces', $provinceIds);
     }
 
+    public function provinceCodes(array $provinceIds): array
+    {
+        $codes = [];
+
+        if ($provinceIds === []) {
+            return $codes;
+        }
+
+        foreach ($this->connection->table('reference_provinces')->whereIn('id', array_values(array_unique($provinceIds)))->get(['id', 'bps_code']) as $row) {
+            $codes[(int) $row->id] = (string) $row->bps_code;
+        }
+
+        return $codes;
+    }
+
     public function provinceOfCity(int $cityId): ?int
     {
         $id = $this->connection->table('reference_cities')->where('id', $cityId)->value('province_id');

@@ -48,6 +48,17 @@ final class InterviewTest extends TestCase
         $this->assertSame(45, $online->durationMinutes());
     }
 
+    public function test_an_onsite_interview_keeps_its_work_location_and_the_other_formats_drop_it(): void
+    {
+        $onsite = Interview::schedule(7, $this->now->modify('+2 days'), 45, InterviewFormat::Onsite, 'Jl. Setiabudi 1', null, 3, 2, $this->now, locationId: 12);
+        $online = Interview::schedule(7, $this->now->modify('+2 days'), 45, InterviewFormat::Online, null, 'https://a.test', 3, 2, $this->now, locationId: 12);
+        $free = Interview::schedule(7, $this->now->modify('+2 days'), 45, InterviewFormat::Onsite, 'Room 2', null, 3, 2, $this->now);
+
+        $this->assertSame(12, $onsite->locationId);
+        $this->assertNull($online->locationId);
+        $this->assertNull($free->locationId);
+    }
+
     private function video(bool $recorded): Interview
     {
         return Interview::schedule(7, $this->now->modify('+2 days'), 45, InterviewFormat::Video, 'Somewhere', 'https://a.test', 3, 2, $this->now, recorded: $recorded);

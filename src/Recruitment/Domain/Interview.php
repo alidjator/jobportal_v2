@@ -50,6 +50,8 @@ final readonly class Interview
         public ?string $note = null,
         public string $calendarUid = '',
         public int $calendarSequence = 0,
+        /** The work location the onsite address was copied from (`company_locations`); null for free text or another format. The text in `location` stays as it was sent. */
+        public ?int $locationId = null,
     ) {}
 
     /**
@@ -74,6 +76,7 @@ final readonly class Interview
         ?string $note = null,
         string $calendarUid = '',
         int $calendarSequence = 0,
+        ?int $locationId = null,
     ): self {
         $location = self::text($location);
         $meetingUrl = self::text($meetingUrl);
@@ -117,6 +120,7 @@ final readonly class Interview
             note: $note,
             calendarUid: $calendarUid,
             calendarSequence: $calendarSequence,
+            locationId: $format === InterviewFormat::Onsite ? $locationId : null,
         );
     }
 
@@ -365,6 +369,7 @@ final readonly class Interview
             $noteChanged ? $note : $this->note,
             $this->calendarUid,
             $calendarSequence ?? $this->calendarSequence,
+            $this->locationId,
         );
     }
 }

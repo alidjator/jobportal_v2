@@ -100,7 +100,6 @@ final class CompaniesImporterTest extends FeatureTestCase
         $this->assertSame($this->industry, (int) $company->industry_id);
         $this->assertSame($this->organizationType, (int) $company->organization_type_id);
         $this->assertSame($this->teamSize, (int) $company->team_size_id);
-        $this->assertSame('Jl. Merdeka 1', $company->address_line);
         $this->assertSame(1, (int) $company->is_visible);
         $this->assertNull($company->verified_at);
         $this->assertNull($company->logo_path);
@@ -113,6 +112,13 @@ final class CompaniesImporterTest extends FeatureTestCase
         $this->assertSame([(int) $company->id, $newOwner, 'company_admin'], [(int) $member->company_id, (int) $member->user_id, $member->role]);
         $this->assertSame((int) $company->id, (int) DB::table('legacyimport_id_map')->where('entity', 'company')->value('new_id'));
         $this->assertSame(1, $this->entity($report)['imported']);
+
+        // The one legacy address becomes the main work location.
+        $main = DB::table('company_locations')->where('company_id', $company->id)->get();
+        $this->assertCount(1, $main);
+        $this->assertSame(['Kantor Pusat', 'head_office', true, 'active', 'Jl. Merdeka 1'], [$main[0]->name, $main[0]->type, (bool) $main[0]->is_main, $main[0]->status, $main[0]->address_line]);
+        $this->assertNull($main[0]->latitude);
+        $this->assertSame('2023-01-02 03:04:05', $main[0]->created_at);
     }
 
     public function test_a_company_keeps_its_badge_from_the_legacy_time_or_flag(): void
@@ -137,10 +143,25 @@ final class CompaniesImporterTest extends FeatureTestCase
 
         $this->import();
 
-        $rows = DB::table('company_companies')->orderBy('id')->get(['province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id'])->map(fn ($row): array => array_map(fn ($id): ?int => $id === null ? null : (int) $id, (array) $row))->all();
+        $rows = DB::table('company_locations')->orderBy('id')->get(['province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id'])->map(fn ($row): array => array_map(fn ($id): ?int => $id === null ? null : (int) $id, (array) $row))->all();
         $this->assertSame([$chain['province_id'], $chain['city_id'], $chain['subdistrict_id'], $chain['village_id'], $chain['postal_code_id']], array_values($rows[0]));
         $this->assertSame([$chain['province_id'], null, null, null, null], array_values($rows[1]));
         $this->assertSame([null, null, null, null, null], array_values($rows[2]));
+    }
+
+    public function test_coordinates_are_kept_when_both_are_inside_indonesia_and_dropped_with_a_note_otherwise(): void
+    {
+        $this->owner('PT Titik', ['lat' => '-6.914744', 'long' => '107.609810']);
+        $this->owner('PT Luar', ['lat' => '51.5', 'long' => '-0.12']);
+        $this->owner('PT Separuh', ['lat' => '-6.9']);
+        $this->owner('PT Teks', ['lat' => 'north', 'long' => 'east']);
+        $this->owner('PT Kosong');
+
+        $report = $this->entity($this->import());
+
+        $points = DB::table('company_locations')->orderBy('id')->get(['latitude', 'longitude'])->map(fn ($row): array => [$row->latitude === null ? null : (float) $row->latitude, $row->longitude === null ? null : (float) $row->longitude])->all();
+        $this->assertSame([[-6.914744, 107.60981], [null, null], [null, null], [null, null], [null, null]], $points);
+        $this->assertSame(3, $report['notes']['coordinates-dropped']);
     }
 
     public function test_an_invalid_website_date_or_team_size_is_emptied_with_a_note(): void

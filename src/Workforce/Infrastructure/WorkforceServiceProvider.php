@@ -7,6 +7,7 @@ use Src\Shared\Application\Approval\ApprovalGranted;
 use Src\Shared\Application\Approval\ApprovalRejected;
 use Src\Shared\Application\Approval\ApprovalReturned;
 use Src\Shared\Application\Approval\ApprovalSubjectCatalog;
+use Src\Shared\Application\Company\CompanyLocationUsages;
 use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -21,6 +22,7 @@ use Src\Workforce\Infrastructure\Listeners\ApplyApprovalOutcome;
 use Src\Workforce\Infrastructure\Listeners\RecordWorkforceAuditEntries;
 use Src\Workforce\Infrastructure\Persistence\DatabasePlanRepository;
 use Src\Workforce\Infrastructure\Persistence\DatabaseRequisitionRepository;
+use Src\Workforce\Infrastructure\Persistence\RequisitionLocationUsage;
 
 /** The Workforce context: manpower plans and requisitions of the internal tenants (`docs/design/erp-requisitions.md`). */
 final class WorkforceServiceProvider extends ContextServiceProvider
@@ -36,6 +38,10 @@ final class WorkforceServiceProvider extends ContextServiceProvider
     {
         $this->callAfterResolving(SettingsCatalog::class, function (SettingsCatalog $catalog): void {
             $catalog->add(...WorkforceSettings::definitions());
+        });
+
+        $this->callAfterResolving(CompanyLocationUsages::class, function (CompanyLocationUsages $usages): void {
+            $usages->add($this->app->make(RequisitionLocationUsage::class));
         });
 
         $this->callAfterResolving(ApprovalSubjectCatalog::class, function (ApprovalSubjectCatalog $catalog): void {

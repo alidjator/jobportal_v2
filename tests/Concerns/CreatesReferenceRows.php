@@ -77,10 +77,20 @@ trait CreatesReferenceRows
     {
         $existing = DB::table('company_companies')->where('slug', $slug)->value('id');
 
-        return $existing !== null ? (int) $existing : (int) DB::table('company_companies')->insertGetId([
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $id = (int) DB::table('company_companies')->insertGetId([
             'name' => strtoupper($slug), 'slug' => $slug, 'status' => 'active', 'industry_id' => $this->industryId(),
             'organization_type_id' => $this->organizationTypeId(), 'created_at' => now(), 'updated_at' => now(),
         ]);
+        // Every company has a main work location.
+        DB::table('company_locations')->insert([
+            'company_id' => $id, 'name' => 'Kantor Pusat', 'type' => 'head_office', 'is_main' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return $id;
     }
 
     protected function userRowId(string $email = 'someone@example.test'): int

@@ -140,6 +140,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-attachment` | 422 | Assessment, Messaging | The file must be a PDF, a JPEG or a PNG. |
 | `invalid-calendar-range` | 422 | Dashboard |  |
 | `invalid-column` | 422 | Assessment |  |
+| `invalid-coordinates` | 422 | Company, Shared | Give both the latitude and the longitude, or neither. |
 | `invalid-cost-centre` | 422 | Organization | The cost centre is not an active cost centre of the legal entity. |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
 | `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
@@ -177,7 +178,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-letter` | 422 | Recruitment | The letter must be a PDF file. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
-| `invalid-location` | 422 | Company, JobSeeker, Organization | The location is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
+| `invalid-location` | 422 | Company, JobSeeker, Organization, Recruitment, Workforce | The address is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
+| `invalid-location-name` | 422 | Company | The location name must have 1 to 100 characters. |
 | `invalid-name` | 422 | JobAlert |  |
 | `invalid-name-change` | 422 | Company | The name change request is not valid. |
 | `invalid-navigation` | 422 | Assessment |  |
@@ -269,6 +271,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-entity-has-tenant` | 409 | Organization | The legal entity already has a tenant. |
 | `legal-entity-inactive` | 409 | Organization | The legal entity is inactive. |
 | `legal-entity-name-taken` | 409 | Organization | The group already has a legal entity with this name. |
+| `location-in-use` | 409 | Company | Something still points to this location: deactivate it instead. |
+| `location-inactive` | 409 | Company | An inactive location cannot be the main location: activate it first. |
+| `location-is-main` | 409 | Company | The main location cannot be deactivated: make another location the main one first. |
+| `location-limit-reached` | 422 | Company | The company has reached the largest number of locations. |
+| `location-name-taken` | 422 | Company | Another location of this company already has this name. |
+| `location-not-found` | 404 | Company | Location not found. |
 | `location-parent-required` | 422 | ReferenceData |  |
 | `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |

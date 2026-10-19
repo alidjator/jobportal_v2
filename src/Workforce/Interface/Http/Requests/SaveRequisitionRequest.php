@@ -10,7 +10,7 @@ use Src\Workforce\Domain\RequisitionType;
 
 /**
  * A requisition (`POST` creates a draft, `PUT` replaces what a draft or rejected one says): `type`, `position_id`, `hires`, `job_type_id`, `target_join_date`, `justification`,
- * `hiring_manager_user_id`; optional `requested_grade_id`, `contract_months` (a contract needs it), `cost_centre_id` (the unit's by default), `salary_min`, `salary_max` and, for a
+ * `hiring_manager_user_id`; optional `requested_grade_id`, `contract_months` (a contract needs it), `cost_centre_id` (the unit's by default), `location_id` (an active work location of the tenant), `salary_min`, `salary_max` and, for a
  * replacement, `replacement_name` and `replacement_leaving_date`. Whether the ids fit the position and the tenant is checked by the use case.
  */
 final class SaveRequisitionRequest extends FormRequest
@@ -33,6 +33,7 @@ final class SaveRequisitionRequest extends FormRequest
             'replacement_name' => ['nullable', 'string', 'max:150'],
             'replacement_leaving_date' => ['nullable', 'date_format:Y-m-d'],
             'hiring_manager_user_id' => ['required', 'integer', 'min:1'],
+            'location_id' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
@@ -45,7 +46,7 @@ final class SaveRequisitionRequest extends FormRequest
             RequisitionType::from($this->string('type')->toString()), $this->integer('position_id'), $number('requested_grade_id'), $this->integer('hires'), $this->integer('job_type_id'),
             $number('contract_months'), new DateTimeImmutable($this->string('target_join_date')->toString()), $number('cost_centre_id'), $number('salary_min'), $number('salary_max'),
             $this->string('justification')->toString(), $this->filled('replacement_name') ? $this->string('replacement_name')->toString() : null, $day('replacement_leaving_date'),
-            $this->integer('hiring_manager_user_id'),
+            $this->integer('hiring_manager_user_id'), $number('location_id'),
         );
     }
 }

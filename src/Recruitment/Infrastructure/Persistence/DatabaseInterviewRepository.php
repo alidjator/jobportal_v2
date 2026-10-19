@@ -59,6 +59,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'ends_at' => $this->format($interview->endsAt),
             'format' => $interview->format->value,
             'location' => $interview->location,
+            'location_id' => $interview->locationId,
             'meeting_url' => $interview->meetingUrl,
             'interviewer_id' => $interview->interviewerId,
             'created_by' => $interview->createdBy,
@@ -101,6 +102,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $interview->note,
             $interview->calendarUid,
             $interview->calendarSequence,
+            $interview->locationId,
         );
     }
 
@@ -251,6 +253,7 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             $row->note === null ? null : (string) $row->note,
             (string) $row->calendar_uid,
             (int) $row->calendar_sequence,
+            $row->location_id === null ? null : (int) $row->location_id,
         );
     }
 

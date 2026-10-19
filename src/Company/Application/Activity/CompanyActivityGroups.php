@@ -32,7 +32,7 @@ final class CompanyActivityGroups
             AuditAction::JOB_TAKEN_DOWN, AuditAction::JOB_RESTORED,
         ],
         'settings' => [
-            AuditAction::COMPANY_SETTINGS_UPDATED, AuditAction::SETTING_UPDATED, AuditAction::SETTING_RESET,
+            AuditAction::COMPANY_SETTINGS_UPDATED, AuditAction::COMPANY_LOCATION_CHANGED, AuditAction::SETTING_UPDATED, AuditAction::SETTING_RESET,
             AuditAction::COMPANY_INVITATION_EMAIL_DOMAINS_CHANGED, AuditAction::COMPANY_NAME_CHANGE_REQUESTED, AuditAction::COMPANY_NAME_CHANGE_CANCELLED,
             AuditAction::COMPANY_NAME_CHANGE_APPROVED, AuditAction::COMPANY_NAME_CHANGE_REJECTED,
         ],

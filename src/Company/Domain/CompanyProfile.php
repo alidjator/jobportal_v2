@@ -6,8 +6,8 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 
 /**
- * What a company says about itself. Bio and vision are Markdown (clients render and sanitise them). The classifications and the location
- * are ids of the shared masters and of the location chain; whether they are valid is checked by the use cases, which can ask ReferenceData.
+ * What a company says about itself. Bio and vision are Markdown (clients render and sanitise them). The classifications are ids of the shared masters; whether they are
+ * valid is checked by the use cases, which can ask ReferenceData. The address is not part of the profile: it is the main work location (`CompanyLocation`).
  */
 final readonly class CompanyProfile
 {
@@ -20,12 +20,6 @@ final readonly class CompanyProfile
         public int $industryId,
         public int $organizationTypeId,
         public ?int $teamSizeId,
-        public ?string $addressLine,
-        public ?int $provinceId,
-        public ?int $cityId,
-        public ?int $subdistrictId,
-        public ?int $villageId,
-        public ?int $postalCodeId,
         public ?string $contactEmail,
         public ?string $contactPhone,
         public bool $isVisible,
@@ -34,7 +28,7 @@ final readonly class CompanyProfile
     /** The profile a company starts with: only the required fields, visible to the public. */
     public static function minimal(string $name, int $industryId, int $organizationTypeId): self
     {
-        return new self($name, null, null, null, null, $industryId, $organizationTypeId, null, null, null, null, null, null, null, null, null, true);
+        return new self($name, null, null, null, null, $industryId, $organizationTypeId, null, null, null, true);
     }
 
     /**

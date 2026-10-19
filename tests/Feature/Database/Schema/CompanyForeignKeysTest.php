@@ -21,6 +21,14 @@ final class CompanyForeignKeysTest extends FeatureTestCase
         ]);
     }
 
+    /** @param  array<string, mixed>  $attributes */
+    private function location(int $companyId, array $attributes = []): int
+    {
+        return (int) DB::table('company_locations')->insertGetId([
+            'company_id' => $companyId, 'name' => 'Kantor Pusat', 'type' => 'head_office', 'is_main' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now(), ...$attributes,
+        ]);
+    }
+
     /** @return list<string> */
     private function foreignKeyColumns(string $table): array
     {
@@ -30,8 +38,16 @@ final class CompanyForeignKeysTest extends FeatureTestCase
     public function test_a_company_points_to_the_reference_data_and_its_creator_with_foreign_keys(): void
     {
         $this->assertSame(
-            ['city_id', 'created_by_admin_id', 'industry_id', 'legal_entity_id', 'organization_type_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'team_size_id', 'village_id'],
+            ['created_by_admin_id', 'industry_id', 'legal_entity_id', 'organization_type_id', 'team_size_id'],
             $this->foreignKeyColumns('company_companies'),
+        );
+    }
+
+    public function test_a_work_location_points_to_its_company_and_the_location_masters_with_foreign_keys(): void
+    {
+        $this->assertSame(
+            ['city_id', 'company_id', 'postal_code_id', 'province_id', 'subdistrict_id', 'village_id'],
+            $this->foreignKeyColumns('company_locations'),
         );
     }
 
@@ -39,19 +55,37 @@ final class CompanyForeignKeysTest extends FeatureTestCase
     {
         $teamSize = $this->referenceId('reference_team_sizes', 'small', ['min_size' => 1, 'max_size' => 10]);
 
-        $id = $this->company([...$this->locationChain(), 'team_size_id' => $teamSize]);
+        $id = $this->company(['team_size_id' => $teamSize]);
 
-        $this->assertNotNull(DB::table('company_companies')->find($id)->postal_code_id);
+        $this->assertSame($teamSize, (int) DB::table('company_companies')->find($id)->team_size_id);
+    }
+
+    public function test_a_location_with_a_full_valid_address_is_accepted(): void
+    {
+        $id = $this->location($this->company(), $this->locationChain());
+
+        $this->assertNotNull(DB::table('company_locations')->find($id)->postal_code_id);
     }
 
     public function test_the_database_refuses_a_reference_that_does_not_exist(): void
     {
-        foreach (['industry_id', 'organization_type_id', 'team_size_id', 'province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id'] as $column) {
+        foreach (['industry_id', 'organization_type_id', 'team_size_id'] as $column) {
             try {
                 DB::transaction(fn () => $this->company([$column => 999999]));
                 $this->fail("{$column} accepted an id that does not exist");
             } catch (QueryException) {
                 $this->assertSame(0, DB::table('company_companies')->count(), $column);
+            }
+        }
+
+        $company = $this->company();
+
+        foreach (['province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id'] as $column) {
+            try {
+                DB::transaction(fn () => $this->location($company, [$column => 999999]));
+                $this->fail("{$column} of a location accepted an id that does not exist");
+            } catch (QueryException) {
+                $this->assertSame(0, DB::table('company_locations')->count(), $column);
             }
         }
     }

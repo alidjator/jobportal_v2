@@ -50,7 +50,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
             )))
             ->orderBy('i.starts_at')->orderBy('i.id')
             ->limit($scope->limit)
-            ->get(['i.id', 'i.application_id', 'a.job_id', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.location', 'i.meeting_url', 'i.interviewer_id', new Expression("a.profile_snapshot->>'name' as candidate_name")]);
+            ->get(['i.id', 'i.application_id', 'a.job_id', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.location', 'i.location_id', 'i.meeting_url', 'i.interviewer_id', new Expression("a.profile_snapshot->>'name' as candidate_name")]);
 
         if ($rows->isEmpty()) {
             return [];
@@ -104,6 +104,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
                     'interview_id' => $id,
                     'format' => (string) $row->format,
                     'location' => $row->location === null ? null : (string) $row->location,
+                    'location_id' => $row->location_id === null ? null : (int) $row->location_id,
                     'has_meeting_link' => $row->meeting_url !== null,
                     'interviewer' => ['id' => $interviewerId, 'name' => $names[$interviewerId] ?? null, 'rsvp' => ($answers[$id][$interviewerId] ?? RsvpAnswer::pending())->rsvp->value],
                     'panel' => array_map(static fn (int $userId): array => ['id' => $userId, 'name' => $names[$userId] ?? null, 'rsvp' => ($answers[$id][$userId] ?? RsvpAnswer::pending())->rsvp->value], $panel),

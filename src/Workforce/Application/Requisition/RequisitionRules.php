@@ -3,6 +3,7 @@
 namespace Src\Workforce\Application\Requisition;
 
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyLocations;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Organization\LegalEntityDirectory;
 use Src\Shared\Application\Organization\PositionDirectory;
@@ -26,6 +27,7 @@ final readonly class RequisitionRules
         private LegalEntityDirectory $entities,
         private ReferenceValues $references,
         private CompanyTeam $team,
+        private CompanyLocations $places,
         private FiscalCalendar $calendar,
         private Clock $clock,
     ) {}
@@ -33,7 +35,7 @@ final readonly class RequisitionRules
     /**
      * @return array<string, mixed> the requisition properties the input decides, keyed by property name
      *
-     * @throws BusinessRuleViolation `invalid-requisition-field`
+     * @throws BusinessRuleViolation `invalid-requisition-field` or `invalid-location`
      */
     public function fields(int $companyId, int $legalEntityId, RequisitionInput $input): array
     {
@@ -74,6 +76,12 @@ final readonly class RequisitionRules
             throw $this->invalid('The hiring manager is not a member of this tenant.');
         }
 
+        if ($input->locationId !== null && $this->places->activeLocation($companyId, $input->locationId) === null) {
+            $message = 'The location is not an active location of this company.';
+
+            throw new BusinessRuleViolation($message, 'invalid-location', extensions: ['errors' => ['location_id' => [$message]]]);
+        }
+
         $replacement = $input->type === RequisitionType::Replacement;
 
         if ($replacement && ($input->replacementName === null || trim($input->replacementName) === '' || $input->replacementLeavingDate === null)) {
@@ -97,6 +105,7 @@ final readonly class RequisitionRules
             'replacementName' => $replacement ? trim((string) $input->replacementName) : null,
             'replacementLeavingDate' => $replacement ? $input->replacementLeavingDate : null,
             'hiringManagerUserId' => $input->hiringManagerUserId,
+            'locationId' => $input->locationId,
         ];
     }
 
