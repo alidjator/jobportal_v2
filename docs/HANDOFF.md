@@ -14,20 +14,20 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 
 ## Current state (2026-10-19)
 
-- Latest tag `v0.8.0` (#19 and #21; #19 checked with 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
-- **Phases 0 to 7 coded and committed.** Phase 8 status per item: `phase-8-index.md`. `master` is at #28 (2026-10-19); the branch `phase-8-interview-reschedule` (designs #29 to #33, gap analysis FG1 to FG18 in `docs/analysis/actor-gap-analysis.md`, and the code of #29, committed after a green check) is not merged yet.
-- Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); `000176` (#29) is new and not run yet; reference data only (0 accounts) until the final import.
-- **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
-- **API coding limited (2026-10-19):** only #29, #30, #15, #20 and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
-- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #28 and `frontend.md` 11.5, 11.6 (#27 is coded); open before go-live: client IP behind the Nuxt proxy (5.2).
+- Latest tag `v0.9.0` (#29, `composer check` green; 3294 tests); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
+- **Phases 0 to 7 coded and committed.** Phase 8 status per item: `phase-8-index.md`. `master` is at #29 (2026-10-19), with the designs #29 to #33 and the gap analysis FG1 to FG18 (`docs/analysis/actor-gap-analysis.md`).
+- Test database at `000176`; real PostgreSQL `jobportal_v2` at `000175`, `000176` (#29) run by the user (check `php artisan migrate:status`); reference data only (0 accounts) until the final import.
+- **Go-live readiness first** (2026-10-13, `docs/deployment-checklist.md`; the live dev site is this folder, so code needing a new migration fails until `migrate`). Name: ONESIS ERP / ONESIS Career (`naming.md`); `onesis` is the technical identifier.
+- **API coding limited (2026-10-19):** only #30, #15, #20 (#29 done) and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
+- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 
 - Performance audit steps 4 (measure) and 6 (query-count tests); `jobportal_v2_perf` (at `000112`, empty) is dropped when done.
 - Architecture review findings deferred: 7, 8, 20 (`decisions.md` section 6), 9, 21 (refactor after the import).
-- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 designed in `phase-8-platform-admin.md` (G20 before go-live), G14 in `phase-8-job-discovery.md`; the rest await scope or are designed elsewhere. R8 reopened by the tele-interview benchmark.
+- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 in `phase-8-platform-admin.md` (G20 before go-live), G14 in `phase-8-job-discovery.md`; the rest await scope. R8 reopened (tele-interview benchmark).
 - Immediate (not nightly) clearing of talent pool notes needs a JobSeeker trigger.
-- Flaky test: the `'42'` assertion of `TestAuthoringTest` fails now and then and passes on rerun.
+- Flaky: the `'42'` assertion of `TestAuthoringTest` (passes on rerun).
 
 ## Items waiting for the user
 
@@ -38,12 +38,12 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review brief `docs/legal-review.md`: up to date 2026-10-19 (questions 1 to 22), Indonesian copy `docs/legal-review.id.md` for sending, **not sent yet**; section 0 orders the questions (A before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
+- Legal review `docs/legal-review.md` (questions 1 to 22, 2026-10-19; Indonesian copy `legal-review.id.md`), **not sent yet**; section 0 orders them (before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`
 
-- Commit identity: set in the repository's `.git/config` (since 2026-10-10), so a plain `git commit` works.
+- Commit identity is in the repository's `.git/config`: a plain `git commit` works.
 - Live dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`, `COMPANY_INVITATION_URL` empty; nginx directly (no `trustProxies`); scheduler from the `jobportal` crontab. nginx config (root) `/etc/nginx/conf.d/api-karir.satu.solutions.conf`, copy in `/home/jobportal/nginx/`; it, the crontab and ACLs are outside git.
 - `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it whenever one is added.
 - `KARIR_PKP_FILES_ROOT` is set in `.env`. Import mapping files: `--map=masters=<path>`, `--map=groups=<path>`.

@@ -36,6 +36,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | `phase-8-interview-results.md` (#21) | coded 2026-10-19 (`000173`), committed `b06a4e9` on `master`, checked (`composer check`: the suite green apart from the flaky `'42'` assertion of `TestAuthoringTest`, which passes on rerun): scale anchors, duplicating a kit, the comparison `GET company/jobs/{id}/interview-results` and the interview columns of the applicant export; open: the assessment field of a comparison row (waits for #23); interpretations to confirm are in its "Coded" section |
 | `company-locations.md` (#27) | coded and checked 2026-10-19 (`000174`, `000175`; `composer check` green): `company_locations` with the main location per company, the locations API, `location_id` on interviews and requisitions, the legacy import of address and coordinates; open: the group read rule (no group route reads a profile yet); interpretations to confirm are in its "Coded" section |
 | `company-locations.md` (#28) | coded and checked 2026-10-19: `locations` array in the public job list and detail, one item from the job's own columns (no migration); a job without an address gets `locations: []` (decided with the user); see its "Coded: #28" section |
+| `phase-8-interview-reschedule.md` (#29, FG2 and FG3) | coded and checked 2026-10-19 (`000176`; `composer check` green, tag `v0.9.0`): moving a confirmed interview up to a cut-off, refusing a proposal, no-shows, the job seeker's 2-hour reminder, the fix of the accepted-proposal `.ics` and panel RSVPs; not done: the analytics funnel and the cut-off in the job seeker's resource (see its "Coded" section) |
 
 ## Next coding (in this order)
 
@@ -54,7 +55,6 @@ front end asks for) are coded; the other rows wait even when ready.
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
-| 29 | `phase-8-interview-reschedule.md` (FG2 and FG3 of `docs/analysis/actor-gap-analysis.md`) | coded 2026-10-19 (migration `000176`), check green |
 | 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
 | 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
 | 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
