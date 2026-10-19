@@ -9,7 +9,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 ## Coded
 
-Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18: tag `v0.7.0`; #19 and #21: 2026-10-19). Parts still open inside a coded item are listed under "Next coding".
+Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18: tag `v0.7.0`; #19 and #21: tag `v0.8.0`). Parts still open inside a coded item are listed under "Next coding".
 
 | Document | Status |
 |---|---|
