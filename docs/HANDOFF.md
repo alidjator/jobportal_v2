@@ -19,7 +19,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - Test database at `000176`; real PostgreSQL `jobportal_v2` at `000175`, `000176` (#29) run by the user (check `php artisan migrate:status`); reference data only (0 accounts) until the final import.
 - **Go-live readiness first** (2026-10-13, `docs/deployment-checklist.md`; the live dev site is this folder, so code needing a new migration fails until `migrate`). Name: ONESIS ERP / ONESIS Career (`naming.md`); `onesis` is the technical identifier.
 - **API coding limited (2026-10-19):** only #30, #15, #20 (#29 done) and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
-- Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
+- Front end: designed (`frontend.md`), not coded; working folder `/usr/local/src/jobportal-frontend/onesis-talent` (empty); needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 

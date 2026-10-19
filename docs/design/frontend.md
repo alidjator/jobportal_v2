@@ -7,6 +7,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: the front end is designed now and coded after the legacy import rehearsal; go-live readiness keeps priority ([detail](#1-timing)).
 - 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), the admin panel a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
+- 2026-10-19: the front-end working folder is `/usr/local/src/jobportal-frontend/onesis-talent` (the workspace root) ([detail](#3-repository-and-applications)).
 - 2026-10-13: two applications: the public site with job seekers and company dashboards, and a separate admin panel on its own domain ([detail](#3-repository-and-applications)).
 - 2026-10-13: development domains `karir.satu.solutions` (public) and `admin-karir.satu.solutions` (admin); production domains later ([detail](#4-domains)).
 - 2026-10-13: the admin panel keeps its token in `sessionStorage`, with a strict CSP ([detail](#5-authentication)).
@@ -65,6 +66,8 @@ Decided by the user on 2026-10-13:
 
 - **Repository:** separate from the API (`jobportal_v2`), so the API and the front end deploy independently and the API working folder, which is also the
   live site, is not touched by Node builds.
+- **Working folder (decided by the user on 2026-10-19):** `/usr/local/src/jobportal-frontend/onesis-talent`, owned by `jobportal`; it is the root of
+  the pnpm workspace (section 10). The neighbouring `talent` folder (a plain copy of the Able Pro template) and the template copy next to it are not used.
 - **Applications:** two. One serves the public pages, job seekers and company dashboards; the admin panel is a second application on its own domain, because
   admins have their own guard, TOTP and 12-hour tokens and the panel should not be exposed on the public domain.
 - **Partner psychologists (decided by the user on 2026-10-13):** the fifth role (`/api/v1/provider/**`: sign-in with two-factor, test authoring, norms,
