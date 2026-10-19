@@ -59,6 +59,7 @@ front end asks for) are coded; the other rows wait even when ready.
 | 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
 | 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
 | 33 | `phase-8-whatsapp.md` (FG6), **after go-live** | Meta Business verification and template approvals (started by the user); `legal-review.md` question 22 for the unofficial adapter; uses #29 section 6 and #32 |
+| 34 | `phase-8-activation.md` (activation of the imported users and companies, designed 2026-10-20), **before the freeze of the final import** | seven parts; parts 1, 3, 4, 6 change the import and need a second rehearsal; the freeze date, SMTP provider, support contact and legal review question j are the user's |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 
