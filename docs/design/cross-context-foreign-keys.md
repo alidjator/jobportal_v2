@@ -50,6 +50,8 @@ All keys are `RESTRICT`, named explicitly (63 character limit on PostgreSQL), ad
 
 **Added with the requisitions (`erp-requisitions.md` sections 3 and 5, 2026-10-16):** `workforce_requisitions.company_id` to `company_companies`; `workforce_requisitions.requester_id`, `hiring_manager_user_id` and `workforce_requisition_amendments.requested_by_id` to `identity_users`; `workforce_requisitions.job_type_id` to `reference_job_types` (all RESTRICT). The legal entity, position, unit, grade, cost centre and approval of a requisition, and `job_jobs.requisition_id`, are plain indexed columns (the key of a job to its requisition is not a foreign key: Job and Workforce stay apart, and a requisition is closed or cancelled, never deleted).
 
+**Decided with the company locations (`company-locations.md`, 2026-10-19, coded with #27):** `company_locations` joins the stable targets. `company_locations.company_id` to `company_companies` and its five region columns to the `reference_*` regions; `recruitment_interviews.location_id` and `workforce_requisitions.location_id` to `company_locations` (all RESTRICT). A location in use is deactivated, never deleted.
+
 **Added with support access (`erp-governance.md` section 1.1, 2026-10-16):** `organization_support_grants.admin_id` (RESTRICT) to `identity_admins`, and `granted_by_user_id`, `revoked_by_user_id` (RESTRICT) to `identity_users`.
 
 **To `job_jobs`:** `recruitment_applications.job_id`, `recruitment_job_questions.job_id` (`CASCADE`, see Decided), `jobinvitation_invitations.job_id`.

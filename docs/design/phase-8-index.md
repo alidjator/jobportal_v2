@@ -43,8 +43,8 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 13 | **new** hand-off to Employee (after `phase-8-hiring.md`) | a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` | #14: the pending rejections of the rejections design carry the candidate message |
-| 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
-| 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
+| 27 | `company-locations.md` (designed 2026-10-19): `company_locations` per tenant (main location from the company address, whose columns are dropped), the locations API, optional `location_id` on interviews and requisitions; migrations `000174`, `000175` | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
+| 28 | job `locations` array in the API, filled with one item from today's province and city (shape: `company-locations.md` decision 12) | after #27, before the front end; jobs with several locations come with #20 |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
 | 22 | `phase-8-assessment-automation.md` | |
 | 23 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |

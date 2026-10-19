@@ -171,7 +171,7 @@ contact email, phone and address of a company, one address of a legal entity, on
 
 | Step | Work | Depends on |
 |---|---|---|
-| A | #27 company locations, #28 job `locations` in the API (`phase-8-index.md`) | before the front end and the final legacy import run |
+| A | #27 company locations (`company-locations.md`), #28 job `locations` in the API (`phase-8-index.md`) | before the front end and the final legacy import run |
 | B | jobs with several locations inside #20 `phase-8-job-posting.md` | A; after go-live |
 | C1 | answer the open HRIS questions of section 7 (current HRIS, payroll scope, data migration) | the user |
 | C2 | benchmark the ERP actors (approver, workforce planner, group admin) and employee data: Mekari Talenta, SAP SuccessFactors, Workday | |
