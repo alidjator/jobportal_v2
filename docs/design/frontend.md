@@ -74,7 +74,7 @@ Decided by the user on 2026-10-13:
   live site, is not touched by Node builds.
 - **Working folder (decided by the user on 2026-10-19):** `/usr/local/src/jobportal-frontend/onesis-talent`, owned by `jobportal`; it is the root of
   the pnpm workspace (section 10). The neighbouring `talent` folder (a plain copy of the Able Pro template) and the template copy next to it are not used.
-- **Applications:** two. One serves the public pages, job seekers and company dashboards; the admin panel is a second application on its own domain, because
+- **Applications (replaced on 2026-10-19 by three applications, next point):** two. One serves the public pages, job seekers and company dashboards; the admin panel is a second application on its own domain, because
   admins have their own guard, TOTP and 12-hour tokens and the panel should not be exposed on the public domain.
 - **Changed 2026-10-19 (decided by the user, option (c) of `docs/analysis/frontend-gap-analysis.md` section 5): three applications.** The company
   dashboard leaves the public Nuxt application and joins the ERP pages (group structure, approvals, workforce plans, requisitions, read across tenants,
@@ -101,7 +101,8 @@ Decided by the user on 2026-10-13:
   the wrong kind of user. The API settings are pointed at those paths; no new API code (FEG4).
 - **Partner psychologists (decided by the user on 2026-10-13):** the fifth role (`/api/v1/provider/**`: sign-in with two-factor, test authoring, norms,
   report templates, reviewing and signing results) gets a separate area in the admin application, with its own sign-in and menu. It is back office like
-  the admin panel (two-factor, no indexing, token in `sessionStorage`), so the split stays at two applications.
+  the admin panel (two-factor, no indexing, token in `sessionStorage`), so it stays in the admin application (also after the 2026-10-19 change to
+  three applications).
 
 ## 4. Domains
 

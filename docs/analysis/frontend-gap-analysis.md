@@ -6,7 +6,7 @@ functional review of the API is `actor-gap-analysis.md` (FG1 to FG18); this roun
 is there a page, a dialog or a state in the front-end design that lets them do it?**
 
 **Why now.** The page maps of `frontend.md` (sections 7 to 9) were built from the routes of 2026-10-13 (284 OpenAPI paths). Since then the phase 8
-items, the ERP direction and the company locations added about 460 more routes (751 under `/api/v1` on 2026-10-19). Each phase 8 design ends with a
+items, the ERP direction and the company locations added about 300 more paths (589 paths with 751 routes under `/api/v1` on 2026-10-19). Each phase 8 design ends with a
 "Front end" row, but those rows were never carried back into `frontend.md`, so the page maps, the menus and the role rules describe the product of
 2026-10-13.
 
@@ -51,7 +51,7 @@ These change the shape of the design, not only a page.
 | Search, job detail, company profile, salary, training, campaigns, legal, FAQ, newsletter | P1 to P13 | Mapped |
 | Similar jobs on a job page and on its 404 (`GET jobs/{job}/similar`) | P3 names no endpoint for it; 11.4 promises "similar jobs to continue" on a closed job | Partial |
 | Share a job (Web Share, WhatsApp, copy link) | only in `phase-8-job-discovery.md` | Design row |
-| Report a job without an account | report needs sign-in; P3 has no "Laporkan" button | Partial |
+| Report a job (`POST jobs/{id}/reports`, sign-in needed) | P3 has no "Laporkan" button and no sign-in step for it | Partial |
 | Announcement of maintenance or a policy change | none | Unmapped (FEG8) |
 | Verify a psychological report by its number (public page) | only in `phase-8-provider-tools.md` (#23) | Design row |
 | Apply state before signing in ("Masuk untuk melamar") | P3 Apply leads to sign-in | Mapped |
@@ -80,7 +80,7 @@ These change the shape of the design, not only a page.
 | | Join date and note after being hired (`phase-8-hiring.md`) | J5 does not show the hired state | Unmapped |
 | | Contact notice of the company on the application (job discovery) | none | Design row |
 | Interview | Confirm, decline, propose, `.ics`, join, recording consent | J5, J6 | Mapped |
-| | **Ask to reschedule a confirmed interview until the cut-off** (`reschedule_until`, #29, coded) | J5 knows only confirm, decline, propose | Unmapped |
+| | **Ask to reschedule a confirmed interview until the cut-off**: the existing `propose` on a `confirmed` interview, with a reason (#29, coded; 409 `reschedule-too-late`, `reschedule_until` in the resource) | J5 offers propose only while waiting for an answer | Partial |
 | | Told of a no-show and the company's next step (#29, coded) | no state in J5 | Unmapped |
 | | Reason choices in the decline dialog (`phase-8-withdrawals.md`, coded) | J5 has no reason list | Partial |
 | | Location of an in-person interview with its address and map (`location_id`, #27) | J5 shows no place block | Partial |
@@ -223,7 +223,7 @@ Each pair lists what each side must see and do in the front end. **Bold** rows a
 | Schedule dialog: format, date and time with the zone, place from the company locations or a link, panel, note prefilled from the defaults, **email preview** | Partial | Invitation card: date and time in the device zone with its label, format, **place with address and map** or link, interviewer names, note, `.ics` | Partial |
 | Bulk slots and "schedule later" from the pipeline selection | Partial (bulk move only) | One agenda of upcoming interviews and tests ("Jadwal mendatang") | Design row (#15) |
 | State badges on the pipeline and calendar: waiting, confirmed, proposal, declined, **reschedule asked**, **no-show** | Partial | Confirm, decline **with a reason**, propose another time (2x, counter shown) | Partial |
-| **Proposal banner: Terima / Tolak / Jadwalkan lain** (`accept-proposal`, `refuse-proposal`) | Unmapped | **"Minta jadwal ulang" until `reschedule_until`**, then the button hides with the reason | Unmapped |
+| **Proposal banner: Terima / Tolak / Jadwalkan lain** (`accept-proposal`, `refuse-proposal`) | Unmapped | **"Minta jadwal ulang" (`propose` with a reason) until `reschedule_until`**, then the button hides with the reason | Partial |
 | **"Tidak hadir" after the start** (`no-show`) | Unmapped | **Missed-interview state with the company's next step** | Unmapped |
 | Cancel with a note | Mapped | Cancelled state with the note | Partial |
 | Panel RSVP badges on the interview | Unmapped | — | — |
