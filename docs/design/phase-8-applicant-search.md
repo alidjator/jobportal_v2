@@ -66,7 +66,7 @@ Added to `GET company/jobs/{id}/applications` and the new list across jobs; any 
 
 - **Sort:** `applied_at` (default, newest first), `match_score`, `rating` (average; unrated last), each with `-` for the other direction.
 - **Counts per stage** follow the filters, so the pipeline columns show the filtered numbers.
-- Rows gain `match_score` and `rating {average, count}` when not already there; the front end shows the score as a column (C5) and the list's
+- Rows gain `match_score` and `rating {average, count}` when not already there; the front end shows the score as a column (C6) and the list's
   columns can be hidden per member in the browser (no API).
 
 ## 4. Applicants across jobs
@@ -90,7 +90,7 @@ Added to `GET company/jobs/{id}/applications` and the new list across jobs; any 
 | Ports | JobInvitation: whether a person held an invitation to a job; Assessment: applications with a pending test |
 | API | `GET company/applications`; new filters, `filter[q]` over `search_text` and sorts on both lists; `match_score` and `rating` on rows |
 | Errors | 422 `invalid-filter` for a malformed value or a `q` shorter than 2 characters |
-| Front end | filter panel and score column on the pipeline list (C5); "Semua pelamar" page (C5b) |
+| Front end | filter panel and score column on the pipeline list (C6); "Semua pelamar" page (C5b) |
 
 ## Coded (2026-10-19)
 

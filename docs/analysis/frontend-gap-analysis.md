@@ -25,6 +25,8 @@ Plans, billing, payments, orders and invoices stay out of scope.
 | **Not taken** | Left out by a recorded user decision. |
 | **API gap** | Needs API work too (the FG number of `actor-gap-analysis.md` where there is one). |
 
+**Status of this document (2026-10-19):** every FEG is covered in `frontend.md`, see section 6.
+
 **Priority.** **P1** before go-live of the portal; **P2** for the ERP TA core (internal tenants); **P3** later. FEG numbers are new in this round.
 
 ## 1. Cross-cutting findings
@@ -386,3 +388,27 @@ All Unmapped (2.6).
 4. **Email link contract (FEG4).** Recommended: a table in `frontend.md` of every link the API sends (setting, path, signed-out case), and the API
    settings pointed at those paths.
    **Decided by the user on 2026-10-19: as recommended**, written in the page-map session (`frontend.md` section 3).
+
+## 6. Coverage (2026-10-19)
+
+The page-map session of 2026-10-19 rewrote `docs/design/frontend.md` (sections 2, 5.2, 7 to 10, 11.1, 11.7 and the new section 12). Every FEG is
+**covered** there; elements whose API is only designed carry their phase 8 item number (`#N`) and are built when that item is coded. The API gaps
+(FG4, FG5, FG7, FG13 to FG15, FG18) stay open in `actor-gap-analysis.md`; they have no page until their API is designed.
+
+| Id | Status | Where in `frontend.md` |
+|---|---|---|
+| FEG1 | Covered | Back office pages E1 to E16 (8.3) and the Workforce and Organisasi menu groups (11.1); admin D27 groups and tenants, D28 support reads (9.1). |
+| FEG2 | Covered | 8.0 (menus by `GET company/me` permissions and group membership, landing page per preset), "Access" column of 8.2 and 8.3. |
+| FEG3 | Covered | One numbering (section 7 introduction): C5b, C27, C28 and the new C29 to C32, B1 to B5, E1 to E16, J16 to J18, P14, P15, D27, D28, M7, M8; the "C5" pipeline references of the phase 8 designs corrected to C6 (8.5). |
+| FEG4 | Covered | Section 12: rules (12.1), link contract with `.env` values (12.2), link entry for the API-shaped team links (12.3); two API fixes found and decided (12.5, 8.5). |
+| FEG5 | Covered | 5.2 (two-factor contract), A1 second step, B1 with forced enrolment, B4 ending in enrolment, J15 and C25 two-factor settings, C22 reset and status. |
+| FEG6 | Covered | 12.3 (task items, the "Perlu tindakan" card of C1) and 12.4 (target page per notification type, checked by the coverage test of 11.6). |
+| FEG7 | Covered | 11.7 address and location pickers; C32 work locations; J2 address. |
+| FEG8 | Covered | 11.1 announcement banner (public and back-office layouts). |
+| FEG9 | Covered | J5, J11, J15, J17 (data export, block and report, talent pool consent, reschedule request, no-show and hired states, offer page, reasons, interview place). |
+| FEG10 | Covered | C3 to C7, C12, C13 (all applicants, facets and stale marks, hire and fill, withdraw for the candidate, proposal refuse and no-show, results comparison, tasks card, bulk invitations, save to pool, email preview, offer form with terms and upload, hires export). |
+| FEG11 | Covered | C20 (name change), C22 (team and permission editor as coded), C27 (activity log), C29 (settings and message defaults), C32 (locations). |
+| FEG12 | Covered | C28 (review inbox and page), C6 (bounded pipeline), C30 ("Wawancara saya"), C8 (RSVP), C7 (limited layout for a panel seat). |
+| FEG13 | Covered | M4 (explanation template, auto-issue), M5 (mark reviewed, revise); account security: the provider API has no password or recovery-code endpoint, so M6 shows none (9.2). |
+| FEG14 | Covered | Admin sidebar with D21 to D28 (11.1), D21 read view, D2 operations card, D23 message report action, D19 auto-issue. |
+| FEG15 | Covered | `#N` marks in sections 7 to 9 for #12, #14, #15, #20, #22, #23, #24, #25, #31, #32, #33; frozen and after-import designs marked as such. |

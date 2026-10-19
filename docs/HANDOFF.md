@@ -19,7 +19,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - Real PostgreSQL `jobportal_v2` and the test database are at `000176` (2026-10-19); reference data only (0 accounts) until the final import.
 - **Go-live readiness first** (2026-10-13, `docs/deployment-checklist.md`; the live dev site is this folder, so code needing a new migration fails until `migrate`). Name: ONESIS ERP / ONESIS Career (`naming.md`); `onesis` is the technical identifier.
 - **API coding limited (2026-10-19):** only #30, #15, #20 (#29 done) and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
-- Front end: designed (`frontend.md`; three applications since 2026-10-19, gap analysis `docs/analysis/frontend-gap-analysis.md`), not coded; working folder `/usr/local/src/jobportal-frontend/onesis-talent` (empty); needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
+- Front end: designed (`frontend.md`; three applications since 2026-10-19, page maps rewritten, every FEG covered), not coded; it asks the API for the team `.ics` link (12.5) and the `my_scoring` list (8.5); working folder `/usr/local/src/jobportal-frontend/onesis-talent` (empty); needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 
@@ -34,7 +34,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`, checklist section 3); the **freeze date** for the final run is not set.
 - SMTP provider (then its webhook parser); then the reset emails to the imported accounts: `identity:send-imported-password-resets` (dry run first, batches of 200; `docs/deployment-checklist.md` section 3).
 - Admin setting `platform.operations_email` (scheduler alerts) and an outside uptime monitor on `GET /api/v1/health/scheduler`.
-- `CORS_ALLOWED_ORIGINS` (front-end origin); `JOB_SEEKER_PROFILE_URL` and `JOB_SEEKER_APPLICATION_URL` (links in emails); consider nginx `limit_req` for unknown paths.
+- `CORS_ALLOWED_ORIGINS` (admin origin); the link settings (`COMPANY_INVITATION_URL`, `JOB_SEEKER_*_URL`, `COMPANY_APP*_URL`, newsletter, campaign, psychologist) with the values of `frontend.md` 12.2; consider nginx `limit_req` for unknown paths.
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).

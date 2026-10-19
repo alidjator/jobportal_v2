@@ -102,7 +102,7 @@ them meanwhile), a full per-job email template library and a job widget for comp
 | Preferences | `team_daily_digest`, `team_interview_changes`, `team_offer_answers`, `team_new_applications`, `team_scoring`, `provider_reviews` |
 | Scheduler | `company:send-team-digests` (07:00 Jakarta, Monday to Saturday) |
 | Emails | `team.daily_digest` and the `team.*` templates of the keys above; `recruitment.application_received` |
-| Front end | "Perlu tindakan" card (C1); time in stage and stale mark on the pipeline (C5, C6); other applications on the application detail; team preferences in the account settings; "Pesan lamaran diterima" in the message defaults |
+| Front end | "Perlu tindakan" card (C1); time in stage and stale mark on the pipeline (C6); other applications on the application detail; team preferences in the account settings; "Pesan lamaran diterima" in the message defaults |
 
 ## Coded: sections 2, 4 and 1 (2026-10-17)
 

@@ -29,7 +29,7 @@ go-live). Shuffling already exists (`draw_count` per section equal to the number
   `assessment-required`. An `assessment` object in the request always wins.
 - **A default that no longer works** (test archived, battery no longer granted, provider inactive): checked again at sending; a single move is 409
   `assessment-default-invalid`, a bulk move skips the application with that code. The job page shows the broken default.
-- Front end: "Tes default" per assessment stage in the job's pipeline settings (C5), next to the default interview kit.
+- Front end: "Tes default" per assessment stage in the job editor (C4), next to the default interview kit.
 
 ## 2. Automatic advance (skill tests only)
 
@@ -71,4 +71,4 @@ go-live). Shuffling already exists (`draw_count` per section equal to the number
 | Events | the advance listener on the final result |
 | Notifications | `application.auto_advanced` (in-app, team) |
 | Errors | 422 `stage-not-assessment`, `advance-not-allowed`, `invalid-advance-stage`; 409 `assessment-default-invalid` (skip code in bulk) |
-| Front end | default test per stage with the advance rule (C5); result comparison (C5); "Acak soal" label for `draw_count` in the test editor |
+| Front end | default test per stage with the advance rule (C4); result comparison (C5); "Acak soal" label for `draw_count` in the test editor |
