@@ -127,6 +127,8 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
             'headline' => $profile->headline,
             'summary' => $profile->summary,
             'location' => [
+                'province_id' => $profile->provinceId,
+                'city_id' => $profile->cityId,
                 'province' => $location->province,
                 'city' => $location->city,
                 'subdistrict' => $location->subdistrict,

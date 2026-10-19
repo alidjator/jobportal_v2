@@ -31,6 +31,8 @@ final class CompanyApplicationResource extends JsonResource
                 'age' => $row->age,
             ],
             'meets_must_have' => $row->meetsMustHave,
+            /** @var int|null how well the applicant fitted the job when applying, 0 to 100; null when the job gave too little to judge */
+            'match_score' => $row->matchScore,
             'rating' => ['average' => $row->ratingAverage, 'count' => $row->ratingCount],
             /** @var array{score: float|null, yes: int, no: int}|null */
             'interview_result' => $row->interviewResult === null ? null : ['score' => $row->interviewResult->score, 'yes' => $row->interviewResult->yes(), 'no' => $row->interviewResult->no()],

@@ -87,6 +87,11 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             ->whereIn('application_id', (clone $applications)->select('id'))
             ->delete();
 
+        // The facets are copied from the snapshot (location, skills, search text), so they go with it.
+        $this->connection->table('recruitment_application_facets')
+            ->whereIn('application_id', (clone $applications)->select('id'))
+            ->delete();
+
         $applications->update([
             'cover_letter' => null,
             'withdrawn_note' => null,

@@ -29,4 +29,12 @@ interface InvitedCandidates
      * @return list<int>
      */
     public function userIdsOf(int $jobId, array $userIds): array;
+
+    /**
+     * Among these applications, the ones an invitation holds: the invited job seeker applied through it. For the facets of applications made before they existed.
+     *
+     * @param  list<int>  $applicationIds
+     * @return list<int>
+     */
+    public function applicationIdsHeld(array $applicationIds): array;
 }

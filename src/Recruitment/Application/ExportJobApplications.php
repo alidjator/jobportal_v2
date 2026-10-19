@@ -44,8 +44,9 @@ final readonly class ExportJobApplications
     public function execute(Actor $actor, RecruiterApplicationQuery $query, ?string $ipAddress, ?string $userAgent): ApplicantExport
     {
         $member = $this->access->viewer($actor, CompanyPermission::ApplicationsExport);
-        $this->access->job($member, $query->jobId);
-        $query = $query->withHiringManagerScope($this->scope->isBound($member, $query->jobId));
+        $jobId = (int) $query->jobId;
+        $this->access->job($member, $jobId);
+        $query = $query->withHiringManagerScope($this->scope->isBound($member, $jobId));
 
         $cap = $this->settings->integer(RecruitmentSettings::MAX_EXPORT_ROWS, $member->companyId);
         $total = $this->reader->count($query);
@@ -54,12 +55,12 @@ final readonly class ExportJobApplications
             throw new BusinessRuleViolation("An export can hold at most {$cap} applications; narrow the filters.", 'export-too-large', extensions: ['max_rows' => $cap]);
         }
 
-        $questions = $this->questions->forJob($query->jobId);
+        $questions = $this->questions->forJob($jobId);
         $now = $this->clock->now();
 
-        $this->events->dispatch([new ApplicantsExported($query->jobId, $member->companyId, $member->userId, $this->filters($query), $total, $ipAddress, $userAgent, $now)]);
+        $this->events->dispatch([new ApplicantsExported($jobId, $member->companyId, $member->userId, $this->filters($query), $total, $ipAddress, $userAgent, $now)]);
 
-        return new ApplicantExport($query->jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions, $this->contact->companyIsOpen($member->companyId)));
+        return new ApplicantExport($jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions, $this->contact->companyIsOpen($member->companyId)));
     }
 
     /**

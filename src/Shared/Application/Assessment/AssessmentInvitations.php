@@ -44,6 +44,15 @@ interface AssessmentInvitations
     public function hasActive(int $applicationId): bool;
 
     /**
+     * The applications of the company whose candidate was sent a test and has not finished it (invited or started); `$jobIds` limits them to those jobs (null: every
+     * job). For the pipeline filter `test_pending`.
+     *
+     * @param  list<int>|null  $jobIds
+     * @return list<int>
+     */
+    public function applicationIdsWithPendingTest(int $companyId, ?array $jobIds): array;
+
+    /**
      * Cancels the active invitation, if any.
      *
      * @return list<DomainEvent>

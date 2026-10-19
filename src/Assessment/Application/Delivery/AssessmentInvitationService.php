@@ -48,6 +48,11 @@ final readonly class AssessmentInvitationService implements AssessmentInvitation
         return $this->invitations->active($applicationId) instanceof Invitation;
     }
 
+    public function applicationIdsWithPendingTest(int $companyId, ?array $jobIds): array
+    {
+        return $this->invitations->activeApplicationIds($companyId, $jobIds);
+    }
+
     public function cancelActive(InvitedApplication $application): array
     {
         $active = $this->invitations->active($application->applicationId, forUpdate: true);

@@ -45,6 +45,14 @@ final readonly class MasterReferenceValues implements ReferenceValues
         return $this->masters->idBySlug($this->definition($master), $slug);
     }
 
+    public function educationRanks(array $levelIds): array
+    {
+        return array_map(
+            static fn (MasterItem $item): int => (int) $item->extras['rank'],
+            $this->masters->findMany($this->definition('education-levels'), array_values(array_unique($levelIds))),
+        );
+    }
+
     private function definition(string $master): MasterDefinition
     {
         return MasterCatalog::find($master) ?? throw new InvalidArgumentException("Unknown master {$master}.");

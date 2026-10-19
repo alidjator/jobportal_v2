@@ -44,4 +44,17 @@ final class ReferenceValuesTest extends FeatureTestCase
         $this->assertFalse($values->isActive('benefits', $rejected));
         $this->assertNull($values->name('benefits', $pending, 'en'));
     }
+
+    public function test_education_ranks_are_read_in_one_call_and_an_unknown_level_is_missing(): void
+    {
+        $bachelor = $this->referenceId('reference_education_levels', 'bachelor', ['rank' => 5]);
+        $master = $this->referenceId('reference_education_levels', 'master', ['rank' => 6]);
+        DB::table('reference_education_levels')->where('id', $master)->update(['is_active' => false]);
+        $values = $this->app->make(ReferenceValues::class);
+
+        // A level an admin deactivated keeps its rank, so an old profile still ranks.
+        $this->assertSame([$bachelor => 5, $master => 6], $values->educationRanks([$bachelor, $master, $bachelor]));
+        $this->assertSame([$bachelor => 5], $values->educationRanks([$bachelor, 999999]));
+        $this->assertSame([], $values->educationRanks([]));
+    }
 }

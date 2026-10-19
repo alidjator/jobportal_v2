@@ -22,13 +22,12 @@ interface RecruiterApplicationReader
     public function export(RecruiterApplicationQuery $query, int $limit): iterable;
 
     /**
-     * How many applications each stage of the job holds, keyed by stage id; a stage without applications is missing.
-     *
-     * `$hiringManagerVisibleOnly` counts only the applications that carry the marker for hiring managers.
+     * How many applications each stage holds under the query, keyed by stage id; a stage without applications is missing. The scope, the hiring manager limit, the
+     * search and every filter apply; the stage filters and the "active only" default do not, so every column shows its own count.
      *
      * @return array<int, int>
      */
-    public function countByStage(int $jobId, bool $hiringManagerVisibleOnly = false): array;
+    public function countByStage(RecruiterApplicationQuery $query): array;
 
     public function find(int $id): ?RecruiterApplicationDetailData;
 

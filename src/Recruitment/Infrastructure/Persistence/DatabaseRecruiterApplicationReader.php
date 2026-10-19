@@ -8,6 +8,7 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Src\Recruitment\Application\ApplicantExportRow;
+use Src\Recruitment\Application\ApplicantFilters;
 use Src\Recruitment\Application\OtherApplicationRow;
 use Src\Recruitment\Application\RecruiterApplicationDetailData;
 use Src\Recruitment\Application\RecruiterApplicationQuery;
@@ -36,7 +37,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
     private const string NOT_SCHEDULED = 'not_scheduled';
 
-    private const array ROW_COLUMNS = ['a.id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+    private const array ROW_COLUMNS = ['a.id', 'a.job_id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.match_score', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
 
@@ -48,7 +49,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         $direction = $query->newestFirst ? 'desc' : 'asc';
         $now = $this->clock->now();
 
-        $rows = $this->ordered($this->withRatings($filtered), $query, $direction)
+        // A rating filter has joined the ratings already.
+        $rows = $this->ordered($query->filters->ratingMin === null ? $this->withRatings($filtered) : $filtered, $query, $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
             ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()])
@@ -74,7 +76,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
             $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))
-                ->get([...self::ROW_COLUMNS, 'a.job_id', $this->interviewStateColumn()])
+                ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()])
                 ->keyBy('id');
 
             foreach ($chunk as $id) {
@@ -93,11 +95,27 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
     {
         $filtered = $this->connection->table('recruitment_applications as a')
             ->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')
-            ->where('a.job_id', $query->jobId)
+            ->when($query->jobId !== null, fn (Builder $b) => $b->where('a.job_id', $query->jobId))
+            ->when($query->jobId === null, fn (Builder $b) => $b->where('a.company_id', $query->companyId))
+            ->when($query->jobId === null && $query->jobIds !== null, fn (Builder $b) => $b->whereIn('a.job_id', $query->jobIds))
             ->when($query->stageId !== null, fn (Builder $b) => $b->where('a.stage_id', $query->stageId))
             ->when($query->stageType !== null, fn (Builder $b) => $b->where('a.stage_type', $query->stageType?->value))
-            ->when($query->hiringManagerVisibleOnly, fn (Builder $b) => $b->whereNotNull('a.hiring_manager_visible_at'))
+            ->when($query->activeOnly && $query->stageId === null && $query->stageType === null, fn (Builder $b) => $b->whereNotIn('a.stage_type', [StageType::Hired->value, StageType::Rejected->value, StageType::Withdrawn->value]))
+            ->when($query->hiringManagerBoundJobIds !== [], fn (Builder $b) => $b->where(fn (Builder $bound) => $bound->whereNotIn('a.job_id', $query->hiringManagerBoundJobIds)->orWhereNotNull('a.hiring_manager_visible_at')))
             ->when($query->meetsMustHave !== null, fn (Builder $b) => $b->where('a.meets_must_have', $query->meetsMustHave === true ? 1 : 0));
+
+        $searching = $query->search !== null && $query->search !== '';
+
+        // The facets are joined only when something reads them; an application without a row (anonymised, or not built yet) matches no facet filter.
+        if ($searching || $query->filters->usesFacets()) {
+            $filtered->leftJoin('recruitment_application_facets as f', 'f.application_id', '=', 'a.id');
+        }
+
+        if ($query->filters->ratingMin !== null) {
+            $this->withRatings($filtered);
+        }
+
+        $this->whereFilters($filtered, $query->filters);
 
         if ($query->staleOnly) {
             // Whole Jakarta days: the day the stage was entered, in Jakarta time, is more than the limit before today.
@@ -111,11 +129,50 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->whereInterviewState($filtered, $query->interviewState);
         }
 
-        if ($query->search !== null && $query->search !== '') {
-            TextSearch::contains($filtered, new Expression("a.profile_snapshot->>'name'"), $query->search);
+        if ($searching) {
+            $filtered->where(function (Builder $match) use ($query): void {
+                TextSearch::contains($match, new Expression("a.profile_snapshot->>'name'"), (string) $query->search);
+                TextSearch::contains($match, 'f.search_text', (string) $query->search, 'or');
+            });
         }
 
         return $filtered;
+    }
+
+    /** The profile, score, origin and process filters (`docs/design/phase-8-applicant-search.md` section 3). */
+    private function whereFilters(Builder $filtered, ApplicantFilters $filters): void
+    {
+        $filtered
+            ->when($filters->provinceId !== null, fn (Builder $b) => $b->where('f.province_id', $filters->provinceId))
+            ->when($filters->cityId !== null, fn (Builder $b) => $b->where('f.city_id', $filters->cityId))
+            ->when($filters->educationRankMin !== null, fn (Builder $b) => $b->whereRaw('f.education_rank::integer >= ?', [$filters->educationRankMin]))
+            // Whole years: 2 to 5 years keeps 24 months up to 71 months.
+            ->when($filters->experienceMinYears !== null, fn (Builder $b) => $b->where('f.experience_months', '>=', (int) $filters->experienceMinYears * 12))
+            ->when($filters->experienceMaxYears !== null, fn (Builder $b) => $b->where('f.experience_months', '<', ((int) $filters->experienceMaxYears + 1) * 12))
+            ->when($filters->skillIds !== [], fn (Builder $b) => $b->whereRaw('f.skill_ids @> ?::integer[]', ['{'.implode(',', $filters->skillIds).'}']))
+            ->when($filters->salaryMax !== null, fn (Builder $b) => $b->where('f.expected_salary_monthly', '<=', $filters->salaryMax))
+            ->when($filters->matchMin !== null, fn (Builder $b) => $b->where('a.match_score', '>=', $filters->matchMin))
+            ->when($filters->ratingMin !== null, fn (Builder $b) => $b->where('r.rating_average', '>=', $filters->ratingMin))
+            ->when($filters->appliedFrom !== null, fn (Builder $b) => $b->where('a.applied_at', '>=', $this->jakartaDayStart((string) $filters->appliedFrom)))
+            ->when($filters->appliedTo !== null, fn (Builder $b) => $b->where('a.applied_at', '<', $this->jakartaDayStart((string) $filters->appliedTo, '+1 day')))
+            ->when($filters->invited !== null, fn (Builder $b) => $b->where('f.from_invitation', $filters->invited))
+            ->when($filters->returning !== null, fn (Builder $b) => $b->where('f.returning', $filters->returning))
+            ->when($filters->states !== [], fn (Builder $b) => $b->where(function (Builder $any) use ($filters): void {
+                foreach ($filters->states as $state) {
+                    match ($state) {
+                        ApplicantFilters::INTERVIEW_SCHEDULED => $any->orWhereExists(fn (Builder $q) => $q->selectRaw('1')->from('recruitment_interviews as i')->whereColumn('i.application_id', 'a.id')->whereIn('i.status', ['pending', 'confirmed'])),
+                        ApplicantFilters::OFFER_PENDING => $any->orWhereExists(fn (Builder $q) => $q->selectRaw('1')->from('recruitment_offers as o')->whereColumn('o.application_id', 'a.id')->where('o.status', 'pending')),
+                        ApplicantFilters::TEST_PENDING => $any->orWhereIn('a.id', $filters->pendingTestApplicationIds ?? []),
+                        default => $any->orWhereRaw('1 = 0'),
+                    };
+                }
+            }));
+    }
+
+    /** The start of a Jakarta day (moved by `$shift`) as a UTC time, the way the application times are stored. */
+    private function jakartaDayStart(string $date, string $shift = 'now'): string
+    {
+        return (new DateTimeImmutable($date, new DateTimeZone(StageClock::ZONE)))->modify($shift)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
     }
 
     /**
@@ -151,8 +208,13 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
     /** By the applied time, or by the time in stage: more days in the stage is an earlier `stage_entered_at`, so the direction is reversed. */
     private function ordered(Builder $builder, RecruiterApplicationQuery $query, string $direction): Builder
     {
+        // The score and the rating put the applications without one last, whichever way the list runs; both ties fall back to the newest.
         if ($query->sortKey === RecruiterApplicationQuery::SORT_DAYS_IN_STAGE) {
             $builder->orderByRaw("(a.stage_entered_at AT TIME ZONE 'UTC' AT TIME ZONE '".StageClock::ZONE."')::date ".($direction === 'desc' ? 'asc' : 'desc'));
+        } elseif ($query->sortKey === RecruiterApplicationQuery::SORT_MATCH_SCORE) {
+            $builder->orderByRaw("a.match_score {$direction} nulls last")->orderBy('a.applied_at', 'desc');
+        } elseif ($query->sortKey === RecruiterApplicationQuery::SORT_RATING) {
+            $builder->orderByRaw("r.rating_average {$direction} nulls last")->orderBy('a.applied_at', 'desc');
         } else {
             $builder->orderBy('a.applied_at', $direction);
         }
@@ -170,11 +232,12 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         return $builder->leftJoinLateral($ratings, 'r');
     }
 
-    public function countByStage(int $jobId, bool $hiringManagerVisibleOnly = false): array
+    public function countByStage(RecruiterApplicationQuery $query): array
     {
         $counts = [];
 
-        foreach ($this->connection->table('recruitment_applications')->where('job_id', $jobId)->when($hiringManagerVisibleOnly, fn (Builder $b) => $b->whereNotNull('hiring_manager_visible_at'))->groupBy('stage_id')->selectRaw('stage_id, COUNT(*) as total')->get() as $row) {
+        // The columns show how many applications each stage would hold under the other filters, so the stage filters and the "active only" default do not apply.
+        foreach ($this->filtered($query->withoutStageFilters())->groupBy('a.stage_id')->selectRaw('a.stage_id, COUNT(*) as total')->get() as $row) {
             $counts[(int) $row->stage_id] = (int) $row->total;
         }
 
@@ -312,6 +375,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             0,
             $type === StageType::Interview ? (string) ($row->interview_state ?? self::NOT_SCHEDULED) : null,
             hire: $this->hire($row),
+            matchScore: $row->match_score === null ? null : (int) $row->match_score,
+            jobId: (int) $row->job_id,
         );
     }
 

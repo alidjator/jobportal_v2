@@ -1,4 +1,4 @@
-# Phase 8: applicants across jobs, keyword search and more pipeline filters (designed 2026-10-14, not coded)
+# Phase 8: applicants across jobs, keyword search and more pipeline filters (designed 2026-10-14, coded 2026-10-19, not checked yet)
 
 Gaps found against Mekari Talenta's Candidates menu (help center article 34633532438169): one list of all applicants across jobs, a keyword search,
 many filters and a candidate score column. Not copied on purpose: age and gender filters (protected attributes; our sensitive filters stay off until
@@ -13,6 +13,10 @@ filters), `phase-1-applications.md` (snapshot), `phase-3-matching.md` (score) an
   rating** (minimum match score, sort by score, minimum average rating), on **origin and time** (date range, invited, returning applicant) and on
   **process state** (interview scheduled, offer pending, test not done). Age and gender are not offered (decided by the user).
 - 2026-10-14: a **list across jobs** that shows active applications by default (decided by the user).
+- 2026-10-19: the snapshot `location` block gains `province_id` and `city_id` (additive, version stays 1) so the facet reads them from the snapshot; a
+  snapshot without ids gives null facets (decided by the user, section 1).
+- 2026-10-19: `education_rank` comes from a new method of the `ReferenceValues` port (level id to rank), read when the facet is built; the snapshot
+  keeps only the level id (decided by the user, section 1).
 
 ## 1. Facet table
 
@@ -87,3 +91,28 @@ Added to `GET company/jobs/{id}/applications` and the new list across jobs; any 
 | API | `GET company/applications`; new filters, `filter[q]` over `search_text` and sorts on both lists; `match_score` and `rating` on rows |
 | Errors | 422 `invalid-filter` for a malformed value or a `q` shorter than 2 characters |
 | Front end | filter panel and score column on the pipeline list (C5); "Semua pelamar" page (C5b) |
+
+## Coded (2026-10-19)
+
+Migration `000172` (`recruitment_application_facets`; plus the foreign keys to `company_companies`, `job_jobs`, `reference_provinces` and `reference_cities`, all RESTRICT).
+Branch `phase-8-applicant-search`. Not checked yet by the user's own run.
+
+- **Code:** `ApplicationFacetBuilder` (snapshot to `ApplicationFacets`), `ExperienceMonths` (the matching rule, in Recruitment's domain), `ApplicationFacetRepository`
+  (save, `hasEarlierApplication`, `sourcesWithoutFacets`), `BuildApplicationFacets` and the command `recruitment:build-application-facets`; `ApplyToJob` writes the row in
+  its transaction. `ApplicantFilters` and `ApplicantFilterResolver` carry and complete the filters; `ApplicationRowEnricher` is the per-page enrichment both lists share.
+  `RecruiterApplicationQuery` gained `filters`, the across-jobs scope (`companyId`, `jobIds`, `activeOnly`) and `hiringManagerBoundJobIds` (replaces the boolean).
+- **Ports:** `ReferenceValues::educationRanks()`, `InvitedCandidates::applicationIdsHeld()` (backfill only; at apply time the existing source check decides
+  `from_invitation`), `AssessmentInvitations::applicationIdsWithPendingTest()` (`test_pending` is an invitation that is invited or started).
+- **API:** `GET company/applications` (`CompanyApplicantResource`: the job card plus `job {id, title}`); both lists take the new filters and sorts; rows carry `match_score`.
+- **Interpretations to confirm:**
+  - Only an expected salary given **per month** is kept in `expected_salary_monthly`; an hourly or per-project amount gives null (no hours-per-month rule exists), so
+    `filter[salary_max]` never matches it.
+  - `filter[experience_min]` and `filter[experience_max]` are whole completed years: 2 to 5 means 24 to 71 months.
+  - A malformed filter, an unknown filter, or a `q` under 2 characters is the usual 422 `validation-failed` with the field errors, as every other list; the separate
+    code `invalid-filter` of this design is not used (the same code is named in `phase-8-job-posting.md`, not coded yet).
+  - **Behaviour change:** the stage counts of the per-job list now follow the search and the filters (the stage filters and the "active only" default excluded), as
+    section 3 says; before they ignored every filter. `filter[q]` also needs 2 characters on the per-job list now (the tests were changed).
+  - An application with no facet row (anonymised, or imported and not built yet) matches only the stage, date, score and rating filters.
+  - A hiring manager bound to a job sees only marked applications of that job in the across-jobs list too, and the counts follow.
+  - The facet of an application is not updated later (the snapshot is frozen); `returning` is true when the person had an earlier application to the company at that moment.
+- **Before the final import:** run the command (`docs/deployment-checklist.md` section 3); the import writes applications without facets.

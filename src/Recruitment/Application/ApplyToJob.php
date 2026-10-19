@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswerChecker;
+use Src\Recruitment\Domain\ApplicationFacetRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
 use Src\Recruitment\Domain\ApplicationSource;
@@ -51,6 +52,8 @@ final readonly class ApplyToJob
         private InvitedCandidates $invitations,
         private ApplicantMatchScores $matchScores,
         private ApplicationRepository $applications,
+        private ApplicationFacetRepository $facets,
+        private ApplicationFacetBuilder $facetBuilder,
         private JobQuestionRepository $jobQuestions,
         private StageRepository $stages,
         private ScreeningSwitch $screening,
@@ -129,7 +132,11 @@ final readonly class ApplyToJob
                 $storedPath = 'recruitment/applications/'.bin2hex(random_bytes(20)).'.pdf';
                 $this->files->put($storedPath, $submission->resume->contents);
 
-                return $this->applications->add(
+                $appliedAt = $this->clock->now();
+                $source = $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation;
+                $snapshot = ['name' => $contact->name, 'email' => $contact->email] + $submission->snapshot;
+
+                $application = $this->applications->add(
                     Application::submit(
                         $userId,
                         $jobId,
@@ -137,15 +144,25 @@ final readonly class ApplyToJob
                         $appliedStage->id,
                         $coverLetter,
                         new ApplicationResume($submission->resume->name, $storedPath, strlen($submission->resume->contents)),
-                        ['name' => $contact->name, 'email' => $contact->email] + $submission->snapshot,
+                        $snapshot,
                         $checked->meetsMustHave,
-                        $this->clock->now(),
-                        $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation,
+                        $appliedAt,
+                        $source,
                         $this->matchScores->percent($userId, $jobId),
-                        $input->talentPoolConsent ? $this->clock->now() : null,
+                        $input->talentPoolConsent ? $appliedAt : null,
                     ),
                     $checked->answers,
                 );
+
+                $this->facets->save(
+                    (int) $application->id,
+                    $companyId,
+                    $jobId,
+                    $appliedAt,
+                    $this->facetBuilder->build($snapshot, $appliedAt, $source === ApplicationSource::Invitation, $this->facets->hasEarlierApplication($userId, $companyId, $appliedAt)),
+                );
+
+                return $application;
             });
         } catch (Throwable $e) {
             // The copy of the resume is written inside the transaction; when anything fails afterwards it must not stay behind.

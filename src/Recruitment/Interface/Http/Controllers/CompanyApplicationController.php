@@ -10,6 +10,8 @@ use Src\Recruitment\Application\ExportHires;
 use Src\Recruitment\Application\ExportJobApplications;
 use Src\Recruitment\Application\GetCompanyApplication;
 use Src\Recruitment\Application\GetCompanyApplicationResume;
+use Src\Recruitment\Application\JobApplicationList;
+use Src\Recruitment\Application\ListCompanyApplications;
 use Src\Recruitment\Application\ListJobApplications;
 use Src\Recruitment\Application\ProcessApplication;
 use Src\Recruitment\Application\StageCount;
@@ -19,11 +21,13 @@ use Src\Recruitment\Interface\Http\CsvDownload;
 use Src\Recruitment\Interface\Http\PdfDownload;
 use Src\Recruitment\Interface\Http\Requests\ExportHiresRequest;
 use Src\Recruitment\Interface\Http\Requests\ExportJobApplicationsRequest;
+use Src\Recruitment\Interface\Http\Requests\ListCompanyApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\ListJobApplicationsRequest;
 use Src\Recruitment\Interface\Http\Requests\MarkApplicationWithdrawnRequest;
 use Src\Recruitment\Interface\Http\Requests\MoveApplicationRequest;
 use Src\Recruitment\Interface\Http\Requests\RejectApplicationRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateApplicationHireRequest;
+use Src\Recruitment\Interface\Http\Resources\CompanyApplicantResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationDetailResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -38,9 +42,21 @@ final class CompanyApplicationController extends ApiController
     {
         $result = $list->execute($actors->fromRequest($request), $request->toQuery($id), $request->pageRequest());
 
-        return CompanyApplicationResource::collection(PaginatedResources::paginator($result->page, $request))->additional([
-            'stages' => array_map(static fn (StageCount $stage): array => ['id' => $stage->stageId, 'type' => $stage->type->value, 'name' => $stage->name, 'count' => $stage->count], $result->stages),
-        ]);
+        return CompanyApplicationResource::collection(PaginatedResources::paginator($result->page, $request))->additional(['stages' => $this->stages($result)]);
+    }
+
+    /** The applicants across the jobs the member may see (`docs/design/phase-8-applicant-search.md` section 4): each row is the card of the job list plus its job. */
+    public function all(ListCompanyApplicationsRequest $request, ActorResolver $actors, ListCompanyApplications $list): AnonymousResourceCollection
+    {
+        $result = $list->execute($actors->fromRequest($request), $request->toQuery(), $request->pageRequest());
+
+        return CompanyApplicantResource::collection(PaginatedResources::paginator($result->page, $request))->additional(['stages' => $this->stages($result)]);
+    }
+
+    /** @return list<array{id: int, type: string, name: string, count: int}> */
+    private function stages(JobApplicationList $result): array
+    {
+        return array_map(static fn (StageCount $stage): array => ['id' => $stage->stageId, 'type' => $stage->type->value, 'name' => $stage->name, 'count' => $stage->count], $result->stages);
     }
 
     public function export(ExportJobApplicationsRequest $request, int $id, ActorResolver $actors, ExportJobApplications $export): StreamedResponse

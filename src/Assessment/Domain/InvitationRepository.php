@@ -13,6 +13,14 @@ interface InvitationRepository
     /** The application's invitation that is invited or started, if any. */
     public function active(int $applicationId, bool $forUpdate = false): ?Invitation;
 
+    /**
+     * The applications of the company that have an invitation invited or started, whichever the invitation; `$jobIds` limits them to those jobs (null: every job).
+     *
+     * @param  list<int>|null  $jobIds
+     * @return list<int>
+     */
+    public function activeApplicationIds(int $companyId, ?array $jobIds): array;
+
     /** Inserts a new invitation with its assessors and returns it with its id. */
     public function add(Invitation $invitation): Invitation;
 

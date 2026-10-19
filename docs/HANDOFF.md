@@ -12,11 +12,11 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 | API-document rules, error catalog | `docs/api/` |
 | History | `docs/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
 
-## Current state (2026-10-18)
+## Current state (2026-10-19)
 
 - `master` is tagged `v0.6.0` (3145 tests green); earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
-- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16, #17 coded, #12 and #13 partly; **#18 (talent pool) coded and checked 2026-10-18 on branch `phase-8-talent-pool` (`composer check` green, 3182 tests), not committed yet**; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
-- Real PostgreSQL `jobportal_v2` and the test database are at `000169`; **`000170` and `000171` (#18) are new and still to run on both**; reference data only (0 accounts) until the final import.
+- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16, #17, #18 coded and committed (#18 is `8209f1c` on `master`), #12 and #13 partly; **#19 (applicant search) coded 2026-10-19 on branch `phase-8-applicant-search`, not checked and not committed yet**; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
+- Real PostgreSQL `jobportal_v2` and the test database: **`000172` (#19) is new and to run on both** (`000170` and `000171` of #18 too, if not run yet); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
 - **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions), so the next item is **#27 `company_locations` (needs a design session)**, then #28 (job `locations` in the API); both come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #27, #28 and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).

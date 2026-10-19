@@ -43,4 +43,14 @@ final readonly class DatabaseInvitedCandidates implements InvitedCandidates
         return $this->connection->table('jobinvitation_invitations')->where('job_id', $jobId)->whereIn('user_id', $userIds)->pluck('user_id')
             ->map(fn (mixed $id): int => (int) $id)->values()->all();
     }
+
+    public function applicationIdsHeld(array $applicationIds): array
+    {
+        if ($applicationIds === []) {
+            return [];
+        }
+
+        return $this->connection->table('jobinvitation_invitations')->whereIn('application_id', $applicationIds)->distinct()->pluck('application_id')
+            ->map(fn (mixed $id): int => (int) $id)->values()->all();
+    }
 }

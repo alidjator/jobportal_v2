@@ -45,6 +45,20 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
         return $row === null ? null : $this->hydrate([$row])[0];
     }
 
+    public function activeApplicationIds(int $companyId, ?array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        return $this->connection->table(self::TABLE)
+            ->where('company_id', $companyId)
+            ->whereIn('status', $this->activeStatuses())
+            ->when($jobIds !== null, fn ($query) => $query->whereIn('job_id', $jobIds))
+            ->pluck('application_id')
+            ->map(fn (mixed $id): int => (int) $id)->values()->all();
+    }
+
     public function add(Invitation $invitation): Invitation
     {
         $now = $this->clock->now();

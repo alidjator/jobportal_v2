@@ -42,7 +42,16 @@ final readonly class RecruiterApplicationRow
         public ?array $interviewRsvp = null,
         public ?array $reviewSummary = null,
         public ?HireDetails $hire = null,
+        public ?int $matchScore = null,
+        public int $jobId = 0,
+        public ?string $jobTitle = null,
     ) {}
+
+    /** The row with the title of its job (the list across jobs shows it). */
+    public function withJobTitle(?string $title): self
+    {
+        return $this->with(jobTitle: $title);
+    }
 
     /** The row with the result of its latest scored interview (what the viewer may see of it). */
     public function withInterviewResult(?InterviewResult $result): self

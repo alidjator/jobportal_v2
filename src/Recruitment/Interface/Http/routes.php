@@ -55,6 +55,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
 
     Route::get('company/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
+    Route::get('company/applications', [CompanyApplicationController::class, 'all']);
     Route::get('company/hires/export', [CompanyApplicationController::class, 'exportHires'])->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
     Route::get('company/jobs/{id}/applications/export', [CompanyApplicationController::class, 'export'])->whereNumber('id')->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
     Route::post('company/jobs/{id}/applications/bulk-move', [BulkApplicationController::class, 'move'])->whereNumber('id');

@@ -36,4 +36,13 @@ interface ReferenceValues
 
     /** The id of the item with that slug, active or not, or null when there is none. For a fixed, well-known item such as the monthly salary period. */
     public function idBySlug(string $master, string $slug): ?int;
+
+    /**
+     * The rank of several education levels in one query, keyed by id (an id with no level is missing), whether or not the level is still active. A higher rank is a
+     * higher level of education.
+     *
+     * @param  list<int>  $levelIds
+     * @return array<int, int>
+     */
+    public function educationRanks(array $levelIds): array;
 }

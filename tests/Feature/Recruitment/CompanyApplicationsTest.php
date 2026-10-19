@@ -102,7 +102,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertSame([$this->secondId, $this->firstId], array_column($response->json('data'), 'id'));
 
         $row = $response->json('data.1');
-        $this->assertSame(['id', 'applicant', 'meets_must_have', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'stale', 'interview_state', 'interview_rsvp', 'review_summary', 'other_applications_count', 'hire'], array_keys($row));
+        $this->assertSame(['id', 'applicant', 'meets_must_have', 'match_score', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'stale', 'interview_state', 'interview_rsvp', 'review_summary', 'other_applications_count', 'hire'], array_keys($row));
         $this->assertSame(['is_deleted', 'name', 'headline', 'latest_experience', 'city', 'expected_salary', 'age'], array_keys($row['applicant']));
         $this->assertFalse($row['applicant']['is_deleted']);
         $this->assertSame('Siti Rahma', $row['applicant']['name']);
@@ -121,17 +121,21 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $response->assertJsonPath('meta.total', 2);
     }
 
-    public function test_the_list_carries_every_stage_with_its_count_whatever_the_filters(): void
+    public function test_the_list_carries_every_stage_with_its_count_under_the_filters_except_the_stage_ones(): void
     {
         $interview = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'interview')->where('is_default', 1)->value('id');
         DB::table('recruitment_applications')->where('id', $this->secondId)->update(['stage_id' => $interview, 'stage_type' => 'interview']);
 
-        foreach ([[], ['filter' => ['stage_type' => 'interview']], ['filter' => ['q' => 'nobody']]] as $query) {
+        // The stage filters leave the counts alone; any other filter narrows them.
+        foreach ([[], ['filter' => ['stage_type' => 'interview']]] as $query) {
             $stages = $this->list($query)->assertOk()->json('stages');
 
             $this->assertSame(['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($stages, 'type'));
             $this->assertSame([1, 0, 0, 1, 0, 0, 0, 0], array_column($stages, 'count'));
         }
+
+        $this->assertSame([0, 0, 0, 0, 0, 0, 0, 0], array_column($this->list(['filter' => ['q' => 'nobody']])->assertOk()->json('stages'), 'count'));
+        $this->assertSame([0, 0, 0, 1, 0, 0, 0, 0], array_column($this->list(['filter' => ['q' => 'budi']])->assertOk()->json('stages'), 'count'));
 
         // Another job's applications are not counted.
         $other = $this->insertJob('Other job', 'active', attributes: ['deadline' => '2026-12-31']);
@@ -152,8 +156,10 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertSame([$this->firstId], $ids($this->list(['filter' => ['meets_must_have' => 'true']])));
         $this->assertSame([$this->secondId], $ids($this->list(['filter' => ['meets_must_have' => 'false']])));
         $this->assertSame([$this->secondId], $ids($this->list(['filter' => ['q' => 'budi']])));
-        $this->assertSame([$this->secondId, $this->firstId], $ids($this->list(['filter' => ['q' => 'S']])));
-        $this->assertSame([], $ids($this->list(['filter' => ['q' => '%']])));
+        // The search also reads the words of the profile (here the headline and the job title), and `%` is searched for literally.
+        $this->assertSame([$this->secondId, $this->firstId], $ids($this->list(['filter' => ['q' => 'backend'], 'sort' => '-applied_at'])));
+        $this->assertSame([], $ids($this->list(['filter' => ['q' => '%%']])));
+        $this->list(['filter' => ['q' => 'S']])->assertStatus(422);
         $this->assertSame([], $ids($this->list(['filter' => ['stage_type' => 'offer']])));
 
         $this->list(['filter' => ['stage_type' => 'unknown']])->assertStatus(422);
