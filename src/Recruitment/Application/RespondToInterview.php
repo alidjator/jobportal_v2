@@ -117,6 +117,7 @@ final readonly class RespondToInterview
 
         $this->events->dispatch([$event]);
 
-        return $this->views->one($saved);
+        return $this->views->one($saved)
+            ->withRescheduleUntil($saved->rescheduleUntil($this->settings->integer(RecruitmentSettings::INTERVIEW_RESCHEDULE_CUTOFF_HOURS, $event->companyId)));
     }
 }

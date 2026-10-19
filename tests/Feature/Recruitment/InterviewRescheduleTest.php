@@ -136,6 +136,20 @@ final class InterviewRescheduleTest extends FeatureTestCase
             ->assertJsonPath('data.0.proposal.reason', 'Ada ujian di kampus.');
     }
 
+    public function test_the_job_seeker_sees_until_when_a_confirmed_interview_can_be_moved(): void
+    {
+        $this->openInterview(confirm: false);
+        $mine = fn (): TestResponse => $this->api('GET', "/me/applications/{$this->applicationId}/interview", token: $this->seekerToken)->assertOk();
+        $mine()->assertJsonPath('data.reschedule_until', null);
+
+        $this->mine('confirm')->assertOk()->assertJsonPath('data.reschedule_until', '2026-10-07T02:00:00+00:00');
+        $this->app->make(SettingsStore::class)->setCompanyOverride('recruitment.interview_reschedule_cutoff_hours', $this->companyId, 6, null);
+        $mine()->assertJsonPath('data.reschedule_until', '2026-10-07T20:00:00+00:00');
+
+        $this->mine('propose', ['starts_at' => '2026-10-09T03:00:00Z', 'reason' => 'Bentrok'])->assertOk()->assertJsonPath('data.reschedule_until', null);
+        $this->api('GET', "/company/applications/{$this->applicationId}/interviews", token: $this->recruiterToken)->assertOk()->assertJsonPath('data.0.reschedule_until', null);
+    }
+
     public function test_the_request_closes_at_the_cut_off_and_the_new_time_must_be_as_far_ahead(): void
     {
         $this->openInterview();

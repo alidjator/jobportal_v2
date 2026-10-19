@@ -143,5 +143,6 @@ invitation of `phase-8-interviewers.md` section 2 to every panel member, and eve
   note here wrongly said analytics did not exist). It gains the table `interviews`: the interviews that started in the range by status
   (`scheduled` = all, `pending`, `confirmed`, `completed`, `no_show`, `declined`, `cancelled`), read live from `recruitment_interviews`, and
   `no_show_rate` = no-shows among the confirmed ones (`confirmed`, `completed`, `no_show`); suppressed below the smallest group. No migration.
-- **Not done here:** the job seeker's interview resource does not say until when a move can be asked (the front end shows the cut-off from
-  the 409 `reschedule-too-late`).
+- **`reschedule_until` (added 2026-10-19, chosen by the user):** the job seeker's interview (`GET me/applications/{id}/interview` and the
+  answers to it) carries until when a confirmed interview may be asked to move: the start less the company's cut-off; null while pending,
+  with an open proposal or without proposals left, and always null in the team's resources. It may already be past.

@@ -52,6 +52,11 @@ final class InterviewResource extends JsonResource
             ],
             /** @var int */
             'proposals_left' => max(0, Interview::PROPOSALS_MAX - $interview->proposalsUsed),
+            /**
+             * Job seeker only (null for the team): until when a confirmed interview may be asked to move (the start less the company's cut-off); null while
+             * pending, with an open proposal or without proposals left. Once past, a request is refused with `reschedule-too-late`.
+             */
+            'reschedule_until' => $this->resource->rescheduleUntil?->format(DATE_ATOM),
             'created_at' => $interview->createdAt->format(DATE_ATOM),
         ];
     }

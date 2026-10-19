@@ -145,6 +145,19 @@ final readonly class Interview
     }
 
     /**
+     * Until when the job seeker may ask to move the interview: the start less the cut-off, for a confirmed interview without an open proposal and with
+     * proposals left; null otherwise. It may already be past.
+     */
+    public function rescheduleUntil(int $cutoffHours): ?DateTimeImmutable
+    {
+        if ($this->status !== InterviewStatus::Confirmed || $this->hasProposal() || $this->proposalsUsed >= self::PROPOSALS_MAX) {
+            return null;
+        }
+
+        return $this->startsAt->sub(new DateInterval('PT'.max(0, $cutoffHours).'H'));
+    }
+
+    /**
      * The job seeker confirms. For a recorded interview they also answer the recording (granted or refused); the answer is ignored otherwise. For a voice
      * interview they give the number to call (`$phone`, required); for a video interview they may give a fallback number (`$fallbackPhone`); other formats ignore both.
      *
