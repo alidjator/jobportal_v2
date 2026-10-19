@@ -10,7 +10,8 @@ use Src\Recruitment\Domain\InterviewFormat;
 /**
  * Writes the iCalendar (RFC 5545) file of an interview (`docs/design/phase-8-interview-calendar.md` section 3). One interview chain is one event: the UID stays and the
  * sequence rises with every change, so a calendar app moves or cancels the event it has. Times are UTC. The description never holds a join token; an external
- * meeting link the recruiter set is included, as in the email. `$pageUrlTemplate` is the client page of the application with `{application_id}` in it (empty: no link).
+ * meeting link the recruiter set is included, as in the email. `$pageUrlTemplate` is the job seeker's page of the application with `{application_id}` in it (empty: no link);
+ * `$teamPageUrlTemplate` is the company team's page, used by the files made through `forTeam()` (the panel's, the downloaded one and the team's cancellation).
  */
 final readonly class InterviewCalendar
 {
@@ -22,7 +23,13 @@ final readonly class InterviewCalendar
 
     private const int FOLD = 75;
 
-    public function __construct(private string $organizerAddress, private ?string $pageUrlTemplate = null) {}
+    public function __construct(private string $organizerAddress, private ?string $pageUrlTemplate = null, private ?string $teamPageUrlTemplate = null) {}
+
+    /** The same calendar writing the company team's page in place of the job seeker's. */
+    public function forTeam(): self
+    {
+        return new self($this->organizerAddress, $this->teamPageUrlTemplate, $this->teamPageUrlTemplate);
+    }
 
     /**
      * @param  ?array{name: string, email: string}  $attendee  the job seeker; left out of the file the team downloads

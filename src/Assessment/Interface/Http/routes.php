@@ -59,6 +59,7 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     // The tests sent to the candidates, for the members who may see the application.
     Route::get('applications/{id}/invitations', [InvitationController::class, 'index'])->whereNumber('id');
     Route::put('applications/{id}/invitation', [InvitationController::class, 'store'])->whereNumber('id');
+    Route::get('invitations', [ResultController::class, 'toScore']);
     Route::get('invitations/{id}', [InvitationController::class, 'show'])->whereNumber('id');
     Route::post('invitations/{id}/cancel', [InvitationController::class, 'cancel'])->whereNumber('id');
     Route::post('invitations/{id}/attachment', [InvitationController::class, 'attach'])->whereNumber('id');

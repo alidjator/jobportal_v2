@@ -402,7 +402,7 @@ Decided by the user on 2026-10-19 (section 3): the back office has its own sign-
 | C28 | Review kandidat (hiring manager) | `/review`, `/review/{id}` | `GET company/review-requests` (`filter[state]`, `filter[role]`), `GET .../{id}`, `PUT .../{id}/applications/{applicationId}/review` (Lanjut / Tidak / Mungkin with a note), `POST .../{id}/close` | `applications.review` |
 | C29 | Company settings | `/perusahaan/pengaturan` (a tab beside C20, `phase-8-company-admin.md`) | `GET`/`PATCH company/settings` (`company.require_two_factor`, stale days, `recruitment.applicant_retention_months`), `GET`/`PUT company/message-defaults` ("Teks default pesan", "Pesan lamaran diterima"). **#15:** the rejection default. **#14:** restricted candidates (`company/restrictions`). **#32:** check types. | company admin |
 | C30 | Wawancara saya | `/wawancara` | `GET company/interviews` (upcoming and past; `filter[rsvp]`, `filter[my_scorecard]`, `filter[proposal]`), RSVP from the row | `interviews.participate` |
-| C31 | Penilaian tes saya | `/asesmen/penilaian` | `GET company/assessment/invitations?filter[my_scoring]=pending` (**not coded**: asked by the front end, decided by the user on 2026-10-19, section 8.5); until it lands the task link opens C1 | assessors |
+| C31 | Penilaian tes saya | `/asesmen/penilaian` | `GET company/assessment/invitations?filter[my_scoring]=pending` (**coded 2026-10-19**, section 8.5) | assessors |
 | C32 | Work locations | `/perusahaan/lokasi` | `GET`/`POST company/locations`, `PATCH`/`DELETE .../{id}`, `main`, `activate`, `deactivate` (address picker, section 11.7) | `company.profile` (the list is read by every member for the pickers) |
 
 ### 8.3 Workforce and organisation: ERP pages
@@ -444,6 +444,12 @@ across tenants are audited per applicant, which the page says.
   the task at `company/assessment/invitations?filter[my_scoring]=pending` (`phase-8-recruiter-workday.md`), but only
   `GET company/assessment/invitations/{id}` is coded. **Decided:** add the list endpoint as an endpoint the front end asks for (allowed during the
   limited coding of `decisions.md` section 5) for page C31; until it lands, the task link opens C1.
+  **Coded (2026-10-19):** `GET company/assessment/invitations?filter[my_scoring]=pending`, decided by the user the same day: `filter[my_scoring]=pending`
+  is **required** (missing or any other filter is 422) and the member needs no permission beyond being an assessor of the invitation (the set the task counts: the
+  company's `submitted` invitations whose result is `pending_scoring`). **Offset-paginated** (`page`, `per_page`; the standard `links` and `meta` with `total`, as
+  `company/applications`); **longest waiting first** (the attempt's `submitted_at`, then id). Each row is the fields of `GET company/assessment/invitations/{id}`
+  plus `candidate {id, name}`, `job {id, title}` and `submitted_at`; no score and no answer. The front end links a row to the existing `invitations/{id}/scoring`
+  calls. The task link no longer needs the C1 fallback (12.3).
 - **Page numbers of the designs** (FEG3, decided by the user on 2026-10-19): the pipeline is C6 and the job detail C5; the designs that called the
   pipeline "C5" (`phase-8-applicant-search.md`, `phase-8-recruiter-workday.md`) and the default test per stage "C5"
   (`phase-8-assessment-automation.md`, which belongs in the job editor C4) were corrected the same day.
@@ -845,7 +851,7 @@ Decided by the user on 2026-10-19:
 | Newsletter confirmation | confirmation email | `NEWSLETTER_CONFIRM_URL=https://karir.satu.solutions/newsletter/konfirmasi/{token}` | public P10 | works (token) | works |
 | Newsletter unsubscribe | every issue | `NEWSLETTER_UNSUBSCRIBE_URL=https://karir.satu.solutions/newsletter/berhenti/{token}` | public P10 | works (token) | works |
 | Manual-candidate claim | **#31** email to the person | setting named when #31 is coded; value `https://karir.satu.solutions/undangan-lamaran/{token}` | public P15 | page works; the claim needs A1 | A1 refuses a company member |
-| Team interview `.ics` | panel invitation `.ics`, `GET company/interviews/{id}/calendar.ics`, the cancellation on a withdrawal | today `JOB_SEEKER_APPLICATION_URL` (12.5); after the fix `COMPANY_APPLICATION_URL` | back office C7 | B1, then back | until the fix the link opens J5, and A1 sends the member on to C7 |
+| Team interview `.ics` | panel invitation `.ics`, `GET company/interviews/{id}/calendar.ics`, the cancellation on a withdrawal | `COMPANY_APPLICATION_URL` (coded 2026-10-19, 12.5) | back office C7 | B1, then back | files made before the fix still open J5, and A1 sends the member on to C7 |
 
 Not a link of ours: the meeting link of an online interview (set by the company), an announcement's `link_url` (set by an admin), Moodle course
 links (`MOODLE_COURSE_URL`). No link by design: password reset and email verification (six-digit codes), the data export email (download while
@@ -874,7 +880,7 @@ the "Perlu tindakan" card of C1, whose items carry the same `filter`, and the A1
 | `/company/interviews?filter[rsvp]=declined` | `panel_declined` | C30 with the same filter |
 | `/company/interviews?filter[my_scorecard]=pending` | `my_scorecards` | C30 with the same filter |
 | `/company/interviews?filter[proposal]=open` | `reschedule_requests` | C30 with the same filter |
-| `/company/assessment/invitations?filter[my_scoring]=pending` | `my_scoring` | C31 (C1 until its endpoint lands, 8.5) |
+| `/company/assessment/invitations?filter[my_scoring]=pending` | `my_scoring` | C31 (endpoint coded 2026-10-19, 8.5; the C1 fallback is no longer needed) |
 | anything else under `/company/` | | C1 with the notice "Tautan tidak dikenali" |
 
 The task keys are read from the code of 2026-10-19 (`src/*/Infrastructure/Tasks`); the coverage test of section 10 fails when the API gains a key
@@ -920,4 +926,8 @@ types. The coverage test of 11.6 also fails when a type has no row here.
   template, `JOB_SEEKER_APPLICATION_URL`, so the panel invitation `.ics`, the downloaded team `.ics` and the team's cancellation `.ics` carry the
   job seeker's J5 link. **Decided: fix it in the API** as work the front end asks for (the team's files use `COMPANY_APPLICATION_URL`); until then
   the A1 refusal sends a member on to C7 (12.3).
+  **Coded (2026-10-19):** `InterviewCalendar::forTeam()` writes `COMPANY_APPLICATION_URL` into the panel invitation and cancellation `.ics`, the
+  `GET company/interviews/{id}/calendar.ics` download and the team's withdrawal cancellation; the job seeker's files keep `JOB_SEEKER_APPLICATION_URL`. An empty
+  `COMPANY_APPLICATION_URL` leaves the team's files without a link (the job seeker's page is never used for them). The A1 refusal to C7 stays valid for old
+  files already in calendars.
 - **`my_scoring` has no list endpoint:** see 8.5 (decided the same day: the endpoint is added for C31).

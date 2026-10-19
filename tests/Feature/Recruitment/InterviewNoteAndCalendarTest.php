@@ -259,6 +259,27 @@ final class InterviewNoteAndCalendarTest extends FeatureTestCase
         $this->api('GET', "/company/interviews/{$id}/calendar.ics", token: $this->seekerToken)->assertForbidden();
     }
 
+    public function test_the_team_file_carries_the_company_page_and_the_job_seeker_file_keeps_the_job_seeker_page(): void
+    {
+        config(['app.application_url' => 'https://seeker.example/applications/{application_id}', 'app.company_application_url' => 'https://team.example/applications/{application_id}']);
+        $this->toInterviewStage($this->interviewSchedule())->assertOk();
+        $id = (int) $this->interviewRow()->id;
+
+        $seekerFile = str_replace("\r\n ", '', (string) $this->calendarOf(collect($this->emailsWithCalendar())->first()));
+        $this->assertStringContainsString("URL:https://seeker.example/applications/{$this->applicationId}\r\n", $seekerFile);
+        $this->assertStringNotContainsString('team.example', $seekerFile);
+
+        $teamFile = str_replace("\r\n ", '', $this->api('GET', "/company/interviews/{$id}/calendar.ics", token: $this->recruiterToken)->assertOk()->getContent());
+        $this->assertStringContainsString("URL:https://team.example/applications/{$this->applicationId}\r\n", $teamFile);
+        $this->assertStringContainsString("Details: https://team.example/applications/{$this->applicationId}", $teamFile);
+        $this->assertStringNotContainsString('seeker.example', $teamFile);
+
+        config(['app.company_application_url' => null]);
+        $bare = $this->api('GET', "/company/interviews/{$id}/calendar.ics", token: $this->recruiterToken)->assertOk()->getContent();
+        $this->assertStringNotContainsString("\r\nURL:", $bare);
+        $this->assertStringNotContainsString('seeker.example', $bare);
+    }
+
     public function test_a_long_line_is_folded_at_75_octets_without_breaking_a_character(): void
     {
         $note = str_repeat('Jalan Sudirman nomor 1, Jakarta Pusat — lantai 5 ', 6);

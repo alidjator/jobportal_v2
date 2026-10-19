@@ -128,6 +128,11 @@ they wait for the interview calendar (#10: message defaults, the logo, `intervie
   `filter[deadline_to]` (a day: deadline on or before it) and `filter[applications]=0` were added now, so the three job items already open a real list.
 
 
+## Coded: `my_scoring` list (2026-10-19)
+
+`GET company/assessment/invitations?filter[my_scoring]=pending` (Assessment, `ListInvitationsToScore`; asked by the front end for page C31, `frontend.md` 8.5). Decided by the user: the filter is required and the only one (422 otherwise), access is being an assessor of the company's
+invitation (no permission, as the task), offset pagination with total, longest waiting first (`attempt.submitted_at`). Rows: the invitation fields plus `candidate`, `job` and `submitted_at`. The set is the one `MyScoringTask` counts. Tests: `ScoringQueueTest`.
+
 ## Coded: section 5, the received email (2026-10-17)
 
 With #10 section 6 (migration `000157`: `company_message_defaults`). New template `recruitment.application_received` (job, company, the Jakarta date, the company's `applied` message, the link to the application page from `JOB_SEEKER_APPLICATION_URL`, empty when unset), sent by the queued listener

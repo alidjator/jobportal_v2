@@ -6,11 +6,13 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use LogicException;
+use Src\Assessment\Domain\AwaitingScoring;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationAttachment;
 use Src\Assessment\Domain\InvitationMode;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\InvitationStatus;
+use Src\Assessment\Domain\ResultStatus;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -120,6 +122,24 @@ final readonly class DatabaseInvitationRepository implements InvitationRepositor
         $rows = $builder->orderByDesc('id')->offset($request->offset())->limit($request->perPage)->get()->all();
 
         return new Page($this->hydrate($rows), $total, $request);
+    }
+
+    public function pageAwaitingScoring(int $companyId, int $assessorUserId, PageRequest $request): Page
+    {
+        $builder = $this->connection->table(self::TABLE.' as invitation')
+            ->join(self::ASSESSORS.' as assessor', 'assessor.invitation_id', '=', 'invitation.id')
+            ->join('assessment_attempts as attempt', 'attempt.invitation_id', '=', 'invitation.id')
+            ->join('assessment_results as result', 'result.attempt_id', '=', 'attempt.id')
+            ->where('assessor.user_id', $assessorUserId)
+            ->where('invitation.company_id', $companyId)
+            ->where('invitation.status', InvitationStatus::Submitted->value)
+            ->where('result.status', ResultStatus::PendingScoring->value);
+
+        $total = (clone $builder)->count();
+        $rows = $builder->select('invitation.*', 'attempt.submitted_at')->orderBy('attempt.submitted_at')->orderBy('invitation.id')->offset($request->offset())->limit($request->perPage)->get()->all();
+        $invitations = $this->hydrate($rows);
+
+        return new Page(array_map(fn (Invitation $invitation, stdClass $row): AwaitingScoring => new AwaitingScoring($invitation, $this->time((string) $row->submitted_at)), $invitations, $rows), $total, $request);
     }
 
     public function dueForReminder(DateTimeImmutable $from, DateTimeImmutable $until): array

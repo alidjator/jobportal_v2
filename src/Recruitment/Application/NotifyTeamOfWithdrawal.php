@@ -86,7 +86,7 @@ final readonly class NotifyTeamOfWithdrawal
         $companyName = $company === null ? '' : $company->name;
         $candidate = $this->contacts->contact($event->applicantUserId)?->name;
         $link = $this->page->to($event->applicationId);
-        $calendar = $this->calendar->write($interview, InterviewCalendar::CANCEL, $jobTitle, $companyName, null, $this->clock->now());
+        $calendar = $this->calendar->forTeam()->write($interview, InterviewCalendar::CANCEL, $jobTitle, $companyName, null, $this->clock->now());
         $startsAt = $interview->startsAt->setTimezone(new DateTimeZone(self::ZONE))->format('Y-m-d H:i').' WIB';
 
         foreach ($recipients as $userId) {

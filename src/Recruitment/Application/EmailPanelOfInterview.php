@@ -112,7 +112,7 @@ final readonly class EmailPanelOfInterview
                 'where' => $this->where($interview, $language),
                 'kit' => $interview->kitName === null ? '' : "\n\n".($language === 'id' ? 'Kit pertanyaan' : 'Question kit').': '.$interview->kitName,
                 'link' => $link === null ? '' : "\n\n".($language === 'id' ? 'Buka lamaran' : 'Open the application').': '.$link,
-            ], $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $account->name, 'email' => $account->email], $now), $method);
+            ], $this->calendar->forTeam()->write($interview, $method, $jobTitle, $companyName, ['name' => $account->name, 'email' => $account->email], $now), $method);
         }
     }
 

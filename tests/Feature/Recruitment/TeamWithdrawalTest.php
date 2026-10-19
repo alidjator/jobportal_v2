@@ -176,6 +176,7 @@ final class TeamWithdrawalTest extends FeatureTestCase
 
     public function test_the_assignees_and_the_interviewers_are_told_and_the_member_who_marked_it_is_left_out(): void
     {
+        config(['app.application_url' => 'https://seeker.example/applications/{application_id}', 'app.company_application_url' => 'https://team.example/applications/{application_id}']);
         $this->toInterviewStage();
         $before = count($this->emailsTo('rina@example.test'));
 
@@ -189,7 +190,10 @@ final class TeamWithdrawalTest extends FeatureTestCase
 
         $emails = array_slice($this->emailsTo('rina@example.test'), $before);
         $this->assertCount(1, $emails);
-        $this->assertStringContainsString("METHOD:CANCEL\r\n", (string) $this->calendarOf($emails[0]));
+        $teamCalendar = str_replace("\r\n ", '', (string) $this->calendarOf($emails[0]));
+        $this->assertStringContainsString("METHOD:CANCEL\r\n", $teamCalendar);
+        $this->assertStringContainsString("URL:https://team.example/applications/{$this->applicationId}\r\n", $teamCalendar);
+        $this->assertStringNotContainsString('seeker.example', $teamCalendar);
         $this->assertStringContainsString('Siti Rahma', (string) $emails[0]->getTextBody());
         $this->assertCount(0, $this->emailsTo('andi@example.test'));
     }

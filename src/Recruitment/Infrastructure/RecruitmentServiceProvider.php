@@ -330,7 +330,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         $this->app->bind(InterviewCalendar::class, function ($app): InterviewCalendar {
             $config = $app->make(Repository::class);
 
-            return new InterviewCalendar((string) $config->get('mail.from.address'), $config->get('app.application_url'));
+            return new InterviewCalendar((string) $config->get('mail.from.address'), $config->get('app.application_url'), $config->get('app.company_application_url'));
         });
         $this->app->bind(JoinTokenFactory::class, fn ($app): JoinTokenFactory => new HmacJoinTokenFactory((string) $app->make(Repository::class)->get('app.key')));
         $this->app->bind(RecordingVolume::class, fn ($app): RecordingVolume => new LocalRecordingVolume(

@@ -139,6 +139,16 @@ final class InterviewRsvpTest extends FeatureTestCase
         $this->assertStringContainsString('mailto:andi@example.test', $calendar);
     }
 
+    public function test_the_panel_calendar_file_carries_the_company_page_not_the_job_seeker_page(): void
+    {
+        config(['app.application_url' => 'https://seeker.example/applications/{application_id}', 'app.company_application_url' => 'https://team.example/applications/{application_id}']);
+        $this->openInterview();
+
+        $calendar = str_replace("\r\n ", '', $this->calendarTo('andi@example.test', 'Invitation to interview'));
+        $this->assertStringContainsString("URL:https://team.example/applications/{$this->applicationId}\r\n", $calendar);
+        $this->assertStringNotContainsString('seeker.example', $calendar);
+    }
+
     public function test_the_invitation_follows_the_interview_preference_and_the_notice_stays(): void
     {
         $this->api('PUT', '/me/notification-preferences/team_interview_changes/email', ['enabled' => false], $this->adminToken)->assertNoContent();

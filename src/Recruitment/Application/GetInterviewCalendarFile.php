@@ -30,6 +30,6 @@ final readonly class GetInterviewCalendarFile
         $jobId = $team->application->jobId;
         $company = $this->companies->summaries([$team->application->companyId])[$team->application->companyId] ?? null;
 
-        return $this->calendar->write($team->interview, InterviewCalendar::PUBLISH, $this->jobs->titles([$jobId])[$jobId] ?? '', $company === null ? '' : $company->name, null, $this->clock->now());
+        return $this->calendar->forTeam()->write($team->interview, InterviewCalendar::PUBLISH, $this->jobs->titles([$jobId])[$jobId] ?? '', $company === null ? '' : $company->name, null, $this->clock->now());
     }
 }

@@ -8,16 +8,20 @@ use Illuminate\Http\Response;
 use Src\Assessment\Application\Results\DownloadReport;
 use Src\Assessment\Application\Results\GetInvitationResult;
 use Src\Assessment\Application\Results\ListIntegrityEvents;
+use Src\Assessment\Application\Results\ListInvitationsToScore;
 use Src\Assessment\Application\Results\ListScoringAnswers;
 use Src\Assessment\Application\Results\OpenCandidateVideo;
 use Src\Assessment\Application\Results\ScoreAnswer;
+use Src\Assessment\Interface\Http\Requests\ListScoringQueueRequest;
 use Src\Assessment\Interface\Http\Requests\ScoreAnswerRequest;
 use Src\Assessment\Interface\Http\Resources\IntegrityLogResource;
 use Src\Assessment\Interface\Http\Resources\InvitationResultResource;
 use Src\Assessment\Interface\Http\Resources\ScoringItemResource;
+use Src\Assessment\Interface\Http\Resources\ScoringQueueResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\FileStreamResponse;
+use Src\Shared\Interface\Http\PaginatedResources;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
@@ -32,6 +36,12 @@ final class ResultController extends ApiController
     public function integrityEvents(Request $request, int $id, ActorResolver $actors, ListIntegrityEvents $list): IntegrityLogResource
     {
         return new IntegrityLogResource($list->execute($actors->fromRequest($request), $id));
+    }
+
+    /** The tests waiting for the member to score (`filter[my_scoring]=pending`), longest waiting first. */
+    public function toScore(ListScoringQueueRequest $request, ActorResolver $actors, ListInvitationsToScore $list): AnonymousResourceCollection
+    {
+        return ScoringQueueResource::collection(PaginatedResources::paginator($list->execute($actors->fromRequest($request), $request->pageRequest()), $request));
     }
 
     public function scoring(Request $request, int $id, ActorResolver $actors, ListScoringAnswers $list): AnonymousResourceCollection

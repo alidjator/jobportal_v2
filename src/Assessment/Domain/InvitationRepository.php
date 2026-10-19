@@ -42,6 +42,13 @@ interface InvitationRepository
     public function pageOfApplicant(int $userId, ?InvitationStatus $status, PageRequest $request): Page;
 
     /**
+     * The company's submitted invitations whose result waits for scoring and where the member is an assessor, the longest waiting first (the set of the `my_scoring` task).
+     *
+     * @return Page<AwaitingScoring>
+     */
+    public function pageAwaitingScoring(int $companyId, int $assessorUserId, PageRequest $request): Page;
+
+    /**
      * The invitations not started yet whose due time falls in the window and that were not reminded.
      *
      * @return list<Invitation>
