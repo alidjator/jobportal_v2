@@ -51,6 +51,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
+| 29 | `phase-8-interview-reschedule.md` (FG2 of `docs/analysis/actor-gap-analysis.md`) | ready for coding (schema and the fix of its "Finding" approved 2026-10-19) |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 

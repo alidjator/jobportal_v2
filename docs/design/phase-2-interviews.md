@@ -6,7 +6,7 @@ moving to `interview` (one by one); a bulk move to `interview` uses one base sch
 ## Confirmed by the user (2026-10-08)
 
 - **One active schedule per application.** Changing the time cancels the old schedule and creates a new one; the history is kept. The job seeker is notified.
-- **Rescheduling:** the job seeker confirms, or proposes another time at most 2 times. The recruiter accepts a proposal or sets a new time. After the limit the job seeker can only confirm or decline.
+- **Rescheduling** (changed 2026-10-19 by `phase-8-interview-reschedule.md`: a confirmed interview can also take a proposal, the team can refuse one, and `no_show` exists): the job seeker confirms, or proposes another time at most 2 times. The recruiter accepts a proposal or sets a new time. After the limit the job seeker can only confirm or decline.
 - **Bulk slots:** the recruiter gives a start time, a duration, a gap and the interviewer; slots are created one after another in the order of the selected applicants. A daily window
   (start and end of the working day) is part of the base schedule; a slot that would end after the window moves to the next working day.
 - **Access:** same as the application detail (assigned recruiters and company admins); the interviewer is chosen among the members who may see the job. No answer from the job seeker leaves the
