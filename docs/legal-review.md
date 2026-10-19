@@ -15,7 +15,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | **A. Before go-live** | 1 to 7, 10 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then) | built |
 | **B. Blocks building a feature** | 12, 13, 15, 20, 21 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform and pre-employment checks are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
-| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16 designed; 18 a plan |
+| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22 designed; 18 a plan |
 
 ## 1. What the system does
 
@@ -106,6 +106,11 @@ where the question is open; "designed" means it is planned and waits for the ans
     and criminal records are specific personal data (UU 27/2022 Article 4(2)): is this consent and minimisation enough, may "unfit" be recorded at
     all or only "not recommended", may background and reference findings be kept as files, and may an internal tenant carry the outcome into the
     employee record?
+22. **WhatsApp notices through an unofficial gateway (added 2026-10-19).** Job seekers who opt in get interview, test and offer reminders by
+    WhatsApp (`phase-8-whatsapp.md`). An installation may send them through the official WhatsApp Business API (Meta) or through an unofficial
+    gateway that automates WhatsApp Web, which breaks WhatsApp's terms and runs the session at a third party. Under UU 27/2022, what agreement is
+    needed with each sender as a data processor, is an unofficial gateway acceptable at all for candidates' data, and what must the privacy policy
+    say about WhatsApp (Meta as a processor, transfer outside Indonesia, Article 56)?
 
 ## 3. What we can change after the answers
 

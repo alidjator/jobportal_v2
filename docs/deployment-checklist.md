@@ -84,4 +84,6 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] `APP_NAME="ONESIS ERP"` in the production `.env`; the problem `type` renamed to `urn:onesis:error:<code>` (coding session, `naming.md` section 1) before go-live.
 - [ ] Infrastructure names changed from `jobportal` to `onesis` together with separating the live site from the working folder (`naming.md` section 3).
 - [ ] Contact details for the public site (email, phone, address, WhatsApp if any) given by the user (`docs/design/frontend.md` 11.6).
+- [ ] Not blocking go-live, start early: Meta Business verification, a WhatsApp Business number and approval of the templates listed in
+  `docs/design/phase-8-whatsapp.md` section 3 (`id` and `en`), for the WhatsApp notices coded after go-live (#33).
 - [ ] Admin roles other than `super_admin` created and given (`identity:create-role`, `identity:set-admin-role`, `docs/design/phase-8-admin-console.md`); at least two active `super_admin` accounts so one can recover the other.

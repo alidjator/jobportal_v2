@@ -72,7 +72,7 @@ Five actor kinds in the code (`ActorKind`); the personas below are the roles tha
 | Hire | Join date and note | present | Exists |
 | | **Pre-employment documents** (KTP, NPWP, diploma, SKCK, bank account, BPJS) and onboarding checklist | — | Decided: Employee pre-boarding with #13 (FG5) |
 | Communication | Chat with companies applied to, block, report, attachments | present | Exists |
-| | **WhatsApp or SMS notices** for time-critical events | channels are email and push (push deferred) | **Gap** (FG6) |
+| | **WhatsApp or SMS notices** for time-critical events | channels are email and push (push deferred) | Designed (#33, after go-live) |
 | | Contact the platform (help request) | FAQ only | **Gap** (FG7) |
 | Privacy | Data export, account deletion with grace period, notification preferences | present | Exists |
 
@@ -193,7 +193,7 @@ Each pair lists what each side must have. **Bold** rows are the missing pieces.
 | Accept a proposal or set a new time | Exists | Answer before the interview without signing in again (link in the email) | Exists (link to the app) |
 | Unscheduled interviews in the task list | Exists | One agenda of upcoming interviews | Designed (#15) |
 | Receive and answer a reschedule request on a confirmed interview | Designed (#29) | Ask to reschedule a confirmed interview with a reason | Designed (#29) |
-| Panel reminders day before and 30 minutes before | Exists | Reminder 2 hours before (in-app, email); **WhatsApp** | Designed (#29); **Gap (FG6)** |
+| Panel reminders day before and 30 minutes before | Exists | Reminder 2 hours before (in-app, email); WhatsApp | Designed (#29); Designed (#33) |
 | Offer time slots for the candidate to pick | Not taken | Pick a slot | Not taken |
 | Mark no-show | Designed (#29); attendance log exists | Told the interview was missed, with the company's next step | Designed (#29) |
 
@@ -319,7 +319,7 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 | FG3 | Short reminder (1 to 2 hours) to the job seeker before an interview | job seeker | P1 | Designed 2026-10-19: 2 hours, `phase-8-interview-reschedule.md` section 6 (#29). |
 | FG4 | Technical problem report and extra-time request during or before a test | job seeker, recruiter | P2 | The team answers by resending; needs the integrity rules kept. |
 | FG5 | Pre-employment documents and onboarding checklist | new hire, HR | P2 | Decided 2026-10-19: Employee pre-boarding, designed with #13 (`erp-direction.md` section 3). |
-| FG6 | WhatsApp (or SMS) channel for time-critical notices | job seeker | P2 | Highest reach in Indonesia; needs a provider (WhatsApp Business API), opt-in, cost; phone verification (G5) becomes a dependency. |
+| FG6 | WhatsApp (or SMS) channel for time-critical notices | job seeker | P2 | Designed 2026-10-19: `phase-8-whatsapp.md` (#33), coded after go-live; the WhatsApp code verifies the number (G5 for WhatsApp). |
 | FG7 | Help requests from users to the platform | all, platform admin | P2 | Or point to an outside helpdesk; a decision is enough for go-live. |
 | FG8 | Integration API (API keys, webhooks) for external tenants | company admin | P3 | The hires export is the bridge today. |
 | FG9 | Manual candidate entry (offline, walk-in, CV by email) with a claim-and-consent step | recruiter, candidate | P2 | Designed 2026-10-19: `phase-8-manual-candidates.md` (#31); legal question 20. |
@@ -340,6 +340,6 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 2. **HR process steps:** FG12 (#32) and FG9 (#31) were designed on 2026-10-19 and wait for legal questions 21 and 20; FG5 goes to Employee
    pre-boarding with #13.
 3. **ERP TA core:** FG10, FG11, FG13 and FG14 depend on the Employee context or the group; they fit the design session of #13.
-4. **Channel:** FG6 (WhatsApp) is a cost and provider decision, not only a feature.
+4. **Channel:** FG6 (WhatsApp) was designed on 2026-10-19 (#33, after go-live); the Meta Business verification and the template approvals start now.
 
 Nothing here is scheduled; each item needs the user's choice before a design session.

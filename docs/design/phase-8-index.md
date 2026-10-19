@@ -55,6 +55,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
 | 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
 | 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
+| 33 | `phase-8-whatsapp.md` (FG6), **after go-live** | Meta Business verification and template approvals (started by the user); `legal-review.md` question 22 for the unofficial adapter; uses #29 section 6 and #32 |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 
