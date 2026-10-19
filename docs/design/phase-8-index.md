@@ -42,7 +42,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | # | Document | Waits for |
 |---|---|---|
 | 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |
-| 13 | **new** hand-off to Employee (after `phase-8-hiring.md`) | a design session (`erp-direction.md` section 3) |
+| 13 | **new** hand-off to Employee (after `phase-8-hiring.md`), with the pre-boarding documents (FG5, decided 2026-10-19) | a design session (`erp-direction.md` section 3) |
 | 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
 | 15 | `phase-8-candidate-experience.md` (section 5, the agenda, added 2026-10-19) | #14: the pending rejections of the rejections design carry the candidate message |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
@@ -53,6 +53,8 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
 | 29 | `phase-8-interview-reschedule.md` (FG2 and FG3 of `docs/analysis/actor-gap-analysis.md`) | ready for coding (schema, the fix of its "Finding" and section 6 approved 2026-10-19) |
 | 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
+| 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
+| 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 

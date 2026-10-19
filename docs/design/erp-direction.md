@@ -48,6 +48,9 @@ code and no schema before go-live; it adds new designs and sets a new order for 
   similar data live only there, under stricter access, never in Recruitment; the "out of scope" note of `phase-8-hiring.md` stays true for Recruitment.
 - The hires export of `phase-8-hiring.md` is the **bridge** until Employee exists: it feeds the existing HRIS.
 - A hire of an internal tenant later creates a pending employee record through a domain event (hand-off design, section 6, item 13).
+- **Pre-employment documents** (KTP, NPWP, diplomas, SKCK, bank account, BPJS cards; FG5 of `docs/analysis/actor-gap-analysis.md`) are collected
+  by Employee through a pre-boarding page that the new hire opens with the same account, designed with the hand-off (item 13); external tenants keep
+  collecting them outside the system (decided by the user, 2026-10-19).
 - The hand-off does **not** carry psychological reports or test results by default (`phase-6-assessments.md`, "ERP later"; `legal-review.md`
   question 18).
 

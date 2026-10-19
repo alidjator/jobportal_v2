@@ -3,7 +3,7 @@
 For the legal adviser of **ONESIS ERP** (One Solutions Integrated System) and its job seeker site **ONESIS Career**, operated in Indonesia. The ERP's
 first module is talent acquisition (jobs, applications, interviews, psychological tests, offers); the job seeker site is public. The brief lists what the
 system does, or is designed to do, with sensitive personal data and what we need answered. It is a factual inventory, not legal advice, and the legal
-references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-16 (not sent yet).
+references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-19 (not sent yet).
 
 ## 0. Priority of the answers
 
@@ -13,7 +13,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Priority | Questions | Why | State |
 |---|---|---|---|
 | **A. Before go-live** | 1 to 7, 10 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then) | built |
-| **B. Blocks building a feature** | 12, 13, 15 | the online offer acceptance, restricted candidates and the applicant data retention per company are not built until answered | designed |
+| **B. Blocks building a feature** | 12, 13, 15, 20, 21 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform and pre-employment checks are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
 | **D. Policy text, or after go-live** | 8, 9, 14, 16, 18 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16 designed; 18 a plan |
 
@@ -93,6 +93,19 @@ where the question is open; "designed" means it is planned and waits for the ans
     STR and SILP) as the signer of psychological reports for that customer's applicants (`phase-8-provider-institutions.md` section 8). The report would
     state that the signer is an in-house psychologist. Does Law 23/2022 (and the professional code of ethics) allow an employee to sign selection
     reports for the employer's own applicants, what conflict-of-interest safeguards are required, and must the candidate be told?
+20. **CVs received outside the platform (added 2026-10-19).** A company may enter a person who sent a CV by email, came to a walk-in interview or
+    was referred: the team types the name and email and may upload the CV it received; the person gets an email to sign up and apply; the CV is
+    seen by the team only and deleted after 30 days when the person does not respond (`phase-8-manual-candidates.md`). What is the lawful basis
+    under UU 27/2022 for keeping and reading the CV before the person agrees on the platform (the person's own request to be considered,
+    Article 20(2)(b)?), is 30 days acceptable, and must the email name the source of the data (Article 31 information duty)? For a referral the
+    data comes from a third party: is the referrer's sharing enough, or may the team only send the invitation without the CV?
+21. **Medical check-up and background checks (added 2026-10-19).** Before hiring, a company may record a medical check-up, a background check, a
+    police record (SKCK) and reference checks per applicant (`phase-8-pre-employment-checks.md`). The system stores only a category for the medical
+    result (fit, fit with notes, unfit), asks the candidate's consent in the platform for each check, shows the outcome to members with a
+    dedicated permission only, audits every read, and deletes medical outcomes and check files 90 days after the application ends. Health data
+    and criminal records are specific personal data (UU 27/2022 Article 4(2)): is this consent and minimisation enough, may "unfit" be recorded at
+    all or only "not recommended", may background and reference findings be kept as files, and may an internal tenant carry the outcome into the
+    employee record?
 
 ## 3. What we can change after the answers
 

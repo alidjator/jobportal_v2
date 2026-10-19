@@ -70,7 +70,7 @@ Five actor kinds in the code (`ActorKind`); the personas below are the roles tha
 | | Accept with password and evidence | — | Designed (#12 section 3, legal question 12) |
 | | Ask about or negotiate the offer | chat only | Not taken |
 | Hire | Join date and note | present | Exists |
-| | **Pre-employment documents** (KTP, NPWP, diploma, SKCK, bank account, BPJS) and onboarding checklist | — | **Gap** (FG5, waits for Employee) |
+| | **Pre-employment documents** (KTP, NPWP, diploma, SKCK, bank account, BPJS) and onboarding checklist | — | Decided: Employee pre-boarding with #13 (FG5) |
 | Communication | Chat with companies applied to, block, report, attachments | present | Exists |
 | | **WhatsApp or SMS notices** for time-critical events | channels are email and push (push deferred) | **Gap** (FG6) |
 | | Contact the platform (help request) | FAQ only | **Gap** (FG7) |
@@ -102,12 +102,12 @@ Five actor kinds in the code (`ActorKind`); the personas below are the roles tha
 | Time in stage, task list, daily digest, team notification preferences, other applications | present | Exists |
 | Undo a rejection; reject remaining applicants of a closed job | — | Designed (#14, #15) |
 | Sourcing: candidate search, job invitations (single and bulk), talent pool with categories, campaigns with QR | present | Exists |
-| **Add a candidate manually** (walk-in, referral, CV by email, job fair without sign-up) | only candidates with an account | **Gap** (FG9) |
+| Add a candidate manually (walk-in, referral, CV by email, job fair without sign-up) | only candidates with an account | Designed (#31) |
 | **Employee referral** program (referrer, status back to the referrer) | — | **Gap** (FG10, P2) |
 | **Internal job posting and internal applicants** (mutasi, promosi) | — | **Gap** (FG11, P2, needs Employee) |
 | Interviews: schedule, bulk slots, schedule later, panel, note, `.ics`, video and voice rooms, recording, calendar, email preview | present | Exists |
 | **Self-scheduling** (candidate picks from offered slots) and interviewer availability | — | Not taken (G12) |
-| **Reference check, background check, medical check-up (MCU)** as tracked steps with results | only free notes or a custom stage name | **Gap** (FG12, P2) |
+| Reference check, background check, medical check-up (MCU) as tracked steps with results | only free notes or a custom stage name | Designed (#32) |
 | Assessments: own tests, library, batteries, scoring, results, comparison | present (comparison of tests designed) | Exists / Designed (#22) |
 | Default test per stage, auto-advance on score | — | Designed (#22) |
 | Offers with terms and letter; hire with join date; hires export | present | Exists |
@@ -254,8 +254,8 @@ which is right. FG2 (#29) sends a new invitation and RSVP to the panel when an a
 | Recruiter / HR must have | Status | New hire must have | Status |
 |---|---|---|---|
 | Move to hired with join date and note, change later, hires export | Exists | Join date and note, told of changes | Exists |
-| **Request pre-employment documents and track them** | **Gap (FG5)** | **Upload them once, see what is missing** | **Gap (FG5)** |
-| **MCU and background check before the join date** | **Gap (FG12)** | **See the appointment and the result status** | **Gap (FG12)** |
+| Request pre-employment documents and track them | Decided (#13, Employee) | Upload them once, see what is missing | Decided (#13, Employee) |
+| MCU and background check before the join date | Designed (#32) | See the appointment, give consent, see "Selesai" | Designed (#32) |
 | Hand-off to the Employee record (internal tenants) | Designed-to-be (#13) | — | — |
 
 ### 3.8 Messaging (recruiter ↔ job seeker ↔ platform admin)
@@ -272,7 +272,7 @@ which is right. FG2 (#29) sends a new invitation and RSVP to the panel when an a
 |---|---|---|---|
 | Candidate search, invitation to a job, talent pool, consent shown | Exists | Discoverability switches, invitations list, decline, talent pool consent per application | Exists |
 | Hide restricted candidates | Designed (#14) | Block named companies | Designed (#25) |
-| **Add an offline candidate** | **Gap (FG9)** | **Claim the profile by email and give consent** | **Gap (FG9)** |
+| Add an offline candidate | Designed (#31) | Claim the invitation by email and agree | Designed (#31) |
 | **Referral by an employee** | **Gap (FG10)** | **Referred person told who referred them and asked to apply** | **Gap (FG10)** |
 
 ### 3.10 Shortlist review and requisition (recruiter ↔ hiring manager ↔ approver)
@@ -318,14 +318,14 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 | FG2 | Reschedule request on a confirmed interview, and a no-show notice | job seeker, recruiter, interviewer | P1 | Designed 2026-10-19: `phase-8-interview-reschedule.md` (#29). |
 | FG3 | Short reminder (1 to 2 hours) to the job seeker before an interview | job seeker | P1 | Designed 2026-10-19: 2 hours, `phase-8-interview-reschedule.md` section 6 (#29). |
 | FG4 | Technical problem report and extra-time request during or before a test | job seeker, recruiter | P2 | The team answers by resending; needs the integrity rules kept. |
-| FG5 | Pre-employment documents and onboarding checklist | new hire, HR | P2 | Belongs with the Employee hand-off (#13); personal data (NIK, bank) stays out of Recruitment. |
+| FG5 | Pre-employment documents and onboarding checklist | new hire, HR | P2 | Decided 2026-10-19: Employee pre-boarding, designed with #13 (`erp-direction.md` section 3). |
 | FG6 | WhatsApp (or SMS) channel for time-critical notices | job seeker | P2 | Highest reach in Indonesia; needs a provider (WhatsApp Business API), opt-in, cost; phone verification (G5) becomes a dependency. |
 | FG7 | Help requests from users to the platform | all, platform admin | P2 | Or point to an outside helpdesk; a decision is enough for go-live. |
 | FG8 | Integration API (API keys, webhooks) for external tenants | company admin | P3 | The hires export is the bridge today. |
-| FG9 | Manual candidate entry (offline, walk-in, CV by email) with a claim-and-consent step | recruiter, candidate | P2 | Common in an ERP ATS; needs a consent rule under UU PDP before any data is kept. |
+| FG9 | Manual candidate entry (offline, walk-in, CV by email) with a claim-and-consent step | recruiter, candidate | P2 | Designed 2026-10-19: `phase-8-manual-candidates.md` (#31); legal question 20. |
 | FG10 | Employee referral program | employee, recruiter, referred person | P2 | Needs the Employee context for "employee"; external tenants could use members. |
 | FG11 | Internal job posting and internal applicants (transfer, promotion) | employee, recruiter, group admin | P2 | Needs Employee; the group read rule and the positions already exist. |
-| FG12 | Reference check, background check and MCU as tracked steps | recruiter, candidate, (vendor) | P2 | Standard in Indonesian corporate and SOE hiring; health data is sensitive (legal review). |
+| FG12 | Reference check, background check and MCU as tracked steps | recruiter, candidate, (vendor) | P2 | Designed 2026-10-19: `phase-8-pre-employment-checks.md` (#32); legal question 21. |
 | FG13 | Requisition fulfilment: hires and join dates per requisition | hiring manager, group admin | P2 | Read model over requisition, job and hires. |
 | FG14 | Group talent pool across the group's tenants, with consent | group admin, recruiter, candidate | P2 | The talent pool consent today names one company. |
 | FG15 | Approve from an email or notification link | approver | P3 | Re-authentication required; convenience only. |
@@ -337,9 +337,9 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 
 1. **P1 candidates for go-live:** FG1 (#15), FG2 and FG3 (#29) and FG16 (#30) were decided and designed on 2026-10-19; FG17 was withdrawn
    (already in `frontend.md`). FG2 changes the rule of `phase-2-interviews.md` that a confirmed interview can only be declined.
-2. **HR process steps not modelled:** FG12 (reference, background, MCU) and FG5 (pre-employment documents) are usual in the PKP group's hiring
-   and touch sensitive data; they need scope and legal questions before a design.
-3. **ERP TA core:** FG9, FG10, FG11, FG13 and FG14 depend on the Employee context or the group; they fit the design session of #13.
+2. **HR process steps:** FG12 (#32) and FG9 (#31) were designed on 2026-10-19 and wait for legal questions 21 and 20; FG5 goes to Employee
+   pre-boarding with #13.
+3. **ERP TA core:** FG10, FG11, FG13 and FG14 depend on the Employee context or the group; they fit the design session of #13.
 4. **Channel:** FG6 (WhatsApp) is a cost and provider decision, not only a feature.
 
 Nothing here is scheduled; each item needs the user's choice before a design session.
