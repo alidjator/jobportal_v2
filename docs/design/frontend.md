@@ -7,6 +7,12 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: the front end is designed now and coded after the legacy import rehearsal; go-live readiness keeps priority ([detail](#1-timing)).
 - 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), the admin panel a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
+- 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one back-office SPA; the public Nuxt application keeps visitors and job seekers only; the admin panel stays ([detail](#3-repository-and-applications)).
+- 2026-10-19: the back office runs on Nuxt with `ssr: false`; its token stays in a sealed httpOnly cookie behind its own Nuxt proxy, as in 5.2 ([detail](#3-repository-and-applications)).
+- 2026-10-19: back-office development domain `preview.satu.solutions`, workspace folder `apps/backoffice` ([detail](#3-repository-and-applications)).
+- 2026-10-19: the back office has its own sign-in, two-factor, password reset and team invitation pages; the public sign-in sends company and group members there, no token passes between the applications ([detail](#3-repository-and-applications)).
+- 2026-10-19: the back-office menu follows the permissions of `GET company/me` and the group membership, with a landing page per preset ([detail](#8-page-map-company-dashboard)).
+- 2026-10-19: one page-map session before front-end coding rewrites sections 7 to 9 and 11.1 for three applications, and adds the link contract for emails, notifications and `.ics` ([detail](#3-repository-and-applications)).
 - 2026-10-19: the front-end working folder is `/usr/local/src/jobportal-frontend/onesis-talent` (the workspace root) ([detail](#3-repository-and-applications)).
 - 2026-10-13: two applications: the public site with job seekers and company dashboards, and a separate admin panel on its own domain ([detail](#3-repository-and-applications)).
 - 2026-10-13: development domains `karir.satu.solutions` (public) and `admin-karir.satu.solutions` (admin); production domains later ([detail](#4-domains)).
@@ -70,6 +76,29 @@ Decided by the user on 2026-10-13:
   the pnpm workspace (section 10). The neighbouring `talent` folder (a plain copy of the Able Pro template) and the template copy next to it are not used.
 - **Applications:** two. One serves the public pages, job seekers and company dashboards; the admin panel is a second application on its own domain, because
   admins have their own guard, TOTP and 12-hour tokens and the panel should not be exposed on the public domain.
+- **Changed 2026-10-19 (decided by the user, option (c) of `docs/analysis/frontend-gap-analysis.md` section 5): three applications.** The company
+  dashboard leaves the public Nuxt application and joins the ERP pages (group structure, approvals, workforce plans, requisitions, read across tenants,
+  support grants; FEG1) in **one back-office SPA** (Nuxt with `ssr: false`, see below) for all company and group work (ONESIS Talent, Workforce and Core). The public Nuxt
+  application keeps only visitors and job seekers (sections 7.1 to 7.3); the admin panel with the psychologist area stays as it is. Why: company
+  members and group members are the same accounts, these pages need no server rendering, and `naming.md` already splits ONESIS (ERP side) from
+  ONESIS Career (job seekers).
+- **Back-office token (decided by the user on 2026-10-19):** the back office runs on **Nuxt with `ssr: false`** (still a single-page application in
+  the browser) so that it reuses the public flow of section 5.2: the token stays in a sealed httpOnly cookie (`nuxt-auth-utils`) and every API call
+  goes through its own Nuxt proxy route. Chosen over `sessionStorage` (a new tab would ask to sign in again, and recruiters open applicants in new
+  tabs) and over a Sanctum cookie session (API change). Cost: a second Node service next to the public one.
+- **Back-office domain and folder (decided by the user on 2026-10-19):** `preview.satu.solutions` during development (section 4); workspace folder
+  `apps/backoffice` (section 10).
+- **Back-office sign-in (decided by the user on 2026-10-19):** the back office has its own account pages (sign-in with password and Google,
+  two-factor, forgot and reset password, the team invitation A7), all on `preview.satu.solutions`; `COMPANY_INVITATION_URL` points there. The public
+  sign-in (A1) refuses a company or group member after `GET me` (the token is revoked at once) and shows a link "Masuk ke dashboard perusahaan";
+  no token is ever passed between the applications, and neither cookie is set on the parent domain.
+- Sections 2, 5.2, 7.2, 8, 10 and 11.1 still describe the two-application split; they are rewritten in the page-map session below.
+- **Page-map session (decided by the user on 2026-10-19):** one design session, before any front-end coding, rewrites sections 7 to 9 and 11.1 for
+  the three applications from the routes of that day and the "Front end" rows of the phase 8 designs (FEG3, FEG9 to FEG15 of
+  `docs/analysis/frontend-gap-analysis.md`), with one page numbering.
+- **Link contract (decided by the user on 2026-10-19):** the same session adds a table of every link the API sends in emails, in-app
+  notifications and `.ics` files: the `.env` setting, the target path in which application, and what happens when the reader is signed out or is
+  the wrong kind of user. The API settings are pointed at those paths; no new API code (FEG4).
 - **Partner psychologists (decided by the user on 2026-10-13):** the fifth role (`/api/v1/provider/**`: sign-in with two-factor, test authoring, norms,
   report templates, reviewing and signing results) gets a separate area in the admin application, with its own sign-in and menu. It is back office like
   the admin panel (two-factor, no indexing, token in `sessionStorage`), so the split stays at two applications.
@@ -78,6 +107,8 @@ Decided by the user on 2026-10-13:
 
 Decided by the user on 2026-10-13: `karir.satu.solutions` for the public application and `admin-karir.satu.solutions` for the admin panel during
 development, next to the API at `api-karir.satu.solutions`. Both origins go into `CORS_ALLOWED_ORIGINS`. Production domains are decided later.
+**Added 2026-10-19 (user):** the back office (section 3) runs on `preview.satu.solutions` during development; it also goes into
+`CORS_ALLOWED_ORIGINS`.
 
 ## 5. Authentication
 
@@ -241,6 +272,11 @@ Not mapped to a page: `POST`/`DELETE me/device-tokens` (push tokens for a future
 Built on 2026-10-13 from the API routes (`/api/v1/company/**`) and agreed by the user the same day. Part of the public Nuxt application, rendered in the
 browser only like `/me/**`, with the Able Pro dashboard layout. **Prefix `/rekruter`** (decided 2026-10-13; for example `/rekruter/lowongan`,
 `/rekruter/pelamar/{id}`), which does not clash with the public company profile `/perusahaan/{slug}`.
+
+**Changed 2026-10-19 (decided by the user): menus by permission.** The back-office menu is built from the permissions of `GET company/me` and the
+group membership, not from a fixed menu per preset: an item shows only when its permission is held (a group with no visible item is hidden), and
+the landing page follows the preset (interviewer: "Wawancara saya"; hiring manager: the review inbox; recruiter and company admin: the dashboard).
+The API stays the authority (403 is "not allowed"). The text below is the rule of 2026-10-13, kept until the page-map session (section 3).
 
 **Roles shape the menu** (from `phase-1-company.md` and `phase-1-jobs.md`): one company per member account (no company switcher). A **company admin**
 sees every job and manages the profile, documents, team, stages, campaigns and settings; a **recruiter** creates jobs and sees only the jobs assigned to
