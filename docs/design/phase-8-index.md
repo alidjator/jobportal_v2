@@ -39,6 +39,9 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 
 ## Next coding (in this order)
 
+**Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15 and #20 (and endpoints the
+front end asks for) are coded; the other rows wait even when ready.
+
 | # | Document | Waits for |
 |---|---|---|
 | 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |

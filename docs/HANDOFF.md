@@ -15,10 +15,10 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 ## Current state (2026-10-19)
 
 - Latest tag `v0.8.0` (#19 and #21; #19 checked with 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
-- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16 to #19 and #21 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
+- **Phases 0 to 7 coded and committed.** Phase 8 status per item: `phase-8-index.md`. `master` is at #28 (2026-10-19); the docs branch `phase-8-interview-reschedule` (designs #29 to #33, gap analysis FG1 to FG18 in `docs/analysis/actor-gap-analysis.md`) is not merged yet.
 - Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
-- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions); **#28 (job `locations` array) is coded and checked** (no migration); then the front end and the final import run. **#27 `company_locations` is coded and checked (migrations `000174`, `000175`).**
+- **API coding limited (2026-10-19):** only #29, #30, #15, #20 and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #28 and `frontend.md` 11.5, 11.6 (#27 is coded); open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
@@ -38,7 +38,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review brief `docs/legal-review.md`: up to date 2026-10-16, **not sent yet**; section 0 orders the questions (A before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
+- Legal review brief `docs/legal-review.md`: up to date 2026-10-19 (questions 1 to 22), Indonesian copy `docs/legal-review.id.md` for sending, **not sent yet**; section 0 orders the questions (A before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`

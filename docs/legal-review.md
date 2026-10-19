@@ -28,7 +28,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Matching and alerts | Job recommendations, candidate recommendations, the match percentage and job alerts use **no** sensitive attribute: only skills, location and work mode, experience, education, salary and role. |
 | Profile views | A company member opening a candidate profile or resume is logged (company, member, candidate, time); the candidate sees which companies looked. Contact data stays hidden until the candidate applies. |
 | Job views | Planned (dashboards): each view of a job is logged with the account id, or a daily-salted hash of IP and user agent for a visitor who is not logged in, for 90 days; afterwards only a daily count per job remains. Companies see the counts, never the viewers. |
-| Application source and match score | Each application records where the applicant came from (search, recommendation, alert, direct link or invitation) and the match percentage at the time of applying. Both are used only in aggregate analytics for the platform and the company admin (groups under 5 are hidden); no endpoint returns them for a person. |
+| Application source and match score | Each application records where the applicant came from (search, recommendation, alert, direct link, invitation, shared link or entered by the company) and the match percentage at the time of applying. Both are used only in aggregate analytics for the platform and the company admin (groups under 5 are hidden); no endpoint returns them for a person. |
 | Company reviews | A job seeker who applied to a company may review it; an admin approves it first, and the author's **name is always shown** with a published review. A company may reply and may report a review. When the account is erased, the text of a published review is deleted and the ratings stay. |
 | Talent pool | A company member may save a candidate who can be found (opted in) into the company's talent pool with a category and a **free-text note of up to 500 characters**, seen by every member of that company only, never by the candidate. The entry and its note are hidden while the candidate cannot be found; the note is deleted by a nightly job after that (the entry stays), and the entry and note are deleted when the account is anonymised or a member removes the entry. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
@@ -39,6 +39,9 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Data download (Q14) | A job seeker can download their data; what companies and psychologists wrote about them is left out. |
 | Applicant data retention (Q15) | Designed: a final application is anonymised on the company's side after a period the company chooses (6 to 60 months, default 24). |
 | Reported chats (Q16) | Designed: a reported conversation keeps the reported message and up to 10 earlier ones for platform admins, deleted 180 days after the decision. |
+| CVs from outside the platform (Q20) | Designed: a company enters a person's name and email and may upload the CV it received by email, at a walk-in or through a referral; the person is invited to sign up and apply; the CV is seen by the team only and deleted after 30 days without a response. |
+| Pre-employment checks (Q21) | Designed: medical check-up, background check, police record and reference checks per applicant, each with the candidate's consent in the platform; the medical result is a category only (fit, fit with notes, unfit); outcomes are seen by a dedicated permission only and every read is audited; medical outcomes and check files are deleted 90 days after the application ends. |
+| WhatsApp notices (Q22) | Designed, after go-live: job seekers who opt in and confirm their number with a WhatsApp code get interview, test, offer and check reminders by WhatsApp, through the official Meta API or, where an installation chooses it, an unofficial gateway. No message text or number is kept in the log. |
 
 ## 2. Questions
 
@@ -127,3 +130,6 @@ where the question is open; "designed" means it is planned and waits for the ans
 - Q17: keep the raw data in a locked institution archive instead of deleting it on erasure.
 - Q18: keep the rule that reports never move to the employee record, or add a new consent step for the employee.
 - Q19: add safeguards (a second signer, a notice to the candidate) or allow partner psychologists only.
+- Q20: drop the CV upload (invitation by email only), shorten the 30 days, or name the source in the email.
+- Q21: record "not recommended" instead of "unfit", forbid files for background and reference checks, shorten the 90 days, or keep outcomes out of the employee record.
+- Q22: remove the unofficial adapter, or require a data-processing agreement before an installation may switch it on.

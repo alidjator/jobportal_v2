@@ -131,6 +131,9 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
   2) jobs, their lifecycle and per-job assignment, 3) public job search, 4) hybrid stages (seven default stages per company), 5) screening questions, 6) job seeker profile and resumes,
   7) applying (J1), 8) pipeline with stage history and stage notifications, 9) data migration (scripts and tests only). Each step is designed one question at a time before it is coded.
 - Not yet decided: order inside the other phases, estimates, and per-phase bounded-context/schema design beyond Phase 0 and the Company context.
+- **API coding limited until the front end catches up (decided 2026-10-19, user):** only go-live items (#29, #30, #15, #20; #15 still waits for
+  #14 and question 13) and the endpoints the front end asks for are coded. ERP and later items (#12 section 3, #13, #14, #22 to #26, #31 to
+  #33) wait; design sessions go on. Lifted by the user when the front end reaches the go-live pages of `frontend.md`.
 
 ## 6. Still open (see also `phase-0-schema.md`)
 
