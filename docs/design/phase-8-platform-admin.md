@@ -29,6 +29,8 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
 - 2026-10-15: **platform announcements** shown as a banner.
 - 2026-10-15: a **scheduler watch** on the operations card with an email to an operations address (chosen by the user).
 - 2026-10-18: the **admin account view** (`GET admin/users`, `users.view`) shows the suppression flag; the **mass reset email** is a console command, `identity:send-imported-password-resets` (decided by the user, see "Coded: sections 5 to 8").
+- 2026-10-19: a **queue watch** next to the scheduler watch: an email on new failed jobs and on a stalled queue (FG16 of
+  `docs/analysis/actor-gap-analysis.md`, chosen by the user; section 9, item #30).
 
 ## 1. Job reports (before go-live)
 
@@ -130,6 +132,21 @@ admins' two-factor only (`identity:reset-admin-two-factor`).
   turns late or failing and once when it recovers (`alerted_at`).
 - **Dead scheduler:** `GET health/scheduler` (no sign-in, no data) answers 200 when the last tick is within 5 minutes, else 503, for an outside uptime
   monitor; `docs/deployment-checklist.md` gains that monitor.
+
+## 9. Queue watch (designed 2026-10-19, item #30, before go-live)
+
+The operations card already shows failed and waiting queue jobs; nobody is told when they pile up.
+
+- **Checked by** `platform:check-scheduled-tasks` (every 5 minutes), through a `QueueHealth` port read from the `jobs` and `failed_jobs` tables.
+- **Failed jobs:** an email to `platform.operations_email` when `failed_jobs` has rows newer than the last alert, **at most once an hour**,
+  with the count per queue and job class and the newest exception's first line (no payload: it may hold personal data).
+- **Stalled queue:** an email when the oldest available job of a queue (`available_at` passed, not reserved) waits more than **10 minutes**,
+  once while it lasts, and once when it recovers. Covers dead workers (Supervisor stopped) and a full `bulk` queue.
+- **State:** a new table `platform_queue_alerts` (`kind` `failed` or `stalled`, `queue`, `alerted_at`, `recovered_at`, `last_failed_job_id`;
+  unique (`kind`, `queue`)); schema approved by the user 2026-10-19.
+- **Card:** the operations card gains `queues: [{queue, waiting, oldest_wait_seconds, failed_last_24h, stalled}]`.
+- Essential email in English, as the scheduler alert (a suppressed operations address still gets it). `docs/deployment-checklist.md` lists the
+  setting next to the scheduler alert.
 
 ## Changes in short
 

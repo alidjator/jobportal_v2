@@ -57,11 +57,11 @@ Five actor kinds in the code (`ActorKind`); the personas below are the roles tha
 | Track | Application list and detail with stage history, viewed time, rejection reason | present | Exists |
 | | "Job closed" label and notice; "under review" notice; rejection message from the company | — | Designed (#15) |
 | | One to-do list ("Perlu tindakan") | — | Designed (#15) |
-| | **Agenda of my confirmed interviews and test windows** across applications | to-do covers only items waiting for an answer; a confirmed interview leaves the list | **Gap** (FG1) |
+| | **Agenda of my confirmed interviews and test windows** across applications | to-do covers only items waiting for an answer | Designed (#15 section 5, `GET me/agenda`) |
 | | Expected response time of the company or stage | — | Known gap (G17, W8) |
 | Interview | Confirm, decline, propose another time (2x), `.ics`, join video room, recording consent | present | Exists |
 | | **Ask to reschedule a confirmed interview** | only decline, which ends the interview (`Interview::assertAwaitingJobSeeker`) | Designed (#29) |
-| | **Reminder shortly before the start** (e.g. 1 to 2 hours) | day-before email only; the 30-minute notice goes to the panel only | **Gap** (FG3) |
+| | **Reminder shortly before the start** (e.g. 1 to 2 hours) | day-before email only; the 30-minute notice goes to the panel only | Designed (#29 section 6, 2 hours before) |
 | Assessment | Invitations, consent, attempt with autosave, video answers, integrity events, decline, explanation | present | Exists |
 | | Practice questions and device check | — | Designed (#15) |
 | | **Report a technical problem during a test / ask for more time** | none; the team can only resend a new invitation | **Gap** (FG4) |
@@ -170,7 +170,7 @@ No new gap; the psychologist side is fully designed and waits for #23 and #24.
 | Company self-registration review | — | Designed, frozen |
 | Appeal of a rejected or taken-down job | — | Known gap (G8) |
 | **Help requests from users** (queue, answer, link to account) | — | **Gap** (FG7) |
-| **Failed jobs and outgoing email health** in the console | `GET health/scheduler` only | **Gap** (FG16, P1 light) |
+| Failed jobs and outgoing email health in the console | operations card shows failed and waiting jobs; email health waits for the SMTP provider | Exists / Designed (#17) |
 
 ### 2.9 System
 
@@ -178,7 +178,7 @@ No new gap; the psychologist side is fully designed and waits for #23 and #24.
 |---|---|---|
 | Reminders, expiries, digests, retention purges, anonymisation, facets | present | Exists |
 | Bounce and complaint handling | parser waits for the SMTP provider | Designed (#17 open part) |
-| **Alert on failed queue jobs** (not only on a stalled scheduler) | — | **Gap** (FG16) |
+| Alert on failed queue jobs and a stalled queue | scheduler alert only | Designed (#30) |
 
 ## 3. Paired features
 
@@ -191,9 +191,9 @@ Each pair lists what each side must have. **Bold** rows are the missing pieces.
 | Schedule one or in bulk, format, place or link, panel, note | Exists | Invitation by email and in-app, with `.ics`, place or link, note, interviewer name | Exists |
 | See confirmations, proposals, declines on the pipeline and calendar | Exists | Confirm, decline, propose another time (2x) | Exists |
 | Accept a proposal or set a new time | Exists | Answer before the interview without signing in again (link in the email) | Exists (link to the app) |
-| Unscheduled interviews in the task list | Exists | **One agenda of upcoming interviews** | **Gap (FG1)** |
+| Unscheduled interviews in the task list | Exists | One agenda of upcoming interviews | Designed (#15) |
 | Receive and answer a reschedule request on a confirmed interview | Designed (#29) | Ask to reschedule a confirmed interview with a reason | Designed (#29) |
-| Panel reminders day before and 30 minutes before | Exists | **Reminder 1 to 2 hours before, by a channel the person reads (WhatsApp)** | **Gap (FG3, FG6)** |
+| Panel reminders day before and 30 minutes before | Exists | Reminder 2 hours before (in-app, email); **WhatsApp** | Designed (#29); **Gap (FG6)** |
 | Offer time slots for the candidate to pick | Not taken | Pick a slot | Not taken |
 | Mark no-show | Designed (#29); attendance log exists | Told the interview was missed, with the company's next step | Designed (#29) |
 
@@ -206,7 +206,7 @@ which is right. FG2 (#29) sends a new invitation and RSVP to the panel when an a
 |---|---|---|---|
 | Lobby, admit, join, record with consent, recordings | Exists | Lobby, join, recording consent and its withdrawal | Exists |
 | Voice call to the candidate's phone | Exists | Phone number confirmed at confirmation | Exists |
-| **Device and connection check before joining** | Front end only (not designed) | **Device check before the interview** | **Gap (FG17, front end)** |
+| Device and connection check before joining | Designed (`frontend.md` J6, C9) | Device check before the interview | Designed (`frontend.md` J6, C9) |
 
 ### 3.3 Interview results (interviewer ↔ recruiter and hiring manager ↔ job seeker)
 
@@ -314,9 +314,9 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 
 | Id | Gap | Actors | Priority | Note |
 |---|---|---|---|---|
-| FG1 | Agenda of the job seeker's upcoming interviews and test windows | job seeker | P1 | Extends the to-do of #15; small (read model over interviews and invitations). |
+| FG1 | Agenda of the job seeker's upcoming interviews and test windows | job seeker | P1 | Designed 2026-10-19: `phase-8-candidate-experience.md` section 5 (#15). |
 | FG2 | Reschedule request on a confirmed interview, and a no-show notice | job seeker, recruiter, interviewer | P1 | Designed 2026-10-19: `phase-8-interview-reschedule.md` (#29). |
-| FG3 | Short reminder (1 to 2 hours) to the job seeker before an interview | job seeker | P1 | The panel already has a 30-minute notice; reuse the command. |
+| FG3 | Short reminder (1 to 2 hours) to the job seeker before an interview | job seeker | P1 | Designed 2026-10-19: 2 hours, `phase-8-interview-reschedule.md` section 6 (#29). |
 | FG4 | Technical problem report and extra-time request during or before a test | job seeker, recruiter | P2 | The team answers by resending; needs the integrity rules kept. |
 | FG5 | Pre-employment documents and onboarding checklist | new hire, HR | P2 | Belongs with the Employee hand-off (#13); personal data (NIK, bank) stays out of Recruitment. |
 | FG6 | WhatsApp (or SMS) channel for time-critical notices | job seeker | P2 | Highest reach in Indonesia; needs a provider (WhatsApp Business API), opt-in, cost; phone verification (G5) becomes a dependency. |
@@ -329,14 +329,14 @@ Job seeker side: report a job (Exists), report a review (Exists). The reporter i
 | FG13 | Requisition fulfilment: hires and join dates per requisition | hiring manager, group admin | P2 | Read model over requisition, job and hires. |
 | FG14 | Group talent pool across the group's tenants, with consent | group admin, recruiter, candidate | P2 | The talent pool consent today names one company. |
 | FG15 | Approve from an email or notification link | approver | P3 | Re-authentication required; convenience only. |
-| FG16 | Failed queue jobs and outgoing email health for the platform admin, with an alert | platform admin, system | P1 | Only a stalled scheduler is detected today. |
-| FG17 | Device and connection check before a video interview | job seeker, interviewer | P1 | Front end only; the test device check of #15 can be reused. |
+| FG16 | Alert on failed queue jobs and a stalled queue | platform admin, system | P1 | Designed 2026-10-19: `phase-8-platform-admin.md` section 9 (#30). The operations card already shows the counts. |
+| FG17 | ~~Device and connection check before a video interview~~ | job seeker, interviewer | — | Withdrawn 2026-10-19: already designed in `frontend.md` (J6, C9). |
 | FG18 | Reporter told the outcome of a job or review report | job seeker, company | P3 | In-app notice on dismiss or take-down. |
 
 ## 5. Points for the user
 
-1. **P1 candidates for go-live:** FG1, FG2, FG3, FG16 and FG17. FG2 was decided and designed on 2026-10-19
-   (`phase-8-interview-reschedule.md`, #29); it changes the rule of `phase-2-interviews.md` that a confirmed interview can only be declined.
+1. **P1 candidates for go-live:** FG1 (#15), FG2 and FG3 (#29) and FG16 (#30) were decided and designed on 2026-10-19; FG17 was withdrawn
+   (already in `frontend.md`). FG2 changes the rule of `phase-2-interviews.md` that a confirmed interview can only be declined.
 2. **HR process steps not modelled:** FG12 (reference, background, MCU) and FG5 (pre-employment documents) are usual in the PKP group's hiring
    and touch sensitive data; they need scope and legal questions before a design.
 3. **ERP TA core:** FG9, FG10, FG11, FG13 and FG14 depend on the Employee context or the group; they fit the design session of #13.

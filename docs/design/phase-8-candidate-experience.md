@@ -23,6 +23,8 @@ sample questions (`is_sample`) are part of the drawn bank (`StartAttempt::draw`)
 - 2026-10-15: a **to-do list** for the candidate, as a dashboard card and `GET me/tasks` (chosen by the user).
 - 2026-10-15: **practice questions for skill tests** from the sample questions, which are **no longer drawn** into attempts; a device check before
   every test (decided by the user).
+- 2026-10-19: an **agenda** of the candidate's coming dates, `GET me/agenda` and a dashboard card, next to the to-do list (FG1 of
+  `docs/analysis/actor-gap-analysis.md`, chosen by the user).
 
 ## 1. No silent applications
 
@@ -74,15 +76,32 @@ sample questions (`is_sample`) are part of the drawn bank (`StartAttempt::draw`)
   `start` the front end checks the browser (full screen, recording when needed), the connection, and the camera and microphone, and shows the
   environment checklist (quiet room, stable connection, no switching tabs). Front end only; the server keeps its rules.
 
+## 5. Agenda (added 2026-10-19, FG1)
+
+The to-do list holds what waits for the candidate; the agenda holds **when** things happen, answered or not.
+
+- **Port:** a `Shared` registry `ApplicantAgendaSource`, filled like `ApplicantTaskSource`: Recruitment gives `interview` (`pending` and
+  `confirmed`, `starts_at` to `ends_at`, format, place or whether a room exists, the open proposal of `phase-8-interview-reschedule.md`),
+  `offer_deadline` (offer `pending`, `expires_at`) and `join_date` (application `hired`, all day); Assessment gives `assessment_window`
+  (invitation `invited` or `started`, `starts_at` to `due_at`).
+- **`GET me/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`** (job seekers; Jakarta days, `to` included, at most 42 days, 422 `invalid-calendar-range`;
+  default today to 30 days ahead): items `{id ("interview:12"...), type, starts_at, ends_at, all_day, status, application_id, job_title,
+  company_name, link}`, earliest first, at most 200 (`meta.truncated`). Not cached. Final applications (rejected, withdrawn) are left out, as are
+  anonymised ones.
+- **Dashboard card `agenda`:** the next 5 items from now and the count of the next 7 days, under the dashboard cache; the card is dropped from
+  the cache on the same events that drop `todo`.
+- Front end: "Jadwal mendatang" under "Perlu tindakan" on the dashboard; a full list page with a week and list view; each item links to the
+  interview, test or offer page.
+
 ## Changes in short
 
 | Piece | Change |
 |---|---|
 | Migration | `recruitment_application_stage_history.candidate_note`; `recruitment_pending_rejections.candidate_note` |
-| Ports | `ApplicantTaskSource` (Shared; Recruitment, Assessment, JobInvitation) |
-| API | `job_closed` and `rejection_message` on my applications; `candidate_note` on reject, bulk reject and reject-remaining; `POST company/jobs/{id}/applications/reject-remaining`; `rejection` in `company/message-defaults`; `GET me/tasks`; `GET me/assessment/invitations/{id}/practice`; `requirements` on the invitation |
+| Ports | `ApplicantTaskSource` (Shared; Recruitment, Assessment, JobInvitation); `ApplicantAgendaSource` (Shared; Recruitment, Assessment) |
+| API | `job_closed` and `rejection_message` on my applications; `candidate_note` on reject, bulk reject and reject-remaining; `POST company/jobs/{id}/applications/reject-remaining`; `rejection` in `company/message-defaults`; `GET me/tasks`; `GET me/agenda`; `GET me/assessment/invitations/{id}/practice`; `requirements` on the invitation |
 | Assessment | samples left out of the draw; publish counts without samples; `samples_drawn` flag |
-| Dashboard | card `todo` |
+| Dashboard | cards `todo` and `agenda` |
 | Notifications | `application.job_closed`, `application.under_review`, `applications.reject_remaining_done` (in-app) |
 | Errors | 409 `job-still-open` |
-| Front end | closed-job label; reject-remaining in the close dialog; candidate message in the reject dialogs and the application detail; "Perlu tindakan"; practice and device check before a test |
+| Front end | closed-job label; reject-remaining in the close dialog; candidate message in the reject dialogs and the application detail; "Perlu tindakan"; "Jadwal mendatang"; practice and device check before a test |

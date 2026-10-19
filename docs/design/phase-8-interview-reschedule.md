@@ -26,6 +26,7 @@ whose RSVPs stay as answered for the old time (see "Finding" below).
 - 2026-10-19: the schema of "Changes in short" and these rules are approved (decided by the user): the proposed time also respects the cut-off;
   an unanswered proposal lapses at the old start; the refusal message is sent, not stored; the main interviewer may also mark a no-show; a
   mistaken `no_show` becomes `completed` through `complete` without a notice.
+- 2026-10-19: the job seeker also gets a reminder **2 hours** before a confirmed interview, in-app and by email (FG3, chosen by the user).
 
 ## 1. Asking to move a confirmed interview
 
@@ -82,6 +83,17 @@ whose RSVPs stay as answered for the old time (see "Finding" below).
 `recruitment.interview_reschedule_cutoff_hours` (integer 0 to 168, default 24; 0 means until the start), admin setting overridable per company
 like `recruitment.offer_labor_rules`; listed in `SettingsTest`.
 
+## 6. Reminder 2 hours before (FG3)
+
+- `SendStartingSoonReminders` gains a second pass for the job seeker: confirmed interviews starting within **120 minutes**, once per interview,
+  claimed through a new column `recruitment_interviews.candidate_soon_reminded_at` (like `starting_reminded_at` for the panel). A time change
+  (reschedule, accepted proposal) clears it, as `reminded_at` today. An interview confirmed less than 2 hours ahead is reminded on the next run
+  while it has not started.
+- In-app `interview.starting_soon` to the job seeker and email `recruitment.interview_starting_soon` (preference `application_update`): job,
+  company, time in WIB, format, the address of an onsite interview or the link to the platform's room page (never the room credentials), and the
+  company's contact line "Hubungi lewat chat bila ada kendala". No `.ics`.
+- Not sent for a `no_show`, cancelled, declined or final application, as the panel pass.
+
 ## Finding (2026-10-19, fix included in this item)
 
 Accepting a proposal moves the time in place, but the job seeker's email has **no updated `.ics`** and the panel gets **no new invitation**;
@@ -93,12 +105,12 @@ invitation of `phase-8-interviewers.md` section 2 to every panel member, and eve
 
 | Piece | Change |
 |---|---|
-| Migration | `recruitment_interviews.proposal_reason` (varchar 500, null), `proposal_made_at` (timestamp, null); status CHECK gains `no_show`; `no_show_note` (varchar 1000, null) |
+| Migration | `recruitment_interviews.proposal_reason` (varchar 500, null), `proposal_made_at` (timestamp, null); status CHECK gains `no_show`; `no_show_note` (varchar 1000, null); `candidate_soon_reminded_at` (timestamp, null; approved 2026-10-19) |
 | Notify | `ProposalAccepted` sends `.ics` `REQUEST` to the job seeker, the panel invitation to every panel member, and resets every panel RSVP to `pending` |
 | Domain | `propose` allowed on `confirmed` with reason and cut-off; `refuseProposal`; `markNoShow`; `complete` from `no_show`; `InterviewStatus::NoShow` (not active) |
 | API | `reason` on propose; `POST .../interview/refuse-proposal`; `POST .../interview/no-show`; `proposal` on the interview resources |
 | Setting | `recruitment.interview_reschedule_cutoff_hours` |
-| Notifications | `interview.proposal_refused`, `interview.no_show` (in-app and email); team email for proposals |
+| Notifications | `interview.proposal_refused`, `interview.no_show`, the job seeker's `interview.starting_soon` (in-app and email); team email for proposals |
 | Tasks | `reschedule_requests` |
 | Errors | 409 `reschedule-too-late`, `interview-not-started`; 422 `reason-required` (reused) |
 | Front end | "Minta jadwal ulang" on a confirmed interview with the cut-off; proposal banner and Terima / Tolak / Jadwalkan lain for the team; "Tidak hadir" after the start |
