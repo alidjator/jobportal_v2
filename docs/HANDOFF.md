@@ -14,7 +14,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 
 ## Current state (2026-10-19)
 
-- Latest tag `v0.7.0` (#18, = `origin/master`); local `master` holds #19 (`f760853`, 3205 tests green) and is not pushed yet. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
+- Latest tag `v0.7.0` (#18); `master` holds #19 after it (`f760853`, 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
 - **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11 and #16 to #19 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
 - Real PostgreSQL `jobportal_v2` and the test database: **`000172` (#19) is new and to run on both** (`000170` and `000171` of #18 too, if not run yet); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
