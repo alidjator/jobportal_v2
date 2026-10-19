@@ -15,8 +15,8 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 ## Current state (2026-10-19)
 
 - Latest tag `v0.8.0` (#19 and #21; #19 checked with 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
-- **Phases 0 to 7 coded and committed.** Phase 8 status per item: `phase-8-index.md`. `master` is at #28 (2026-10-19); the docs branch `phase-8-interview-reschedule` (designs #29 to #33, gap analysis FG1 to FG18 in `docs/analysis/actor-gap-analysis.md`) is not merged yet.
-- Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); reference data only (0 accounts) until the final import.
+- **Phases 0 to 7 coded and committed.** Phase 8 status per item: `phase-8-index.md`. `master` is at #28 (2026-10-19); the branch `phase-8-interview-reschedule` (designs #29 to #33, gap analysis FG1 to FG18 in `docs/analysis/actor-gap-analysis.md`, and the code of #29, committed after a green check) is not merged yet.
+- Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); `000176` (#29) is new and not run yet; reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
 - **API coding limited (2026-10-19):** only #29, #30, #15, #20 and endpoints the front end asks for until the front end catches up (`decisions.md` section 5).
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #28 and `frontend.md` 11.5, 11.6 (#27 is coded); open before go-live: client IP behind the Nuxt proxy (5.2).

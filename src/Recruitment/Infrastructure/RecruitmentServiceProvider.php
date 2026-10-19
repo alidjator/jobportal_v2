@@ -165,6 +165,7 @@ use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersExpiringTask;
 use Src\Recruitment\Infrastructure\Tasks\OffersWaitingTask;
 use Src\Recruitment\Infrastructure\Tasks\PanelDeclinedTask;
+use Src\Recruitment\Infrastructure\Tasks\RescheduleRequestsTask;
 use Src\Recruitment\Infrastructure\Tasks\ReviewsOverdueTask;
 use Src\Recruitment\Infrastructure\Tasks\StaleApplicationsTask;
 use Src\Recruitment\Infrastructure\Video\BroadcastLobbySignal;
@@ -376,6 +377,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
                 $this->app->make(MyScorecardsTask::class),
                 $this->app->make(MyRsvpTask::class),
                 $this->app->make(PanelDeclinedTask::class),
+                $this->app->make(RescheduleRequestsTask::class),
                 $this->app->make(MyReviewsTask::class),
                 $this->app->make(ReviewsOverdueTask::class),
                 $this->app->make(OffersWaitingTask::class),

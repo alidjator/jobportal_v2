@@ -40,6 +40,18 @@ final class RecruitmentEmailTemplates
 
     public const string INTERVIEW_REMINDER = 'recruitment.interview_reminder';
 
+    /** Sent to the job seeker when the team accepted the time they proposed; carries the `interview.ics` request with the new time. */
+    public const string INTERVIEW_PROPOSAL_ACCEPTED = 'recruitment.interview_proposal_accepted';
+
+    /** Sent to the job seeker when the team kept the current time instead of the one they proposed, with the team's optional message. */
+    public const string INTERVIEW_PROPOSAL_REFUSED = 'recruitment.interview_proposal_refused';
+
+    /** Sent to the job seeker when the team recorded that they did not come to the interview. */
+    public const string INTERVIEW_NO_SHOW = 'recruitment.interview_no_show';
+
+    /** Sent to the job seeker about two hours before a confirmed interview. */
+    public const string INTERVIEW_STARTING_SOON = 'recruitment.interview_starting_soon';
+
     /** Sent to the job seeker when the team marked the application withdrawn; carries the `interview.ics` cancel when an interview was active. */
     public const string APPLICATION_WITHDRAWN_BY_COMPANY = 'recruitment.application_withdrawn_by_company';
 
@@ -106,7 +118,11 @@ final class RecruitmentEmailTemplates
             InterviewChange::Reminder => self::INTERVIEW_REMINDER,
             InterviewChange::Updated => self::INTERVIEW_UPDATED,
             InterviewChange::Declined => self::INTERVIEW_DECLINED,
-            InterviewChange::ProposalAccepted, InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::RecordingWithdrawn, InterviewChange::PanelChanged => null,
+            InterviewChange::ProposalAccepted => self::INTERVIEW_PROPOSAL_ACCEPTED,
+            InterviewChange::ProposalRefused => self::INTERVIEW_PROPOSAL_REFUSED,
+            InterviewChange::NoShow => self::INTERVIEW_NO_SHOW,
+            InterviewChange::StartingSoon => self::INTERVIEW_STARTING_SOON,
+            InterviewChange::Confirmed, InterviewChange::Proposed, InterviewChange::RecordingWithdrawn, InterviewChange::PanelChanged => null,
         };
     }
 
@@ -297,6 +313,46 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nIni pengingat wawancara Anda untuk posisi {{job_title}} di {{company_name}}.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nSemoga sukses!",
                     'en' => "Hello {{name}},\n\nA reminder of your interview for {{job_title}} at {{company_name}}.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nGood luck!",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_PROPOSAL_ACCEPTED,
+                'Sent to an applicant when the company accepted the interview time they proposed; the interview is confirmed at that time.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Usulan waktu wawancara untuk {{job_title}} diterima', 'en' => 'Your proposed interview time for {{job_title}} was accepted']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} menerima waktu yang Anda usulkan untuk wawancara posisi {{job_title}}. Wawancara sudah terkonfirmasi.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}\nDirekam: {{recording}}{{note}}\n\nFile kalender terlampir memperbarui acara di kalender Anda.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} accepted the time you proposed for the interview for {{job_title}}. The interview is confirmed.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}\nRecorded: {{recording}}{{note}}\n\nThe attached calendar file updates the event in your calendar.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_PROPOSAL_REFUSED,
+                'Sent to an applicant when the company kept the current interview time instead of the one they proposed.',
+                [...$variables, new EmailVariable('message', 'The company\'s message, on its own lines with its label; empty when there is none', "\n\nPesan dari perusahaan: Jadwal panel sudah penuh pada waktu itu.")],
+                TranslatedText::fromArray(['id' => 'Usulan waktu wawancara untuk {{job_title}} tidak diterima', 'en' => 'Your proposed interview time for {{job_title}} was not accepted']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} tidak dapat memakai waktu yang Anda usulkan untuk wawancara posisi {{job_title}}. Jadwal tetap {{starts_at}}.{{message}}\n\nBuka akun Anda untuk mengonfirmasi, menolak, atau menghubungi perusahaan melalui chat.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} cannot use the time you proposed for the interview for {{job_title}}. The interview stays at {{starts_at}}.{{message}}\n\nOpen your account to confirm or decline it, or to write to the company in the chat.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_NO_SHOW,
+                'Sent to an applicant when the company recorded that they did not come to the interview.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Anda tercatat tidak hadir pada wawancara {{job_title}}', 'en' => 'You were recorded as absent from the interview for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAnda tercatat tidak hadir pada wawancara {{job_title}} di {{company_name}} pada {{starts_at}}. Hubungi perusahaan melalui chat bila ada kendala.",
+                    'en' => "Hello {{name}},\n\nYou were recorded as absent from the interview for {{job_title}} at {{company_name}} on {{starts_at}}. Write to the company in the chat if something went wrong.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::INTERVIEW_STARTING_SOON,
+                'Sent to an applicant about two hours before a confirmed interview.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Wawancara {{job_title}} dimulai sebentar lagi', 'en' => 'Your interview for {{job_title}} starts soon']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nWawancara Anda untuk posisi {{job_title}} di {{company_name}} dimulai dalam sekitar 2 jam.\n\nWaktu: {{starts_at}}\nFormat: {{format}}\nTempat atau tautan: {{place}}{{note}}\n\nHubungi {{company_name}} lewat chat bila ada kendala.",
+                    'en' => "Hello {{name}},\n\nYour interview for {{job_title}} at {{company_name}} starts in about 2 hours.\n\nTime: {{starts_at}}\nFormat: {{format}}\nPlace or link: {{place}}{{note}}\n\nWrite to {{company_name}} in the chat if something comes up.",
                 ]),
             ),
         ];

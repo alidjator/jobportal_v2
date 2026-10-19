@@ -19,7 +19,7 @@ use Src\Shared\Application\Notifications\NotificationPreferences;
 
 /**
  * The invitation of the interview's panel (`docs/design/phase-8-interviewers.md` section 2): an email with the calendar file (`METHOD:REQUEST`, the attendee is the member)
- * to the main interviewer and the extra members when the interview is scheduled or gets a new time, and to a member added to the panel; the cancellation
+ * to the main interviewer and the extra members when the interview is scheduled or gets a new time (also an accepted proposal), and to a member added to the panel; the cancellation
  * (`METHOD:CANCEL`) to a member who left the panel, to the panel of an interview the team cancelled and to the members a new time no longer includes. All follow the
  * preference `team_interview_changes`; the in-app notice is written elsewhere. A suspended member or an inactive account gets none.
  */
@@ -51,7 +51,7 @@ final readonly class EmailPanelOfInterview
     public function handle(InterviewChanged $event): void
     {
         $interview = match ($event->change) {
-            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::PanelChanged, InterviewChange::Cancelled => $this->interviews->findById($event->interviewId),
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::ProposalAccepted, InterviewChange::PanelChanged, InterviewChange::Cancelled => $this->interviews->findById($event->interviewId),
             default => null,
         };
 
@@ -62,7 +62,7 @@ final readonly class EmailPanelOfInterview
         $members = array_values(array_unique([$interview->interviewerId, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])]));
 
         match ($event->change) {
-            InterviewChange::Scheduled, InterviewChange::Rescheduled => $this->send($event, $interview, $members, $event->removedUserIds),
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::ProposalAccepted => $this->send($event, $interview, $members, $event->removedUserIds),
             InterviewChange::PanelChanged => $this->send($event, $interview, $event->addedUserIds, $event->removedUserIds),
             default => $this->send($event, $interview, [], $members),
         };

@@ -25,6 +25,8 @@ final class RecruitmentSettings
 
     public const string OFFER_LABOR_RULES = 'recruitment.offer_labor_rules';
 
+    public const string INTERVIEW_RESCHEDULE_CUTOFF_HOURS = 'recruitment.interview_reschedule_cutoff_hours';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -71,6 +73,11 @@ final class RecruitmentSettings
             SettingDefinition::boolean(
                 self::OFFER_LABOR_RULES, true,
                 'Whether an offer follows the labour-law limits (PP 35/2021): probation only for a permanent employee and at most 3 months, an internship at most 12 months. While off, only the field limits apply.',
+                overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::INTERVIEW_RESCHEDULE_CUTOFF_HOURS, 24, 0, 168,
+                'Until how many hours before a confirmed interview the job seeker may ask to move it, and how far ahead the time they propose must be. 0 allows it until the start.',
                 overridable: true,
             ),
         ];

@@ -137,7 +137,7 @@ final class CompanyCalendarTest extends FeatureTestCase
 
         Carbon::setTestNow('2026-10-12 04:00:00');
         $this->recruiterToken = $this->tokenFor($this->recruiterId);
-        $this->assertSame(['view_application', 'edit', 'edit_note', 'cancel', 'scorecard', 'download_ics'], $this->calendar()->json('data.0.actions'));
+        $this->assertSame(['view_application', 'edit', 'edit_note', 'cancel', 'no_show', 'scorecard', 'download_ics'], $this->calendar()->json('data.0.actions'));
 
         DB::table('recruitment_interviews')->where('application_id', $this->applicationId)->update(['status' => 'completed']);
         $this->assertSame(['view_application', 'scorecard', 'download_ics'], $this->calendar()->json('data.0.actions'));

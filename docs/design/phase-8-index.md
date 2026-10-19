@@ -54,7 +54,7 @@ front end asks for) are coded; the other rows wait even when ready.
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
-| 29 | `phase-8-interview-reschedule.md` (FG2 and FG3 of `docs/analysis/actor-gap-analysis.md`) | ready for coding (schema, the fix of its "Finding" and section 6 approved 2026-10-19) |
+| 29 | `phase-8-interview-reschedule.md` (FG2 and FG3 of `docs/analysis/actor-gap-analysis.md`) | coded 2026-10-19 (migration `000176`), check green |
 | 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
 | 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
 | 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |

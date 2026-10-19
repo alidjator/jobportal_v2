@@ -12,6 +12,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewFormat;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\InterviewRepository;
+use Src\Recruitment\Domain\InterviewStatus;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Company\CompanyDirectory;
 use Src\Shared\Application\Company\CompanyTeam;
@@ -40,6 +41,7 @@ final readonly class EmailTeamOfEvents
     private const array INTERVIEW_WORDS = [
         'confirmed' => ['id' => 'mengonfirmasi wawancara', 'en' => 'confirmed the interview'],
         'proposed' => ['id' => 'mengusulkan waktu wawancara lain', 'en' => 'proposed another interview time'],
+        'reschedule' => ['id' => 'minta pindah jadwal wawancara yang sudah dikonfirmasi', 'en' => 'asked to move the confirmed interview'],
         'declined' => ['id' => 'menolak wawancara', 'en' => 'declined the interview'],
     ];
 
@@ -78,6 +80,10 @@ final readonly class EmailTeamOfEvents
 
         if (! $interview instanceof Interview) {
             return;
+        }
+
+        if ($event->change === InterviewChange::Proposed && $interview->status === InterviewStatus::Confirmed) {
+            $words = self::INTERVIEW_WORDS['reschedule'];
         }
 
         $this->send(

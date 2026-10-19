@@ -11,6 +11,9 @@ interface InterviewRepository
     /** The pending or confirmed interview of the application, if any. */
     public function active(int $applicationId, bool $forUpdate = false): ?Interview;
 
+    /** The newest interview of the application, whatever its status, if any. */
+    public function latest(int $applicationId, bool $forUpdate = false): ?Interview;
+
     /** @return list<Interview> newest first */
     public function forApplication(int $applicationId): array;
 
@@ -73,4 +76,14 @@ interface InterviewRepository
 
     /** Marks the panel as told that the interview starts soon; false when another run did it first. */
     public function claimStartingReminder(int $interviewId, DateTimeImmutable $at): bool;
+
+    /**
+     * Confirmed interviews that start after `$from` and no later than `$until` and whose job seeker was not told they start soon.
+     *
+     * @return list<Interview>
+     */
+    public function dueForCandidateSoonReminder(DateTimeImmutable $from, DateTimeImmutable $until): array;
+
+    /** Clears the open proposals of active interviews whose current start has come, unanswered; nothing is sent. Returns how many lapsed. */
+    public function lapseProposals(DateTimeImmutable $now): int;
 }

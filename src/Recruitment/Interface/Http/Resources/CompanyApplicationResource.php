@@ -45,6 +45,8 @@ final class CompanyApplicationResource extends JsonResource
             'interview_state' => $row->interviewState,
             /** @var array{pending: int, declined: int}|null how many of the panel of the active interview have not answered the invitation and how many cannot attend; null without an active interview */
             'interview_rsvp' => $row->interviewRsvp,
+            /** Whether the job seeker asked for another time for the active interview and the team has not answered ("Kandidat minta pindah jadwal"). */
+            'interview_proposal_open' => $row->interviewProposalOpen,
             /** @var array{advance: int, decline: int, maybe: int, pending: int}|null the decisions of shortlist reviews and the answers still awaited; null when no open review request names the application */
             'review_summary' => $row->reviewSummary,
             'other_applications_count' => $row->otherApplicationsCount,

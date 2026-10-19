@@ -76,7 +76,7 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
         $interviews = $this->connection->table('recruitment_interviews')->whereIn('application_id', (clone $applications)->select('id'));
 
         (clone $interviews)->whereNotIn('id', $this->connection->table('recruitment_interview_scorecards')->select('interview_id'))->delete();
-        $interviews->update(['location' => null, 'meeting_url' => null]);
+        $interviews->update(['location' => null, 'meeting_url' => null, 'proposal_reason' => null, 'no_show_note' => null]);
 
         // Offers carry the applicant's answer note (and the letter that names them), so they go too, with the letters nobody used yet.
         $this->connection->table('recruitment_offer_letter_uploads')

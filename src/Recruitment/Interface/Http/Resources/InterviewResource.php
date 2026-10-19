@@ -10,7 +10,8 @@ use Src\Recruitment\Domain\InterviewFormat;
 
 /**
  * An interview, for the team and for the job seeker alike. `proposals_left` counts how many more times the job seeker may propose another time, and
- * `proposed_starts_at` is the time waiting for the team's answer (null when none). `recorded` tells that the team will record the interview and
+ * `proposed_starts_at` is the time waiting for the team's answer (null when none), also inside `proposal` with the reason and when it was made. A confirmed
+ * interview with a proposal stays confirmed at `starts_at` until the team answers. `recorded` tells that the team will record the interview and
  * `recording_consent` is the job seeker's answer (null until they answer).
  *
  * @property InterviewView $resource
@@ -43,6 +44,12 @@ final class InterviewResource extends JsonResource
             'caller_number' => $interview->format === InterviewFormat::Voice ? config('services.asterisk.caller_id') : null,
             'interviewer' => ['id' => $interview->interviewerId, 'name' => $this->resource->interviewerName],
             'proposed_starts_at' => $interview->proposedStartsAt?->format(DATE_ATOM),
+            /** The open proposal of the job seeker, or null. */
+            'proposal' => $interview->proposedStartsAt === null ? null : [
+                'starts_at' => $interview->proposedStartsAt->format(DATE_ATOM),
+                'reason' => $interview->proposalReason,
+                'made_at' => $interview->proposalMadeAt?->format(DATE_ATOM),
+            ],
             /** @var int */
             'proposals_left' => max(0, Interview::PROPOSALS_MAX - $interview->proposalsUsed),
             'created_at' => $interview->createdAt->format(DATE_ATOM),

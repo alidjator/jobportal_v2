@@ -19,7 +19,7 @@ use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Job\JobDirectory;
 
 /**
- * The interviews of the calendar: pending, confirmed and completed ones that overlap the window (declined and cancelled ones are not shown), for the jobs the member may see, without
+ * The interviews of the calendar: pending, confirmed, completed and no-show ones that overlap the window (declined and cancelled ones are not shown), for the jobs the member may see, without
  * applications whose applicant was anonymised. The link of the meeting stays in the interview detail: the event only says whether there is one.
  */
 final readonly class InterviewCalendarSource implements CalendarSource
@@ -42,7 +42,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
             ->when($scope->jobIds !== null, fn (Builder $query) => $query->whereIn('a.job_id', $scope->jobIds ?? []))
             ->when($scope->jobId !== null, fn (Builder $query) => $query->where('a.job_id', $scope->jobId))
             ->whereNotNull('a.profile_snapshot')
-            ->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value, InterviewStatus::Completed->value])
+            ->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value, InterviewStatus::Completed->value, InterviewStatus::NoShow->value])
             ->where('i.starts_at', '<', $this->utc($scope->to))
             ->where('i.ends_at', '>', $this->utc($scope->from))
             ->when($scope->mine, fn (Builder $query) => $query->where(fn (Builder $mine) => $mine->where('i.interviewer_id', $scope->userId)->orWhereExists(
@@ -50,7 +50,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
             )))
             ->orderBy('i.starts_at')->orderBy('i.id')
             ->limit($scope->limit)
-            ->get(['i.id', 'i.application_id', 'a.job_id', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.location', 'i.location_id', 'i.meeting_url', 'i.interviewer_id', new Expression("a.profile_snapshot->>'name' as candidate_name")]);
+            ->get(['i.id', 'i.application_id', 'a.job_id', 'i.starts_at', 'i.ends_at', 'i.status', 'i.format', 'i.location', 'i.location_id', 'i.meeting_url', 'i.interviewer_id', 'i.proposed_starts_at', new Expression("a.profile_snapshot->>'name' as candidate_name")]);
 
         if ($rows->isEmpty()) {
             return [];
@@ -87,6 +87,7 @@ final readonly class InterviewCalendarSource implements CalendarSource
             $involved = $interviewerId === $scope->userId || in_array($scope->userId, $panel, true);
             $startsAt = $this->time((string) $row->starts_at);
             $status = (string) $row->status;
+            $proposed = $row->proposed_starts_at === null ? null : $this->time((string) $row->proposed_starts_at);
 
             return new CalendarEvent(
                 "interview:{$id}",
@@ -110,29 +111,41 @@ final readonly class InterviewCalendarSource implements CalendarSource
                     'panel' => array_map(static fn (int $userId): array => ['id' => $userId, 'name' => $names[$userId] ?? null, 'rsvp' => ($answers[$id][$userId] ?? RsvpAnswer::pending())->rsvp->value], $panel),
                     /** The answer of the member who asks to the invitation; null when they do not sit on the panel. */
                     'my_rsvp' => $involved ? ($answers[$id][$scope->userId] ?? RsvpAnswer::pending())->rsvp->value : null,
+                    /** The time the job seeker asked for, waiting for the team's answer ("Kandidat minta pindah jadwal"); null when none. */
+                    'proposed_starts_at' => $proposed?->format(DATE_ATOM),
                 ],
                 $involved,
-                $this->actions($scope, $status, $startsAt, $involved),
+                $this->actions($scope, $status, $startsAt, $involved, $proposed !== null, $interviewerId === $scope->userId),
             );
         })->all();
     }
 
     /**
-     * What the member may do with the interview now, by the rules of the use cases that already exist: reschedule, change the note and cancel need `interviews.manage` and an active
-     * interview; the scorecard belongs to the panel once the interview has started and was not cancelled.
+     * What the member may do with the interview now, by the rules of the use cases that already exist: reschedule, change the note, cancel and answer a proposal need
+     * `interviews.manage` and an active interview; a no-show is marked on a confirmed interview after its start, also by the main interviewer; the scorecard belongs to
+     * the panel once a confirmed or completed interview has started.
      *
      * @return list<string>
      */
-    private function actions(CalendarScope $scope, string $status, DateTimeImmutable $startsAt, bool $involved): array
+    private function actions(CalendarScope $scope, string $status, DateTimeImmutable $startsAt, bool $involved, bool $hasProposal, bool $leads): array
     {
         $actions = ['view_application'];
         $active = in_array($status, [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value], true);
+        $manages = $scope->can(CompanyPermission::InterviewsManage->value);
 
-        if ($active && $scope->can(CompanyPermission::InterviewsManage->value)) {
+        if ($active && $manages) {
             array_push($actions, 'edit', 'edit_note', 'cancel');
         }
 
-        if ($involved && $status !== InterviewStatus::Pending->value && $startsAt <= $scope->now) {
+        if ($active && $manages && $hasProposal) {
+            array_push($actions, 'accept_proposal', 'refuse_proposal');
+        }
+
+        if ($status === InterviewStatus::Confirmed->value && $startsAt <= $scope->now && ($manages || $leads)) {
+            $actions[] = 'no_show';
+        }
+
+        if ($involved && in_array($status, [InterviewStatus::Confirmed->value, InterviewStatus::Completed->value], true) && $startsAt <= $scope->now) {
             $actions[] = 'scorecard';
         }
 

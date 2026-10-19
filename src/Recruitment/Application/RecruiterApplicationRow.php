@@ -45,6 +45,8 @@ final readonly class RecruiterApplicationRow
         public ?int $matchScore = null,
         public int $jobId = 0,
         public ?string $jobTitle = null,
+        /** Whether the job seeker's proposed time for the active interview waits for the team's answer ("Kandidat minta pindah jadwal"). */
+        public bool $interviewProposalOpen = false,
     ) {}
 
     /** The row with the title of its job (the list across jobs shows it). */

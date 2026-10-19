@@ -19,4 +19,13 @@ enum InterviewChange: string
 
     /** Only the details (the note for the candidate) changed: the time and the confirmation stay. */
     case Updated = 'updated';
+
+    /** The team kept the current time instead of the one the job seeker proposed; the event carries the team's optional message. */
+    case ProposalRefused = 'proposal_refused';
+
+    /** The team recorded that the job seeker did not come. */
+    case NoShow = 'no_show';
+
+    /** The job seeker is reminded that the confirmed interview starts within two hours. */
+    case StartingSoon = 'starting_soon';
 }

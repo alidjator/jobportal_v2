@@ -39,7 +39,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
             $builder->whereIn('a.job_id', $query->jobIds);
         }
 
-        if ((! $query->allOfCompany && $query->rsvp !== 'declined') || $query->scorecardPending || $query->rsvp === 'pending') {
+        if ((! $query->allOfCompany && $query->rsvp !== 'declined' && ! $query->proposalOpen) || $query->scorecardPending || $query->rsvp === 'pending') {
             $builder->where(fn (Builder $mine) => $mine->where('i.interviewer_id', $query->userId)->orWhereExists(
                 fn (Builder $panel) => $panel->selectRaw('1')->from('recruitment_interview_participants as p')->whereColumn('p.interview_id', 'i.id')->where('p.user_id', $query->userId),
             ));
@@ -48,7 +48,7 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
         if ($query->upcoming) {
             $builder->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])->where('i.ends_at', '>', $now);
         } else {
-            $builder->whereIn('i.status', [InterviewStatus::Confirmed->value, InterviewStatus::Completed->value])->where('i.ends_at', '<=', $now);
+            $builder->whereIn('i.status', [InterviewStatus::Confirmed->value, InterviewStatus::Completed->value, InterviewStatus::NoShow->value])->where('i.ends_at', '<=', $now);
         }
 
         if ($query->scorecardPending) {
@@ -72,6 +72,12 @@ final readonly class DatabaseMyInterviewReader implements MyInterviewReader
         if ($query->rsvp === 'declined') {
             $builder->where('i.created_by', $query->userId)->where(fn (Builder $declined) => $declined->where('i.interviewer_rsvp', Rsvp::Declined->value)
                 ->orWhereExists(fn (Builder $panel) => $panel->selectRaw('1')->from('recruitment_interview_participants as p')->whereColumn('p.interview_id', 'i.id')->where('p.rsvp', Rsvp::Declined->value)));
+        }
+
+        if ($query->proposalOpen) {
+            $builder->whereIn('i.status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])->where('i.starts_at', '>', $now)->whereNotIn('a.stage_type', $final)
+                ->whereNotNull('i.proposed_starts_at')
+                ->where(fn (Builder $mine) => $mine->where('i.created_by', $query->userId)->orWhere('i.interviewer_id', $query->userId));
         }
 
         if ($request->cursor !== null) {

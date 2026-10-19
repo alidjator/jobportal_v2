@@ -76,6 +76,14 @@ final readonly class DatabaseInterviewRsvps implements InterviewRsvps
             ->update(['rsvp' => $rsvp->value, 'rsvp_note' => $note, 'rsvp_at' => $this->format($at)]);
     }
 
+    public function resetAll(int $interviewId): void
+    {
+        $this->connection->table('recruitment_interviews')->where('id', $interviewId)
+            ->update(['interviewer_rsvp' => Rsvp::Pending->value, 'interviewer_rsvp_note' => null, 'interviewer_rsvp_at' => null]);
+        $this->connection->table('recruitment_interview_participants')->where('interview_id', $interviewId)
+            ->update(['rsvp' => Rsvp::Pending->value, 'rsvp_note' => null, 'rsvp_at' => null]);
+    }
+
     private function format(DateTimeImmutable $time): string
     {
         return $time->setTimezone(new DateTimeZone('UTC'))->format(self::TIME);

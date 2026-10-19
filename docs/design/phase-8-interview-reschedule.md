@@ -1,4 +1,4 @@
-# Phase 8: rescheduling a confirmed interview, refusing a proposed time and no-shows (designed 2026-10-19, not coded)
+# Phase 8: rescheduling a confirmed interview, refusing a proposed time and no-shows (designed 2026-10-19, coded 2026-10-19)
 
 Gap FG2 of `docs/analysis/actor-gap-analysis.md`, seen from both sides of the interview: the job seeker can only **decline** a confirmed interview,
 which ends it, and the team cannot **refuse** a proposed time or record a **no-show**. Changes the rule of `phase-2-interviews.md` ("after the
@@ -27,6 +27,8 @@ whose RSVPs stay as answered for the old time (see "Finding" below).
   an unanswered proposal lapses at the old start; the refusal message is sent, not stored; the main interviewer may also mark a no-show; a
   mistaken `no_show` becomes `completed` through `complete` without a notice.
 - 2026-10-19: the job seeker also gets a reminder **2 hours** before a confirmed interview, in-app and by email (FG3, chosen by the user).
+- 2026-10-19 (coding): `recruitment_interviews.status` had **no CHECK** in the real database; migration `000176` adds a new one with all six values
+  (chosen by the user). Interpretations made while coding: see "Coded".
 
 ## 1. Asking to move a confirmed interview
 
@@ -114,3 +116,28 @@ invitation of `phase-8-interviewers.md` section 2 to every panel member, and eve
 | Tasks | `reschedule_requests` |
 | Errors | 409 `reschedule-too-late`, `interview-not-started`; 422 `reason-required` (reused) |
 | Front end | "Minta jadwal ulang" on a confirmed interview with the cut-off; proposal banner and Terima / Tolak / Jadwalkan lain for the team; "Tidak hadir" after the start |
+
+## Coded (2026-10-19)
+
+- **Migration** `2026_10_19_000176_add_reschedule_and_no_show_to_interviews`: the four columns of "Changes in short" and the new
+  `recruitment_interviews_status_check` (`pending`, `confirmed`, `declined`, `cancelled`, `completed`, `no_show`).
+- **Setting** `recruitment.interview_reschedule_cutoff_hours` (overridable per company); no `.env` value.
+- Interpretations made while coding:
+  - The cut-off rule for the proposed start (at least the cut-off ahead) applies only to a request on a **confirmed** interview, as section 1
+    places it; a proposal on a pending interview keeps the old rule (in the future).
+  - The accepted proposal gets its own job seeker email `recruitment.interview_proposal_accepted` (with the `.ics` `REQUEST`), since the
+    rescheduled email asks to confirm again; the panel gets the invitation and the in-app `interview.panel_invited` as for a reschedule.
+  - The proposal's reason is in the team's in-app `interview.proposed` data (`reason`, `proposed_starts_at`); the team email words a request
+    on a confirmed interview as "asked to move the confirmed interview" and carries no reason.
+  - Lapsing unanswered proposals runs in `recruitment:send-starting-soon-reminders` (every five minutes), with the job seeker's 2-hour pass.
+  - The 2-hour reminder is an `InterviewChanged` (`starting_soon`) claimed under the row lock like the day-before reminder, not a separate
+    claim query; its email shows the meeting link of an online interview, the address of an onsite one, and "in the platform" for video.
+  - `no-show` is open to the main interviewer through `panelOpens` of the lookup; anyone else needs `interviews.manage`.
+  - `complete` on an application without an active interview takes the newest interview when it is a `no_show`.
+  - The task `reschedule_requests` (order 29) opens `company/interviews?filter[proposal]=open`, a new filter of that list. The pipeline row
+    carries `interview_proposal_open`; the calendar event carries `details.proposed_starts_at` and the actions `accept_proposal`,
+    `refuse_proposal` and `no_show`, and shows `no_show` interviews; the scorecard action is limited to confirmed and completed interviews.
+  - The past list of `company/interviews` shows `no_show` interviews too. Erasing an applicant also clears `proposal_reason` and `no_show_note`
+    of the interviews that are kept.
+- **Not done here:** analytics has no interview funnel yet (section 3 counts `no_show` there when it exists); the job seeker's interview
+  resource does not say until when a move can be asked (the front end shows the cut-off from the 409 `reschedule-too-late`).

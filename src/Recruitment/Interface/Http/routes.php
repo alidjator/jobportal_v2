@@ -90,6 +90,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/interviews', [InterviewController::class, 'mine']);
     Route::get('company/interviews/{id}/calendar.ics', [InterviewController::class, 'calendarFile'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/refuse-proposal', [InterviewController::class, 'refuseProposal'])->whereNumber('id');
+    Route::post('company/applications/{id}/interview/no-show', [InterviewController::class, 'noShow'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/cancel', [InterviewController::class, 'cancel'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/complete', [InterviewController::class, 'complete'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/video/join', [VideoInterviewController::class, 'join'])->whereNumber('id');

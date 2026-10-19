@@ -9,7 +9,8 @@ use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
  * An interview of one application. The team schedules it (`pending`), the job seeker confirms it, declines it or proposes another time (at most
- * {@see self::PROPOSALS_MAX} times), and the team accepts a proposal, cancels it or marks it completed. An application has at most one active interview.
+ * {@see self::PROPOSALS_MAX} times, also to move a confirmed interview up to a cut-off before its start), and the team accepts or refuses a proposal, cancels it,
+ * marks it completed or, after its start, records a no-show. An application has at most one active interview.
  * A video or voice interview may be marked `recorded`: the job seeker then consents or refuses when they answer the schedule, and may withdraw a given consent.
  */
 final readonly class Interview
@@ -25,6 +26,8 @@ final readonly class Interview
     public const int URL_MAX = 500;
 
     public const int NOTE_MAX = 1000;
+
+    public const int PROPOSAL_REASON_MAX = 500;
 
     public function __construct(
         public int $applicationId,
@@ -52,6 +55,13 @@ final readonly class Interview
         public int $calendarSequence = 0,
         /** The work location the onsite address was copied from (`company_locations`); null for free text or another format. The text in `location` stays as it was sent. */
         public ?int $locationId = null,
+        /** Why the job seeker proposed another time (required to move a confirmed interview) and when; both null without an open proposal. */
+        public ?string $proposalReason = null,
+        public ?DateTimeImmutable $proposalMadeAt = null,
+        /** The team's own note on a no-show; never shown to the job seeker. */
+        public ?string $noShowNote = null,
+        /** When the job seeker was reminded that the interview starts within two hours; cleared when the time changes. */
+        public ?DateTimeImmutable $candidateSoonRemindedAt = null,
     ) {}
 
     /**
@@ -157,30 +167,80 @@ final readonly class Interview
     {
         $this->assertActive();
 
-        return $this->changed(status: InterviewStatus::Declined, proposedStartsAt: null, calendarSequence: $this->calendarSequence + 1);
+        return $this->changed(status: InterviewStatus::Declined, proposedStartsAt: null, proposalReason: null, proposalMadeAt: null, calendarSequence: $this->calendarSequence + 1);
     }
 
     /**
-     * The job seeker proposes another start (the duration stays). It stays pending until the team answers.
+     * The job seeker proposes another start (the duration stays); the status does not change until the team answers. On a pending interview the reason is
+     * optional. On a confirmed one it is required and the request must come at least `$cutoffHours` before the current start, for a start at least as far
+     * ahead; the interview stays confirmed at the old time, and the recording answer and the phone number given at the confirmation stay.
      *
-     * @throws StateConflict `interview-not-pending`, `proposal-pending` or `proposal-limit`
-     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future, or `recording-consent-required` or `invalid-phone`
+     * @throws StateConflict `interview-not-pending`, `proposal-pending`, `proposal-limit` or `reschedule-too-late`
+     * @throws BusinessRuleViolation `invalid-interview` when the time is not in the future (or within the cut-off) or the reason is too long, `reason-required`,
+     *                               `recording-consent-required` or `invalid-phone`
      */
-    public function propose(DateTimeImmutable $startsAt, ?RecordingConsent $consent, DateTimeImmutable $now, ?string $phone = null, ?string $fallbackPhone = null): self
-    {
-        $this->assertAwaitingJobSeeker();
+    public function propose(
+        DateTimeImmutable $startsAt,
+        ?RecordingConsent $consent,
+        DateTimeImmutable $now,
+        ?string $phone = null,
+        ?string $fallbackPhone = null,
+        ?string $reason = null,
+        int $cutoffHours = 0,
+    ): self {
+        if (! $this->status->isActive()) {
+            throw new StateConflict('This interview is not waiting for your answer.', 'interview-not-pending');
+        }
+
+        if ($this->hasProposal()) {
+            throw new StateConflict('Your proposed time is waiting for an answer from the company.', 'proposal-pending');
+        }
 
         if ($this->proposalsUsed >= self::PROPOSALS_MAX) {
             throw new StateConflict('You already proposed another time '.self::PROPOSALS_MAX.' times. Confirm or decline this interview.', 'proposal-limit');
         }
 
-        if ($startsAt <= $now) {
-            throw new BusinessRuleViolation('The proposed time must be in the future.', 'invalid-interview', extensions: ['errors' => ['starts_at' => ['The proposed time must be in the future.']]]);
+        $confirmed = $this->status === InterviewStatus::Confirmed;
+        $reason = self::text($reason);
+        $cutoff = new DateInterval('PT'.max(0, $cutoffHours).'H');
+
+        if ($confirmed && $reason === null) {
+            $message = 'Say why you ask to move the interview.';
+
+            throw new BusinessRuleViolation($message, 'reason-required', extensions: ['errors' => ['reason' => [$message]]]);
+        }
+
+        if ($reason !== null && mb_strlen($reason) > self::PROPOSAL_REASON_MAX) {
+            $message = 'The reason can have at most '.self::PROPOSAL_REASON_MAX.' characters.';
+
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['reason' => [$message]]]);
+        }
+
+        if ($confirmed && $now > $this->startsAt->sub($cutoff)) {
+            throw new StateConflict(
+                'The interview can no longer be moved: ask at least '.$cutoffHours.' hours before it starts. You can still decline it or write to the company.',
+                'reschedule-too-late',
+                extensions: ['cutoff_hours' => $cutoffHours],
+            );
+        }
+
+        $earliest = $confirmed ? $now->add($cutoff) : $now;
+
+        if ($startsAt <= $now || ($confirmed && $startsAt < $earliest)) {
+            $message = $startsAt <= $now ? 'The proposed time must be in the future.' : 'The proposed time must be at least '.$cutoffHours.' hours ahead.';
+
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['starts_at' => [$message]]]);
+        }
+
+        $proposed = $this->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt, proposalReason: $reason, proposalMadeAt: $now);
+
+        if ($confirmed) {
+            return $proposed;
         }
 
         // A recorded interview takes the answer now, and a voice interview the number to call: the team accepting the proposal confirms it without the job
         // seeker answering again.
-        return $this->consented($consent, $now)->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt, candidatePhone: $this->confirmedPhone($phone, $fallbackPhone));
+        return $proposed->consented($consent, $now)->changed(candidatePhone: $this->confirmedPhone($phone, $fallbackPhone));
     }
 
     /**
@@ -214,7 +274,60 @@ final readonly class Interview
 
         $duration = $this->startsAt->diff($this->endsAt);
 
-        return $this->changed(startsAt: $this->proposedStartsAt, endsAt: $this->proposedStartsAt->add($duration), status: InterviewStatus::Confirmed, proposedStartsAt: null, remindedAt: null, calendarSequence: $this->calendarSequence + 1);
+        return $this->changed(
+            startsAt: $this->proposedStartsAt,
+            endsAt: $this->proposedStartsAt->add($duration),
+            status: InterviewStatus::Confirmed,
+            proposedStartsAt: null,
+            remindedAt: null,
+            proposalReason: null,
+            proposalMadeAt: null,
+            candidateSoonRemindedAt: null,
+            calendarSequence: $this->calendarSequence + 1,
+        );
+    }
+
+    /**
+     * The team keeps the current time: the proposal is cleared and its use of the quota stays. A pending interview stays pending, a confirmed one keeps its time.
+     *
+     * @throws StateConflict `interview-not-active` or `no-proposal`
+     */
+    public function refuseProposal(): self
+    {
+        $this->assertActive();
+
+        if ($this->proposedStartsAt === null) {
+            throw new StateConflict('There is no proposed time to refuse.', 'no-proposal');
+        }
+
+        return $this->changed(proposedStartsAt: null, proposalReason: null, proposalMadeAt: null);
+    }
+
+    /**
+     * The team records that the job seeker did not come: only a confirmed interview that has started. The note is for the team only.
+     *
+     * @throws StateConflict `interview-not-confirmed` or `interview-not-started`
+     * @throws BusinessRuleViolation `invalid-interview` when the note is too long
+     */
+    public function markNoShow(?string $note, DateTimeImmutable $now): self
+    {
+        if ($this->status !== InterviewStatus::Confirmed) {
+            throw new StateConflict('Only a confirmed interview can be marked as a no-show.', 'interview-not-confirmed');
+        }
+
+        if ($now < $this->startsAt) {
+            throw new StateConflict('The interview has not started yet.', 'interview-not-started');
+        }
+
+        $note = self::text($note);
+
+        if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
+            $message = 'The note can have at most '.self::NOTE_MAX.' characters.';
+
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]]);
+        }
+
+        return $this->changed(status: InterviewStatus::NoShow, proposedStartsAt: null, proposalReason: null, proposalMadeAt: null, noShowNote: $note);
     }
 
     /** @throws StateConflict `interview-not-active` */
@@ -222,17 +335,21 @@ final readonly class Interview
     {
         $this->assertActive();
 
-        return $this->changed(status: InterviewStatus::Cancelled, proposedStartsAt: null, calendarSequence: $this->calendarSequence + 1);
+        return $this->changed(status: InterviewStatus::Cancelled, proposedStartsAt: null, proposalReason: null, proposalMadeAt: null, calendarSequence: $this->calendarSequence + 1);
     }
 
-    /** @throws StateConflict `interview-not-confirmed` */
+    /**
+     * A confirmed interview took place; a no-show marked by mistake is corrected the same way.
+     *
+     * @throws StateConflict `interview-not-confirmed`
+     */
     public function complete(): self
     {
-        if ($this->status !== InterviewStatus::Confirmed) {
+        if ($this->status !== InterviewStatus::Confirmed && $this->status !== InterviewStatus::NoShow) {
             throw new StateConflict('Only a confirmed interview can be marked as completed.', 'interview-not-confirmed');
         }
 
-        return $this->changed(status: InterviewStatus::Completed);
+        return $this->changed(status: InterviewStatus::Completed, proposedStartsAt: null, proposalReason: null, proposalMadeAt: null);
     }
 
     /**
@@ -258,6 +375,12 @@ final readonly class Interview
     public function reminded(DateTimeImmutable $at): self
     {
         return $this->changed(remindedAt: $at);
+    }
+
+    /** The job seeker was told that the interview starts within two hours. */
+    public function remindedSoon(DateTimeImmutable $at): self
+    {
+        return $this->changed(candidateSoonRemindedAt: $at);
     }
 
     /** @throws StateConflict */
@@ -344,6 +467,10 @@ final readonly class Interview
         ?string $note = null,
         bool $noteChanged = false,
         ?int $calendarSequence = null,
+        mixed $proposalReason = false,
+        mixed $proposalMadeAt = false,
+        mixed $noShowNote = false,
+        mixed $candidateSoonRemindedAt = false,
     ): self {
         return new self(
             $this->applicationId,
@@ -370,6 +497,10 @@ final readonly class Interview
             $this->calendarUid,
             $calendarSequence ?? $this->calendarSequence,
             $this->locationId,
+            $proposalReason === false ? $this->proposalReason : $proposalReason,
+            $proposalMadeAt === false ? $this->proposalMadeAt : $proposalMadeAt,
+            $noShowNote === false ? $this->noShowNote : $noShowNote,
+            $candidateSoonRemindedAt === false ? $this->candidateSoonRemindedAt : $candidateSoonRemindedAt,
         );
     }
 }

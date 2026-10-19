@@ -18,6 +18,9 @@ interface InterviewRsvps
     /** Records the answer of the main interviewer or of an extra member of the interview; the caller has checked that the user sits on the panel. */
     public function answer(int $interviewId, int $userId, Rsvp $rsvp, ?string $note, DateTimeImmutable $at): void;
 
+    /** Puts the answers of the main interviewer and of every extra member back to `pending`, without a note: the interview got a new time in place. */
+    public function resetAll(int $interviewId): void;
+
     /**
      * How many of the main interviewer and the extra members of the active (pending or confirmed) interview of each application have not answered and how many cannot attend.
      *

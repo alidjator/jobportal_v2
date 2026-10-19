@@ -13,6 +13,7 @@ final readonly class MyInterviewQuery
      * @param  ?string  $rsvp  `pending`: the upcoming interviews where the member sits on the panel and has not answered the invitation; `declined`: the upcoming interviews the member scheduled where a panel member cannot attend
      * @param  ?list<int>  $jobIds  with `$allOfCompany`: the jobs the member may see (null: every job of the company)
      * @param  list<int>  $boundJobIds  with `$allOfCompany`: the jobs where the member is a hiring manager bound to the stage boundary
+     * @param  bool  $proposalOpen  only the upcoming interviews the member scheduled or leads where the job seeker's proposed time waits for an answer
      */
     public function __construct(
         public int $userId,
@@ -24,5 +25,6 @@ final readonly class MyInterviewQuery
         public ?array $jobIds,
         public array $boundJobIds,
         public DateTimeImmutable $now,
+        public bool $proposalOpen = false,
     ) {}
 }

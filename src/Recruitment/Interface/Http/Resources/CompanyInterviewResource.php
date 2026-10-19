@@ -24,6 +24,8 @@ final class CompanyInterviewResource extends JsonResource
             /** The work location the address was copied from (`GET company/locations`); null for free text. */
             'location_id' => $interview->locationId,
             'kit' => $interview->kitName === null ? null : ['id' => $interview->kitId, 'name' => $interview->kitName],
+            /** The team's own note on a no-show (status `no_show`); the job seeker never sees it. */
+            'no_show_note' => $interview->noShowNote,
             /** The answer of the main interviewer to the invitation. */
             'interviewer_rsvp' => $this->resource->interviewerRsvp === null ? null : (new InterviewRsvpResource($this->resource->interviewerRsvp))->toArray($request),
             /** The extra panel members, each with the answer to the invitation (`rsvp`). */

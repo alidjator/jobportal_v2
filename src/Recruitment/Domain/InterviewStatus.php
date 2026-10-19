@@ -10,6 +10,9 @@ enum InterviewStatus: string
     case Cancelled = 'cancelled';
     case Completed = 'completed';
 
+    /** The team recorded that the job seeker did not come to a confirmed interview. Not active: the application may get a new interview. */
+    case NoShow = 'no_show';
+
     /** Pending and confirmed interviews are the live ones: an application has at most one. */
     public function isActive(): bool
     {

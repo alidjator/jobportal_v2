@@ -53,7 +53,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         $rows = $this->ordered($query->filters->ratingMin === null ? $this->withRatings($filtered) : $filtered, $query, $direction)
             ->offset($request->offset())
             ->limit($request->perPage)
-            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()])
+            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn(), $this->interviewProposalColumn()])
             ->map(fn (stdClass $row): RecruiterApplicationRow => $this->toRow($row, $query->staleAfterDays, $now))
             ->all();
 
@@ -79,7 +79,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         $now = $this->clock->now();
         $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $ids))
-            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()]);
+            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn(), $this->interviewProposalColumn()]);
 
         $byId = [];
 
@@ -106,7 +106,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
         foreach (array_chunk($ids, self::EXPORT_CHUNK) as $chunk) {
             $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $chunk))
-                ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()])
+                ->get([...self::ROW_COLUMNS, $this->interviewStateColumn(), $this->interviewProposalColumn()])
                 ->keyBy('id');
 
             foreach ($chunk as $id) {
@@ -220,6 +220,12 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->limit(1);
 
         return new Expression('('.$latest->toSql().') AS interview_state');
+    }
+
+    /** Whether the active interview of the application has a proposed time waiting for the team's answer. */
+    private function interviewProposalColumn(): Expression
+    {
+        return new Expression("EXISTS (SELECT 1 FROM recruitment_interviews AS ip WHERE ip.application_id = a.id AND ip.status IN ('pending', 'confirmed') AND ip.proposed_starts_at IS NOT NULL) AS interview_proposal_open");
     }
 
     private function whereInterviewState(Builder $filtered, string $state): void
@@ -407,6 +413,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             hire: $this->hire($row),
             matchScore: $row->match_score === null ? null : (int) $row->match_score,
             jobId: (int) $row->job_id,
+            interviewProposalOpen: (bool) ($row->interview_proposal_open ?? false),
         );
     }
 

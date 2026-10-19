@@ -17,11 +17,13 @@ use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferences;
 
 /**
- * Tells the people involved that an interview changed. The job seeker hears what the team did (scheduled, rescheduled, cancelled, proposal accepted) and the
- * reminder; the team (the interviewer and who scheduled it, and the whole panel for the reminder) hears what the job seeker did (confirmed, proposed another time, declined, withdrew the recording consent) and the reminder.
- * In-app notifications are always written (ids and the start time only); the job seeker's email follows the preference `application_update`, and is sent for
- * scheduled, rescheduled, details updated, cancelled, declined by the job seeker (a cancellation of the calendar event) and the reminder; all but the reminder carry
- * the `.ics` file of the interview. The team gets no email. In-app and email are separate steps, so a retry of one never repeats the other.
+ * Tells the people involved that an interview changed. The job seeker hears what the team did (scheduled, rescheduled, cancelled, proposal accepted or refused,
+ * no-show) and the reminders (the day before and two hours before); the team (the interviewer and who scheduled it, and the whole panel for the reminder) hears what
+ * the job seeker did (confirmed, proposed another time, with the reason, declined, withdrew the recording consent) and the day-before reminder. An accepted proposal is
+ * a new time, so the panel is invited again as with a reschedule. In-app notifications are always written (ids and the start time only, the reason of a proposal; the
+ * team's message with a refusal goes only into the email, never stored); the job seeker's email follows the preference `application_update`, and is sent for every
+ * change the job seeker hears of. Scheduled, rescheduled, accepted proposal and details updated carry the `.ics` request, cancelled and declined its cancellation,
+ * the others none. The team's emails are sent elsewhere. In-app and email are separate steps, so a retry of one never repeats the other.
  */
 final readonly class NotifyOfInterviewChange
 {
@@ -54,6 +56,15 @@ final readonly class NotifyOfInterviewChange
             'company_name' => $this->companyName($event),
             'starts_at' => $interview->startsAt->format(DATE_ATOM),
         ];
+
+        if ($event->change === InterviewChange::Proposed && $interview->proposedStartsAt !== null) {
+            $data['proposed_starts_at'] = $interview->proposedStartsAt->format(DATE_ATOM);
+            $data['reason'] = $interview->proposalReason;
+        }
+
+        if ($event->change === InterviewChange::StartingSoon) {
+            $data['format'] = $interview->format->value;
+        }
 
         $type = ApplicationNotificationType::forInterview($event->change);
 
@@ -91,6 +102,11 @@ final readonly class NotifyOfInterviewChange
         $method = $this->calendarMethod($event->change);
 
         $variables = InterviewEmailVariables::of($interview, $contact, $jobTitle, $companyName, $event->companyId);
+
+        if ($event->change === InterviewChange::ProposalRefused) {
+            $variables['message'] = $event->message === null ? '' : "\n\n".($contact->locale === 'id' ? 'Pesan dari perusahaan' : 'Message from the company').': '.$event->message;
+        }
+
         $calendar = $method === null ? null : $this->calendar->write($interview, $method, $jobTitle, $companyName, ['name' => $contact->name, 'email' => $contact->email], $this->clock->now());
 
         $this->emails->send($contact, $key, $variables, $calendar, $method ?? InterviewCalendar::REQUEST);
@@ -104,7 +120,7 @@ final readonly class NotifyOfInterviewChange
     private function invited(InterviewChanged $event): array
     {
         return match ($event->change) {
-            InterviewChange::Scheduled, InterviewChange::Rescheduled => array_values(array_unique([$event->interviewerId, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])])),
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::ProposalAccepted => array_values(array_unique([$event->interviewerId, ...($this->panel->forInterviews([$event->interviewId])[$event->interviewId] ?? [])])),
             InterviewChange::PanelChanged => $event->addedUserIds,
             default => [],
         };
@@ -126,7 +142,7 @@ final readonly class NotifyOfInterviewChange
     private function calendarMethod(InterviewChange $change): ?string
     {
         return match ($change) {
-            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Updated => InterviewCalendar::REQUEST,
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::ProposalAccepted, InterviewChange::Updated => InterviewCalendar::REQUEST,
             InterviewChange::Cancelled, InterviewChange::Declined => InterviewCalendar::CANCEL,
             default => null,
         };
@@ -134,7 +150,10 @@ final readonly class NotifyOfInterviewChange
 
     private function toApplicant(InterviewChange $change): bool
     {
-        return in_array($change, [InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Cancelled, InterviewChange::ProposalAccepted, InterviewChange::Reminder, InterviewChange::Updated], true);
+        return in_array($change, [
+            InterviewChange::Scheduled, InterviewChange::Rescheduled, InterviewChange::Cancelled, InterviewChange::ProposalAccepted, InterviewChange::ProposalRefused,
+            InterviewChange::NoShow, InterviewChange::Reminder, InterviewChange::StartingSoon, InterviewChange::Updated,
+        ], true);
     }
 
     private function toTeam(InterviewChange $change): bool

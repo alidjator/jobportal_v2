@@ -31,12 +31,12 @@ final readonly class ListMyInterviews
      * @throws AccessDenied `not-a-company-member`, `company-suspended` or `company-permission-required` (all interviews without `interviews.manage` and `applications.view`)
      * @throws BusinessRuleViolation `invalid-cursor`
      */
-    public function execute(Actor $actor, bool $upcoming, bool $scorecardPending, ?string $rsvp, bool $allOfCompany, CursorRequest $request): CursorPage
+    public function execute(Actor $actor, bool $upcoming, bool $scorecardPending, ?string $rsvp, bool $allOfCompany, CursorRequest $request, bool $proposalOpen = false): CursorPage
     {
         $member = $allOfCompany ? $this->access->viewer($actor, CompanyPermission::InterviewsManage) : $this->access->member($actor);
         $jobIds = $allOfCompany && ! $member->viewsAll() ? $this->jobs->assignedJobIds($member->companyId, $member->userId) : null;
         $query = new MyInterviewQuery(
-            $member->userId, $member->companyId, $upcoming, $scorecardPending, $rsvp, $allOfCompany, $jobIds, $allOfCompany ? $this->scope->boundJobIds($member) : [], $this->clock->now(),
+            $member->userId, $member->companyId, $upcoming, $scorecardPending, $rsvp, $allOfCompany, $jobIds, $allOfCompany ? $this->scope->boundJobIds($member) : [], $this->clock->now(), $proposalOpen,
         );
         $page = $this->reader->page($query, $request);
         $titles = $this->jobs->titles(array_values(array_unique(array_map(static fn (MyInterviewRow $row): int => $row->jobId, $page->items))));

@@ -125,6 +125,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
 | `interview-not-confirmed` | 409 | Recruitment | Only a confirmed interview can be joined. |
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
+| `interview-not-started` | 409 | Recruitment | The interview has not started yet. |
 | `interview-started` | 409 | Recruitment | This interview has started, so the answer can no longer change. |
 | `invalid-announcement` | 422 | Content |  |
 | `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
@@ -168,7 +169,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-ideal-answer` | 422 | Recruitment |  |
 | `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
 | `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
-| `invalid-interview` | 422 | Recruitment | The proposed time must be in the future. |
+| `invalid-interview` | 422 | Recruitment |  |
 | `invalid-interviewer` | 422 | Recruitment |  |
 | `invalid-job` | 422 | Job | A job opened for a requisition names its vacancies. |
 | `invalid-job-questions` | 422 | Recruitment | The questions of the job are not valid. |
@@ -386,6 +387,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `requisition-quota-exceeded` | 422 | Workforce |  |
 | `requisition-required` | 422 | Job | This tenant opens its jobs from an approved requisition, so a job cannot be cloned. |
 | `requisition-vacancies-exceeded` | 422 | Workforce | All the hires of this requisition are already open in jobs. |
+| `reschedule-too-late` | 409 | Recruitment |  |
 | `resume-limit-reached` | 409 | JobSeeker |  |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |

@@ -24,14 +24,23 @@ final readonly class InterviewChanged implements DomainEvent
         public array $addedUserIds = [],
         /** @var list<int> the members who left the panel, with a reschedule or a panel change */
         public array $removedUserIds = [],
+        /** The team's message to the job seeker with a refused proposal; sent, never stored. */
+        public ?string $message = null,
     ) {}
 
     /**
      * @param  list<int>  $addedUserIds
      * @param  list<int>  $removedUserIds
      */
-    public static function of(InterviewChange $change, Application $application, Interview $interview, DateTimeImmutable $at, array $addedUserIds = [], array $removedUserIds = []): self
-    {
+    public static function of(
+        InterviewChange $change,
+        Application $application,
+        Interview $interview,
+        DateTimeImmutable $at,
+        array $addedUserIds = [],
+        array $removedUserIds = [],
+        ?string $message = null,
+    ): self {
         return new self(
             $change,
             (int) $interview->id,
@@ -44,6 +53,7 @@ final readonly class InterviewChanged implements DomainEvent
             $at,
             $addedUserIds,
             $removedUserIds,
+            $message,
         );
     }
 

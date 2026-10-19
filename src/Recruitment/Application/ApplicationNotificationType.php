@@ -66,7 +66,13 @@ final class ApplicationNotificationType
     /** A panel member answered "cannot attend": the member who scheduled the interview is told. */
     public const string INTERVIEW_PANEL_DECLINED = 'interview.panel_declined';
 
-    /** The panel is told that the interview starts in about 30 minutes. */
+    /** The team kept the current time instead of the one the job seeker proposed: the job seeker is told. */
+    public const string INTERVIEW_PROPOSAL_REFUSED = 'interview.proposal_refused';
+
+    /** The team recorded that the job seeker did not come: the job seeker is told. */
+    public const string INTERVIEW_NO_SHOW = 'interview.no_show';
+
+    /** The panel is told that the interview starts in about 30 minutes, the job seeker in about 2 hours. */
     public const string INTERVIEW_STARTING_SOON = 'interview.starting_soon';
 
     /** The scheduler and the main interviewer are told, 72 hours after the interview, how many scorecards are still missing. */
@@ -112,6 +118,9 @@ final class ApplicationNotificationType
             InterviewChange::RecordingWithdrawn => self::INTERVIEW_RECORDING_WITHDRAWN,
             InterviewChange::Updated => self::INTERVIEW_UPDATED,
             InterviewChange::PanelChanged => self::INTERVIEW_PANEL_INVITED,
+            InterviewChange::ProposalRefused => self::INTERVIEW_PROPOSAL_REFUSED,
+            InterviewChange::NoShow => self::INTERVIEW_NO_SHOW,
+            InterviewChange::StartingSoon => self::INTERVIEW_STARTING_SOON,
         };
     }
 

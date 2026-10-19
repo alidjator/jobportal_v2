@@ -12,6 +12,8 @@ use Src\Recruitment\Application\ListMyInterviews;
 use Src\Recruitment\Application\ManageInterview;
 use Src\Recruitment\Application\ScheduleInterview;
 use Src\Recruitment\Interface\Http\Requests\ListMyInterviewsRequest;
+use Src\Recruitment\Interface\Http\Requests\MarkInterviewNoShowRequest;
+use Src\Recruitment\Interface\Http\Requests\RefuseInterviewProposalRequest;
 use Src\Recruitment\Interface\Http\Requests\ScheduleInterviewRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateInterviewNoteRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyInterviewResource;
@@ -26,7 +28,7 @@ final class InterviewController extends ApiController
     /** The interviews of the caller: the ones they sit on, upcoming or past, or every interview of the jobs they may see. */
     public function mine(ListMyInterviewsRequest $request, ActorResolver $actors, ListMyInterviews $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->rsvp(), $request->allOfCompany(), $request->cursorRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->rsvp(), $request->allOfCompany(), $request->cursorRequest(), $request->proposalOpen());
 
         return MyInterviewResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
@@ -64,6 +66,18 @@ final class InterviewController extends ApiController
     public function acceptProposal(Request $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource
     {
         return new CompanyInterviewResource($manage->acceptProposal($actors->fromRequest($request), $id));
+    }
+
+    /** Keeps the current time instead of the one the job seeker proposed; the optional message goes to the job seeker and is not stored. */
+    public function refuseProposal(RefuseInterviewProposalRequest $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource
+    {
+        return new CompanyInterviewResource($manage->refuseProposal($actors->fromRequest($request), $id, $request->message()));
+    }
+
+    /** Records that the job seeker did not come to the confirmed interview, after its start. */
+    public function noShow(MarkInterviewNoShowRequest $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource
+    {
+        return new CompanyInterviewResource($manage->markNoShow($actors->fromRequest($request), $id, $request->note()));
     }
 
     public function cancel(Request $request, int $id, ActorResolver $actors, ManageInterview $manage): CompanyInterviewResource

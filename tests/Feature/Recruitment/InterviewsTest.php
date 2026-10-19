@@ -212,7 +212,8 @@ final class InterviewsTest extends FeatureTestCase
         $this->mine('confirm')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:proposal-pending');
 
         $this->team('accept-proposal')->assertOk()->assertJsonPath('data.status', 'confirmed')->assertJsonPath('data.starts_at', $this->utc($proposed))->assertJsonPath('data.proposed_starts_at', null);
-        $this->assertSame(['interview.panel_invited', 'interview.proposed'], $this->notificationTypes($this->recruiterId));
+        // The accepted time is a new time: the interviewer is invited again.
+        $this->assertSame(['interview.panel_invited', 'interview.panel_invited', 'interview.proposed'], $this->notificationTypes($this->recruiterId));
         $this->assertContains('interview.proposal_accepted', $this->notificationTypes($this->seekerId));
     }
 

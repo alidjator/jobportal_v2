@@ -38,6 +38,19 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
         return $row === null ? null : $this->toInterview($row);
     }
 
+    public function latest(int $applicationId, bool $forUpdate = false): ?Interview
+    {
+        $query = $this->connection->table('recruitment_interviews')->where('application_id', $applicationId)->orderByDesc('created_at')->orderByDesc('id');
+
+        if ($forUpdate) {
+            $query->lockForUpdate();
+        }
+
+        $row = $query->first();
+
+        return $row === null ? null : $this->toInterview($row);
+    }
+
     public function forApplication(int $applicationId): array
     {
         return $this->connection->table('recruitment_interviews')
@@ -114,6 +127,10 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             'status' => $interview->status->value,
             'proposals_used' => $interview->proposalsUsed,
             'proposed_starts_at' => $interview->proposedStartsAt === null ? null : $this->format($interview->proposedStartsAt),
+            'proposal_reason' => $interview->proposalReason,
+            'proposal_made_at' => $interview->proposalMadeAt === null ? null : $this->format($interview->proposalMadeAt),
+            'no_show_note' => $interview->noShowNote,
+            'candidate_soon_reminded_at' => $interview->candidateSoonRemindedAt === null ? null : $this->format($interview->candidateSoonRemindedAt),
             'active_key' => $interview->status->isActive() ? $interview->applicationId : null,
             'reminded_at' => $interview->remindedAt === null ? null : $this->format($interview->remindedAt),
             'recording_consent' => $interview->recordingConsent?->value,
@@ -227,6 +244,28 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
         return $this->connection->table('recruitment_interviews')->where('id', $interviewId)->whereNull('starting_reminded_at')->update(['starting_reminded_at' => $this->format($at)]) > 0;
     }
 
+    public function dueForCandidateSoonReminder(DateTimeImmutable $from, DateTimeImmutable $until): array
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->where('status', InterviewStatus::Confirmed->value)
+            ->whereNull('candidate_soon_reminded_at')
+            ->where('starts_at', '>', $this->format($from))
+            ->where('starts_at', '<=', $this->format($until))
+            ->orderBy('starts_at')
+            ->get()
+            ->map(fn (stdClass $row): Interview => $this->toInterview($row))
+            ->all();
+    }
+
+    public function lapseProposals(DateTimeImmutable $now): int
+    {
+        return $this->connection->table('recruitment_interviews')
+            ->whereIn('status', [InterviewStatus::Pending->value, InterviewStatus::Confirmed->value])
+            ->whereNotNull('proposed_starts_at')
+            ->where('starts_at', '<=', $this->format($now))
+            ->update(['proposed_starts_at' => null, 'proposal_reason' => null, 'proposal_made_at' => null, 'updated_at' => $this->format($now)]);
+    }
+
     private function toInterview(stdClass $row): Interview
     {
         return new Interview(
@@ -254,6 +293,10 @@ final readonly class DatabaseInterviewRepository implements InterviewRepository
             (string) $row->calendar_uid,
             (int) $row->calendar_sequence,
             $row->location_id === null ? null : (int) $row->location_id,
+            $row->proposal_reason === null ? null : (string) $row->proposal_reason,
+            $row->proposal_made_at === null ? null : $this->time((string) $row->proposal_made_at),
+            $row->no_show_note === null ? null : (string) $row->no_show_note,
+            $row->candidate_soon_reminded_at === null ? null : $this->time((string) $row->candidate_soon_reminded_at),
         );
     }
 
