@@ -1,4 +1,4 @@
-# Phase 8: applicants across jobs, keyword search and more pipeline filters (designed 2026-10-14, coded 2026-10-19, not checked yet)
+# Phase 8: applicants across jobs, keyword search and more pipeline filters (designed 2026-10-14, coded 2026-10-19)
 
 Gaps found against Mekari Talenta's Candidates menu (help center article 34633532438169): one list of all applicants across jobs, a keyword search,
 many filters and a candidate score column. Not copied on purpose: age and gender filters (protected attributes; our sensitive filters stay off until
@@ -95,7 +95,7 @@ Added to `GET company/jobs/{id}/applications` and the new list across jobs; any 
 ## Coded (2026-10-19)
 
 Migration `000172` (`recruitment_application_facets`; plus the foreign keys to `company_companies`, `job_jobs`, `reference_provinces` and `reference_cities`, all RESTRICT).
-Branch `phase-8-applicant-search`. Not checked yet by the user's own run.
+Committed `f760853` on `master` (2026-10-19). Checked (`composer check` green, 3205 tests).
 
 - **Code:** `ApplicationFacetBuilder` (snapshot to `ApplicationFacets`), `ExperienceMonths` (the matching rule, in Recruitment's domain), `ApplicationFacetRepository`
   (save, `hasEarlierApplication`, `sourcesWithoutFacets`), `BuildApplicationFacets` and the command `recruitment:build-application-facets`; `ApplyToJob` writes the row in

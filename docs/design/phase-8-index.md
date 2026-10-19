@@ -9,7 +9,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 ## Coded
 
-Everything below passed the full `composer check` of tag `v0.6.0` (2026-10-18). Parts still open inside a coded item are listed under "Next coding".
+Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18: tag `v0.7.0`; #19: 2026-10-19). Parts still open inside a coded item are listed under "Next coding".
 
 | Document | Status |
 |---|---|
@@ -32,7 +32,7 @@ Everything below passed the full `composer check` of tag `v0.6.0` (2026-10-18). 
 | `phase-8-withdrawals.md` (#16) | complete: parts A to C coded 2026-10-17 (`000159`) |
 | `phase-8-platform-admin.md` sections 5 to 8 (#17) | coded 2026-10-18 (`000166` to `000169`), with the admin account view (`users.view`) and the mass reset command; section 6 (email suppression) is in before the reset emails to the imported accounts; open: the front end and the SMTP provider's webhook parser `EmailEventParser` (waits for the provider) |
 | `phase-8-talent-pool.md` (#18) | coded 2026-10-18 (`000170`, `000171`): consent when applying, saving applicants, invitations from the pool (single and bulk), the richer list and the entry page; checked (`composer check` green, 3182 tests); open: the skip code `candidate-restricted` (waits for #14) |
-| `phase-8-applicant-search.md` (#19) | coded 2026-10-19 on branch `phase-8-applicant-search` (`000172`), not checked yet: facet table and its command, keyword search, filters and sorts on both lists, `GET company/applications`; open: run `recruitment:build-application-facets` after the final import; interpretations to confirm are in its "Coded" section |
+| `phase-8-applicant-search.md` (#19) | coded 2026-10-19 (`000172`), committed `f760853` on `master`, checked (`composer check` green, 3205 tests): facet table and its command, keyword search, filters and sorts on both lists, `GET company/applications`; open: run `recruitment:build-application-facets` after the final import; interpretations to confirm are in its "Coded" section |
 
 ## Next coding (in this order)
 
