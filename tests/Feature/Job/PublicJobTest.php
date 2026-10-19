@@ -93,22 +93,22 @@ final class PublicJobTest extends FeatureTestCase
 
     public function test_the_location_is_names_not_ids(): void
     {
-        $data = $this->publicJob((string) $this->liveJob())->assertOk()->json('data.location');
+        $data = $this->publicJob((string) $this->liveJob())->assertOk()->json('data.locations');
 
         $this->assertSame(
-            ['province' => 'JAWA BARAT', 'city' => 'BANDUNG', 'subdistrict' => 'SUKASARI', 'village' => 'GEGERKALONG', 'postal_code' => '40153', 'address_line' => 'Jl. Setiabudi 1'],
+            [['id' => null, 'name' => null, 'type' => null, 'province' => 'JAWA BARAT', 'city' => 'BANDUNG', 'subdistrict' => 'SUKASARI', 'village' => 'GEGERKALONG', 'postal_code' => '40153', 'address_line' => 'Jl. Setiabudi 1']],
             $data,
         );
     }
 
-    public function test_a_remote_job_without_a_location_shows_empty_places(): void
+    public function test_a_remote_job_without_a_location_has_no_locations(): void
     {
         $id = $this->liveJob(override: ['work_mode' => 'remote', 'province_id' => null, 'city_id' => null, 'subdistrict_id' => null, 'village_id' => null, 'postal_code_id' => null, 'address_line' => null]);
 
         $data = $this->publicJob((string) $id)->assertOk()->json('data');
 
         $this->assertSame('remote', $data['work_mode']);
-        $this->assertSame(['province' => null, 'city' => null, 'subdistrict' => null, 'village' => null, 'postal_code' => null, 'address_line' => null], $data['location']);
+        $this->assertSame([], $data['locations']);
     }
 
     public function test_the_salary_is_shown_only_when_the_company_shows_it(): void

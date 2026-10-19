@@ -170,3 +170,12 @@ Migrations `000174` (table, main location per company, the six address columns d
 5. **Breaking change for clients:** `address_line` and the five region ids left `GET company/profile` (now `main_location`), the public page `location` became `locations`, and `PATCH company/profile` no longer takes the address.
 6. **Existing rows of interviews** keep `location_id` null; only new interviews with a chosen location carry it.
 
+## Coded: #28, the job `locations` array (2026-10-19)
+
+No migration. The public job list item (`PublicJobListResource`: search, saved jobs, recommendations, alerts) and the public job detail (`PublicJobResource`) return `locations` in place of `location`: an array
+with one item built from the job's own columns, as decision 12 says. The list item is `{id, name, type, city, province}` and the detail item adds `subdistrict`, `village`, `postal_code` and `address_line`; `id`,
+`name` and `type` are null until #20 lets a job point to work locations. The company's own job detail keeps its ids (`province_id`, ...) and is unchanged.
+
+**Decided with the user (2026-10-19):** a job with no province and no street line (a remote job) returns `locations: []`, not an item of nulls, so the shape is already 0 to N items for #20. The list item keeps only city and
+province, the two places it showed before. Breaking change: `location` is now `locations` on the public list and detail (no client exists yet).
+

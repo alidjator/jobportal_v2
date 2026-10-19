@@ -131,14 +131,14 @@ final class JobSearchTest extends FeatureTestCase
         $this->assertSame(['id', 'name', 'slug', 'logo_url', 'verified'], array_keys($row['company']));
         $this->assertSame([$this->companyId, 'PT-MAJU', 'pt-maju', true], [$row['company']['id'], $row['company']['name'], $row['company']['slug'], $row['company']['verified']]);
         $this->assertStringEndsWith('/api/v1/companies/pt-maju/logo?v=abc123', $row['company']['logo_url']);
-        $this->assertSame(['city' => 'BANDUNG', 'province' => 'JAWA BARAT'], $row['location']);
+        $this->assertSame([['id' => null, 'name' => null, 'type' => null, 'city' => 'BANDUNG', 'province' => 'JAWA BARAT']], $row['locations']);
         $this->assertSame(['id' => $type, 'name' => 'full-time'], $row['job_type']);
         $this->assertSame(['id' => $level, 'name' => 'senior'], $row['job_level']);
         $this->assertSame('hybrid', $row['work_mode']);
         $this->assertSame(['min' => 10000000, 'max' => 15000000, 'period' => ['id' => $period, 'name' => 'monthly']], $row['salary']);
         $this->assertSame(['2026-12-31', '2026-10-01T08:00:00+00:00'], [$row['deadline'], $row['published_at']]);
         $this->assertSame(
-            ['id', 'slug', 'title', 'company', 'location', 'job_type', 'job_level', 'work_mode', 'salary', 'deadline', 'published_at'],
+            ['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'deadline', 'published_at'],
             array_keys($row),
         );
     }
@@ -151,7 +151,7 @@ final class JobSearchTest extends FeatureTestCase
 
         $rows = collect($this->search()->assertOk()->json('data'))->keyBy('title');
 
-        $this->assertSame([null, null, null, null, null], [$rows['Bare']['job_type'], $rows['Bare']['job_level'], $rows['Bare']['work_mode'], $rows['Bare']['salary'], $rows['Bare']['location']['city']]);
+        $this->assertSame([null, null, null, null, []], [$rows['Bare']['job_type'], $rows['Bare']['job_level'], $rows['Bare']['work_mode'], $rows['Bare']['salary'], $rows['Bare']['locations']]);
         $this->assertNull($rows['Hidden pay']['salary']);
         $this->assertStringNotContainsString('5000000', (string) json_encode($rows['Hidden pay']));
     }

@@ -40,14 +40,19 @@ final class PublicJobResource extends JsonResource
             'deadline' => $content->deadline?->format('Y-m-d'),
             'work_mode' => $content->workMode?->value,
             'salary' => $this->resource->salary,
-            'location' => [
+            // Until a job can have several work locations (#20) the list holds one item built from the job's own address, or none when the job has no province and no street line (a remote job);
+            // `id`, `name` and `type` are those of a company work location and are null.
+            'locations' => $location->province === null && $content->addressLine === null ? [] : [[
+                'id' => null,
+                'name' => null,
+                'type' => null,
                 'province' => $location->province,
                 'city' => $location->city,
                 'subdistrict' => $location->subdistrict,
                 'village' => $location->village,
                 'postal_code' => $location->postalCode,
                 'address_line' => $content->addressLine,
-            ],
+            ]],
             'skills' => $this->resource->skills,
             'tags' => $content->tags,
             'benefits' => $this->resource->benefits,

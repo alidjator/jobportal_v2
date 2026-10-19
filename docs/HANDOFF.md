@@ -18,7 +18,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16 to #19 and #21 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
 - Real PostgreSQL `jobportal_v2` and the test database are at `000175` (2026-10-19); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
-- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions); the next item is **#28** (job `locations` array, `company-locations.md` decision 12), before the front end and the final import run. **#27 `company_locations` is coded and checked (migrations `000174`, `000175`).**
+- **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions); **#28 (job `locations` array) is coded and checked** (no migration); then the front end and the final import run. **#27 `company_locations` is coded and checked (migrations `000174`, `000175`).**
 - Front end: designed (`frontend.md`), not coded; needs the `phase-8-*` API pieces, #28 and `frontend.md` 11.5, 11.6 (#27 is coded); open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)

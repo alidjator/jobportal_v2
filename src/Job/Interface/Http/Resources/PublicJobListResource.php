@@ -30,7 +30,8 @@ final class PublicJobListResource extends JsonResource
                 'logo_url' => $company->logoUrl,
                 'verified' => $company->verified,
             ],
-            'location' => ['city' => $this->resource->city, 'province' => $this->resource->province],
+            // One item for now (a job has one address until #20), none when the job shows no city and no province; `id`, `name` and `type` are those of a company work location and are null.
+            'locations' => $this->resource->city === null && $this->resource->province === null ? [] : [['id' => null, 'name' => null, 'type' => null, 'city' => $this->resource->city, 'province' => $this->resource->province]],
             'job_type' => $this->resource->jobType,
             'job_level' => $this->resource->jobLevel,
             'work_mode' => $this->resource->workMode?->value,
