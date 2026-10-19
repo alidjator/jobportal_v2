@@ -4,6 +4,7 @@ namespace Tests\Feature\Dashboard;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
@@ -261,7 +262,7 @@ final class AnalyticsTest extends FeatureTestCase
         $this->scenario();
 
         $tables = $this->company('funnel')->assertOk()->json('data.tables');
-        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'by_job', 'by_recruiter'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews', 'by_job', 'by_recruiter'], array_keys($tables));
         $this->assertSame(['stage', 'next_stage', 'entered', 'average_days_in_stage', 'median_days_in_stage', 'conversion'], $tables['stages']['columns']);
 
         $applied = $this->row($tables['stages']['rows'], 'stage', 'applied');
@@ -319,13 +320,53 @@ final class AnalyticsTest extends FeatureTestCase
         $this->assertNull($second['moves']);
     }
 
+    private function interview(int $applicationId, string $startsAt, string $status): void
+    {
+        DB::table('recruitment_interviews')->insert([
+            'application_id' => $applicationId, 'starts_at' => $startsAt, 'ends_at' => $startsAt, 'format' => 'online', 'interviewer_id' => $this->recruiterId,
+            'created_by' => $this->recruiterId, 'status' => $status, 'calendar_uid' => (string) Str::uuid(), 'created_at' => $startsAt, 'updated_at' => $startsAt,
+        ]);
+    }
+
+    public function test_the_funnel_counts_the_interviews_of_the_range_by_status_with_the_no_show_rate(): void
+    {
+        $this->app->make(SettingsStore::class)->setGlobal('analytics.min_group_size', 2, null);
+        $application = $this->submitted($this->companyId, $this->jobId, '2026-09-30 03:00:00', null, null);
+        $other = $this->submitted($this->otherCompanyId, $this->otherJobId, '2026-09-30 03:00:00', null, null);
+
+        $this->interview($application, '2026-10-01 03:00:00', 'completed');
+        $this->interview($application, '2026-10-02 03:00:00', 'completed');
+        $this->interview($application, '2026-10-02 04:00:00', 'confirmed');
+        $this->interview($application, '2026-10-03 03:00:00', 'no_show');
+        $this->interview($application, '2026-10-03 04:00:00', 'cancelled');
+        $this->interview($application, '2026-10-04 03:00:00', 'declined');
+        $this->interview($application, '2026-09-30 03:00:00', 'no_show');
+        $this->interview($application, '2026-10-04 17:30:00', 'no_show');
+        $this->interview($other, '2026-10-02 03:00:00', 'no_show');
+
+        $row = $this->company('funnel')->assertOk()->json('data.tables.interviews.rows.0');
+        $this->assertSame(6, $row['scheduled']);
+        $this->assertSame(0, $row['pending']);
+        $this->assertSame(1, $row['confirmed']);
+        $this->assertSame(2, $row['completed']);
+        $this->assertSame(1, $row['no_show']);
+        $this->assertSame(1, $row['declined']);
+        $this->assertSame(1, $row['cancelled']);
+        $this->assertEquals(0.25, $row['no_show_rate']);
+
+        $platform = $this->platform('funnel', $this->adminAccountToken(['analytics.view']))->assertOk()->json('data.tables.interviews.rows.0');
+        $this->assertSame(7, $platform['scheduled']);
+        $this->assertSame(2, $platform['no_show']);
+        $this->assertEquals(0.4, $platform['no_show_rate']);
+    }
+
     public function test_the_platform_funnel_adds_up_every_company_and_has_no_job_or_recruiter_tables(): void
     {
         $this->scenario();
 
         $tables = $this->platform('funnel', $this->adminAccountToken(['analytics.view']))->assertOk()->json('data.tables');
 
-        $this->assertSame(['stages', 'speed', 'offers', 'by_reason'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews'], array_keys($tables));
         $this->assertSame(7, $this->row($tables['stages']['rows'], 'stage', 'applied')['entered']);
         $this->assertSame(6, $this->row($tables['stages']['rows'], 'stage', 'screening')['entered']);
     }

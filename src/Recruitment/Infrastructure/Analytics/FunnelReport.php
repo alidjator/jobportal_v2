@@ -3,7 +3,9 @@
 namespace Src\Recruitment\Infrastructure\Analytics;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Analytics\AnalyticsReportProvider;
 use Src\Shared\Application\Analytics\AnalyticsScope;
 use Src\Shared\Application\Analytics\AnalyticsTable;
@@ -12,7 +14,8 @@ use Src\Shared\Application\Job\JobDirectory;
 
 /**
  * Funnel and speed: how many applications entered each stage and went on, how long they stayed (average from the daily summary, median read live), how long it took
- * to reach an offer and a hire, and how many offers were accepted. A company also sees its jobs and its recruiters.
+ * to reach an offer and a hire, how many offers were accepted, and how the interviews that started in the range ended (read live; no-shows of
+ * `docs/design/phase-8-interview-reschedule.md` section 3). A company also sees its jobs and its recruiters.
  */
 final readonly class FunnelReport implements AnalyticsReportProvider
 {
@@ -20,6 +23,8 @@ final readonly class FunnelReport implements AnalyticsReportProvider
     private const array LINE = ['applied', 'screening', 'assessment', 'interview', 'offer', 'hired'];
 
     private const int JOB_ROWS = 50;
+
+    private const array INTERVIEW_STATUSES = ['pending', 'confirmed', 'completed', 'no_show', 'declined', 'cancelled'];
 
     public function __construct(
         private ConnectionInterface $connection,
@@ -79,6 +84,7 @@ final readonly class FunnelReport implements AnalyticsReportProvider
             new AnalyticsTable('speed', ['milestone'], ['count', 'average_days', 'median_days'], $this->speed($scope, $durations['since_applied']), 'count'),
             new AnalyticsTable('offers', [], ['offers_sent', 'accepted', 'acceptance_rate'], [$this->offers($scope, $entered['offer'] ?? 0)], 'offers_sent'),
             $this->withdrawals($scope),
+            $this->interviews($scope),
         ];
 
         if ($scope->companyId !== null) {
@@ -141,6 +147,30 @@ final readonly class FunnelReport implements AnalyticsReportProvider
         usort($rows, fn (array $a, array $b): int => [$b['count'], $a['reason']] <=> [$a['count'], $b['reason']]);
 
         return new AnalyticsTable('by_reason', ['reason'], ['count', 'by_applicant', 'by_team'], $rows, 'count');
+    }
+
+    /**
+     * The interviews that started in the range by status: `pending` was never answered, `confirmed` took place but was not marked. The no-show rate is the share of
+     * no-shows among the interviews that were confirmed (`confirmed`, `completed` and `no_show`).
+     */
+    private function interviews(AnalyticsScope $scope): AnalyticsTable
+    {
+        $counts = array_fill_keys(self::INTERVIEW_STATUSES, 0);
+
+        foreach ($this->connection->table('recruitment_interviews as i')
+            ->join('recruitment_applications as a', 'a.id', '=', 'i.application_id')
+            ->when($scope->companyId !== null, fn (Builder $query) => $query->where('a.company_id', $scope->companyId))
+            ->where('i.starts_at', '>=', AnalyticsDays::startUtc($scope->from))
+            ->where('i.starts_at', '<', AnalyticsDays::endUtc($scope->to))
+            ->groupBy('i.status')
+            ->get(['i.status', $this->connection->raw('COUNT(*) as total')]) as $row) {
+            $counts[(string) $row->status] = (int) $row->total;
+        }
+
+        $held = $counts['confirmed'] + $counts['completed'] + $counts['no_show'];
+        $row = ['scheduled' => array_sum($counts), ...$counts, 'no_show_rate' => Figures::ratio($counts['no_show'], $held)];
+
+        return new AnalyticsTable('interviews', [], ['scheduled', ...self::INTERVIEW_STATUSES, 'no_show_rate'], [$row], 'scheduled');
     }
 
     private function byJob(AnalyticsScope $scope): AnalyticsTable

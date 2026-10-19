@@ -139,5 +139,9 @@ invitation of `phase-8-interviewers.md` section 2 to every panel member, and eve
     `refuse_proposal` and `no_show`, and shows `no_show` interviews; the scorecard action is limited to confirmed and completed interviews.
   - The past list of `company/interviews` shows `no_show` interviews too. Erasing an applicant also clears `proposal_reason` and `no_show_note`
     of the interviews that are kept.
-- **Not done here:** analytics has no interview funnel yet (section 3 counts `no_show` there when it exists); the job seeker's interview
-  resource does not say until when a move can be asked (the front end shows the cut-off from the 409 `reschedule-too-late`).
+- **Analytics (added 2026-10-19, chosen by the user):** the `funnel` report had no interview table (it counts stage moves only; an earlier
+  note here wrongly said analytics did not exist). It gains the table `interviews`: the interviews that started in the range by status
+  (`scheduled` = all, `pending`, `confirmed`, `completed`, `no_show`, `declined`, `cancelled`), read live from `recruitment_interviews`, and
+  `no_show_rate` = no-shows among the confirmed ones (`confirmed`, `completed`, `no_show`); suppressed below the smallest group. No migration.
+- **Not done here:** the job seeker's interview resource does not say until when a move can be asked (the front end shows the cut-off from
+  the 409 `reschedule-too-late`).
