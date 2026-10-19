@@ -15,6 +15,7 @@ use Src\Recruitment\Interface\Http\Controllers\InterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewPanelController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\InterviewRecordingController;
+use Src\Recruitment\Interface\Http\Controllers\InterviewResultController;
 use Src\Recruitment\Interface\Http\Controllers\JanusWebhookController;
 use Src\Recruitment\Interface\Http\Controllers\JobInterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
@@ -57,6 +58,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
     Route::get('company/applications', [CompanyApplicationController::class, 'all']);
     Route::get('company/hires/export', [CompanyApplicationController::class, 'exportHires'])->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
+    Route::get('company/jobs/{id}/interview-results', [InterviewResultController::class, 'index'])->whereNumber('id');
     Route::get('company/jobs/{id}/applications/export', [CompanyApplicationController::class, 'export'])->whereNumber('id')->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
     Route::post('company/jobs/{id}/applications/bulk-move', [BulkApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/jobs/{id}/applications/bulk-reject', [BulkApplicationController::class, 'reject'])->whereNumber('id');
@@ -110,6 +112,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/interview-kits', [InterviewKitController::class, 'store']);
     Route::get('company/interview-kits/{id}', [InterviewKitController::class, 'show'])->whereNumber('id');
     Route::put('company/interview-kits/{id}', [InterviewKitController::class, 'update'])->whereNumber('id');
+    Route::post('company/interview-kits/{id}/duplicate', [InterviewKitController::class, 'duplicate'])->whereNumber('id');
     Route::delete('company/interview-kits/{id}', [InterviewKitController::class, 'destroy'])->whereNumber('id');
 
     Route::get('company/jobs/{id}/interview-kits', [JobInterviewKitController::class, 'index'])->whereNumber('id');

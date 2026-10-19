@@ -22,7 +22,7 @@ final class InterviewQuestionsResource extends JsonResource
             'kit' => $this->resource->kitName === null ? null : ['id' => $this->resource->kitId, 'name' => $this->resource->kitName],
             'locked' => $this->resource->locked,
             'questions' => array_map(
-                static fn (InterviewQuestion $item, int $index): array => ['id' => $item->id, 'position' => $index + 1, 'text' => $item->question->text, 'guidance' => $item->question->guidance, 'weight' => $item->question->weight],
+                static fn (InterviewQuestion $item, int $index): array => ['id' => $item->id, 'position' => $index + 1, ...InterviewKitResource::fields($item->question)],
                 $this->resource->questions,
                 array_keys($this->resource->questions),
             ),

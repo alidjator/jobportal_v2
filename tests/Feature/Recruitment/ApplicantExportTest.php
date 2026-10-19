@@ -97,16 +97,17 @@ final class ApplicantExportTest extends FeatureTestCase
         $this->assertCount(3, $lines);
         $this->assertSame([
             'Application ID', 'Applied at', 'Name', 'Email', 'Phone', 'City', 'Age', 'Headline', 'Latest job title', 'Latest job company',
-            'Expected salary (IDR)', 'Expected salary period', 'Stage', 'Meets must-have', 'Average rating', 'Rating count', 'Can you relocate?', 'Which tools?',
+            'Expected salary (IDR)', 'Expected salary period', 'Stage', 'Meets must-have', 'Average rating', 'Rating count', 'Interview score', 'Interview yes', 'Interview no', 'Interview kit', 'Can you relocate?', 'Which tools?',
         ], $lines[0]);
 
         $this->assertSame([(string) $this->secondId, '2026-10-05T10:00:00Z', 'Budi Santoso', 'budi.s@example.test'], array_slice($lines[1], 0, 4));
-        $this->assertSame('', $lines[1][16]);
+        $this->assertSame('', $lines[1][20]);
 
         $first = $lines[2];
         $this->assertSame([(string) $this->firstId, '2026-10-05T09:00:00Z', 'Siti Rahma', 'siti@example.test'], array_slice($first, 0, 4));
         $this->assertSame(['Applied', '3', '2'], [$first[12], $first[14], $first[15]]);
-        $this->assertSame(['yes', 'Git; Docker'], array_slice($first, 16));
+        $this->assertSame(['', '', '', ''], array_slice($first, 16, 4));
+        $this->assertSame(['yes', 'Git; Docker'], array_slice($first, 20));
     }
 
     public function test_the_filters_of_the_list_narrow_the_export(): void

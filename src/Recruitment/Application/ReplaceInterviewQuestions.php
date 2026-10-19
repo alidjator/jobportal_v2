@@ -26,7 +26,7 @@ final readonly class ReplaceInterviewQuestions
     ) {}
 
     /**
-     * @param  list<array{text: string, guidance: ?string, weight: int}>  $questions
+     * @param  list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>  $questions
      *
      * @throws AccessDenied `not-a-company-member`, `company-suspended` or `interview-edit-denied`
      * @throws EntityNotFound

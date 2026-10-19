@@ -22,6 +22,21 @@ interface RecruiterApplicationReader
     public function export(RecruiterApplicationQuery $query, int $limit): iterable;
 
     /**
+     * The match score of every application the query selects, in the query's order and without paging (null: no score); the filters and the scope apply.
+     *
+     * @return array<int, int|null> by application id
+     */
+    public function matchScores(RecruiterApplicationQuery $query): array;
+
+    /**
+     * The list lines of these applications, whatever the query's paging and order (its stale limit is used).
+     *
+     * @param  list<int>  $ids
+     * @return array<int, RecruiterApplicationRow> by application id
+     */
+    public function rows(array $ids, RecruiterApplicationQuery $query): array;
+
+    /**
      * How many applications each stage holds under the query, keyed by stage id; a stage without applications is missing. The scope, the hiring manager limit, the
      * search and every filter apply; the stage filters and the "active only" default do not, so every column shows its own count.
      *

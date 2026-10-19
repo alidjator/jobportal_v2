@@ -1,4 +1,4 @@
-# Phase 8: comparing interview results, scale anchors, duplicating kits and interview scores in the export (designed 2026-10-14, not coded)
+# Phase 8: comparing interview results, scale anchors, duplicating kits and interview scores in the export (designed 2026-10-14, coded 2026-10-19)
 
 Mekari Talenta documents no interview kits or scorecards (searched 2026-10-14; it has assessors on an interview and comments on a stage move), so
 these come from our own gap list, chosen by the user from the advice of 2026-10-14. Not taken now: email reminders (with the team notification
@@ -63,3 +63,20 @@ end may call the notes endpoint) and competency groups (the decision of 2026-10-
 | API | `GET company/jobs/{id}/interview-results`; anchors on kits and the copy; `POST company/interview-kits/{id}/duplicate`; four export columns |
 | Errors | 422 `stage-not-interview` on the comparison filter; existing kit errors for anchors |
 | Front end | comparison table (C5); anchors in the kit editor and the scorecard form; "Duplikat" in the kit library |
+
+## Coded (2026-10-19, #21)
+
+Migration `000173` (the anchor columns); to run on both databases. Tests: `tests/Feature/Recruitment/InterviewResultsTest.php`; `ApplicantExportTest` has the four new columns.
+
+- **Anchors:** `KitQuestion` carries `anchor1`, `anchor3`, `anchor5`; the API shows them as `anchors {score_1, score_3, score_5}` on kit questions and on the questions of an interview, and takes `anchor_1`, `anchor_3`, `anchor_5` (all optional, trimmed, empty means none) on every save. Scheduling and a new time copy them with the questions, as before.
+- **Duplicate:** `DuplicateInterviewKit`, `POST company/interview-kits/{id}/duplicate`; the name rule is `InterviewKit::duplicate`, case-insensitive like the unique index.
+- **Comparison:** `CompareInterviewResults`, `GET company/jobs/{id}/interview-results`. The response is `data` (rows), `meta` (paging) and `kit` (the column kit with its questions and anchors, or null). The rows are sorted in memory (one query for the ids and match scores, one for the latest interviews, one for the results); only the page reads the full rows, the panels and the question averages.
+- **Export:** `ExportJobApplications` reads the latest interviews of 200 applicants at a time.
+- **New ports:** `InterviewResults::latestInterviews` (what `latestForApplications` is built on) and `questionScores`; `RecruiterApplicationReader::matchScores` and `rows`.
+
+Interpretations to confirm:
+
+1. **`filter[stage_id]`** limits the rows to the applications that are in that stage now, like the pipeline list; interviews keep no stage of their own. The stage must be an interview stage (422 `stage-not-interview`).
+2. **No assessment field in a row.** Section 1 says "the latest assessment result as the applicant list shows it", but the applicant list shows none today (the review card summary waits for #23). It comes with that item.
+3. **Sorting** is always highest first (`score`, `yes`, `match_score`), without a `-` prefix; rows with no value come last.
+4. **`filter[kit_id]`** names a kit of the company (404 otherwise); a cell is filled only for interviews that were scheduled with that kit.

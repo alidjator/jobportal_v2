@@ -25,7 +25,7 @@ final readonly class UpdateInterviewKit
     ) {}
 
     /**
-     * @param  list<array{text: string, guidance: ?string, weight: int}>  $questions
+     * @param  list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>  $questions
      *
      * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
      * @throws EntityNotFound

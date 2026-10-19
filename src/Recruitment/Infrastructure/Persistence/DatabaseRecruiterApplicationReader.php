@@ -60,6 +60,36 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
         return new Page($rows, $total, $request);
     }
 
+    public function matchScores(RecruiterApplicationQuery $query): array
+    {
+        $scores = [];
+
+        foreach ($this->ordered($this->filtered($query), $query, $query->newestFirst ? 'desc' : 'asc')->get(['a.id', 'a.match_score']) as $row) {
+            $scores[(int) $row->id] = $row->match_score === null ? null : (int) $row->match_score;
+        }
+
+        return $scores;
+    }
+
+    public function rows(array $ids, RecruiterApplicationQuery $query): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $now = $this->clock->now();
+        $rows = $this->withRatings($this->connection->table('recruitment_applications as a')->join('recruitment_stages as s', 's.id', '=', 'a.stage_id')->whereIn('a.id', $ids))
+            ->get([...self::ROW_COLUMNS, $this->interviewStateColumn()]);
+
+        $byId = [];
+
+        foreach ($rows as $row) {
+            $byId[(int) $row->id] = $this->toRow($row, $query->staleAfterDays, $now);
+        }
+
+        return $byId;
+    }
+
     public function count(RecruiterApplicationQuery $query): int
     {
         return $this->filtered($query)->count();

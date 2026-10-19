@@ -13,7 +13,7 @@ final class ReplaceInterviewQuestionsRequest extends FormRequest
         return KitQuestionFields::rules(mayBeEmpty: true);
     }
 
-    /** @return list<array{text: string, guidance: ?string, weight: int}> */
+    /** @return list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}> */
     public function questions(): array
     {
         return KitQuestionFields::questions($this->array('questions'));

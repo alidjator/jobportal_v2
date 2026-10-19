@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Recruitment\Application\CreateInterviewKit;
 use Src\Recruitment\Application\DeleteInterviewKit;
+use Src\Recruitment\Application\DuplicateInterviewKit;
 use Src\Recruitment\Application\GetInterviewKit;
 use Src\Recruitment\Application\ListInterviewKits;
 use Src\Recruitment\Application\UpdateInterviewKit;
@@ -40,6 +41,13 @@ final class InterviewKitController extends ApiController
     public function update(SaveInterviewKitRequest $request, int $id, ActorResolver $actors, UpdateInterviewKit $update): InterviewKitResource
     {
         return new InterviewKitResource($update->execute($actors->fromRequest($request), $id, $request->name(), $request->questions()));
+    }
+
+    public function duplicate(Request $request, int $id, ActorResolver $actors, DuplicateInterviewKit $duplicate): JsonResponse
+    {
+        $kit = $duplicate->execute($actors->fromRequest($request), $id);
+
+        return (new InterviewKitResource($kit))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function destroy(Request $request, int $id, ActorResolver $actors, DeleteInterviewKit $delete): Response

@@ -13,16 +13,19 @@ final class KitQuestionFields
     {
         return [
             'questions' => [$mayBeEmpty ? 'present' : 'required', 'array', 'max:100'],
-            'questions.*' => ['array:text,guidance,weight'],
+            'questions.*' => ['array:text,guidance,weight,anchor_1,anchor_3,anchor_5'],
             'questions.*.text' => ['required', 'string'],
             'questions.*.guidance' => ['nullable', 'string'],
             'questions.*.weight' => ['required', 'integer'],
+            'questions.*.anchor_1' => ['nullable', 'string'],
+            'questions.*.anchor_3' => ['nullable', 'string'],
+            'questions.*.anchor_5' => ['nullable', 'string'],
         ];
     }
 
     /**
      * @param  array<int, array<string, mixed>>  $questions
-     * @return list<array{text: string, guidance: ?string, weight: int}>
+     * @return list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>
      */
     public static function questions(array $questions): array
     {
@@ -30,6 +33,9 @@ final class KitQuestionFields
             'text' => (string) $question['text'],
             'guidance' => isset($question['guidance']) ? (string) $question['guidance'] : null,
             'weight' => (int) $question['weight'],
+            'anchor_1' => isset($question['anchor_1']) ? (string) $question['anchor_1'] : null,
+            'anchor_3' => isset($question['anchor_3']) ? (string) $question['anchor_3'] : null,
+            'anchor_5' => isset($question['anchor_5']) ? (string) $question['anchor_5'] : null,
         ], $questions));
     }
 }

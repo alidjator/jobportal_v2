@@ -82,7 +82,7 @@ final readonly class DatabaseInterviewKitRepository implements InterviewKitRepos
     private function insertQuestions(int $kitId, array $questions): void
     {
         $this->connection->table('recruitment_interview_kit_questions')->insert(array_map(
-            static fn (KitQuestion $question, int $index): array => ['kit_id' => $kitId, 'position' => $index + 1, 'text' => $question->text, 'guidance' => $question->guidance, 'weight' => $question->weight],
+            static fn (KitQuestion $question, int $index): array => ['kit_id' => $kitId, 'position' => $index + 1, 'text' => $question->text, 'guidance' => $question->guidance, 'weight' => $question->weight, 'anchor_1' => $question->anchor1, 'anchor_3' => $question->anchor3, 'anchor_5' => $question->anchor5],
             $questions,
             array_keys($questions),
         ));
@@ -103,7 +103,14 @@ final readonly class DatabaseInterviewKitRepository implements InterviewKitRepos
             ->get();
 
         foreach ($questionRows as $question) {
-            $questions[(int) $question->kit_id][] = new KitQuestion((string) $question->text, $question->guidance === null ? null : (string) $question->guidance, (int) $question->weight);
+            $questions[(int) $question->kit_id][] = new KitQuestion(
+                (string) $question->text,
+                $question->guidance === null ? null : (string) $question->guidance,
+                (int) $question->weight,
+                $question->anchor_1 === null ? null : (string) $question->anchor_1,
+                $question->anchor_3 === null ? null : (string) $question->anchor_3,
+                $question->anchor_5 === null ? null : (string) $question->anchor_5,
+            );
         }
 
         return array_map(fn (stdClass $row): InterviewKit => new InterviewKit(

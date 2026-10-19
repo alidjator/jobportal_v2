@@ -25,7 +25,7 @@ Context: `Recruitment` (the export), `Platform` (the audit entry). Spec in `deci
 - **Anonymised applicants** (account erased): the row stays for the count; every personal column is empty and the name column reads `Deleted account`.
 - **File name:** `applicants-job-{id}-{YYYYMMDD}.csv`, sent as an attachment (`Content-Disposition`), `Cache-Control: no-store`.
 - **Screening answers:** a multi-choice answer is its choices joined with `; `; an unanswered question is empty; archived questions that the job still holds are included, in the job's question order.
-- **Not in the export:** notes, ratings by person, interviews, offers, resume files and rejection reasons (the last stays hidden from applicants and is not a column by decision).
+- **Interviews:** four columns after the rating columns, the summary of the latest interview with a sent scorecard (`phase-8-interview-results.md` section 4). **Not in the export:** notes, ratings by person, interview notes and per-person scores, offers, resume files and rejection reasons (the last stays hidden from applicants and is not a column by decision).
 - **No migration, no new permission, no new setting.** The audit action constant is added to `AuditAction`; the throttle limit lives in the route definition (a named rate limiter).
 
 ## Coded (2026-10-08)

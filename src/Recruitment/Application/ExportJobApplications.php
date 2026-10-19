@@ -23,7 +23,11 @@ final readonly class ExportJobApplications
     private const array HEADERS = [
         'Application ID', 'Applied at', 'Name', 'Email', 'Phone', 'City', 'Age', 'Headline', 'Latest job title', 'Latest job company',
         'Expected salary (IDR)', 'Expected salary period', 'Stage', 'Meets must-have', 'Average rating', 'Rating count',
+        'Interview score', 'Interview yes', 'Interview no', 'Interview kit',
     ];
+
+    /** How many applicants are read before their interview results are fetched in one query. */
+    private const int RESULT_CHUNK = 200;
 
     public function __construct(
         private RecruitmentAccess $access,
@@ -34,6 +38,7 @@ final readonly class ExportJobApplications
         private Settings $settings,
         private ContactVisibility $contact,
         private HiringManagerScope $scope,
+        private InterviewResults $results,
     ) {}
 
     /**
@@ -60,17 +65,40 @@ final readonly class ExportJobApplications
 
         $this->events->dispatch([new ApplicantsExported($jobId, $member->companyId, $member->userId, $this->filters($query), $total, $ipAddress, $userAgent, $now)]);
 
-        return new ApplicantExport($jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions, $this->contact->companyIsOpen($member->companyId)));
+        return new ApplicantExport($jobId, $now, [...self::HEADERS, ...array_map(static fn ($question): string => $question->question->text, $questions)], $this->rows($query, $total, $questions, $this->contact->companyIsOpen($member->companyId), $member->userId));
     }
 
     /**
      * @param  list<JobQuestion>  $questions
      * @return iterable<list<string>>
      */
-    private function rows(RecruiterApplicationQuery $query, int $limit, array $questions, bool $companyIsOpen): iterable
+    private function rows(RecruiterApplicationQuery $query, int $limit, array $questions, bool $companyIsOpen, int $viewerId): iterable
     {
+        $chunk = [];
+
         foreach ($this->reader->export($query, $limit) as $applicant) {
-            yield $this->cells($applicant, $questions, $this->contact->closedFor($companyIsOpen, $applicant->row->stageType));
+            $chunk[] = $applicant;
+
+            if (count($chunk) === self::RESULT_CHUNK) {
+                yield from $this->chunkRows($chunk, $questions, $companyIsOpen, $viewerId);
+                $chunk = [];
+            }
+        }
+
+        yield from $this->chunkRows($chunk, $questions, $companyIsOpen, $viewerId);
+    }
+
+    /**
+     * @param  list<ApplicantExportRow>  $applicants
+     * @param  list<JobQuestion>  $questions
+     * @return iterable<list<string>>
+     */
+    private function chunkRows(array $applicants, array $questions, bool $companyIsOpen, int $viewerId): iterable
+    {
+        $interviews = $this->results->latestInterviews(array_map(static fn (ApplicantExportRow $applicant): int => $applicant->row->id, $applicants), $viewerId);
+
+        foreach ($applicants as $applicant) {
+            yield $this->cells($applicant, $questions, $this->contact->closedFor($companyIsOpen, $applicant->row->stageType), $interviews[$applicant->row->id] ?? null);
         }
     }
 
@@ -78,7 +106,7 @@ final readonly class ExportJobApplications
      * @param  list<JobQuestion>  $questions
      * @return list<string>
      */
-    private function cells(ApplicantExportRow $applicant, array $questions, bool $contactClosed): array
+    private function cells(ApplicantExportRow $applicant, array $questions, bool $contactClosed, ?LatestInterview $interview): array
     {
         $row = $applicant->row;
         $answers = [];
@@ -118,8 +146,26 @@ final readonly class ExportJobApplications
             $row->meetsMustHave === null ? '' : self::yesNo($row->meetsMustHave),
             $row->ratingAverage === null ? '' : (string) $row->ratingAverage,
             (string) $row->ratingCount,
+            ...self::interviewCells($interview),
             ...array_map(static fn ($question): string => $answers[$question->question->id] ?? '', $questions),
         ];
+    }
+
+    /**
+     * The score of the latest scored interview, the yes and the no recommendations and the kit; empty without one, and for an interview whose result is locked for
+     * the exporting member (they are on its panel and have not sent their scorecard).
+     *
+     * @return list<string>
+     */
+    private static function interviewCells(?LatestInterview $interview): array
+    {
+        $result = $interview?->result;
+
+        if (! $result instanceof InterviewResult) {
+            return ['', '', '', ''];
+        }
+
+        return [$result->score === null ? '' : number_format($result->score, 2, '.', ''), (string) $result->yes(), (string) $result->no(), (string) $interview->kitName];
     }
 
     /** @return array<string, bool|int|string> */

@@ -9,7 +9,7 @@ ERP governance (platform admin, reference data, group scope of settings and audi
 
 ## Coded
 
-Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18: tag `v0.7.0`; #19: 2026-10-19). Parts still open inside a coded item are listed under "Next coding".
+Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18: tag `v0.7.0`; #19 and #21: 2026-10-19). Parts still open inside a coded item are listed under "Next coding".
 
 | Document | Status |
 |---|---|
@@ -33,6 +33,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | `phase-8-platform-admin.md` sections 5 to 8 (#17) | coded 2026-10-18 (`000166` to `000169`), with the admin account view (`users.view`) and the mass reset command; section 6 (email suppression) is in before the reset emails to the imported accounts; open: the front end and the SMTP provider's webhook parser `EmailEventParser` (waits for the provider) |
 | `phase-8-talent-pool.md` (#18) | coded 2026-10-18 (`000170`, `000171`): consent when applying, saving applicants, invitations from the pool (single and bulk), the richer list and the entry page; checked (`composer check` green, 3182 tests); open: the skip code `candidate-restricted` (waits for #14) |
 | `phase-8-applicant-search.md` (#19) | coded 2026-10-19 (`000172`), committed `f760853` on `master`, checked (`composer check` green, 3205 tests): facet table and its command, keyword search, filters and sorts on both lists, `GET company/applications`; open: run `recruitment:build-application-facets` after the final import; interpretations to confirm are in its "Coded" section |
+| `phase-8-interview-results.md` (#21) | coded 2026-10-19 on branch `phase-8-interview-results` (`000173`), checked (`composer check`: the suite green apart from the flaky `'42'` assertion of `TestAuthoringTest`, which passes on rerun): scale anchors, duplicating a kit, the comparison `GET company/jobs/{id}/interview-results` and the interview columns of the applicant export; open: the assessment field of a comparison row (waits for #23); interpretations to confirm are in its "Coded" section |
 
 ## Next coding (in this order)
 
@@ -45,7 +46,6 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | 27 | **new** `company-locations.md`: several work locations per tenant (`company_locations`: head office, branches, sites), the `locations` API shape of companies, jobs and interview places, the current company address as the main location, one main location per imported company; interview places and requisitions may point to a location | **before the front end and before the final legacy import run** (decided 2026-10-17, `erp-direction.md` section 9) |
 | 28 | job `locations` array in the API, filled with one item from today's province and city | after #27, before the front end; jobs with several locations come with #20 |
 | 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
-| 21 | `phase-8-interview-results.md` | |
 | 22 | `phase-8-assessment-automation.md` | |
 | 23 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |

@@ -26,7 +26,7 @@ final readonly class InterviewKit
     ) {}
 
     /**
-     * @param  list<array{text: string, guidance: ?string, weight: int}>  $questions
+     * @param  list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>  $questions
      *
      * @throws BusinessRuleViolation `invalid-kit`
      */
@@ -40,7 +40,7 @@ final readonly class InterviewKit
     /**
      * The kit with a new name and a whole new list of questions.
      *
-     * @param  list<array{text: string, guidance: ?string, weight: int}>  $questions
+     * @param  list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>  $questions
      *
      * @throws BusinessRuleViolation `invalid-kit`
      */
@@ -52,7 +52,27 @@ final readonly class InterviewKit
     }
 
     /**
-     * @param  list<array{text: string, guidance: ?string, weight: int}>  $raw
+     * A copy with the same questions, guidance, weights and anchors, named "{name} (salinan)", then "(salinan 2)" and so on until no name of the company
+     * matches (case does not count), with the original name cut so the whole name stays within {@see self::NAME_MAX} characters.
+     *
+     * @param  list<string>  $takenNames  the names of the company's kits
+     */
+    public function duplicate(array $takenNames, int $userId, DateTimeImmutable $now): self
+    {
+        $taken = array_map(mb_strtolower(...), $takenNames);
+
+        for ($number = 1; ; $number++) {
+            $suffix = $number === 1 ? ' (salinan)' : " (salinan {$number})";
+            $name = mb_substr($this->name, 0, self::NAME_MAX - mb_strlen($suffix)).$suffix;
+
+            if (! in_array(mb_strtolower($name), $taken, true)) {
+                return new self($this->companyId, $name, $this->questions, $userId, $userId, $now, $now);
+            }
+        }
+    }
+
+    /**
+     * @param  list<array{text: string, guidance: ?string, weight: int, anchor_1?: ?string, anchor_3?: ?string, anchor_5?: ?string}>  $raw
      * @return array{0: string, 1: list<KitQuestion>}
      */
     private static function checked(string $name, array $raw): array
