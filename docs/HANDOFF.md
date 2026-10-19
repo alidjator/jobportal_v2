@@ -14,9 +14,8 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 
 ## Current state (2026-10-19)
 
-- Latest tag `v0.7.0` (#18); `master` holds #19 after it (`f760853`, 3205 tests green); push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
-- **#21 (interview results) is coded, checked and committed (`b06a4e9`) on branch `phase-8-interview-results`, not merged into `master` yet.**
-- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11 and #16 to #19 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
+- Latest tag `v0.7.0` (#18); `master` holds #19 (`f760853`, 3205 tests green) and #21 (`b06a4e9`) after it; push state: `git status -sb`. Earlier tags in `git tag`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (deploy key alias `github-jobportal`).
+- **Phases 0 to 7 coded and committed.** Phase 8: #5 to #11, #16 to #19 and #21 coded, checked and committed, #12 and #13 partly; what is still open inside them is in `phase-8-index.md` ("Coded" and the first rows of "Next coding").
 - Real PostgreSQL `jobportal_v2` and the test database are at `000173` (2026-10-19); reference data only (0 accounts) until the final import.
 - **Direction (agreed 2026-10-13): go-live readiness first** (`docs/deployment-checklist.md`; the live dev site is this folder, so the scheduler fails when code needing a new migration is live before `migrate`). Name: ONESIS ERP / ONESIS Career (`docs/design/naming.md`); `onesis` stays the technical identifier.
 - **Next coding:** #12 to #15 wait (legal questions 12 and 13, design sessions), so the next item is **#27 `company_locations` (needs a design session)**, then #28 (job `locations` in the API); both come before the front end and the final import run (employee data order: `erp-direction.md` section 9).
