@@ -473,3 +473,16 @@ as asked; this list is the record. Nothing here is designed or scheduled yet: ea
 **Effect on the order of 5.3.** Decisions 6 and 15 move work before go-live. The activation design session
 (MG-P01) now covers decisions 1, 2, 5, 6, 8, 12, 13, 14 and 15; decisions 3, 9, 10, 11, 16 and 17 fit the item-by-item phase 8 designs; decision
 7 waits for the ERP TA core session (#13).
+
+## 6. Decisions after the review (2026-10-20, second round)
+
+Answered by the user in Indonesian; the recommendation was chosen each time (the first row was a single path, taken as the approach).
+
+| # | Gap | Decision |
+|---|---|---|
+| 18 | MG-P03 | The company resources of an application carry **`email_deliverable` only** (false when the candidate's address is on the suppression list), never the reason (bounce or complaint). It is read through the `EmailSuppressions` port. |
+| 19 | MG-P03 | The flag is on the **application list and detail** (C6, C7) for members who may already read the application; interviews and offers are not changed now. |
+| 20 | MG-B03 | Bulk assignment starts from the **member page C22**: one action adds a member to many jobs. The selection from C3 is not built now. |
+| 21 | MG-B03 | The action **only adds** (the assignees of each job keep everyone else), covers imported jobs, takes at most 100 jobs per request, needs `jobs.assign`, and is written to the company activity log. It never removes an assignment. |
+
+Both items are small enough for the item-by-item phase 8 designs; the coding order follows `decisions.md` section 5 (endpoints the front end asks for).
