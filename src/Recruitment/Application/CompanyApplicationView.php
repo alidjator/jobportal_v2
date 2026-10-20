@@ -23,7 +23,7 @@ final readonly class CompanyApplicationView
         public array $actorNames,
         public ApplicationRatingView $rating,
         public array $interviews = [],
-        public int $daysInStage = 0,
+        public ?int $daysInStage = 0,
         public bool $stale = false,
         public array $otherApplications = [],
         public int $othersHidden = 0,

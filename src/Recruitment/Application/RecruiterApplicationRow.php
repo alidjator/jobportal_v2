@@ -35,7 +35,8 @@ final readonly class RecruiterApplicationRow
         public int $ratingCount = 0,
         public ?InterviewResult $interviewResult = null,
         public ?DateTimeImmutable $stageEnteredAt = null,
-        public int $daysInStage = 0,
+        /** Null for an imported application that was not moved yet (`UntouchedImport`). */
+        public ?int $daysInStage = 0,
         public bool $stale = false,
         public int $otherApplicationsCount = 0,
         public ?string $interviewState = null,
@@ -47,6 +48,8 @@ final readonly class RecruiterApplicationRow
         public ?string $jobTitle = null,
         /** Whether the job seeker's proposed time for the active interview waits for the team's answer ("Kandidat minta pindah jadwal"). */
         public bool $interviewProposalOpen = false,
+        /** When the application was imported from karir.pkp; null for one made on this platform. */
+        public ?DateTimeImmutable $migratedAt = null,
     ) {}
 
     /** The row with the title of its job (the list across jobs shows it). */

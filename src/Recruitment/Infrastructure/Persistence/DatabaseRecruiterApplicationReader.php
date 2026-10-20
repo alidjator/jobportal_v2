@@ -16,6 +16,7 @@ use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruiterApplicationRow;
 use Src\Recruitment\Application\RecruiterHistoryEntry;
 use Src\Recruitment\Application\StageClock;
+use Src\Recruitment\Application\UntouchedImport;
 use Src\Recruitment\Domain\HireDetails;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
@@ -37,7 +38,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
     private const string NOT_SCHEDULED = 'not_scheduled';
 
-    private const array ROW_COLUMNS = ['a.id', 'a.job_id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.match_score', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+    private const array ROW_COLUMNS = ['a.id', 'a.job_id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.match_score', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.migrated_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
 
@@ -151,7 +152,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             // Whole Jakarta days: the day the stage was entered, in Jakarta time, is more than the limit before today.
             $zone = new DateTimeZone(StageClock::ZONE);
             $cutoff = $this->clock->now()->setTimezone($zone)->modify("-{$query->staleAfterDays} days")->format('Y-m-d');
-            $filtered->whereIn('a.stage_type', [StageType::Applied->value, StageType::Screening->value])
+            UntouchedImportScope::exclude($filtered)->whereIn('a.stage_type', [StageType::Applied->value, StageType::Screening->value])
                 ->whereRaw("(a.stage_entered_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date < ?::date", [StageClock::ZONE, $cutoff]);
         }
 
@@ -305,6 +306,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             $this->time((string) $row->stage_entered_at),
             hire: $this->hire($row),
             talentPoolConsent: $row->talent_pool_consent_at !== null,
+            migratedAt: $row->migrated_at === null ? null : $this->time((string) $row->migrated_at),
         );
     }
 
@@ -382,6 +384,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
     {
         $type = StageType::from($row->stage_type);
         $entered = $this->time((string) $row->stage_entered_at);
+        $migratedAt = $row->migrated_at === null ? null : $this->time((string) $row->migrated_at);
+        $untouched = UntouchedImport::applies($migratedAt, $entered);
         $days = StageClock::days($entered, $now);
 
         $snapshot = $this->snapshot($row->profile_snapshot);
@@ -406,14 +410,15 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             (int) $row->rating_count,
             null,
             $entered,
-            $days,
-            StageClock::isStale($type, $days, $staleAfterDays),
+            $untouched ? null : $days,
+            ! $untouched && StageClock::isStale($type, $days, $staleAfterDays),
             0,
             $type === StageType::Interview ? (string) ($row->interview_state ?? self::NOT_SCHEDULED) : null,
             hire: $this->hire($row),
             matchScore: $row->match_score === null ? null : (int) $row->match_score,
             jobId: (int) $row->job_id,
             interviewProposalOpen: (bool) ($row->interview_proposal_open ?? false),
+            migratedAt: $migratedAt,
         );
     }
 

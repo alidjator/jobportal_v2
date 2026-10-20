@@ -35,7 +35,10 @@ final class CompanyApplicationDetailResource extends JsonResource
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
             'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),
+            /** Null for an imported application that was not moved yet: its stage time only says when it was imported. */
             'days_in_stage' => $view->daysInStage,
+            'migrated' => $data->migratedAt !== null,
+            'migrated_at' => $data->migratedAt?->format(DATE_ATOM),
             'stale' => $view->stale,
             /** @var array{join_date: string, note: string|null}|null the join date and the note for the candidate of a hired application */
             'hire' => HirePayload::of($data->hire),

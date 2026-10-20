@@ -25,6 +25,9 @@ final class MyApplicationResource extends JsonResource
             'status' => $row->status->value,
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
             'viewed_at' => $row->viewedAt?->format(DATE_ATOM),
+            /** The application came from karir.pkp: its history has two entries and the profile data was copied at the import. */
+            'migrated' => $row->migratedAt !== null,
+            'migrated_at' => $row->migratedAt?->format(DATE_ATOM),
         ];
     }
 }

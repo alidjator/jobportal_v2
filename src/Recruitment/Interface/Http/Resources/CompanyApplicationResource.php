@@ -39,7 +39,10 @@ final class CompanyApplicationResource extends JsonResource
             'stage' => ['id' => $row->stageId, 'type' => $row->stageType->value, 'name' => $row->stageName],
             'applied_at' => $row->appliedAt->format(DATE_ATOM),
             'stage_entered_at' => $row->stageEnteredAt?->format(DATE_ATOM),
+            /** Null for an imported application that was not moved yet: its stage time only says when it was imported. */
             'days_in_stage' => $row->daysInStage,
+            'migrated' => $row->migratedAt !== null,
+            'migrated_at' => $row->migratedAt?->format(DATE_ATOM),
             'stale' => $row->stale,
             /** @var 'not_scheduled'|'pending'|'confirmed'|'completed'|null null outside an interview stage */
             'interview_state' => $row->interviewState,

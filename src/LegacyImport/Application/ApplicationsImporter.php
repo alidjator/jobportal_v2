@@ -434,6 +434,8 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             'withdrawn_note' => null,
             'applied_at' => $appliedAt,
             'stage_entered_at' => $stage['type'] === StageType::Applied ? $appliedAt : $now,
+            // The marker of an imported application: it counts as untouched until its stage is first changed.
+            'migrated_at' => $now,
             // The marker of the hiring managers: the default boundary is the first interview stage, so an application at an interview, offer or hired stage qualifies.
             'hiring_manager_visible_at' => in_array($stage['type'], [StageType::Interview, StageType::Offer, StageType::Hired], true) ? $now : null,
             'created_at' => $appliedAt,

@@ -8,6 +8,7 @@ use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\StageClock;
 use Src\Recruitment\Domain\StageType;
 use Src\Recruitment\Infrastructure\Persistence\HiringManagerBound;
+use Src\Recruitment\Infrastructure\Persistence\UntouchedImportScope;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Application\Tasks\TaskProvider;
@@ -43,7 +44,7 @@ final readonly class StaleApplicationsTask implements TaskProvider
         $limit = $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $scope->companyId);
         $cutoff = $scope->now->setTimezone(new DateTimeZone(StageClock::ZONE))->modify("-{$limit} days")->format('Y-m-d');
 
-        return HiringManagerBound::limit($this->connection->table('recruitment_applications as a'), $scope->boundJobIds)
+        return UntouchedImportScope::exclude(HiringManagerBound::limit($this->connection->table('recruitment_applications as a'), $scope->boundJobIds))
             ->where('a.company_id', $scope->companyId)
             ->when($scope->jobIds !== null, fn ($query) => $query->whereIn('a.job_id', $scope->jobIds ?? []))
             ->whereIn('a.stage_type', [StageType::Applied->value, StageType::Screening->value])

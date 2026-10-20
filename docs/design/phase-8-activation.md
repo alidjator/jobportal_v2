@@ -303,6 +303,15 @@ Migration `000177_add_imported_at_to_identity_users` (new; backfills `imported_a
 - The importer sets `imported_at` to the import time (the clock of the run). The domain `User` does not carry the field yet (only the model and a repository read, `findHeldIds`); the admin resources of part 7 add it.
 - Needs a second rehearsal together with parts 3, 4 and 6 (the account importer changed).
 
+### Part 4: label and stale rule (2026-10-20)
+
+Migration `000180_add_migrated_at_to_recruitment_applications` (new; partial index, backfilled from the profile snapshot). `ApplicationsImporter` sets `migrated_at` to the import time, so this part needs the second rehearsal (with parts 1, 3 and 6). Interpretations made while coding:
+
+- **One rule, two forms.** `UntouchedImport::applies(migratedAt, stageEnteredAt)` (Recruitment Application) and `UntouchedImportScope::exclude` (the SQL form, Infrastructure) say "imported and `stage_entered_at <= migrated_at`"; a unit test and the feature test keep them together. The four places: the stale **mark** on the list rows (`toRow`), the stale **filter** (`filter[stale]`), the `stale_applications` **task count** (which also feeds the team digest line) and the stale mark of the **detail** (`GetCompanyApplication`).
+- **Time in stage.** `days_in_stage` is `null` (not a number) on an untouched import, on the list and on the detail; `stage_entered_at` keeps its value. Sorting by `days_in_stage` still uses `stage_entered_at` (an untouched import sorts by its import-time stage entry); the design asks nothing more.
+- **Label.** `migrated` and `migrated_at` on the company list row and detail, and on the job seeker list row and detail. They stay after the first move; only the stale rule and the "—" end. The existing `applicant.migrated` of the snapshot is unchanged.
+- The explanation text (A12) is the client's; no server text was added. Other places that read `stage_entered_at` (the list sort, the stage-time of the history) were left as they are.
+
 ### Part 3: import summaries (2026-10-20)
 
 Migration `000179_create_import_summaries` (new; `jobseeker_import_summaries`, `company_import_summaries`). The importers changed, so this part needs the second rehearsal (with parts 1, 4 and 6). Interpretations made while coding:

@@ -72,6 +72,7 @@ final readonly class GetCompanyApplication
         }
 
         [$otherApplications, $othersHidden] = $team->panelOnly ? [[], 0] : $this->others->of($member, $data);
+        $untouched = UntouchedImport::applies($data->migratedAt, $data->stageEnteredAt);
         $days = StageClock::days($data->stageEnteredAt, $this->clock->now());
 
         return new CompanyApplicationView(
@@ -82,8 +83,8 @@ final readonly class GetCompanyApplication
             $actorNames,
             $team->panelOnly ? new ApplicationRatingView(null, 0, null, []) : $this->ratings->view($id, $member->userId),
             $this->interviewResults->forApplication($id, $member->userId),
-            $days,
-            StageClock::isStale($data->stageType, $days, $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $data->companyId)),
+            $untouched ? null : $days,
+            ! $untouched && StageClock::isStale($data->stageType, $days, $this->settings->integer(RecruitmentSettings::STALE_AFTER_DAYS, $data->companyId)),
             $otherApplications,
             $othersHidden,
             $team->panelOnly ? [] : $this->reviews->forApplication($id, $member->userId),

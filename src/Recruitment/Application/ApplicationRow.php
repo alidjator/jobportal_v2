@@ -15,5 +15,7 @@ final readonly class ApplicationRow
         public StageType $status,
         public DateTimeImmutable $appliedAt,
         public ?DateTimeImmutable $viewedAt = null,
+        /** When the application was imported from karir.pkp; null for one made on this platform. */
+        public ?DateTimeImmutable $migratedAt = null,
     ) {}
 }

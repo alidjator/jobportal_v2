@@ -531,6 +531,16 @@ final class ApplicationsImporterTest extends FeatureTestCase
 
     // ----- through the real API -----
 
+    public function test_every_imported_application_is_marked_with_the_time_of_the_import(): void
+    {
+        $this->application('Interview', ['created_at' => '2026-07-01 08:00:00']);
+        $this->application('Interview', ['created_at' => '2026-08-01 08:00:00']);
+        $this->import();
+
+        $this->assertSame(['2026-10-08 09:00:00', '2026-10-08 09:00:00'], DB::table('recruitment_applications')->orderBy('id')->pluck('migrated_at')->all());
+        $this->assertSame(0, DB::table('recruitment_applications')->whereColumn('stage_entered_at', '>', 'migrated_at')->count());
+    }
+
     public function test_the_import_summaries_tell_each_side_what_came_along(): void
     {
         $this->application('All Applications', ['created_at' => '2026-07-01 08:00:00']);
