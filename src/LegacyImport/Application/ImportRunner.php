@@ -17,6 +17,7 @@ final readonly class ImportRunner
         private IdMap $idMap,
         private Clock $clock,
         private ReportWriter $reports,
+        private ImportSummaryFlusher $summaries,
     ) {}
 
     /** @return list<string> the entities that can be imported, in the order `--all` runs them */
@@ -50,10 +51,14 @@ final readonly class ImportRunner
             }
         }
 
-        $context = new ImportContext($write, new ImportReport, $this->idMap, $this->clock, $mappings);
+        $context = new ImportContext($write, new ImportReport, $this->idMap, $this->clock, new ImportSummaryRecorder, $mappings);
 
         foreach ($selected as $importer) {
             $importer->run($context);
+        }
+
+        if ($write) {
+            $this->summaries->flush($context->summary);
         }
 
         $name = $this->clock->now()->format('Ymd-His').'-'.($entity ?? 'all').'-'.($write ? 'write' : 'dry-run');

@@ -15,4 +15,17 @@ final readonly class IdentityFirstSignIns implements FirstSignIns
     {
         return $this->users->findJobSeekerIdsFirstSignedInBefore($cutoff, $afterId, $limit);
     }
+
+    public function firstSignedInAt(array $userIds): array
+    {
+        $times = [];
+
+        foreach ($this->users->findByIds($userIds) as $id => $user) {
+            if ($user->firstLoginAt() !== null) {
+                $times[$id] = $user->firstLoginAt();
+            }
+        }
+
+        return $times;
+    }
 }

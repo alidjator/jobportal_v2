@@ -179,7 +179,7 @@ final class SettingsTest extends FeatureTestCase
             'company.banner_max_size_kb', 'company.document_max_size_kb', 'company.logo_max_size_kb', 'company.max_locations', 'company.require_two_factor',
             'group.require_two_factor',
             'identity.activation_bounce_limit_percent', 'identity.activation_complaint_limit_percent', 'identity.activation_job_seekers_not_before', 'identity.activation_reminder_days',
-            'identity.avatar_max_size_kb',
+            'identity.avatar_max_size_kb', 'identity.import_summary_retention_days',
             'interview.recording_retention_days', 'interview.video_enabled', 'interview.video_max_concurrent_rooms',
             'interview.voice_enabled', 'interview.voice_max_attempts', 'interview.voice_max_call_minutes', 'interview.voice_max_concurrent_calls', 'interview.voice_monthly_minutes',
             'invitations.max_per_day',

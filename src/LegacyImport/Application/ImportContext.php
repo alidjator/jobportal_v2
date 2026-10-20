@@ -17,6 +17,7 @@ final readonly class ImportContext
         public ImportReport $report,
         public IdMap $idMap,
         public Clock $clock,
+        public ImportSummaryRecorder $summary,
         public array $mappings = [],
     ) {}
 

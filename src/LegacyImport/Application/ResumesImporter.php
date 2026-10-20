@@ -97,6 +97,7 @@ final readonly class ResumesImporter implements Importer
 
         if ($reason !== null) {
             $report->skipped(self::ENTITY, $legacyId, $reason);
+            $context->summary->jobSeeker($userId, 'resume_skipped', $reason);
 
             return;
         }

@@ -76,6 +76,7 @@ final class JobQuestionsImporter implements Importer
                 'questions' => $context->idMap->findMany(QuestionsImporter::QUESTION, $questionIds),
                 'jobCompanies' => $jobCompanies,
                 'legacyQuestions' => $questions,
+                'companies' => $context->idMap->findMany(CompaniesImporter::COMPANY, array_values(array_unique(array_filter($jobCompanies)))),
             ];
 
             $this->transactions->run(function () use ($rows, $context, $state): void {
@@ -122,8 +123,14 @@ final class JobQuestionsImporter implements Importer
             default => null,
         };
 
+        $companyId = $legacyJob === null ? null : ($state['companies'][$state['jobCompanies'][$legacyJob] ?? 0] ?? null);
+
         if ($reason !== null) {
             $report->skipped(self::ENTITY, $legacyId, $reason);
+
+            if ($companyId !== null) {
+                $context->summary->company($companyId, 'screening_questions_skipped', $reason);
+            }
 
             return;
         }
@@ -135,6 +142,10 @@ final class JobQuestionsImporter implements Importer
         if ($this->counts[$jobId] > $this->settings->integer(RecruitmentSettings::MAX_SCREENING_QUESTIONS) && ! isset($this->over[$jobId])) {
             $this->over[$jobId] = true;
             $report->note(self::ENTITY, 'job-over-question-limit');
+
+            if ($companyId !== null) {
+                $context->summary->company($companyId, 'screening_questions_over_limit');
+            }
         }
 
         if ($context->write) {

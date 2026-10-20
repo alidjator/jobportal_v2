@@ -5,6 +5,7 @@ use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
 use Src\JobSeeker\Interface\Http\Controllers\CandidateController;
 use Src\JobSeeker\Interface\Http\Controllers\CvController;
 use Src\JobSeeker\Interface\Http\Controllers\DataExportController;
+use Src\JobSeeker\Interface\Http\Controllers\ImportSummaryController;
 use Src\JobSeeker\Interface\Http\Controllers\MyProfileController;
 
 // The job seeker's own profile and its lists; every use case checks that the caller is a job seeker.
@@ -36,6 +37,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('me/data-export', [DataExportController::class, 'store']);
     Route::get('me/data-export', [DataExportController::class, 'show']);
     Route::get('me/data-export/download', [DataExportController::class, 'download']);
+
+    // What the karir.pkp import carried for the account (`404 no-import-summary` for an account that was not imported).
+    Route::get('me/import-summary', [ImportSummaryController::class, 'show']);
+    Route::post('me/import-summary/dismiss', [ImportSummaryController::class, 'dismiss']);
 
     // The CV generator: the templates on offer, and a PDF made from the latest profile.
     Route::get('me/cv/templates', [CvController::class, 'templates']);

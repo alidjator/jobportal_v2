@@ -259,6 +259,8 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             $this->store($row, (int) $userId, (int) $jobId, (int) $companyId, $stage, $defaults[StageType::Applied->value], $state, $context, $stored);
         }
 
+        $context->summary->jobSeeker((int) $userId, 'applications_imported', $isNewest ? null : 'withdrawn_duplicates');
+        $context->summary->company((int) $companyId, 'applications_imported', $isNewest ? null : 'withdrawn_duplicates');
         $report->imported(self::ENTITY);
     }
 
@@ -294,6 +296,7 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
 
         if ($target === null) {
             $report->note(self::ENTITY, 'group-unmapped');
+            $context->summary->company($companyId, 'applications_imported', 'group_unmapped', inTotal: false);
 
             if (! isset($this->reportedGroups[$groupId])) {
                 $this->reportedGroups[$groupId] = true;
@@ -375,6 +378,10 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             $report->note(self::ENTITY, 'no-resume');
         } elseif ($resumeId === null) {
             $report->note(self::ENTITY, 'resume-not-migrated');
+        }
+
+        if ($resumeId === null) {
+            $context->summary->jobSeeker($userId, 'applications_imported', 'no_resume', inTotal: false);
         }
 
         $hasProfile = $this->writer->hasProfile($userId);

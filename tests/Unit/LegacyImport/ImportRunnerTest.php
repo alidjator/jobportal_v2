@@ -5,9 +5,12 @@ namespace Tests\Unit\LegacyImport;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Src\LegacyImport\Application\CompanySummaryWriter;
 use Src\LegacyImport\Application\ImportContext;
 use Src\LegacyImport\Application\Importer;
 use Src\LegacyImport\Application\ImportRunner;
+use Src\LegacyImport\Application\ImportSummaryFlusher;
+use Src\LegacyImport\Application\JobSeekerSummaryWriter;
 use Src\LegacyImport\Application\ReportWriter;
 use Src\LegacyImport\Domain\IdMap;
 use Src\Shared\Application\Clock;
@@ -100,7 +103,19 @@ final class ImportRunnerTest extends TestCase
             public function replace(string $entity, array $newIdsByLegacyId, DateTimeImmutable $at): void {}
         };
 
-        return new ImportRunner($importers, $idMap, $clock, $reports);
+        $summaries = new ImportSummaryFlusher(
+            new class implements JobSeekerSummaryWriter
+            {
+                public function save(int $userId, array $items, DateTimeImmutable $at): void {}
+            },
+            new class implements CompanySummaryWriter
+            {
+                public function save(int $companyId, array $items, DateTimeImmutable $at): void {}
+            },
+            $clock,
+        );
+
+        return new ImportRunner($importers, $idMap, $clock, $reports, $summaries);
     }
 
     /** @param  array<string, mixed>  $report */

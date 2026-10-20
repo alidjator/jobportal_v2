@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Identity\Application\Account\CurrentUserView;
 
-/** The account of `GET me`: the fields of a sign-in response and `email_deliverable`, false while the address is on the suppression list (the front end asks the person to check or change it). @property CurrentUserView $resource */
+/** The account of `GET me`: the fields of a sign-in response `imported_from_legacy` (the account came from karir.pkp) and `email_deliverable`, false while the address is on the suppression list (the front end asks the person to check or change it). @property CurrentUserView $resource */
 final class CurrentUserResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -24,6 +24,7 @@ final class CurrentUserResource extends JsonResource
             'locale' => $user->locale(),
             'has_avatar' => $user->avatarPath() !== null,
             'email_deliverable' => $this->resource->emailDeliverable,
+            'imported_from_legacy' => $user->importedAt() !== null,
         ];
     }
 }

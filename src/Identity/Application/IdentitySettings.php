@@ -17,6 +17,8 @@ final class IdentitySettings
 
     public const string ACTIVATION_JOB_SEEKERS_NOT_BEFORE = 'identity.activation_job_seekers_not_before';
 
+    public const string IMPORT_SUMMARY_RETENTION_DAYS = 'identity.import_summary_retention_days';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -26,6 +28,7 @@ final class IdentitySettings
             SettingDefinition::text(self::ACTIVATION_BOUNCE_LIMIT_PERCENT, '2', 10, 'The activation emails stop when more than this percentage of the previous batch bounced (a number, for example 2).'),
             SettingDefinition::text(self::ACTIVATION_COMPLAINT_LIMIT_PERCENT, '0.1', 10, 'The activation emails stop when more than this percentage of the previous batch complained (a number, for example 0.1).'),
             SettingDefinition::text(self::ACTIVATION_JOB_SEEKERS_NOT_BEFORE, '', 10, 'The first day (YYYY-MM-DD) imported job seekers may be emailed their activation. Empty: the send command refuses.'),
+            SettingDefinition::integer(self::IMPORT_SUMMARY_RETENTION_DAYS, 90, 7, 730, 'How many days after the first sign-in an imported job seeker or company can still read the summary of what the karir.pkp import carried; then it is deleted.'),
         ];
     }
 }

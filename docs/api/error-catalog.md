@@ -7,6 +7,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `account-deactivated` | 403 | Identity | This account has been deactivated. |
 | `account-not-active` | 409 | Identity | Only an active account can be deleted. |
 | `account-suspended` | 403 | Identity | This account has been suspended. |
+| `activation-batch-limit-exceeded` | 422 | Identity |  |
+| `activation-limit-invalid` | 422 | Identity | The settings identity.activation_bounce_limit_percent and identity.activation_complaint_limit_percent must be numbers. |
+| `activation-not-yet-open` | 422 | Identity |  |
+| `activation-support-contact-missing` | 422 | Identity | Set the setting platform.support_email before sending activation emails. |
+| `activation-url-missing` | 422 | Identity | Set the activation and sign-in page URLs (see .env.example) before sending activation emails. |
 | `admin-not-active` | 409 | Identity | Only an active administrator can be suspended. |
 | `admin-not-suspended` | 409 | Identity | Only a suspended administrator can be reactivated. |
 | `admin-only` | 403 | Dashboard, JobSeeker, Newsletter, Review | Only an admin has this dashboard. |
@@ -296,6 +301,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-active-offer` | 409 | Recruitment | This application has no pending offer. |
 | `no-active-recording` | 409 | Recruitment | No recording is running. |
 | `no-changes` | 422 | Organization | Nothing to change: send at least one field. |
+| `no-import-summary` | 404 | Company, JobSeeker | There is no import summary for this company. |
 | `no-live-call` | 409 | Recruitment | There is no call in progress. |
 | `no-open-reports` | 409 | Job | This job has no open reports. |
 | `no-phone-number` | 409 | Recruitment |  |

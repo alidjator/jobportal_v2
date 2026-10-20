@@ -34,6 +34,11 @@ final class EducationsImporter extends CandidateListImporter
         return 'education';
     }
 
+    protected function skippedSummaryCode(): string
+    {
+        return 'education_skipped';
+    }
+
     public function entity(): string
     {
         return self::ENTITY;
@@ -68,7 +73,7 @@ final class EducationsImporter extends CandidateListImporter
             return $reason;
         }
 
-        $gpa = $this->gpa($row->grade, $context);
+        $gpa = $this->gpa($row->grade, $userId, $context);
         $field = LegacyText::limit(LegacyText::clean($row->field), 100);
         $description = LegacyText::plain($row->notes);
 
@@ -86,7 +91,7 @@ final class EducationsImporter extends CandidateListImporter
         ];
     }
 
-    private function gpa(mixed $grade, ImportContext $context): ?string
+    private function gpa(mixed $grade, int $userId, ImportContext $context): ?string
     {
         $text = LegacyText::clean($grade === null ? null : (string) $grade);
 
@@ -101,6 +106,7 @@ final class EducationsImporter extends CandidateListImporter
         }
 
         $context->report->note(self::ENTITY, 'gpa-invalid');
+        $context->summary->jobSeeker($userId, 'gpa_emptied');
 
         return null;
     }

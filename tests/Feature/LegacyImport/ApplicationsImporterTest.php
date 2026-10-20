@@ -531,6 +531,39 @@ final class ApplicationsImporterTest extends FeatureTestCase
 
     // ----- through the real API -----
 
+    public function test_the_import_summaries_tell_each_side_what_came_along(): void
+    {
+        $this->application('All Applications', ['created_at' => '2026-07-01 08:00:00']);
+        $this->application('Interview', ['created_at' => '2026-08-01 08:00:00']);
+        $this->application('Shortlisted', ['created_at' => '2026-07-15 08:00:00', 'candidate_resume_id' => $this->resume()]);
+        $this->import();
+
+        $newId = fn (string $entity, int $legacy): int => (int) DB::table('legacyimport_id_map')->where('entity', $entity)->where('legacy_id', $legacy)->value('new_id');
+        $item = fn (array $items, string $code): ?array => collect($items)->firstWhere('code', $code);
+
+        $seeker = json_decode((string) DB::table('jobseeker_import_summaries')->where('user_id', $newId('user', $this->user))->value('items'), true);
+        $this->assertEquals(['count' => 3, 'detail' => ['withdrawn_duplicates' => 2, 'no_resume' => 2]], array_diff_key($item($seeker, 'applications_imported'), ['code' => 1]));
+        $this->assertNotNull($item($seeker, 'password_reset_needed'));
+
+        $company = json_decode((string) DB::table('company_import_summaries')->where('company_id', $newId('company', $this->company))->value('items'), true);
+        $this->assertSame(['count' => 3, 'detail' => ['withdrawn_duplicates' => 2]], array_diff_key($item($company, 'applications_imported'), ['code' => 1]));
+        $this->assertSame(1, $item($company, 'jobs_imported')['count']);
+
+        $this->assertSame(1, DB::table('jobseeker_import_summaries')->where('user_id', $newId('user', $this->user))->count());
+    }
+
+    public function test_the_summary_of_a_second_run_does_not_count_twice(): void
+    {
+        $this->application();
+        $this->import();
+        $this->import();
+
+        $count = fn (): int => (int) collect(json_decode((string) DB::table('company_import_summaries')->value('items'), true))->firstWhere('code', 'applications_imported')['count'];
+
+        $this->assertSame(1, $count());
+        $this->assertSame(1, DB::table('company_import_summaries')->count());
+    }
+
     public function test_an_imported_application_is_served_and_moved_through_the_company_api(): void
     {
         $this->application('Shortlisted', ['candidate_resume_id' => $this->resume()]);

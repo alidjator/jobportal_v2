@@ -255,6 +255,44 @@ final class ProfileListsImporterTest extends FeatureTestCase
 
     // ----- the result seen through the API -----
 
+    public function test_what_is_left_out_or_defaulted_is_recorded_in_the_summary_of_the_job_seeker(): void
+    {
+        $this->experience(['company' => ' ']);
+        $this->experience();
+        $this->education(['level' => 2]);
+        $this->education(['grade' => 'cum laude']);
+        $this->legacyRow('candidate_skill', ['candidate_id' => $this->candidate, 'skill_id' => null]);
+        DB::connection('legacy')->table('candidate_languages')->where('id', 2)->update(['name' => '']);
+        $this->legacyRow('candidate_language', ['candidate_id' => $this->candidate, 'candidate_language_id' => 1]);
+        $this->legacyRow('candidate_language', ['candidate_id' => $this->candidate, 'candidate_language_id' => 2]);
+
+        foreach (['experiences', 'educations', 'skills', 'languages'] as $entity) {
+            $this->import($entity);
+        }
+
+        $items = collect(json_decode((string) DB::table('jobseeker_import_summaries')->value('items'), true))->keyBy('code');
+
+        $this->assertSame(1, $items['experience_skipped']['count']);
+        $this->assertSame(['company-invalid' => 1], $items['experience_skipped']['detail']);
+        $this->assertSame(['education-level-unmatched' => 1], $items['education_skipped']['detail']);
+        $this->assertSame(1, $items['gpa_emptied']['count']);
+        $this->assertSame(1, $items['skills_skipped']['count']);
+        $this->assertSame(1, $items['languages_defaulted']['count']);
+        $this->assertSame(['language-unmatched' => 1], $items['languages_skipped']['detail']);
+        $this->assertSame(1, DB::table('jobseeker_import_summaries')->count());
+    }
+
+    public function test_running_the_lists_again_keeps_the_same_counts_in_the_summary(): void
+    {
+        $this->experience(['company' => ' ']);
+
+        $this->import('experiences');
+        $this->import('experiences');
+
+        $items = json_decode((string) DB::table('jobseeker_import_summaries')->value('items'), true);
+        $this->assertSame(1, collect($items)->firstWhere('code', 'experience_skipped')['count']);
+    }
+
     public function test_the_job_seeker_sees_the_imported_lists_through_the_api(): void
     {
         $this->experience();

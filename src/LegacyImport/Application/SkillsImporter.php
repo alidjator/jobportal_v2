@@ -32,6 +32,11 @@ final class SkillsImporter extends CandidateListImporter
         return 'skill';
     }
 
+    protected function skippedSummaryCode(): string
+    {
+        return 'skills_skipped';
+    }
+
     public function entity(): string
     {
         return self::ENTITY;

@@ -17,6 +17,7 @@ use Src\JobSeeker\Application\EraseJobSeekerData;
 use Src\JobSeeker\Application\Export\DataExportEmailSender;
 use Src\JobSeeker\Application\Export\DataExportEmailTemplates;
 use Src\JobSeeker\Application\Export\ProfileDataExporter;
+use Src\JobSeeker\Application\ImportSummary\ImportSummaryDataExporter;
 use Src\JobSeeker\Application\JobSeekerPermissions;
 use Src\JobSeeker\Application\JobSeekerSettings;
 use Src\JobSeeker\Application\Reminders\ProfileReminderEmailSender;
@@ -28,6 +29,7 @@ use Src\JobSeeker\Domain\DataExportRepository;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\Events\DataExportRequested;
 use Src\JobSeeker\Domain\ExperienceRepository;
+use Src\JobSeeker\Domain\ImportSummaryRepository;
 use Src\JobSeeker\Domain\JobSeekerDataEraser;
 use Src\JobSeeker\Domain\ProfileListRepository;
 use Src\JobSeeker\Domain\ProfileReminderRepository;
@@ -48,6 +50,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseCvTemplateRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseDataExportRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseEducationRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseExperienceRepository;
+use Src\JobSeeker\Infrastructure\Persistence\DatabaseImportSummaryRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseJobSeekerDataEraser;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileListRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileReminderRepository;
@@ -55,6 +58,7 @@ use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseProfileViewRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseResumeRepository;
 use Src\JobSeeker\Interface\Console\CleanUpDataExportsCommand;
+use Src\JobSeeker\Interface\Console\PurgeImportSummariesCommand;
 use Src\JobSeeker\Interface\Console\SendProfileRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
@@ -97,16 +101,22 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
         ProfileReminderRepository::class => DatabaseProfileReminderRepository::class,
         ProfileReminderEmailSender::class => MailProfileReminderSender::class,
         DataExportRepository::class => DatabaseDataExportRepository::class,
+        ImportSummaryRepository::class => DatabaseImportSummaryRepository::class,
         DataExportEmailSender::class => MailDataExportSender::class,
     ];
 
     public function register(): void
     {
-        $this->commands([SendProfileRemindersCommand::class, CleanUpDataExportsCommand::class]);
+        $this->commands([SendProfileRemindersCommand::class, CleanUpDataExportsCommand::class, PurgeImportSummariesCommand::class]);
 
         // Once a day at 10:00 Jakarta time; which accounts are due is decided by the use case.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendProfileRemindersCommand::class)->dailyAt('10:00')->timezone('Asia/Jakarta')->withoutOverlapping()->onOneServer();
+        });
+
+        // Import summaries are readable for a retention period after the first sign-in (`identity.import_summary_retention_days`); a nightly purge deletes the older ones.
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(PurgeImportSummariesCommand::class)->dailyAt('03:30')->timezone('Asia/Jakarta')->withoutOverlapping()->onOneServer();
         });
 
         // The personal data archives live 24 hours; a cleanup every hour keeps the wait for deletion short.
@@ -149,6 +159,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
 
         $this->app->tag(EraseJobSeekerData::class, ErasureStep::class);
         $this->app->tag(ProfileDataExporter::class, PersonalDataExporter::class);
+        $this->app->tag(ImportSummaryDataExporter::class, PersonalDataExporter::class);
 
         Event::listen(UserAnonymized::class, EraseJobSeekerDataWhenUserAnonymized::class);
         Event::listen(DataExportRequested::class, BuildDataExportWhenRequested::class);

@@ -10,13 +10,16 @@ use Src\LegacyImport\Application\ApplicationWriter;
 use Src\LegacyImport\Application\CampaignsImporter;
 use Src\LegacyImport\Application\CampaignWriter;
 use Src\LegacyImport\Application\CompaniesImporter;
+use Src\LegacyImport\Application\CompanySummaryWriter;
 use Src\LegacyImport\Application\CompanyWriter;
 use Src\LegacyImport\Application\EducationsImporter;
 use Src\LegacyImport\Application\ExperiencesImporter;
 use Src\LegacyImport\Application\ImagesImporter;
 use Src\LegacyImport\Application\Importer;
 use Src\LegacyImport\Application\ImportRunner;
+use Src\LegacyImport\Application\ImportSummaryFlusher;
 use Src\LegacyImport\Application\JobQuestionsImporter;
+use Src\LegacyImport\Application\JobSeekerSummaryWriter;
 use Src\LegacyImport\Application\JobSeekerWriter;
 use Src\LegacyImport\Application\JobsImporter;
 use Src\LegacyImport\Application\JobWriter;
@@ -81,6 +84,8 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         ScreeningWriter::class => DatabaseScreeningWriter::class,
         ApplicationWriter::class => DatabaseApplicationWriter::class,
         CampaignWriter::class => DatabaseCampaignWriter::class,
+        JobSeekerSummaryWriter::class => DatabaseJobSeekerSummaryWriter::class,
+        CompanySummaryWriter::class => DatabaseCompanySummaryWriter::class,
         NewsletterSubscriberWriter::class => DatabaseNewsletterSubscriberWriter::class,
         LocationLookup::class => DatabaseLocationLookup::class,
         LegacyFiles::class => LocalLegacyFiles::class,
@@ -98,6 +103,7 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
             $app->make(IdMap::class),
             $app->make(Clock::class),
             $app->make(ReportWriter::class),
+            $app->make(ImportSummaryFlusher::class),
         ));
 
         $this->app->bind(LocalLegacyFiles::class, fn (): LocalLegacyFiles => new LocalLegacyFiles((string) config('legacy_import.files_root'), (int) config('legacy_import.max_file_bytes')));

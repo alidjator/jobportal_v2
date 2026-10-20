@@ -37,6 +37,17 @@ final class LanguagesImporter extends CandidateListImporter
         return 'language';
     }
 
+    /** Every imported language gets the neutral level: the owner is told to set it. */
+    protected function afterMapped(int $userId, ImportContext $context): void
+    {
+        $context->summary->jobSeeker($userId, 'languages_defaulted');
+    }
+
+    protected function skippedSummaryCode(): string
+    {
+        return 'languages_skipped';
+    }
+
     public function entity(): string
     {
         return self::ENTITY;

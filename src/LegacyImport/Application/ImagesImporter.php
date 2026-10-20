@@ -133,6 +133,7 @@ final readonly class ImagesImporter implements Importer
 
         if ($reason !== null) {
             $report->skipped($entity, $legacyId, $reason);
+            $this->recordSkippedAvatar($context, $entity, $newId, $reason);
 
             return;
         }
@@ -141,6 +142,7 @@ final readonly class ImagesImporter implements Importer
             $image = $this->images->process($contents, $maxWidth, $maxHeight);
         } catch (BusinessRuleViolation) {
             $report->skipped($entity, $legacyId, 'invalid-image');
+            $this->recordSkippedAvatar($context, $entity, $newId, 'invalid-image');
 
             return;
         }
@@ -170,6 +172,14 @@ final readonly class ImagesImporter implements Importer
         }
 
         $report->imported($entity);
+    }
+
+    /** The summary of a job seeker says that the picture did not come along (a company's logo and banner are not part of it). */
+    private function recordSkippedAvatar(ImportContext $context, string $entity, int $userId, string $reason): void
+    {
+        if ($entity === self::AVATAR) {
+            $context->summary->jobSeeker($userId, 'avatar_skipped', $reason);
+        }
     }
 
     /** The legacy path, or null when there is no image (empty, or the default picture). */

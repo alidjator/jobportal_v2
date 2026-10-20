@@ -35,6 +35,11 @@ final class ExperiencesImporter extends CandidateListImporter
         return 'experience';
     }
 
+    protected function skippedSummaryCode(): string
+    {
+        return 'experience_skipped';
+    }
+
     public function entity(): string
     {
         return self::ENTITY;

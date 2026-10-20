@@ -67,6 +67,12 @@ abstract class CandidateListImporter implements Importer
         return $time->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
     }
 
+    /** The code of the import summary for a row of this kind that was left out. */
+    abstract protected function skippedSummaryCode(): string;
+
+    /** Called for each row that is going to be imported, for a kind that has something to tell the owner about it. */
+    protected function afterMapped(int $userId, ImportContext $context): void {}
+
     /** Called when a run starts, to forget what the previous run counted. */
     protected function reset(): void {}
 
@@ -136,9 +142,15 @@ abstract class CandidateListImporter implements Importer
         if (is_string($mapped)) {
             $report->skipped($entity, $legacyId, $mapped);
 
+            // A duplicate loses nothing: the owner already has that item.
+            if ($mapped !== 'duplicate') {
+                $context->summary->jobSeeker($userId, $this->skippedSummaryCode(), $mapped);
+            }
+
             return;
         }
 
+        $this->afterMapped($userId, $context);
         $this->counts[$userId]++;
 
         if ($context->write) {

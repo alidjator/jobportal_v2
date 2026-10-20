@@ -58,6 +58,7 @@ use Src\Company\Domain\Events\CompanyVerificationGranted;
 use Src\Company\Domain\Events\CompanyVerificationWithdrawn;
 use Src\Company\Domain\Events\DocumentTypeCreated;
 use Src\Company\Domain\Events\DocumentTypeVerificationRulesChanged;
+use Src\Company\Domain\ImportSummaryRepository;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Domain\MessageDefaultsRepository;
 use Src\Company\Domain\NameChangeRequestRepository;
@@ -78,6 +79,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseCompanyMemberRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseCompanyVerificationBadge;
 use Src\Company\Infrastructure\Persistence\DatabaseDocumentTypeRepository;
+use Src\Company\Infrastructure\Persistence\DatabaseImportSummaryRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseMessageDefaultsRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
@@ -91,6 +93,7 @@ use Src\Company\Infrastructure\Persistence\RepositoryPublicCompanies;
 use Src\Company\Infrastructure\Persistence\RepositorySuspendedMembers;
 use Src\Company\Infrastructure\Persistence\RepositoryTenantRegistry;
 use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
+use Src\Company\Interface\Console\PurgeImportSummariesCommand;
 use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CandidateMessageRules;
@@ -125,6 +128,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
     public array $bindings = [
         CompanyRepository::class => DatabaseCompanyRepository::class,
         CompanyMemberRepository::class => DatabaseCompanyMemberRepository::class,
+        ImportSummaryRepository::class => DatabaseImportSummaryRepository::class,
         AdminCompanyReader::class => DatabaseAdminCompanyReader::class,
         CompanyDirectory::class => RepositoryCompanyDirectory::class,
         TenantRegistry::class => RepositoryTenantRegistry::class,
@@ -160,13 +164,14 @@ final class CompanyServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
-        $this->commands([PurgeEndedInvitationsCommand::class, PurgeNameChangeDocumentsCommand::class]);
+        $this->commands([PurgeEndedInvitationsCommand::class, PurgeNameChangeDocumentsCommand::class, PurgeImportSummariesCommand::class]);
 
         $this->app->bind(CompanyEmailFrame::class, fn ($app): CompanyEmailFrame => new CompanyEmailFrame($app->make(PublicCompanies::class), (string) $app->make('config')->get('app.name')));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(PurgeEndedInvitationsCommand::class)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeNameChangeDocumentsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeImportSummariesCommand::class)->dailyAt('03:45')->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {

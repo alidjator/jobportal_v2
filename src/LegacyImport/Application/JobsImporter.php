@@ -175,6 +175,10 @@ final class JobsImporter implements Importer
         if ($reason !== null) {
             $report->skipped(self::ENTITY, $legacyId, $reason);
 
+            if ($companyId !== null && $reason === 'pending-edit-skipped') {
+                $context->summary->company($companyId, 'pending_edits_skipped');
+            }
+
             return;
         }
 
@@ -188,6 +192,7 @@ final class JobsImporter implements Importer
             $context->idMap->remember(self::JOB, $legacyId, $this->jobs->insert($job), $context->clock->now());
         }
 
+        $context->summary->company((int) $companyId, 'jobs_imported', $job->status);
         $report->imported(self::ENTITY);
     }
 
@@ -229,6 +234,10 @@ final class JobsImporter implements Importer
         $appliesOutside = in_array($row->apply_on, ['email', 'custom_url'], true);
         $status = $this->status($legacyStatus, $appliesOutside, $deadline, $state['today']);
 
+        if ($appliesOutside && $status === 'closed') {
+            $context->summary->company($companyId, 'jobs_closed_apply_outside');
+        }
+
         if ($status === 'expired' && $legacyStatus === 'active' && ! $appliesOutside) {
             $report->flagged(self::ENTITY, $legacyId, 'deadline-passed-expired');
         }
@@ -241,6 +250,7 @@ final class JobsImporter implements Importer
             } else {
                 $status = 'draft';
                 $report->flagged(self::ENTITY, $legacyId, 'draft-incomplete-'.$gap);
+                $context->summary->company($companyId, 'jobs_draft_incomplete', $gap);
             }
         }
 

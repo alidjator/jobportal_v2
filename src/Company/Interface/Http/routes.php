@@ -10,6 +10,7 @@ use Src\Company\Interface\Http\Controllers\CompanyNameChangeController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CompanySettingsController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
+use Src\Company\Interface\Http\Controllers\ImportSummaryController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
 use Src\Company\Interface\Http\Controllers\MessageDefaultsController;
 use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
@@ -56,6 +57,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/documents/{typeId}', [CompanyDocumentController::class, 'store'])->whereNumber('typeId');
     Route::delete('company/documents/{typeId}', [CompanyDocumentController::class, 'destroy'])->whereNumber('typeId');
     Route::get('company/documents/{typeId}/file', [CompanyDocumentController::class, 'file'])->whereNumber('typeId');
+
+    // What the karir.pkp import carried for the own company (company admins; `404 no-import-summary` for a company that was not imported).
+    Route::get('company/import-summary', [ImportSummaryController::class, 'show']);
+    Route::post('company/import-summary/dismiss', [ImportSummaryController::class, 'dismiss']);
 
     // The own company profile: any member reads it, the use cases check that the caller is a company admin to change it.
     Route::get('company/profile', [CompanyProfileController::class, 'show']);

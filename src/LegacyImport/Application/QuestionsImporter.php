@@ -91,6 +91,10 @@ final class QuestionsImporter implements Importer
         if ($reason !== null) {
             $report->skipped(self::ENTITY, $legacyId, $reason);
 
+            if ($companyId !== null) {
+                $context->summary->company($companyId, 'screening_questions_skipped', $reason);
+            }
+
             return;
         }
 

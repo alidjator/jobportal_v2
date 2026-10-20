@@ -14,4 +14,12 @@ interface FirstSignIns
      * @return list<int>
      */
     public function jobSeekerIdsBefore(DateTimeImmutable $cutoff, int $afterId, int $limit): array;
+
+    /**
+     * When each of these accounts (any type) signed in for the first time; an account that never did is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, DateTimeImmutable>
+     */
+    public function firstSignedInAt(array $userIds): array;
 }

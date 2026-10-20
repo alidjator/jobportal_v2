@@ -115,6 +115,7 @@ final readonly class LinksImporter implements Importer
 
         if ($url === '' || mb_strlen($url) > self::URL_MAX) {
             $report->skipped(self::ENTITY, $link['legacyId'], 'link-invalid');
+            $context->summary->jobSeeker((int) $userId, 'links_skipped', 'link-invalid');
 
             return;
         }

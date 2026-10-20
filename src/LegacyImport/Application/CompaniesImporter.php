@@ -146,6 +146,11 @@ final readonly class CompaniesImporter implements Importer
             $companyId = $this->companies->insert($company);
             $this->stages->provision($companyId);
             $context->idMap->remember(self::COMPANY, $legacyId, $companyId, $context->clock->now());
+            $context->summary->openCompany($companyId);
+
+            if ($company->verifiedAt !== null) {
+                $context->summary->company($companyId, 'verified_badge_kept');
+            }
         }
 
         $report->imported(self::ENTITY);

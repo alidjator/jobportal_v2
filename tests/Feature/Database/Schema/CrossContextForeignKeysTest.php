@@ -16,6 +16,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
     /** @var array<string, array<string, list<string>>> referenced table => table => columns */
     private const array EXPECTED = [
         'identity_users' => [
+            'jobseeker_import_summaries' => ['user_id'],
+            'company_import_summaries' => ['dismissed_by_user_id'],
             'company_members' => ['user_id'],
             'company_invitations' => ['invited_by_user_id'],
             'job_assignments' => ['user_id', 'assigned_by_user_id'],
@@ -91,6 +93,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'company_name_change_requests' => ['decided_by_admin_id'],
         ],
         'company_companies' => [
+            'company_import_summaries' => ['company_id'],
             'approval_instances' => ['company_id'],
             'workforce_requisitions' => ['company_id'],
             'recruitment_interview_kits' => ['company_id'],

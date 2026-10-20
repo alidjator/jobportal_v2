@@ -178,6 +178,7 @@ final class EloquentUserRepository implements UserRepository
             $model->deletion_requested_at?->toDateTimeImmutable(),
             $model->anonymized_at?->toDateTimeImmutable(),
             $model->first_login_at?->toDateTimeImmutable(),
+            $model->imported_at?->toDateTimeImmutable(),
         );
     }
 }

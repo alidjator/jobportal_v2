@@ -29,6 +29,7 @@ final class User extends AggregateRoot
         private ?DateTimeImmutable $deletionRequestedAt,
         private ?DateTimeImmutable $anonymizedAt,
         private ?DateTimeImmutable $firstLoginAt = null,
+        private ?DateTimeImmutable $importedAt = null,
     ) {}
 
     /** A new self-registered job seeker: active, email not yet verified. Company members are created by an admin. */
@@ -147,6 +148,12 @@ final class User extends AggregateRoot
     public function firstLoginAt(): ?DateTimeImmutable
     {
         return $this->firstLoginAt;
+    }
+
+    /** When the account came from the karir.pkp import; null for an account made on this platform. */
+    public function importedAt(): ?DateTimeImmutable
+    {
+        return $this->importedAt;
     }
 
     public function deletionRequestedAt(): ?DateTimeImmutable

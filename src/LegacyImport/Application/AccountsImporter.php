@@ -127,6 +127,14 @@ final readonly class AccountsImporter implements Importer
             ));
 
             $context->idMap->remember(self::USER, $legacyId, $newId, $context->clock->now());
+
+            if ($type === 'job_seeker') {
+                $context->summary->openJobSeeker($newId);
+
+                if (! LegacyText::isBcrypt($row->password)) {
+                    $context->summary->jobSeeker($newId, 'password_reset_needed');
+                }
+            }
         }
 
         $report->imported(self::ENTITY);
