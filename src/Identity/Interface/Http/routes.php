@@ -5,6 +5,7 @@ use Src\Identity\Interface\Http\Controllers\AvatarController;
 use Src\Identity\Interface\Http\Controllers\CancelAccountDeletionController;
 use Src\Identity\Interface\Http\Controllers\ChangePasswordController;
 use Src\Identity\Interface\Http\Controllers\CurrentUserController;
+use Src\Identity\Interface\Http\Controllers\EmailChangeController;
 use Src\Identity\Interface\Http\Controllers\ForgotPasswordController;
 use Src\Identity\Interface\Http\Controllers\MemberTwoFactorSignInController;
 use Src\Identity\Interface\Http\Controllers\MyTwoFactorController;
@@ -33,6 +34,11 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('auth/email/resend', ResendEmailVerificationCodeController::class);
 
     Route::put('me/password', ChangePasswordController::class);
+
+    // The self-service change of the sign-in email (code to the new address, confirmed with the password); limits are kept by the use cases.
+    Route::post('me/email-change', [EmailChangeController::class, 'store']);
+    Route::post('me/email-change/confirm', [EmailChangeController::class, 'confirm']);
+    Route::delete('me/email-change', [EmailChangeController::class, 'destroy']);
 
     // The second factor of a company member (any other account is refused by the use cases).
     Route::get('me/two-factor', [MyTwoFactorController::class, 'show']);

@@ -20,7 +20,7 @@ final readonly class EloquentUserDataEraser implements UserDataEraser
             ->where('subject_id', $userId)
             ->delete();
 
-        foreach (['identity_user_recovery_codes', 'identity_user_two_factor_challenges', 'identity_user_two_factor'] as $table) {
+        foreach (['identity_user_recovery_codes', 'identity_user_two_factor_challenges', 'identity_user_two_factor', 'identity_email_changes'] as $table) {
             $this->connection->table($table)->where('user_id', $userId)->delete();
         }
 

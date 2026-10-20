@@ -17,6 +17,18 @@ final class IdentityEmailTemplates
 
     public const string TENANT_INTERNAL = 'identity.tenant_internal';
 
+    public const string EMAIL_CHANGE_CODE = 'account.email_change_code';
+
+    public const string EMAIL_CHANGE_TAKEN = 'account.email_change_taken';
+
+    public const string EMAIL_CHANGED = 'account.email_changed';
+
+    public const string EMAIL_CORRECTED_OLD = 'account.email_corrected_old';
+
+    public const string EMAIL_CORRECTED_NEW = 'account.email_corrected_new';
+
+    public const string TWO_FACTOR_RESET = 'account.two_factor_reset';
+
     public const string ACTIVATION_JOB_SEEKER = 'activation.job_seeker';
 
     public const string ACTIVATION_JOB_SEEKER_NO_PASSWORD = 'activation.job_seeker_no_password';
@@ -113,6 +125,86 @@ final class IdentityEmailTemplates
                 TranslatedText::fromArray([
                     'id' => 'Halo {{name}}, akun Anda di ONESIS Career sudah siap, tetapi Anda belum masuk. Masuk atau aktifkan akun di {{activation_url}}. Ini pengingat terakhir; kami tidak mengirim email lain sampai Anda masuk. Kami tidak pernah meminta kata sandi atau kode lewat email. Bantuan: {{support_email}}.',
                     'en' => 'Hello {{name}}, your account on ONESIS Career is ready, but you have not signed in yet. Sign in or activate your account at {{activation_url}}. This is the last reminder; we send nothing else until you sign in. We never ask for a password or a code by email. Help: {{support_email}}.',
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EMAIL_CHANGE_CODE,
+                'Sent with the code that confirms a change of the sign-in email: to the new address, and (for an account without a password) to the current address as well.',
+                [
+                    new EmailVariable('name', 'The recipient\'s name', 'Siti'),
+                    new EmailVariable('new_email', 'The address the sign-in email would change to', 'siti.baru@example.test'),
+                    new EmailVariable('code', 'The six-digit code', '049213', required: true),
+                    new EmailVariable('minutes', 'How many minutes the code stays valid', '15'),
+                ],
+                TranslatedText::fromArray(['id' => 'Kode untuk mengganti email masuk Anda', 'en' => 'Your code to change your sign-in email']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nAda permintaan untuk mengganti email masuk akun Anda menjadi **{{new_email}}**. Gunakan kode ini untuk mengonfirmasinya:\n\n# {{code}}\n\nKode berlaku selama {{minutes}} menit dan hanya dapat digunakan sekali.\n\nJika Anda tidak meminta ini, abaikan email ini dan segera ganti kata sandi Anda.",
+                    'en' => "Hello {{name}},\n\nSomeone asked to change the sign-in email of your account to **{{new_email}}**. Use this code to confirm it:\n\n# {{code}}\n\nThe code is valid for {{minutes}} minutes and can be used once.\n\nIf you did not ask for this, ignore this email and change your password now.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EMAIL_CHANGE_TAKEN,
+                'Sent to the owner of an address that someone else tried to use as a new sign-in email. It holds no code.',
+                [new EmailVariable('name', 'The recipient\'s name', 'Siti')],
+                TranslatedText::fromArray(['id' => 'Seseorang mencoba memakai alamat email Anda', 'en' => 'Someone tried to use your email address']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nSeseorang mencoba memakai alamat email ini sebagai email masuk untuk akun lain. Karena alamat ini sudah dipakai akun Anda, tidak ada yang berubah dan tidak ada tindakan yang perlu Anda lakukan.\n\nJika ini mengkhawatirkan Anda, ganti kata sandi Anda.",
+                    'en' => "Hello {{name}},\n\nSomeone tried to use this email address as the sign-in email of another account. Because your account already uses it, nothing changed and you do not need to do anything.\n\nIf this worries you, change your password.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EMAIL_CHANGED,
+                'Sent to the old address after the sign-in email was changed (essential: it lets the owner report a hijack).',
+                [
+                    new EmailVariable('name', 'The recipient\'s name', 'Siti'),
+                    new EmailVariable('new_email', 'The new sign-in email', 'siti.baru@example.test'),
+                    new EmailVariable('support_contact', 'The support address and, when set, the WhatsApp number', 'bantuan@example.test / WhatsApp 0812-0000-0000'),
+                ],
+                TranslatedText::fromArray(['id' => 'Email masuk akun Anda telah diganti', 'en' => 'The sign-in email of your account was changed']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nEmail masuk akun Anda diganti menjadi **{{new_email}}**, dan semua sesi lain telah diakhiri.\n\nJika ini bukan Anda, hubungi kami segera: {{support_contact}}.",
+                    'en' => "Hello {{name}},\n\nThe sign-in email of your account was changed to **{{new_email}}**, and every other session was ended.\n\nIf this was not you, contact us at once: {{support_contact}}.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EMAIL_CORRECTED_OLD,
+                'Sent to the old address when the platform team corrected the sign-in email of an account after an identity check.',
+                [
+                    new EmailVariable('name', 'The recipient\'s name', 'Siti'),
+                    new EmailVariable('new_email', 'The new sign-in email', 'siti.baru@example.test'),
+                    new EmailVariable('support_contact', 'The support address and, when set, the WhatsApp number', 'bantuan@example.test / WhatsApp 0812-0000-0000'),
+                ],
+                TranslatedText::fromArray(['id' => 'Email masuk akun Anda diubah oleh tim platform', 'en' => 'The sign-in email of your account was changed by the platform team']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nTim platform mengubah email masuk akun Anda menjadi **{{new_email}}** setelah pemeriksaan identitas, dan semua sesi telah diakhiri.\n\nJika ini bukan atas permintaan Anda, hubungi kami segera: {{support_contact}}.",
+                    'en' => "Hello {{name}},\n\nThe platform team changed the sign-in email of your account to **{{new_email}}** after an identity check, and every session was ended.\n\nIf this was not at your request, contact us at once: {{support_contact}}.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::EMAIL_CORRECTED_NEW,
+                'Sent to the new address after the platform team corrected the sign-in email of an account: the link where the owner sets a password with a code sent here.',
+                [
+                    new EmailVariable('name', 'The recipient\'s name', 'Siti'),
+                    new EmailVariable('activation_url', 'The page where the password is set', 'https://karir.example/aktifkan-akun', required: true),
+                    new EmailVariable('support_contact', 'The support address and, when set, the WhatsApp number', 'bantuan@example.test / WhatsApp 0812-0000-0000'),
+                ],
+                TranslatedText::fromArray(['id' => 'Email masuk akun Anda diperbarui', 'en' => 'The sign-in email of your account was updated']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nTim platform memperbarui akun Anda agar memakai alamat email ini untuk masuk. Atur kata sandi Anda di {{activation_url}}: kami akan mengirim kode 6 digit ke alamat ini, yang sekaligus memverifikasinya.\n\nKami tidak pernah meminta kata sandi atau kode lewat email, WhatsApp, atau telepon. Bantuan: {{support_contact}}.",
+                    'en' => "Hello {{name}},\n\nThe platform team updated your account to use this email address to sign in. Set your password at {{activation_url}}: we will send a 6-digit code to this address, which also verifies it.\n\nWe never ask for a password or a code by email, WhatsApp or phone. Help: {{support_contact}}.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::TWO_FACTOR_RESET,
+                'Sent to an account whose two-step verification the platform team removed after an identity check (a lost device).',
+                [
+                    new EmailVariable('name', 'The recipient\'s name', 'Siti'),
+                    new EmailVariable('support_contact', 'The support address and, when set, the WhatsApp number', 'bantuan@example.test / WhatsApp 0812-0000-0000'),
+                ],
+                TranslatedText::fromArray(['id' => 'Verifikasi dua langkah akun Anda direset', 'en' => 'The two-step verification of your account was reset']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nTim platform menghapus verifikasi dua langkah akun Anda setelah pemeriksaan identitas, dan semua sesi telah diakhiri. Saat Anda masuk berikutnya, Anda mungkin diminta memasang aplikasi autentikator lagi.\n\nJika ini bukan atas permintaan Anda, hubungi kami segera: {{support_contact}}.",
+                    'en' => "Hello {{name}},\n\nThe platform team removed the two-step verification of your account after an identity check, and every session was ended. The next time you sign in you may be asked to set up an authenticator app again.\n\nIf this was not at your request, contact us at once: {{support_contact}}.",
                 ]),
             ),
         ];

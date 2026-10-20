@@ -4,10 +4,14 @@ namespace Src\Identity\Infrastructure;
 
 use Google\Auth\AccessToken;
 use Google\Auth\Cache\FileSystemCacheItemPool;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Src\Identity\Application\Account\AccountNoticeSender;
 use Src\Identity\Application\Account\AdminAccessReader;
 use Src\Identity\Application\Account\IdentityAccountActivation;
 use Src\Identity\Application\Account\IdentityAdminContacts;
@@ -31,6 +35,7 @@ use Src\Identity\Application\Auth\SignInThrottle;
 use Src\Identity\Application\Auth\VerificationCodeGenerator;
 use Src\Identity\Application\Auth\VerificationCodeHasher;
 use Src\Identity\Application\Auth\VerificationCodeSender;
+use Src\Identity\Application\EmailChange\EmailChangeThrottle;
 use Src\Identity\Application\Erasure\ErasureLedger;
 use Src\Identity\Application\IdentityEmailTemplates;
 use Src\Identity\Application\IdentityPermissions;
@@ -45,6 +50,7 @@ use Src\Identity\Application\TwoFactor\UserTwoFactorChallenges;
 use Src\Identity\Application\TwoFactor\UserTwoFactors;
 use Src\Identity\Domain\ActivationEmailRepository;
 use Src\Identity\Domain\AdminRepository;
+use Src\Identity\Domain\EmailChangeRepository;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
 use Src\Identity\Domain\Events\AdminPasswordReset;
@@ -79,6 +85,7 @@ use Src\Identity\Infrastructure\Auth\HmacVerificationCodeHasher;
 use Src\Identity\Infrastructure\Auth\LaravelPasswordHasher;
 use Src\Identity\Infrastructure\Auth\RandomTwoFactorTokens;
 use Src\Identity\Infrastructure\Auth\RandomVerificationCodeGenerator;
+use Src\Identity\Infrastructure\Auth\RateLimiterEmailChangeThrottle;
 use Src\Identity\Infrastructure\Auth\RateLimiterPasswordResetRequestThrottle;
 use Src\Identity\Infrastructure\Auth\RateLimiterRegistrationThrottle;
 use Src\Identity\Infrastructure\Auth\RateLimiterSignInThrottle;
@@ -89,10 +96,12 @@ use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Identity\Infrastructure\Mail\ConfigActivationLinks;
+use Src\Identity\Infrastructure\Mail\MailAccountNoticeSender;
 use Src\Identity\Infrastructure\Mail\MailActivationEmailSender;
 use Src\Identity\Infrastructure\Mail\MailTwoFactorNoticeSender;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
 use Src\Identity\Infrastructure\Persistence\DatabaseActivationEmailRepository;
+use Src\Identity\Infrastructure\Persistence\DatabaseEmailChangeRepository;
 use Src\Identity\Infrastructure\Persistence\DatabaseErasureLedger;
 use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
@@ -155,6 +164,11 @@ final class IdentityServiceProvider extends ContextServiceProvider
         'admin' => AdminModel::class,
     ];
 
+    /** The support actions of an admin on one account (activation email, password reset code, verification code): 5 an hour per admin and account. */
+    public const string SUPPORT_ACTION_LIMITER = 'admin-user-support';
+
+    private const int SUPPORT_ACTIONS_PER_HOUR = 5;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         UserRepository::class => EloquentUserRepository::class,
@@ -176,6 +190,9 @@ final class IdentityServiceProvider extends ContextServiceProvider
         ActivationEmailRepository::class => DatabaseActivationEmailRepository::class,
         ActivationEmailSender::class => MailActivationEmailSender::class,
         ActivationLinks::class => ConfigActivationLinks::class,
+        EmailChangeRepository::class => DatabaseEmailChangeRepository::class,
+        EmailChangeThrottle::class => RateLimiterEmailChangeThrottle::class,
+        AccountNoticeSender::class => MailAccountNoticeSender::class,
         MemberTwoFactor::class => IdentityMemberTwoFactor::class,
         TwoFactorNoticeSender::class => MailTwoFactorNoticeSender::class,
         MemberSessions::class => IdentityMemberSessions::class,
@@ -241,6 +258,8 @@ final class IdentityServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         Relation::morphMap(self::MORPH_MAP);
+
+        RateLimiter::for(self::SUPPORT_ACTION_LIMITER, fn (Request $request): Limit => Limit::perHour(self::SUPPORT_ACTIONS_PER_HOUR)->by('admin-user-support|'.$request->user()?->getAuthIdentifier().'|'.$request->route('id')));
 
         $this->app->tag(AccountDataExporter::class, PersonalDataExporter::class);
 

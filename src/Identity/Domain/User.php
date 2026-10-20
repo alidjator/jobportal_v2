@@ -204,6 +204,13 @@ final class User extends AggregateRoot
         $this->emailVerifiedAt ??= $at;
     }
 
+    /** Sets a new sign-in email (lower case). It counts as verified at `$verifiedAt` when a code proved the mailbox, and as unverified (null) when a platform admin corrected it. */
+    public function changeEmail(string $email, ?DateTimeImmutable $verifiedAt): void
+    {
+        $this->email = mb_strtolower(trim($email));
+        $this->emailVerifiedAt = $verifiedAt;
+    }
+
     /** True while the account is deactivated and waiting for the end of the deletion grace period. */
     public function isPendingDeletion(): bool
     {

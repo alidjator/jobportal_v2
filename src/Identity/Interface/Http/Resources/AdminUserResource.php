@@ -28,6 +28,7 @@ final class AdminUserResource extends JsonResource
             'deletion_requested_at' => $user->deletionRequestedAt()?->format(DateTimeInterface::ATOM),
             'email_suppressed' => $this->resource->emailSuppressionReason !== null,
             'email_suppression_reason' => $this->resource->emailSuppressionReason,
+            'only_company_admin' => $this->when($this->resource->onlyCompanyAdmin !== null, $this->resource->onlyCompanyAdmin),
         ];
     }
 }

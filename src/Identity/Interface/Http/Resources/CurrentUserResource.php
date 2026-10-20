@@ -2,17 +2,20 @@
 
 namespace Src\Identity\Interface\Http\Resources;
 
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Identity\Application\Account\CurrentUserView;
+use Src\Identity\Domain\MaskedEmail;
 
-/** The account of `GET me`: the fields of a sign-in response `imported_from_legacy` (the account came from karir.pkp) and `email_deliverable`, false while the address is on the suppression list (the front end asks the person to check or change it). @property CurrentUserView $resource */
+/** The account of `GET me`: the fields of a sign-in response `imported_from_legacy` (the account came from karir.pkp) and `pending_email_change` (the masked new address and when its code expires, or null) and `email_deliverable`, false while the address is on the suppression list (the front end asks the person to check or change it). @property CurrentUserView $resource */
 final class CurrentUserResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
         $user = $this->resource->user;
+        $pending = $this->resource->pendingEmailChange;
 
         return [
             'id' => $user->id,
@@ -25,6 +28,7 @@ final class CurrentUserResource extends JsonResource
             'has_avatar' => $user->avatarPath() !== null,
             'email_deliverable' => $this->resource->emailDeliverable,
             'imported_from_legacy' => $user->importedAt() !== null,
+            'pending_email_change' => $pending === null ? null : ['email_masked' => MaskedEmail::of($pending->newEmail), 'expires_at' => $pending->expiresAt->format(DateTimeInterface::ATOM)],
         ];
     }
 }

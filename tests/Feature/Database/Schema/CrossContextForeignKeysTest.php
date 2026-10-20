@@ -62,6 +62,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'identity_user_two_factor' => ['user_id'],
             'identity_user_recovery_codes' => ['user_id'],
             'identity_user_two_factor_challenges' => ['user_id'],
+            'identity_email_changes' => ['user_id'],
             'company_name_change_requests' => ['requested_by_user_id'],
             'organization_group_members' => ['user_id'],
             'organization_support_grants' => ['granted_by_user_id', 'revoked_by_user_id'],

@@ -11,11 +11,14 @@ final class IdentityPermissions
 
     public const string USERS_VIEW = 'users.view';
 
+    public const string USERS_MANAGE = 'users.manage';
+
     /** @return list<PermissionDefinition> */
     public static function definitions(): array
     {
         return [
             new PermissionDefinition(self::USERS_VIEW, self::GROUP),
+            new PermissionDefinition(self::USERS_MANAGE, self::GROUP),
         ];
     }
 }

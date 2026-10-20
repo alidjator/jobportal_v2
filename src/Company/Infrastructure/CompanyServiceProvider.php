@@ -17,6 +17,7 @@ use Src\Company\Application\Invitations\InvitationSender;
 use Src\Company\Application\Invitations\InvitationThrottle;
 use Src\Company\Application\Messages\CompanyCandidateMessageRules;
 use Src\Company\Application\Messages\RepositoryCompanyMessageTexts;
+use Src\Company\Application\Team\CompanyMemberEmailDomains;
 use Src\Company\Application\Team\CompanyTwoFactorPolicy;
 use Src\Company\Application\Team\LastCompanyAdminDeletionGuard;
 use Src\Company\Application\Team\MemberNoticeSender;
@@ -66,6 +67,7 @@ use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfNameChange;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
+use Src\Company\Infrastructure\Listeners\NotifyMemberOfAdminTwoFactorReset;
 use Src\Company\Infrastructure\Listeners\NotifyMemberOfPermissionChange;
 use Src\Company\Infrastructure\Listeners\RecordCompanyAuditEntries;
 use Src\Company\Infrastructure\Listeners\ReleaseMembershipWhenUserAnonymized;
@@ -95,6 +97,7 @@ use Src\Company\Infrastructure\Persistence\RepositoryTenantRegistry;
 use Src\Company\Interface\Console\PurgeEndedInvitationsCommand;
 use Src\Company\Interface\Console\PurgeImportSummariesCommand;
 use Src\Company\Interface\Console\PurgeNameChangeDocumentsCommand;
+use Src\Identity\Domain\Events\AccountTwoFactorResetByAdmin;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyDirectory;
@@ -105,6 +108,7 @@ use Src\Shared\Application\Company\CompanyMemberDeletionGuard;
 use Src\Shared\Application\Company\CompanyMembershipResolver;
 use Src\Shared\Application\Company\CompanyMessageTexts;
 use Src\Shared\Application\Company\CompanyTeam;
+use Src\Shared\Application\Company\MemberEmailDomains;
 use Src\Shared\Application\Company\MemberSignInGuard;
 use Src\Shared\Application\Company\MemberTwoFactorPolicy;
 use Src\Shared\Application\Company\PublicCompanies;
@@ -134,6 +138,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         TenantRegistry::class => RepositoryTenantRegistry::class,
         CompanyTeam::class => RepositoryCompanyTeam::class,
         CompanyMemberDeletionGuard::class => LastCompanyAdminDeletionGuard::class,
+        MemberEmailDomains::class => CompanyMemberEmailDomains::class,
         PublicCompanies::class => RepositoryPublicCompanies::class,
         CompanyLetterheads::class => RepositoryCompanyLetterheads::class,
         CompanyLocationRepository::class => DatabaseCompanyLocationRepository::class,
@@ -222,6 +227,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
         Event::listen(CompanyMemberTwoFactorReset::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberTwoFactorReset']);
         Event::listen(CompanyMemberTwoFactorReset::class, [NotifyMemberOfPermissionChange::class, 'onTwoFactorReset']);
         Event::listen(CompanySettingChanged::class, RequireTwoFactorWhenCompanySwitchesItOn::class);
+        Event::listen(AccountTwoFactorResetByAdmin::class, NotifyMemberOfAdminTwoFactorReset::class);
         Event::listen(CompanyMemberReactivated::class, [RecordCompanyAuditEntries::class, 'onCompanyMemberReactivated']);
         Event::listen(CompanyOwnerTransferred::class, [RecordCompanyAuditEntries::class, 'onCompanyOwnerTransferred']);
         Event::listen(CompanyInvitationUpdated::class, [RecordCompanyAuditEntries::class, 'onCompanyInvitationUpdated']);

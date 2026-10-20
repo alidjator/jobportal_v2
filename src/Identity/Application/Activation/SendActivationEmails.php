@@ -122,6 +122,24 @@ final readonly class SendActivationEmails
         );
     }
 
+    /**
+     * Sends one account its activation email on a platform admin's support request. It is logged as `manual` (any number of times), so the stop rule and the reminder timing of the
+     * batches are left alone.
+     *
+     * @throws BusinessRuleViolation `activation-support-contact-missing` or `activation-url-missing` while the settings are not filled
+     */
+    public function sendOne(User $user): void
+    {
+        $now = $this->clock->now();
+        $blocked = $this->setupGuards($user->isCompanyMember() ? UserType::CompanyMember : UserType::JobSeeker);
+
+        if ($blocked !== []) {
+            throw $blocked[0];
+        }
+
+        $this->send($user, ActivationKind::Manual, 'support-'.$now->format('Ymd'), $now);
+    }
+
     private function send(User $user, ActivationKind $kind, string $batch, DateTimeImmutable $now): bool
     {
         $id = (int) $user->id;
@@ -172,15 +190,7 @@ final readonly class SendActivationEmails
     /** @return list<BusinessRuleViolation> the guards that stop a real run */
     private function guards(ActivationRun $run, bool $staffTest, DateTimeImmutable $now): array
     {
-        $blocked = [];
-
-        if ($this->settings->text(self::SUPPORT_EMAIL) === '') {
-            $blocked[] = new BusinessRuleViolation('Set the setting platform.support_email before sending activation emails.', 'activation-support-contact-missing');
-        }
-
-        if ($this->links->activationUrl($run->audience) === null || ($run->audience === UserType::JobSeeker && $this->links->signInUrl() === null)) {
-            $blocked[] = new BusinessRuleViolation('Set the activation and sign-in page URLs (see .env.example) before sending activation emails.', 'activation-url-missing');
-        }
+        $blocked = $this->setupGuards($run->audience);
 
         if ($staffTest) {
             return $blocked;
@@ -198,6 +208,22 @@ final readonly class SendActivationEmails
 
         if ($limit !== null) {
             $blocked[] = $limit;
+        }
+
+        return $blocked;
+    }
+
+    /** @return list<BusinessRuleViolation> the settings that must be filled before any activation email goes out */
+    private function setupGuards(UserType $audience): array
+    {
+        $blocked = [];
+
+        if ($this->settings->text(self::SUPPORT_EMAIL) === '') {
+            $blocked[] = new BusinessRuleViolation('Set the setting platform.support_email before sending activation emails.', 'activation-support-contact-missing');
+        }
+
+        if ($this->links->activationUrl($audience) === null || ($audience === UserType::JobSeeker && $this->links->signInUrl() === null)) {
+            $blocked[] = new BusinessRuleViolation('Set the activation and sign-in page URLs (see .env.example) before sending activation emails.', 'activation-url-missing');
         }
 
         return $blocked;

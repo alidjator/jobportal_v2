@@ -5,7 +5,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | Code | Status | Raised in | Message |
 |---|---|---|---|
 | `account-deactivated` | 403 | Identity | This account has been deactivated. |
-| `account-not-active` | 409 | Identity | Only an active account can be deleted. |
+| `account-not-active` | 409 | Identity | The account is not active. |
+| `account-not-correctable` | 409 | Identity | Psychologist accounts are managed through the assessment console, not here. |
+| `account-not-imported` | 409 | Identity | Only an account imported from karir.pkp gets an activation email. |
 | `account-suspended` | 403 | Identity | This account has been suspended. |
 | `activation-batch-limit-exceeded` | 422 | Identity |  |
 | `activation-limit-invalid` | 422 | Identity | The settings identity.activation_bounce_limit_percent and identity.activation_complaint_limit_percent must be numbers. |
@@ -103,8 +105,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `education-limit-reached` | 409 | JobSeeker |  |
 | `email-already-registered` | 409 | Assessment, Company, Identity | An account with this email already exists. |
 | `email-already-verified` | 409 | Identity | The email address is already verified. |
+| `email-change-code-invalid` | 422 | Identity | The code is incorrect. |
+| `email-change-expired` | 422 | Identity | There is no pending email change, or it has expired. Request a new code. |
+| `email-change-limit-reached` | 429 | Identity | Too many email change requests. Try again later. |
+| `email-change-too-soon` | 429 | Identity | The email address was changed recently. Try again later. |
 | `email-domain-not-allowed` | 422 | Company | This company only invites email addresses of its allowed domains. |
+| `email-in-use` | 409 | Identity | Another account already uses this email address. |
 | `email-not-verified` | 403, 409 | Identity, Job, Training | Verify your email address before continuing. |
+| `email-undeliverable` | 422 | Identity | This address does not receive email, so the code could not arrive. Use another address. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `entry-unavailable` | 422 | JobInvitation | This candidate cannot be invited right now. |
 | `experience-limit-reached` | 409 | JobSeeker |  |

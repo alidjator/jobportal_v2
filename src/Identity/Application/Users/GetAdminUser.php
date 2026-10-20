@@ -2,6 +2,7 @@
 
 namespace Src\Identity\Application\Users;
 
+use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Audit\AuditAction;
@@ -9,6 +10,9 @@ use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
 use Src\Shared\Application\Audit\AuditTrail;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Company\CompanyMembership;
+use Src\Shared\Application\Company\CompanyMembershipResolver;
+use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Email\EmailSuppressions;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -21,6 +25,8 @@ final readonly class GetAdminUser
         private EmailSuppressions $suppressions,
         private AuditTrail $audit,
         private Clock $clock,
+        private CompanyMembershipResolver $memberships,
+        private CompanyTeam $teams,
     ) {}
 
     /**
@@ -43,6 +49,22 @@ final readonly class GetAdminUser
             AuditActorType::Admin, (int) $actor->id, AuditAction::USER_VIEWED, 'user', $userId, [], $ipAddress, $userAgent, $this->clock->now(),
         ));
 
-        return new AdminUserView($user, $this->suppressions->reasons([$user->email()])[mb_strtolower($user->email())] ?? null);
+        return new AdminUserView($user, $this->suppressions->reasons([$user->email()])[mb_strtolower($user->email())] ?? null, $this->isOnlyCompanyAdmin($user));
+    }
+
+    /** Null for an account that is not a company member; true for the one company admin of a company. */
+    private function isOnlyCompanyAdmin(User $user): ?bool
+    {
+        if (! $user->isCompanyMember()) {
+            return null;
+        }
+
+        $membership = $this->memberships->forUser((int) $user->id);
+
+        if ($membership === null || ! $membership->isCompanyAdmin()) {
+            return false;
+        }
+
+        return count(array_filter($this->teams->roles($membership->companyId), static fn (string $role): bool => $role === CompanyMembership::ROLE_COMPANY_ADMIN)) === 1;
     }
 }

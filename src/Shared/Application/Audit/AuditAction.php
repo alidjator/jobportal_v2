@@ -47,6 +47,18 @@ final class AuditAction
 
     public const string ACCOUNT_ANONYMIZED = 'account.anonymized';
 
+    public const string ACCOUNT_EMAIL_CHANGED = 'account.email_changed';
+
+    public const string ACCOUNT_EMAIL_CORRECTED = 'account.email_corrected';
+
+    public const string ACCOUNT_TWO_FACTOR_RESET = 'account.two_factor_reset';
+
+    public const string ACCOUNT_ACTIVATION_EMAIL_SENT = 'account.activation_email_sent';
+
+    public const string ACCOUNT_PASSWORD_RESET_SENT = 'account.password_reset_sent';
+
+    public const string ACCOUNT_VERIFICATION_RESENT = 'account.verification_resent';
+
     public const string AUDIT_PURGED = 'audit.purged';
 
     public const string SETTING_UPDATED = 'settings.updated';

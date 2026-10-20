@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Application\IdentityPermissions;
+use Src\Identity\Infrastructure\IdentityServiceProvider;
+use Src\Identity\Interface\Http\Controllers\AdminUserActionController;
 use Src\Identity\Interface\Http\Controllers\AdminUserController;
 use Src\Identity\Interface\Http\Controllers\ChangePasswordController;
 use Src\Identity\Interface\Http\Controllers\CurrentAdminController;
@@ -25,6 +27,17 @@ Route::prefix('admin')->group(function (): void {
         Route::middleware('can:'.IdentityPermissions::USERS_VIEW)->group(function (): void {
             Route::get('users', [AdminUserController::class, 'index']);
             Route::get('users/{id}', [AdminUserController::class, 'show'])->whereNumber('id');
+        });
+
+        Route::middleware('can:'.IdentityPermissions::USERS_MANAGE)->prefix('users/{id}')->whereNumber('id')->group(function (): void {
+            Route::put('email', [AdminUserActionController::class, 'correctEmail']);
+            Route::post('reset-two-factor', [AdminUserActionController::class, 'resetTwoFactor']);
+
+            Route::middleware('throttle:'.IdentityServiceProvider::SUPPORT_ACTION_LIMITER)->group(function (): void {
+                Route::post('activation-email', [AdminUserActionController::class, 'activationEmail']);
+                Route::post('password-reset', [AdminUserActionController::class, 'passwordReset']);
+                Route::post('resend-verification', [AdminUserActionController::class, 'resendVerification']);
+            });
         });
     });
 });
