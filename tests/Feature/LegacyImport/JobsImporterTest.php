@@ -147,6 +147,7 @@ final class JobsImporterTest extends FeatureTestCase
         $this->assertSame('Jl. Merdeka 1', $row->address_line);
         $this->assertSame([$ownerId, '2026-08-01 08:00:00', '2026-08-01 08:00:00', '2026-08-02 09:00:00'], [(int) $row->created_by_user_id, $row->published_at, $row->created_at, $row->updated_at]);
         $this->assertNull($row->reviewed_at);
+        $this->assertSame('2026-10-07 09:00:00', substr((string) $row->migrated_at, 0, 19), 'The import time marks the job as imported.');
 
         $this->assertStringContainsString('We are looking for a backend developer', $row->description);
         $this->assertStringContainsString("## Hard skills\n\n- PHP", $row->description);

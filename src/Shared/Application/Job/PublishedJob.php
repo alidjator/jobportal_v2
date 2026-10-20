@@ -4,7 +4,7 @@ namespace Src\Shared\Application\Job;
 
 use DateTimeImmutable;
 
-/** A job that went live at least once, as the time-to-fill report needs it. `publishedAt` is the moment it first went live (UTC). */
+/** A job that went live at least once, as the time-to-fill report needs it. `publishedAt` is the moment it first went live (UTC); `imported` says it came from the karir.pkp import. */
 final readonly class PublishedJob
 {
     /** @param list<int> $assigneeUserIds the accounts the job is assigned to now */
@@ -16,6 +16,7 @@ final readonly class PublishedJob
         public DateTimeImmutable $publishedAt,
         public ?int $vacancies,
         public array $assigneeUserIds,
+        public bool $imported = false,
     ) {}
 
     /** How many hires fill the job: its vacancies, or one when none are stated. */

@@ -85,6 +85,7 @@ final readonly class FunnelReport implements AnalyticsReportProvider
             new AnalyticsTable('offers', [], ['offers_sent', 'accepted', 'acceptance_rate'], [$this->offers($scope, $entered['offer'] ?? 0)], 'offers_sent'),
             $this->withdrawals($scope),
             $this->interviews($scope),
+            $this->imported($scope),
         ];
 
         if ($scope->companyId !== null) {
@@ -171,6 +172,24 @@ final readonly class FunnelReport implements AnalyticsReportProvider
         $row = ['scheduled' => array_sum($counts), ...$counts, 'no_show_rate' => Figures::ratio($counts['no_show'], $held)];
 
         return new AnalyticsTable('interviews', [], ['scheduled', ...self::INTERVIEW_STATUSES, 'no_show_rate'], [$row], 'scheduled');
+    }
+
+    /**
+     * The applications of the range that came from the karir.pkp import. The applications per day count them, but their stage moves and times are left out of the
+     * stages, speed, offers and withdrawals tables (`docs/design/phase-8-imported-history-in-reports.md`), so the page can explain the first months.
+     */
+    private function imported(AnalyticsScope $scope): AnalyticsTable
+    {
+        $row = $this->connection->table('recruitment_applications as a')
+            ->whereNotNull('a.migrated_at')
+            ->where('a.applied_at', '>=', AnalyticsDays::startUtc($scope->from))
+            ->where('a.applied_at', '<', AnalyticsDays::endUtc($scope->to))
+            ->when($scope->companyId !== null, fn (Builder $query) => $query->where('a.company_id', $scope->companyId))
+            ->first([$this->connection->raw('COUNT(*) as total'), $this->connection->raw("COALESCE(SUM(CASE WHEN a.stage_type = 'hired' THEN 1 ELSE 0 END), 0) as hired")]);
+
+        $applications = (int) $row->total;
+
+        return new AnalyticsTable('imported', [], ['includes_imported', 'applications', 'hired'], [['includes_imported' => $applications > 0, 'applications' => $applications, 'hired' => (int) $row->hired]]);
     }
 
     private function byJob(AnalyticsScope $scope): AnalyticsTable

@@ -29,6 +29,7 @@ final readonly class TransitionRows
             $rows = $this->connection->table('recruitment_application_stage_history as h')
                 ->join('recruitment_applications as a', 'a.id', '=', 'h.application_id')
                 ->whereNotNull('h.from_type')
+                ->whereNull('a.migrated_at')
                 ->where('h.created_at', '>=', $startUtc)
                 ->where('h.created_at', '<', $endUtc)
                 ->where('h.id', '>', $lastId)

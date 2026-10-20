@@ -42,7 +42,7 @@ final readonly class DatabasePublishedJobs implements PublishedJobs
     /** @return list<PublishedJob> */
     private function hydrate(Builder $query): array
     {
-        $rows = $query->orderBy('id')->get(['id', 'company_id', 'title', 'category_id', 'published_at', 'vacancies']);
+        $rows = $query->orderBy('id')->get(['id', 'company_id', 'title', 'category_id', 'published_at', 'vacancies', 'migrated_at']);
         $assignees = [];
 
         foreach (array_chunk($rows->pluck('id')->all(), self::CHUNK) as $chunk) {
@@ -62,6 +62,7 @@ final readonly class DatabasePublishedJobs implements PublishedJobs
                 new DateTimeImmutable((string) $row->published_at, new DateTimeZone('UTC')),
                 $row->vacancies === null ? null : (int) $row->vacancies,
                 $assignees[(int) $row->id] ?? [],
+                $row->migrated_at !== null,
             );
         }
 

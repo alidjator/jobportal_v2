@@ -42,6 +42,7 @@ final readonly class DatabaseJobWriter implements JobWriter
             'created_by_user_id' => $job->creatorUserId,
             'created_at' => $job->createdAt,
             'updated_at' => $job->updatedAt,
+            'migrated_at' => $job->migratedAt,
         ]);
 
         // The full text vector of the search (see `JobSearchVectors`): title, company name and description; the legacy jobs have no tags.

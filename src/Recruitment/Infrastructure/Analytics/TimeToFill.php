@@ -28,7 +28,8 @@ final readonly class TimeToFill
         foreach ($this->jobs->among(array_keys($hires)) as $job) {
             $moments = $hires[$job->id];
 
-            if (count($moments) < $job->positions()) {
+            // An imported job went live and was filled before the platform: it is not a filled job here.
+            if ($job->imported || count($moments) < $job->positions()) {
                 continue;
             }
 
@@ -60,7 +61,7 @@ final readonly class TimeToFill
         foreach ($this->jobs->liveOfCompany($companyId) as $job) {
             $count = count($hires[$job->id] ?? []);
 
-            if ($count < $job->positions()) {
+            if (! $job->imported && $count < $job->positions()) {
                 $open[] = new OpenJob($job, self::days($job, $now), $count);
             }
         }

@@ -23,6 +23,7 @@ final readonly class HireTimes
                 'h.application_id', '=', 'a.id',
             )
             ->where('a.stage_type', 'hired')
+            ->whereNull('a.migrated_at')
             ->when($companyId !== null, fn ($query) => $query->where('a.company_id', $companyId))
             ->orderBy('a.job_id')->orderBy('h.hired_at')
             ->get(['a.job_id', 'h.hired_at']);

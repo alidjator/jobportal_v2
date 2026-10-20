@@ -262,7 +262,7 @@ final class AnalyticsTest extends FeatureTestCase
         $this->scenario();
 
         $tables = $this->company('funnel')->assertOk()->json('data.tables');
-        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews', 'by_job', 'by_recruiter'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews', 'imported', 'by_job', 'by_recruiter'], array_keys($tables));
         $this->assertSame(['stage', 'next_stage', 'entered', 'average_days_in_stage', 'median_days_in_stage', 'conversion'], $tables['stages']['columns']);
 
         $applied = $this->row($tables['stages']['rows'], 'stage', 'applied');
@@ -366,7 +366,7 @@ final class AnalyticsTest extends FeatureTestCase
 
         $tables = $this->platform('funnel', $this->adminAccountToken(['analytics.view']))->assertOk()->json('data.tables');
 
-        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews'], array_keys($tables));
+        $this->assertSame(['stages', 'speed', 'offers', 'by_reason', 'interviews', 'imported'], array_keys($tables));
         $this->assertSame(7, $this->row($tables['stages']['rows'], 'stage', 'applied')['entered']);
         $this->assertSame(6, $this->row($tables['stages']['rows'], 'stage', 'screening')['entered']);
     }
@@ -677,6 +677,52 @@ final class AnalyticsTest extends FeatureTestCase
 
         $csv = $this->company('fill', self::RANGE.'&format=csv&table=open')->assertOk();
         $this->assertStringContainsString('Job E', $csv->getContent());
+    }
+
+    // ----- imported history -----
+
+    public function test_imported_applications_leave_the_moves_and_times_but_stay_in_the_totals_and_are_reported(): void
+    {
+        $imported = $this->submitted($this->companyId, $this->jobId, '2026-10-01 10:00:00', 'search', 85);
+        $this->moved($imported, $this->companyId, 'applied', 'screening', '2026-10-02 10:00:00', $this->recruiterId);
+        $this->moved($imported, $this->companyId, 'screening', 'hired', '2026-10-03 10:00:00', $this->recruiterId);
+        DB::table('recruitment_applications')->where('id', $imported)->update(['migrated_at' => '2026-10-01 11:00:00']);
+        $this->scenario();
+
+        $tables = $this->company('funnel')->assertOk()->json('data.tables');
+
+        $this->assertSame(7, $this->row($tables['stages']['rows'], 'stage', 'applied')['entered'], 'The applications per day count the imported one.');
+        $this->assertSame(5, $this->row($tables['stages']['rows'], 'stage', 'screening')['entered'], 'Its moves are not counted.');
+        $this->assertTrue($this->row($tables['speed']['rows'], 'milestone', 'hired')['suppressed'], 'Its hire is not in the speed.');
+        $this->assertSame(['includes_imported' => true, 'applications' => 1, 'hired' => 1], array_intersect_key($tables['imported']['rows'][0], array_flip(['includes_imported', 'applications', 'hired'])));
+    }
+
+    public function test_a_company_without_imported_applications_does_not_include_imported_data(): void
+    {
+        $this->scenario();
+
+        $row = $this->company('funnel')->assertOk()->json('data.tables.imported.rows.0');
+
+        $this->assertSame([false, 0, 0], [$row['includes_imported'], $row['applications'], $row['hired']]);
+    }
+
+    public function test_imported_hires_and_imported_jobs_are_not_filled_jobs(): void
+    {
+        $this->fillScenario();
+
+        $native = $this->insertJob('Native job', 'active', attributes: ['published_at' => '2026-10-01 00:00:00']);
+        $this->hire($native, $this->companyId, '2026-10-03 00:00:00');
+        DB::table('recruitment_applications')->where('job_id', $native)->update(['migrated_at' => '2026-10-01 11:00:00']);
+
+        $imported = $this->insertJob('Imported job', 'active', attributes: ['published_at' => '2026-10-01 00:00:00']);
+        $this->hire($imported, $this->companyId, '2026-10-03 00:00:00');
+        DB::table('job_jobs')->where('id', $imported)->update(['migrated_at' => '2026-10-01 11:00:00']);
+        $this->app->make('cache')->flush();
+
+        $tables = $this->company('fill')->assertOk()->json('data.tables');
+
+        $this->assertSame(2, $tables['summary']['rows'][0]['filled_jobs']);
+        $this->assertSame(['Job E', 'Native job', 'Job C'], array_column($tables['open']['rows'], 'title'), 'A job with only imported hires is still open; an imported job is not listed.');
     }
 
     public function test_the_dashboard_card_gives_the_median_of_the_last_90_days_and_the_jobs_not_filled(): void

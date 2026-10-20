@@ -28,3 +28,10 @@ An imported application's moves are not in the medians, the conversion or the da
 ## Open points
 
 None.
+
+## Coded (2026-10-20)
+
+- Migration `000184` adds `job_jobs.migrated_at` (partial index), backfilled from `legacyimport_id_map` (entity `job`, its `imported_at`); `JobsImporter` sets it through `NewJob::$migratedAt`. Run `php artisan migrate`; no command is needed.
+- The exclusion is `a.migrated_at IS NULL` in `TransitionRows` (daily rollup), `LiveMedians` and `HireTimes`. `PublishedJob::$imported` makes `TimeToFill` skip an imported job, in the filled list and in the open list.
+- **Interpretation:** the funnel's stage counts, offers and withdrawals come from the transition rollup, so they leave imported applications together with the times; only the applications per day (`applied` row) still count them. The response is a flat table, so `includes_imported` and the `imported` count are a one-row table `imported` (`includes_imported`, `applications`, `hired`, by `applied_at` in the range) added to the funnel report, instead of fields beside the tables.
+- A daily rollup written before this change still holds the imported moves of its days (no imported data exists in the real database yet); rebuild a range with `analytics:rollup --from --to` if one is needed.

@@ -284,6 +284,7 @@ final class JobsImporter implements Importer
             $wasLive && in_array($status, ['active', 'expired', 'closed'], true) ? $createdAt : null,
             $createdAt,
             $updatedAt,
+            $context->clock->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
         );
     }
 

@@ -45,7 +45,7 @@ final readonly class LiveMedians
     private function rows(AnalyticsScope $scope): array
     {
         $milestones = implode(', ', array_fill(0, count(self::MILESTONES), '?'));
-        $company = $scope->companyId === null ? '' : 'WHERE a.company_id = ?';
+        $company = $scope->companyId === null ? '' : 'AND a.company_id = ?';
 
         // The previous entry is found over the whole history of an application, then the range is applied, so a move at the start of the range still sees its predecessor.
         $sql = <<<SQL
@@ -54,7 +54,7 @@ final readonly class LiveMedians
                     LAG(h.created_at) OVER (PARTITION BY h.application_id ORDER BY h.id) AS previous_at
                 FROM recruitment_application_stage_history AS h
                 JOIN recruitment_applications AS a ON a.id = h.application_id
-                {$company}
+                WHERE a.migrated_at IS NULL {$company}
             ), durations AS (
                 SELECT from_type, to_type,
                     GREATEST(0, EXTRACT(EPOCH FROM date_trunc('second', created_at)) - EXTRACT(EPOCH FROM date_trunc('second', COALESCE(previous_at, applied_at)))) AS in_stage,
