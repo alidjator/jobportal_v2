@@ -39,7 +39,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review `docs/legal-review.md` (questions 1 to 22, 2026-10-19; Indonesian copy `legal-review.id.md`), **not sent yet**; section 0 orders them (before go-live: 1 to 7, 10). Sensitive candidate-search filters stay off until answered.
+- Legal review `docs/legal-review.md` (questions 1 to 25, 2026-10-21; Indonesian copy `legal-review.id.md`), **not sent yet**; section 0 orders them (before go-live: 1 to 7, 10, 23 to 25). Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`

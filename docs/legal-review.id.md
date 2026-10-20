@@ -1,12 +1,12 @@
 <!-- Indonesian copy of docs/legal-review.md for sending to the legal adviser. The English file is the source; update this copy whenever it changes. Internal file and setting names are left out on purpose. -->
 
-# Brief kajian hukum: data pribadi, kriteria seleksi, dan tes psikologi
+# Bahan kajian hukum: data pribadi, kriteria seleksi, dan tes psikologi
 
 Disusun untuk penasihat hukum **ONESIS ERP** (One Solutions Integrated System) dan situs pencari kerjanya, **ONESIS Career**, yang beroperasi di
 Indonesia. Modul pertama ERP ini adalah rekrutmen (lowongan, lamaran, wawancara, tes psikologi, penawaran kerja), sedangkan situs pencari kerja
-terbuka untuk umum. Brief ini mendata apa yang dilakukan sistem, atau yang dirancang akan dilakukan, terhadap data pribadi yang sensitif, beserta
+terbuka untuk umum. Dokumen ini mendata apa yang dilakukan sistem, atau yang dirancang akan dilakukan, terhadap data pribadi yang sensitif, beserta
 pertanyaan yang memerlukan jawaban. Dokumen ini adalah inventaris fakta, bukan pendapat hukum. Rujukan peraturan di dalam pertanyaan hanya
-petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 19 Oktober 2026.
+petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 21 Oktober 2026.
 
 ## 0. Prioritas jawaban
 
@@ -16,7 +16,7 @@ setelah ada jawaban.
 
 | Prioritas | Pertanyaan | Alasan | Keadaan |
 |---|---|---|---|
-| **A. Sebelum peluncuran** | 1 sampai 7, 10 | Syarat dan ketentuan serta kebijakan privasi harus final. Filter sensitif, batas usia, dan isian data pribadi pada CV memerlukan kepastian (tetap mati atau pada nilai bawaan sampai ada jawaban). | sudah dibangun |
+| **A. Sebelum peluncuran** | 1 sampai 7, 10, 23 sampai 25 | Syarat dan ketentuan serta kebijakan privasi harus final. Filter sensitif, batas usia, dan isian data pribadi pada CV memerlukan kepastian (tetap mati atau pada nilai bawaan sampai ada jawaban). Rekaman serta kewajiban umum penyelenggara (pendaftaran, pejabat pelindungan data, pemberitahuan kebocoran, pembagian peran, dan lokasi data) harus jelas. | sudah dibangun; 24 dan 25 merupakan kewajiban penyelenggara |
 | **B. Menahan pembangunan fitur** | 12, 13, 15, 20, 21 | Penerimaan penawaran kerja secara daring, daftar kandidat yang dibatasi, masa simpan data pelamar per perusahaan, kandidat yang dimasukkan dari luar platform, dan pemeriksaan pra-kerja tidak dibangun sebelum ada jawaban. | dirancang |
 | **C. Sebelum mitra psikologi atau psikolog internal pertama** | 11, 17, 19 | Laporan otomatis, masa simpan data mentah, dan penandatangan internal. Tes psikologi dimatikan sampai ada jawaban. | 11 dan 17 sudah dibangun (laporan otomatis mati); 19 dirancang |
 | **D. Isi kebijakan, atau setelah peluncuran** | 8, 9, 14, 16, 18, 22 | Jawabannya mengubah teks kebijakan atau fitur yang datang kemudian. Sementara itu sistem berjalan dengan perilaku yang ada. | 8, 9, 14 sudah dibangun; 16 dan 22 dirancang; 18 masih rencana |
@@ -36,6 +36,7 @@ setelah ada jawaban.
 | Ulasan perusahaan | Pencari kerja yang pernah melamar ke suatu perusahaan boleh mengulas perusahaan itu. Admin menyetujui ulasan lebih dulu, dan **nama penulis selalu ditampilkan** pada ulasan yang terbit. Perusahaan boleh membalas dan melaporkan ulasan. Bila akun dihapus, teks ulasan yang sudah terbit dihapus dan nilai bintangnya tetap. |
 | Talent pool | Anggota tim perusahaan dapat menyimpan kandidat yang bersedia ditemukan ke talent pool perusahaan, dengan kategori dan **catatan bebas hingga 500 karakter**. Catatan itu hanya dilihat oleh anggota perusahaan tersebut, tidak pernah oleh kandidat. Entri dan catatannya disembunyikan selama kandidat tidak bersedia ditemukan; setelah itu catatannya dihapus oleh proses malam (entrinya tetap). Entri dan catatan dihapus bila akun dianonimkan atau bila anggota tim menghapus entri. |
 | Penghapusan akun | Penghapusan akun menganonimkan akun dan menghapus profil, resume, notifikasi lowongan, undangan, riwayat lihat, dan catatan pembuatan CV. |
+| Rekaman wawancara dan jawaban video (P23) | Perusahaan dapat menandai wawancara video atau suara sebagai direkam. Kandidat menyetujui atau menolak saat mengonfirmasi jadwal dan dapat menarik persetujuannya sampai perekaman dimulai; penolakan tidak membatalkan wawancara. Perekaman dimulai secara manual oleh anggota tim, semua peserta melihat tanda sedang merekam, dan pada panggilan suara kandidat mendengar pemberitahuan "panggilan ini direkam". Tes dengan soal jawaban video memerlukan persetujuan perekaman tersendiri, dan kandidat boleh menolak tes tersebut. Rekaman disimpan di penyimpanan privat platform, hanya dapat diputar oleh anggota perusahaan yang berhak melihat lamaran, dan dihapus 90 hari setelah wawancara atau tes (dapat diubah admin), atau lebih cepat bila lamaran dianonimkan atau anggota tim menghapusnya. |
 | Aktivitas tim perusahaan (P10) | Admin perusahaan dapat melihat aktivitas setiap anggota tim, termasuk alamat IP dan browser saat masuk, serta satu log aktivitas seluruh perusahaan yang dapat diekspor ke CSV; disimpan 12 bulan. |
 | Tes psikologi (P11, P17 sampai P19) | Psikolog berlisensi (STR dan SILP) dari lembaga mitra, atau psikolog internal milik pelanggan (dirancang), menyusun rangkaian tes dan menandatangani laporan. Perusahaan hanya dapat memakai rangkaian tes bila platform mengaktifkan tes psikologi untuk perusahaan itu. Kandidat memberi persetujuan sebelum tes dan menerima penjelasan dalam bahasa awam. Lembaga dapat diizinkan menerbitkan laporan secara otomatis dari normanya (dimatikan sampai pertanyaan 11 terjawab). |
 | Penawaran kerja (P12) | Dirancang: pencari kerja menerima surat penawaran secara daring dengan mencentang persetujuan dan memasukkan kata sandi akunnya. Waktu, alamat IP, browser, dan hash surat disimpan sebagai bukti. |
@@ -53,12 +54,18 @@ setelah ada jawaban.
    dalam ketenagakerjaan (misalnya UU 13/2003 Pasal 5 dan 6, sebagaimana telah diubah)? Bila ya, apakah platform ikut bertanggung jawab karena
    menyediakan alatnya, atau hanya perusahaan yang memakainya? Apakah jawabannya berbeda untuk kewarganegaraan (aturan izin kerja dapat menjadi
    kriteria yang sah)?
-2. **Golongan data pribadi.** Menurut UU 27/2022 tentang Pelindungan Data Pribadi, apakah agama dan status perkawinan termasuk data pribadi yang
-   bersifat spesifik? Bila ya, apakah isian opsional dengan syarat dan ketentuan umum seperti sekarang sudah cukup, atau diperlukan persetujuan
-   eksplisit tersendiri?
-3. **Batas usia akun.** Apakah menolak pencari kerja di atas 60 tahun (atau batas lain yang diatur) sah bila yang dibatasi adalah akunnya, bukan
-   satu lowongan? Berapa batas usia minimum yang tepat (saat ini 15 tahun), dan apakah diperlukan persetujuan orang tua atau larangan jenis
-   pekerjaan tertentu bagi yang berusia di bawah 18 tahun?
+2. **Golongan data pribadi.** Menurut pembacaan kami, daftar data pribadi yang bersifat spesifik dalam UU 27/2022 tentang Pelindungan Data Pribadi
+   (Pasal 4 ayat (2)) memuat data kesehatan, biometrik, genetika, catatan kejahatan, data anak, data keuangan pribadi, dan data lain sesuai
+   peraturan perundang-undangan, tetapi tidak memuat agama maupun status perkawinan (berbeda dengan GDPR). Apakah pembacaan ini benar, atau ada
+   undang-undang lain yang menjadikan keduanya data spesifik? Bila keduanya data pribadi umum, apakah risiko diskriminasinya tetap menuntut lebih
+   dari isian opsional dengan syarat dan ketentuan umum seperti sekarang (persetujuan eksplisit tersendiri, pemberitahuan siapa yang dapat
+   melihatnya)? Pencari kerja di bawah 18 tahun dibahas dalam pertanyaan 3.
+3. **Batas usia akun (diperbarui 21 Oktober 2026).** Apakah menolak pencari kerja di atas 60 tahun (atau batas lain yang diatur) sah bila yang
+   dibatasi adalah akunnya, bukan satu lowongan? Berapa batas usia minimum yang tepat (saat ini 15 tahun)? Data orang yang berusia di bawah 18
+   tahun merupakan data anak, salah satu data pribadi yang bersifat spesifik (UU 27/2022 Pasal 4 ayat (2)), dan pemrosesannya memerlukan
+   persetujuan orang tua atau wali (Pasal 25). Apakah platform wajib memperoleh persetujuan itu saat pendaftaran dan bagaimana memeriksanya, atau
+   sebaiknya batas minimum dinaikkan menjadi 18 tahun? Apakah aturan pekerja anak (UU 13/2003 Pasal 68 sampai 75) membatasi lowongan yang boleh
+   dilihat atau dilamar pencari kerja di bawah 18 tahun, dan siapa yang bertanggung jawab: platform atau perusahaan?
 4. **Data pribadi pada CV.** Bolehkah platform menyediakan isian tersebut pada CV yang dibuat atas pilihan pencari kerja sendiri, mengingat CV di
    Indonesia lazim memuatnya? Perlukah platform menambahkan peringatan, atau menyembunyikan sebagian isian?
 5. **Atribut yang dilindungi sebagai hasil pencarian.** Perusahaan tidak dapat melihat nilai-nilai tersebut dalam pencarian, tetapi dapat
@@ -127,7 +134,7 @@ setelah ada jawaban.
     menerima email untuk mendaftar dan melamar. CV hanya dilihat tim dan dihapus setelah 30 hari bila orang itu tidak menanggapi. Apa dasar
     pemrosesan yang sah menurut UU 27/2022 untuk menyimpan dan membaca CV sebelum orang tersebut menyetujui di platform (permintaan orang itu
     sendiri untuk dipertimbangkan, Pasal 20 ayat (2) huruf b?), apakah 30 hari dapat diterima, dan apakah email wajib menyebutkan sumber data
-    (kewajiban pemberitahuan Pasal 31)? Untuk rekomendasi, datanya berasal dari pihak ketiga: apakah penyerahan oleh pemberi rekomendasi sudah
+    (kewajiban pemberitahuan oleh pengendali; kami belum menemukan pasal yang tepat)? Untuk rekomendasi, datanya berasal dari pihak ketiga: apakah penyerahan oleh pemberi rekomendasi sudah
     cukup, atau tim hanya boleh mengirim undangan tanpa CV?
 21. **Medical check-up dan pemeriksaan latar belakang (ditambahkan 19 Oktober 2026).** Sebelum menerima karyawan, perusahaan dapat mencatat
     medical check-up, pemeriksaan latar belakang, SKCK, dan pemeriksaan referensi per pelamar. Sistem hanya menyimpan kategori hasil medis (fit,
@@ -141,11 +148,33 @@ setelah ada jawaban.
     tidak resmi yang mengotomasi WhatsApp Web, yang melanggar ketentuan WhatsApp dan menjalankan sesinya di pihak ketiga. Menurut UU 27/2022,
     perjanjian apa yang diperlukan dengan setiap pengirim sebagai prosesor data, apakah gateway tidak resmi dapat diterima sama sekali untuk data
     kandidat, dan apa yang wajib dimuat kebijakan privasi mengenai WhatsApp (Meta sebagai prosesor, transfer ke luar wilayah Indonesia, Pasal 56)?
+23. **Rekaman wawancara dan jawaban video (ditambahkan 21 Oktober 2026).** Wawancara video dan suara serta jawaban video dalam tes dapat direkam
+    dengan persetujuan eksplisit kandidat yang diberikan di platform sebelum perekaman dimulai (bagian 1). Apakah persetujuan yang diberikan saat
+    mengonfirmasi jadwal dan dapat ditarik sampai perekaman dimulai ini merupakan dasar pemrosesan yang sah menurut UU 27/2022? Apakah suara dan
+    gambar yang direkam termasuk data biometrik (Pasal 4 ayat (2)) bila hanya disimpan dan diputar ulang, tidak dipakai untuk mengenali
+    seseorang? Apakah 90 hari merupakan periode yang wajar, dan siapa yang boleh memutar rekaman (semua anggota yang berhak melihat lamaran, atau
+    hanya panel pewawancara)? Bolehkah perusahaan menolak kandidat karena ia menolak direkam (saat ini penolakan tidak membatalkan wawancara,
+    tetapi tes yang ditolak mengakhiri tahap tersebut)? Apakah kandidat wajib diberi salinan rekaman bila memintanya (berkaitan dengan
+    pertanyaan 14)?
+24. **Kewajiban umum penyelenggara (ditambahkan 21 Oktober 2026).** Sebelum peluncuran: apakah platform wajib mendaftar sebagai Penyelenggara
+    Sistem Elektronik Lingkup Privat (PP 71/2019 dan peraturan menteri tentang PSE lingkup privat), dan atas nama badan hukum yang mana? Apakah
+    platform wajib menunjuk pejabat pelindungan data pribadi (UU 27/2022 Pasal 53), mengingat platform memproses data pribadi spesifik dalam
+    jumlah besar (hasil medical check-up, tes psikologi, data anak)? Apa yang dituntut kewajiban pemberitahuan kebocoran data dalam 3 x 24 jam
+    (Pasal 46) dalam praktik: siapa yang diberi tahu (orang yang bersangkutan, lembaga pengawas), apa isi pemberitahuannya, dan catatan apa
+    yang wajib disimpan?
+25. **Pembagian peran dan lokasi data (ditambahkan 21 Oktober 2026).** Siapa pengendali data untuk setiap jenis data: platform untuk akun dan
+    profil pencari kerja, perusahaan untuk lamaran, catatan, scorecard, dan pemeriksaan pra-kerja, lembaga mitra untuk tes psikologi, atau
+    adakah yang menjadi pengendali bersama? Perjanjian apa yang diperlukan sebagai akibatnya (syarat bagi perusahaan, perjanjian pemrosesan
+    data sebagaimana pertanyaan 6, dan perjanjian dengan lembaga mitra)? Platform berjalan di server yang dikelola sendiri oleh penyelenggara;
+    email, jalur SIP untuk panggilan suara, dan WhatsApp (pertanyaan 22) melalui penyedia pihak luar, sebagian mungkin di luar Indonesia.
+    Apakah PP 71/2019 mewajibkan penyelenggara lingkup privat menyimpan data di Indonesia, dan apa yang dituntut Pasal 56 untuk setiap
+    penyedia di luar negeri?
 
 ## 3. Yang dapat kami ubah setelah ada jawaban
 
 - Mengaktifkan keempat filter sensitif untuk semua pengguna, atau menghapusnya dari sistem.
 - Mengubah batas usia akun, atau menghapus batas atasnya.
+- P3: menaikkan batas usia minimum menjadi 18 tahun, atau menambahkan persetujuan orang tua atau wali bagi pencari kerja di bawah 18 tahun.
 - Menghapus sebagian dari enam isian data pribadi opsional pada CV, atau menambahkan peringatan.
 - Mengubah isi syarat dan ketentuan serta kebijakan privasi (dokumen berversi yang dikelola admin).
 - P10: memperpendek masa simpan log aktivitas 12 bulan, atau menyembunyikan alamat IP dan browser dari admin perusahaan.
@@ -162,3 +191,6 @@ setelah ada jawaban.
 - P21: mencatat "tidak disarankan" alih-alih "unfit", melarang berkas untuk pemeriksaan latar belakang dan referensi, memperpendek 90 hari, atau
   tidak membawa hasil ke data karyawan.
 - P22: meniadakan adapter tidak resmi, atau mewajibkan perjanjian pemrosesan data sebelum sebuah instalasi boleh mengaktifkannya.
+- P23: memperpendek 90 hari, membatasi pemutaran rekaman hanya untuk panel pewawancara, atau mematikan perekaman.
+- P24 dan P25: mendaftarkan platform, mencantumkan pejabat pelindungan data dan prosedur kebocoran data dalam kebijakan privasi, serta menambahkan
+  ketentuan pengendali dan prosesor ke perjanjian dengan perusahaan dan lembaga mitra.

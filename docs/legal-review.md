@@ -3,7 +3,7 @@
 For the legal adviser of **ONESIS ERP** (One Solutions Integrated System) and its job seeker site **ONESIS Career**, operated in Indonesia. The ERP's
 first module is talent acquisition (jobs, applications, interviews, psychological tests, offers); the job seeker site is public. The brief lists what the
 system does, or is designed to do, with sensitive personal data and what we need answered. It is a factual inventory, not legal advice, and the legal
-references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-19 (not sent yet).
+references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-21 (not sent yet).
 
 ## 0. Priority of the answers
 
@@ -12,7 +12,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 
 | Priority | Questions | Why | State |
 |---|---|---|---|
-| **A. Before go-live** | 1 to 7, 10 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then) | built |
+| **A. Before go-live** | 1 to 7, 10, 23 to 25 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then); the recordings and the operator's general duties (registration, data protection officer, breach notice, roles, where the data is kept) must be settled | built; 24, 25 are duties of the operator |
 | **B. Blocks building a feature** | 12, 13, 15, 20, 21 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform and pre-employment checks are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
 | **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22 designed; 18 a plan |
@@ -32,6 +32,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Company reviews | A job seeker who applied to a company may review it; an admin approves it first, and the author's **name is always shown** with a published review. A company may reply and may report a review. When the account is erased, the text of a published review is deleted and the ratings stay. |
 | Talent pool | A company member may save a candidate who can be found (opted in) into the company's talent pool with a category and a **free-text note of up to 500 characters**, seen by every member of that company only, never by the candidate. The entry and its note are hidden while the candidate cannot be found; the note is deleted by a nightly job after that (the entry stays), and the entry and note are deleted when the account is anonymised or a member removes the entry. |
 | Erasure | Account deletion anonymises the account and erases the profile, resumes, alerts, invitations, views and CV records. |
+| Interview and video-answer recordings (Q23) | A company may mark a video or voice interview as recorded. The candidate consents or refuses when confirming the schedule and may withdraw until recording starts; refusing does not cancel the interview. A team member starts the recording by hand, every participant sees an indicator, and a voice call plays "this call is recorded" to the candidate. A test with video-answer questions needs a separate recording consent, and the candidate may decline the test. Recordings are kept on the platform's private storage, streamed only to the company members who may see the application, and deleted 90 days after the interview or the test (admin settings), earlier when the application is anonymised or a team member deletes them. |
 | Company team activity (Q10) | A company admin sees each member's activity, including the IP address and browser of their sign-ins, and one activity log of the whole company that can be exported as CSV; kept 12 months. |
 | Psychological tests (Q11, Q17 to Q19) | Licensed psychologists (STR and SILP) of a partner institution, or the customer's own in-house psychologists (designed), build test batteries and sign the reports; a company uses a battery only when the platform switches psychological tests on for it. The candidate consents before the test and gets a plain-language explanation. A provider may be allowed to issue reports automatically from its norms (off by default until question 11 is answered). |
 | Offers (Q12) | Designed: the job seeker accepts an offer letter online with a checkbox and their password; the time, IP address, browser and a hash of the letter are kept as evidence. |
@@ -46,8 +47,8 @@ where the question is open; "designed" means it is planned and waits for the ans
 ## 2. Questions
 
 1. **Discrimination in recruitment.** Do the filters by religion, gender and age in the candidate search conflict with the prohibition of discrimination in employment (for example Law 13/2003, Articles 5 and 6, as amended)? If so, is the platform liable for offering the tool, or only the company that uses it? Does the answer differ for nationality (a work permit rule can be a legitimate criterion)?
-2. **Personal data classes.** Under the Personal Data Protection Law (Law 27/2022), are religion and marital status specific personal data? If so, is the present optional field with the general terms enough, or is a separate explicit consent required?
-3. **Age limit of accounts.** Is refusing job seekers above 60 (or any configured limit) lawful when it limits the account, not one job? Which minimum age is right (15 now) and is parental consent or a ban on certain work needed for under 18?
+2. **Personal data classes.** As we read it, the list of specific personal data in the Personal Data Protection Law (Law 27/2022, Article 4(2)) names health, biometric, genetic, criminal record, children's and personal financial data, and other data set by law, but not religion or marital status (unlike the GDPR). Is that right, or does another law make them specific personal data? If they are general personal data, does their risk of discrimination still call for more than the present optional field with the general terms (a separate explicit consent, a notice of who sees them)? Job seekers under 18 are covered by question 3.
+3. **Age limit of accounts.** Is refusing job seekers above 60 (or any configured limit) lawful when it limits the account, not one job? Which minimum age is right (15 now)? The data of a person under 18 is children's data, a class of specific personal data (UU 27/2022 Article 4(2)), whose processing needs the consent of a parent or guardian (Article 25): must the platform get that consent at sign-up, and how must it be checked, or should the minimum be 18? Do the child labour rules (Law 13/2003, Articles 68 to 75) limit which jobs a job seeker under 18 may see or apply to, and does the platform or the company answer for that? (Updated 2026-10-21.)
 4. **Personal details on a CV.** May the platform offer these fields on a generated CV when the job seeker chooses them, given that common Indonesian CVs carry them? Should the platform add a warning, or hide some of them?
 5. **Protected attributes as search results.** Companies cannot see these values in the search, but they can infer them by filtering repeatedly. Is that a concern if the filters are later switched on?
 6. **Terms and privacy policy.** What must the documents say about the candidate search (opt-in, view log, what the company sees), the CV generator and the processing for matching? Is a data-processing agreement with companies needed?
@@ -100,7 +101,7 @@ where the question is open; "designed" means it is planned and waits for the ans
     was referred: the team types the name and email and may upload the CV it received; the person gets an email to sign up and apply; the CV is
     seen by the team only and deleted after 30 days when the person does not respond (`phase-8-manual-candidates.md`). What is the lawful basis
     under UU 27/2022 for keeping and reading the CV before the person agrees on the platform (the person's own request to be considered,
-    Article 20(2)(b)?), is 30 days acceptable, and must the email name the source of the data (Article 31 information duty)? For a referral the
+    Article 20(2)(b)?), is 30 days acceptable, and must the email name the source of the data (the information duty of the controller; we have not found the right article)? For a referral the
     data comes from a third party: is the referrer's sharing enough, or may the team only send the invitation without the CV?
 21. **Medical check-up and background checks (added 2026-10-19).** Before hiring, a company may record a medical check-up, a background check, a
     police record (SKCK) and reference checks per applicant (`phase-8-pre-employment-checks.md`). The system stores only a category for the medical
@@ -114,11 +115,29 @@ where the question is open; "designed" means it is planned and waits for the ans
     gateway that automates WhatsApp Web, which breaks WhatsApp's terms and runs the session at a third party. Under UU 27/2022, what agreement is
     needed with each sender as a data processor, is an unofficial gateway acceptable at all for candidates' data, and what must the privacy policy
     say about WhatsApp (Meta as a processor, transfer outside Indonesia, Article 56)?
+23. **Interview and video-answer recordings (added 2026-10-21).** Video and voice interviews and video answers in tests may be recorded, with the
+    candidate's explicit consent given in the platform before recording starts (section 1). Is this consent, given when confirming the schedule
+    and withdrawable until recording starts, a sound basis under UU 27/2022? Are a recorded voice and image biometric data (Article 4(2)) when they
+    are only stored and played back, never used to identify a person? Is 90 days a sound period, and who may play a recording (every member who
+    may see the application, or only the interview panel)? May a company reject a candidate for refusing a recording (today a refusal does not
+    cancel the interview, but a declined test ends that step)? Must the candidate get a copy on request (with question 14)?
+24. **General duties of the operator (added 2026-10-21).** Before go-live: must the platform register as a private electronic system operator
+    (PSE Lingkup Privat, PP 71/2019 and the ministry's regulation on private operators), and under which legal entity? Must it appoint a data
+    protection officer (UU 27/2022 Article 53), given that it processes specific personal data at scale (pre-employment medical outcomes,
+    psychological tests, children's data)? What does the notice of a data breach within 3 x 24 hours (Article 46) require of us in practice: whom
+    we tell (the people concerned, the authority), what the notice must say, and what records we must keep?
+25. **Roles and where the data is kept (added 2026-10-21).** Who is the controller of each kind of data: the platform for the job seeker's account
+    and profile, the company for its applications, notes, scorecards and checks, the partner institution for psychological tests, or are some of
+    them joint controllers? Which agreements follow from that (the terms for companies, a data-processing agreement, see question 6, and the
+    agreement with partner institutions)? The platform runs on servers the operator manages itself; email, the SIP trunk for voice calls and
+    WhatsApp (question 22) go through outside providers, some possibly outside Indonesia. Does PP 71/2019 require a private operator to keep the
+    data in Indonesia, and what does Article 56 require for each provider abroad?
 
 ## 3. What we can change after the answers
 
 - Switch the four filters on for everyone, or remove them in code (one setting, `job_seeker.candidate_sensitive_filters_enabled`).
 - Change the account age limits (admin settings `job_seeker.min_age`, `job_seeker.max_age`), or remove the upper limit (set it to 100).
+- Q3: raise the minimum age to 18, or add a parent's or guardian's consent step for job seekers under 18.
 - Remove any of the six optional CV details (`CvInclusion`), or add a warning.
 - Change what the terms and the privacy policy say (versioned legal documents managed by an admin).
 - Q10: shorten the 12 months of the activity log, or hide IP address and browser from company admins.
@@ -133,3 +152,5 @@ where the question is open; "designed" means it is planned and waits for the ans
 - Q20: drop the CV upload (invitation by email only), shorten the 30 days, or name the source in the email.
 - Q21: record "not recommended" instead of "unfit", forbid files for background and reference checks, shorten the 90 days, or keep outcomes out of the employee record.
 - Q22: remove the unofficial adapter, or require a data-processing agreement before an installation may switch it on.
+- Q23: shorten the 90 days (`interview.recording_retention_days`, `assessment.video_retention_days`), limit playback to the interview panel, or switch recording off.
+- Q24 and Q25: register the platform, name a data protection officer and the breach procedure in the privacy policy, and add the controller and processor terms to the agreements with companies and partner institutions.
