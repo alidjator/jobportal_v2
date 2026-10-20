@@ -56,7 +56,7 @@ final class LegacySchema
     /** @return list<string> */
     public static function tables(): array
     {
-        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs', 'campaigns', 'emails'];
+        $tables = ['candidate_languages', 'users', 'candidates', 'companies', 'candidate_education', 'candidate_experiences', 'candidate_skill', 'candidate_language', 'candidate_resumes', 'social_links', 'jobs', 'job_skills', 'job_benefit', 'company_questions', 'company_question_job', 'application_groups', 'applied_jobs', 'campaigns', 'emails', 'bookmark_candidate_job', 'candidate_job_alerts', 'company_bookmark_categories', 'bookmark_company', 'bookmark_company_category'];
 
         foreach (self::TRANSLATED_MASTERS as [$master, $translations]) {
             $tables[] = $master;
@@ -75,7 +75,7 @@ final class LegacySchema
             $schema->drop('companies');
         }
 
-        if ($schema->hasTable('candidates') && ! $schema->hasColumn('candidates', 'bio')) {
+        if ($schema->hasTable('candidates') && (! $schema->hasColumn('candidates', 'bio') || ! $schema->hasColumn('candidates', 'received_job_alert'))) {
             $schema->drop('candidates');
         }
 
@@ -141,6 +141,7 @@ final class LegacySchema
                 $table->integer('expected_salary')->nullable();
                 $table->string('phone')->nullable();
                 $table->string('campaign_channel')->nullable()->default('nosession');
+                $table->boolean('received_job_alert')->default(true);
                 $table->timestamp('created_at')->nullable();
                 $table->timestamp('updated_at')->nullable();
             });
@@ -316,6 +317,57 @@ final class LegacySchema
                 $table->timestamp('created_at')->nullable();
                 $table->timestamp('updated_at')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('bookmark_candidate_job')) {
+            $schema->create('bookmark_candidate_job', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('candidate_id');
+                $table->unsignedBigInteger('job_id')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('candidate_job_alerts')) {
+            $schema->create('candidate_job_alerts', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('candidate_id');
+                $table->unsignedBigInteger('job_role_id');
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('company_bookmark_categories')) {
+            $schema->create('company_bookmark_categories', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id');
+                $table->string('name')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('bookmark_company')) {
+            $schema->create('bookmark_company', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('company_id');
+                $table->unsignedBigInteger('candidate_id');
+                $table->unsignedBigInteger('category_id')->nullable();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('bookmark_company_category')) {
+            $schema->create('bookmark_company_category', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('bookmark_id');
+                $table->unsignedBigInteger('category_id');
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable();
             });
         }
 

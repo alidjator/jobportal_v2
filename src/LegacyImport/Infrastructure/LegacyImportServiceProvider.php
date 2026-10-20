@@ -18,6 +18,8 @@ use Src\LegacyImport\Application\ImagesImporter;
 use Src\LegacyImport\Application\Importer;
 use Src\LegacyImport\Application\ImportRunner;
 use Src\LegacyImport\Application\ImportSummaryFlusher;
+use Src\LegacyImport\Application\JobAlertsImporter;
+use Src\LegacyImport\Application\JobAlertWriter;
 use Src\LegacyImport\Application\JobQuestionsImporter;
 use Src\LegacyImport\Application\JobSeekerSummaryWriter;
 use Src\LegacyImport\Application\JobSeekerWriter;
@@ -37,8 +39,12 @@ use Src\LegacyImport\Application\ProfilesImporter;
 use Src\LegacyImport\Application\QuestionsImporter;
 use Src\LegacyImport\Application\ReportWriter;
 use Src\LegacyImport\Application\ResumesImporter;
+use Src\LegacyImport\Application\SavedCandidatesImporter;
+use Src\LegacyImport\Application\SavedJobsImporter;
+use Src\LegacyImport\Application\SavedJobWriter;
 use Src\LegacyImport\Application\ScreeningWriter;
 use Src\LegacyImport\Application\SkillsImporter;
+use Src\LegacyImport\Application\TalentPoolWriter;
 use Src\LegacyImport\Domain\IdMap;
 use Src\LegacyImport\Interface\Console\LegacyImportCommand;
 use Src\LegacyImport\Interface\Console\LegacyMastersCheckCommand;
@@ -67,6 +73,9 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         QuestionsImporter::class,
         JobQuestionsImporter::class,
         ApplicationsImporter::class,
+        SavedJobsImporter::class,
+        JobAlertsImporter::class,
+        SavedCandidatesImporter::class,
         CampaignsImporter::class,
         NewsletterSubscribersImporter::class,
     ];
@@ -87,6 +96,9 @@ final class LegacyImportServiceProvider extends ContextServiceProvider
         JobSeekerSummaryWriter::class => DatabaseJobSeekerSummaryWriter::class,
         CompanySummaryWriter::class => DatabaseCompanySummaryWriter::class,
         NewsletterSubscriberWriter::class => DatabaseNewsletterSubscriberWriter::class,
+        SavedJobWriter::class => DatabaseSavedJobWriter::class,
+        JobAlertWriter::class => DatabaseJobAlertWriter::class,
+        TalentPoolWriter::class => DatabaseTalentPoolWriter::class,
         LocationLookup::class => DatabaseLocationLookup::class,
         LegacyFiles::class => LocalLegacyFiles::class,
     ];

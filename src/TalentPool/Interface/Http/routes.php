@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\TalentPool\Infrastructure\TalentPoolServiceProvider;
 use Src\TalentPool\Interface\Http\Controllers\CategoryController;
+use Src\TalentPool\Interface\Http\Controllers\MyMembershipController;
 use Src\TalentPool\Interface\Http\Controllers\TalentPoolController;
 
 // The talent pool of the caller's company, shared by its members. Every use case checks that the caller is a member of an active company; renaming and
@@ -17,6 +18,9 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/talent-pool/categories', [CategoryController::class, 'store'])->middleware($write);
     Route::patch('company/talent-pool/categories/{id}', [CategoryController::class, 'update'])->whereNumber('id')->middleware($write);
     Route::delete('company/talent-pool/categories/{id}', [CategoryController::class, 'destroy'])->whereNumber('id')->middleware($write);
+
+    // A job seeker leaves the private lists carried over from karir.pkp (`source=legacy`).
+    Route::delete('me/talent-pool-memberships', [MyMembershipController::class, 'destroy'])->middleware($write);
 
     Route::get('company/talent-pool/{id}', [TalentPoolController::class, 'show'])->whereNumber('id');
     Route::patch('company/talent-pool/{id}', [TalentPoolController::class, 'update'])->whereNumber('id')->middleware($write);

@@ -265,7 +265,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `job-not-taken-down` | 409 | Job | Only a job that was taken down can be restored. |
 | `job-on-hold` | 409 | Recruitment | This job is under review and takes no applications right now. |
 | `job-questions-locked` | 409 | Recruitment | The job has applications, so its questions can no longer change. |
-| `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, Training | Only a job seeker can take a test. |
+| `job-seeker-only` | 403 | Assessment, Dashboard, Job, JobAlert, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Training | Only a job seeker can take a test. |
 | `job-taken-down` | 409 | Assessment, Recruitment | This job was taken down, so its applications can no longer be processed. |
 | `join-date-required` | 422 | Recruitment |  |
 | `kit-limit-reached` | 409 | Recruitment | The company has reached its limit of interview kits. |

@@ -67,4 +67,12 @@ interface CandidateReader
      * @return array<int, array{slug: string, name: string}> by account id
      */
     public function namesOfUsers(array $userIds): array;
+
+    /**
+     * The name of these accounts whether or not they can be found now, for those that are active and not anonymised and have a profile (a company holding a private list sees whom it saved).
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, string> by account id
+     */
+    public function activeNamesOfUsers(array $userIds): array;
 }

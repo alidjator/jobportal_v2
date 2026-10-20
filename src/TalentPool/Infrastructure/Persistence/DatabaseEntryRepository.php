@@ -163,6 +163,19 @@ final readonly class DatabaseEntryRepository implements EntryRepository
         );
     }
 
+    public function restingOnLegacyAfter(int $afterId, int $limit, DateTimeImmutable $untouchedSince): array
+    {
+        return array_map(
+            fn (stdClass $row): Entry => $this->toEntry($row),
+            $this->connection->table('talentpool_entries')->where('source', EntrySource::Legacy->value)->where('updated_at', '<=', $this->format($untouchedSince))->where('id', '>', $afterId)->orderBy('id')->limit($limit)->get()->all(),
+        );
+    }
+
+    public function deleteLegacyOfCandidate(int $candidateUserId): int
+    {
+        return $this->connection->table('talentpool_entries')->where('candidate_user_id', $candidateUserId)->where('source', EntrySource::Legacy->value)->delete();
+    }
+
     public function removeMany(array $ids): int
     {
         return $ids === [] ? 0 : $this->connection->table('talentpool_entries')->whereIn('id', $ids)->delete();

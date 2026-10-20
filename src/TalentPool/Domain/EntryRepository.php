@@ -2,6 +2,7 @@
 
 namespace Src\TalentPool\Domain;
 
+use DateTimeImmutable;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\StateConflict;
@@ -71,6 +72,16 @@ interface EntryRepository
      * @return list<Entry>
      */
     public function restingOnConsentAfter(int $afterId, int $limit): array;
+
+    /**
+     * Entries carried over from karir.pkp (the `legacy` source) that were last touched at or before `$untouchedSince` (the import, or the company's last change), in id order, starting after `$afterId`.
+     *
+     * @return list<Entry>
+     */
+    public function restingOnLegacyAfter(int $afterId, int $limit, DateTimeImmutable $untouchedSince): array;
+
+    /** Deletes the entries of the `legacy` source that hold the candidate and returns how many were deleted. */
+    public function deleteLegacyOfCandidate(int $candidateUserId): int;
 
     /**
      * Deletes these entries and returns how many were deleted.

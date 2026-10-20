@@ -31,4 +31,13 @@ interface CandidateDirectory
      * @return array<int, CandidateRef> by account id
      */
     public function refs(array $userIds): array;
+
+    /**
+     * The display name of these accounts, found or not, and nothing else (no slug, no profile): a company that holds a private list of people the import carried over sees whom it saved. An account
+     * without a profile, a suspended or deactivated one, or one that was anonymised is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, string> by account id
+     */
+    public function names(array $userIds): array;
 }

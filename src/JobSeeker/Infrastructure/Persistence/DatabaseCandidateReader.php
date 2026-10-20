@@ -126,6 +126,24 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return $names;
     }
 
+    public function activeNamesOfUsers(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($this->connection->table('jobseeker_profiles as p')
+            ->join('identity_users as u', 'u.id', '=', 'p.user_id')
+            ->whereIn('p.user_id', $userIds)->whereNull('u.anonymized_at')->where('u.status', 'active')
+            ->get(['p.user_id', 'u.name']) as $row) {
+            $names[(int) $row->user_id] = (string) $row->name;
+        }
+
+        return $names;
+    }
+
     /** @return list<string> */
     private function columns(): array
     {

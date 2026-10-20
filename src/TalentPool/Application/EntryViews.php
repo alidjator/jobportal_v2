@@ -11,10 +11,12 @@ use Src\Shared\Application\Recruitment\PoolApplications;
 use Src\TalentPool\Domain\CategoryRepository;
 use Src\TalentPool\Domain\ConsentWindow;
 use Src\TalentPool\Domain\Entry;
+use Src\TalentPool\Domain\EntrySource;
 
 /**
  * Turns entries into what the company sees. Who is available, and how, is looked up once for the whole list through ports: a findable candidate shows the candidate
  * search summary; a person available through consent alone shows the snapshot of their latest consenting application (never the live profile, no contact data).
+ * A private list carried over from karir.pkp (`legacy` source) shows the name of a person who is not available too, and nothing else about them.
  * Nothing about the person is copied into TalentPool.
  */
 final readonly class EntryViews
@@ -45,6 +47,10 @@ final readonly class EntryViews
         $available = array_values(array_filter($userIds, static fn (int $id): bool => isset($found[$id]) || isset($snapshots[$id])));
         $applications = $this->applications->latestApplications($actor, $available);
         $invitations = $this->invitations->ofCompany($member->companyId, $available);
+        $legacyNames = $this->candidates->names(array_values(array_unique(array_map(
+            static fn (Entry $entry): int => $entry->candidateUserId,
+            array_filter($entries, static fn (Entry $entry): bool => $entry->source === EntrySource::Legacy && ! isset($found[$entry->candidateUserId]) && ! isset($snapshots[$entry->candidateUserId])),
+        ))));
         $savers = $this->members->summaries(array_values(array_unique(array_filter(array_map(static fn (Entry $entry): ?int => $entry->savedByUserId, $entries)))));
 
         $categoryNames = [];
@@ -53,7 +59,7 @@ final readonly class EntryViews
             $categoryNames[(int) $category->id] = $category->name;
         }
 
-        return array_map(function (Entry $entry) use ($found, $snapshots, $applications, $invitations, $savers, $categoryNames): EntryView {
+        return array_map(function (Entry $entry) use ($found, $snapshots, $applications, $invitations, $savers, $categoryNames, $legacyNames): EntryView {
             $userId = $entry->candidateUserId;
             $summary = $found[$userId] ?? null;
             $snapshot = $snapshots[$userId] ?? null;
@@ -65,7 +71,7 @@ final readonly class EntryViews
                 $entry->categoryId === null ? null : ($categoryNames[$entry->categoryId] ?? null),
                 $isAvailable,
                 $summary?->slug,
-                $summary->name ?? $snapshot?->name,
+                $summary->name ?? $snapshot->name ?? ($legacyNames[$userId] ?? null),
                 $isAvailable ? $entry->note : null,
                 $entry->createdAt,
                 $entry->source,

@@ -65,4 +65,9 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
 
         return $refs;
     }
+
+    public function names(array $userIds): array
+    {
+        return $this->candidates->activeNamesOfUsers($userIds);
+    }
 }

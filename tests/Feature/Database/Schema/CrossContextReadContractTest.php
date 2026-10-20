@@ -45,7 +45,7 @@ final class CrossContextReadContractTest extends FeatureTestCase
             'identity_users' => ['id', 'avatar_path'],
         ],
         'JobSeeker/Infrastructure/Persistence/DatabaseCandidateReader.php' => [
-            'identity_users' => ['id', 'name', 'avatar_path', 'anonymized_at'],
+            'identity_users' => ['id', 'name', 'avatar_path', 'anonymized_at', 'status'],
             'reference_education_levels' => ['id', 'rank'],
         ],
         'JobSeeker/Infrastructure/Persistence/DatabaseCandidateSignalSource.php' => [
