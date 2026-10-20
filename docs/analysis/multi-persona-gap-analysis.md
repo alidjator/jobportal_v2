@@ -484,5 +484,9 @@ Answered by the user in Indonesian; the recommendation was chosen each time (the
 | 19 | MG-P03 | The flag is on the **application list and detail** (C6, C7) for members who may already read the application; interviews and offers are not changed now. |
 | 20 | MG-B03 | Bulk assignment starts from the **member page C22**: one action adds a member to many jobs. The selection from C3 is not built now. |
 | 21 | MG-B03 | The action **only adds** (the assignees of each job keep everyone else), covers imported jobs, takes at most 100 jobs per request, needs `jobs.assign`, and is written to the company activity log. It never removes an assignment. |
+| 22 | MG-B09 | The task `approvals_waiting` on C1 counts **what the inbox E1 lists** (`MyApprovals::mine` as approver: steps in the member's name, steps delegated to them today, steps of a group role they hold), so the number on C1 equals the rows of the list it opens. It needs no company permission (every approver may decide), and it opens the approver inbox. |
+| 23 | MG-B09 | **Approvers only:** the requester gets no task when an approval is returned for revision; the existing return notice stays their reminder. |
+| 24 | MG-C06 | The new queues are **one card per module**, each with its own admin permission, like `jobs_queue` and `companies_queue`; an admin sees only the queues they may manage. |
+| 25 | MG-C06 | Queues now: company **name changes** pending, **review and reply moderation** waiting, **chat reports** open. The job reports are already in `jobs_queue`; the licence queue of #24 comes as its own card with #24. |
 
-Both items are small enough for the item-by-item phase 8 designs; the coding order follows `decisions.md` section 5 (endpoints the front end asks for).
+The four items (MG-P03, MG-B03, MG-B09, MG-C06) are small enough for the item-by-item phase 8 designs; the coding order follows `decisions.md` section 5 (endpoints the front end asks for).
