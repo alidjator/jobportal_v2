@@ -91,7 +91,8 @@ final readonly class CompleteTwoFactorSignIn
 
         $expiresAt = $now->modify(is_string($tokenLifetime) ? $tokenLifetime : $tokenLifetime($userId));
 
-        [$token, $newRecoveryCodes] = $this->transactions->run(function () use ($user, $userId, $challenge, $command, $step, $enrolling, $now, $expiresAt): array {
+        $first = false;
+        [$token, $newRecoveryCodes] = $this->transactions->run(function () use ($user, $userId, $challenge, $command, $step, $enrolling, $now, $expiresAt, &$first): array {
             $this->challenges->consume($challenge->id, $now);
             $codes = [];
 
@@ -103,7 +104,7 @@ final readonly class CompleteTwoFactorSignIn
                 $this->factors->recordStep($userId, $step, $now);
             }
 
-            $user->recordSignIn($now);
+            $first = $user->recordSignIn($now);
             $this->users->save($user);
 
             return [$this->tokens->issueForUser($userId, $command->deviceName, $expiresAt), $codes];
@@ -113,7 +114,7 @@ final readonly class CompleteTwoFactorSignIn
         $this->events->dispatch([
             ...($step !== null && $enrolling ? [new UserTwoFactorEnabled($userId, $command->ipAddress, $command->userAgent, $now)] : []),
             ...($usedRecoveryCode ? [new UserRecoveryCodeUsed($userId, $command->ipAddress, $command->userAgent, $now)] : []),
-            new SignedIn(AccountScope::User, $userId, $command->ipAddress, $command->userAgent, $now),
+            new SignedIn(AccountScope::User, $userId, $command->ipAddress, $command->userAgent, $now, $first),
         ]);
 
         return new TwoFactorSignInResult($token, $expiresAt, $user, $newRecoveryCodes);

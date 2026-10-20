@@ -9,6 +9,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Src\Identity\Application\Account\AdminAccessReader;
+use Src\Identity\Application\Account\IdentityAccountActivation;
 use Src\Identity\Application\Account\IdentityAdminContacts;
 use Src\Identity\Application\Account\IdentityApplicantContacts;
 use Src\Identity\Application\Account\IdentityCompanyMemberAccounts;
@@ -17,6 +18,8 @@ use Src\Identity\Application\Account\IdentityMemberSessions;
 use Src\Identity\Application\Account\IdentityMemberTwoFactor;
 use Src\Identity\Application\Account\IdentityPsychologistAccounts;
 use Src\Identity\Application\Account\UserDataEraser;
+use Src\Identity\Application\Activation\ActivationEmailSender;
+use Src\Identity\Application\Activation\ActivationLinks;
 use Src\Identity\Application\Admin\AdminDirectory;
 use Src\Identity\Application\Admin\AdminRbacWriter;
 use Src\Identity\Application\Auth\AccessTokenIssuer;
@@ -40,6 +43,7 @@ use Src\Identity\Application\TwoFactor\TwoFactorTokens;
 use Src\Identity\Application\TwoFactor\UserRecoveryCodes;
 use Src\Identity\Application\TwoFactor\UserTwoFactorChallenges;
 use Src\Identity\Application\TwoFactor\UserTwoFactors;
+use Src\Identity\Domain\ActivationEmailRepository;
 use Src\Identity\Domain\AdminRepository;
 use Src\Identity\Domain\Events\AccountDeletionCancelled;
 use Src\Identity\Domain\Events\AccountDeletionRequested;
@@ -84,8 +88,11 @@ use Src\Identity\Infrastructure\Auth\SpatieAdminDirectory;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
+use Src\Identity\Infrastructure\Mail\ConfigActivationLinks;
+use Src\Identity\Infrastructure\Mail\MailActivationEmailSender;
 use Src\Identity\Infrastructure\Mail\MailTwoFactorNoticeSender;
 use Src\Identity\Infrastructure\Mail\MailVerificationCodeSender;
+use Src\Identity\Infrastructure\Persistence\DatabaseActivationEmailRepository;
 use Src\Identity\Infrastructure\Persistence\DatabaseErasureLedger;
 use Src\Identity\Infrastructure\Persistence\DatabaseRecoveryCodes;
 use Src\Identity\Infrastructure\Persistence\DatabaseTermsAcceptanceRepository;
@@ -115,11 +122,12 @@ use Src\Identity\Interface\Console\ReconcileErasureCommand;
 use Src\Identity\Interface\Console\ResetAdminPasswordCommand;
 use Src\Identity\Interface\Console\ResetAdminTwoFactorCommand;
 use Src\Identity\Interface\Console\ResetUserTwoFactorCommand;
-use Src\Identity\Interface\Console\SendImportedPasswordResetsCommand;
+use Src\Identity\Interface\Console\SendActivationEmailsCommand;
 use Src\Identity\Interface\Console\SetAdminRoleCommand;
 use Src\Identity\Interface\Console\SetAdminRolePermissionsCommand;
 use Src\Identity\Interface\Console\SuspendAdminCommand;
 use Src\Identity\Interface\Console\SyncAdminPermissionsCommand;
+use Src\Shared\Application\Accounts\AccountActivation;
 use Src\Shared\Application\Accounts\AdminAccounts;
 use Src\Shared\Application\Accounts\AdminContacts;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
@@ -164,6 +172,10 @@ final class IdentityServiceProvider extends ContextServiceProvider
         UserDataEraser::class => EloquentUserDataEraser::class,
         ApplicantContacts::class => IdentityApplicantContacts::class,
         FirstSignIns::class => IdentityFirstSignIns::class,
+        AccountActivation::class => IdentityAccountActivation::class,
+        ActivationEmailRepository::class => DatabaseActivationEmailRepository::class,
+        ActivationEmailSender::class => MailActivationEmailSender::class,
+        ActivationLinks::class => ConfigActivationLinks::class,
         MemberTwoFactor::class => IdentityMemberTwoFactor::class,
         TwoFactorNoticeSender::class => MailTwoFactorNoticeSender::class,
         MemberSessions::class => IdentityMemberSessions::class,
@@ -214,7 +226,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, SendImportedPasswordResetsCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, SendActivationEmailsCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
             ListAdminPermissionsCommand::class, ListAdminRolesCommand::class, ListAdminsCommand::class, CreateAdminRoleCommand::class, SetAdminRolePermissionsCommand::class,
             DeleteAdminRoleCommand::class, SetAdminRoleCommand::class, SuspendAdminCommand::class, ReactivateAdminCommand::class, ResetAdminPasswordCommand::class]);
 

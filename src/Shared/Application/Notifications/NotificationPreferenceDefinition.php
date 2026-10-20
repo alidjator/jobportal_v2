@@ -8,7 +8,8 @@ use Src\Shared\Application\ActorKind;
 /**
  * One kind of notification a user can tune, for example `application_update`. `defaults` lists the channels the kind supports and
  * whether each one is on until the user decides otherwise; a channel that is not listed is not offered for this kind. `audiences`
- * names the kinds of account that see and may change it (a job seeker by default).
+ * names the kinds of account that see and may change it (a job seeker by default). `scheduled` marks an email the platform sends on its own
+ * schedule rather than because of something a person did; it is not sent to an imported account until that account has signed in once.
  */
 final readonly class NotificationPreferenceDefinition
 {
@@ -21,6 +22,7 @@ final readonly class NotificationPreferenceDefinition
         public string $description,
         public array $defaults,
         public array $audiences = [ActorKind::JobSeeker->value],
+        public bool $scheduled = false,
     ) {
         if ($defaults === []) {
             throw new InvalidArgumentException("Notification preference {$key} must support at least one channel.");

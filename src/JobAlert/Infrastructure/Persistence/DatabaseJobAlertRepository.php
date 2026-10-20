@@ -101,6 +101,14 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
         $this->connection->table('jobalert_alerts')->where('user_id', $userId)->delete();
     }
 
+    public function moveCursorOfUser(int $userId, DateTimeImmutable $at): void
+    {
+        $this->connection->table('jobalert_alerts')
+            ->where('user_id', $userId)
+            ->where('last_run_at', '<', $this->format($at))
+            ->update(['last_run_at' => $this->format($at)]);
+    }
+
     public function activeAfter(AlertFrequency $frequency, int $afterId, int $limit): array
     {
         return array_map(

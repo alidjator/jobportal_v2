@@ -4,6 +4,7 @@ namespace Src\JobAlert\Infrastructure;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobStatusChanged;
@@ -19,6 +20,7 @@ use Src\JobAlert\Domain\AlertDeliveryRepository;
 use Src\JobAlert\Domain\JobAlertRepository;
 use Src\JobAlert\Infrastructure\Listeners\EraseJobAlertsWhenUserAnonymized;
 use Src\JobAlert\Infrastructure\Listeners\NotifyAlertsOfLiveJob;
+use Src\JobAlert\Infrastructure\Listeners\StartAlertsWhenUserSignsInFirst;
 use Src\JobAlert\Infrastructure\Mail\MailAlertSender;
 use Src\JobAlert\Infrastructure\Persistence\DatabaseAlertDeliveryRepository;
 use Src\JobAlert\Infrastructure\Persistence\DatabaseJobAlertRepository;
@@ -68,6 +70,7 @@ final class JobAlertServiceProvider extends ContextServiceProvider
                 JobAlertNotificationType::EMAIL_PREFERENCE,
                 'Email about new jobs that match one of your job alerts.',
                 [NotificationChannel::Email->value => true],
+                scheduled: true,
             ));
         });
     }
@@ -81,5 +84,6 @@ final class JobAlertServiceProvider extends ContextServiceProvider
         $this->app->tag(EraseJobAlerts::class, ErasureStep::class);
         $this->app->tag(AlertsDataExporter::class, PersonalDataExporter::class);
         Event::listen(UserAnonymized::class, EraseJobAlertsWhenUserAnonymized::class);
+        Event::listen(SignedIn::class, StartAlertsWhenUserSignsInFirst::class);
     }
 }

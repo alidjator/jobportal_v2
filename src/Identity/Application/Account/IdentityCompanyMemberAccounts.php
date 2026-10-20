@@ -101,11 +101,11 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         $now = $this->clock->now();
         $expiresAt = $now->modify($this->lifetime->forUser($userId));
 
-        $user->recordSignIn($now);
+        $first = $user->recordSignIn($now);
         $user = $this->users->save($user);
         $token = $this->tokens->issueForUser($userId, $deviceName, $expiresAt);
 
-        $this->events->dispatch([new SignedIn(AccountScope::User, $userId, $ipAddress, $userAgent, $now)]);
+        $this->events->dispatch([new SignedIn(AccountScope::User, $userId, $ipAddress, $userAgent, $now, $first)]);
 
         return new AccountSession(
             $token, $expiresAt, $userId, $user->type->value, $user->name(), $user->email(),

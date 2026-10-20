@@ -62,6 +62,7 @@ final class DashboardServiceProvider extends ContextServiceProvider
                 'Email every morning (Monday to Saturday) with what waits for you: your task list, new applications on your jobs and your interviews of the day. Nothing is sent when nothing waits.',
                 [NotificationChannel::Email->value => true],
                 [ActorKind::CompanyMember->value],
+                scheduled: true,
             ));
         });
 

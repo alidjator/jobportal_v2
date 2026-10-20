@@ -4,7 +4,6 @@ namespace Src\Identity\Infrastructure\Persistence\Eloquent;
 
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Identity\Domain\AccountStatus;
 use Src\Identity\Domain\User;
@@ -79,6 +78,18 @@ final class EloquentUserRepository implements UserRepository
             ->all();
     }
 
+    public function findHeldIds(array $userIds): array
+    {
+        return UserModel::query()
+            ->whereIn('id', $userIds)
+            ->whereNotNull('imported_at')
+            ->whereNull('first_login_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
     public function search(?string $search, PageRequest $request): Page
     {
         $query = UserModel::query()->whereNull('anonymized_at');
@@ -93,14 +104,14 @@ final class EloquentUserRepository implements UserRepository
         return new Page($models->map(fn (UserModel $model): User => $this->toDomain($model))->values()->all(), $total, $request);
     }
 
-    public function findWithoutPassword(int $afterId, int $limit): array
+    public function findImportedAwaitingSignIn(UserType $type, int $afterId, int $limit, ?array $emails = null): array
     {
         return UserModel::query()
-            ->where('type', '!=', UserType::Psychologist->value)
-            ->where('status', AccountStatus::Active->value)
+            ->where('type', $type->value)
+            ->whereNotNull('imported_at')
+            ->whereNull('first_login_at')
             ->whereNull('anonymized_at')
-            ->whereNull('password')
-            ->whereNotExists(fn (QueryBuilder $links) => $links->selectRaw('1')->from('identity_social_accounts')->whereColumn('identity_social_accounts.user_id', 'identity_users.id'))
+            ->when($emails !== null, fn (Builder $query) => $query->whereIn('email', $emails))
             ->where('id', '>', $afterId)
             ->orderBy('id')
             ->limit($limit)
@@ -108,6 +119,16 @@ final class EloquentUserRepository implements UserRepository
             ->map(fn (UserModel $model): User => $this->toDomain($model))
             ->values()
             ->all();
+    }
+
+    public function countImported(UserType $type, bool $signedIn): int
+    {
+        return UserModel::query()
+            ->where('type', $type->value)
+            ->whereNotNull('imported_at')
+            ->whereNull('anonymized_at')
+            ->when($signedIn, fn (Builder $query) => $query->whereNotNull('first_login_at'), fn (Builder $query) => $query->whereNull('first_login_at'))
+            ->count();
     }
 
     public function save(User $user): User

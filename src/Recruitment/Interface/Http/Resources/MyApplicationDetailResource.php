@@ -8,7 +8,6 @@ use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationView;
 use Src\Recruitment\Domain\RejectionReason;
-use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
 
 /**
@@ -72,7 +71,7 @@ final class MyApplicationDetailResource extends JsonResource
     }
 
     /**
-     * The last move into `withdrawn`: its reason (the applicant's own or the team's), who marked it and when. The team's note is never part of it.
+     * The last move into `withdrawn`: its reason (the applicant's own or the team's), who marked it (`applicant`, `recruiter` or `system`, for example a duplicate the import withdrew) and when. The team's note is never part of it.
      *
      * @param  list<ApplicationHistoryEntry>  $history
      * @return array{reason: string|null, by: string, at: string}|null
@@ -83,7 +82,7 @@ final class MyApplicationDetailResource extends JsonResource
             if ($entry->status === StageType::Withdrawn) {
                 return [
                     'reason' => $entry->withdrawalReason?->value,
-                    'by' => $entry->by === StageMoveActor::Recruiter ? 'recruiter' : 'applicant',
+                    'by' => $entry->by->value,
                     'at' => $entry->at->format(DATE_ATOM),
                 ];
             }

@@ -124,6 +124,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
                 ProfileReminderNotificationType::EMAIL_PREFERENCE,
                 'Email reminders to complete your profile so that you can apply for jobs.',
                 [NotificationChannel::Email->value => true],
+                scheduled: true,
             ));
         });
 

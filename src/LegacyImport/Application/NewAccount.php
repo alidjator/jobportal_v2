@@ -16,5 +16,6 @@ final readonly class NewAccount
         public ?string $campaignCode,
         public string $createdAt,
         public string $updatedAt,
+        public string $importedAt,
     ) {}
 }

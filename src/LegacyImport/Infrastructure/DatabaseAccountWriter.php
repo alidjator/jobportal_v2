@@ -28,6 +28,7 @@ final readonly class DatabaseAccountWriter implements AccountWriter
             'registration_campaign_code' => $account->campaignCode,
             'created_at' => $account->createdAt,
             'updated_at' => $account->updatedAt,
+            'imported_at' => $account->importedAt,
         ]);
     }
 

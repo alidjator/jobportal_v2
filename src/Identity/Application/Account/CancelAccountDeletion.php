@@ -59,9 +59,10 @@ final readonly class CancelAccountDeletion
         $now = $this->clock->now();
         $expiresAt = $now->modify(SignInUser::TOKEN_LIFETIME);
 
-        $token = $this->transactions->run(function () use ($user, $command, $now, $expiresAt): string {
+        $first = false;
+        $token = $this->transactions->run(function () use ($user, $command, $now, $expiresAt, &$first): string {
             $user->cancelDeletion();
-            $user->recordSignIn($now);
+            $first = $user->recordSignIn($now);
             $this->users->save($user);
 
             return $this->tokens->issueForUser((int) $user->id, $command->deviceName, $expiresAt);
@@ -70,7 +71,7 @@ final readonly class CancelAccountDeletion
         $this->throttle->clearCredentials(AccountScope::User, $email, $command->ipAddress);
         $this->events->dispatch([
             new AccountDeletionCancelled((int) $user->id, $command->ipAddress, $command->userAgent, $now),
-            new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now),
+            new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now, $first),
         ]);
 
         return new UserSignInResult($token, $expiresAt, $user);

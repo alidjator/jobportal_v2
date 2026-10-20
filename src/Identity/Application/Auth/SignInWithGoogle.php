@@ -101,11 +101,12 @@ final readonly class SignInWithGoogle
         $now = $this->clock->now();
         $expiresAt = $now->modify($user !== null && $user->isCompanyMember() ? $this->lifetime->forUser((int) $user->id) : SignInUser::TOKEN_LIFETIME);
 
-        [$user, $token] = $this->transactions->run(function () use ($user, $identity, $email, $linkedUserId, $command, $now, $expiresAt): array {
+        $first = false;
+        [$user, $token] = $this->transactions->run(function () use ($user, $identity, $email, $linkedUserId, $command, $now, $expiresAt, &$first): array {
             $user ??= User::registerWithGoogle($this->nameOf($identity, $email), $email, $command->language, $this->campaigns->activeCode($command->campaignCode), $now);
             $passwordRemoved = $linkedUserId === null && $user->id !== null && $user->confirmEmailOwnershipThroughGoogle($now);
 
-            $user->recordSignIn($now);
+            $first = $user->recordSignIn($now);
             $user = $this->users->save($user);
 
             if ($linkedUserId === null) {
@@ -122,7 +123,7 @@ final readonly class SignInWithGoogle
         $this->throttle->clear($throttleKey);
         $this->events->dispatch([
             ...($isNewUser ? [new UserRegistered((int) $user->id, $user->type->value, $now)] : []),
-            new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now),
+            new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now, $first),
         ]);
 
         return new GoogleSignInResult(new UserSignInResult($token, $expiresAt, $user), $isNewUser);

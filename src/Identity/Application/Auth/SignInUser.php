@@ -75,15 +75,16 @@ final readonly class SignInUser
         $now = $this->clock->now();
         $expiresAt = $now->modify($user->isCompanyMember() ? $this->lifetime->forUser((int) $user->id) : self::TOKEN_LIFETIME);
 
-        $token = $this->transactions->run(function () use ($user, $command, $now, $expiresAt): string {
-            $user->recordSignIn($now);
+        $first = false;
+        $token = $this->transactions->run(function () use ($user, $command, $now, $expiresAt, &$first): string {
+            $first = $user->recordSignIn($now);
             $this->users->save($user);
 
             return $this->tokens->issueForUser((int) $user->id, $command->deviceName, $expiresAt);
         });
 
         $this->throttle->clearCredentials(AccountScope::User, $email, $command->ipAddress);
-        $this->events->dispatch([new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now)]);
+        $this->events->dispatch([new SignedIn(AccountScope::User, (int) $user->id, $command->ipAddress, $command->userAgent, $now, $first)]);
 
         return new UserSignInResult($token, $expiresAt, $user);
     }

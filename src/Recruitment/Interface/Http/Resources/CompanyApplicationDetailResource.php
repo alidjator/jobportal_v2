@@ -102,7 +102,7 @@ final class CompanyApplicationDetailResource extends JsonResource
         ];
     }
 
-    /** The last move into `withdrawn`, when the application is withdrawn now. The team's note is the one of the history entry; the applicant's is the application's. */
+    /** The last move into `withdrawn`, when the application is withdrawn now. The team's (or the system's) note is the one of the history entry; the applicant's is the application's. */
     private function withdrawal(CompanyApplicationView $view): ?array
     {
         $data = $view->data;
@@ -114,12 +114,13 @@ final class CompanyApplicationDetailResource extends JsonResource
         foreach (array_reverse($data->history) as $entry) {
             if ($entry->toType === StageType::Withdrawn) {
                 $byTeam = $entry->by === StageMoveActor::Recruiter;
+                $byApplicant = $entry->by === StageMoveActor::Applicant;
 
                 return [
                     'reason' => $entry->withdrawalReason?->value,
-                    'by' => $byTeam ? 'recruiter' : 'applicant',
+                    'by' => $entry->by->value,
                     'actor' => $byTeam && $entry->actorId !== null && isset($view->actorNames[$entry->actorId]) ? ['id' => $entry->actorId, 'name' => $view->actorNames[$entry->actorId]] : null,
-                    'note' => $byTeam ? $entry->note : $data->withdrawnNote,
+                    'note' => $byApplicant ? $data->withdrawnNote : $entry->note,
                     'at' => $entry->at->format(DATE_ATOM),
                 ];
             }

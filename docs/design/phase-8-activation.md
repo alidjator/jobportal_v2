@@ -290,6 +290,37 @@ Decisions 3, 4, 7, 9, 10, 11, 16 and 17 of section 5.6 (job snapshot copy, analy
 
 None. The user answered every question, approved the defaults a to j and the drafts (2026-10-20). Waiting for the user, outside this design: the freeze date, the SMTP provider, the final domain and sender address, the values of the support settings, and the legal review (point j of section 16).
 
+## Coded
+
+### Part 1: marker and hold (2026-10-20, branch `phase-8-activation`)
+
+Migration `000177_add_imported_at_to_identity_users` (new; backfills `imported_at` from `legacyimport_id_map`, entity `user`). Interpretations made while coding:
+
+- **First-sign-in signal.** `User::recordSignIn` now returns true on the first sign-in, and `SignedIn` carries `firstSignIn` (default false), set by the five user sign-in paths (password, two-factor, Google, cancelled deletion, company member). Registration does not set it: a new account has no imported alerts. The alert listener (`StartAlertsWhenUserSignsInFirst`, queued) moves the cursor of **every** alert of the account forward to that moment; no "imported" flag is needed, because an account cannot create an alert before its first sign-in. The cursor only moves forward.
+- **Only the `email` channel is held.** Push is left alone (a device is registered by signing in). `isEnabled` and `enabledAmong` check `AccountActivation` only for a `scheduled` key.
+- **Scheduled keys:** `recommendation`, `profile_reminder`, `job_alert` (digests and immediate alerts), `chat_message` (unread email), `team_daily_digest`. Other keys are unchanged.
+- **Expiry notice: no check added.** `NotifyAssigneesOfExpiry` writes an in-app notification only and no email exists for it, and in-app notifications are never held (section 4), so nothing was changed there. Section 4 says it "asks `AccountActivation` directly"; if an expiry email is added later, it must ask.
+- The importer sets `imported_at` to the import time (the clock of the run). The domain `User` does not carry the field yet (only the model and a repository read, `findHeldIds`); the admin resources of part 7 add it.
+- Needs a second rehearsal together with parts 3, 4 and 6 (the account importer changed).
+
+### Part 2: activation email, command and settings (2026-10-20)
+
+Migration `000178_create_identity_activation_emails` (new). The old command `identity:send-imported-password-resets`, its use case, report, test and `UserRepository::findWithoutPassword` are removed; checklist section 3 and `HANDOFF.md` are rewritten (the history in `phase-8-platform-admin.md` still names the old command). No endpoint: the support actions (resend activation, password reset, resend verification) belong to part 5. Interpretations made while coding:
+
+- **Four template keys, not three:** `activation.job_seeker` (old password works), `activation.job_seeker_no_password`, `activation.company`, `activation.reminder`; a template has one body, so the two job-seeker variants are two keys. The company template shows `{{support_contact}}` (support address, plus the WhatsApp number when set) in place of the two placeholders of the draft; the reminder is the same text for every audience.
+- **Settings:** `identity.activation_reminder_days` is an integer (1 to 60); the two limits and the date are **text** settings (there is no decimal or date type): `activation_bounce_limit_percent` (`2`), `activation_complaint_limit_percent` (`0.1`), `activation_job_seekers_not_before` (`YYYY-MM-DD`, empty = refuse). A non-numeric limit refuses a real run (`activation-limit-invalid`). `platform.support_email` and `platform.support_whatsapp` are registered by Platform. `identity.import_summary_retention_days` comes with part 3.
+- **Links:** `.env` `JOB_SEEKER_ACTIVATION_URL`, `COMPANY_ACTIVATION_URL` and a third one the draft needs, `JOB_SEEKER_SIGN_IN_URL` (`{SIGN_IN_URL}` of A6). A real run is refused while the one it needs is empty (`activation-url-missing`).
+- **Guards apply to a real run; a dry run reports them** ("A real run would be refused: ...") and still counts. The date guard and the stop rule are skipped for the staff test. The stop rule looks at the **latest automatic batch of the same audience** (activation or reminder; staff tests are ignored): bounces (`hard_bounce`) and complaints among the suppressed addresses of its accounts, as a percentage of the accounts it went to, strictly above the limit refuses.
+- **Selection and order:** imported, never signed in, not anonymised, then split into suppressed, deactivated or suspended, already sent (same kind), not due (reminder: no activation email, or younger than the reminder days), and sendable. **Unverified addresses are sent only when no verified one is left** (so a batch never mixes them); the report counts them as held back meanwhile. Order is by user id.
+- **Batch label:** `batch|pilot|reminder|staff-test` + audience + run time (`--pilot` is a flag, not a name). **Staff test:** `--emails=<file>` (one address per line) logs kind `manual` rows, which do not use up the real activation and may be repeated.
+- **Sending:** the email is queued like the other account notices (`AccountNoticeMail`, `default` queue), not sent inline; `--delay` paces the loop. A row is reserved in the log first (unique partial index on `activation` and `reminder`), released if handing it to the mailer fails.
+- The company name comes through `CompanyMembershipResolver` and `CompanyDirectory`; an owner without a membership gets an empty name.
+- The log keeps its rows when an account is anonymised (ids only, no personal data); `CrossContextForeignKeysTest` lists it among the tables without a foreign key.
+
+### Fix MG-A08 / MG-B05: withdrawal by the system (2026-10-20, tied to the migrated applications MG-A09/MG-B06)
+
+`withdrawal.by` of `GET me/applications/{id}` and `GET company/applications/{id}` now returns `applicant`, `recruiter` or `system` (it mapped every non-recruiter to `applicant`, so the older duplicates the import withdraws read as "the candidate withdrew"). On the company side the `note` of a system move is the history entry's note, never the applicant's withdrawn note; `actor` stays null for it. Test: `TeamWithdrawalTest`. API docs cache cleared and rebuilt.
+
 ## Appendix A: drafts for review
 
 Indonesian is the language of these texts (the project writes everything else in English); each draft has a one-line English gloss. Placeholders: `{FREEZE_DATE}`, `{NEW_SITE_URL}`, `{SIGN_IN_URL}`, `{ACTIVATION_URL}`, `{SENDER_ADDRESS}`, `{SUPPORT_EMAIL}`, `{SUPPORT_WHATSAPP}`, `{REMINDER_DAYS}`, `{NOTICE_URL}`, `{COMPANY_NAME}`, `{NAME}`. The tone is plain and calm: the sender and the address are named, nothing is urgent, no password or code is asked for by email.

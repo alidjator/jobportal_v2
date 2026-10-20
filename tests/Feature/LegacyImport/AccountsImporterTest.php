@@ -66,6 +66,8 @@ final class AccountsImporterTest extends FeatureTestCase
         $this->assertSame('2024-02-05 07:00:00', $user->updated_at);
         $this->assertNull($user->avatar_path);
         $this->assertNull($user->last_login_at);
+        $this->assertNull($user->first_login_at);
+        $this->assertNotNull($user->imported_at);
 
         $this->assertSame((int) $user->id, DB::table('legacyimport_id_map')->where('entity', 'user')->where('legacy_id', $id)->value('new_id'));
         $this->assertSame(['read' => 1, 'imported' => 1, 'skipped' => 0], array_intersect_key($this->entity($report), array_flip(['read', 'imported', 'skipped'])));

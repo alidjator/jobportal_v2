@@ -175,8 +175,8 @@ final class UserTest extends TestCase
 
         $this->assertNull($user->firstLoginAt());
 
-        $user->recordSignIn($first);
-        $user->recordSignIn($second);
+        $this->assertTrue($user->recordSignIn($first));
+        $this->assertFalse($user->recordSignIn($second));
 
         $this->assertSame($first, $user->firstLoginAt());
         $this->assertSame($second, $user->lastLoginAt());

@@ -14,6 +14,7 @@ final readonly class SignedIn implements DomainEvent
         public ?string $ipAddress,
         public ?string $userAgent,
         private DateTimeImmutable $occurredAt,
+        public bool $firstSignIn = false,
     ) {}
 
     public function occurredAt(): DateTimeImmutable

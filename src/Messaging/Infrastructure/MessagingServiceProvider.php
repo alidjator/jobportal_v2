@@ -120,6 +120,7 @@ final class MessagingServiceProvider extends ContextServiceProvider
                 MessagingNotificationType::UNREAD_PREFERENCE,
                 'Email when a chat message is still unread 15 minutes after it arrived (one email per conversation).',
                 [NotificationChannel::Email->value => true],
+                scheduled: true,
             ));
         });
     }

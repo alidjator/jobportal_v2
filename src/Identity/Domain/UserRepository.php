@@ -35,6 +35,14 @@ interface UserRepository
     public function findJobSeekerIdsFirstSignedInBefore(DateTimeImmutable $cutoff, int $afterId, int $limit): array;
 
     /**
+     * The ids among these that belong to imported accounts that have not signed in since the import.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function findHeldIds(array $userIds): array;
+
+    /**
      * The accounts that are not anonymised, newest first; the search text matches part of the name or the email.
      *
      * @return Page<User>
@@ -42,12 +50,16 @@ interface UserRepository
     public function search(?string $search, PageRequest $request): Page;
 
     /**
-     * Active accounts of the public sign-in (not psychologists, not anonymised) that have no password and no link to a social provider, so
-     * they can only get in through a password reset; ascending id after the cursor.
+     * The accounts of this type that came from the import and have not signed in since (any status, never an anonymised one), with an id after `$afterId`, in id order. With
+     * `$emails` only the accounts with these (lower case) addresses.
      *
+     * @param  list<string>|null  $emails
      * @return list<User>
      */
-    public function findWithoutPassword(int $afterId, int $limit): array;
+    public function findImportedAwaitingSignIn(UserType $type, int $afterId, int $limit, ?array $emails = null): array;
+
+    /** How many imported accounts of this type (never an anonymised one) have signed in since the import, or have not. */
+    public function countImported(UserType $type, bool $signedIn): int;
 
     /** Inserts a new user or updates an existing one, and returns the stored aggregate (with its id). */
     public function save(User $user): User;

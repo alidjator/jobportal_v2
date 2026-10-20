@@ -55,6 +55,7 @@ final class MatchingServiceProvider extends ContextServiceProvider
                 RecommendationNotificationType::EMAIL_PREFERENCE,
                 'Email once a week with jobs that fit your profile.',
                 [NotificationChannel::Email->value => true],
+                scheduled: true,
             ));
         });
     }

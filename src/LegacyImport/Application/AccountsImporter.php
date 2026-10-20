@@ -123,6 +123,7 @@ final readonly class AccountsImporter implements Importer
                 $this->campaignCode($campaign),
                 $createdAt,
                 $row->updated_at === null ? $createdAt : $this->time($row->updated_at, $context),
+                $this->time(null, $context),
             ));
 
             $context->idMap->remember(self::USER, $legacyId, $newId, $context->clock->now());

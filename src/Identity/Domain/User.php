@@ -182,10 +182,14 @@ final class User extends AggregateRoot
         $this->status->assertCanSignIn();
     }
 
-    public function recordSignIn(DateTimeImmutable $at): void
+    /** Returns true when this is the account's first sign-in. */
+    public function recordSignIn(DateTimeImmutable $at): bool
     {
+        $first = $this->firstLoginAt === null;
         $this->lastLoginAt = $at;
         $this->firstLoginAt ??= $at;
+
+        return $first;
     }
 
     public function verifyEmail(DateTimeImmutable $at): void

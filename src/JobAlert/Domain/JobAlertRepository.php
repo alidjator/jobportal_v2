@@ -2,6 +2,7 @@
 
 namespace Src\JobAlert\Domain;
 
+use DateTimeImmutable;
 use Src\Shared\Application\Job\LiveJobProfile;
 
 interface JobAlertRepository
@@ -25,6 +26,9 @@ interface JobAlertRepository
     public function delete(int $alertId): void;
 
     public function deleteOfUser(int $userId): void;
+
+    /** Moves the cursor of the user's alerts forward to `$at` (never back), so the next digest holds only jobs published after it. */
+    public function moveCursorOfUser(int $userId, DateTimeImmutable $at): void;
 
     /**
      * The alerts of this frequency that are not paused, with an id after `$afterId`, in id order: a batch to walk through them all.

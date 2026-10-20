@@ -124,6 +124,11 @@ return [
 
     'campaign_registration_url' => env('CAMPAIGN_REGISTRATION_URL'),
 
+    // Client pages of the activation of imported karir.pkp accounts (`docs/design/phase-8-activation.md`): the explanation page of each site and the job seeker sign-in page. Empty: the send command refuses.
+    'job_seeker_activation_url' => env('JOB_SEEKER_ACTIVATION_URL'),
+    'company_activation_url' => env('COMPANY_ACTIVATION_URL'),
+    'job_seeker_sign_in_url' => env('JOB_SEEKER_SIGN_IN_URL'),
+
     // Client page of the job seeker's own profile, linked from the profile reminder email. Empty: the email carries no link.
     'profile_url' => env('JOB_SEEKER_PROFILE_URL'),
 

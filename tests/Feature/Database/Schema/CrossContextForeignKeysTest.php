@@ -123,6 +123,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
         'matching_deliveries' => ['user_id', 'job_id'],
         'platform_audit_logs' => ['actor_id', 'subject_id'],
         'legacyimport_id_map' => ['legacy_id', 'new_id'],
+        'identity_activation_emails' => ['user_id'],
         'job_market_daily' => ['company_id', 'category_id', 'province_id'],
         'review_reports' => ['reporter_id'],
         'job_reports' => ['reporter_user_id'],

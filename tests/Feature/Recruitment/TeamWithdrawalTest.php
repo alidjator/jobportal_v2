@@ -90,6 +90,22 @@ final class TeamWithdrawalTest extends FeatureTestCase
         return null;
     }
 
+    public function test_a_withdrawal_by_the_system_is_not_shown_as_the_applicants_own(): void
+    {
+        $this->withdraw(['reason' => 'other', 'note' => 'Older duplicate'])->assertNoContent();
+        DB::table('recruitment_application_stage_history')->where('application_id', $this->applicationId)->where('to_type', 'withdrawn')->update(['actor_kind' => 'system']);
+        DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['withdrawn_note' => 'Applicant words']);
+
+        $this->api('GET', "/company/applications/{$this->applicationId}", token: $this->adminToken)->assertOk()
+            ->assertJsonPath('data.withdrawal.by', 'system')
+            ->assertJsonPath('data.withdrawal.actor', null)
+            ->assertJsonPath('data.withdrawal.note', 'Older duplicate');
+
+        $mine = $this->api('GET', "/me/applications/{$this->applicationId}", token: $this->seekerToken)->assertOk();
+        $mine->assertJsonPath('data.withdrawal.by', 'system');
+        $this->assertStringNotContainsString('Older duplicate', (string) $mine->getContent());
+    }
+
     public function test_the_team_marks_a_withdrawal_with_its_reason_and_note_and_the_applicant_may_apply_again(): void
     {
         $this->withdraw(['reason' => 'unreachable', 'note' => 'Stopped answering'])->assertNoContent();
