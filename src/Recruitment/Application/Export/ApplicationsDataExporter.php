@@ -7,6 +7,7 @@ use DateTimeInterface;
 use Src\Recruitment\Application\ApplicantApplicationReader;
 use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
+use Src\Recruitment\Domain\ApplicationJobSnapshots;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
@@ -22,7 +23,7 @@ use Src\Shared\Application\Privacy\PersonalDataSection;
 
 /**
  * The Recruitment part of the personal data export: every application as the job seeker sees it (stage history by system stage type, the reason code of a
- * rejection, the withdrawal note, the screening answers), the profile snapshot and resume copy they sent, their interviews and the offers made to them.
+ * rejection, the withdrawal note, the screening answers), the profile snapshot and resume copy they sent, the job content they applied for, their interviews and the offers made to them.
  * Left out, because it belongs to the company: stage names, notes, ratings, scorecards, the match with the screening rules, and the company's own rejection note.
  */
 final readonly class ApplicationsDataExporter implements PersonalDataExporter
@@ -34,6 +35,7 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
         private OfferRepository $offers,
         private JobDirectory $jobs,
         private CompanyDirectory $companies,
+        private ApplicationJobSnapshots $jobSnapshots,
     ) {}
 
     public function key(): string
@@ -95,6 +97,7 @@ final readonly class ApplicationsDataExporter implements PersonalDataExporter
                     'chosen_options' => array_column($answer->options, 'label'),
                 ], $detail->answers ?? []),
                 'profile_snapshot' => $application->profileSnapshot ?? [],
+                'job_content' => $this->jobSnapshots->find($row->id),
                 'interviews' => array_map(static fn (Interview $interview): array => [
                     'starts_at' => $interview->startsAt->format(DateTimeInterface::ATOM),
                     'ends_at' => $interview->endsAt->format(DateTimeInterface::ATOM),

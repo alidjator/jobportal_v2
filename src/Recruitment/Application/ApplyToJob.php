@@ -7,6 +7,7 @@ use DateTimeZone;
 use Src\Recruitment\Domain\Application;
 use Src\Recruitment\Domain\ApplicationAnswerChecker;
 use Src\Recruitment\Domain\ApplicationFacetRepository;
+use Src\Recruitment\Domain\ApplicationJobSnapshots;
 use Src\Recruitment\Domain\ApplicationRepository;
 use Src\Recruitment\Domain\ApplicationResume;
 use Src\Recruitment\Domain\ApplicationSource;
@@ -33,7 +34,7 @@ use Src\Shared\Domain\Exceptions\TooManyAttempts;
 use Throwable;
 
 /**
- * A job seeker applies to a live public job. The application keeps its own copy of the chosen resume and a snapshot of the profile as it is now, so
+ * A job seeker applies to a live public job. The application keeps its own copy of the chosen resume, a snapshot of the profile as it is now and a copy of the job's content as the candidate read it, so
  * what the recruiter sees never changes under them. The applicant is locked first, so two requests of the same person (and the daily count) run one
  * after the other, then the job, so a job that is closed meanwhile takes no application; the unique key of the application is the last line of defence against a duplicate. It also records where the applicant came from (an invitation
  * wins over the hint of the client) and how well they fitted the job, for the analytics.
@@ -54,6 +55,7 @@ final readonly class ApplyToJob
         private ApplicationRepository $applications,
         private ApplicationFacetRepository $facets,
         private ApplicationFacetBuilder $facetBuilder,
+        private ApplicationJobSnapshots $jobSnapshots,
         private JobQuestionRepository $jobQuestions,
         private StageRepository $stages,
         private ScreeningSwitch $screening,
@@ -153,6 +155,13 @@ final readonly class ApplyToJob
                     ),
                     $checked->answers,
                 );
+
+                // What the candidate read when they applied, kept so they can read it again after the job closes.
+                $content = $this->jobs->contentSnapshot($jobId);
+
+                if ($content !== null) {
+                    $this->jobSnapshots->save((int) $application->id, $content);
+                }
 
                 $this->facets->save(
                     (int) $application->id,

@@ -99,6 +99,7 @@ final readonly class DatabaseApplicantDataEraser implements ApplicantDataEraser
             'resume_path' => null,
             'resume_size_bytes' => null,
             'profile_snapshot' => null,
+            'job_snapshot' => null,
             'talent_pool_consent_at' => null,
         ]);
     }

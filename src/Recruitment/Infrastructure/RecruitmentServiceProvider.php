@@ -55,6 +55,7 @@ use Src\Recruitment\Application\Voice\HandleAriEvent;
 use Src\Recruitment\Application\Voice\VoiceGateway;
 use Src\Recruitment\Domain\ApplicantDataEraser;
 use Src\Recruitment\Domain\ApplicationFacetRepository;
+use Src\Recruitment\Domain\ApplicationJobSnapshots;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
@@ -133,6 +134,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReade
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantRelations;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationFacetRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationJobSnapshots;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
@@ -183,6 +185,7 @@ use Src\Recruitment\Infrastructure\Voice\AsteriskAriGateway;
 use Src\Recruitment\Infrastructure\Voice\DatabaseCallRepository;
 use Src\Recruitment\Infrastructure\Voice\DatabaseVoiceSessionRepository;
 use Src\Recruitment\Interface\Broadcasting\RecruitmentChannels;
+use Src\Recruitment\Interface\Console\BackfillJobSnapshotsCommand;
 use Src\Recruitment\Interface\Console\BuildApplicationFacetsCommand;
 use Src\Recruitment\Interface\Console\CloseVideoRoomsCommand;
 use Src\Recruitment\Interface\Console\CloseVoiceSessionsCommand;
@@ -251,6 +254,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicationVisibility::class => DatabaseHiringManagerVisibility::class,
         ApplicationRepository::class => DatabaseApplicationRepository::class,
         ApplicationFacetRepository::class => DatabaseApplicationFacetRepository::class,
+        ApplicationJobSnapshots::class => DatabaseApplicationJobSnapshots::class,
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
         InterviewRepository::class => DatabaseInterviewRepository::class,
@@ -393,7 +397,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();

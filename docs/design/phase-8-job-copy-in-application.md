@@ -25,6 +25,17 @@ Closes MG-A10 of `docs/analysis/multi-persona-gap-analysis.md` (decision 3). Bui
 
 Apply copies the content; a later job edit and close leave the copy unchanged; the salary is hidden when the job hides it; names come back in the request language; an application of the migration has `as_of_migration`; the importer sets it; the list does not carry it; erasure clears it; the export holds it.
 
+## Coded (2026-10-20)
+
+Migration `000183_add_job_snapshot_to_recruitment_applications` (new; the column only). Changes the import, so it joins the second rehearsal with #34 and #36. Interpretations made while coding:
+
+- **The fill is a command, not the migration.** `recruitment:backfill-job-snapshots` (run once after the migration; idempotent, id order, batches of 200, the content of each job built once per run) fills the applications that have no copy, from the job as it is then, with `as_of_migration: true`. A migration that builds the content would depend on the application's classes and master translations; a command can be repeated. Until it has run, `job_content` is null. An erased application (no profile snapshot) is left out, so an erasure is never undone by a rerun.
+- **The port is `JobDirectory::contentSnapshot`** (Shared, provided by Job through `JobContentSnapshot`); it builds the content of any job, live or not, and holds nothing about the company, the assignees or the status. `ApplyToJob` saves it in the same transaction as the application; `ApplicationsImporter` writes it with the application (marked `as_of_migration`).
+- **Keys:** `version`, `title`, `description`, `work_mode`, `locations` (one item from the job's own address, empty without one), `salary` (`min`, `max` and the period with both names, only when the job shows it), `skills` and `benefits` (`id` and a name in `id` and `en`), `tags`, `as_of_migration`. There is no currency in the schema, so `salary` has the period instead.
+- **Read:** `GET me/applications/{id}` carries `job_content` in the language of the request (the other language when an item has no name in it); the list does not. `GetMyApplication` takes the language. The company resources do not carry it.
+- **Erased and exported:** the applicant erasure sets `job_snapshot` to null with the profile snapshot, and the personal data export holds it as `job_content`.
+- **Not done:** the line of J5 for `as_of_migration` is the front end's; `locations` carry the reference names of the day (one language).
+
 ## Open points
 
 None.

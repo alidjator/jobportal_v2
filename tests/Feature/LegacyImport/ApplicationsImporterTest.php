@@ -171,6 +171,17 @@ final class ApplicationsImporterTest extends FeatureTestCase
         $this->assertArrayNotHasKey('birth_date', $snapshot);
     }
 
+    public function test_an_imported_application_keeps_the_job_content_as_of_the_migration(): void
+    {
+        $this->application();
+
+        $this->import();
+
+        $content = json_decode((string) DB::table('recruitment_applications')->value('job_snapshot'), true);
+        $this->assertSame([1, 'Backend Developer', true], [$content['version'], $content['title'], $content['as_of_migration']]);
+        $this->assertEqualsCanonicalizing(['version', 'title', 'description', 'work_mode', 'locations', 'salary', 'skills', 'benefits', 'tags', 'as_of_migration'], array_keys($content));
+    }
+
     public function test_an_applicant_without_a_migrated_profile_gets_a_snapshot_with_the_name_and_email_only(): void
     {
         DB::connection('legacy')->table('candidates')->where('id', $this->candidate)->update(['user_id' => $this->user]);

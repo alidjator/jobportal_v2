@@ -96,4 +96,13 @@ interface JobDirectory
 
     /** Locks the job row until the transaction ends, so two changes to what hangs on the job run one after the other. */
     public function lock(int $jobId): void;
+
+    /**
+     * The content of the job as a candidate reads it when they apply, ready to be kept with the application (`docs/design/phase-8-job-copy-in-application.md`): title, description, work
+     * mode, locations (province, city, address line), the salary only when the job shows it, skills, benefits and tags, with the names of master items in both languages. It holds nothing
+     * about the company, the assignees or the status, and is built for any job, live or not. Null when the job does not exist.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function contentSnapshot(int $jobId): ?array;
 }

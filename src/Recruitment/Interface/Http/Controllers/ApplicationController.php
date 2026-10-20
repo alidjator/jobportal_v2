@@ -19,6 +19,7 @@ use Src\Recruitment\Interface\Http\Requests\WithdrawApplicationRequest;
 use Src\Recruitment\Interface\Http\Resources\ApplicationSubmittedResource;
 use Src\Recruitment\Interface\Http\Resources\MyApplicationDetailResource;
 use Src\Recruitment\Interface\Http\Resources\MyApplicationResource;
+use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\CursorResources;
@@ -40,9 +41,9 @@ final class ApplicationController extends ApiController
         return MyApplicationResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
     }
 
-    public function show(Request $request, int $id, ActorResolver $actors, GetMyApplication $get): MyApplicationDetailResource
+    public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetMyApplication $get): MyApplicationDetailResource
     {
-        return new MyApplicationDetailResource($get->execute($actors->fromRequest($request), $id));
+        return new MyApplicationDetailResource($get->execute($actors->fromRequest($request), $id, $context->language));
     }
 
     public function withdraw(WithdrawApplicationRequest $request, int $id, ActorResolver $actors, WithdrawMyApplication $withdraw): Response

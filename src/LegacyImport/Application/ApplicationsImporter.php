@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
 use Src\Shared\Application\FileStorage;
+use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\TransactionManager;
 use stdClass;
 use Throwable;
@@ -43,12 +44,16 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
     /** @var array<int, true> */
     private array $reportedGroups = [];
 
+    /** @var array<int, array<string, mixed>|null> the content of each job, built once per run */
+    private array $jobContent = [];
+
     public function __construct(
         private readonly LegacySource $legacy,
         private readonly ApplicationWriter $writer,
         private readonly ApplicantProfileSource $profiles,
         private readonly ApplicantContacts $contacts,
         private readonly FileStorage $storage,
+        private readonly JobDirectory $jobDirectory,
         private readonly TransactionManager $transactions,
     ) {}
 
@@ -90,6 +95,7 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
         $newest = $this->newestApplications();
         $this->stageCache = [];
         $this->reportedGroups = [];
+        $this->jobContent = [];
 
         $this->legacy->chunk('applied_jobs', self::BATCH, function (array $rows) use ($context, $mapping, $groups, $newest): void {
             $state = $this->state($rows, $context);
@@ -430,6 +436,8 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             'resume_path' => $path,
             'resume_size_bytes' => $resume === null ? null : strlen($resume->contents),
             'profile_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            // The job as it is now, marked so the candidate is told it may have changed since they applied.
+            'job_snapshot' => $this->jobSnapshot($jobId),
             'meets_must_have' => null,
             'withdrawn_note' => null,
             'applied_at' => $appliedAt,
@@ -456,5 +464,13 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
         $time = $value === null || $value === '' ? $context->clock->now() : new DateTimeImmutable((string) $value, new DateTimeZone('UTC'));
 
         return $time->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    }
+
+    /** The content of the job for the copy kept with an imported application, as a JSON text, or null when the job cannot be read. */
+    private function jobSnapshot(int $jobId): ?string
+    {
+        $this->jobContent[$jobId] ??= $this->jobDirectory->contentSnapshot($jobId);
+
+        return $this->jobContent[$jobId] === null ? null : json_encode([...$this->jobContent[$jobId], 'as_of_migration' => true], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
     }
 }

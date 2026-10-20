@@ -2,6 +2,7 @@
 
 namespace Src\Job\Infrastructure;
 
+use Src\Job\Application\Browse\JobContentSnapshot;
 use Src\Job\Application\JobListItem;
 use Src\Job\Application\JobNotificationRecipients;
 use Src\Job\Application\JobReader;
@@ -25,6 +26,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         private PublicCompanies $companies,
         private JobReader $reader,
         private JobNotificationRecipients $recipients,
+        private JobContentSnapshot $contentSnapshots,
     ) {}
 
     public function visibleToMember(int $jobId, int $companyId, int $userId, bool $seesAllJobs): ?JobSummary
@@ -140,5 +142,10 @@ final readonly class RepositoryJobDirectory implements JobDirectory
     public function lock(int $jobId): void
     {
         $this->jobs->lock($jobId);
+    }
+
+    public function contentSnapshot(int $jobId): ?array
+    {
+        return $this->contentSnapshots->of($jobId);
     }
 }
