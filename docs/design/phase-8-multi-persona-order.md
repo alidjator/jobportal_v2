@@ -26,7 +26,7 @@ A proposal for `phase-8-index.md` (the next free numbers are 35 to 44; the index
 
 Waves 2 to 4 do not change the data, so they can follow the final import. Wave 1 cannot: the freeze date should wait for #35 and #36 or they follow a later import.
 
-## What the user decides
+## What the user decided (2026-10-20)
 
-- Whether these items join the allowed list of `decisions.md` section 5 (until the front end catches up only #29, #30, #15, #20, #34 and the endpoints the front end asks for may be coded); the gap analysis 5.3 puts the low-effort, high-value ones (#37, #38) inside that rule.
-- Whether the freeze waits for #35 and #36.
+- **#35, #36, #37 and #38 may be coded now** (added to the list of `decisions.md` section 5); #39 to #44 wait until the front end asks for them.
+- The freeze of the final import waits for #35 and #36, so one second rehearsal covers #34, #35 and #36.

@@ -134,6 +134,11 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
 - **API coding limited until the front end catches up (decided 2026-10-19, user):** only go-live items (#29, #30, #15, #20; #15 still waits for
   #14 and question 13) and the endpoints the front end asks for are coded. ERP and later items (#12 section 3, #13, #14, #22 to #26, #31 to
   #33) wait; design sessions go on. Lifted by the user when the front end reaches the go-live pages of `frontend.md`.
+  **2026-10-20 (user):** #34 (`phase-8-activation.md`, the activation of the imported users and companies) is added to the items coded
+  now, because it must be done before the freeze of the final import.
+  **2026-10-20 (user, second):** #35 and #36 (`phase-8-job-copy-in-application.md`, `phase-8-imported-history-in-reports.md`: they change the import, so they
+  must be done before the freeze) and #37 and #38 (`phase-8-company-team-fixes.md`, `phase-8-admin-queue-cards.md`: small, high value) are added too; the order and
+  numbers are in `phase-8-multi-persona-order.md`. #39 to #44 wait for the front end to ask for them.
 
 ## 6. Still open (see also `phase-0-schema.md`)
 
