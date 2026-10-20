@@ -93,6 +93,7 @@ use Src\Identity\Infrastructure\Auth\SanctumAccessTokenIssuer;
 use Src\Identity\Infrastructure\Auth\SpatieAdminAccessReader;
 use Src\Identity\Infrastructure\Auth\SpatieAdminDirectory;
 use Src\Identity\Infrastructure\Auth\SpatieAdminRbacWriter;
+use Src\Identity\Infrastructure\Dashboard\ActivationCard;
 use Src\Identity\Infrastructure\Dashboard\PlatformJobSeekersCard;
 use Src\Identity\Infrastructure\Listeners\RecordIdentityAuditEntries;
 use Src\Identity\Infrastructure\Mail\ConfigActivationLinks;
@@ -118,6 +119,7 @@ use Src\Identity\Infrastructure\Persistence\EloquentAdminAccounts;
 use Src\Identity\Infrastructure\Persistence\EloquentSocialAccountRepository;
 use Src\Identity\Infrastructure\Persistence\EloquentUserDataEraser;
 use Src\Identity\Infrastructure\Privacy\AccountDataExporter;
+use Src\Identity\Interface\Console\ActivationReportCommand;
 use Src\Identity\Interface\Console\AnonymizeDueAccountsCommand;
 use Src\Identity\Interface\Console\CreateAdminCommand;
 use Src\Identity\Interface\Console\CreateAdminRoleCommand;
@@ -223,6 +225,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
             $cards->add(
                 $this->app->make(PlatformJobSeekersCard::class),
+                $this->app->make(ActivationCard::class),
             );
         });
 
@@ -243,7 +246,7 @@ final class IdentityServiceProvider extends ContextServiceProvider
             $catalog->add(...IdentitySettings::definitions());
         });
 
-        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, SendActivationEmailsCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
+        $this->commands([AnonymizeDueAccountsCommand::class, SyncAdminPermissionsCommand::class, CreateAdminCommand::class, ResetAdminTwoFactorCommand::class, ResetUserTwoFactorCommand::class, SendActivationEmailsCommand::class, ActivationReportCommand::class, PurgeTwoFactorChallengesCommand::class, ReconcileErasureCommand::class,
             ListAdminPermissionsCommand::class, ListAdminRolesCommand::class, ListAdminsCommand::class, CreateAdminRoleCommand::class, SetAdminRolePermissionsCommand::class,
             DeleteAdminRoleCommand::class, SetAdminRoleCommand::class, SuspendAdminCommand::class, ReactivateAdminCommand::class, ResetAdminPasswordCommand::class]);
 

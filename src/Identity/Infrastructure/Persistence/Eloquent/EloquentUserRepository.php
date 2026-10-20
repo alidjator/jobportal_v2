@@ -90,9 +90,11 @@ final class EloquentUserRepository implements UserRepository
             ->all();
     }
 
-    public function search(?string $search, PageRequest $request): Page
+    public function search(?string $search, PageRequest $request, ?bool $imported = null, ?bool $signedIn = null): Page
     {
-        $query = UserModel::query()->whereNull('anonymized_at');
+        $query = UserModel::query()->whereNull('anonymized_at')
+            ->when($imported !== null, fn (Builder $filter) => $imported ? $filter->whereNotNull('imported_at') : $filter->whereNull('imported_at'))
+            ->when($signedIn !== null, fn (Builder $filter) => $signedIn ? $filter->whereNotNull('first_login_at') : $filter->whereNull('first_login_at'));
 
         if ($search !== null) {
             $query->where(fn (Builder $match) => TextSearch::contains(TextSearch::contains($match->getQuery(), 'name', $search), 'email', $search, 'or'));
@@ -128,6 +130,58 @@ final class EloquentUserRepository implements UserRepository
             ->whereNotNull('imported_at')
             ->whereNull('anonymized_at')
             ->when($signedIn, fn (Builder $query) => $query->whereNotNull('first_login_at'), fn (Builder $query) => $query->whereNull('first_login_at'))
+            ->count();
+    }
+
+    public function importedCounts(UserType $type): array
+    {
+        $row = UserModel::query()
+            ->where('type', $type->value)
+            ->whereNotNull('imported_at')
+            ->whereNull('anonymized_at')
+            ->selectRaw('COUNT(*) as imported')
+            ->selectRaw("COUNT(*) FILTER (WHERE status <> 'active') as deactivated")
+            ->selectRaw("COUNT(*) FILTER (WHERE status = 'active' AND email_verified_at IS NULL) as unverified")
+            ->selectRaw('COUNT(*) FILTER (WHERE first_login_at IS NOT NULL) as signed_in')
+            ->first();
+
+        return ['imported' => (int) $row?->getAttribute('imported'), 'deactivated' => (int) $row?->getAttribute('deactivated'), 'unverified' => (int) $row?->getAttribute('unverified'), 'signedIn' => (int) $row?->getAttribute('signed_in')];
+    }
+
+    public function importedDeliverableEmails(UserType $type): array
+    {
+        return UserModel::query()
+            ->where('type', $type->value)
+            ->whereNotNull('imported_at')
+            ->whereNull('anonymized_at')
+            ->where('status', 'active')
+            ->whereNotNull('email_verified_at')
+            ->pluck('email')
+            ->map(static fn (mixed $email): string => mb_strtolower((string) $email))
+            ->values()
+            ->all();
+    }
+
+    public function signedInAmong(array $userIds): array
+    {
+        $signedIn = [];
+
+        foreach (array_chunk($userIds, 1000) as $chunk) {
+            foreach (UserModel::query()->whereIn('id', $chunk)->whereNotNull('first_login_at')->pluck('id') as $id) {
+                $signedIn[] = (int) $id;
+            }
+        }
+
+        return $signedIn;
+    }
+
+    public function countImportedSignedInBy(UserType $type, DateTimeImmutable $at): int
+    {
+        return UserModel::query()
+            ->where('type', $type->value)
+            ->whereNotNull('imported_at')
+            ->whereNull('anonymized_at')
+            ->where('first_login_at', '<=', $at->format('Y-m-d H:i:s'))
             ->count();
     }
 

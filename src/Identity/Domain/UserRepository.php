@@ -43,11 +43,12 @@ interface UserRepository
     public function findHeldIds(array $userIds): array;
 
     /**
-     * The accounts that are not anonymised, newest first; the search text matches part of the name or the email.
+     * The accounts that are not anonymised, newest first; the search text matches part of the name or the email. `$imported` keeps only the accounts that came from karir.pkp (true) or
+     * that did not (false); `$signedIn` only those that signed in at least once (true) or never did (false); null means no filter.
      *
      * @return Page<User>
      */
-    public function search(?string $search, PageRequest $request): Page;
+    public function search(?string $search, PageRequest $request, ?bool $imported = null, ?bool $signedIn = null): Page;
 
     /**
      * The accounts of this type that came from the import and have not signed in since (any status, never an anonymised one), with an id after `$afterId`, in id order. With
@@ -60,6 +61,32 @@ interface UserRepository
 
     /** How many imported accounts of this type (never an anonymised one) have signed in since the import, or have not. */
     public function countImported(UserType $type, bool $signedIn): int;
+
+    /**
+     * The imported accounts of this type (never an anonymised one) split for the activation report: all of them, those deactivated or suspended, those active with an address that was never
+     * verified, and those that signed in.
+     *
+     * @return array{imported: int, deactivated: int, unverified: int, signedIn: int}
+     */
+    public function importedCounts(UserType $type): array;
+
+    /**
+     * The addresses (lower case) of the imported accounts of this type that are active and verified, the ones an activation email can reach.
+     *
+     * @return list<string>
+     */
+    public function importedDeliverableEmails(UserType $type): array;
+
+    /**
+     * The ids among these that signed in at least once.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function signedInAmong(array $userIds): array;
+
+    /** How many imported accounts of this type first signed in at or before the moment. */
+    public function countImportedSignedInBy(UserType $type, DateTimeImmutable $at): int;
 
     /** Inserts a new user or updates an existing one, and returns the stored aggregate (with its id). */
     public function save(User $user): User;

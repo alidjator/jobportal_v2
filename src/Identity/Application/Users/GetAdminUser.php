@@ -2,6 +2,7 @@
 
 namespace Src\Identity\Application\Users;
 
+use Src\Identity\Domain\ActivationEmailRepository;
 use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
 use Src\Shared\Application\Actor;
@@ -27,6 +28,7 @@ final readonly class GetAdminUser
         private Clock $clock,
         private CompanyMembershipResolver $memberships,
         private CompanyTeam $teams,
+        private ActivationEmailRepository $activation,
     ) {}
 
     /**
@@ -49,7 +51,7 @@ final readonly class GetAdminUser
             AuditActorType::Admin, (int) $actor->id, AuditAction::USER_VIEWED, 'user', $userId, [], $ipAddress, $userAgent, $this->clock->now(),
         ));
 
-        return new AdminUserView($user, $this->suppressions->reasons([$user->email()])[mb_strtolower($user->email())] ?? null, $this->isOnlyCompanyAdmin($user));
+        return new AdminUserView($user, $this->suppressions->reasons([$user->email()])[mb_strtolower($user->email())] ?? null, $this->isOnlyCompanyAdmin($user), $this->activation->ofUser($userId));
     }
 
     /** Null for an account that is not a company member; true for the one company admin of a company. */

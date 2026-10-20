@@ -28,4 +28,27 @@ interface ActivationEmailRepository
      * @return array{batch: string, userIds: list<int>}|null
      */
     public function latestBatch(array $variants): ?array;
+
+    /**
+     * The activation emails of these variants for the report: when the first one went out (null before it), how many accounts got one, how many got the reminder, and who got one.
+     *
+     * @param  list<ActivationVariant>  $variants
+     * @return array{firstSentAt: DateTimeImmutable|null, sent: int, reminders: int, userIds: list<int>}
+     */
+    public function summary(array $variants): array;
+
+    /**
+     * Every batch of automatic emails (activation and reminder) sent to these variants, in the order it started, with the accounts it went to.
+     *
+     * @param  list<ActivationVariant>  $variants
+     * @return list<array{batch: string, sentAt: DateTimeImmutable, userIds: list<int>}>
+     */
+    public function batches(array $variants): array;
+
+    /**
+     * The emails of every kind this account got, oldest first.
+     *
+     * @return list<array{kind: string, batch: string, sentAt: DateTimeImmutable}>
+     */
+    public function ofUser(int $userId): array;
 }

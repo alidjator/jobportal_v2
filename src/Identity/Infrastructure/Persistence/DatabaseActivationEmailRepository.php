@@ -60,4 +60,42 @@ final readonly class DatabaseActivationEmailRepository implements ActivationEmai
             'userIds' => $this->connection->table(self::TABLE)->where('batch', $latest)->whereIn('variant', $variantValues)->pluck('user_id')->map(static fn (mixed $id): int => (int) $id)->all(),
         ];
     }
+
+    public function summary(array $variants): array
+    {
+        $values = array_map(static fn (ActivationVariant $variant): string => $variant->value, $variants);
+        $activation = $this->connection->table(self::TABLE)->where('kind', ActivationKind::Activation->value)->whereIn('variant', $values);
+        $first = (clone $activation)->min('sent_at');
+
+        return [
+            'firstSentAt' => $first === null ? null : new DateTimeImmutable((string) $first, new DateTimeZone('UTC')),
+            'sent' => (clone $activation)->count(),
+            'reminders' => $this->connection->table(self::TABLE)->where('kind', ActivationKind::Reminder->value)->whereIn('variant', $values)->count(),
+            'userIds' => (clone $activation)->pluck('user_id')->map(static fn (mixed $id): int => (int) $id)->all(),
+        ];
+    }
+
+    public function batches(array $variants): array
+    {
+        $values = array_map(static fn (ActivationVariant $variant): string => $variant->value, $variants);
+        $batches = [];
+
+        foreach ($this->connection->table(self::TABLE)
+            ->whereIn('kind', [ActivationKind::Activation->value, ActivationKind::Reminder->value])
+            ->whereIn('variant', $values)
+            ->orderBy('id')
+            ->get(['batch', 'user_id', 'sent_at']) as $row) {
+            $batches[$row->batch] ??= ['batch' => (string) $row->batch, 'sentAt' => new DateTimeImmutable((string) $row->sent_at, new DateTimeZone('UTC')), 'userIds' => []];
+            $batches[$row->batch]['userIds'][] = (int) $row->user_id;
+        }
+
+        return array_values($batches);
+    }
+
+    public function ofUser(int $userId): array
+    {
+        return $this->connection->table(self::TABLE)->where('user_id', $userId)->orderBy('id')->get(['kind', 'batch', 'sent_at'])
+            ->map(static fn (object $row): array => ['kind' => (string) $row->kind, 'batch' => (string) $row->batch, 'sentAt' => new DateTimeImmutable((string) $row->sent_at, new DateTimeZone('UTC'))])
+            ->all();
+    }
 }

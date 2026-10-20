@@ -17,7 +17,7 @@ final class AdminUserController extends ApiController
 {
     public function index(ListAdminUsersRequest $request, ListAdminUsers $list): AnonymousResourceCollection
     {
-        return AdminUserResource::collection(PaginatedResources::paginator($list->execute($request->search(), $request->pageRequest()), $request));
+        return AdminUserResource::collection(PaginatedResources::paginator($list->execute($request->search(), $request->pageRequest(), $request->imported(), $request->signedIn()), $request));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetAdminUser $get): AdminUserResource

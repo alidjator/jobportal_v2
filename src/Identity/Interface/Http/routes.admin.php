@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Application\IdentityPermissions;
 use Src\Identity\Infrastructure\IdentityServiceProvider;
+use Src\Identity\Interface\Http\Controllers\AdminActivationController;
 use Src\Identity\Interface\Http\Controllers\AdminUserActionController;
 use Src\Identity\Interface\Http\Controllers\AdminUserController;
 use Src\Identity\Interface\Http\Controllers\ChangePasswordController;
@@ -27,6 +28,7 @@ Route::prefix('admin')->group(function (): void {
         Route::middleware('can:'.IdentityPermissions::USERS_VIEW)->group(function (): void {
             Route::get('users', [AdminUserController::class, 'index']);
             Route::get('users/{id}', [AdminUserController::class, 'show'])->whereNumber('id');
+            Route::get('activation/report', [AdminActivationController::class, 'report']);
         });
 
         Route::middleware('can:'.IdentityPermissions::USERS_MANAGE)->prefix('users/{id}')->whereNumber('id')->group(function (): void {
