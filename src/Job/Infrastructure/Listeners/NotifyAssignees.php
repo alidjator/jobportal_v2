@@ -32,6 +32,10 @@ final class NotifyAssignees implements ShouldQueue
 
     public function handle(JobAssigneesChanged $event): void
     {
+        if ($event->bulk) {
+            return;
+        }
+
         $others = static fn (array $userIds): array => array_values(array_filter($userIds, static fn (int $id): bool => $id !== $event->changedByUserId));
 
         $this->notifier->send($others($event->added), JobNotificationType::ASSIGNED, ['job_id' => $event->jobId]);

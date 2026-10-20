@@ -39,6 +39,7 @@ use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobHeld;
 use Src\Job\Domain\Events\JobReportsClosed;
 use Src\Job\Domain\Events\JobStatusChanged;
+use Src\Job\Domain\Events\MemberAssignedToJobs;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobReportRepository;
 use Src\Job\Domain\JobRepository;
@@ -57,6 +58,7 @@ use Src\Job\Infrastructure\Listeners\NotifyAssignees;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfDecision;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfExpiry;
 use Src\Job\Infrastructure\Listeners\NotifyAssigneesOfHold;
+use Src\Job\Infrastructure\Listeners\NotifyMemberOfBulkAssignment;
 use Src\Job\Infrastructure\Listeners\NotifyReportersOfReview;
 use Src\Job\Infrastructure\Listeners\ReassignJobsWhenMemberRemoved;
 use Src\Job\Infrastructure\Listeners\RecordJobAuditEntries;
@@ -201,6 +203,8 @@ final class JobServiceProvider extends ContextServiceProvider
         RateLimiter::for(self::REPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REPORTS_PER_HOUR)->by('job-reports|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         Event::listen(JobAssigneesChanged::class, NotifyAssignees::class);
+        Event::listen(MemberAssignedToJobs::class, NotifyMemberOfBulkAssignment::class);
+        Event::listen(MemberAssignedToJobs::class, [RecordJobAuditEntries::class, 'onMemberAssignedToJobs']);
         Event::listen(JobStatusChanged::class, NotifyAssigneesOfExpiry::class);
         Event::listen(JobDecided::class, NotifyAssigneesOfDecision::class);
         Event::listen(CompanyMemberRemoved::class, ReassignJobsWhenMemberRemoved::class);

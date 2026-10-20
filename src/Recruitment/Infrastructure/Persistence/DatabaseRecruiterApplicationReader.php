@@ -38,7 +38,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
 
     private const string NOT_SCHEDULED = 'not_scheduled';
 
-    private const array ROW_COLUMNS = ['a.id', 'a.job_id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.match_score', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.migrated_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
+    private const array ROW_COLUMNS = ['a.id', 'a.user_id', 'a.job_id', 'a.stage_id', 'a.stage_type', 'a.meets_must_have', 'a.match_score', 'a.profile_snapshot', 'a.applied_at', 'a.stage_entered_at', 'a.migrated_at', 'a.join_date', 'a.hire_note', 's.name as stage_name', 'r.rating_average', 'r.rating_count'];
 
     public function __construct(private ConnectionInterface $connection, private DatabaseApplicationAnswers $answers, private Clock $clock) {}
 
@@ -307,6 +307,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             hire: $this->hire($row),
             talentPoolConsent: $row->talent_pool_consent_at !== null,
             migratedAt: $row->migrated_at === null ? null : $this->time((string) $row->migrated_at),
+            userId: (int) $row->user_id,
         );
     }
 
@@ -419,6 +420,7 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             jobId: (int) $row->job_id,
             interviewProposalOpen: (bool) ($row->interview_proposal_open ?? false),
             migratedAt: $migratedAt,
+            userId: (int) $row->user_id,
         );
     }
 

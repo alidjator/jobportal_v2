@@ -327,6 +327,45 @@ final class ApprovalInstanceTest extends FeatureTestCase
 
     // ----- delegation -----
 
+    /** @return array<string, int> */
+    private function taskCounts(UserModel $user): array
+    {
+        $this->app->make('cache')->flush();
+        $items = $this->as($user, 'GET', '/company/tasks')->assertOk()->json('data.items');
+
+        return array_combine(array_column($items, 'key'), array_column($items, 'count'));
+    }
+
+    public function test_the_task_list_counts_the_approvals_that_wait_for_the_member_like_the_inbox_does(): void
+    {
+        $id = $this->submit(1);
+
+        $this->assertSame(1, $this->taskCounts($this->manager)['approvals_waiting']);
+        $this->as($this->manager, 'GET', '/company/approvals?as=approver')->assertJsonCount(1, 'data');
+        $this->assertSame(0, $this->taskCounts($this->requester)['approvals_waiting'], 'The requester never counts their own request.');
+        $this->assertSame(0, $this->taskCounts($this->reviewer)['approvals_waiting']);
+
+        $this->as($this->manager, 'POST', '/company/approval-delegations', ['delegate_user_id' => $this->reviewer->id, 'from' => '2026-10-16', 'to' => '2026-10-16'])->assertCreated();
+        $this->assertSame(1, $this->taskCounts($this->reviewer)['approvals_waiting'], 'A delegated step counts while the delegation lasts.');
+
+        Carbon::setTestNow('2026-10-17 09:00:00');
+        $this->assertSame(0, $this->taskCounts($this->reviewer)['approvals_waiting']);
+
+        Carbon::setTestNow('2026-10-16 09:00:00');
+        $this->as($this->manager, 'POST', "/company/approvals/{$id}/approve")->assertOk();
+        $this->assertSame(0, $this->taskCounts($this->manager)['approvals_waiting'], 'A decided step leaves the count.');
+    }
+
+    public function test_a_holder_of_a_group_role_counts_the_steps_of_that_role(): void
+    {
+        $id = $this->submit(5);
+        $this->as($this->manager, 'POST', "/company/approvals/{$id}/approve")->assertOk();
+
+        $this->assertSame(1, $this->taskCounts($this->reviewer)['approvals_waiting']);
+        $this->assertSame(1, $this->taskCounts($this->auditor)['approvals_waiting']);
+        $this->as($this->auditor, 'GET', '/company/approvals?as=approver')->assertJsonCount(1, 'data');
+    }
+
     public function test_a_delegate_decides_in_the_approvers_place_and_both_names_are_recorded(): void
     {
         $id = $this->submit(1);

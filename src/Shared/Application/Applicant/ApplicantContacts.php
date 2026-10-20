@@ -26,4 +26,12 @@ interface ApplicantContacts
      * @return array<int, string>
      */
     public function names(array $userIds): array;
+
+    /**
+     * The accounts among these whose address is on the suppression list (it no longer receives email); an account without an address on file is not flagged. One read for the whole list.
+     *
+     * @param  list<int>  $userIds
+     * @return list<int>
+     */
+    public function undeliverable(array $userIds): array;
 }

@@ -32,6 +32,8 @@ final class CompanyApplicationDetailResource extends JsonResource
             'id' => $data->id,
             'job' => ['id' => $data->jobId, 'title' => $view->jobTitle],
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
+            /** False when the applicant's email address no longer receives email: reach them by phone or chat. Never says why. */
+            'email_deliverable' => $view->emailDeliverable,
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
             'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),

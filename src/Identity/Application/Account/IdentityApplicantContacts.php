@@ -6,11 +6,12 @@ use Src\Identity\Domain\UserRepository;
 use Src\Identity\Domain\UserType;
 use Src\Shared\Application\Applicant\ApplicantContact;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Email\EmailSuppressions;
 
 /** Gives Recruitment the name and email of an applicant's account. */
 final readonly class IdentityApplicantContacts implements ApplicantContacts
 {
-    public function __construct(private UserRepository $users) {}
+    public function __construct(private UserRepository $users, private EmailSuppressions $suppressions) {}
 
     public function contact(int $userId): ?ApplicantContact
     {
@@ -37,6 +38,21 @@ final readonly class IdentityApplicantContacts implements ApplicantContacts
         $user = $this->users->findById($userId);
 
         return $user !== null && $user->anonymizedAt() === null && $user->type === UserType::JobSeeker;
+    }
+
+    public function undeliverable(array $userIds): array
+    {
+        $emails = [];
+
+        foreach ($this->users->findByIds($userIds) as $user) {
+            if ($user->anonymizedAt() === null && $user->id !== null) {
+                $emails[$user->id] = strtolower($user->email());
+            }
+        }
+
+        $suppressed = $this->suppressions->reasons(array_values($emails));
+
+        return array_keys(array_filter($emails, static fn (string $email): bool => isset($suppressed[$email])));
     }
 
     public function names(array $userIds): array

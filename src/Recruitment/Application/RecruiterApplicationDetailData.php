@@ -33,6 +33,7 @@ final readonly class RecruiterApplicationDetailData
         public ?HireDetails $hire = null,
         public bool $talentPoolConsent = false,
         public ?DateTimeImmutable $migratedAt = null,
+        public int $userId = 0,
     ) {}
 
     /** The same application with the contact data of the applicant removed from the snapshot (see `ContactVisibility`). */
@@ -42,7 +43,7 @@ final readonly class RecruiterApplicationDetailData
 
         return new self(
             $this->id, $this->jobId, $this->companyId, $this->stageId, $this->stageType, $this->meetsMustHave, $this->coverLetter, $this->resumeName, $this->withdrawnNote,
-            $snapshot, $this->answers, $this->history, $this->appliedAt, $this->stageEnteredAt, $this->snapshot !== null, $this->hire, $this->talentPoolConsent, $this->migratedAt,
+            $snapshot, $this->answers, $this->history, $this->appliedAt, $this->stageEnteredAt, $this->snapshot !== null, $this->hire, $this->talentPoolConsent, $this->migratedAt, $this->userId,
         );
     }
 }

@@ -151,6 +151,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-assessment-test` | 422 | Assessment |  |
 | `invalid-assessor` | 422 | Assessment |  |
 | `invalid-assignees` | 422 | Job | A job needs at least one assignee. |
+| `invalid-assignments` | 422 | Job | Every job must belong to the company. |
 | `invalid-attachment` | 422 | Assessment, Messaging | The file must be a PDF, a JPEG or a PNG. |
 | `invalid-calendar-range` | 422 | Dashboard |  |
 | `invalid-column` | 422 | Assessment |  |

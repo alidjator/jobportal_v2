@@ -50,7 +50,16 @@ final readonly class RecruiterApplicationRow
         public bool $interviewProposalOpen = false,
         /** When the application was imported from karir.pkp; null for one made on this platform. */
         public ?DateTimeImmutable $migratedAt = null,
+        public int $userId = 0,
+        /** False when the applicant's address is on the suppression list; never says why. */
+        public bool $emailDeliverable = true,
     ) {}
+
+    /** The row with whether the applicant's email address still receives email. */
+    public function withEmailDeliverable(bool $deliverable): self
+    {
+        return $this->with(emailDeliverable: $deliverable);
+    }
 
     /** The row with the title of its job (the list across jobs shows it). */
     public function withJobTitle(?string $title): self

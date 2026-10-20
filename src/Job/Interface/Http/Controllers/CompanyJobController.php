@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Job\Application\AssignMemberToJobs;
 use Src\Job\Application\CloneJob;
 use Src\Job\Application\CloseJob;
 use Src\Job\Application\CreateJob;
@@ -19,6 +20,7 @@ use Src\Job\Application\ReopenJob;
 use Src\Job\Application\ReplaceJobAssignees;
 use Src\Job\Application\SetHiringManagerBoundary;
 use Src\Job\Application\UpdateJob;
+use Src\Job\Interface\Http\Requests\AssignMemberToJobsRequest;
 use Src\Job\Interface\Http\Requests\ListJobsRequest;
 use Src\Job\Interface\Http\Requests\ReopenJobRequest;
 use Src\Job\Interface\Http\Requests\ReplaceJobAssigneesRequest;
@@ -121,6 +123,12 @@ final class CompanyJobController extends ApiController
         $replace->execute($actor, $id, $request->assignees(), $request->ip(), $request->userAgent());
 
         return new JsonResponse(['data' => $get->execute($actor, $id)]);
+    }
+
+    /** Adds the member to many jobs of the company at once, as a recruiter; the answer says how many were added and how many already had the member. */
+    public function assignMember(AssignMemberToJobsRequest $request, int $userId, ActorResolver $actors, AssignMemberToJobs $assign): JsonResponse
+    {
+        return new JsonResponse(['data' => $assign->execute($actors->fromRequest($request), $userId, $request->jobIds(), $request->ip(), $request->userAgent())]);
     }
 
     public function setHiringManagerBoundary(SetHiringManagerBoundaryRequest $request, int $id, ActorResolver $actors, SetHiringManagerBoundary $set): Response

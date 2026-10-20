@@ -21,6 +21,7 @@ use Src\Approval\Infrastructure\Mail\MailApprovalEmailSender;
 use Src\Approval\Infrastructure\Persistence\DatabaseApprovalInstanceRepository;
 use Src\Approval\Infrastructure\Persistence\DatabaseDelegationRepository;
 use Src\Approval\Infrastructure\Persistence\DatabaseFlowRepository;
+use Src\Approval\Infrastructure\Tasks\ApprovalsWaitingTask;
 use Src\Approval\Interface\Console\SendApprovalRemindersCommand;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Shared\Application\ActorKind;
@@ -30,6 +31,7 @@ use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 /** The Approval context: generic approval flows of groups and tenants for the subjects other contexts register (`docs/design/erp-requisitions.md` section 4). */
@@ -60,6 +62,10 @@ final class ApprovalServiceProvider extends ContextServiceProvider
                 new NotificationPreferenceDefinition(ApprovalNotificationType::TASK_PREFERENCE, 'Email when an approval is waiting for your decision, and reminders while it waits.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
                 new NotificationPreferenceDefinition(ApprovalNotificationType::UPDATE_PREFERENCE, 'Email when a request you made is approved, rejected or returned for revision, or when one of its approvers left.', [NotificationChannel::Email->value => true], [ActorKind::CompanyMember->value]),
             );
+        });
+
+        $this->callAfterResolving(TaskProviders::class, function (TaskProviders $tasks): void {
+            $tasks->add($this->app->make(ApprovalsWaitingTask::class));
         });
 
         $this->commands([SendApprovalRemindersCommand::class]);

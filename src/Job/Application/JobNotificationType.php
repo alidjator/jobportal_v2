@@ -7,6 +7,9 @@ final class JobNotificationType
 {
     public const string ASSIGNED = 'job.assigned';
 
+    /** One notice for a member added to many jobs at once; its data holds the count. */
+    public const string ASSIGNED_MANY = 'job.assigned_many';
+
     public const string UNASSIGNED = 'job.unassigned';
 
     public const string EXPIRED = 'job.expired';

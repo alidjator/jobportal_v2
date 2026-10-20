@@ -26,6 +26,8 @@ final readonly class JobAssigneesChanged implements DomainEvent
         public ?string $ipAddress,
         public ?string $userAgent,
         private DateTimeImmutable $occurredAt,
+        /** True when the member was added to many jobs at once: the per-job notice is skipped and `MemberAssignedToJobs` tells them once. */
+        public bool $bulk = false,
     ) {}
 
     public function occurredAt(): DateTimeImmutable

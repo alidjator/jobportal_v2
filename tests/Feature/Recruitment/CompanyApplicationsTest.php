@@ -59,6 +59,41 @@ final class CompanyApplicationsTest extends FeatureTestCase
         return $this->api('GET', "/company/applications/{$id}", token: $token ?? $this->adminToken);
     }
 
+    // ----- undeliverable email -----
+
+    private function suppressEmailOf(int $applicationId, string $reason = 'hard_bounce'): void
+    {
+        $userId = (int) DB::table('recruitment_applications')->where('id', $applicationId)->value('user_id');
+        $email = (string) DB::table('identity_users')->where('id', $userId)->value('email');
+        DB::table('platform_email_suppressions')->insert(['email' => strtolower($email), 'reason' => $reason, 'source' => 'test', 'created_at' => now()]);
+    }
+
+    public function test_a_suppressed_address_flags_the_row_and_the_detail_without_saying_why(): void
+    {
+        $this->suppressEmailOf($this->firstId, 'complaint');
+
+        $rows = $this->list()->assertOk()->json('data');
+        $flags = array_column($rows, 'email_deliverable', 'id');
+        $this->assertEquals([$this->firstId => false, $this->secondId => true], $flags);
+        $this->assertStringNotContainsString('complaint', (string) json_encode($rows));
+
+        $detail = $this->show($this->firstId)->assertOk();
+        $detail->assertJsonPath('data.email_deliverable', false);
+        $this->assertStringNotContainsString('complaint', (string) $detail->getContent());
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.email_deliverable', true);
+
+        $across = $this->api('GET', '/company/applications', token: $this->adminToken)->assertOk()->json('data');
+        $this->assertEquals([$this->firstId => false, $this->secondId => true], array_column($across, 'email_deliverable', 'id'));
+    }
+
+    public function test_a_member_who_may_not_read_the_application_gets_no_flag(): void
+    {
+        $this->suppressEmailOf($this->firstId);
+
+        $this->show($this->firstId, $this->secondRecruiterToken)->assertNotFound();
+        $this->show($this->firstId, $this->otherAdminToken)->assertNotFound();
+    }
+
     // ----- access -----
 
     public function test_only_company_members_who_may_see_the_job_can_read_its_applications(): void
@@ -102,7 +137,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertSame([$this->secondId, $this->firstId], array_column($response->json('data'), 'id'));
 
         $row = $response->json('data.1');
-        $this->assertSame(['id', 'applicant', 'meets_must_have', 'match_score', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'migrated', 'migrated_at', 'stale', 'interview_state', 'interview_rsvp', 'interview_proposal_open', 'review_summary', 'other_applications_count', 'hire'], array_keys($row));
+        $this->assertSame(['id', 'applicant', 'email_deliverable', 'meets_must_have', 'match_score', 'rating', 'interview_result', 'stage', 'applied_at', 'stage_entered_at', 'days_in_stage', 'migrated', 'migrated_at', 'stale', 'interview_state', 'interview_rsvp', 'interview_proposal_open', 'review_summary', 'other_applications_count', 'hire'], array_keys($row));
         $this->assertSame(['is_deleted', 'name', 'headline', 'latest_experience', 'city', 'expected_salary', 'age'], array_keys($row['applicant']));
         $this->assertFalse($row['applicant']['is_deleted']);
         $this->assertSame('Siti Rahma', $row['applicant']['name']);

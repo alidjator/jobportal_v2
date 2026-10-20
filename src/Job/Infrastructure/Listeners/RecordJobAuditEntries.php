@@ -7,6 +7,7 @@ use Src\Job\Domain\Events\JobAssigneesChanged;
 use Src\Job\Domain\Events\JobDecided;
 use Src\Job\Domain\Events\JobReportsClosed;
 use Src\Job\Domain\Events\JobStatusChanged;
+use Src\Job\Domain\Events\MemberAssignedToJobs;
 use Src\Shared\Application\Audit\AuditAction;
 use Src\Shared\Application\Audit\AuditActorType;
 use Src\Shared\Application\Audit\AuditEntry;
@@ -87,6 +88,15 @@ final class RecordJobAuditEntries implements ShouldQueue
                 $event->ipAddress, $event->userAgent, $event->occurredAt(),
             ));
         }
+    }
+
+    /** One entry on the company's activity log for a bulk assignment: the member and the count, no job titles. */
+    public function onMemberAssignedToJobs(MemberAssignedToJobs $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->assignedByUserId, AuditAction::COMPANY_MEMBER_JOBS_ASSIGNED, 'company', $event->companyId,
+            ['user_id' => $event->userId, 'count' => $event->count], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
     }
 
     public function onJobAssigneesChanged(JobAssigneesChanged $event): void

@@ -93,6 +93,8 @@ final class AuditAction
 
     public const string COMPANY_MEMBER_REACTIVATED = 'company.member_reactivated';
 
+    public const string COMPANY_MEMBER_JOBS_ASSIGNED = 'company.member_jobs_assigned';
+
     public const string COMPANY_OWNER_TRANSFERRED = 'company.owner_transferred';
 
     public const string COMPANY_INVITATION_UPDATED = 'company.invitation_updated';

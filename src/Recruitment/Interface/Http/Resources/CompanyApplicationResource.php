@@ -30,6 +30,8 @@ final class CompanyApplicationResource extends JsonResource
                 'expected_salary' => $row->expectedSalary,
                 'age' => $row->age,
             ],
+            /** False when the applicant's email address no longer receives email: reach them by phone or chat. Never says why. */
+            'email_deliverable' => $row->emailDeliverable,
             'meets_must_have' => $row->meetsMustHave,
             /** @var int|null how well the applicant fitted the job when applying, 0 to 100; null when the job gave too little to judge */
             'match_score' => $row->matchScore,

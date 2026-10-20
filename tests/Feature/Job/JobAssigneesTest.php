@@ -253,4 +253,78 @@ final class JobAssigneesTest extends FeatureTestCase
 
         $this->assertTrue(DB::table('company_members')->where('user_id', $this->recruiterId)->exists());
     }
+
+    // ----- adding a member to many jobs -----
+
+    public function test_a_member_is_added_to_many_jobs_as_a_recruiter_and_existing_assignees_stay(): void
+    {
+        $first = $this->insertJob('First', 'draft', [$this->adminId]);
+        $second = $this->insertJob('Second', 'closed', [$this->adminId]);
+        $imported = $this->insertJob('Imported', 'active', [$this->adminId], attributes: ['migrated_at' => '2026-10-01 00:00:00']);
+        $already = $this->insertJob('Already', 'draft', [$this->secondRecruiterId]);
+        DB::table('job_assignments')->where('job_id', $second)->where('user_id', $this->adminId)->update(['role' => 'hiring_manager']);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$first, $second, $imported, $already, $first]])->assertOk()
+            ->assertJsonPath('data.added', 3)->assertJsonPath('data.already', 1);
+
+        foreach ([$first, $second, $imported] as $job) {
+            $this->assertEqualsCanonicalizing([$this->adminId, $this->secondRecruiterId], $this->assigneesOf($job));
+            $this->assertSame('recruiter', DB::table('job_assignments')->where('job_id', $job)->where('user_id', $this->secondRecruiterId)->value('role'));
+        }
+
+        $this->assertSame('hiring_manager', DB::table('job_assignments')->where('job_id', $second)->where('user_id', $this->adminId)->value('role'));
+        $this->api('GET', "/company/jobs/{$first}", token: $this->secondRecruiterToken)->assertOk();
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$first, $second]])->assertOk()
+            ->assertJsonPath('data.added', 0)->assertJsonPath('data.already', 2);
+    }
+
+    public function test_one_foreign_job_rejects_everything_with_its_position(): void
+    {
+        $mine = $this->insertJob('Mine', 'draft', [$this->adminId]);
+        $foreign = $this->insertJob('Foreign', 'draft', [$this->otherAdminId], $this->otherCompanyId);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$mine, $foreign, 999999]])->assertStatus(422)
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-assignments')
+            ->assertJsonPath('errors', fn (array $errors): bool => array_keys($errors) === ['job_ids.1', 'job_ids.2']);
+
+        $this->assertSame([$this->adminId], $this->assigneesOf($mine));
+        $this->assertSame([], DB::table('job_assignments')->where('user_id', $this->secondRecruiterId)->pluck('job_id')->all());
+    }
+
+    public function test_the_list_is_limited_and_a_stranger_is_not_a_member(): void
+    {
+        $job = $this->insertJob('Mine', 'draft', [$this->adminId]);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => range(1, 101)])->assertStatus(422)->assertJsonValidationErrors(['job_ids']);
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => []])->assertStatus(422)->assertJsonValidationErrors(['job_ids']);
+        $this->api('POST', "/company/members/{$this->otherAdminId}/jobs", ['job_ids' => [$job]])->assertNotFound();
+    }
+
+    public function test_assigning_needs_the_permission_to_assign(): void
+    {
+        $job = $this->insertJob('Mine', 'draft', [$this->recruiterId]);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$job]], $this->recruiterToken)->assertForbidden();
+        $this->assertSame([$this->recruiterId], $this->assigneesOf($job));
+    }
+
+    public function test_one_summary_notice_goes_to_the_member_and_the_audit_keeps_one_entry_per_job_and_one_for_the_company(): void
+    {
+        $first = $this->insertJob('First', 'draft', [$this->adminId]);
+        $second = $this->insertJob('Second', 'draft', [$this->adminId]);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$first, $second]])->assertOk();
+
+        $this->assertSame([['type' => 'job.assigned_many', 'data' => ['count' => 2]]], $this->notificationsOf($this->secondRecruiterId));
+        $this->assertCount(2, $this->auditEntries());
+
+        $company = DB::table('platform_audit_logs')->where('action', 'company.member_jobs_assigned')->get();
+        $this->assertCount(1, $company);
+        $this->assertSame(['user_id' => $this->secondRecruiterId, 'count' => 2], json_decode((string) $company[0]->metadata, true));
+        $this->assertSame($this->companyId, (int) $company[0]->company_id);
+
+        $this->api('POST', "/company/members/{$this->secondRecruiterId}/jobs", ['job_ids' => [$first, $second]])->assertOk()->assertJsonPath('data.added', 0);
+        $this->assertCount(1, $this->notificationsOf($this->secondRecruiterId), 'A rerun that adds nothing tells nobody.');
+    }
 }

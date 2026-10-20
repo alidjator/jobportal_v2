@@ -33,3 +33,11 @@ Closes MG-P03, MG-B03 and MG-B09 of `docs/analysis/multi-persona-gap-analysis.md
 ## Open points
 
 None.
+
+## Coded (2026-10-20)
+
+No migration. No `.env` value.
+
+- **MG-P03:** `ApplicantContacts::undeliverable` (Identity, through `EmailSuppressions::reasons`); `ApplicationRowEnricher` asks once per page; `GetCompanyApplication` once for the detail. `RecruiterApplicationRow` and `RecruiterApplicationDetailData` gained `userId` (never exposed). The list of C6/C7 and the detail carry `email_deliverable`.
+- **MG-B03:** `POST company/members/{userId}/jobs` is in the Job context (`AssignMemberToJobs`, `CompanyJobController::assignMember`), next to the job assignee routes; the `GET` of the same path stays in Company. The per-job event `JobAssigneesChanged` has `bulk: true` (skipped by `NotifyAssignees`); the new event `MemberAssignedToJobs` feeds `NotifyMemberOfBulkAssignment` (`job.assigned_many`, data `{count}`) and the company audit entry `company.member_jobs_assigned` (group `team` of the activity log). The error `errors` keys are `job_ids.<position>` (the position in the list sent). A target who is not a member of the company is a 404.
+- **MG-B09:** `MyApprovals::waitingCount` shares its query with `mine(approver)`; `ApprovalsWaitingTask` (order 28) is registered by the Approval service provider and builds the actor from the member id only.

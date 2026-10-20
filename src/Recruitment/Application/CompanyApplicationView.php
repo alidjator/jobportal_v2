@@ -28,5 +28,6 @@ final readonly class CompanyApplicationView
         public array $otherApplications = [],
         public int $othersHidden = 0,
         public array $reviews = [],
+        public bool $emailDeliverable = true,
     ) {}
 }

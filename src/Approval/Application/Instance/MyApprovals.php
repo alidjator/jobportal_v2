@@ -46,22 +46,36 @@ final readonly class MyApprovals
         $this->member($actor);
 
         if ($as === 'requester') {
-            $ids = $this->instances->ofRequester((int) $actor->id);
-        } else {
-            $held = $this->heldBy($actor);
-            $ids = $this->instances->pendingFor(
-                [(int) $actor->id, ...$this->authority->delegatorsToday((int) $actor->id)], $held['group_id'] ?? null, $held['permissions'] ?? [],
-            );
+            return $this->views->of(array_values(array_filter(array_map($this->instances->find(...), $this->instances->ofRequester((int) $actor->id)))), $actor);
         }
+
+        return $this->views->of($this->waiting($actor), $actor);
+    }
+
+    /**
+     * How many approvals wait for the account: exactly the rows `mine` lists as `approver`, so the task list and the inbox cannot disagree.
+     *
+     * @throws AccessDenied `not-a-company-member`
+     */
+    public function waitingCount(Actor $actor): int
+    {
+        $this->member($actor);
+
+        return count($this->waiting($actor));
+    }
+
+    /** @return list<ApprovalInstance> the approvals with a step the account may decide now, newest first */
+    private function waiting(Actor $actor): array
+    {
+        $held = $this->heldBy($actor);
+        $ids = $this->instances->pendingFor(
+            [(int) $actor->id, ...$this->authority->delegatorsToday((int) $actor->id)], $held['group_id'] ?? null, $held['permissions'] ?? [],
+        );
 
         $instances = array_values(array_filter(array_map($this->instances->find(...), $ids)));
 
-        if ($as !== 'requester') {
-            // The query matches the slots an account could fill; a delegate or holder still may not be the requester.
-            $instances = array_values(array_filter($instances, fn (ApprovalInstance $instance): bool => $this->authority->slotFor($instance, $actor, $this->authority->today()) !== null));
-        }
-
-        return $this->views->of($instances, $actor);
+        // The query matches the slots an account could fill; a delegate or holder still may not be the requester.
+        return array_values(array_filter($instances, fn (ApprovalInstance $instance): bool => $this->authority->slotFor($instance, $actor, $this->authority->today()) !== null));
     }
 
     /**

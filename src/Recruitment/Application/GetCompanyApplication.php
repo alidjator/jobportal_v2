@@ -7,6 +7,7 @@ use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -30,6 +31,7 @@ final readonly class GetCompanyApplication
         private ApplicationReviews $reviews,
         private Settings $settings,
         private Clock $clock,
+        private ApplicantContacts $contacts,
     ) {}
 
     /**
@@ -88,6 +90,7 @@ final readonly class GetCompanyApplication
             $otherApplications,
             $othersHidden,
             $team->panelOnly ? [] : $this->reviews->forApplication($id, $member->userId),
+            $this->contacts->undeliverable([$data->userId]) === [],
         );
     }
 }
