@@ -37,11 +37,15 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 | `company-locations.md` (#27) | coded and checked 2026-10-19 (`000174`, `000175`; `composer check` green): `company_locations` with the main location per company, the locations API, `location_id` on interviews and requisitions, the legacy import of address and coordinates; open: the group read rule (no group route reads a profile yet); interpretations to confirm are in its "Coded" section |
 | `company-locations.md` (#28) | coded and checked 2026-10-19: `locations` array in the public job list and detail, one item from the job's own columns (no migration); a job without an address gets `locations: []` (decided with the user); see its "Coded: #28" section |
 | `phase-8-interview-reschedule.md` (#29, FG2 and FG3) | coded and checked 2026-10-19 (`000176`; `composer check` green, tag `v0.9.0`): moving a confirmed interview up to a cut-off, refusing a proposal, no-shows, the job seeker's 2-hour reminder, the fix of the accepted-proposal `.ics` and panel RSVPs; the `interviews` table of the `funnel` report (no-shows) added after the tag (checked: tests, Pint and PHPStan green); `reschedule_until` in the job seeker's resource added after it (checked: tests, Pint and PHPStan green; see its "Coded" section) |
+| `phase-8-activation.md` (#34) | parts 1 to 7 coded 2026-10-20 (`000177` to `000182`), committed (`d2f8075` to `89c3a69`); parts 1, 3, 4 and 6 change the import and need the second rehearsal before the freeze; freeze date, SMTP provider, support contact and legal review question j are the user's |
+| `phase-8-job-copy-in-application.md` (#35, MG-A10) | coded 2026-10-20 (`000183`), checked (green), committed `55a79a2` |
+| `phase-8-imported-history-in-reports.md` (#36, MG-B11) | coded 2026-10-20 (`000184`), checked (green), committed `957e812` |
+| `phase-8-company-team-fixes.md` (#37, MG-P03, MG-B03, MG-B09) | coded 2026-10-20 (no migration), checked (green), committed `e687168` |
 
 ## Next coding (in this order)
 
-**Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15 and #20 (and endpoints the
-front end asks for) are coded; the other rows wait even when ready.
+**Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15, #20 and, since 2026-10-20, #34 (and endpoints
+the front end asks for) are coded; the other rows wait even when ready.
 
 | # | Document | Waits for |
 |---|---|---|
@@ -59,7 +63,13 @@ front end asks for) are coded; the other rows wait even when ready.
 | 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
 | 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
 | 33 | `phase-8-whatsapp.md` (FG6), **after go-live** | Meta Business verification and template approvals (started by the user); `legal-review.md` question 22 for the unofficial adapter; uses #29 section 6 and #32 |
-| 34 | `phase-8-activation.md` (activation of the imported users and companies, designed 2026-10-20), **before the freeze of the final import** | seven parts; parts 1, 3, 4, 6 change the import and need a second rehearsal; the freeze date, SMTP provider, support contact and legal review question j are the user's |
+| 38 | `phase-8-admin-queue-cards.md` (MG-C06) | may be coded (not started) |
+| 39 | `phase-8-account-and-public-items.md` (MG-A01, A03, A11, A12, A13, C01; A14 waits for #26) | designed; waits for the front end |
+| 40 | `phase-8-recruitment-closure.md` (MG-P04, MG-P05) | designed; waits for the front end |
+| 41 | `phase-8-approval-escalation.md` (MG-B10) | designed; waits for the front end |
+| 42 | `phase-8-concurrent-edits.md` (MG-B08) | designed; waits for the front end (it sends `If-Match` before the setting is turned on) |
+| 43 | `phase-8-reference-merge.md` (MG-C02) | designed; waits for the front end |
+| 44 | `phase-8-company-support-access.md` (MG-C05) | designed; waits for the front end |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 
