@@ -26,3 +26,7 @@ Each count follows its table (a handled item leaves it); the card is absent with
 ## Open points
 
 None.
+
+## Coded (2026-10-20)
+
+No migration, no `.env` value. `NameChangesQueueCard` (Company), `ReviewsQueueCard` (Review) and `ChatReportsQueueCard` (Messaging) are `DashboardCardProvider`s registered by their service providers. The `companies_queue` card keeps its own `name_changes_waiting` count; `name_changes_queue` is the separate card of the design, so a moderator who only holds `companies.manage` sees both. `oldest_open_at` is an ISO 8601 time in UTC, null when no report is open.

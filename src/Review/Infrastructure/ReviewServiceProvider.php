@@ -15,12 +15,14 @@ use Src\Review\Domain\Events\ReviewModerated;
 use Src\Review\Domain\ReplyRepository;
 use Src\Review\Domain\ReportRepository;
 use Src\Review\Domain\ReviewRepository;
+use Src\Review\Infrastructure\Dashboard\ReviewsQueueCard;
 use Src\Review\Infrastructure\Listeners\EraseReviewerDataWhenUserAnonymized;
 use Src\Review\Infrastructure\Listeners\RecordReviewAuditEntries;
 use Src\Review\Infrastructure\Persistence\DatabaseReplyRepository;
 use Src\Review\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Review\Infrastructure\Persistence\DatabaseReviewRepository;
 use Src\Shared\Application\Accounts\ErasureStep;
+use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Infrastructure\ContextServiceProvider;
@@ -50,6 +52,10 @@ final class ReviewServiceProvider extends ContextServiceProvider
 
     public function register(): void
     {
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add($this->app->make(ReviewsQueueCard::class));
+        });
+
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...ReviewPermissions::definitions());
         });

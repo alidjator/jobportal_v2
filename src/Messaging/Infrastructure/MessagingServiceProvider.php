@@ -30,6 +30,7 @@ use Src\Messaging\Domain\MessageReportRepository;
 use Src\Messaging\Domain\MessageRepository;
 use Src\Messaging\Domain\MessagingDataEraser;
 use Src\Messaging\Domain\ReadStateRepository;
+use Src\Messaging\Infrastructure\Dashboard\ChatReportsQueueCard;
 use Src\Messaging\Infrastructure\Dashboard\UnreadConversationsCard;
 use Src\Messaging\Infrastructure\Listeners\BroadcastMessagingEvents;
 use Src\Messaging\Infrastructure\Listeners\EraseMessagingDataWhenUserAnonymized;
@@ -92,6 +93,7 @@ final class MessagingServiceProvider extends ContextServiceProvider
             $cards->add(
                 new UnreadConversationsCard($this->app->make(ConnectionInterface::class), DashboardAudience::JobSeeker),
                 new UnreadConversationsCard($this->app->make(ConnectionInterface::class), DashboardAudience::Company),
+                new ChatReportsQueueCard($this->app->make(ConnectionInterface::class)),
             );
         });
 

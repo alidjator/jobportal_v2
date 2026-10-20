@@ -340,7 +340,83 @@ final class DashboardTest extends FeatureTestCase
 
         $this->assertSame($base, array_keys($plain));
         $this->assertSame(['applications', 'companies', 'job_seekers', 'jobs', 'jobs_queue', 'operations'], array_keys($jobs));
-        $this->assertSame(['applications', 'companies', 'companies_queue', 'job_seekers', 'jobs', 'jobs_queue', 'operations'], array_keys($all));
+        $this->assertSame(['applications', 'companies', 'companies_queue', 'job_seekers', 'jobs', 'jobs_queue', 'name_changes_queue', 'operations'], array_keys($all));
+
+        $moderator = $this->platform($this->adminAccountToken(['dashboard.view', 'reviews.moderate', 'messages.moderate'], 'moderator@example.test'))->assertOk()->json('data.cards');
+        $this->assertSame(['applications', 'chat_reports_queue', 'companies', 'job_seekers', 'jobs', 'operations', 'reviews_queue'], array_keys($moderator));
+    }
+
+    public function test_the_review_queue_counts_what_waits_for_the_moderator_and_a_handled_item_leaves_it(): void
+    {
+        $reviewer = $this->seeker('reviewer@example.test', name: 'Reviewer');
+        $review = fn (int $company, string $status): int => DB::table('review_reviews')->insertGetId([
+            'company_id' => $company, 'user_id' => $reviewer, 'rating' => 4, 'status' => $status, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $pending = $review($this->companyId, 'pending');
+        $published = $review($this->otherCompanyId, 'published');
+        DB::table('review_replies')->insert(['review_id' => $published, 'body' => 'Thanks', 'status' => 'pending', 'written_by_user_id' => $this->adminId, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('review_reports')->insert([
+            ['review_id' => $published, 'reporter_kind' => 'user', 'reporter_id' => $reviewer, 'reason' => 'spam', 'status' => 'open', 'created_at' => now(), 'updated_at' => now()],
+            ['review_id' => $published, 'reporter_kind' => 'user', 'reporter_id' => $reviewer, 'reason' => 'spam', 'status' => 'dismissed', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $token = $this->adminAccountToken(['dashboard.view', 'reviews.moderate']);
+        $queue = function () use ($token) {
+            $this->app->make('cache')->flush();
+
+            return $this->platform($token)->assertOk()->json('data.cards.reviews_queue');
+        };
+
+        $this->assertSame(['pending_reviews' => 1, 'pending_replies' => 1, 'open_reports' => 1], $queue());
+
+        DB::table('review_reviews')->where('id', $pending)->update(['status' => 'published']);
+        DB::table('review_replies')->update(['status' => 'published']);
+        DB::table('review_reports')->update(['status' => 'actioned']);
+        $this->assertSame(['pending_reviews' => 0, 'pending_replies' => 0, 'open_reports' => 0], $queue());
+    }
+
+    public function test_the_chat_report_queue_counts_the_open_reports_and_dates_the_oldest(): void
+    {
+        $conversation = DB::table('messaging_conversations')->insertGetId(['company_id' => $this->companyId, 'job_seeker_user_id' => $this->seekerId, 'started_by_user_id' => $this->adminId, 'last_message_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+        $report = fn (string $status, string $at): int => DB::table('messaging_reports')->insertGetId([
+            'conversation_id' => $conversation, 'reporter_side' => 'company', 'reporter_user_id' => $this->adminId, 'reason' => 'spam', 'status' => $status, 'created_at' => $at, 'updated_at' => $at,
+        ]);
+        $oldest = $report('open', '2026-10-01 08:00:00');
+        $report('open', '2026-10-03 08:00:00');
+        $report('dismissed', '2026-09-01 08:00:00');
+        $token = $this->adminAccountToken(['dashboard.view', 'messages.moderate']);
+        $queue = function () use ($token) {
+            $this->app->make('cache')->flush();
+
+            return $this->platform($token)->assertOk()->json('data.cards.chat_reports_queue');
+        };
+
+        $card = $queue();
+        $this->assertSame(2, $card['open_reports']);
+        $this->assertSame('2026-10-01T08:00:00+00:00', $card['oldest_open_at']);
+
+        DB::table('messaging_reports')->where('id', $oldest)->update(['status' => 'actioned']);
+        $this->assertSame('2026-10-03T08:00:00+00:00', $queue()['oldest_open_at']);
+
+        DB::table('messaging_reports')->update(['status' => 'dismissed']);
+        $this->assertSame(['open_reports' => 0, 'oldest_open_at' => null], $queue());
+    }
+
+    public function test_the_name_change_queue_counts_the_pending_requests(): void
+    {
+        $token = $this->adminAccountToken(['dashboard.view', 'companies.manage']);
+        $queue = function () use ($token) {
+            $this->app->make('cache')->flush();
+
+            return $this->platform($token)->assertOk()->json('data.cards.name_changes_queue');
+        };
+
+        $this->assertSame(['pending' => 0], $queue());
+
+        DB::table('company_name_change_requests')->insert([
+            'company_id' => $this->companyId, 'requested_by_user_id' => $this->adminId, 'current_name' => 'PT Lama', 'new_name' => 'PT Baru', 'reason' => 'Rebranding', 'status' => 'pending',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->assertSame(['pending' => 1], $queue());
     }
 
     public function test_the_admin_dashboard_counts_the_platform_and_the_queues(): void

@@ -64,6 +64,7 @@ use Src\Company\Domain\InvitationRepository;
 use Src\Company\Domain\MessageDefaultsRepository;
 use Src\Company\Domain\NameChangeRequestRepository;
 use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
+use Src\Company\Infrastructure\Dashboard\NameChangesQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfNameChange;
 use Src\Company\Infrastructure\Listeners\NotifyCompanyAdminsOfVerification;
@@ -183,6 +184,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
             $cards->add(
                 $this->app->make(PlatformCompaniesCard::class),
                 $this->app->make(CompanyVerificationQueueCard::class),
+                $this->app->make(NameChangesQueueCard::class),
             );
         });
 
