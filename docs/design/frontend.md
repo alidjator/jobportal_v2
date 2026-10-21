@@ -14,6 +14,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-21: coding order: foundation, then a thin slice Console → Workspace → Career tried end to end, then the go-live scope, complex screens, ERP pages and Portal Mitra last ([detail](#13-coding-order)).
 - 2026-10-21: hosting paths: release folders `/usr/local/src/jobportal-frontend/releases/<app>/current`, Workspace's Node service on `127.0.0.1:3101` (Career takes 3100), a static "Segera hadir" page until the first build; nginx files for Workspace and Console written ([detail](#10-technical-foundation)).
 - 2026-10-20: one development domain per application: `karir.satu.solutions`, `workspace.satu.solutions` (was `preview.satu.solutions`), `console.satu.solutions` (was `admin-karir.satu.solutions`); API unchanged; `CORS_ALLOWED_ORIGINS` and the link contract follow ([detail](#4-domains), [links](#122-link-contract)).
+- 2026-10-21: template rules for front-end coding (copy markup and classes, no new styles, reusable components, Vue in place of template JavaScript, ask before elements not in the template), in the front-end `CLAUDE.md`; the contrast adjustment of 11.2 is withdrawn ([detail](#6-ui-template)).
 - 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one SPA, ONESIS Workspace; the public Nuxt application keeps visitors and job seekers only; Console stays ([detail](#3-repository-and-applications)).
 - 2026-10-19: Workspace runs on Nuxt with `ssr: false`; its token stays in a sealed httpOnly cookie behind its own Nuxt proxy, as in 5.2 ([detail](#3-repository-and-applications)).
 - 2026-10-19: back-office development domain `preview.satu.solutions`, workspace folder `apps/backoffice`; **changed 2026-10-20:** `workspace.satu.solutions`, `apps/workspace` ([detail](#3-repository-and-applications)).
@@ -220,6 +221,13 @@ sign-in; a token never passes from one to the other. Where they differ, the item
   service on the same host (`workspace.satu.solutions` to another local port), with the same rules; the client-IP point above covers both.
 
 ## 6. UI template
+
+**Template rules (mandatory for front-end coding, set by the user on 2026-10-21; kept in the front-end repository's `CLAUDE.md`):** copy the
+template's markup and classes exactly and change only the content; import its CSS as it is and write no new styles (no exception, also not for
+contrast); split pages into reusable Vue/Nuxt components; replace template JavaScript or jQuery with Vue/Nuxt equivalents; ask the user before
+adding an element that is not in the template. Elements this design already decided (the `focus` layout, the bottom navigation, the announcement
+banner, the pickers of 11.7, the complex screens of 11.5) count as approved, but the Able Pro or Vuetify component each is built from is shown to
+the user before it is written.
 
 Decided by the user on 2026-10-13, after both templates the user owns were read (files only, nothing run; both folders are read-only):
 
@@ -709,7 +717,7 @@ One pattern per situation, used by every page of every application.
 - **Time zone:** times come from the API in UTC and are shown in the device's zone with its label (WIB, WITA, WIT; other zones by their offset). An
   interview time also shows the zone in the invitation and the confirmation.
 - **Accessibility:** WCAG 2.1 AA: keyboard use, visible focus, labels on every field, errors announced to screen readers, and the Able Pro colours
-  checked for contrast (adjusted in the theme where they fail).
+  used as they are (**changed 2026-10-21 by the user:** no theme adjustment for contrast, template rule 2 of section 6).
 
 ### 11.3 Key page layouts
 
