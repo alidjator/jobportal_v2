@@ -115,7 +115,7 @@ in the page map. The open functional gaps of earlier rounds remain: FG4 (test pr
 
 ## 2. Company side
 
-The back office (`frontend.md` section 8) serves every company and group member; menus and the landing page follow the 29 company permissions and
+Workspace (`frontend.md` section 8) serves every company and group member; menus and the landing page follow the 29 company permissions and
 the group permissions (8.0). **Fact that shapes most of this section:** the import makes each legacy company owner the **only** member of the
 company, as `company_admin`, creator and only assignee of every imported job (`phase-1-migration.md:111-113, 122`); team members, notes, ratings,
 saved candidates, screening answers and the CV-view log are not carried. The open gaps of earlier rounds remain: FG8 (integration API), FG10
@@ -200,7 +200,7 @@ settings, activity log, group plans and requisitions, read-only recruitment acro
 1. **MG-B01:** bring the platform admin's two-factor reset for company members forward to before go-live (out of the "after import" group), or
    make every imported company invite a second admin before the owner's enrolment?
 2. **MG-B04:** keep "one company per account" for internal tenants, or let one account belong to several tenants of the same group (with a tenant
-   switcher in the back office)?
+   switcher in Workspace)?
 3. **MG-B07:** import the legacy saved candidates (with their categories) into the talent pool? This touches the talent pool consent rule of
    `phase-8-talent-pool.md`, which legacy saves never asked for.
 4. **MG-B11:** for imported applications in analytics: leave them out, show them as a separate "before the cut-over" period, or count only from
@@ -210,7 +210,7 @@ settings, activity log, group plans and requisitions, read-only recruitment acro
 
 ## 3. Psychologists and platform admin
 
-Both live in the admin application (`frontend.md` section 9): `/masuk` and pages D for admins, `/mitra/masuk` and pages M for psychologists.
+Both live in Console (`frontend.md` section 9): `/masuk` and pages D for admins, `/mitra/masuk` and pages M for psychologists.
 Admin accounts and roles stay **console-only** by the user's decision of 2026-10-13 (9.3); that is not counted as a gap here. The four legacy
 admin features left out on 2026-10-13 (candidate export, cross-company applications, job bulk import, platform interview templates) are not
 reopened. Open gaps of earlier rounds: FG7 (help requests), FG16 (queue alert, designed #30), G8 (appeal of a rejected job).
@@ -223,7 +223,7 @@ groups, candidate context, claim and release, recommendation and the register (M
 
 | ID | Actor | Feature | Gap | Persona | Business impact | Status API | Status data | Evidence | Priority |
 |---|---|---|---|---|---|---|---|---|---|
-| MG-C01 | Psychologist | Forgotten password | The shared `POST auth/password/forgot` and `auth/password/reset` work for any `identity_users` row (no type check), so a psychologist can reset by code, but the admin application has **no** forgot or reset page under `/mitra` (M2 has none) and the public A3 page belongs to the job seeker application. Changing the password while signed in has no endpoint at all (FEG13). | FE, BE, SA | A psychologist who forgets the password cannot sign in without the platform team; signed reports wait (and with #24, go overdue). | Exists (reset by code); Missing (change while signed in) | Exists | `RequestPasswordReset.php` (no type filter); `frontend.md` 9.2 and its FEG13 note | P2 |
+| MG-C01 | Psychologist | Forgotten password | The shared `POST auth/password/forgot` and `auth/password/reset` work for any `identity_users` row (no type check), so a psychologist can reset by code, but Console has **no** forgot or reset page under `/mitra` (M2 has none) and the public A3 page belongs to the job seeker application. Changing the password while signed in has no endpoint at all (FEG13). | FE, BE, SA | A psychologist who forgets the password cannot sign in without the platform team; signed reports wait (and with #24, go overdue). | Exists (reset by code); Missing (change while signed in) | Exists | `RequestPasswordReset.php` (no type filter); `frontend.md` 9.2 and its FEG13 note | P2 |
 
 ### 3.2 Institution lead
 
@@ -332,7 +332,7 @@ profiles, jobs, alerts and matching).
 
 | ID | Gap | Persona | Business impact | Status API | Status data | Evidence | Priority |
 |---|---|---|---|---|---|---|---|
-| MG-P03 | **Undeliverable email is shown to nobody who can act.** The job seeker area and the back office do not use `email_deliverable`; the company resources of an application do not carry it; the user cannot fix it without the email change of MG-A05. | FE, BE, HR | Candidates miss interview invitations and offer deadlines they only get by email; recruiters mark them as no-shows. | Exists for the user (`GET me`); Missing for the company side | Exists | `CurrentUserResource.php:9`; `AdminUserResource.php:29-30`; `grep email_deliverable` in `frontend.md`, `src/Recruitment`: nothing | P2 |
+| MG-P03 | **Undeliverable email is shown to nobody who can act.** The job seeker area and Workspace do not use `email_deliverable`; the company resources of an application do not carry it; the user cannot fix it without the email change of MG-A05. | FE, BE, HR | Candidates miss interview invitations and offer deadlines they only get by email; recruiters mark them as no-shows. | Exists for the user (`GET me`); Missing for the company side | Exists | `CurrentUserResource.php:9`; `AdminUserResource.php:29-30`; `grep email_deliverable` in `frontend.md`, `src/Recruitment`: nothing | P2 |
 
 #### 4.2.4 Account deletion while a recruitment is running
 
@@ -428,7 +428,7 @@ MG-P02), which must be ready before the freeze date is set.
 | Hold rule for scheduled emails before the first sign-in | system | MG-P02 |
 | Active sessions list and sign-out per device | J15, C25 | MG-A13 |
 | Version check (`If-Match` or a version field) on job, offer and interview edits | C4, C7 | MG-B08 |
-| Forgot and reset password pages in the psychologist area (API exists); password change for psychologists | M2, M6 | MG-C01 |
+| Forgot and reset password pages in Portal Mitra (API exists); password change for psychologists | M2, M6 | MG-C01 |
 
 ### 5.5 Schema needs
 
@@ -462,7 +462,7 @@ as asked; this list is the record. Nothing here is designed or scheduled yet: ea
 | 8 | MG-B07 | **Import the legacy saved candidates as a private company list without contact actions**; contact and invitations open only after the candidate's consent or when the profile is discoverable. |
 | 9 | MG-B11 | **Speed and conversion reports count only applications created after the cut-over date**; totals may include the imported ones. |
 | 10 | MG-B10 | **Escalate after 3 reminders to the group's `group.approvals.manage` holders** (task and notice to replace the approver with the existing replace action); the count is a setting. |
-| 11 | MG-C02 | **Merge of reference items in the admin panel** (D15 "Gabungkan ke…"): every reference moves to the target, the source is retired, its old slug resolves to the target. |
+| 11 | MG-C02 | **Merge of reference items in Console** (D15 "Gabungkan ke…"): every reference moves to the target, the source is retired, its old slug resolves to the target. |
 | 12 | MG-C04 | **A platform admin may correct a user's sign-in email** under `users.manage`, after a written identity check; audited, both addresses told, every token revoked. |
 | 13 | MG-C03 | **The return of imported users is a go-live success measure**: an admin report of imported accounts and companies, reset emails sent and bounced, and first sign-ins, at 30, 60 and 90 days. |
 | 14 | MG-P01 | **Company owners are activated first** (a few days ahead, so their jobs are ready), then job seekers in batches, after a notice on karir.pkp before the freeze. **Claude drafts** the notice, the reset email and the newsletter text in the activation design session, for the user to review. |

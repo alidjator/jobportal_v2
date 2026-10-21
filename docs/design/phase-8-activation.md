@@ -9,7 +9,7 @@ design is what must exist **before the final run**: the import is treated as a u
 One line per decision; the detail is in the section named. If they disagree, the detail section wins. "User" = answered by the user in this session
 (2026-10-20); "default" = proposed by the design and approved by the user (section 16, defaults a to j).
 
-- 2026-10-20 One **activation email** for every active, verified imported account, **without a code**, with a link to a new landing page (A8 for job seekers, B6 for the back office); two variants (has a password / has none); the old command `identity:send-imported-password-resets` is replaced (user; [section 3](#3-the-activation-email-the-landing-pages-and-the-command)).
+- 2026-10-20 One **activation email** for every active, verified imported account, **without a code**, with a link to a new landing page (A8 for job seekers, B6 for Workspace); two variants (has a password / has none); the old command `identity:send-imported-password-resets` is replaced (user; [section 3](#3-the-activation-email-the-landing-pages-and-the-command)).
 - 2026-10-20 Order: pre-freeze notice **14 days and 3 days** before the freeze; company owners activated first, job seekers **3 working days** later; job seekers in a **pilot of 200, then 500 a day**, with a stop rule at more than 2% bounces or 0.1% complaints; verified addresses first, unverified ones last; **one reminder after 7 days** (user; [section 2](#2-order-and-calendar)).
 - 2026-10-20 Drafts of the notice, the banners, the newsletter, the activation and reminder emails and the page texts are in [Appendix A](#appendix-a-drafts-for-review); **Claude drafts, the user reviews** (user, decision 14).
 - 2026-10-20 **Hold rule:** an imported account that has not signed in since the import gets **no scheduled email** (recommendations, profile reminders, team digests, unread-message emails, job alerts, expiry notices) and **no newsletter-style email**; emails caused by a person (interview invitation, offer, rejection, verification, reset) still go, in-app notifications are not held; held mail is skipped, not queued (user; [section 4](#4-the-hold-on-scheduled-emails)).
@@ -62,7 +62,7 @@ Newsletter issues of the new platform are sent by an admin by hand (`phase-4-new
 **Landing pages.** The email links to a page that explains and starts the reset:
 
 - **A8** `/aktifkan-akun` on the public site (job seekers): short explanation, two choices: "Masuk" (A1) and "Atur kata sandi baru" (an email field, then `POST auth/password/forgot`, then the existing reset step A3). It cannot tell which variant the reader has (no account-existence leak), so both choices show for everyone. A1 and A3 get a one-line pointer "Pernah memakai karir.pkp? Aktifkan akun" (static text).
-- **B6** `/aktifkan-akun` in the back office (company owners): the same, on B1/B2, with the line that an authenticator app is needed for the first sign-in.
+- **B6** `/aktifkan-akun` in Workspace (company owners): the same, on B1/B2, with the line that an authenticator app is needed for the first sign-in.
 
 **Command `identity:send-activation-emails`** (replaces `identity:send-imported-password-resets`; its use case, report class and tests are removed, the checklist item is rewritten):
 
@@ -203,7 +203,7 @@ New pages take the next number in their series (`frontend.md` 7 to 9); "#N" mark
 | Page | Change |
 |---|---|
 | **A8** (new) | Public "Aktifkan akun" `/aktifkan-akun`: explanation, "Masuk" and "Atur kata sandi baru" (`POST auth/password/forgot`); target of `{ACTIVATION_URL}` of the job-seeker activation email |
-| **B6** (new) | Back-office "Aktifkan akun" `/aktifkan-akun` for company owners, plus the line about the authenticator app |
+| **B6** (new) | Workspace "Aktifkan akun" `/aktifkan-akun` for company owners, plus the line about the authenticator app |
 | A1, A3, B1, B2 | One static line "Pernah memakai karir.pkp? Aktifkan akun" linking to A8/B6 |
 | **J19** (new) | "Riwayat pemindahan" `/me/pemindahan` (`GET me/import-summary`); linked from J15 and from the J1 card |
 | J1 | Card "Ringkasan pemindahan" at the first visit (dismissable); profile completeness card as today |

@@ -16,6 +16,8 @@ document records the names and when each place changes.
   separating the live site from the working folder** (decided by the user; [Infrastructure](#3-infrastructure)).
 - 2026-10-15: the API domain **stays `api-karir.satu.solutions`** for now; a neutral domain comes when the ERP goes to other customers (decided by
   the user; [Domains](#4-domains)).
+- 2026-10-20: the **three front-end applications** are named **ONESIS Career**, **ONESIS Workspace** and **ONESIS Console** (with **Portal
+  Mitra**), each on its own development domain (decided by the user; [Front-end applications](#5-front-end-applications)).
 
 ## 1. API contract (coded 2026-10-15)
 
@@ -44,3 +46,19 @@ document records the names and when each place changes.
 
 - The API stays at `api-karir.satu.solutions`. When ONESIS is offered to other customer groups, a neutral API domain is chosen and the old one is
   redirected for a period; that needs its own decision then.
+
+## 5. Front-end applications (decided 2026-10-20)
+
+Industry-standard product names, one per application of `frontend.md` section 3:
+
+| Name | Who | Identifier, folder | Development domain |
+|---|---|---|---|
+| ONESIS Career | visitors and job seekers | `public`, `apps/public` | `karir.satu.solutions` |
+| ONESIS Workspace (was "back office") | company and group members | `workspace`, `apps/workspace` | `workspace.satu.solutions` (was `preview.satu.solutions`) |
+| ONESIS Console (was "admin panel") | platform admins | `console`, `apps/console` | `console.satu.solutions` (was `admin-karir.satu.solutions`) |
+| Portal Mitra (was "psychologist area"), inside Console | partner psychologists | paths under `/mitra` | Console's domain |
+
+- UI text uses the names, for example "Masuk ke Workspace".
+- "Admin" in the user stories means the company admin, so Console never calls the platform role bare "Admin": it reads "Operator platform" or
+  "Admin platform".
+- Unchanged: the API domain (section 4), the API paths `/api/v1/admin/**`, the admin permissions and guard, and the page numbers (D1 to D28, M1 to M8).

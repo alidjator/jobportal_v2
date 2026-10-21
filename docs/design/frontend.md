@@ -5,44 +5,46 @@ Design of the web front end that consumes this API. Code is not started.
 ## Decisions
 
 - 2026-10-13: the front end is designed now and coded after the legacy import rehearsal; go-live readiness keeps priority ([detail](#1-timing)).
-- 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), the admin panel a single-page application on Vite ([detail](#2-stack)).
+- 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), Console a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
-- 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one back-office SPA; the public Nuxt application keeps visitors and job seekers only; the admin panel stays ([detail](#3-repository-and-applications)).
-- 2026-10-19: the back office runs on Nuxt with `ssr: false`; its token stays in a sealed httpOnly cookie behind its own Nuxt proxy, as in 5.2 ([detail](#3-repository-and-applications)).
-- 2026-10-19: back-office development domain `preview.satu.solutions`, workspace folder `apps/backoffice` ([detail](#3-repository-and-applications)).
-- 2026-10-19: the back office has its own sign-in, two-factor, password reset and team invitation pages; the public sign-in sends company and group members there, no token passes between the applications ([detail](#3-repository-and-applications)).
-- 2026-10-19: the back-office menu follows the permissions of `GET company/me` and the group membership, with a landing page per preset ([detail](#8-page-map-back-office)).
+- 2026-10-20: application names: **ONESIS Career** (public), **ONESIS Workspace** (company and group members, was "back office"), **ONESIS Console** (platform admins, was "admin panel") with **Portal Mitra** for psychologists (was "psychologist area", `/mitra` unchanged); identifiers `public`, `workspace`, `console`; in the UI the platform role reads "Operator platform" or "Admin platform", never bare "Admin"; API paths `/api/v1/admin/**`, admin permissions and page numbers stay ([detail](#3-repository-and-applications), `naming.md`).
+- 2026-10-20: one development domain per application: `karir.satu.solutions`, `workspace.satu.solutions` (was `preview.satu.solutions`), `console.satu.solutions` (was `admin-karir.satu.solutions`); API unchanged; `CORS_ALLOWED_ORIGINS` and the link contract follow ([detail](#4-domains), [links](#122-link-contract)).
+- 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one SPA, ONESIS Workspace; the public Nuxt application keeps visitors and job seekers only; Console stays ([detail](#3-repository-and-applications)).
+- 2026-10-19: Workspace runs on Nuxt with `ssr: false`; its token stays in a sealed httpOnly cookie behind its own Nuxt proxy, as in 5.2 ([detail](#3-repository-and-applications)).
+- 2026-10-19: back-office development domain `preview.satu.solutions`, workspace folder `apps/backoffice`; **changed 2026-10-20:** `workspace.satu.solutions`, `apps/workspace` ([detail](#3-repository-and-applications)).
+- 2026-10-19: Workspace has its own sign-in, two-factor, password reset and team invitation pages; the public sign-in sends company and group members there, no token passes between the applications ([detail](#3-repository-and-applications)).
+- 2026-10-19: the Workspace menu follows the permissions of `GET company/me` and the group membership, with a landing page per preset ([detail](#8-page-map-workspace)).
 - 2026-10-19: one page-map session before front-end coding rewrites sections 7 to 9 and 11.1 for three applications, and adds the link contract for emails, notifications and `.ics` ([detail](#3-repository-and-applications)).
 - 2026-10-19: the front-end working folder is `/usr/local/src/jobportal-frontend/onesis-talent` (the workspace root) ([detail](#3-repository-and-applications)).
 - 2026-10-19: page-map session done: sections 2, 5.2, 7 to 10, 11.1 rewritten for three applications, shared components 11.7, links and targets section 12 ([detail](#3-repository-and-applications)).
-- 2026-10-19: one page numbering: P, A, J (public), B, C, E (back office), D, M (admin); old numbers kept, C5b, C27, C28 as designed, new pages take the next number, "#N" marks designed-not-coded elements; design references to the pipeline as "C5" corrected to C6 ([detail](#7-page-map-public-site-and-job-seekers)).
-- 2026-10-19: back-office paths are Indonesian without a prefix and without `/en` ([detail](#8-page-map-back-office)).
-- 2026-10-19: the language of the job seeker area, the back office and the admin application comes from a cookie sent as `Accept-Language`; links never carry `/en` ([detail](#111-layouts-and-navigation)).
-- 2026-10-19: the API's API-shaped team links (`COMPANY_APP_URL` + `/company/...`, `/review-requests/{id}`) are answered by link-entry routes of the back office that redirect to pages ([detail](#123-link-entry-in-the-back-office)).
+- 2026-10-19: one page numbering: P, A, J (public), B, C, E (Workspace), D, M (Console); old numbers kept, C5b, C27, C28 as designed, new pages take the next number, "#N" marks designed-not-coded elements; design references to the pipeline as "C5" corrected to C6 ([detail](#7-page-map-public-site-and-job-seekers)).
+- 2026-10-19: Workspace paths are Indonesian without a prefix and without `/en` ([detail](#8-page-map-workspace)).
+- 2026-10-19: the language of the job seeker area, Workspace and Console comes from a cookie sent as `Accept-Language`; links never carry `/en` ([detail](#111-layouts-and-navigation)).
+- 2026-10-19: the API's API-shaped team links (`COMPANY_APP_URL` + `/company/...`, `/review-requests/{id}`) are answered by link-entry routes of Workspace that redirect to pages ([detail](#123-link-entry-in-workspace)).
 - 2026-10-19: links: signed out → sign-in of the target application and back; wrong kind of account → refused with a link to the right application and the equivalent path; not theirs → the API's 404 or 403 ([detail](#121-rules-for-every-link)).
-- 2026-10-19: announcement banner as a strip above the header of the public and back-office layouts; `info` closable, `important` always ([detail](#111-layouts-and-navigation)).
-- 2026-10-19: back-office menu is one sidebar grouped per module (Ringkasan, Talent, Workforce, Organisasi, Perusahaan) ([detail](#111-layouts-and-navigation)).
+- 2026-10-19: announcement banner as a strip above the header of the public and Workspace layouts; `info` closable, `important` always ([detail](#111-layouts-and-navigation)).
+- 2026-10-19: Workspace menu is one sidebar grouped per module (Ringkasan, Talent, Workforce, Organisasi, Perusahaan) ([detail](#111-layouts-and-navigation)).
 - 2026-10-19 (decision gate): the team's interview `.ics` carries the job seeker's page link; fixed in the API as work the front end asks for ([detail](#125-findings-while-mapping-the-links)).
 - 2026-10-19 (decision gate): the `my_scoring` task points at a list endpoint that does not exist; the endpoint is added for page C31 ([detail](#85-findings-while-mapping)).
-- 2026-10-13: two applications (replaced by three on 2026-10-19): the public site with job seekers and company dashboards, and a separate admin panel on its own domain ([detail](#3-repository-and-applications)).
-- 2026-10-13: development domains `karir.satu.solutions` (public) and `admin-karir.satu.solutions` (admin); production domains later ([detail](#4-domains)).
-- 2026-10-13: the admin panel keeps its token in `sessionStorage`, with a strict CSP ([detail](#5-authentication)).
-- 2026-10-13: public application authentication through the Nuxt server: the API token stays in a sealed httpOnly cookie and every API call goes through a Nuxt proxy route; the client-IP consequence is a separate open point ([detail](#52-public-application-and-back-office)).
-- 2026-10-13: the rest of the public flow agreed: CSRF by `SameSite=Lax` plus an `Origin` check, central handling of 401/409/403, area chosen from `GET /me`, Google Identity Services, sign-out, Reverb authorisation through the proxy ([detail](#52-public-application-and-back-office)).
-- 2026-10-13: the token is kept inside a sealed cookie with `nuxt-auth-utils` (no server-side session store); the Nuxt server runs on the same host as the API behind nginx ([detail](#52-public-application-and-back-office)).
-- Postponed to front-end coding: client IP behind the Nuxt proxy (trusted proxy or not; the rate-limiter rules stay unchanged) ([detail](#52-public-application-and-back-office)).
+- 2026-10-13: two applications (replaced by three on 2026-10-19): the public site with job seekers and company dashboards, and a separate Console on its own domain ([detail](#3-repository-and-applications)).
+- 2026-10-13: development domains `karir.satu.solutions` (public) and `admin-karir.satu.solutions` (admin); **changed 2026-10-20:** the admin application moves to `console.satu.solutions`; production domains later ([detail](#4-domains)).
+- 2026-10-13: Console keeps its token in `sessionStorage`, with a strict CSP ([detail](#5-authentication)).
+- 2026-10-13: public application authentication through the Nuxt server: the API token stays in a sealed httpOnly cookie and every API call goes through a Nuxt proxy route; the client-IP consequence is a separate open point ([detail](#52-public-application-and-workspace)).
+- 2026-10-13: the rest of the public flow agreed: CSRF by `SameSite=Lax` plus an `Origin` check, central handling of 401/409/403, area chosen from `GET /me`, Google Identity Services, sign-out, Reverb authorisation through the proxy ([detail](#52-public-application-and-workspace)).
+- 2026-10-13: the token is kept inside a sealed cookie with `nuxt-auth-utils` (no server-side session store); the Nuxt server runs on the same host as the API behind nginx ([detail](#52-public-application-and-workspace)).
+- Postponed to front-end coding: client IP behind the Nuxt proxy (trusted proxy or not; the rate-limiter rules stay unchanged) ([detail](#52-public-application-and-workspace)).
 - 2026-10-13: page map of the public site, account pages and job seeker area agreed; its findings were decided the same day ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: public URLs in Indonesian; English under the `/en` prefix with `hreflang`, Indonesian unprefixed by default ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: a public company list is added to the API (`GET /companies`, new endpoint, coded after the import rehearsal together with the front end) for a company directory page ([detail](#74-findings-while-mapping)).
 - 2026-10-13: a training course detail endpoint is added to the API (`GET /training/courses/{id}`, coded with the front end) for an indexed course page ([detail](#74-findings-while-mapping)).
-- 2026-10-13: the partner psychologist portal (`/api/v1/provider/**`) is a separate area of the admin application, with its own sign-in and menu ([detail](#3-repository-and-applications)).
+- 2026-10-13: the partner psychologist portal (`/api/v1/provider/**`) is a separate area of Console, with its own sign-in and menu ([detail](#3-repository-and-applications)).
 - 2026-10-13: the job seeker area (`/me/**`) renders in the browser only (`ssr: false`); data still goes through the Nuxt proxy ([detail](#7-page-map-public-site-and-job-seekers)).
-- 2026-10-13: company dashboard page map agreed (C1 to C25), under the `/rekruter` prefix, browser-rendered; moved to the back office without the prefix on 2026-10-19 ([detail](#8-page-map-back-office)).
+- 2026-10-13: company dashboard page map agreed (C1 to C25), under the `/rekruter` prefix, browser-rendered; moved to Workspace without the prefix on 2026-10-19 ([detail](#8-page-map-workspace)).
 - 2026-10-13: entry for employers: a static `/untuk-perusahaan` page with contact details **and** a company application form backed by a new API endpoint and an admin review queue (new feature, designed separately, coded after the import rehearsal) ([detail](#85-findings-while-mapping)).
-- 2026-10-13: admin panel (D1 to D20) and psychologist area (M1 to M6) page maps agreed; the psychologist area lives under `/mitra` on the admin domain; its findings were decided the same day ([detail](#9-page-map-admin-panel-and-psychologist-area)).
+- 2026-10-13: Console (D1 to D20) and Portal Mitra (M1 to M6) page maps agreed; Portal Mitra lives under `/mitra` on the Console domain; its findings were decided the same day ([detail](#9-page-map-console-and-portal-mitra)).
 - 2026-10-13: admin endpoints for public user accounts are added (list, search, detail, suspend, reactivate, audited, new permission), new API work after the import rehearsal; adds page D21 ([detail](#93-findings-while-mapping)).
 - 2026-10-13: admin accounts and roles stay console-only; no admin-management pages ([detail](#93-findings-while-mapping)).
-- 2026-10-13: one front-end repository as a pnpm workspace (`apps/public`, `apps/admin`, `packages/ui`, `packages/api`, `packages/i18n`), Node 24 LTS ([detail](#10-technical-foundation)).
+- 2026-10-13: one front-end repository as a pnpm workspace (`apps/public`, `apps/admin` (renamed `apps/console` on 2026-10-20), `packages/ui`, `packages/api`, `packages/i18n`), Node 24 LTS ([detail](#10-technical-foundation)).
 - 2026-10-13: API types generated from the Scramble OpenAPI document with `openapi-typescript`, called through `openapi-fetch` ([detail](#10-technical-foundation)).
 - 2026-10-13: the front end is built on the server by the user; a session only prepares the commands ([detail](#10-technical-foundation)).
 - 2026-10-13: English public paths are translated (`/en/jobs`, `/en/companies`), Indonesian unprefixed (`/lowongan`) ([detail](#7-page-map-public-site-and-job-seekers)).
@@ -59,8 +61,8 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: four legacy admin features stay out: candidate export, a cross-company application list, job bulk import and clone by an admin, platform-wide interview question templates ([detail](#93-findings-while-mapping)).
 - 2026-10-13: the team page shows the jobs each member is assigned to: new `GET company/members/{userId}/jobs` (company admin; every status with its status, newest first; company admins too, only their own assignments), coded the same day.
 - 2026-10-14: a recruitment calendar page C26 and a note for the candidate on interviews, designed in `phase-8-interview-calendar.md`.
-- 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-back-office)).
-- 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); the admin panel starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
+- 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-workspace)).
+- 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); Console starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 
 ## 1. Timing
 
@@ -74,9 +76,9 @@ Decided by the user on 2026-10-13: Vue with TypeScript. Three applications since
 
 - **Public application** (visitors and job seekers): Nuxt with server-side rendering, so job and company pages can be indexed by search engines and
   the API token can be kept in an httpOnly cookie on the Nuxt server instead of in browser storage; the job seeker area renders in the browser.
-- **Back office** (company and group members, added 2026-10-19): Nuxt with `ssr: false`, a single-page application in the browser whose Nuxt server
+- **ONESIS Workspace** (company and group members, added 2026-10-19): Nuxt with `ssr: false`, a single-page application in the browser whose Nuxt server
   only holds the token in a sealed cookie and proxies the API (section 5.2).
-- **Admin panel** (admins and the psychologist area): a single-page application on Vite; it needs no indexing and is served as static files.
+- **ONESIS Console** (platform admins and Portal Mitra): a single-page application on Vite; it needs no indexing and is served as static files.
 
 ## 3. Repository and applications
 
@@ -86,23 +88,23 @@ Decided by the user on 2026-10-13:
   live site, is not touched by Node builds.
 - **Working folder (decided by the user on 2026-10-19):** `/usr/local/src/jobportal-frontend/onesis-talent`, owned by `jobportal`; it is the root of
   the pnpm workspace (section 10). The neighbouring `talent` folder (a plain copy of the Able Pro template) and the template copy next to it are not used.
-- **Applications (replaced on 2026-10-19 by three applications, next point):** two. One serves the public pages, job seekers and company dashboards; the admin panel is a second application on its own domain, because
+- **Applications (replaced on 2026-10-19 by three applications, next point):** two. One serves the public pages, job seekers and company dashboards; Console is a second application on its own domain, because
   admins have their own guard, TOTP and 12-hour tokens and the panel should not be exposed on the public domain.
 - **Changed 2026-10-19 (decided by the user, option (c) of `docs/analysis/frontend-gap-analysis.md` section 5): three applications.** The company
   dashboard leaves the public Nuxt application and joins the ERP pages (group structure, approvals, workforce plans, requisitions, read across tenants,
-  support grants; FEG1) in **one back-office SPA** (Nuxt with `ssr: false`, see below) for all company and group work (ONESIS Talent, Workforce and Core). The public Nuxt
-  application keeps only visitors and job seekers (sections 7.1 to 7.3); the admin panel with the psychologist area stays as it is. Why: company
+  support grants; FEG1) in **one SPA, ONESIS Workspace** (Nuxt with `ssr: false`, see below) for all company and group work (ONESIS Talent, Workforce and Core). The public Nuxt
+  application keeps only visitors and job seekers (sections 7.1 to 7.3); Console with Portal Mitra stays as it is. Why: company
   members and group members are the same accounts, these pages need no server rendering, and `naming.md` already splits ONESIS (ERP side) from
   ONESIS Career (job seekers).
-- **Back-office token (decided by the user on 2026-10-19):** the back office runs on **Nuxt with `ssr: false`** (still a single-page application in
+- **Workspace token (decided by the user on 2026-10-19):** Workspace runs on **Nuxt with `ssr: false`** (still a single-page application in
   the browser) so that it reuses the public flow of section 5.2: the token stays in a sealed httpOnly cookie (`nuxt-auth-utils`) and every API call
   goes through its own Nuxt proxy route. Chosen over `sessionStorage` (a new tab would ask to sign in again, and recruiters open applicants in new
   tabs) and over a Sanctum cookie session (API change). Cost: a second Node service next to the public one.
-- **Back-office domain and folder (decided by the user on 2026-10-19):** `preview.satu.solutions` during development (section 4); workspace folder
-  `apps/backoffice` (section 10).
-- **Back-office sign-in (decided by the user on 2026-10-19):** the back office has its own account pages (sign-in with password and Google,
-  two-factor, forgot and reset password, the team invitation, now B1 to B5 of section 8.1), all on `preview.satu.solutions`; `COMPANY_INVITATION_URL` points there. The public
-  sign-in (A1) refuses a company or group member after `GET me` (the token is revoked at once) and shows a link "Masuk ke dashboard perusahaan";
+- **Workspace domain and folder (decided by the user on 2026-10-19, changed 2026-10-20):** `workspace.satu.solutions` during development (section 4,
+  was `preview.satu.solutions`); workspace folder `apps/workspace` (section 10, was `apps/backoffice`).
+- **Workspace sign-in (decided by the user on 2026-10-19):** Workspace has its own account pages (sign-in with password and Google,
+  two-factor, forgot and reset password, the team invitation, now B1 to B5 of section 8.1), all on `workspace.satu.solutions`; `COMPANY_INVITATION_URL` points there. The public
+  sign-in (A1) refuses a company or group member after `GET me` (the token is revoked at once) and shows a link "Masuk ke Workspace";
   no token is ever passed between the applications, and neither cookie is set on the parent domain.
 - **Page-map session (decided by the user on 2026-10-19):** one design session, before any front-end coding, rewrites sections 7 to 9 and 11.1 for
   the three applications from the routes of that day and the "Front end" rows of the phase 8 designs (FEG3, FEG9 to FEG15 of
@@ -113,29 +115,45 @@ Decided by the user on 2026-10-13:
   the wrong kind of user. The API settings are pointed at those paths; no new API code (FEG4). Written in section 12; the two API fixes found while
   writing it (12.5, 8.5) were decided by the user as endpoints the front end asks for.
 - **Partner psychologists (decided by the user on 2026-10-13):** the fifth role (`/api/v1/provider/**`: sign-in with two-factor, test authoring, norms,
-  report templates, reviewing and signing results) gets a separate area in the admin application, with its own sign-in and menu. It is back office like
-  the admin panel (two-factor, no indexing, token in `sessionStorage`), so it stays in the admin application (also after the 2026-10-19 change to
+  report templates, reviewing and signing results) gets a separate area in Console, with its own sign-in and menu. It is an internal tool like
+  the platform admin pages (two-factor, no indexing, token in `sessionStorage`), so it stays in Console (also after the 2026-10-19 change to
   three applications).
+- **Names (decided by the user on 2026-10-20):** industry-standard product names, one per application, recorded in `naming.md`:
+  **ONESIS Career** (public site and job seekers, `apps/public`), **ONESIS Workspace** (company and group members, `apps/workspace`, UI text such
+  as "Masuk ke Workspace"), **ONESIS Console** (platform admins, `apps/console`) and inside it **Portal Mitra** for partner psychologists (paths
+  under `/mitra`). Why not "Admin": in the user stories "Admin" means the company admin (`CLAUDE.md` rule 8), so the Console UI names the platform
+  role "Operator platform" or "Admin platform", never bare "Admin". Unchanged: the API paths `/api/v1/admin/**`, the admin permissions, the admin
+  guard and the page numbers (D1 to D28, M1 to M8).
 
 ## 4. Domains
 
-Decided by the user on 2026-10-13: `karir.satu.solutions` for the public application and `admin-karir.satu.solutions` for the admin panel during
+Decided by the user on 2026-10-13: `karir.satu.solutions` for the public application and a separate domain for the admin application during
 development, next to the API at `api-karir.satu.solutions`. Both origins go into `CORS_ALLOWED_ORIGINS`. Production domains are decided later.
-**Added 2026-10-19 (user):** the back office (section 3) runs on `preview.satu.solutions` during development; it also goes into
+**Added 2026-10-19 (user):** the company and group application (section 3) runs on its own domain during development; it also goes into
 `CORS_ALLOWED_ORIGINS`.
+**Changed 2026-10-20 (user): one domain per application, named after it** (names in section 3):
+
+| Application | Development domain | Was |
+|---|---|---|
+| ONESIS Career (public, `apps/public`) | `karir.satu.solutions` | unchanged |
+| ONESIS Workspace (`apps/workspace`) | `workspace.satu.solutions` | `preview.satu.solutions` |
+| ONESIS Console with Portal Mitra (`apps/console`) | `console.satu.solutions` | `admin-karir.satu.solutions` |
+| API | `api-karir.satu.solutions` | unchanged |
+
+`CORS_ALLOWED_ORIGINS` (development): `https://karir.satu.solutions,https://workspace.satu.solutions,https://console.satu.solutions`.
 
 ## 5. Authentication
 
-### 5.1 Admin panel
+### 5.1 Console
 
 - **Decided by the user on 2026-10-13:** the 12-hour admin token is kept in `sessionStorage`, so it is dropped when the tab closes, together
   with a strict Content Security Policy. The API needs no change.
 
-### 5.2 Public application and back office
+### 5.2 Public application and Workspace
 
 The whole flow below was agreed by the user on 2026-10-13 (the pattern, items 1 and 2, first; items 3 to 8 afterwards). One point is postponed.
-**Since 2026-10-19 it applies to both Nuxt applications** (section 3): the public application (`karir.satu.solutions`) and the back office
-(`preview.satu.solutions`) each have their own sealed cookie on their own host (never the parent domain), their own proxy route and their own
+**Since 2026-10-19 it applies to both Nuxt applications** (section 3): the public application (`karir.satu.solutions`) and Workspace
+(`workspace.satu.solutions`) each have their own sealed cookie on their own host (never the parent domain), their own proxy route and their own
 sign-in; a token never passes from one to the other. Where they differ, the item says so.
 
 **API contract it builds on** (read from the code, 2026-10-13):
@@ -160,16 +178,16 @@ sign-in; a token never passes from one to the other. Where they differ, the item
    signed) httpOnly, `Secure`, `SameSite=Lax` session cookie whose lifetime ends at the token's `expires_at`, and returns only the user to the browser.
 2. **API calls go through a Nuxt server route** (`/api/**` on the application's own host) that adds `Authorization: Bearer`, `Accept-Language` and forwards the
    request to `api-karir.satu.solutions`, streaming bodies both ways (resume and avatar files, video answer chunks, downloads). Server-side rendering calls
-   the API the same way. Neither Nuxt application then needs a CORS entry; only the admin origin calls the API from a browser. The first sign-in
+   the API the same way. Neither Nuxt application then needs a CORS entry; only the Console origin calls the API from a browser. The first sign-in
    step and the two-factor step both go through the Nuxt server, so the challenge token never reaches the page's script either.
 3. **CSRF:** the cookie is `SameSite=Lax` and the proxy refuses a state-changing request whose `Origin` is not the application's own.
 4. **Route guard and account states**, handled centrally in the proxy and the client:
    - 401: the session cookie is cleared and the user is sent to sign in, returning to the page afterwards.
    - 409 `terms-not-accepted`: redirect to the terms acceptance page.
    - 409 `email-not-verified`: show the verification prompt (code entry and resend) without leaving the page.
-   - 403 `account-suspended` / `account-deactivated`: an explanation page; deactivated accounts get the restore action. In the back office also
+   - 403 `account-suspended` / `account-deactivated`: an explanation page; deactivated accounts get the restore action. In Workspace also
      403 `company-suspended` and `group-suspended` (B5).
-   - Other 403s are shown as "not allowed" and never sign the user out (see the template fix in section 6); in the back office a 403 also reloads
+   - Other 403s are shown as "not allowed" and never sign the user out (see the template fix in section 6); in Workspace a 403 also reloads
      the permissions (section 8.0).
 5. **Role routing after sign-in (changed 2026-10-19):** `GET /me` decides whether the account belongs in this application. The public application
    keeps job seekers (to `/me`) and refuses company and group members: the token is revoked at once and A1 links to B1 (section 12.1). The back
@@ -192,8 +210,8 @@ sign-in; a token never passes from one to the other. Where they differ, the item
 
 - The token is kept inside the sealed cookie with `nuxt-auth-utils`; there is no server-side session store, so several Nuxt processes need no shared state.
 - The Nuxt server runs on the same host as the API, behind nginx (`karir.satu.solutions` to a local port), and reaches the API over the local network.
-  If the trusted proxy is chosen later, the only address to trust is the loopback address. **2026-10-19:** the back office is a second Nuxt
-  service on the same host (`preview.satu.solutions` to another local port), with the same rules; the client-IP point above covers both.
+  If the trusted proxy is chosen later, the only address to trust is the loopback address. **2026-10-19:** Workspace is a second Nuxt
+  service on the same host (`workspace.satu.solutions` to another local port), with the same rules; the client-IP point above covers both.
 
 ## 6. UI template
 
@@ -204,7 +222,7 @@ Decided by the user on 2026-10-13, after both templates the user owns were read 
   source of pages copied when needed (authentication, account profile, chat, calendar, kanban, server-side tables, form wizard, landing, error pages).
 - **Not chosen:** Able Pro Bootstrap 9.6.2 (`/usr/local/src/able-pro-bootstrap-v9.6.2`), plain HTML with vanilla and jQuery plugins that would have to be
   rewritten as Vue components.
-- **Admin panel:** starts from `seed` as a Vite SPA.
+- **Console:** starts from `seed` as a Vite SPA.
 - **Public application:** stays on Nuxt (server-side rendering); the Able Pro layouts and components are ported with `vuetify-nuxt-module`: vue-router routes
   become Nuxt pages, and browser-only code (`localStorage`, `window`) is guarded for server rendering.
 - **Template code that must be replaced, not kept:**
@@ -223,15 +241,15 @@ Decided by the user on 2026-10-13, after both templates the user owns were read 
 
 Built on 2026-10-13 from the API routes and agreed by the user the same day; **rewritten on 2026-10-19 in the page-map session** (section 3) for the
 three applications, from `php artisan route:list --path=api/v1` of that day (589 paths) and the "Front end" rows of the phase 8 designs. This is
-the public Nuxt application (`apps/public`, `karir.satu.solutions`): visitors and job seekers only. Company and group members use the back office
-(section 8); admins and psychologists the admin application (section 9).
+the public Nuxt application (`apps/public`, `karir.satu.solutions`): visitors and job seekers only. Company and group members use Workspace
+(section 8); admins and psychologists Console (section 9).
 
 **How to read the page maps (sections 7 to 9):**
 
 - A page or element without a mark uses endpoints that are **coded**.
 - **#N** marks an element whose API is **designed, not coded** (phase 8 item N of `phase-8-index.md`); it is built when that item is coded, not
   before. **frozen** marks a frozen design (marketplace features), **after import** a design coded after the legacy import.
-- Numbers are stable (decided by the user on 2026-10-19): P, A, J for this application; B, C, E for the back office; D, M for the admin
+- Numbers are stable (decided by the user on 2026-10-19): P, A, J for this application; B, C, E for Workspace; D, M for the admin
   application. A retired number is not reused. Pages added after 2026-10-13 take the next free number (C5b, C27 and C28 keep the numbers their
   designs gave them).
 
@@ -254,7 +272,7 @@ Every page calls the API through the Nuxt proxy (section 5.2). "Index" means ren
 |---|------|------|-----|-------|
 | P1 | Home | `/` | `GET jobs` (latest), `GET job-categories`, `POST newsletter/subscribers` | Index. Search box leads to P2; signed-in job seekers also see `GET me/recommendations`. |
 | P2 | Job search | `/lowongan` | `GET jobs` with `filter[q, work_mode, salary_min, salary_period_id, category_id, role_id, job_type_id, job_level_id, experience_level_id, education_level_id, work_time_id, province_id, city_id, skill_id, company_id, posted_within]`, `sort` (`relevance` by default with a keyword, `match` when signed in, newest, salary), `page`; masters for the filter lists. **frozen:** `filter[disability_friendly]`. **#20:** jobs with several locations of `company_locations`. | Index. Filters live in the query string so a search can be shared and indexed; save toggle and match percentage when signed in; "Simpan sebagai notifikasi lowongan" (J10). Each row shows its `locations`. |
-| P3 | Job detail | `/lowongan/{job}` | `GET jobs/{job}` (with `locations`), `POST jobs/{job}/view` (`source=shared` when opened from a share link), `GET salary-insight`, `GET jobs/{job}/screening-questions`, `GET jobs/{job}/similar` ("Lowongan serupa", also on its 404), `POST jobs/{id}/reports` ("Laporkan lowongan": reason choice and note, sign-in first, then back to the dialog). **#20:** apply state with its reason and fix (`GET me/jobs/{id}/apply-state`: "Verifikasi email", "Lengkapi profil", extra required profile items). **#14:** "Anda dapat melamar lagi mulai {date}" (`reapply_on`). **frozen:** disability badge; "Ikuti" the company. | Index, with `JobPosting` structured data. Share with Web Share, WhatsApp and copy link. Apply button leads to J4 (sign-in first). The same detail component renders the company's preview in the back office (C4, C5, #20). |
+| P3 | Job detail | `/lowongan/{job}` | `GET jobs/{job}` (with `locations`), `POST jobs/{job}/view` (`source=shared` when opened from a share link), `GET salary-insight`, `GET jobs/{job}/screening-questions`, `GET jobs/{job}/similar` ("Lowongan serupa", also on its 404), `POST jobs/{id}/reports` ("Laporkan lowongan": reason choice and note, sign-in first, then back to the dialog). **#20:** apply state with its reason and fix (`GET me/jobs/{id}/apply-state`: "Verifikasi email", "Lengkapi profil", extra required profile items). **#14:** "Anda dapat melamar lagi mulai {date}" (`reapply_on`). **frozen:** disability badge; "Ikuti" the company. | Index, with `JobPosting` structured data. Share with Web Share, WhatsApp and copy link. Apply button leads to J4 (sign-in first). The same detail component renders the company's preview in Workspace (C4, C5, #20). |
 | P4 | Company profile | `/perusahaan/{slug}` | `GET companies/{slug}`, `/logo`, `/banner`, `GET jobs?filter[company_id]`, `GET companies/{slug}/reviews`, `POST companies/{slug}/reviews`, `POST reviews/{id}/report`. **frozen:** "Ikuti" (`me/followed-companies`, `followed`). | Index. Tabs: about (with the company's active locations), open jobs, reviews. Writing a review needs a job seeker who applied to the company. |
 | P5 | Salary insight | `/gaji` | `GET salary-insight`, masters | Index. |
 | P6 | Training | `/pelatihan` | `GET training/courses` | Index. |
@@ -271,17 +289,17 @@ Every page calls the API through the Nuxt proxy (section 5.2). "Index" means ren
 
 ### 7.2 Account pages (blank layout, `noindex`)
 
-Job seekers only. Company and group members sign in on the back office (B1 to B5, section 8.1).
+Job seekers only. Company and group members sign in on Workspace (B1 to B5, section 8.1).
 
 | # | Page | Path | API |
 |---|------|------|-----|
-| A1 | Sign in (password and Google), second step | `/masuk` | `POST auth/login`, `POST auth/google`; when the answer is `{status: two_factor_required, challenge_token}`, the code or recovery-code step `POST auth/two-factor` on the same page (job seekers who switched two-factor on in J15). After the token, `GET me`: a company or group member is refused (the token is revoked at once with `POST auth/logout`) with "Masuk ke dashboard perusahaan", a link to B1 carrying the back-office equivalent of the page asked for when there is one (section 12.3). |
+| A1 | Sign in (password and Google), second step | `/masuk` | `POST auth/login`, `POST auth/google`; when the answer is `{status: two_factor_required, challenge_token}`, the code or recovery-code step `POST auth/two-factor` on the same page (job seekers who switched two-factor on in J15). After the token, `GET me`: a company or group member is refused (the token is revoked at once with `POST auth/logout`) with "Masuk ke Workspace", a link to B1 carrying the Workspace equivalent of the page asked for when there is one (section 12.3). |
 | A2 | Register (job seekers) | `/daftar` | `POST auth/register`, `POST auth/google` |
 | A3 | Forgot and reset password | `/lupa-kata-sandi`, `/atur-ulang-kata-sandi` | `POST auth/password/forgot`, `POST auth/password/reset` (a six-digit code from the email, no link) |
 | A4 | Verify email | `/verifikasi-email` | `POST auth/email/verify`, `POST auth/email/resend` |
 | A5 | Accept terms | `/persetujuan` | `GET me/terms-acceptance`, `POST me/terms-acceptance`, `GET legal-documents/{type}` |
 | A6 | Suspended or deactivated account, restore | `/akun/diblokir` | `POST auth/account/restore` |
-| A7 | (retired 2026-10-19) | | The company invitation moved to the back office as B4. |
+| A7 | (retired 2026-10-19) | | The company invitation moved to Workspace as B4. |
 
 ### 7.3 Job seeker area (Able Pro dashboard layout, `noindex`)
 
@@ -315,26 +333,26 @@ Not mapped to a page: `POST`/`DELETE me/device-tokens` (push tokens for a future
   after the import rehearsal together with front-end coding, and it adds page P12 "Company directory" at `/perusahaan`.
 - **No training course detail:** the API only lists courses. **Decided by the user on 2026-10-13: add `GET /api/v1/training/courses/{id}`**, new API
   work done with front-end coding, so each course gets its own indexed page (P6b `/pelatihan/{course}`).
-- **A fifth role, the partner psychologist (`/api/v1/provider/**`):** placed in the admin application on 2026-10-13 (section 3); its pages are mapped
-  with the admin panel.
+- **A fifth role, the partner psychologist (`/api/v1/provider/**`):** placed in Console on 2026-10-13 (section 3); its pages are mapped
+  with Console.
 - **2026-10-19 (page-map session):** the newsletter pages carry the token in the path (P10); the job seeker's two-factor (A1 second step, J15),
   data export, blocking and reporting in chat, talent pool consent, the reschedule request, the no-show and hired states, the offer page (J17) and the
   withdraw and decline reasons are coded API without a page until now (FEG5, FEG9); they are placed above.
 
-## 8. Page map: back office
+## 8. Page map: Workspace
 
 Built on 2026-10-13 as the company dashboard of the public application (C1 to C25, under `/rekruter`); **rewritten on 2026-10-19** (page-map
-session) as the back office: `apps/backoffice`, Nuxt with `ssr: false` on `preview.satu.solutions` (section 3), token in a sealed cookie behind
+session) as Workspace: `apps/workspace`, Nuxt with `ssr: false` on `workspace.satu.solutions` (section 3), token in a sealed cookie behind
 its own proxy (section 5.2), the Able Pro dashboard layout, every page `noindex` (`robots.txt` disallows everything). It holds the recruitment
 work of the company (ONESIS Talent, pages C) and the ERP pages (ONESIS Workforce and Core, pages E) for every company and group member.
 
-**Paths (decided by the user on 2026-10-19):** Indonesian, without a prefix (the domain is the back office's own) and without an `/en` variant;
+**Paths (decided by the user on 2026-10-19):** Indonesian, without a prefix (the domain is Workspace's own) and without an `/en` variant;
 the interface language comes from the language cookie and is sent as `Accept-Language` (section 11.1). The paths of the API's own links
 (`/company/...`, `/review-requests/{id}`) are served by the link-entry routes of section 12.3, not by pages.
 
 ### 8.0 Access and menu
 
-**Decided by the user on 2026-10-19 (FEG2): menus by permission.** After sign-in the back office reads `GET me` (a job seeker is refused, B1),
+**Decided by the user on 2026-10-19 (FEG2): menus by permission.** After sign-in Workspace reads `GET me` (a job seeker is refused, B1),
 `GET company/me` (`role`, `is_owner`, `permissions`) and `GET organization/group` (403 `not-a-group-member`: no group role; otherwise
 `my_permissions`). They are kept in Pinia and read again after a 403 and when the in-app notification `company.permissions_changed` arrives. A
 menu item shows only when its "Access" below is held; a menu group with no visible item is hidden; the API stays the authority (403 is "not
@@ -353,7 +371,7 @@ allowed", section 11.2). One company per member account: there is no company swi
 
 ### 8.1 Account pages (blank layout)
 
-Decided by the user on 2026-10-19 (section 3): the back office has its own sign-in; no token passes between the applications.
+Decided by the user on 2026-10-19 (section 3): Workspace has its own sign-in; no token passes between the applications.
 
 | # | Page | Path | API |
 |---|------|------|-----|
@@ -455,15 +473,15 @@ across tenants are audited per applicant, which the page says.
   (`phase-8-assessment-automation.md`, which belongs in the job editor C4) were corrected the same day.
 - **C26 is coded** (`phase-8-interview-calendar.md`, 2026-10-17); the 2026-10-13 table still said "designed".
 
-## 9. Page map: admin panel and psychologist area
+## 9. Page map: Console and Portal Mitra
 
 Built on 2026-10-13 from the API routes (`/api/v1/admin/**`, `/api/v1/provider/**`) and agreed by the user the same day; **rewritten on
-2026-10-19** (page-map session) from the routes of that day. Vite SPA on `admin-karir.satu.solutions` from the Able Pro `seed` (`apps/admin`),
+2026-10-19** (page-map session) from the routes of that day. Vite SPA on `console.satu.solutions` from the Able Pro `seed` (`apps/console`),
 token in `sessionStorage` (section 5.1). Two sign-ins in one application: `/masuk` for admins, `/mitra/masuk` for psychologists, whose pages all
 live under `/mitra/...` (decided 2026-10-13); each has its own layout and menu, and the token of one is never sent to the other's endpoints. Paths
 are Indonesian without an `/en` variant; the language comes from the language cookie (section 11.1).
 
-### 9.1 Admin panel
+### 9.1 Platform admin pages
 
 The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`, `analytics.view`, `companies.manage`, `jobs.manage`, `reviews.moderate`,
 `messages.moderate`, `campaigns.manage`, `newsletter.manage`, `faqs.manage`, `legal_documents.manage`, `email_templates.manage`, `cv_templates.manage`,
@@ -501,7 +519,7 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D27 | Groups and tenants | `/grup`, `/grup/{id}` | `GET`/`POST admin/groups`, `GET .../{id}`, `GET .../{id}/members`, `PUT`/`DELETE .../members/{userId}` (first group role), `PUT`/`DELETE .../legal-entities/{entityId}/tenant`, `suspend`, `restore` | `companies.manage` |
 | D28 | Support access reads | `/dukungan`, `/dukungan/{groupId}` | `GET admin/support/groups` (groups with a running grant for this admin), `GET admin/support/group`, `units[/{id}[/versions]]`, `unit-types`, `positions[/{id}[/versions]]`, `grades`, `cost-centres`, `activity` (read only, under the grant; the remaining time shown) | `groups.support` |
 
-### 9.2 Psychologist area
+### 9.2 Portal Mitra
 
 | # | Page | Path | API |
 |---|------|------|-----|
@@ -522,7 +540,7 @@ The psychologist API has no password change or recovery-code endpoint today (FEG
   there is no route to list or search job seekers and company members, nor to suspend, reactivate or deactivate them; `AccountStatus` exists in the
   domain only. **Decided by the user on 2026-10-13: add the admin endpoints**: list and search job seekers and company members, detail, suspend
   (revokes every token), reactivate, each audited, behind a new permission (for example `users.manage`). New API work, designed in detail and coded
-  after the import rehearsal with the front end. Adds page D21 "Users" to the admin panel. (**2026-10-19:** the read part, `users.view`, was coded
+  after the import rehearsal with the front end. Adds page D21 "Users" to Console. (**2026-10-19:** the read part, `users.view`, was coded
   with #17; D21 shows it now.)
 - **No admin endpoints for admin accounts and roles.** Admins are created with `identity:create-admin` and permissions synced with
   `identity:sync-permissions` (console only); there is no page to invite admins, assign roles or reset another admin's two-factor (only the console
@@ -546,10 +564,10 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
 - **Repository (decided):** one front-end repository as a pnpm workspace, Node 24 LTS (installed on the server), at
   `/usr/local/src/jobportal-frontend/onesis-talent`:
   - `apps/public`: Nuxt (server-side rendering), public site and job seeker area (section 7);
-  - `apps/backoffice`: Nuxt with `ssr: false`, the company and group back office (section 8), added 2026-10-19;
-  - `apps/admin`: Vite SPA from the Able Pro `seed`, admin panel and psychologist area (section 9);
+  - `apps/workspace`: Nuxt with `ssr: false`, ONESIS Workspace for company and group members (section 8), added 2026-10-19;
+  - `apps/console`: Vite SPA from the Able Pro `seed`, Console and Portal Mitra (section 9);
   - `packages/ui`: the Able Pro theme, SCSS, layouts and shared components (section 11.7), including the job detail component that P3 and the
-    back-office preview share;
+    Workspace preview share;
   - `packages/api`: generated API types, the client and the problem parser;
   - `packages/i18n`: shared `id` and `en` interface messages, the wording of in-app notifications per `type` and their targets (section 12.4)
     (error text comes from the API).
@@ -564,17 +582,17 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   `urn:onesis:error:<code>`; the union of codes (for decisions, not for text) is generated from `docs/api/error-catalog.md`. A 422 `errors` map goes onto the vee-validate fields, a
   429 shows the wait from `Retry-After`; 401, 403 and 409 are handled centrally (section 5.2).
 - **Data and state (agreed):** Pinia for the session, the permissions (section 8.0) and UI settings; server-rendered public pages use Nuxt `useFetch`; the browser-rendered areas
-  (`/me`, the back office) and the admin application use TanStack Vue Query for caching and invalidation. `@nuxtjs/i18n` with `prefix_except_default` and
-  default `id` in the public application; the back office and the admin application use vue-i18n with the language cookie (section 11.1). Dates with `date-fns` (`moment` dropped), Rupiah with `Intl.NumberFormat`.
+  (`/me`, Workspace) and Console use TanStack Vue Query for caching and invalidation. `@nuxtjs/i18n` with `prefix_except_default` and
+  default `id` in the public application; Workspace and Console use vue-i18n with the language cookie (section 11.1). Dates with `date-fns` (`moment` dropped), Rupiah with `Intl.NumberFormat`.
 - **Quality (agreed):** ESLint and Prettier (from the template), `vue-tsc`, Vitest with Vue Test Utils, Playwright for the main flows (sign-in with
-  two-factor, apply, pipeline move, back-office sign-in and landing per preset, admin two-factor). Two coverage tests: every notification type of the
+  two-factor, apply, pipeline move, Workspace sign-in and landing per preset, admin two-factor). Two coverage tests: every notification type of the
   catalog has a sentence and a target (11.6, 12.4), and every task key of the API has a link-entry mapping (12.3).
 - **Build (decided):** on the server, **run by the user**; a session prepares the commands only. The server has 7 GB of memory with about 1 GB free
   (2026-10-13) while a Nuxt and Vuetify build can take 2 to 4 GB, so the build commands limit Node's heap and may need swap; build when traffic is low,
   and build one application at a time.
 - **Hosting (agreed):** each build goes into its own release folder and a `current` symlink is switched, so the live site never runs from the working
-  folder. The public application and the back office each run Nuxt's `node-server` output as a systemd service on `127.0.0.1` (two ports) behind
-  nginx (the units need root: user lingering is off for `jobportal`). The admin application is static files served by nginx with a strict CSP:
+  folder. The public application and Workspace each run Nuxt's `node-server` output as a systemd service on `127.0.0.1` (two ports) behind
+  nginx (the units need root: user lingering is off for `jobportal`). Console is static files served by nginx with a strict CSP:
   `script-src 'self'`; `style-src` needs `'unsafe-inline'` because Vuetify injects its theme as an inline style and a static site cannot give it a nonce.
 
 
@@ -593,16 +611,16 @@ Built from the Able Pro parts (`full-version/src/layouts`, `views/pages/landingp
 |---|---|---|
 | `public` | P1 to P15 | landing page `AppBarMenu` and `FooterSection` |
 | `blank` | A1 to A6, B1 to B5, D1, M1, M2, error pages | `BlankLayout`, `auth1` pages, `maintenance/error` |
-| `dashboard` | `/me`, the back office, the admin panel, `/mitra` | `DashboardLayout` with the vertical sidebar and header (`NotificationDD`, `LanguageDD`, `ProfileDD`) |
+| `dashboard` | `/me`, Workspace, Console, `/mitra` | `DashboardLayout` with the vertical sidebar and header (`NotificationDD`, `LanguageDD`, `ProfileDD`) |
 | `focus` | J4 apply, J6 and C9 video rooms, J7 test runner, C10 voice call | new: no sidebar, a top bar with the title and an exit; full screen where the page needs it |
 
 **Announcement banner (decided by the user on 2026-10-19, FEG8):** a strip above the header in the `public` and `dashboard` layouts of the public
-application and the back office (not in the admin application, not in `focus` or `blank`), from `GET announcements` (anonymous: audience `all`;
+application and Workspace (not in Console, not in `focus` or `blank`), from `GET announcements` (anonymous: audience `all`;
 job seekers and company members get their audience too). At most two show, `important` first; `info` can be closed (its id remembered in
 `localStorage`), `important` shows again on each visit; `link_url` becomes a button.
 
 **Language (decided by the user on 2026-10-19):** Indonesian by default; the ID/EN switch in the header is kept in a cookie per application and sent
-as `Accept-Language`. Public indexed pages keep the `/en` paths of section 7; the job seeker area, the back office and the admin application have
+as `Accept-Language`. Public indexed pages keep the `/en` paths of section 7; the job seeker area, Workspace and Console have
 no language in the path, and links from emails never carry one (section 12).
 
 **Public header:** logo; Lowongan, Perusahaan, Gaji, Pelatihan; Untuk Perusahaan; language switch (ID/EN); Masuk and Daftar, with "Masuk perusahaan"
@@ -614,7 +632,7 @@ into a drawer.
 *Lamaran:* Lamaran saya, Jadwal (J16, #15), Asesmen · *Profil:* Profil, CV dan resume · *Komunikasi:* Pesan (unread count), Notifikasi (unread count) ·
 *Lainnya:* Ulasan saya, Pelatihan saya, Perusahaan diikuti (frozen) · Pengaturan akun.
 
-**Back-office sidebar (decided by the user on 2026-10-19: one sidebar, grouped per module).** Each item shows only with its access of section 8
+**Workspace sidebar (decided by the user on 2026-10-19: one sidebar, grouped per module).** Each item shows only with its access of section 8
 (8.0); a group with no visible item is hidden. The header holds the company name, the notification bell, the language switch and the avatar menu
 (theme, Akun, Keluar).
 
@@ -631,7 +649,7 @@ into a drawer.
 The pipeline (C6), application detail (C7), interview workspace (C8), results (C16) and the rooms (C9, C10) are reached from a job, an
 application or an interview, not from the menu.
 
-**Admin sidebar:** each item shown only with its permission (9.1): *Ringkasan:* Dasbor, Analitik · *Perusahaan:* Perusahaan, Pengajuan perusahaan
+**Console sidebar:** each item shown only with its permission (9.1): *Ringkasan:* Dasbor, Analitik · *Perusahaan:* Perusahaan, Pengajuan perusahaan
 (D22), Perubahan nama (D24), Grup (D27), Jenis dokumen · Pengguna (D21) · *Moderasi:* Lowongan, Ulasan, Laporan (D23) · *Pemasaran:* Kampanye,
 Newsletter · *Konten:* Pengumuman (D26), FAQ, Dokumen legal, Template email, Template CV · *Asesmen:* Pustaka tes, Penyedia psikolog · *Sistem:* Data
 referensi, Pengaturan, Email tidak terkirim (D25), Log audit · Dukungan grup (D28) · Akun saya. A group with no visible item is hidden.
@@ -644,7 +662,7 @@ referensi, Pengaturan, Email tidak terkirim (D25), Log audit · Dukungan grup (D
   layout, colours and menu direction are fixed by the application.
 - **Vertical sidebar** in every dashboard; on a phone it becomes the drawer.
 - **Bottom navigation on phones for `/me`:** Dasbor, Cari (to `/lowongan`), Lamaran, Pesan (unread count), Profil; the drawer keeps the full menu. A new
-  component (Vuetify `v-bottom-navigation`), not in the template. The back office, admin and psychologist areas use the drawer only.
+  component (Vuetify `v-bottom-navigation`), not in the template. Workspace, Console and Portal Mitra use the drawer only.
 
 ### 11.2 Common states
 
@@ -705,7 +723,7 @@ Wireframes were shown to the user for P2, P3, J1 and C6; the other pages follow 
   move) one click away, and the last choice is remembered per user in the browser. Filters and export on both.
 - **C7 Application detail:** candidate column (profile, resume viewer, screening answers) and a work column with tabs: notes, rating, interviews,
   assessments, offer, history; stage actions at the top.
-- **Admin lists** (D4, D7, D8, D21, D22): the same server table with filters on top and the detail in a page, actions in the detail header.
+- **Console lists** (D4, D7, D8, D21, D22): the same server table with filters on top and the detail in a page, actions in the detail header.
 
 
 ### 11.4 Search engines
@@ -722,8 +740,8 @@ Agreed by the user on 2026-10-13.
   search engines then drop it, as Google asks for expired job postings.
 - **Sitemaps:** an index served by Nuxt (`@nuxtjs/sitemap`) with live jobs, companies (P12 endpoint), courses, legal documents and the static pages, in
   both languages with `hreflang` alternates; rebuilt from the API on request and cached for an hour.
-- **`robots.txt`:** public application disallows `/me`, `/api`, the account pages and their `/en` versions; the back office and the admin domain disallow
-  everything and send `noindex` on every response (changed 2026-10-19 for the back office).
+- **`robots.txt`:** public application disallows `/me`, `/api`, the account pages and their `/en` versions; Workspace and the Console domain disallow
+  everything and send `noindex` on every response (changed 2026-10-19 for Workspace).
 - **`hreflang`:** `id`, `en` and `x-default` (Indonesian) on every indexed page.
 
 **Decided by the user on 2026-10-13:**
@@ -827,8 +845,8 @@ Decided by the user on 2026-10-19:
 
 - **Signed out:** the target application's sign-in (A1, B1, D1 or M2) opens and returns to the link's path and query afterwards (`?ke=<path>`,
   only a path of the same application is accepted).
-- **Wrong kind of account:** the public sign-in (A1) refuses a company or group member and offers "Masuk ke dashboard perusahaan" to B1 with the
-  back-office equivalent of the path when there is one (12.3); the back-office sign-in (B1) refuses a job seeker and links to the public site. An
+- **Wrong kind of account:** the public sign-in (A1) refuses a company or group member and offers "Masuk ke Workspace" to B1 with the
+  Workspace equivalent of the path when there is one (12.3); the Workspace sign-in (B1) refuses a job seeker and links to the public site. An
   admin or psychologist token never exists in the Nuxt applications.
 - **Right kind, not theirs:** the API decides; 404 shows the not-found page, 403 the "not allowed" panel (`company-permission-required` and the
   like), never a sign-out (section 5.2).
@@ -840,28 +858,28 @@ Decided by the user on 2026-10-19:
 
 | Link | Sent in | `.env` value (development) | Opens (application, page) | Signed out | Wrong kind of account |
 |---|---|---|---|---|---|
-| Company invitation | invitation email (`InvitationMail`) | `COMPANY_INVITATION_URL=https://preview.satu.solutions/undangan/{token}` | back office B4 | works (token) | works (the token decides; the API answers for an email it cannot accept) |
-| Psychologist invitation | provider invitation email | `PSYCHOLOGIST_INVITATION_URL=https://admin-karir.satu.solutions/mitra/undangan/{token}` | admin application M1 | works (token) | — |
+| Company invitation | invitation email (`InvitationMail`) | `COMPANY_INVITATION_URL=https://workspace.satu.solutions/undangan/{token}` | Workspace B4 | works (token) | works (the token decides; the API answers for an email it cannot accept) |
+| Psychologist invitation | provider invitation email | `PSYCHOLOGIST_INVITATION_URL=https://console.satu.solutions/mitra/undangan/{token}` | Console M1 | works (token) | — |
 | Campaign registration | campaign link and QR code (C23, D9) | `CAMPAIGN_REGISTRATION_URL=https://karir.satu.solutions/kampanye/{code}` | public P7 | works (public); registration keeps the code | public page; only job seekers register |
 | Profile reminder | profile reminder email | `JOB_SEEKER_PROFILE_URL=https://karir.satu.solutions/me/profile` | public J2 | A1, then back | A1 refuses a company member (to B1) |
-| The job seeker's application | "lamaran diterima" email; the job seeker's interview `.ics` (`URL` and description) | `JOB_SEEKER_APPLICATION_URL=https://karir.satu.solutions/me/applications/{application_id}` | public J5 | A1, then back | A1 refuses a company member, with "Masuk ke dashboard perusahaan" to `/pelamar/{application_id}` (C7) |
-| The team's application | panel invitation and cancellation, panel answers, withdrawal and event emails to the team | `COMPANY_APPLICATION_URL=https://preview.satu.solutions/pelamar/{application_id}` | back office C7 (limited layout for a panel seat) | B1, then back | B1 refuses a job seeker (to the public site); a member without access gets 403 |
-| Review request | `review.requested`, reminder and overdue emails | `COMPANY_APP_URL=https://preview.satu.solutions` + `/review-requests/{id}` | back office link entry → C28 `/review/{id}` | B1, then back | as above |
-| Daily team digest | digest email lines | `COMPANY_APP_URL` + the task's `filter` (`/company/...`) or `/company/applications/{id}` | back office link entry → the pages of 12.3 | B1, then back | as above |
+| The job seeker's application | "lamaran diterima" email; the job seeker's interview `.ics` (`URL` and description) | `JOB_SEEKER_APPLICATION_URL=https://karir.satu.solutions/me/applications/{application_id}` | public J5 | A1, then back | A1 refuses a company member, with "Masuk ke Workspace" to `/pelamar/{application_id}` (C7) |
+| The team's application | panel invitation and cancellation, panel answers, withdrawal and event emails to the team | `COMPANY_APPLICATION_URL=https://workspace.satu.solutions/pelamar/{application_id}` | Workspace C7 (limited layout for a panel seat) | B1, then back | B1 refuses a job seeker (to the public site); a member without access gets 403 |
+| Review request | `review.requested`, reminder and overdue emails | `COMPANY_APP_URL=https://workspace.satu.solutions` + `/review-requests/{id}` | Workspace link entry → C28 `/review/{id}` | B1, then back | as above |
+| Daily team digest | digest email lines | `COMPANY_APP_URL` + the task's `filter` (`/company/...`) or `/company/applications/{id}` | Workspace link entry → the pages of 12.3 | B1, then back | as above |
 | Newsletter confirmation | confirmation email | `NEWSLETTER_CONFIRM_URL=https://karir.satu.solutions/newsletter/konfirmasi/{token}` | public P10 | works (token) | works |
 | Newsletter unsubscribe | every issue | `NEWSLETTER_UNSUBSCRIBE_URL=https://karir.satu.solutions/newsletter/berhenti/{token}` | public P10 | works (token) | works |
 | Manual-candidate claim | **#31** email to the person | setting named when #31 is coded; value `https://karir.satu.solutions/undangan-lamaran/{token}` | public P15 | page works; the claim needs A1 | A1 refuses a company member |
-| Team interview `.ics` | panel invitation `.ics`, `GET company/interviews/{id}/calendar.ics`, the cancellation on a withdrawal | `COMPANY_APPLICATION_URL` (coded 2026-10-19, 12.5) | back office C7 | B1, then back | files made before the fix still open J5, and A1 sends the member on to C7 |
+| Team interview `.ics` | panel invitation `.ics`, `GET company/interviews/{id}/calendar.ics`, the cancellation on a withdrawal | `COMPANY_APPLICATION_URL` (coded 2026-10-19, 12.5) | Workspace C7 | B1, then back | files made before the fix still open J5, and A1 sends the member on to C7 |
 
 Not a link of ours: the meeting link of an online interview (set by the company), an announcement's `link_url` (set by an admin), Moodle course
 links (`MOODLE_COURSE_URL`). No link by design: password reset and email verification (six-digit codes), the data export email (download while
 signed in, J15), approval emails (approving from an email is FG15, an API gap).
 
-### 12.3 Link entry in the back office
+### 12.3 Link entry in Workspace
 
-**Decided by the user on 2026-10-19:** the API's team links have the shape of API paths. The back office answers them with link-entry routes that
+**Decided by the user on 2026-10-19:** the API's team links have the shape of API paths. Workspace answers them with link-entry routes that
 only translate the path and its filters to a page and redirect (`replace`, no history entry); they render nothing themselves. The same table serves
-the "Perlu tindakan" card of C1, whose items carry the same `filter`, and the A1 refusal (public path → back-office path).
+the "Perlu tindakan" card of C1, whose items carry the same `filter`, and the A1 refusal (public path → Workspace path).
 
 | Incoming path (after `COMPANY_APP_URL`) | Task key | Page |
 |---|---|---|

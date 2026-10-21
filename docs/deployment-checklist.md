@@ -19,7 +19,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY` set, `APP_URL` is the public API URL.
 - [ ] `QUEUE_CONNECTION=database` (**not** `sync`) and `QUEUE_BULK_RETRY_AFTER` left at its default unless the `bulk` timeout changes (it must stay above the `--timeout=540` of the bulk worker).
 - [ ] `CACHE_STORE=redis` and `REDIS_CLIENT=predis` (the rate limiter, the settings cache and the review summaries need an atomic store).
-- [ ] `CORS_ALLOWED_ORIGINS` = the front-end origin(s), comma separated (empty refuses every browser; the user has to give the origin).
+- [ ] `CORS_ALLOWED_ORIGINS` = the origins of the three front-end applications (ONESIS Career, Workspace, Console), comma separated (empty refuses every browser); development: `https://karir.satu.solutions,https://workspace.satu.solutions,https://console.satu.solutions` (`frontend.md` section 4); the production domains are given by the user.
 - [ ] `API_DOCS_ENABLED=false` in production (the docs route is served only when `true`); `API_RATE_LIMIT_USER` and `API_RATE_LIMIT_GUEST` checked.
 - [ ] Mail: `MAIL_MAILER` (not `log`), `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`.
 - [ ] Public link templates: `COMPANY_INVITATION_URL`, `CAMPAIGN_REGISTRATION_URL` (`https://<client site>/{code}/register`), `NEWSLETTER_CONFIRM_URL`, `NEWSLETTER_UNSUBSCRIBE_URL`, `JOB_SEEKER_PROFILE_URL` (the profile page linked from the profile reminder email; empty means no link).

@@ -20,7 +20,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - **Go-live readiness first** (2026-10-13, `docs/deployment-checklist.md`; the live dev site is this folder, so code needing a new migration fails until `migrate`). Name: ONESIS ERP / ONESIS Career (`naming.md`); `onesis` is the technical identifier.
 - **Status of the multi-persona items (2026-10-20):** #34 (activation of the imported accounts, parts 1 to 7), #35, #36 and #37 are coded and committed (`phase-8-index.md`); #38 may be coded, not started; #39 to #44 are designed and wait for the front end. Before the freeze: the second rehearsal (parts 1, 3, 4, 6 of #34 and #35, #36 change the import), then the user's items below.
 - **API coding limited (2026-10-19):** only #38 and endpoints the front end asks for until the front end catches up (`decisions.md` section 5); #30, #15, #20 and #34 to #37 are done or allowed as recorded in the index.
-- Front end: designed (`frontend.md`; three applications since 2026-10-19, page maps rewritten, every FEG covered), not coded; it asks the API for the team `.ics` link (12.5) and the `my_scoring` list (8.5); working folder `/usr/local/src/jobportal-frontend/onesis-talent` (empty); needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
+- Front end: designed (`frontend.md`; three applications since 2026-10-19, named ONESIS Career, Workspace and Console with Portal Mitra on 2026-10-20 (`naming.md` 5), page maps rewritten, every FEG covered), not coded; it asks the API for the team `.ics` link (12.5) and the `my_scoring` list (8.5); working folder `/usr/local/src/jobportal-frontend/onesis-talent` (empty); needs the `phase-8-*` API pieces and `frontend.md` 11.5, 11.6; open before go-live: client IP behind the Nuxt proxy (5.2).
 
 ## Open work (not started)
 
@@ -35,7 +35,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`, checklist section 3); the **freeze date** for the final run is not set.
 - SMTP provider (then its webhook parser); then the reset emails to the imported accounts: `identity:send-activation-emails` (staff test, company owners, pilot of 200, then 500 a day; `docs/deployment-checklist.md` section 3).
 - Admin setting `platform.operations_email` (scheduler alerts) and an outside uptime monitor on `GET /api/v1/health/scheduler`.
-- `CORS_ALLOWED_ORIGINS` (admin origin); the link settings (`COMPANY_INVITATION_URL`, `JOB_SEEKER_*_URL`, `COMPANY_APP*_URL`, newsletter, campaign, psychologist) with the values of `frontend.md` 12.2; consider nginx `limit_req` for unknown paths.
+- `CORS_ALLOWED_ORIGINS` (the three origins of `frontend.md` section 4); the link settings (`COMPANY_INVITATION_URL`, `JOB_SEEKER_*_URL`, `COMPANY_APP*_URL`, newsletter, campaign, psychologist) with the values of `frontend.md` 12.2; consider nginx `limit_req` for unknown paths.
 - `.env` values: `.env.example` and the design "coded" sections; production needs `REDIS_CLIENT=predis` and `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus and coturn (`deploy/janus/README.md`) and Asterisk (`deploy/asterisk/README.md`).
 - First admin: `identity:create-admin` (enrols TOTP at the first sign-in); other admins through `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).

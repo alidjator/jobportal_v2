@@ -64,7 +64,7 @@ No files: verification documents are uploaded later by the company admin (C21).
 5. **Reject:** email to the contact with `message_to_user` when given; the internal reason stays admin-only.
 6. **Audit:** `company_registration.approved` and `company_registration.rejected` with the admin.
 
-**New page in the admin panel:** D22 "Company registrations" (queue, detail, correct, approve, reject), plus a dashboard queue card.
+**New page in Console:** D22 "Company registrations" (queue, detail, correct, approve, reject), plus a dashboard queue card.
 
 **Emails** (templates in `id` and `en`, editable in D13, in the language of the request): confirm, received, rejected.
 
