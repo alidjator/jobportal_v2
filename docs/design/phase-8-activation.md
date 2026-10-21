@@ -33,7 +33,7 @@ Read from the code, the schema and the rehearsal report of 2026-10-13 (`20261013
 - A3 is "a code, not a link" (`frontend.md` A3): the activation email therefore carries a link to a page that **requests** the code when the user clicks, never a code.
 - `identity_users.first_login_at` exists (set at the first sign-in; the profile reminders already wait for it). `identity_users` has no imported marker; `legacyimport_id_map` has no foreign keys and "is removable when everything is done".
 - Terms are not carried: the A5/B3 terms gate runs at the first sign-in. Company admins need TOTP (forced enrolment on B1 at the first sign-in). Discoverability starts off.
-- The company-side two-factor reset by another company admin exists (`POST company/members/{userId}/reset-two-factor`), the console `identity:reset-user-two-factor <email>` exists, the psychologist reset exists (D19); the platform admin's API for company members does not (MG-B01).
+- The company-side two-factor reset by another company admin exists (`POST company/members/{userId}/reset-two-factor`), the artisan command `identity:reset-user-two-factor <email>` exists, the psychologist reset exists (D19); the platform admin's API for company members does not (MG-B01).
 - Notification preferences are asked through one Shared port (`NotificationPreferences::isEnabled`, `enabledAmong`), used by the scheduled senders; the `EssentialEmail` marker already lets a message pass the suppression list.
 
 ## 2. Order and calendar
@@ -158,7 +158,7 @@ Three new importers in `src/LegacyImport/Application`, same pattern as the other
 - **Endpoint:** `GET admin/activation/report?audience=job_seeker|company_member` (permission `users.view`), live from `identity_users`, `identity_activation_emails` and `email_suppressions`; no snapshots.
 - **Response:** `imported`, `deactivated`, `unverified`, `suppressed`, `eligible`; `activation: {first_sent_at, sent, reminders_sent, bounced, complaints}`; `signed_in: {count, percent_of_sent, percent_of_imported}`; `milestones: [{day: 30|60|90, date, reached, signed_in, percent_of_sent}]` computed from `first_sent_at` of the audience (user: day 0 is the first activation email; no target); `batches: [{batch, sent_at, sent, bounced, complaints, signed_in}]`.
 - A company counts as activated when its owner has signed in (the audience `company_member` is the owners). The page also lists the companies not yet signed in by name (a company name is not personal data) so they can be called.
-- **Admin page D29** `/aktivasi` (menu "Pengguna"), and a card on D2 with the two sign-in percentages; the console `identity:activation-report` prints the same table. A target can be added later as settings.
+- **Console page D29** `/aktivasi` (menu "Pengguna"), and a card on D2 with the two sign-in percentages; the artisan command `identity:activation-report` prints the same table. A target can be added later as settings.
 
 ## 11. Schema
 
@@ -237,7 +237,7 @@ Parts are independent enough to code one by one; **parts 1, 3, 4 and 6 change th
 4. **Label and stale rule:** `migrated_at`, resources, `UntouchedImport` in the four places. Tests: label on both sides, stale exemption until the first move, the move starts the clock.
 5. **Email change and admin actions:** `identity_email_changes`, the self-service endpoints, admin correction, two-factor reset, support actions, audit, notices. Tests: neutral 202, code attempts, expiry, Google-only second code, domain limit, revoke of tokens, audit, last-admin flag, authorization.
 6. **New importers:** saved jobs, job alerts, saved candidates (with the `legacy` source rules in TalentPool and the `me/talent-pool-memberships` delete). Tests through the real API, idempotent re-run, unavailable jobs, paused alerts, contact actions refused.
-7. **Report and D29 API:** the report use case, filters on `admin/users`, console report, D2 card data.
+7. **Report and D29 API:** the report use case, filters on `admin/users`, command-line report, D2 card data.
 
 Checks are the user's step after each part (`CLAUDE.md`); `composer check` runs once after part 7. The front end needs A8, B6, J19, C33, D29 and the card and label changes of section 13; the copy of Appendix A is the starting text of those pages.
 

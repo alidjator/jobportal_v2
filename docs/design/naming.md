@@ -61,4 +61,6 @@ Industry-standard product names, one per application of `frontend.md` section 3:
 - UI text uses the names, for example "Masuk ke Workspace".
 - "Admin" in the user stories means the company admin, so Console never calls the platform role bare "Admin": it reads "Operator platform" or
   "Admin platform".
+- In the documents, "console" alone no longer means the server command line: that is "command line" or "artisan command" (the file name
+  `phase-8-admin-console.md` stays).
 - Unchanged: the API domain (section 4), the API paths `/api/v1/admin/**`, the admin permissions and guard, and the page numbers (D1 to D28, M1 to M8).

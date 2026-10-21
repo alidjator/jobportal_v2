@@ -44,7 +44,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: entry for employers: a static `/untuk-perusahaan` page with contact details **and** a company application form backed by a new API endpoint and an admin review queue (new feature, designed separately, coded after the import rehearsal) ([detail](#85-findings-while-mapping)).
 - 2026-10-13: Console (D1 to D20) and Portal Mitra (M1 to M6) page maps agreed; Portal Mitra lives under `/mitra` on the Console domain; its findings were decided the same day ([detail](#9-page-map-console-and-portal-mitra)).
 - 2026-10-13: admin endpoints for public user accounts are added (list, search, detail, suspend, reactivate, audited, new permission), new API work after the import rehearsal; adds page D21 ([detail](#93-findings-while-mapping)).
-- 2026-10-13: admin accounts and roles stay console-only; no admin-management pages ([detail](#93-findings-while-mapping)).
+- 2026-10-13: admin accounts and roles stay command-line only (artisan commands on the server); no admin-management pages in Console ([detail](#93-findings-while-mapping)).
 - 2026-10-13: one front-end repository as a pnpm workspace (`apps/public`, `apps/admin` (renamed `apps/console` on 2026-10-20), `packages/ui`, `packages/api`, `packages/i18n`), Node 24 LTS ([detail](#10-technical-foundation)).
 - 2026-10-13: API types generated from the Scramble OpenAPI document with `openapi-typescript`, called through `openapi-fetch` ([detail](#10-technical-foundation)).
 - 2026-10-13: the front end is built on the server by the user; a session only prepares the commands ([detail](#10-technical-foundation)).
@@ -90,7 +90,7 @@ Decided by the user on 2026-10-13:
 - **Working folder (decided by the user on 2026-10-19):** `/usr/local/src/jobportal-frontend/onesis-talent`, owned by `jobportal`; it is the root of
   the pnpm workspace (section 10). The neighbouring `talent` folder (a plain copy of the Able Pro template) and the template copy next to it are not used.
 - **Applications (replaced on 2026-10-19 by three applications, next point):** two. One serves the public pages, job seekers and company dashboards; Console is a second application on its own domain, because
-  admins have their own guard, TOTP and 12-hour tokens and the panel should not be exposed on the public domain.
+  admins have their own guard, TOTP and 12-hour tokens and Console should not be exposed on the public domain.
 - **Changed 2026-10-19 (decided by the user, option (c) of `docs/analysis/frontend-gap-analysis.md` section 5): three applications.** The company
   dashboard leaves the public Nuxt application and joins the ERP pages (group structure, approvals, workforce plans, requisitions, read across tenants,
   support grants; FEG1) in **one SPA, ONESIS Workspace** (Nuxt with `ssr: false`, see below) for all company and group work (ONESIS Talent, Workforce and Core). The public Nuxt
@@ -544,11 +544,11 @@ The psychologist API has no password change or recovery-code endpoint today (FEG
   after the import rehearsal with the front end. Adds page D21 "Users" to Console. (**2026-10-19:** the read part, `users.view`, was coded
   with #17; D21 shows it now.)
 - **No admin endpoints for admin accounts and roles.** Admins are created with `identity:create-admin` and permissions synced with
-  `identity:sync-permissions` (console only); there is no page to invite admins, assign roles or reset another admin's two-factor (only the console
-  command `identity:reset-admin-two-factor`). **Decided by the user on 2026-10-13: it stays console-only**: granting admin rights is the most
-  sensitive action and is limited to people with server access; the panel has no admin-management pages. The console commands that make this workable (roles, role permissions, an admin's role, suspension, password reset) were
+  `identity:sync-permissions` (command line only); there is no page to invite admins, assign roles or reset another admin's two-factor (only the artisan
+  command `identity:reset-admin-two-factor`). **Decided by the user on 2026-10-13: it stays command-line only**: granting admin rights is the most
+  sensitive action and is limited to people with server access; Console has no admin-management pages. The artisan commands that make this workable (roles, role permissions, an admin's role, suspension, password reset) were
   added on 2026-10-13 (`phase-8-admin-console.md`).
-- **Training (Moodle):** no admin route; courses come from Moodle, so nothing to manage in the panel.
+- **Training (Moodle):** no admin route; courses come from Moodle, so nothing to manage in Console.
 - **Legacy admin features without an endpoint** (checked against `legacy-flow-map.md` on 2026-10-13; every `admin/*` route is mapped above).
   **Decided by the user on 2026-10-13: not built**:
   - Candidate export (CSV, Excel): personal data of every job seeker would leave the platform; D21 (search, profile summary) and the D3 CSV
