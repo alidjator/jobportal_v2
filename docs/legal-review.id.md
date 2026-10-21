@@ -54,10 +54,10 @@ setelah ada jawaban.
    dalam ketenagakerjaan (misalnya UU 13/2003 Pasal 5 dan 6, sebagaimana telah diubah)? Bila ya, apakah platform ikut bertanggung jawab karena
    menyediakan alatnya, atau hanya perusahaan yang memakainya? Apakah jawabannya berbeda untuk kewarganegaraan (aturan izin kerja dapat menjadi
    kriteria yang sah)?
-2. **Golongan data pribadi.** Menurut pembacaan kami, daftar data pribadi yang bersifat spesifik dalam UU 27/2022 tentang Pelindungan Data Pribadi
-   (Pasal 4 ayat (2)) memuat data kesehatan, biometrik, genetika, catatan kejahatan, data anak, data keuangan pribadi, dan data lain sesuai
-   peraturan perundang-undangan, tetapi tidak memuat agama maupun status perkawinan (berbeda dengan GDPR). Apakah pembacaan ini benar, atau ada
-   undang-undang lain yang menjadikan keduanya data spesifik? Bila keduanya data pribadi umum, apakah risiko diskriminasinya tetap menuntut lebih
+2. **Golongan data pribadi.** Daftar data pribadi yang bersifat spesifik dalam UU 27/2022 tentang Pelindungan Data Pribadi (Pasal 4
+   ayat (2)) memuat data kesehatan, biometrik, genetika, catatan kejahatan, data anak, data keuangan pribadi, dan data lain sesuai
+   peraturan perundang-undangan, tetapi tidak memuat agama maupun status perkawinan (berbeda dengan GDPR). Apakah ada peraturan
+   perundang-undangan lain yang menjadikan keduanya data spesifik ("data lainnya sesuai dengan ketentuan peraturan perundang-undangan")? Bila keduanya data pribadi umum, apakah risiko diskriminasinya tetap menuntut lebih
    dari isian opsional dengan syarat dan ketentuan umum seperti sekarang (persetujuan eksplisit tersendiri, pemberitahuan siapa yang dapat
    melihatnya)? Pencari kerja di bawah 18 tahun dibahas dalam pertanyaan 3.
 3. **Batas usia akun (diperbarui 21 Oktober 2026).** Apakah menolak pencari kerja di atas 60 tahun (atau batas lain yang diatur) sah bila yang
