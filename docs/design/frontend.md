@@ -8,6 +8,10 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), Console a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
 - 2026-10-20: application names: **ONESIS Career** (public), **ONESIS Workspace** (company and group members, was "back office"), **ONESIS Console** (platform admins, was "admin panel") with **Portal Mitra** for psychologists (was "psychologist area", `/mitra` unchanged); identifiers `public`, `workspace`, `console`; in the UI the platform role reads "Operator platform" or "Admin platform", never bare "Admin"; API paths `/api/v1/admin/**`, admin permissions and page numbers stay ([detail](#3-repository-and-applications), `naming.md`).
+- 2026-10-21: development data from a new demo seeder (fictitious accounts and data, refused in production), not from the legacy rehearsal ([detail](#131-before-step-0)).
+- 2026-10-21: client IP: the API trusts the loopback address as a proxy and the Nuxt servers forward the visitor's IP; coded in step 2 ([detail](#131-before-step-0)).
+- 2026-10-21: go-live scope of the front end: steps 0 to 5 of section 13; complex screens, ERP pages and Portal Mitra after go-live ([detail](#131-before-step-0)).
+- 2026-10-21: coding order: foundation, then a thin slice Console → Workspace → Career tried end to end, then the go-live scope, complex screens, ERP pages and Portal Mitra last ([detail](#13-coding-order)).
 - 2026-10-21: hosting paths: release folders `/usr/local/src/jobportal-frontend/releases/<app>/current`, Workspace's Node service on `127.0.0.1:3101` (Career takes 3100), a static "Segera hadir" page until the first build; nginx files for Workspace and Console written ([detail](#10-technical-foundation)).
 - 2026-10-20: one development domain per application: `karir.satu.solutions`, `workspace.satu.solutions` (was `preview.satu.solutions`), `console.satu.solutions` (was `admin-karir.satu.solutions`); API unchanged; `CORS_ALLOWED_ORIGINS` and the link contract follow ([detail](#4-domains), [links](#122-link-contract)).
 - 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one SPA, ONESIS Workspace; the public Nuxt application keeps visitors and job seekers only; Console stays ([detail](#3-repository-and-applications)).
@@ -33,7 +37,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: public application authentication through the Nuxt server: the API token stays in a sealed httpOnly cookie and every API call goes through a Nuxt proxy route; the client-IP consequence is a separate open point ([detail](#52-public-application-and-workspace)).
 - 2026-10-13: the rest of the public flow agreed: CSRF by `SameSite=Lax` plus an `Origin` check, central handling of 401/409/403, area chosen from `GET /me`, Google Identity Services, sign-out, Reverb authorisation through the proxy ([detail](#52-public-application-and-workspace)).
 - 2026-10-13: the token is kept inside a sealed cookie with `nuxt-auth-utils` (no server-side session store); the Nuxt server runs on the same host as the API behind nginx ([detail](#52-public-application-and-workspace)).
-- Postponed to front-end coding: client IP behind the Nuxt proxy (trusted proxy or not; the rate-limiter rules stay unchanged) ([detail](#52-public-application-and-workspace)).
+- Postponed to front-end coding: client IP behind the Nuxt proxy (trusted proxy or not; the rate-limiter rules stay unchanged); **decided 2026-10-21:** trusted loopback proxy ([detail](#131-before-step-0)).
 - 2026-10-13: page map of the public site, account pages and job seeker area agreed; its findings were decided the same day ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: public URLs in Indonesian; English under the `/en` prefix with `hreflang`, Indonesian unprefixed by default ([detail](#7-page-map-public-site-and-job-seekers)).
 - 2026-10-13: a public company list is added to the API (`GET /companies`, new endpoint, coded after the import rehearsal together with the front end) for a company directory page ([detail](#74-findings-while-mapping)).
@@ -205,7 +209,8 @@ sign-in; a token never passes from one to the other. Where they differ, the item
   views, salary insight, campaigns, reviews, training, newsletter) would then share one bucket for all visitors, and audit and consent records would hold
   the server's IP. Fixing it needs an API change: trust the Nuxt server as a proxy (`trustProxies` for its address only) and forward `X-Forwarded-For`.
   The rate-limiter rules themselves stay unchanged either way (the user does not want them changed). **Postponed by the user on 2026-10-13** until front-end
-  coding starts; it must be decided before the public application goes live.
+  coding starts; it must be decided before the public application goes live. **Decided by the user on 2026-10-21:** trust the loopback proxy
+  (section 13.1, point 2).
 
 **Session and hosting (decided by the user on 2026-10-13):**
 
@@ -955,3 +960,40 @@ types. The coverage test of 11.6 also fails when a type has no row here.
   `COMPANY_APPLICATION_URL` leaves the team's files without a link (the job seeker's page is never used for them). The A1 refusal to C7 stays valid for old
   files already in calendars.
 - **`my_scoring` has no list endpoint:** see 8.5 (decided the same day: the endpoint is added for C31).
+
+## 13. Coding order
+
+Agreed by the user on 2026-10-21. Foundation first, then one thin slice through the three applications that can be tried end to end (Console prepares
+a company, Workspace posts a job, a job seeker applies on Career, the recruiter moves the applicant), then widened. The slice finds problems in the
+sign-in, the proxy and the permissions before many pages depend on them. The three points of section 13.1 are decided before step 0 starts.
+
+| Step | Application | Work | Why here |
+|---|---|---|---|
+| 0 | all | pnpm workspace (Node 24); `packages/api` (types generated from `api.json`, `openapi-fetch`, problem parser), `packages/ui` (Able Pro theme, layouts, shared components 11.7), `packages/i18n`; ESLint, Prettier, `vue-tsc`, Vitest; build and release commands for `releases/<app>/current`. API alongside: the Indonesian translations (`lang/id.json`, `phase-8-api-translations.md`, not coded) | Every form shows the API's text (section 10) |
+| 1 | Console | D1, D20, D2, the menu by permission; then D4, D5 (companies and their documents), D7 (job moderation) | The simplest application (static SPA, `sessionStorage`, no proxy) tests the shared packages; it also prepares the companies the next steps need |
+| 2 | Workspace | Nuxt proxy with the sealed cookie, `Origin` check, central 401, 403 and 409 (5.2); B1 to B5; the shell of 8.0 (permissions, menu, landing page per preset); C25; the link-entry routes of 12.3; the systemd unit on `127.0.0.1:3101` | The proxy pattern is reused by Career |
+| 3 | Workspace | Recruitment core: C1, C3, C4, C5, C6, C7, C5b; the settings they rely on: C19, C18, C17, C20, C21, C32, C22, C29 | The daily work of a recruiter |
+| 4 | Career | Server-rendered public pages P1, P2, P3, P4, P8, P11; A1 to A6; J1, J2, J3, J4 (apply), J5. Then the end-to-end flow is tried and the Playwright tests of the main flows (section 10) are written | Closes the slice |
+| 5 | all | The rest needed to replace karir.pkp. Workspace: C8, C26, C30, C28, C14, C11 to C13, C15, C16, C31, C23, C24, C2, C27. Career: P5 to P7, P9, P10, J8 to J17, the search-engine work of 11.4. Console: D3, D6, D8 to D17, D21, D23 to D26 | Go-live scope |
+| 6 | Career, Workspace | Complex screens (11.5): test runner J7, video rooms J6 and C9 (Janus), voice C10 (JsSIP) | Waits for the root setup of Janus, coturn and Asterisk |
+| 7 | Workspace, Console | ERP pages E1 to E15, D27, D28; Portal Mitra M1 to M6 | New features, not part of replacing the legacy site |
+
+Throughout: an element marked **#N** is built with its page once its API item is coded (#38 to #44 wait for the front end); **frozen** and **after
+import** elements (P6b, P12, P13, D22, the suspend and reactivate actions of D21) come last.
+
+### 13.1 Before step 0
+
+Three points, decided by the user on 2026-10-21 before coding starts:
+
+1. **Development data: a demo seeder.** `jobportal_v2` holds reference data only (0 accounts) and the seeders add no accounts. A new artisan command
+   (API, step 0) fills the development database with fictitious data: a group with two companies, one account per preset (company admin, recruiter,
+   hiring manager, interviewer), job seekers, jobs and applications at several stages. It refuses to run in production. No real personal data reaches
+   the development domains, and the database is emptied with `migrate:fresh` before the final import. Not chosen: the rehearsal data in a separate
+   database (real personal data on the development domains, accounts that need activation) or in `jobportal_v2` itself.
+2. **Client IP behind the Nuxt proxy (5.2): trust the loopback proxy.** The API trusts `127.0.0.1` only (`trustProxies`); the Nuxt servers of Career
+   and Workspace call the API over the loopback address and set `X-Forwarded-For` to the visitor's IP that nginx gives them (`X-Real-IP`), never
+   passing on a header sent by the browser. Other requests are unchanged: their `REMOTE_ADDR` is the client's own address. The rate limiters,
+   audit and consent records then hold the visitor's IP; the rate-limiter rules stay as they are. Coded in step 2 (the API part is work the front
+   end asks for). Not chosen: no trust (one shared bucket for every visitor, the server's IP in the audit) or postponing again.
+3. **Go-live scope: steps 0 to 5.** They replace karir.pkp. Steps 6 (online tests, video and voice interviews) and 7 (ERP pages, Portal Mitra) come
+   after go-live, so those features are not available at go-live.
