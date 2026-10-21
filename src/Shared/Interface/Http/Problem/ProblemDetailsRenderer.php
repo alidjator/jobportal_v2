@@ -2,7 +2,9 @@
 
 namespace Src\Shared\Interface\Http\Problem;
 
+use Closure;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +13,7 @@ use Src\Shared\Domain\Exceptions\AuthenticationFailed;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\DomainException;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
 use Src\Shared\Domain\Exceptions\StateConflict;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
@@ -21,12 +24,19 @@ use Throwable;
 /**
  * Turns every exception raised while serving an API request into an RFC 9457 problem details response
  * (`application/problem+json`). It is the single place that maps domain errors to HTTP statuses.
+ *
+ * `title`, `detail` and the messages of a domain error's `errors` member are translated into the request language with the JSON translations
+ * (`lang/id.json`), the English text being the key; a text without a translation stays English. Validation messages come translated from the validator
+ * (`lang/id/validation.php`); they pass the same lookup, so a message a middleware writes itself (`ValidationException::withMessages`) is translated too.
  */
 final class ProblemDetailsRenderer
 {
     public const string TYPE_PREFIX = 'urn:onesis:error:';
 
     public const string CONTENT_TYPE = 'application/problem+json';
+
+    /** @param  ?Closure(): Translator  $translator  resolved when a problem is rendered (the renderer is built before the container is ready); null keeps English */
+    public function __construct(private readonly ?Closure $translator = null) {}
 
     /** Returns null for requests that are not API requests, so the framework keeps its default rendering. */
     public function render(Throwable $e, Request $request): ?JsonResponse
@@ -39,8 +49,8 @@ final class ProblemDetailsRenderer
             return $this->problem(
                 Response::HTTP_UNPROCESSABLE_ENTITY,
                 'validation-failed',
-                'The request data is invalid.',
-                ['errors' => $e->errors()],
+                $this->translate('The request data is invalid.'),
+                ['errors' => array_map(fn (array $messages): array => array_map(fn (string $message): string => $this->translate($message), $messages), $e->errors())],
             );
         }
 
@@ -48,26 +58,60 @@ final class ProblemDetailsRenderer
             return $this->problem(
                 Response::HTTP_TOO_MANY_REQUESTS,
                 $e->errorCode(),
-                $e->getMessage(),
+                $this->translate($e->template(), $e->parameters()),
                 headers: ['Retry-After' => (string) $e->retryAfterSeconds],
             );
         }
 
         if ($e instanceof DomainException) {
-            return $this->problem($this->statusOf($e), $e->errorCode(), $e->getMessage(), $e->extensions());
+            return $this->problem($this->statusOf($e), $e->errorCode(), $this->translate($e->template(), $e->parameters()), $this->translatedExtensions($e));
         }
 
         if ($e instanceof AuthenticationException) {
-            return $this->problem(Response::HTTP_UNAUTHORIZED, 'unauthenticated', 'Authentication is required.');
+            return $this->problem(Response::HTTP_UNAUTHORIZED, 'unauthenticated', $this->translate('Authentication is required.'));
         }
 
         if ($e instanceof HttpExceptionInterface) {
             $status = $e->getStatusCode();
 
-            return $this->problem($status, $this->codeOfHttpStatus($status), $this->detailOfHttpStatus($status), headers: $e->getHeaders());
+            return $this->problem($status, $this->codeOfHttpStatus($status), $this->translate($this->detailOfHttpStatus($status)), headers: $e->getHeaders());
         }
 
-        return $this->problem(Response::HTTP_INTERNAL_SERVER_ERROR, 'internal-error', 'An unexpected error occurred.');
+        return $this->problem(Response::HTTP_INTERNAL_SERVER_ERROR, 'internal-error', $this->translate('An unexpected error occurred.'));
+    }
+
+    /**
+     * The extensions with every message of `errors` translated; the placeholders take the parameters of the error, or those of an `ErrorMessage`.
+     *
+     * @return array<string, mixed>
+     */
+    private function translatedExtensions(DomainException $e): array
+    {
+        $extensions = $e->extensions();
+
+        if (isset($extensions['errors']) && is_array($extensions['errors'])) {
+            array_walk_recursive($extensions['errors'], function (mixed &$message) use ($e): void {
+                if ($message instanceof ErrorMessage) {
+                    $message = $this->translate($message->template, $message->parameters);
+                } elseif (is_string($message)) {
+                    $message = $this->translate($message, $e->parameters());
+                }
+            });
+        }
+
+        return $extensions;
+    }
+
+    /** @param  array<string, string|int|float>  $parameters */
+    private function translate(string $text, array $parameters = []): string
+    {
+        if ($this->translator === null) {
+            return DomainException::fill($text, $parameters);
+        }
+
+        $translated = ($this->translator)()->get($text, array_map('strval', $parameters));
+
+        return is_string($translated) ? $translated : DomainException::fill($text, $parameters);
     }
 
     private function statusOf(DomainException $e): int
@@ -113,7 +157,7 @@ final class ProblemDetailsRenderer
     {
         $body = [
             'type' => self::TYPE_PREFIX.$code,
-            'title' => Response::$statusTexts[$status] ?? 'Error',
+            'title' => $this->translate(Response::$statusTexts[$status] ?? 'Error'),
             'status' => $status,
             'detail' => $detail,
             ...$extensions,

@@ -47,7 +47,7 @@ final readonly class SubmitForApproval implements Approvals
 
     public function submit(ApprovalSubmission $submission): int
     {
-        $this->catalog->find($submission->subjectType) ?? throw new BusinessRuleViolation("The subject type {$submission->subjectType} is not registered for approval.", 'approval-unknown-subject-type');
+        $this->catalog->find($submission->subjectType) ?? throw new BusinessRuleViolation('The subject type :type is not registered for approval.', 'approval-unknown-subject-type', parameters: ['type' => $submission->subjectType]);
         $groupId = $this->groups->groupOfCompany($submission->companyId) ?? throw new BusinessRuleViolation('Approvals belong to the tenants of an ERP group.', 'approval-not-internal-tenant');
 
         if ($this->instances->pendingOfSubject($submission->subjectType, $submission->subjectId) !== null) {
@@ -133,7 +133,7 @@ final readonly class SubmitForApproval implements Approvals
 
         // An `all` step that names the requester could never be completed, and a step only the requester could approve would approve itself.
         if ($others === [] || ($step->mode === StepMode::All && count($others) !== count($slots))) {
-            throw new BusinessRuleViolation("Step {$step->position} could only be approved by the requester.", 'approval-requester-only-approver');
+            throw new BusinessRuleViolation('Step :position could only be approved by the requester.', 'approval-requester-only-approver', parameters: ['position' => $step->position]);
         }
 
         return $others;

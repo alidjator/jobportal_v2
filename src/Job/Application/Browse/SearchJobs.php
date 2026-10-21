@@ -45,7 +45,7 @@ final readonly class SearchJobs
         }
 
         if ($page->page * $page->perPage > self::MAX_POSITION) {
-            throw new BusinessRuleViolation('The search shows at most the first '.self::MAX_POSITION.' results; narrow it down instead.', 'page-out-of-range');
+            throw new BusinessRuleViolation('The search shows at most the first :max results; narrow it down instead.', 'page-out-of-range', parameters: ['max' => self::MAX_POSITION]);
         }
 
         $query = $this->queries->build($criteria);

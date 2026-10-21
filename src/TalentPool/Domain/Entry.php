@@ -35,7 +35,7 @@ final readonly class Entry
         $note = $note === null ? '' : trim($note);
 
         if (mb_strlen($note) > self::MAX_NOTE_LENGTH) {
-            throw new BusinessRuleViolation('A note has at most '.self::MAX_NOTE_LENGTH.' characters.', 'note-too-long');
+            throw new BusinessRuleViolation('A note has at most :max characters.', 'note-too-long', parameters: ['max' => self::MAX_NOTE_LENGTH]);
         }
 
         return $note === '' ? null : $note;

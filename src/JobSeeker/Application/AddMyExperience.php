@@ -48,7 +48,7 @@ final readonly class AddMyExperience
             $this->profiles->lock($userId, $now);
 
             if ($this->experiences->count($userId) >= HistoryRules::EXPERIENCES_MAX) {
-                throw new StateConflict('A profile can have at most '.HistoryRules::EXPERIENCES_MAX.' work experiences.', 'experience-limit-reached');
+                throw new StateConflict('A profile can have at most :max work experiences.', 'experience-limit-reached', parameters: ['max' => HistoryRules::EXPERIENCES_MAX]);
             }
 
             return $this->experiences->add(new WorkExperience(

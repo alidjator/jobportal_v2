@@ -5,6 +5,7 @@ namespace Src\Recruitment\Domain;
 use DateTimeImmutable;
 use DateTimeZone;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The join date and the optional note for the candidate of a hired application. */
 final readonly class HireDetails
@@ -32,7 +33,7 @@ final readonly class HireDetails
         $day = $joinDate->format('Y-m-d');
 
         if ($day < $today->modify('-'.self::PAST_DAYS_MAX.' days')->format('Y-m-d') || $day > $today->modify('+1 year')->format('Y-m-d')) {
-            self::refuse('invalid-join-date', 'The join date must be within the last '.self::PAST_DAYS_MAX.' days or the next year.', $prefix.'join_date');
+            self::refuse('invalid-join-date', new ErrorMessage('The join date must be within the last :days days or the next year.', ['days' => self::PAST_DAYS_MAX]), $prefix.'join_date');
         }
 
         return new self($joinDate->setTime(0, 0), self::cleanNote($note, $prefix));
@@ -48,7 +49,7 @@ final readonly class HireDetails
         $note = $note === null ? null : trim($note);
 
         if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
-            self::refuse('invalid-hire-note', 'The note can have at most '.self::NOTE_MAX.' characters.', $prefix.'note');
+            self::refuse('invalid-hire-note', new ErrorMessage('The note can have at most :max characters.', ['max' => self::NOTE_MAX]), $prefix.'note');
         }
 
         return $note === '' ? null : $note;
@@ -60,7 +61,7 @@ final readonly class HireDetails
         return $this->joinDate->format('Y-m-d') === $other->joinDate->format('Y-m-d') && $this->note === $other->note;
     }
 
-    private static function refuse(string $code, string $message, string $field): never
+    private static function refuse(string $code, string|ErrorMessage $message, string $field): never
     {
         throw new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }

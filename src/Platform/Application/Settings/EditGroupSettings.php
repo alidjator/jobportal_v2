@@ -16,6 +16,7 @@ use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\Settings\SettingType;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** Platform's side of the group settings page: the group-editable settings of a group, and the group admin's changes saved as the group's own values. */
 final readonly class EditGroupSettings implements GroupSettingsEditor
@@ -52,13 +53,13 @@ final readonly class EditGroupSettings implements GroupSettingsEditor
             $definition = $this->catalog->find((string) $key);
 
             if ($definition === null || ! $definition->groupEditable) {
-                throw new BusinessRuleViolation("The setting {$key} cannot be changed by a group.", 'setting-not-editable', extensions: ['key' => (string) $key]);
+                throw new BusinessRuleViolation('The setting :key cannot be changed by a group.', 'setting-not-editable', extensions: ['key' => (string) $key], parameters: ['key' => (string) $key]);
             }
 
             try {
                 $normalized[$definition->key] = $definition->normalize($value);
             } catch (BusinessRuleViolation $e) {
-                $errors[$definition->key] = $e->getMessage();
+                $errors[$definition->key] = new ErrorMessage($e->template(), $e->parameters());
             }
         }
 

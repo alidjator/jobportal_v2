@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The content rules of a question: its text, points, scale and options, which depend on its type, on the kind of test and on the section format. */
 final class QuestionRules
@@ -64,13 +65,13 @@ final class QuestionRules
         $length = mb_strlen($text);
 
         if ($length < self::TEXT_MIN || $length > self::TEXT_MAX) {
-            throw self::invalid('text', 'The question must have between '.self::TEXT_MIN.' and '.self::TEXT_MAX.' characters.');
+            throw self::invalid('text', new ErrorMessage('The question must have between :min and :max characters.', ['min' => self::TEXT_MIN, 'max' => self::TEXT_MAX]));
         }
 
         $scored = ! in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice], true);
 
         if ($scored && ($points < 1 || $points > self::POINTS_MAX)) {
-            throw self::invalid('points', 'The points must be between 1 and '.self::POINTS_MAX.'.');
+            throw self::invalid('points', new ErrorMessage('The points must be between 1 and :max.', ['max' => self::POINTS_MAX]));
         }
 
         return [
@@ -97,18 +98,18 @@ final class QuestionRules
             return ['thinkSeconds' => null, 'answerSeconds' => null, 'maxRetakes' => null];
         }
 
-        $range = 'between '.self::VIDEO_SECONDS_MIN.' and '.self::VIDEO_SECONDS_MAX.' seconds';
+        $range = ['min' => self::VIDEO_SECONDS_MIN, 'max' => self::VIDEO_SECONDS_MAX];
 
         if ($thinkSeconds !== null && ($thinkSeconds < self::VIDEO_SECONDS_MIN || $thinkSeconds > self::VIDEO_SECONDS_MAX)) {
-            throw self::invalid('think_seconds', "The think time must be {$range}, or empty when it is not limited.");
+            throw self::invalid('think_seconds', new ErrorMessage('The think time must be between :min and :max seconds, or empty when it is not limited.', $range));
         }
 
         if ($answerSeconds === null || $answerSeconds < self::VIDEO_SECONDS_MIN || $answerSeconds > self::VIDEO_SECONDS_MAX) {
-            throw self::invalid('answer_seconds', "The answer time must be {$range}.");
+            throw self::invalid('answer_seconds', new ErrorMessage('The answer time must be between :min and :max seconds.', $range));
         }
 
         if ($maxRetakes === null || $maxRetakes < 0 || $maxRetakes > self::VIDEO_RETAKES_MAX) {
-            throw self::invalid('max_retakes', 'The number of retakes must be between 0 and '.self::VIDEO_RETAKES_MAX.'.');
+            throw self::invalid('max_retakes', new ErrorMessage('The number of retakes must be between 0 and :max.', ['max' => self::VIDEO_RETAKES_MAX]));
         }
 
         return ['thinkSeconds' => $thinkSeconds, 'answerSeconds' => $answerSeconds, 'maxRetakes' => $maxRetakes];
@@ -182,8 +183,8 @@ final class QuestionRules
 
         if (count($options) < $range[0] || count($options) > $range[1]) {
             throw self::invalid('options', $range[0] === $range[1]
-                ? "This question type needs exactly {$range[0]} option(s)."
-                : "This question type needs between {$range[0]} and {$range[1]} options.");
+                ? new ErrorMessage('This question type needs exactly :count option(s).', ['count' => $range[0]])
+                : new ErrorMessage('This question type needs between :min and :max options.', ['min' => $range[0], 'max' => $range[1]]));
         }
 
         $clean = [];
@@ -194,7 +195,7 @@ final class QuestionRules
             $length = mb_strlen($label);
 
             if ($length < 1 || $length > self::OPTION_LABEL_MAX) {
-                throw self::invalid('options', 'Every option must have between 1 and '.self::OPTION_LABEL_MAX.' characters.');
+                throw self::invalid('options', new ErrorMessage('Every option must have between 1 and :max characters.', ['max' => self::OPTION_LABEL_MAX]));
             }
 
             $key = mb_strtolower($label);
@@ -228,7 +229,7 @@ final class QuestionRules
             }
 
             if ($option->scoreValue === null || abs($option->scoreValue) > self::SCORE_MAX) {
-                throw self::invalid('options', 'Every option needs a score between -'.self::SCORE_MAX.' and '.self::SCORE_MAX.'.');
+                throw self::invalid('options', new ErrorMessage('Every option needs a score between -:max and :max.', ['max' => self::SCORE_MAX]));
             }
 
             if ($type === QuestionType::ForcedChoice) {
@@ -266,7 +267,7 @@ final class QuestionRules
         }
     }
 
-    private static function invalid(string $field, string $message, string $code = 'invalid-question'): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message, string $code = 'invalid-question'): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }

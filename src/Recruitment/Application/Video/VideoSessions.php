@@ -149,8 +149,9 @@ final readonly class VideoSessions
     private function windowClosed(): StateConflict
     {
         return new StateConflict(
-            'The video room is open from '.VideoJoinWindow::MINUTES_BEFORE.' minutes before the interview until '.VideoJoinWindow::MINUTES_AFTER.' minutes after it ends.',
+            'The video room is open from :before minutes before the interview until :after minutes after it ends.',
             'video-window-closed',
+            parameters: ['before' => VideoJoinWindow::MINUTES_BEFORE, 'after' => VideoJoinWindow::MINUTES_AFTER],
         );
     }
 }

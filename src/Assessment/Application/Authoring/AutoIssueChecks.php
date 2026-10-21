@@ -9,6 +9,7 @@ use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\Test;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * What a battery needs before its reports may be issued automatically: its provider allows it, the responsible psychologist is an active psychologist of the
@@ -25,7 +26,7 @@ final readonly class AutoIssueChecks
         private ReportTemplateRepository $templates,
     ) {}
 
-    /** @return list<string> */
+    /** @return list<string|ErrorMessage> */
     public function problems(Test $test): array
     {
         $problems = [];
@@ -48,7 +49,7 @@ final readonly class AutoIssueChecks
 
         foreach ($this->norms->ofTest((int) $test->id) as $norm) {
             if ($norm->explanation === null) {
-                $problems[] = "The norm of the scale {$norm->scaleKey} from {$norm->rawMin} to {$norm->rawMax} has no explanation.";
+                $problems[] = new ErrorMessage('The norm of the scale :scale from :min to :max has no explanation.', ['scale' => $norm->scaleKey, 'min' => $norm->rawMin, 'max' => $norm->rawMax]);
             }
         }
 

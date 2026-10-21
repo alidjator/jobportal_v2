@@ -64,7 +64,10 @@ final readonly class RequisitionAccess
         $held = $this->groups->heldBy($actor)['permissions'] ?? [];
 
         if (! in_array(GroupPermission::WorkforceView->value, $held, true) && ! in_array(GroupPermission::WorkforceManage->value, $held, true)) {
-            throw new AccessDenied('This action needs the group permission '.GroupPermission::WorkforceView->value.'.', 'group-permission-required', extensions: ['permission' => GroupPermission::WorkforceView->value]);
+            throw new AccessDenied(
+                'This action needs the group permission :permission.', 'group-permission-required', extensions: ['permission' => GroupPermission::WorkforceView->value],
+                parameters: ['permission' => GroupPermission::WorkforceView->value],
+            );
         }
 
         return new RequisitionScope(PlanSide::Group, $groupId, array_keys($this->entities->namesOfGroup($groupId)), false, true);

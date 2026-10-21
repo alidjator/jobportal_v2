@@ -65,7 +65,7 @@ final readonly class PlanAccess
         $needed = $manage ? GroupPermission::WorkforceManage : GroupPermission::WorkforceView;
 
         if (! $canManage && ($manage || ! in_array($needed->value, $held, true))) {
-            throw new AccessDenied("This action needs the group permission {$needed->value}.", 'group-permission-required', extensions: ['permission' => $needed->value]);
+            throw new AccessDenied('This action needs the group permission :permission.', 'group-permission-required', extensions: ['permission' => $needed->value], parameters: ['permission' => $needed->value]);
         }
 
         return new PlanScope(PlanSide::Group, $groupId, array_keys($this->entities->namesOfGroup($groupId)), $canManage, true);

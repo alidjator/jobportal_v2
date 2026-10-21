@@ -9,6 +9,7 @@ use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** A job seeker sets their whole list of languages with a proficiency each: at most 10, one entry per language, every one an active language. */
 final readonly class ReplaceMyLanguages
@@ -35,7 +36,7 @@ final readonly class ReplaceMyLanguages
         $ids = array_map(static fn (LanguageEntry $entry): int => $entry->languageId, $languages);
 
         if (count($languages) > self::MAX && count($languages) > count($this->lists->languages($userId))) {
-            $errors['languages'][] = 'A profile can have at most '.self::MAX.' languages.';
+            $errors['languages'][] = new ErrorMessage('A profile can have at most :max languages.', ['max' => self::MAX]);
         }
 
         if (count($ids) !== count(array_unique($ids))) {

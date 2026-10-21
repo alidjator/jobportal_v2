@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * A question of an interview kit, and of the copy an interview keeps. The weight tells how much the answer counts in a scorecard's result; the guidance is
@@ -46,7 +47,9 @@ final readonly class KitQuestion
         $questions = [];
 
         if (count($raw) < $min || count($raw) > self::MAX_PER_LIST) {
-            $errors['questions'] = [$min > 0 ? "Give between {$min} and ".self::MAX_PER_LIST.' questions.' : 'Give at most '.self::MAX_PER_LIST.' questions.'];
+            $errors['questions'] = [$min > 0
+                ? new ErrorMessage('Give between :min and :max questions.', ['min' => $min, 'max' => self::MAX_PER_LIST])
+                : new ErrorMessage('Give at most :max questions.', ['max' => self::MAX_PER_LIST])];
         }
 
         foreach ($raw as $index => $item) {
@@ -56,15 +59,15 @@ final readonly class KitQuestion
             if ($text === '') {
                 $errors["questions.{$index}.text"] = ['Write the question.'];
             } elseif (mb_strlen($text) > self::TEXT_MAX) {
-                $errors["questions.{$index}.text"] = ['A question can have at most '.self::TEXT_MAX.' characters.'];
+                $errors["questions.{$index}.text"] = [new ErrorMessage('A question can have at most :max characters.', ['max' => self::TEXT_MAX])];
             }
 
             if (mb_strlen($guidance) > self::GUIDANCE_MAX) {
-                $errors["questions.{$index}.guidance"] = ['The guidance can have at most '.self::GUIDANCE_MAX.' characters.'];
+                $errors["questions.{$index}.guidance"] = [new ErrorMessage('The guidance can have at most :max characters.', ['max' => self::GUIDANCE_MAX])];
             }
 
             if ($item['weight'] < self::WEIGHT_MIN || $item['weight'] > self::WEIGHT_MAX) {
-                $errors["questions.{$index}.weight"] = ['The weight must be between '.self::WEIGHT_MIN.' and '.self::WEIGHT_MAX.'.'];
+                $errors["questions.{$index}.weight"] = [new ErrorMessage('The weight must be between :min and :max.', ['min' => self::WEIGHT_MIN, 'max' => self::WEIGHT_MAX])];
             }
 
             $anchors = [];
@@ -73,7 +76,7 @@ final readonly class KitQuestion
                 $anchor = trim($item["anchor_{$score}"] ?? '');
 
                 if (mb_strlen($anchor) > self::ANCHOR_MAX) {
-                    $errors["questions.{$index}.anchor_{$score}"] = ['An anchor can have at most '.self::ANCHOR_MAX.' characters.'];
+                    $errors["questions.{$index}.anchor_{$score}"] = [new ErrorMessage('An anchor can have at most :max characters.', ['max' => self::ANCHOR_MAX])];
                 }
 
                 $anchors[$score] = $anchor === '' ? null : $anchor;
@@ -102,9 +105,9 @@ final readonly class KitQuestion
         return $questions;
     }
 
-    /** @param  array<string, list<string>>  $errors */
+    /** @param  array<string, list<string|ErrorMessage>>  $errors */
     public static function violation(array $errors): BusinessRuleViolation
     {
-        return new BusinessRuleViolation((string) reset($errors)[0], 'invalid-kit', extensions: ['errors' => $errors]);
+        return new BusinessRuleViolation(reset($errors)[0], 'invalid-kit', extensions: ['errors' => $errors]);
     }
 }

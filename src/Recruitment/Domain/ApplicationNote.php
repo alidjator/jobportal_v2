@@ -48,12 +48,12 @@ final readonly class ApplicationNote
 
         $message = match (true) {
             $body === '' => 'Write the note.',
-            mb_strlen($body) > self::BODY_MAX => 'A note can have at most '.self::BODY_MAX.' characters.',
+            mb_strlen($body) > self::BODY_MAX => 'A note can have at most :max characters.',
             default => null,
         };
 
         if ($message !== null) {
-            throw new BusinessRuleViolation($message, 'invalid-note', extensions: ['errors' => ['body' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-note', extensions: ['errors' => ['body' => [$message]]], parameters: ['max' => self::BODY_MAX]);
         }
 
         return $body;

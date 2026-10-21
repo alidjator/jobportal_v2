@@ -76,7 +76,7 @@ final readonly class UploadVideoChunk
             $maxMb = $this->settings->integer(AssessmentSettings::MAX_VIDEO_MEGABYTES);
 
             if ($take->sizeBytes + $size > $maxMb * 1024 * 1024) {
-                throw new BusinessRuleViolation("The recording is larger than the allowed {$maxMb} MB.", 'video-too-large', extensions: ['max_size_mb' => $maxMb]);
+                throw new BusinessRuleViolation('The recording is larger than the allowed :max MB.', 'video-too-large', extensions: ['max_size_mb' => $maxMb], parameters: ['max' => $maxMb]);
             }
 
             $this->files->put(VideoTakes::chunkPath($takeId, $index), $contents);

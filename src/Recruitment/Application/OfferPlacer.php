@@ -72,9 +72,9 @@ final readonly class OfferPlacer
 
         foreach ($ids as $id) {
             if (! $this->references->isActive('benefits', $id)) {
-                $message = "The benefit {$id} does not exist or is not active.";
+                $message = 'The benefit :benefit does not exist or is not active.';
 
-                throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => ['benefit_ids' => [$message]]]);
+                throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => ['benefit_ids' => [$message]]], parameters: ['benefit' => $id]);
             }
         }
 

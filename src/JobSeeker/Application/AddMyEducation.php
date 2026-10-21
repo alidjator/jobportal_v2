@@ -49,7 +49,7 @@ final readonly class AddMyEducation
             $this->profiles->lock($userId, $now);
 
             if ($this->educations->count($userId) >= HistoryRules::EDUCATIONS_MAX) {
-                throw new StateConflict('A profile can have at most '.HistoryRules::EDUCATIONS_MAX.' education entries.', 'education-limit-reached');
+                throw new StateConflict('A profile can have at most :max education entries.', 'education-limit-reached', parameters: ['max' => HistoryRules::EDUCATIONS_MAX]);
             }
 
             return $this->educations->add(new Education(

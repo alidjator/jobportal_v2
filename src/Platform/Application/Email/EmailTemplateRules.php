@@ -5,6 +5,7 @@ namespace Src\Platform\Application\Email;
 use Src\Shared\Application\Email\EmailPlaceholders;
 use Src\Shared\Application\Email\EmailTemplateDefinition;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * What an admin's subject and body must satisfy: not empty, subject on one line and short, only the template's own variables, and
@@ -27,7 +28,7 @@ final class EmailTemplateRules
         if ($subject === '') {
             $errors['subject'][] = 'The subject is required.';
         } elseif (mb_strlen($subject) > self::MAX_SUBJECT_LENGTH) {
-            $errors['subject'][] = 'The subject may be at most '.self::MAX_SUBJECT_LENGTH.' characters.';
+            $errors['subject'][] = new ErrorMessage('The subject may be at most :max characters.', ['max' => self::MAX_SUBJECT_LENGTH]);
         } elseif (preg_match('/[\r\n]/', $subject) === 1) {
             $errors['subject'][] = 'The subject must be on one line.';
         }
@@ -35,7 +36,7 @@ final class EmailTemplateRules
         if ($body === '') {
             $errors['body'][] = 'The body is required.';
         } elseif (mb_strlen($body) > self::MAX_BODY_LENGTH) {
-            $errors['body'][] = 'The body may be at most '.self::MAX_BODY_LENGTH.' characters.';
+            $errors['body'][] = new ErrorMessage('The body may be at most :max characters.', ['max' => self::MAX_BODY_LENGTH]);
         }
 
         $allowed = $definition->variableNames();
@@ -44,15 +45,17 @@ final class EmailTemplateRules
             $unknown = array_values(array_diff(EmailPlaceholders::in($text), $allowed));
 
             if ($unknown !== []) {
-                $errors[$field][] = 'Unknown variable(s): '.implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $unknown)).'. Allowed: '
-                    .implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $allowed)).'.';
+                $errors[$field][] = new ErrorMessage('Unknown variable(s): :unknown. Allowed: :allowed.', [
+                    'unknown' => implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $unknown)),
+                    'allowed' => implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $allowed)),
+                ]);
             }
         }
 
         $missing = array_values(array_diff($definition->requiredVariableNames(), EmailPlaceholders::in($body)));
 
         if ($missing !== [] && $body !== '') {
-            $errors['body'][] = 'The body must contain: '.implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $missing)).'.';
+            $errors['body'][] = new ErrorMessage('The body must contain: :variables.', ['variables' => implode(', ', array_map(fn (string $name): string => '{{'.$name.'}}', $missing))]);
         }
 
         if ($errors !== []) {

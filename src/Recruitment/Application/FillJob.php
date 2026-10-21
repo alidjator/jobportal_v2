@@ -56,7 +56,9 @@ final readonly class FillJob
         $cap = $this->settings->integer(RecruitmentSettings::MAX_BULK_APPLICATIONS, $member->companyId);
 
         if (count($applicationIds) > $cap) {
-            throw new BusinessRuleViolation('Select at most '.$cap.' applications at a time.', 'too-many-applications', extensions: ['errors' => ['reject_application_ids' => ['Select at most '.$cap.' applications at a time.']]]);
+            throw new BusinessRuleViolation(
+                'Select at most :max applications at a time.', 'too-many-applications', extensions: ['errors' => ['reject_application_ids' => ['Select at most :max applications at a time.']]], parameters: ['max' => $cap],
+            );
         }
 
         if ($close) {

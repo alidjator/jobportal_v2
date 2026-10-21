@@ -50,7 +50,7 @@ final readonly class Invitation
         $note = self::clean($note);
 
         if ($note !== null && mb_strlen($note) > self::MAX_NOTE_LENGTH) {
-            throw new BusinessRuleViolation('The note may have at most '.self::MAX_NOTE_LENGTH.' characters.', 'note-too-long');
+            throw new BusinessRuleViolation('The note may have at most :max characters.', 'note-too-long', parameters: ['max' => self::MAX_NOTE_LENGTH]);
         }
 
         return $note;
@@ -75,7 +75,7 @@ final readonly class Invitation
         $reason = self::clean($reason);
 
         if ($reason !== null && mb_strlen($reason) > self::MAX_REASON_LENGTH) {
-            throw new BusinessRuleViolation('The reason may have at most '.self::MAX_REASON_LENGTH.' characters.', 'reason-too-long');
+            throw new BusinessRuleViolation('The reason may have at most :max characters.', 'reason-too-long', parameters: ['max' => self::MAX_REASON_LENGTH]);
         }
 
         return $this->with(['status' => InvitationStatus::Declined, 'declineReason' => $reason, 'viewedAt' => $this->viewedAt ?? $now, 'respondedAt' => $now, 'updatedAt' => $now]);

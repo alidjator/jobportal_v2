@@ -225,9 +225,9 @@ final readonly class ApplyToJob
         }
 
         if (mb_strlen($text) > self::COVER_LETTER_MAX) {
-            $message = 'The cover letter can have at most '.self::COVER_LETTER_MAX.' characters.';
+            $message = 'The cover letter can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-application', extensions: ['errors' => ['cover_letter' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-application', extensions: ['errors' => ['cover_letter' => [$message]]], parameters: ['max' => self::COVER_LETTER_MAX]);
         }
 
         return $text;

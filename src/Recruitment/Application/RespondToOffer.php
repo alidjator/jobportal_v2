@@ -70,9 +70,9 @@ final readonly class RespondToOffer
         $note = $note === null ? null : trim($note);
 
         if ($note !== null && mb_strlen($note) > Offer::ANSWER_NOTE_MAX) {
-            $message = 'The note can have at most '.Offer::ANSWER_NOTE_MAX.' characters.';
+            $message = 'The note can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-answer', extensions: ['errors' => ['note' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-answer', extensions: ['errors' => ['note' => [$message]]], parameters: ['max' => Offer::ANSWER_NOTE_MAX]);
         }
 
         $withdrawalReason = WithdrawalReason::fromRequest($reason, byTeam: false, code: 'invalid-answer');

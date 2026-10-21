@@ -181,8 +181,9 @@ final class User extends AggregateRoot
     {
         if ($this->isPendingDeletion()) {
             throw new AccessDenied(
-                'This account is scheduled for deletion on '.$this->deletionDueAt()?->format('Y-m-d').'. Cancel the deletion to restore it.',
+                'This account is scheduled for deletion on :date. Cancel the deletion to restore it.',
                 'account-deactivated',
+                parameters: ['date' => (string) $this->deletionDueAt()?->format('Y-m-d')],
             );
         }
 

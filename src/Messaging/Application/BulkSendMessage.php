@@ -58,7 +58,7 @@ final readonly class BulkSendMessage
         $max = $this->settings->integer(MessagingSettings::MAX_BULK_RECIPIENTS, $companyId);
 
         if (count($applicationIds) > $max) {
-            throw new BusinessRuleViolation("A bulk message can go to at most {$max} applications.", 'too-many-recipients', extensions: ['max_recipients' => $max]);
+            throw new BusinessRuleViolation('A bulk message can go to at most :max applications.', 'too-many-recipients', extensions: ['max_recipients' => $max], parameters: ['max' => $max]);
         }
 
         $this->quota->assertRoom($companyId);

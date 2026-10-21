@@ -28,7 +28,7 @@ final readonly class PlanLineRules
     public function build(int $legalEntityId, array $inputs, bool $mayChangeCosts, array $existing): array
     {
         if (count($inputs) > self::MAX_LINES) {
-            throw new BusinessRuleViolation('A plan has at most '.self::MAX_LINES.' lines.', 'invalid-plan-line');
+            throw new BusinessRuleViolation('A plan has at most :max lines.', 'invalid-plan-line', parameters: ['max' => self::MAX_LINES]);
         }
 
         $positions = $this->positions->ofEntity($legalEntityId, $this->clock->now());
@@ -42,25 +42,28 @@ final readonly class PlanLineRules
         $lines = [];
 
         foreach ($inputs as $input) {
-            $position = $positions[$input->positionId] ?? throw new BusinessRuleViolation("Position {$input->positionId} is not a position of this legal entity.", 'invalid-plan-line');
+            $position = $positions[$input->positionId] ?? throw new BusinessRuleViolation('Position :position is not a position of this legal entity.', 'invalid-plan-line', parameters: ['position' => $input->positionId]);
 
             if (! $position->active) {
-                throw new BusinessRuleViolation("Position {$position->code} is deactivated.", 'invalid-plan-line');
+                throw new BusinessRuleViolation('Position :position is deactivated.', 'invalid-plan-line', parameters: ['position' => $position->code]);
             }
 
             if (isset($seen[$input->positionId])) {
-                throw new BusinessRuleViolation("Position {$position->code} appears twice.", 'invalid-plan-line');
+                throw new BusinessRuleViolation('Position :position appears twice.', 'invalid-plan-line', parameters: ['position' => $position->code]);
             }
 
             $seen[$input->positionId] = true;
             $additions = $input->targetHeadcount - $input->openingHeadcount;
 
             if ($additions < 0) {
-                throw new BusinessRuleViolation("The year-end target of position {$position->code} is below its opening headcount.", 'invalid-plan-line');
+                throw new BusinessRuleViolation('The year-end target of position :position is below its opening headcount.', 'invalid-plan-line', parameters: ['position' => $position->code]);
             }
 
             if (count($input->months) !== PlanLine::MONTHS || min($input->months) < 0 || array_sum($input->months) !== $additions) {
-                throw new BusinessRuleViolation("The monthly additions of position {$position->code} must be twelve whole numbers that add up to its additions ({$additions}).", 'invalid-plan-line');
+                throw new BusinessRuleViolation(
+                    'The monthly additions of position :position must be twelve whole numbers that add up to its additions (:additions).', 'invalid-plan-line',
+                    parameters: ['position' => $position->code, 'additions' => $additions],
+                );
             }
 
             $lines[] = new PlanLine(

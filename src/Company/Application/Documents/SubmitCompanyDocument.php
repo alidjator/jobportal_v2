@@ -70,7 +70,7 @@ final readonly class SubmitCompanyDocument
         $maxKb = $this->settings->integer(CompanySettings::DOCUMENT_MAX_SIZE_KB, $companyId);
 
         if (strlen($contents) > $maxKb * 1024) {
-            throw new BusinessRuleViolation("The file is larger than the allowed {$maxKb} KB.", 'file-too-large', extensions: ['max_size_kb' => $maxKb]);
+            throw new BusinessRuleViolation('The file is larger than the allowed :max KB.', 'file-too-large', extensions: ['max_size_kb' => $maxKb], parameters: ['max' => $maxKb]);
         }
 
         $file = $this->processor->process($contents);

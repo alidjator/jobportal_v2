@@ -200,7 +200,11 @@ final readonly class SendActivationEmails
             $notBefore = $this->settings->text(IdentitySettings::ACTIVATION_JOB_SEEKERS_NOT_BEFORE);
 
             if ($notBefore === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $notBefore) || $now->format('Y-m-d') < $notBefore) {
-                $blocked[] = new BusinessRuleViolation('Job seekers are not emailed before the date in identity.activation_job_seekers_not_before'.($notBefore === '' ? ' (empty: set it)' : " ({$notBefore})").'.', 'activation-not-yet-open');
+                $blocked[] = $notBefore === ''
+                    ? new BusinessRuleViolation('Job seekers are not emailed before the date in identity.activation_job_seekers_not_before (empty: set it).', 'activation-not-yet-open')
+                    : new BusinessRuleViolation(
+                        'Job seekers are not emailed before the date in identity.activation_job_seekers_not_before (:date).', 'activation-not-yet-open', parameters: ['date' => $notBefore],
+                    );
             }
         }
 
@@ -252,10 +256,14 @@ final readonly class SendActivationEmails
         $complaints = 100 * ($reasons['complaint'] ?? 0) / $total;
 
         if ($bounces > $bounceLimit || $complaints > $complaintLimit) {
-            return new BusinessRuleViolation(sprintf(
-                'The previous batch (%s) had %.2f%% bounces (limit %s%%) and %.2f%% complaints (limit %s%%). Look at it before sending more.',
-                $previous['batch'], $bounces, $bounceLimit, $complaints, $complaintLimit,
-            ), 'activation-batch-limit-exceeded');
+            return new BusinessRuleViolation(
+                'The previous batch (:batch) had :bounces% bounces (limit :bounce_limit%) and :complaints% complaints (limit :complaint_limit%). Look at it before sending more.',
+                'activation-batch-limit-exceeded',
+                parameters: [
+                    'batch' => $previous['batch'], 'bounces' => sprintf('%.2f', $bounces), 'bounce_limit' => $bounceLimit,
+                    'complaints' => sprintf('%.2f', $complaints), 'complaint_limit' => $complaintLimit,
+                ],
+            );
         }
 
         return null;

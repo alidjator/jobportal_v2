@@ -17,7 +17,7 @@ final readonly class NameChangeDocumentChecker
     public function check(string $contents): void
     {
         if (strlen($contents) > self::MAX_KB * 1024) {
-            throw new BusinessRuleViolation('The file is larger than the allowed '.self::MAX_KB.' KB.', 'file-too-large', extensions: ['max_size_kb' => self::MAX_KB]);
+            throw new BusinessRuleViolation('The file is larger than the allowed :max KB.', 'file-too-large', extensions: ['max_size_kb' => self::MAX_KB], parameters: ['max' => self::MAX_KB]);
         }
 
         if (! str_starts_with($contents, self::PDF_SIGNATURE)) {

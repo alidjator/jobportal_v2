@@ -20,7 +20,7 @@ class ApproveCompanyDocumentRequest extends FormRequest
         return [
             'submitted_at' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail): void {
                 if (! is_string($value) || DateTimeImmutable::createFromFormat(self::FORMAT, $value) === false) {
-                    $fail('The submitted at must be an ISO 8601 timestamp with a time zone, as given by the document list.');
+                    $fail('The submitted at must be an ISO 8601 timestamp with a time zone, as given by the document list.')->translate();
                 }
             }],
         ];

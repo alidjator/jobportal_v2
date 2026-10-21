@@ -17,6 +17,7 @@ use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
@@ -67,7 +68,7 @@ final readonly class PublishTest
         });
     }
 
-    /** @return list<string> */
+    /** @return list<string|ErrorMessage> */
     private function problems(Test $test): array
     {
         $problems = [];
@@ -82,19 +83,22 @@ final readonly class PublishTest
             $count = $counts[(int) $section->id] ?? 0;
 
             if ($section->format !== SectionFormat::SpeedColumns && $count === 0) {
-                $problems[] = "The section \"{$section->title}\" needs at least one question.";
+                $problems[] = new ErrorMessage('The section ":section" needs at least one question.', ['section' => $section->title]);
             }
 
             if ($section->format === SectionFormat::Video) {
                 $needed = array_sum(array_map(static fn (Question $question): int => $question->minimumSeconds(), $this->questions->ofSection((int) $section->id)));
 
                 if ($section->durationSeconds < $needed) {
-                    $problems[] = "The section \"{$section->title}\" needs at least {$needed} seconds for its video questions (the limited think times plus every take at full length) but lasts {$section->durationSeconds}.";
+                    $problems[] = new ErrorMessage(
+                        'The section ":section" needs at least :needed seconds for its video questions (the limited think times plus every take at full length) but lasts :seconds.',
+                        ['section' => $section->title, 'needed' => $needed, 'seconds' => $section->durationSeconds],
+                    );
                 }
             }
 
             if ($section->drawCount !== null && $section->drawCount > $count) {
-                $problems[] = "The section \"{$section->title}\" draws {$section->drawCount} questions but has only {$count}.";
+                $problems[] = new ErrorMessage('The section ":section" draws :drawn questions but has only :count.', ['section' => $section->title, 'drawn' => $section->drawCount, 'count' => $count]);
             }
         }
 
@@ -102,7 +106,7 @@ final readonly class PublishTest
             $normed = array_unique(array_map(static fn ($norm): string => $norm->scaleKey, $this->norms->ofTest((int) $test->id)));
 
             foreach (array_diff($this->questions->scalesOfTest((int) $test->id), $normed) as $scale) {
-                $problems[] = "The scale {$scale} has no norm.";
+                $problems[] = new ErrorMessage('The scale :scale has no norm.', ['scale' => $scale]);
             }
 
             if ($this->templates->bodyOf((int) $test->id) === null) {

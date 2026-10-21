@@ -20,6 +20,7 @@ use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * Puts an interview on an application: checks the interviewer and the panel, cancels the interview that was active (a new time replaces it), saves the new
@@ -224,7 +225,7 @@ final readonly class InterviewScheduler
         $ids = array_values(array_unique($participantIds));
 
         if (count($ids) > InterviewPanel::EXTRA_MAX) {
-            $this->refuse('participant_ids', 'The panel can have at most '.InterviewPanel::EXTRA_MAX.' members besides the main interviewer.');
+            $this->refuse('participant_ids', new ErrorMessage('The panel can have at most :max members besides the main interviewer.', ['max' => InterviewPanel::EXTRA_MAX]));
         }
 
         foreach ($ids as $userId) {
@@ -270,7 +271,7 @@ final readonly class InterviewScheduler
     }
 
     /** @throws BusinessRuleViolation */
-    private function refuse(string $field, string $message): never
+    private function refuse(string $field, string|ErrorMessage $message): never
     {
         throw new BusinessRuleViolation($message, 'invalid-interviewer', extensions: ['errors' => [$field => [$message]]]);
     }

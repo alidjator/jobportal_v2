@@ -37,7 +37,7 @@ final readonly class Message
         }
 
         if ($now > $this->createdAt->modify('+'.MessagingRules::DELETE_WINDOW_MINUTES.' minutes')) {
-            throw new StateConflict('A message can only be deleted within '.MessagingRules::DELETE_WINDOW_MINUTES.' minutes of sending it.', 'delete-window-over');
+            throw new StateConflict('A message can only be deleted within :minutes minutes of sending it.', 'delete-window-over', parameters: ['minutes' => MessagingRules::DELETE_WINDOW_MINUTES]);
         }
     }
 }

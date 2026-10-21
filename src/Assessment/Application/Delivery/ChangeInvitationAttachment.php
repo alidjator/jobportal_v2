@@ -52,7 +52,7 @@ final readonly class ChangeInvitationAttachment
         $maxMb = $this->settings->integer(AssessmentSettings::MAX_ATTACHMENT_MEGABYTES, $invitation->companyId);
 
         if (strlen($contents) > $maxMb * 1024 * 1024) {
-            throw new BusinessRuleViolation("The file is larger than the allowed {$maxMb} MB.", 'file-too-large', extensions: ['max_size_mb' => $maxMb]);
+            throw new BusinessRuleViolation('The file is larger than the allowed :max MB.', 'file-too-large', extensions: ['max_size_mb' => $maxMb], parameters: ['max' => $maxMb]);
         }
 
         $file = $this->content->process($contents);

@@ -45,7 +45,7 @@ final readonly class GrantSupportAccess
         $now = $this->clock->now();
 
         if ($hours < 1 || $hours > self::MAX_HOURS) {
-            throw new BusinessRuleViolation('Support access lasts 1 to '.self::MAX_HOURS.' hours.', 'invalid-support-duration');
+            throw new BusinessRuleViolation('Support access lasts 1 to :max hours.', 'invalid-support-duration', parameters: ['max' => self::MAX_HOURS]);
         }
 
         if (! $this->admins->holds($adminId, OrganizationPermissions::GROUPS_SUPPORT)) {

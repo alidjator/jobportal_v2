@@ -29,9 +29,10 @@ final readonly class RenameMyResume
 
         if (trim($name) === '' || mb_strlen(trim($name)) > ResumePdf::NAME_MAX_LENGTH || $clean !== trim($name)) {
             throw new BusinessRuleViolation(
-                'The name must have between 1 and '.ResumePdf::NAME_MAX_LENGTH.' characters and no path or control characters.',
+                'The name must have between 1 and :max characters and no path or control characters.',
                 'invalid-resume',
-                extensions: ['errors' => ['name' => ['The name must have between 1 and '.ResumePdf::NAME_MAX_LENGTH.' characters and no path or control characters.']]],
+                extensions: ['errors' => ['name' => ['The name must have between 1 and :max characters and no path or control characters.']]],
+                parameters: ['max' => ResumePdf::NAME_MAX_LENGTH],
             );
         }
 

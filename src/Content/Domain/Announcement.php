@@ -27,12 +27,12 @@ final readonly class Announcement
     {
         $message = match (true) {
             $this->endsAt <= $this->startsAt => 'The announcement must end after it starts.',
-            $this->endsAt > $this->startsAt->modify('+'.self::MAX_DAYS.' days') => 'An announcement can stay at most '.self::MAX_DAYS.' days.',
+            $this->endsAt > $this->startsAt->modify('+'.self::MAX_DAYS.' days') => 'An announcement can stay at most :max days.',
             default => null,
         };
 
         if ($message !== null) {
-            throw new BusinessRuleViolation($message, 'invalid-announcement', extensions: ['errors' => ['ends_at' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-announcement', extensions: ['errors' => ['ends_at' => [$message]]], parameters: ['max' => self::MAX_DAYS]);
         }
     }
 

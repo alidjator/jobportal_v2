@@ -99,9 +99,9 @@ final readonly class GetCompanyCalendar
         $last = DateTimeImmutable::createFromFormat('!Y-m-d', $to, $zone);
 
         if ($start === false || $last === false || $last < $start || $start->add(new DateInterval('P'.(self::MAX_DAYS - 1).'D')) < $last) {
-            $message = 'The range must start on or before its last day and cover at most '.self::MAX_DAYS.' days.';
+            $message = 'The range must start on or before its last day and cover at most :max days.';
 
-            throw new BusinessRuleViolation($message, 'invalid-calendar-range', extensions: ['errors' => ['to' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-calendar-range', extensions: ['errors' => ['to' => [$message]]], parameters: ['max' => self::MAX_DAYS]);
         }
 
         $utc = new DateTimeZone('UTC');

@@ -3,6 +3,7 @@
 namespace Src\JobSeeker\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * The safety rules of a profile link: `https`, up to 255 characters, no credentials, no raw IP address, no non-standard port and no known URL shortener; the
@@ -60,7 +61,7 @@ final class LinkRules
         $allowed = $type->allowedDomains();
 
         if ($allowed !== null && ! self::isOneOf($host, $allowed)) {
-            throw self::refused('This kind of link must point to '.implode(' or ', $allowed).'.');
+            throw self::refused(new ErrorMessage('This kind of link must point to :domains.', ['domains' => implode(' or ', $allowed)]));
         }
 
         return new ProfileLink($type, $url);
@@ -87,7 +88,7 @@ final class LinkRules
         }
 
         if (count($links) > self::LINKS_MAX && count($links) > count($stored)) {
-            $errors['links'][] = 'A profile can have at most '.self::LINKS_MAX.' links.';
+            $errors['links'][] = new ErrorMessage('A profile can have at most :max links.', ['max' => self::LINKS_MAX]);
         }
 
         $perType = [];
@@ -99,7 +100,7 @@ final class LinkRules
             if ($perType[$link['type']->value] > $link['type']->maximum() && $perType[$link['type']->value] > ($storedPerType[$link['type']->value] ?? 0)) {
                 $errors["links.{$index}.type"][] = $link['type']->maximum() === 1
                     ? 'Only one link of this kind is allowed.'
-                    : 'At most '.$link['type']->maximum().' links of this kind are allowed.';
+                    : new ErrorMessage('At most :max links of this kind are allowed.', ['max' => $link['type']->maximum()]);
             }
 
             if (self::isStored($stored, $link['type'], $link['url'])) {
@@ -146,7 +147,7 @@ final class LinkRules
         return false;
     }
 
-    private static function refused(string $message): BusinessRuleViolation
+    private static function refused(string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-links', extensions: ['errors' => ['url' => [$message]]]);
     }

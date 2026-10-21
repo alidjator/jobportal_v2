@@ -89,9 +89,9 @@ final readonly class WithdrawMyApplication
         }
 
         if (mb_strlen($note) > self::NOTE_MAX) {
-            $message = 'The note can have at most '.self::NOTE_MAX.' characters.';
+            $message = 'The note can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-withdrawal', extensions: ['errors' => ['note' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-withdrawal', extensions: ['errors' => ['note' => [$message]]], parameters: ['max' => self::NOTE_MAX]);
         }
 
         return $note;

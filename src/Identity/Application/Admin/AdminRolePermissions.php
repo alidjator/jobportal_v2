@@ -32,7 +32,7 @@ final readonly class AdminRolePermissions
         $unknown = array_values(array_diff($names, $known));
 
         if ($unknown !== []) {
-            throw new BusinessRuleViolation('Unknown permission: '.implode(', ', $unknown).'.', 'unknown-permission');
+            throw new BusinessRuleViolation('Unknown permission: :permissions.', 'unknown-permission', parameters: ['permissions' => implode(', ', $unknown)]);
         }
 
         return $names;

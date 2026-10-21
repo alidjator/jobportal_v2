@@ -12,6 +12,7 @@ use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * A job seeker changes some fields of their profile; the row is created the first time. `$changes` holds only what changes, keyed by property name, and a
@@ -87,11 +88,11 @@ final readonly class UpdateMyProfile
             $maximum = $this->settings->integer(JobSeekerSettings::MAX_AGE);
 
             if ($birthDate > $today->modify("-{$minimum} years")) {
-                throw $this->invalid('birth_date', "You must be at least {$minimum} years old.");
+                throw $this->invalid('birth_date', new ErrorMessage('You must be at least :years years old.', ['years' => $minimum]));
             }
 
             if ($birthDate <= $today->modify('-'.($maximum + 1).' years')) {
-                throw $this->invalid('birth_date', "You must be at most {$maximum} years old.");
+                throw $this->invalid('birth_date', new ErrorMessage('You must be at most :years years old.', ['years' => $maximum]));
             }
         }
 
@@ -99,7 +100,7 @@ final readonly class UpdateMyProfile
             $days = $this->settings->integer(JobSeekerSettings::AVAILABLE_FROM_MAX_DAYS);
 
             if ($availableFrom < $today || $availableFrom > $today->modify("+{$days} days")) {
-                throw $this->invalid('available_from', "The date must be from today up to {$days} days ahead.");
+                throw $this->invalid('available_from', new ErrorMessage('The date must be from today up to :days days ahead.', ['days' => $days]));
             }
         }
     }
@@ -116,7 +117,7 @@ final readonly class UpdateMyProfile
         }
     }
 
-    private function invalid(string $field, string $message): BusinessRuleViolation
+    private function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-profile', extensions: ['errors' => [$field => [$message]]]);
     }

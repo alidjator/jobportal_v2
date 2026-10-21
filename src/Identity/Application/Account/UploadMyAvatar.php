@@ -43,7 +43,7 @@ final readonly class UploadMyAvatar
         $maxKb = $this->settings->integer(IdentitySettings::AVATAR_MAX_SIZE_KB);
 
         if (strlen($contents) > $maxKb * 1024) {
-            throw new BusinessRuleViolation("The file is larger than the allowed {$maxKb} KB.", 'file-too-large', extensions: ['max_size_kb' => $maxKb]);
+            throw new BusinessRuleViolation('The file is larger than the allowed :max KB.', 'file-too-large', extensions: ['max_size_kb' => $maxKb], parameters: ['max' => $maxKb]);
         }
 
         $image = $this->images->process($contents, self::MAX_SIDE, self::MAX_SIDE);

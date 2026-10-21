@@ -50,7 +50,9 @@ final readonly class DecideMessageReport
         $note = $note === null || trim($note) === '' ? null : trim($note);
 
         if ($outcome === ReportStatus::Open || ($outcome === ReportStatus::Actioned && $note === null) || ($note !== null && mb_strlen($note) > self::NOTE_MAX)) {
-            throw new BusinessRuleViolation('Say what was done (at most '.self::NOTE_MAX.' characters).', 'invalid-decision', extensions: ['errors' => ['note' => ['Say what was done (at most '.self::NOTE_MAX.' characters).']]]);
+            throw new BusinessRuleViolation(
+                'Say what was done (at most :max characters).', 'invalid-decision', extensions: ['errors' => ['note' => ['Say what was done (at most :max characters).']]], parameters: ['max' => self::NOTE_MAX],
+            );
         }
 
         $adminId = (int) $actor->id;

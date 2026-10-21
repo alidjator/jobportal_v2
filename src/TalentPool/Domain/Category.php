@@ -29,7 +29,7 @@ final readonly class Category
         $name = trim($name);
 
         if ($name === '' || mb_strlen($name) > self::MAX_NAME_LENGTH) {
-            throw new BusinessRuleViolation('A category name has 1 to '.self::MAX_NAME_LENGTH.' characters.', 'category-name-invalid');
+            throw new BusinessRuleViolation('A category name has 1 to :max characters.', 'category-name-invalid', parameters: ['max' => self::MAX_NAME_LENGTH]);
         }
 
         return $name;

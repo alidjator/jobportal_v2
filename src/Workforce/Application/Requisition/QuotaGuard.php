@@ -26,7 +26,9 @@ final readonly class QuotaGuard
             ?? throw new BusinessRuleViolation('The plan in force for this fiscal year has no line for the position.', 'requisition-no-plan-line');
 
         if ($hires > $quota['remaining']) {
-            throw new BusinessRuleViolation("The plan has {$quota['remaining']} hire(s) left for this position and fiscal year.", 'requisition-quota-exceeded', extensions: ['remaining' => $quota['remaining']]);
+            throw new BusinessRuleViolation(
+                'The plan has :remaining hire(s) left for this position and fiscal year.', 'requisition-quota-exceeded', extensions: ['remaining' => $quota['remaining']], parameters: ['remaining' => $quota['remaining']],
+            );
         }
     }
 }

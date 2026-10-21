@@ -18,6 +18,7 @@ use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * The rules of sending a test: the test is published and the company may use it, the window leaves room for the test and stays within the company's limits,
@@ -100,17 +101,23 @@ final readonly class InvitationChecks
         $maxDays = $this->settings->integer(AssessmentSettings::MAX_DUE_DAYS, $companyId);
 
         if ($dueAt < $now->modify("+{$minHours} hours")) {
-            $this->refuse('invalid-assessment-schedule', 'due_at', "The due time must be at least {$minHours} hour".($minHours === 1 ? '' : 's').' from now.');
+            $this->refuse('invalid-assessment-schedule', 'due_at', new ErrorMessage(
+                $minHours === 1 ? 'The due time must be at least :hours hour from now.' : 'The due time must be at least :hours hours from now.', ['hours' => $minHours],
+            ));
         }
 
         if ($dueAt > $now->modify("+{$maxDays} days")) {
-            $this->refuse('invalid-assessment-schedule', 'due_at', "The due time can be at most {$maxDays} day".($maxDays === 1 ? '' : 's').' from now.');
+            $this->refuse('invalid-assessment-schedule', 'due_at', new ErrorMessage(
+                $maxDays === 1 ? 'The due time can be at most :days day from now.' : 'The due time can be at most :days days from now.', ['days' => $maxDays],
+            ));
         }
 
         $seconds = array_sum(array_map(static fn ($section): int => $section->durationSeconds, $this->sections->ofTest((int) $test->id)));
 
         if ($dueAt < $startsAt->modify('+'.max(1, $seconds).' seconds')) {
-            $this->refuse('invalid-assessment-schedule', 'due_at', 'The due time must leave enough time to take the test, which lasts '.intdiv($seconds + 59, 60).' minutes, after the start time.');
+            $this->refuse('invalid-assessment-schedule', 'due_at', new ErrorMessage(
+                'The due time must leave enough time to take the test, which lasts :minutes minutes, after the start time.', ['minutes' => intdiv($seconds + 59, 60)],
+            ));
         }
     }
 
@@ -130,7 +137,7 @@ final readonly class InvitationChecks
         }
 
         if (count($assessors) > self::MAX_ASSESSORS) {
-            $this->refuse('invalid-assessor', 'assessor_ids', 'Choose at most '.self::MAX_ASSESSORS.' assessors.');
+            $this->refuse('invalid-assessor', 'assessor_ids', new ErrorMessage('Choose at most :max assessors.', ['max' => self::MAX_ASSESSORS]));
         }
 
         if ($assessors === [] && $this->questions->testHasType((int) $test->id, QuestionType::LongText)) {
@@ -151,7 +158,7 @@ final readonly class InvitationChecks
         }
     }
 
-    private function refuse(string $code, string $field, string $message): never
+    private function refuse(string $code, string $field, string|ErrorMessage $message): never
     {
         throw new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }

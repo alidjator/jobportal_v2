@@ -30,7 +30,7 @@ final readonly class CreateMasterItem
         return $this->transactions->run(function () use ($definition, $text, $sortOrder, $isActive, $extras): MasterItem {
             foreach ($definition->extras as $field) {
                 if ($field->unique && isset($extras[$field->name]) && $this->masters->extraValueTaken($definition, $field->name, (string) $extras[$field->name], null)) {
-                    throw new StateConflict("The {$field->name} is already used.", 'reference-value-taken');
+                    throw new StateConflict('The :field is already used.', 'reference-value-taken', parameters: ['field' => $field->name]);
                 }
             }
 

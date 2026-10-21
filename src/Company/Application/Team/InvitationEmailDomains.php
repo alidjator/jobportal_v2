@@ -54,7 +54,7 @@ final readonly class InvitationEmailDomains
         }
 
         if (count($clean) > self::MAX_DOMAINS) {
-            throw new BusinessRuleViolation('At most '.self::MAX_DOMAINS.' domains are allowed.', 'invalid-email-domain');
+            throw new BusinessRuleViolation('At most :max domains are allowed.', 'invalid-email-domain', parameters: ['max' => self::MAX_DOMAINS]);
         }
 
         ksort($clean);

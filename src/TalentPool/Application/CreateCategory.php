@@ -34,7 +34,7 @@ final readonly class CreateCategory
             }
 
             if ($this->categories->count($member->companyId) >= self::MAX_CATEGORIES) {
-                throw new BusinessRuleViolation('A company has at most '.self::MAX_CATEGORIES.' categories.', 'category-limit');
+                throw new BusinessRuleViolation('A company has at most :max categories.', 'category-limit', parameters: ['max' => self::MAX_CATEGORIES]);
             }
 
             return $this->categories->add($category);

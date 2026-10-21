@@ -7,8 +7,13 @@ final class EntityNotFound extends DomainException
 {
     public const string DEFAULT_CODE = 'not-found';
 
+    /** `$entity` is part of the template (`Job not found: :id`), so each entity has its own translation; the id is a parameter. */
     public static function of(string $entity, string|int|null $id = null): self
     {
-        return new self($id === null ? "{$entity} not found" : "{$entity} not found: {$id}");
+        if ($id === null) {
+            return new self("{$entity} not found");
+        }
+
+        return new self("{$entity} not found: :id", parameters: ['id' => $id]);
     }
 }

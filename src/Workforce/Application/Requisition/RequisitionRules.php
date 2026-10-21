@@ -10,6 +10,7 @@ use Src\Shared\Application\Organization\PositionDirectory;
 use Src\Shared\Application\Organization\StructureDirectory;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Workforce\Application\Plan\FiscalCalendar;
 use Src\Workforce\Domain\RequisitionType;
 
@@ -43,7 +44,7 @@ final readonly class RequisitionRules
         $position = $this->positions->ofEntity($legalEntityId, $now)[$input->positionId] ?? throw $this->invalid('The position is not a position of this legal entity.');
 
         if (! $position->active) {
-            throw $this->invalid("Position {$position->code} is deactivated.");
+            throw $this->invalid(new ErrorMessage('Position :position is deactivated.', ['position' => $position->code]));
         }
 
         $this->assertGrade($input->requestedGradeId, $position->minGradeId, $position->maxGradeId, $this->entities->groupOf($legalEntityId));
@@ -55,7 +56,7 @@ final readonly class RequisitionRules
         $contract = $input->jobTypeId === $this->references->idBySlug('job-types', 'contract');
 
         if ($contract && ($input->contractMonths === null || $input->contractMonths < 1 || $input->contractMonths > self::MAX_CONTRACT_MONTHS)) {
-            throw $this->invalid('A contract names its length in months, 1 to '.self::MAX_CONTRACT_MONTHS.'.');
+            throw $this->invalid(new ErrorMessage('A contract names its length in months, 1 to :max.', ['max' => self::MAX_CONTRACT_MONTHS]));
         }
 
         if ($input->targetJoinDate->format('Y-m-d') < $now->format('Y-m-d')) {
@@ -135,7 +136,7 @@ final readonly class RequisitionRules
         }
     }
 
-    private function invalid(string $message): BusinessRuleViolation
+    private function invalid(string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-requisition-field');
     }

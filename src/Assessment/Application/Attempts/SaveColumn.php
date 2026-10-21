@@ -8,6 +8,7 @@ use Src\Assessment\Domain\SectionFormat;
 use Src\Assessment\Domain\SpeedColumnResult;
 use Src\Shared\Application\Actor;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
@@ -56,7 +57,7 @@ final readonly class SaveColumn
             $expected = ColumnDigits::expected(ColumnDigits::of($context->attempt->seed, (int) $section->id, $columnNo, $section->settings['digits_per_column']));
 
             if (count($sums) > count($expected)) {
-                throw $this->invalid('answers', 'The column has '.count($expected).' sums.');
+                throw $this->invalid('answers', new ErrorMessage('The column has :count sums.', ['count' => count($expected)]));
             }
 
             $attemptId = (int) $context->attempt->id;
@@ -83,7 +84,7 @@ final readonly class SaveColumn
         });
     }
 
-    private function invalid(string $field, string $message): BusinessRuleViolation
+    private function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-column', extensions: ['errors' => [$field => [$message]]]);
     }

@@ -16,6 +16,7 @@ use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 use Throwable;
 
@@ -103,7 +104,7 @@ final readonly class RequestNameChange
         $length = mb_strlen($newName);
 
         if ($length < self::NAME_MIN || $length > self::NAME_MAX) {
-            $errors['new_name'] = ['The new name must have between '.self::NAME_MIN.' and '.self::NAME_MAX.' characters.'];
+            $errors['new_name'] = [new ErrorMessage('The new name must have between :min and :max characters.', ['min' => self::NAME_MIN, 'max' => self::NAME_MAX])];
         } elseif (mb_strtolower($newName) === mb_strtolower($currentName)) {
             $errors['new_name'] = ['The new name is the same as the current name.'];
         }
@@ -111,7 +112,7 @@ final readonly class RequestNameChange
         $reasonLength = mb_strlen($reason);
 
         if ($reasonLength < self::REASON_MIN || $reasonLength > self::REASON_MAX) {
-            $errors['reason'] = ['The reason must have between '.self::REASON_MIN.' and '.self::REASON_MAX.' characters.'];
+            $errors['reason'] = [new ErrorMessage('The reason must have between :min and :max characters.', ['min' => self::REASON_MIN, 'max' => self::REASON_MAX])];
         }
 
         if ($errors !== []) {

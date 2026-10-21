@@ -22,6 +22,7 @@ use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
@@ -130,7 +131,7 @@ final readonly class BulkProcessApplications
         $cap = $this->settings->integer(RecruitmentSettings::MAX_BULK_APPLICATIONS, $member->companyId);
 
         if (count($applicationIds) > $cap) {
-            $this->refuse('too-many-applications', 'Select at most '.$cap.' applications at a time.', 'application_ids');
+            $this->refuse('too-many-applications', new ErrorMessage('Select at most :max applications at a time.', ['max' => $cap]), 'application_ids');
         }
 
         $states = [];
@@ -222,7 +223,7 @@ final readonly class BulkProcessApplications
         return $hour * 60 + $minute;
     }
 
-    private function refuse(string $code, string $message, string $field): never
+    private function refuse(string $code, string|ErrorMessage $message, string $field): never
     {
         throw new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }

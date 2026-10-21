@@ -8,6 +8,7 @@ use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** A job seeker sets their whole list of skills: at most 30, no repeats, every one an active skill, in the order given. */
 final readonly class ReplaceMySkills
@@ -33,7 +34,7 @@ final readonly class ReplaceMySkills
         $errors = [];
 
         if (count($skillIds) > self::MAX && count($skillIds) > count($this->lists->skillIds($userId))) {
-            $errors['skill_ids'][] = 'A profile can have at most '.self::MAX.' skills.';
+            $errors['skill_ids'][] = new ErrorMessage('A profile can have at most :max skills.', ['max' => self::MAX]);
         }
 
         if (count($skillIds) !== count(array_unique($skillIds))) {

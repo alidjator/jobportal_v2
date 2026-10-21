@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * The terms of an offer beyond the position, salary and start date: employment type, contract length and probation, work mode and location, salary basis,
@@ -85,24 +86,24 @@ final readonly class OfferTerms
         $errors = match (true) {
             $type->hasContractLength() && $contractMonths === null => ['contract_months' => 'Give the length of the contract in months.'],
             ! $type->hasContractLength() && $contractMonths !== null => ['contract_months' => 'Only a contract or an internship has a length in months.'],
-            $contractMonths !== null && ($contractMonths < 1 || $contractMonths > self::CONTRACT_MONTHS_MAX) => ['contract_months' => 'The length must be between 1 and '.self::CONTRACT_MONTHS_MAX.' months.'],
-            $probationMonths !== null && ($probationMonths < 0 || $probationMonths > self::PROBATION_MONTHS_MAX) => ['probation_months' => 'The probation must be between 0 and '.self::PROBATION_MONTHS_MAX.' months.'],
+            $contractMonths !== null && ($contractMonths < 1 || $contractMonths > self::CONTRACT_MONTHS_MAX) => ['contract_months' => new ErrorMessage('The length must be between 1 and :max months.', ['max' => self::CONTRACT_MONTHS_MAX])],
+            $probationMonths !== null && ($probationMonths < 0 || $probationMonths > self::PROBATION_MONTHS_MAX) => ['probation_months' => new ErrorMessage('The probation must be between 0 and :max months.', ['max' => self::PROBATION_MONTHS_MAX])],
             $workMode !== OfferWorkMode::Remote && $workLocation === null => ['work_location' => 'Give the work location.'],
-            $workLocation !== null && mb_strlen($workLocation) > self::WORK_LOCATION_MAX => ['work_location' => 'The work location can have at most '.self::WORK_LOCATION_MAX.' characters.'],
-            count($allowances) > self::ALLOWANCES_MAX => ['allowances' => 'An offer can have at most '.self::ALLOWANCES_MAX.' allowances.'],
+            $workLocation !== null && mb_strlen($workLocation) > self::WORK_LOCATION_MAX => ['work_location' => new ErrorMessage('The work location can have at most :max characters.', ['max' => self::WORK_LOCATION_MAX])],
+            count($allowances) > self::ALLOWANCES_MAX => ['allowances' => new ErrorMessage('An offer can have at most :max allowances.', ['max' => self::ALLOWANCES_MAX])],
             default => self::allowanceError($allowances),
         };
 
         if ($errors !== []) {
-            $message = (string) reset($errors);
+            $message = reset($errors);
 
-            throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string $text): array => [$text], $errors)]);
+            throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string|ErrorMessage $text): array => [$text], $errors)]);
         }
     }
 
     /**
      * @param  list<OfferAllowance>  $allowances
-     * @return array<string, string>
+     * @return array<string, ErrorMessage>
      */
     private static function allowanceError(array $allowances): array
     {
@@ -110,11 +111,11 @@ final readonly class OfferTerms
             $name = trim($allowance->name);
 
             if ($name === '' || mb_strlen($name) > OfferAllowance::NAME_MAX) {
-                return ["allowances.{$index}.name" => 'An allowance needs a name of at most '.OfferAllowance::NAME_MAX.' characters.'];
+                return ["allowances.{$index}.name" => new ErrorMessage('An allowance needs a name of at most :max characters.', ['max' => OfferAllowance::NAME_MAX])];
             }
 
             if ($allowance->amount < 1 || $allowance->amount > OfferAllowance::AMOUNT_MAX) {
-                return ["allowances.{$index}.amount" => 'An allowance must be between 1 and '.OfferAllowance::AMOUNT_MAX.' Rupiah per month.'];
+                return ["allowances.{$index}.amount" => new ErrorMessage('An allowance must be between 1 and :max Rupiah per month.', ['max' => OfferAllowance::AMOUNT_MAX])];
             }
         }
 
@@ -129,11 +130,17 @@ final readonly class OfferTerms
         }
 
         if ($probationMonths !== null && $probationMonths > self::PROBATION_MONTHS_LEGAL_MAX) {
-            throw new BusinessRuleViolation('A probation period can be at most '.self::PROBATION_MONTHS_LEGAL_MAX.' months.', 'probation-too-long', extensions: ['errors' => ['probation_months' => ['A probation period can be at most '.self::PROBATION_MONTHS_LEGAL_MAX.' months.']]]);
+            throw new BusinessRuleViolation(
+                'A probation period can be at most :max months.', 'probation-too-long', extensions: ['errors' => ['probation_months' => ['A probation period can be at most :max months.']]],
+                parameters: ['max' => self::PROBATION_MONTHS_LEGAL_MAX],
+            );
         }
 
         if ($type === EmploymentType::Internship && $contractMonths !== null && $contractMonths > self::INTERNSHIP_MONTHS_MAX) {
-            throw new BusinessRuleViolation('An internship can last at most '.self::INTERNSHIP_MONTHS_MAX.' months.', 'contract-too-long', extensions: ['errors' => ['contract_months' => ['An internship can last at most '.self::INTERNSHIP_MONTHS_MAX.' months.']]]);
+            throw new BusinessRuleViolation(
+                'An internship can last at most :max months.', 'contract-too-long', extensions: ['errors' => ['contract_months' => ['An internship can last at most :max months.']]],
+                parameters: ['max' => self::INTERNSHIP_MONTHS_MAX],
+            );
         }
     }
 }

@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * The text of a psychologist's report with placeholders in double braces. The report is rendered when it is drafted (part 6) from these:
@@ -30,7 +31,7 @@ final class ReportTemplateRules
         $body = trim($body);
 
         if ($body === '' || mb_strlen($body) > self::BODY_MAX) {
-            throw self::invalid('The report template must have between 1 and '.self::BODY_MAX.' characters.');
+            throw self::invalid(new ErrorMessage('The report template must have between 1 and :max characters.', ['max' => self::BODY_MAX]));
         }
 
         preg_match_all('/\{\{(.*?)\}\}/s', $body, $matches);
@@ -47,18 +48,18 @@ final class ReportTemplateRules
             $values = $forExplanation ? [...self::SCALE_VALUES, self::EXPLANATION_VALUE] : self::SCALE_VALUES;
 
             if (count($parts) !== 3 || $parts[0] !== 'scale' || ! in_array($parts[2], $values, true)) {
-                throw self::invalid("The placeholder {{{$token}}} is not known.");
+                throw self::invalid(new ErrorMessage('The placeholder {{:token}} is not known.', ['token' => $token]));
             }
 
             if (! in_array($parts[1], $knownScales, true)) {
-                throw self::invalid("No question of this test uses the scale {$parts[1]}.");
+                throw self::invalid(new ErrorMessage('No question of this test uses the scale :scale.', ['scale' => $parts[1]]));
             }
         }
 
         return $body;
     }
 
-    private static function invalid(string $message): BusinessRuleViolation
+    private static function invalid(string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-report-template', extensions: ['errors' => ['body' => [$message]]]);
     }

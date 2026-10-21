@@ -15,6 +15,7 @@ use Src\Shared\Application\Settings\SettingsCatalog;
 use Src\Shared\Application\Settings\SettingType;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** Platform's side of the company settings page: the editable settings of a company, and the company admin's changes saved as the company's own overrides. */
 final readonly class EditCompanySettings implements CompanySettingsEditor
@@ -51,13 +52,13 @@ final readonly class EditCompanySettings implements CompanySettingsEditor
             $definition = $this->catalog->find((string) $key);
 
             if ($definition === null || ! $definition->companyEditable) {
-                throw new BusinessRuleViolation("The setting {$key} cannot be changed by a company.", 'setting-not-editable', extensions: ['key' => (string) $key]);
+                throw new BusinessRuleViolation('The setting :key cannot be changed by a company.', 'setting-not-editable', extensions: ['key' => (string) $key], parameters: ['key' => (string) $key]);
             }
 
             try {
                 $normalized[$definition->key] = $definition->normalize($value);
             } catch (BusinessRuleViolation $e) {
-                $errors[$definition->key] = $e->getMessage();
+                $errors[$definition->key] = new ErrorMessage($e->template(), $e->parameters());
             }
         }
 

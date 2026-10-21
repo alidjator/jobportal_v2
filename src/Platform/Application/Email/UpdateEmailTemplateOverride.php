@@ -38,7 +38,7 @@ final readonly class UpdateEmailTemplateOverride
         $definition = $this->catalog->find($key) ?? throw EntityNotFound::of('Email template', $key);
 
         if (! in_array($locale, TranslatedText::LANGUAGES, true)) {
-            throw new BusinessRuleViolation('The language must be one of: '.implode(', ', TranslatedText::LANGUAGES).'.', 'unsupported-language');
+            throw new BusinessRuleViolation('The language must be one of: :languages.', 'unsupported-language', parameters: ['languages' => implode(', ', TranslatedText::LANGUAGES)]);
         }
 
         EmailTemplateRules::assertValid($definition, $subject, $body);

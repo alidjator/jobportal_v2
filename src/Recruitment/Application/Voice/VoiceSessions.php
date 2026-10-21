@@ -62,8 +62,9 @@ final readonly class VoiceSessions
 
         if (! VideoJoinWindow::isOpen($interview, $this->clock->now())) {
             throw new StateConflict(
-                'Calls are possible from '.VideoJoinWindow::MINUTES_BEFORE.' minutes before the interview until '.VideoJoinWindow::MINUTES_AFTER.' minutes after it ends.',
+                'Calls are possible from :before minutes before the interview until :after minutes after it ends.',
                 'voice-window-closed',
+                parameters: ['before' => VideoJoinWindow::MINUTES_BEFORE, 'after' => VideoJoinWindow::MINUTES_AFTER],
             );
         }
 

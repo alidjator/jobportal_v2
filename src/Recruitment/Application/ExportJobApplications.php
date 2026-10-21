@@ -57,7 +57,7 @@ final readonly class ExportJobApplications
         $total = $this->reader->count($query);
 
         if ($total > $cap) {
-            throw new BusinessRuleViolation("An export can hold at most {$cap} applications; narrow the filters.", 'export-too-large', extensions: ['max_rows' => $cap]);
+            throw new BusinessRuleViolation('An export can hold at most :max applications; narrow the filters.', 'export-too-large', extensions: ['max_rows' => $cap], parameters: ['max' => $cap]);
         }
 
         $questions = $this->questions->forJob($jobId);

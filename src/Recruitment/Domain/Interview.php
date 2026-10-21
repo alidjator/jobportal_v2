@@ -5,6 +5,7 @@ namespace Src\Recruitment\Domain;
 use DateInterval;
 use DateTimeImmutable;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
@@ -94,20 +95,22 @@ final readonly class Interview
 
         $errors = match (true) {
             $startsAt <= $now => ['starts_at' => 'The interview must start in the future.'],
-            $durationMinutes < self::DURATION_MIN || $durationMinutes > self::DURATION_MAX => ['duration_minutes' => 'The duration must be between '.self::DURATION_MIN.' and '.self::DURATION_MAX.' minutes.'],
+            $durationMinutes < self::DURATION_MIN || $durationMinutes > self::DURATION_MAX => [
+                'duration_minutes' => new ErrorMessage('The duration must be between :min and :max minutes.', ['min' => self::DURATION_MIN, 'max' => self::DURATION_MAX]),
+            ],
             $format === InterviewFormat::Onsite && $location === null => ['location' => 'Say where the interview takes place.'],
             $format === InterviewFormat::Online && $meetingUrl === null => ['meeting_url' => 'Give the meeting link.'],
-            $location !== null && mb_strlen($location) > self::LOCATION_MAX => ['location' => 'The location can have at most '.self::LOCATION_MAX.' characters.'],
-            $meetingUrl !== null && mb_strlen($meetingUrl) > self::URL_MAX => ['meeting_url' => 'The link can have at most '.self::URL_MAX.' characters.'],
+            $location !== null && mb_strlen($location) > self::LOCATION_MAX => ['location' => new ErrorMessage('The location can have at most :max characters.', ['max' => self::LOCATION_MAX])],
+            $meetingUrl !== null && mb_strlen($meetingUrl) > self::URL_MAX => ['meeting_url' => new ErrorMessage('The link can have at most :max characters.', ['max' => self::URL_MAX])],
             $recorded && ! $format->isHeldInPlatform() => ['recorded' => 'Only an interview held in the platform can be recorded.'],
-            $note !== null && mb_strlen($note) > self::NOTE_MAX => ['note' => 'The note can have at most '.self::NOTE_MAX.' characters.'],
+            $note !== null && mb_strlen($note) > self::NOTE_MAX => ['note' => new ErrorMessage('The note can have at most :max characters.', ['max' => self::NOTE_MAX])],
             default => [],
         };
 
         if ($errors !== []) {
-            $message = (string) reset($errors);
+            $message = reset($errors);
 
-            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => array_map(static fn (string $text): array => [$text], $errors)]);
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => array_map(static fn (string|ErrorMessage $text): array => [$text], $errors)]);
         }
 
         return new self(
@@ -210,7 +213,7 @@ final readonly class Interview
         }
 
         if ($this->proposalsUsed >= self::PROPOSALS_MAX) {
-            throw new StateConflict('You already proposed another time '.self::PROPOSALS_MAX.' times. Confirm or decline this interview.', 'proposal-limit');
+            throw new StateConflict('You already proposed another time :max times. Confirm or decline this interview.', 'proposal-limit', parameters: ['max' => self::PROPOSALS_MAX]);
         }
 
         $confirmed = $this->status === InterviewStatus::Confirmed;
@@ -224,15 +227,16 @@ final readonly class Interview
         }
 
         if ($reason !== null && mb_strlen($reason) > self::PROPOSAL_REASON_MAX) {
-            $message = 'The reason can have at most '.self::PROPOSAL_REASON_MAX.' characters.';
+            $message = 'The reason can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['reason' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['reason' => [$message]]], parameters: ['max' => self::PROPOSAL_REASON_MAX]);
         }
 
         if ($confirmed && $now > $this->startsAt->sub($cutoff)) {
             throw new StateConflict(
-                'The interview can no longer be moved: ask at least '.$cutoffHours.' hours before it starts. You can still decline it or write to the company.',
+                'The interview can no longer be moved: ask at least :hours hours before it starts. You can still decline it or write to the company.',
                 'reschedule-too-late',
+                parameters: ['hours' => $cutoffHours],
                 extensions: ['cutoff_hours' => $cutoffHours],
             );
         }
@@ -240,9 +244,9 @@ final readonly class Interview
         $earliest = $confirmed ? $now->add($cutoff) : $now;
 
         if ($startsAt <= $now || ($confirmed && $startsAt < $earliest)) {
-            $message = $startsAt <= $now ? 'The proposed time must be in the future.' : 'The proposed time must be at least '.$cutoffHours.' hours ahead.';
+            $message = $startsAt <= $now ? 'The proposed time must be in the future.' : 'The proposed time must be at least :hours hours ahead.';
 
-            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['starts_at' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['starts_at' => [$message]]], parameters: ['hours' => $cutoffHours]);
         }
 
         $proposed = $this->changed(proposalsUsed: $this->proposalsUsed + 1, proposedStartsAt: $startsAt, proposalReason: $reason, proposalMadeAt: $now);
@@ -335,9 +339,9 @@ final readonly class Interview
         $note = self::text($note);
 
         if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
-            $message = 'The note can have at most '.self::NOTE_MAX.' characters.';
+            $message = 'The note can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]], parameters: ['max' => self::NOTE_MAX]);
         }
 
         return $this->changed(status: InterviewStatus::NoShow, proposedStartsAt: null, proposalReason: null, proposalMadeAt: null, noShowNote: $note);
@@ -377,9 +381,9 @@ final readonly class Interview
         $note = self::text($note);
 
         if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
-            $message = 'The note can have at most '.self::NOTE_MAX.' characters.';
+            $message = 'The note can have at most :max characters.';
 
-            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-interview', extensions: ['errors' => ['note' => [$message]]], parameters: ['max' => self::NOTE_MAX]);
         }
 
         return $this->changed(note: $note, noteChanged: true, calendarSequence: $this->calendarSequence + 1);

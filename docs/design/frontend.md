@@ -8,7 +8,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), Console a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
 - 2026-10-20: application names: **ONESIS Career** (public), **ONESIS Workspace** (company and group members, was "back office"), **ONESIS Console** (platform admins, was "admin panel") with **Portal Mitra** for psychologists (was "psychologist area", `/mitra` unchanged); identifiers `public`, `workspace`, `console`; in the UI the platform role reads "Operator platform" or "Admin platform", never bare "Admin"; API paths `/api/v1/admin/**`, admin permissions and page numbers stay ([detail](#3-repository-and-applications), `naming.md`).
-- 2026-10-21: development data from a new demo seeder (fictitious accounts and data, refused in production), not from the legacy rehearsal ([detail](#131-before-step-0)).
+- 2026-10-21: development data from a new demo seeder (fictitious accounts and data, refused in production), not from the legacy rehearsal ([detail](#131-before-step-0)); designed and coded as `demo:seed` (`phase-8-demo-data.md`).
 - 2026-10-21: client IP: the API trusts the loopback address as a proxy and the Nuxt servers forward the visitor's IP; coded in step 2 ([detail](#131-before-step-0)).
 - 2026-10-21: go-live scope of the front end: steps 0 to 5 of section 13; complex screens, ERP pages and Portal Mitra after go-live ([detail](#131-before-step-0)).
 - 2026-10-21: coding order: foundation, then a thin slice Console → Workspace → Career tried end to end, then the go-live scope, complex screens, ERP pages and Portal Mitra last ([detail](#13-coding-order)).
@@ -989,7 +989,7 @@ Three points, decided by the user on 2026-10-21 before coding starts:
    (API, step 0) fills the development database with fictitious data: a group with two companies, one account per preset (company admin, recruiter,
    hiring manager, interviewer), job seekers, jobs and applications at several stages. It refuses to run in production. No real personal data reaches
    the development domains, and the database is emptied with `migrate:fresh` before the final import. Not chosen: the rehearsal data in a separate
-   database (real personal data on the development domains, accounts that need activation) or in `jobportal_v2` itself.
+   database (real personal data on the development domains, accounts that need activation) or in `jobportal_v2` itself. Coded on 2026-10-21 as `php artisan demo:seed` (`phase-8-demo-data.md`).
 2. **Client IP behind the Nuxt proxy (5.2): trust the loopback proxy.** The API trusts `127.0.0.1` only (`trustProxies`); the Nuxt servers of Career
    and Workspace call the API over the loopback address and set `X-Forwarded-For` to the visitor's IP that nginx gives them (`X-Real-IP`), never
    passing on a header sent by the browser. Other requests are unchanged: their `REMOTE_ADDR` is the client's own address. The rate limiters,

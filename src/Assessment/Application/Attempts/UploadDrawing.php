@@ -54,7 +54,7 @@ final readonly class UploadDrawing
             $maxMb = $this->settings->integer(AssessmentSettings::MAX_DRAWING_MEGABYTES);
 
             if (strlen($contents) > $maxMb * 1024 * 1024) {
-                throw new BusinessRuleViolation("The drawing is larger than the allowed {$maxMb} MB.", 'file-too-large', extensions: ['max_size_mb' => $maxMb]);
+                throw new BusinessRuleViolation('The drawing is larger than the allowed :max MB.', 'file-too-large', extensions: ['max_size_mb' => $maxMb], parameters: ['max' => $maxMb]);
             }
 
             $image = $this->images->process($contents, self::MAX_SIDE, self::MAX_SIDE);

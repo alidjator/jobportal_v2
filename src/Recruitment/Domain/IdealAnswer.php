@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * What a must-have question expects, set per job. `yes_no`: one answer. `single_choice`: the answer must be one of the accepted options.
@@ -98,7 +99,7 @@ final readonly class IdealAnswer
 
         foreach ([$min, $max] as $bound) {
             if ($bound !== null && (! is_int($bound) || $bound < 0 || $bound > QuestionRules::NUMBER_MAX)) {
-                throw self::invalid('The limits of a number must be whole numbers from 0 to '.QuestionRules::NUMBER_MAX.'.');
+                throw self::invalid(new ErrorMessage('The limits of a number must be whole numbers from 0 to :max.', ['max' => QuestionRules::NUMBER_MAX]));
             }
         }
 
@@ -113,7 +114,7 @@ final readonly class IdealAnswer
         return new self(QuestionType::Number, null, [], $min, $max);
     }
 
-    private static function invalid(string $message): BusinessRuleViolation
+    private static function invalid(string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-ideal-answer', extensions: ['errors' => ['ideal' => [$message]]]);
     }

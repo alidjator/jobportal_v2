@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The content limits of a library question: its text and, for a choice question, its choices. */
 final class QuestionRules
@@ -30,7 +31,7 @@ final class QuestionRules
         $length = mb_strlen($text);
 
         if ($length < self::TEXT_MIN || $length > self::TEXT_MAX) {
-            throw self::invalid('text', 'The question must have between '.self::TEXT_MIN.' and '.self::TEXT_MAX.' characters.');
+            throw self::invalid('text', new ErrorMessage('The question must have between :min and :max characters.', ['min' => self::TEXT_MIN, 'max' => self::TEXT_MAX]));
         }
 
         return $text;
@@ -57,7 +58,7 @@ final class QuestionRules
         $clean = array_map(static fn (string $label): string => trim($label), $labels);
 
         if (count($clean) < self::OPTIONS_MIN || count($clean) > self::OPTIONS_MAX) {
-            throw self::invalid('options', 'A choice question needs between '.self::OPTIONS_MIN.' and '.self::OPTIONS_MAX.' options.');
+            throw self::invalid('options', new ErrorMessage('A choice question needs between :min and :max options.', ['min' => self::OPTIONS_MIN, 'max' => self::OPTIONS_MAX]));
         }
 
         $seen = [];
@@ -66,7 +67,7 @@ final class QuestionRules
             $length = mb_strlen($label);
 
             if ($length < 1 || $length > self::OPTION_MAX_LENGTH) {
-                throw self::invalid('options', 'Every option must have between 1 and '.self::OPTION_MAX_LENGTH.' characters.');
+                throw self::invalid('options', new ErrorMessage('Every option must have between 1 and :max characters.', ['max' => self::OPTION_MAX_LENGTH]));
             }
 
             $key = mb_strtolower($label);
@@ -81,7 +82,7 @@ final class QuestionRules
         return $clean;
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-screening-question', extensions: ['errors' => [$field => [$message]]]);
     }

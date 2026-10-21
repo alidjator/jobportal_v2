@@ -59,7 +59,7 @@ final readonly class ExportHires
         $total = $this->reader->count($filter);
 
         if ($total > $cap) {
-            throw new BusinessRuleViolation("An export can hold at most {$cap} hires; narrow the period or the job.", 'export-too-large', extensions: ['max_rows' => $cap]);
+            throw new BusinessRuleViolation('An export can hold at most :max hires; narrow the period or the job.', 'export-too-large', extensions: ['max_rows' => $cap], parameters: ['max' => $cap]);
         }
 
         $this->events->dispatch([new HiresExported($member->companyId, $member->userId, $from, $to, $jobId, $total, $ipAddress, $userAgent, $this->clock->now())]);

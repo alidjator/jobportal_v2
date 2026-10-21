@@ -65,7 +65,7 @@ final readonly class SettingDefinition
     {
         return match ($this->type) {
             SettingType::Integer => $this->normalizeInteger($value),
-            SettingType::Boolean => is_bool($value) ? $value : throw $this->invalid('must be true or false'),
+            SettingType::Boolean => is_bool($value) ? $value : throw $this->invalid('The value of :key must be true or false.'),
             SettingType::Text => $this->normalizeText($value),
             SettingType::Choices => $this->normalizeChoices($value),
         };
@@ -74,11 +74,11 @@ final readonly class SettingDefinition
     private function normalizeInteger(mixed $value): int
     {
         if (! is_int($value)) {
-            throw $this->invalid('must be a whole number');
+            throw $this->invalid('The value of :key must be a whole number.');
         }
 
         if ($value < (int) $this->min || $value > (int) $this->max) {
-            throw $this->invalid("must be between {$this->min} and {$this->max}");
+            throw $this->invalid('The value of :key must be between :min and :max.', ['min' => (int) $this->min, 'max' => (int) $this->max]);
         }
 
         return $value;
@@ -87,13 +87,13 @@ final readonly class SettingDefinition
     private function normalizeText(mixed $value): string
     {
         if (! is_string($value)) {
-            throw $this->invalid('must be text');
+            throw $this->invalid('The value of :key must be text.');
         }
 
         $value = trim($value);
 
         if (mb_strlen($value) > (int) $this->max) {
-            throw $this->invalid("must be at most {$this->max} characters");
+            throw $this->invalid('The value of :key must be at most :max characters.', ['max' => (int) $this->max]);
         }
 
         return $value;
@@ -103,25 +103,28 @@ final readonly class SettingDefinition
     private function normalizeChoices(mixed $value): array
     {
         if (! is_array($value) || ! array_is_list($value) || array_filter($value, fn (mixed $item): bool => ! is_string($item)) !== []) {
-            throw $this->invalid('must be a list of text values');
+            throw $this->invalid('The value of :key must be a list of text values.');
         }
 
         $unknown = array_values(array_diff($value, $this->allowedValues));
         if ($unknown !== []) {
-            throw $this->invalid('contains values that are not allowed: '.implode(', ', $unknown).'. Allowed: '.implode(', ', $this->allowedValues));
+            throw $this->invalid(
+                'The value of :key contains values that are not allowed: :unknown. Allowed: :allowed.', ['unknown' => implode(', ', $unknown), 'allowed' => implode(', ', $this->allowedValues)],
+            );
         }
 
         $unique = array_values(array_unique($value));
 
         if (count($unique) < $this->minItems) {
-            throw $this->invalid("needs at least {$this->minItems} value(s)");
+            throw $this->invalid('The value of :key needs at least :min value(s).', ['min' => $this->minItems]);
         }
 
         return $unique;
     }
 
-    private function invalid(string $problem): BusinessRuleViolation
+    /** @param  array<string, string|int|float>  $parameters */
+    private function invalid(string $message, array $parameters = []): BusinessRuleViolation
     {
-        return new BusinessRuleViolation("The value of {$this->key} {$problem}.", 'invalid-setting-value');
+        return new BusinessRuleViolation($message, 'invalid-setting-value', parameters: ['key' => $this->key, ...$parameters]);
     }
 }

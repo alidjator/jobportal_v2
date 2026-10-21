@@ -49,7 +49,7 @@ final readonly class SaveJob
 
             // Over the limit: throwing rolls the new row back.
             if ($new && $this->saved->count($userId) > self::MAX_SAVED) {
-                throw new BusinessRuleViolation('You can save at most '.self::MAX_SAVED.' jobs. Remove one first.', 'saved-jobs-limit');
+                throw new BusinessRuleViolation('You can save at most :max jobs. Remove one first.', 'saved-jobs-limit', parameters: ['max' => self::MAX_SAVED]);
             }
 
             return $new;

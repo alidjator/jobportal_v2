@@ -105,9 +105,10 @@ final readonly class UpdateJob
 
         if ($fields !== [] && $this->applications->hasApplications($jobId)) {
             throw new StateConflict(
-                'This job already has applications, so '.implode(', ', $fields).' can no longer change.',
+                'This job already has applications, so :fields can no longer change.',
                 'job-locked-after-applications',
                 extensions: ['fields' => $fields],
+                parameters: ['fields' => implode(', ', $fields)],
             );
         }
     }

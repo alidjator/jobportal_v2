@@ -103,12 +103,12 @@ final readonly class WithdrawApplicationByTeam
 
         $message = match (true) {
             $note === null && $reason->requiresNoteFromTeam() => 'A note is required for this reason.',
-            $note !== null && mb_strlen($note) > WithdrawMyApplication::NOTE_MAX => 'The note can have at most '.WithdrawMyApplication::NOTE_MAX.' characters.',
+            $note !== null && mb_strlen($note) > WithdrawMyApplication::NOTE_MAX => 'The note can have at most :max characters.',
             default => null,
         };
 
         if ($message !== null) {
-            throw new BusinessRuleViolation($message, 'invalid-withdrawal', extensions: ['errors' => ['note' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-withdrawal', extensions: ['errors' => ['note' => [$message]]], parameters: ['max' => WithdrawMyApplication::NOTE_MAX]);
         }
 
         return $note;

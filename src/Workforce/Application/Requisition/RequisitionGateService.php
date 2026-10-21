@@ -49,7 +49,7 @@ final readonly class RequisitionGateService implements RequisitionGate
         if ($others + $vacancies > $requisition->hires) {
             $left = max($requisition->hires - $others, 0);
 
-            throw new BusinessRuleViolation("The requisition has {$left} hire(s) left to open.", 'requisition-vacancies-exceeded', extensions: ['remaining' => $left]);
+            throw new BusinessRuleViolation('The requisition has :remaining hire(s) left to open.', 'requisition-vacancies-exceeded', extensions: ['remaining' => $left], parameters: ['remaining' => $left]);
         }
 
         if ($requisition->status === RequisitionStatus::Approved) {

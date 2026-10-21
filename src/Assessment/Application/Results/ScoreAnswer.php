@@ -58,7 +58,8 @@ final readonly class ScoreAnswer
 
             if ($score < 0 || $score > $points) {
                 throw new BusinessRuleViolation(
-                    "The score must be a whole number from 0 to {$points}.", 'invalid-score', extensions: ['errors' => ['score' => ["The score must be a whole number from 0 to {$points}."]]],
+                    'The score must be a whole number from 0 to :points.', 'invalid-score',
+                    extensions: ['errors' => ['score' => ['The score must be a whole number from 0 to :points.']]], parameters: ['points' => $points],
                 );
             }
 

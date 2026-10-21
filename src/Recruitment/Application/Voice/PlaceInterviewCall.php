@@ -65,7 +65,7 @@ final readonly class PlaceInterviewCall
             $attempts = $this->settings->integer(InterviewSettings::VOICE_MAX_ATTEMPTS, $companyId);
 
             if ($this->calls->countOf($interviewId) >= $attempts) {
-                throw new StateConflict("The candidate was already called {$attempts} times. Reschedule the interview.", 'call-attempts-used');
+                throw new StateConflict('The candidate was already called :attempts times. Reschedule the interview.', 'call-attempts-used', parameters: ['attempts' => $attempts]);
             }
 
             if ($this->limits->remainingSeconds($companyId, $this->clock->now()) <= 0) {

@@ -31,7 +31,7 @@ final readonly class DeleteAdminRole
         $role = $this->directory->role($name) ?? throw EntityNotFound::of('Role', $name);
 
         if ($role->adminCount > 0) {
-            throw new StateConflict("{$role->adminCount} administrator(s) hold the role {$name}; give them another role first.", 'role-in-use');
+            throw new StateConflict(':count administrator(s) hold the role :role; give them another role first.', 'role-in-use', parameters: ['count' => $role->adminCount, 'role' => $name]);
         }
 
         $this->rbac->deleteRole($name);

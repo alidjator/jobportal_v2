@@ -42,9 +42,10 @@ final readonly class UploadCompanyImage
 
         if (strlen($contents) > $maxBytes) {
             throw new BusinessRuleViolation(
-                'The file is larger than the allowed '.intdiv($maxBytes, 1024).' KB.',
+                'The file is larger than the allowed :max KB.',
                 'file-too-large',
                 extensions: ['max_size_kb' => intdiv($maxBytes, 1024)],
+                parameters: ['max' => intdiv($maxBytes, 1024)],
             );
         }
 

@@ -43,7 +43,10 @@ final readonly class AlertCriteria
 
         if ($keyword !== '') {
             if (mb_strlen($keyword) > self::MAX_KEYWORD_LENGTH || count(explode(' ', $keyword)) > self::MAX_KEYWORD_WORDS) {
-                throw new BusinessRuleViolation('The keyword can have at most '.self::MAX_KEYWORD_WORDS.' words and '.self::MAX_KEYWORD_LENGTH.' characters.', 'invalid-criteria');
+                throw new BusinessRuleViolation(
+                    'The keyword can have at most :words words and :characters characters.', 'invalid-criteria',
+                    parameters: ['words' => self::MAX_KEYWORD_WORDS, 'characters' => self::MAX_KEYWORD_LENGTH],
+                );
             }
 
             $filters['q'] = $keyword;
@@ -61,7 +64,7 @@ final readonly class AlertCriteria
 
         foreach ($modes as $mode) {
             if (! is_string($mode) || ! in_array($mode, self::WORK_MODES, true)) {
-                throw new BusinessRuleViolation('The work mode must be one of: '.implode(', ', self::WORK_MODES).'.', 'invalid-criteria');
+                throw new BusinessRuleViolation('The work mode must be one of: :modes.', 'invalid-criteria', parameters: ['modes' => implode(', ', self::WORK_MODES)]);
             }
         }
 
@@ -73,7 +76,7 @@ final readonly class AlertCriteria
             $salary = $input['salary_min'];
 
             if (! is_int($salary) || $salary < 0 || $salary > self::MAX_SALARY) {
-                throw new BusinessRuleViolation('The minimum salary must be a whole number from 0 to '.self::MAX_SALARY.'.', 'invalid-criteria');
+                throw new BusinessRuleViolation('The minimum salary must be a whole number from 0 to :max.', 'invalid-criteria', parameters: ['max' => self::MAX_SALARY]);
             }
 
             $period = $input['salary_period_id'] ?? null;
@@ -92,7 +95,7 @@ final readonly class AlertCriteria
 
         if (($input['posted_within'] ?? null) !== null) {
             if (! is_int($input['posted_within']) || ! in_array($input['posted_within'], self::POSTED_WITHIN, true)) {
-                throw new BusinessRuleViolation('The posting window must be one of: '.implode(', ', self::POSTED_WITHIN).' days.', 'invalid-criteria');
+                throw new BusinessRuleViolation('The posting window must be one of: :days days.', 'invalid-criteria', parameters: ['days' => implode(', ', self::POSTED_WITHIN)]);
             }
 
             $filters['posted_within'] = $input['posted_within'];
@@ -141,7 +144,7 @@ final readonly class AlertCriteria
     private static function list(mixed $value, string $name): array
     {
         if (! is_array($value) || ! array_is_list($value) || count($value) > self::MAX_VALUES) {
-            throw new BusinessRuleViolation("{$name} must be a list of up to ".self::MAX_VALUES.' values.', 'invalid-criteria');
+            throw new BusinessRuleViolation(':name must be a list of up to :max values.', 'invalid-criteria', parameters: ['name' => $name, 'max' => self::MAX_VALUES]);
         }
 
         return $value;
@@ -154,7 +157,7 @@ final readonly class AlertCriteria
 
         foreach (self::list($value, $name) as $id) {
             if (! is_int($id) || $id < 1) {
-                throw new BusinessRuleViolation("{$name} must hold positive whole numbers.", 'invalid-criteria');
+                throw new BusinessRuleViolation(':name must hold positive whole numbers.', 'invalid-criteria', parameters: ['name' => $name]);
             }
 
             $ids[$id] = $id;

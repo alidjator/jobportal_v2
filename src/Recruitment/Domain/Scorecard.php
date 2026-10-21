@@ -4,6 +4,7 @@ namespace Src\Recruitment\Domain;
 
 use DateTimeImmutable;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * One panel member's scorecard of an interview: a score from 1 to 5 per question, a final recommendation and a note. The result is the average of the answered
@@ -59,7 +60,7 @@ final readonly class Scorecard
         $errors = [];
 
         if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
-            $errors['note'] = ['The note can have at most '.self::NOTE_MAX.' characters.'];
+            $errors['note'] = [new ErrorMessage('The note can have at most :max characters.', ['max' => self::NOTE_MAX])];
         }
 
         foreach ($answers as $index => $answer) {
@@ -74,11 +75,11 @@ final readonly class Scorecard
             $seen[$answer['question_id']] = true;
 
             if ($answer['score'] !== null && ($answer['score'] < self::SCORE_MIN || $answer['score'] > self::SCORE_MAX)) {
-                $errors["answers.{$index}.score"] = ['The score must be between '.self::SCORE_MIN.' and '.self::SCORE_MAX.'.'];
+                $errors["answers.{$index}.score"] = [new ErrorMessage('The score must be between :min and :max.', ['min' => self::SCORE_MIN, 'max' => self::SCORE_MAX])];
             }
 
             if ($answerNote !== null && mb_strlen($answerNote) > self::ANSWER_NOTE_MAX) {
-                $errors["answers.{$index}.note"] = ['The note can have at most '.self::ANSWER_NOTE_MAX.' characters.'];
+                $errors["answers.{$index}.note"] = [new ErrorMessage('The note can have at most :max characters.', ['max' => self::ANSWER_NOTE_MAX])];
             }
 
             // An answer with neither a score nor a note is a skipped question, the same as no answer.
@@ -90,7 +91,7 @@ final readonly class Scorecard
         ksort($checked);
 
         if ($errors !== []) {
-            throw new BusinessRuleViolation((string) reset($errors)[0], 'invalid-scorecard', extensions: ['errors' => $errors]);
+            throw new BusinessRuleViolation(reset($errors)[0], 'invalid-scorecard', extensions: ['errors' => $errors]);
         }
 
         if ($this->isSubmitted() && ! $recommendation instanceof Recommendation) {

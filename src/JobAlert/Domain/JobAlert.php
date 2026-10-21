@@ -88,7 +88,7 @@ final readonly class JobAlert
         $name = trim((string) preg_replace('/\s+/u', ' ', $name));
 
         if ($name === '' || mb_strlen($name) > self::MAX_NAME_LENGTH) {
-            throw new BusinessRuleViolation('The name must be 1 to '.self::MAX_NAME_LENGTH.' characters.', 'invalid-name');
+            throw new BusinessRuleViolation('The name must be 1 to :max characters.', 'invalid-name', parameters: ['max' => self::MAX_NAME_LENGTH]);
         }
 
         return $name;

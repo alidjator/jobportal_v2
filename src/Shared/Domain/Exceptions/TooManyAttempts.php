@@ -9,8 +9,14 @@ final class TooManyAttempts extends DomainException
 {
     public const string DEFAULT_CODE = 'too-many-requests';
 
-    public function __construct(string $message = '', public readonly int $retryAfterSeconds = 60, ?string $errorCode = null, ?Throwable $previous = null)
-    {
-        parent::__construct($message, $errorCode, $previous);
+    /** @param  array<string, string|int|float>  $parameters */
+    public function __construct(
+        string|ErrorMessage $message = '',
+        public readonly int $retryAfterSeconds = 60,
+        ?string $errorCode = null,
+        ?Throwable $previous = null,
+        array $parameters = [],
+    ) {
+        parent::__construct($message, $errorCode, $previous, parameters: $parameters);
     }
 }

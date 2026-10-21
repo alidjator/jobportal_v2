@@ -54,7 +54,7 @@ final readonly class ApprovalDelegations
         $today = $this->today();
 
         if ($from < $today || $to < $from || $from->modify('+'.(self::MAX_DAYS - 1).' days') < $to) {
-            throw new BusinessRuleViolation('A delegation starts today or later and lasts at most '.self::MAX_DAYS.' days.', 'invalid-delegation-range');
+            throw new BusinessRuleViolation('A delegation starts today or later and lasts at most :max days.', 'invalid-delegation-range', parameters: ['max' => self::MAX_DAYS]);
         }
 
         $delegateCompany = $delegateUserId === $actor->id ? null : $this->memberships->forUser($delegateUserId)?->companyId;

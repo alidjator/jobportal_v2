@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** What a candidate may send as the answer to a question of each type. Only the field of the type is accepted, and the options are named by position. */
 final class AnswerRules
@@ -76,13 +77,13 @@ final class AnswerRules
         $text = trim((string) $text);
 
         if ($text === '' || mb_strlen($text) > $max) {
-            throw self::invalid('text', "The answer must have between 1 and {$max} characters.");
+            throw self::invalid('text', new ErrorMessage('The answer must have between 1 and :max characters.', ['max' => $max]));
         }
 
         return $text;
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-answer', extensions: ['errors' => [$field => [$message]]]);
     }

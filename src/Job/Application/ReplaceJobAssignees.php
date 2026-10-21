@@ -15,6 +15,7 @@ use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * A company admin sets who works on a job: the whole set is replaced, it holds at least one member, and every member must belong to the company (an
@@ -113,7 +114,7 @@ final readonly class ReplaceJobAssignees
             throw new BusinessRuleViolation(
                 'Every assignee must be a member of the company.',
                 'invalid-assignees',
-                extensions: ['errors' => ['user_ids' => array_map(static fn (int $id): string => "The account {$id} is not a member of the company.", $strangers)]],
+                extensions: ['errors' => ['user_ids' => array_map(static fn (int $id): ErrorMessage => new ErrorMessage('The account :account is not a member of the company.', ['account' => $id]), $strangers)]],
             );
         }
     }

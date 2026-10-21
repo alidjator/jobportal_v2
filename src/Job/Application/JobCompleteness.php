@@ -7,6 +7,7 @@ use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * Whether a job may be live: every required field is filled (title, description of at least 50 characters, category, role, job type, level, work time,
@@ -42,7 +43,7 @@ final readonly class JobCompleteness
         $errors = [];
 
         if ($content->description === null || mb_strlen(trim($content->description)) < self::MIN_DESCRIPTION_LENGTH) {
-            $errors['description'][] = 'A description of at least '.self::MIN_DESCRIPTION_LENGTH.' characters is required.';
+            $errors['description'][] = new ErrorMessage('A description of at least :min characters is required.', ['min' => self::MIN_DESCRIPTION_LENGTH]);
         }
 
         foreach (self::REQUIRED_IDS as $field => $property) {
@@ -74,7 +75,7 @@ final readonly class JobCompleteness
         }
     }
 
-    private function deadlineProblem(JobContent $content, int $companyId, bool $checkRange): ?string
+    private function deadlineProblem(JobContent $content, int $companyId, bool $checkRange): string|ErrorMessage|null
     {
         if ($content->deadline === null) {
             return 'This field is required.';
@@ -92,7 +93,7 @@ final readonly class JobCompleteness
         }
 
         if ($content->deadline > $today->modify("+{$days} days")) {
-            return "The deadline cannot be more than {$days} days from today.";
+            return new ErrorMessage('The deadline cannot be more than :days days from today.', ['days' => $days]);
         }
 
         return null;

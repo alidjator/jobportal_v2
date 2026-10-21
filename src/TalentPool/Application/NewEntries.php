@@ -32,7 +32,7 @@ final readonly class NewEntries
         }
 
         if ($this->entries->count($entry->companyId) >= self::MAX_ENTRIES) {
-            throw new BusinessRuleViolation('A company keeps at most '.self::MAX_ENTRIES.' candidates in its talent pool.', 'talent-pool-limit');
+            throw new BusinessRuleViolation('A company keeps at most :max candidates in its talent pool.', 'talent-pool-limit', parameters: ['max' => self::MAX_ENTRIES]);
         }
 
         return $this->entries->add($entry);

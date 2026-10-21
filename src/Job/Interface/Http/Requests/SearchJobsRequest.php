@@ -120,7 +120,7 @@ final class SearchJobsRequest extends FormRequest
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
             if (is_string($value) && count(preg_split('/\s+/u', trim($value), -1, PREG_SPLIT_NO_EMPTY) ?: []) > self::MAX_WORDS) {
-                $fail('The search can have at most '.self::MAX_WORDS.' words.');
+                $fail('The search can have at most :max words.')->translate(['max' => (string) self::MAX_WORDS]);
             }
         };
     }
@@ -132,7 +132,7 @@ final class SearchJobsRequest extends FormRequest
             $values = is_string($value) ? array_map('trim', explode(',', $value)) : [];
 
             if ($values === [] || count($values) > self::MAX_VALUES) {
-                $fail('Give 1 to '.self::MAX_VALUES.' values separated by commas.');
+                $fail('Give 1 to :max values separated by commas.')->translate(['max' => (string) self::MAX_VALUES]);
 
                 return;
             }
@@ -141,7 +141,11 @@ final class SearchJobsRequest extends FormRequest
                 $valid = $allowed === null ? preg_match('/^[1-9][0-9]{0,18}$/', $item) === 1 : in_array($item, $allowed, true);
 
                 if (! $valid) {
-                    $fail($allowed === null ? 'Every value must be a positive whole number.' : 'Every value must be one of: '.implode(', ', $allowed).'.');
+                    if ($allowed === null) {
+                        $fail('Every value must be a positive whole number.')->translate();
+                    } else {
+                        $fail('Every value must be one of: :values.')->translate(['values' => implode(', ', $allowed)]);
+                    }
 
                     return;
                 }

@@ -26,7 +26,8 @@ final class MemberPermissionRules
             foreach ($held as $permission) {
                 if ($permission->requiresView()) {
                     throw new BusinessRuleViolation(
-                        "The permission {$permission->value} needs applications.view.", 'permission-requires-view', extensions: ['permission' => $permission->value],
+                        'The permission :permission needs applications.view.', 'permission-requires-view', extensions: ['permission' => $permission->value],
+                        parameters: ['permission' => $permission->value],
                     );
                 }
             }
@@ -36,7 +37,8 @@ final class MemberPermissionRules
             foreach ($held as $permission) {
                 if ($permission->requiresReview()) {
                     throw new BusinessRuleViolation(
-                        "The permission {$permission->value} needs applications.review.", 'permission-requires-review', extensions: ['permission' => $permission->value],
+                        'The permission :permission needs applications.review.', 'permission-requires-review', extensions: ['permission' => $permission->value],
+                        parameters: ['permission' => $permission->value],
                     );
                 }
             }

@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The rules of a norm table: well-formed rows, and no two ranges of one scale overlapping. */
 final class NormRules
@@ -23,7 +24,7 @@ final class NormRules
     public static function check(array $norms, array $knownScales): array
     {
         if (count($norms) > self::ROWS_MAX) {
-            throw self::invalid('A norm table may have at most '.self::ROWS_MAX.' rows.');
+            throw self::invalid(new ErrorMessage('A norm table may have at most :max rows.', ['max' => self::ROWS_MAX]));
         }
 
         $clean = [];
@@ -32,7 +33,7 @@ final class NormRules
             $band = trim($norm->band);
 
             if (! in_array($norm->scaleKey, $knownScales, true)) {
-                throw self::invalid("No question of this test uses the scale {$norm->scaleKey}.");
+                throw self::invalid(new ErrorMessage('No question of this test uses the scale :scale.', ['scale' => $norm->scaleKey]));
             }
 
             if ($norm->rawMin > $norm->rawMax) {
@@ -40,7 +41,7 @@ final class NormRules
             }
 
             if (abs($norm->standardScore) > self::SCORE_MAX) {
-                throw self::invalid('A standard score must lie between -'.self::SCORE_MAX.' and '.self::SCORE_MAX.'.');
+                throw self::invalid(new ErrorMessage('A standard score must lie between -:max and :max.', ['max' => self::SCORE_MAX]));
             }
 
             if ($band === '' || mb_strlen($band) > 40) {
@@ -50,7 +51,7 @@ final class NormRules
             $explanation = $norm->explanation === null ? null : trim($norm->explanation);
 
             if ($explanation !== null && mb_strlen($explanation) > self::EXPLANATION_MAX) {
-                throw self::invalid('An explanation may have at most '.self::EXPLANATION_MAX.' characters.');
+                throw self::invalid(new ErrorMessage('An explanation may have at most :max characters.', ['max' => self::EXPLANATION_MAX]));
             }
 
             $clean[] = new Norm($norm->scaleKey, $norm->rawMin, $norm->rawMax, round($norm->standardScore, 2), $band, $explanation === '' ? null : $explanation);
@@ -60,14 +61,14 @@ final class NormRules
 
         for ($i = 1; $i < count($clean); $i++) {
             if ($clean[$i]->scaleKey === $clean[$i - 1]->scaleKey && $clean[$i]->rawMin <= $clean[$i - 1]->rawMax) {
-                throw self::invalid("The ranges of the scale {$clean[$i]->scaleKey} overlap.");
+                throw self::invalid(new ErrorMessage('The ranges of the scale :scale overlap.', ['scale' => $clean[$i]->scaleKey]));
             }
         }
 
         return $clean;
     }
 
-    private static function invalid(string $message): BusinessRuleViolation
+    private static function invalid(string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-norms', extensions: ['errors' => ['norms' => [$message]]]);
     }

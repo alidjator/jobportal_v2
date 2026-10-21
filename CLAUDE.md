@@ -31,6 +31,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   class, thin controllers, FormRequests, API resources, no global helpers, no cross-context foreign keys or table reads (use ports in `src/Shared`).
   **One documented exception (decided 2026-10-07):** the operational tool `src/LegacyImport` (data migration from karir.pkp, no API) may write the tables of other contexts directly, only in its own
   Infrastructure layer, one writer class per entity, because it must set values the application never writes (`verified_at`, historical stages and times, legacy timestamps); its tests check the result through the real API.
+  The operational tool `src/DemoData` (`demo:seed`, decided 2026-10-21) writes nothing directly: it calls the use cases of other contexts as a client does (`docs/design/phase-8-demo-data.md`).
 - **English everywhere:** identifiers, comments, documentation, commit messages, API error messages. Map Indonesian terms to common job-portal English
   (lamaran = application, lowongan = job, pelamar = applicant, perusahaan = company). New table, column and route names are designed freely, not bound to legacy names.
 - Match the surrounding code (comment density, naming, idiom). Every new behaviour gets tests (written with the code); Pint and PHPStan must be clean before a commit, checked by the user in the separate check step below (never by you on your own).

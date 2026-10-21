@@ -50,9 +50,9 @@ final readonly class ScoreDrawing
             $max = $this->questions->find($questionId)->points ?? 0;
 
             if ($score < 0 || $score > $max) {
-                $message = "The score must be from 0 to {$max}.";
+                $message = 'The score must be from 0 to :max.';
 
-                throw new BusinessRuleViolation($message, 'invalid-score', extensions: ['errors' => ['score' => [$message]]]);
+                throw new BusinessRuleViolation($message, 'invalid-score', extensions: ['errors' => ['score' => [$message]]], parameters: ['max' => $max]);
             }
 
             $note = $note === null || trim($note) === '' ? null : trim($note);

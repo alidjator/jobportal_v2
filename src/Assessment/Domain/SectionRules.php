@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The rules of a section: its title, its format and what the format allows, and its time. */
 final class SectionRules
@@ -69,7 +70,7 @@ final class SectionRules
             $value = $settings[$key] ?? null;
 
             if (! is_int($value) || $value < $min || $value > $max) {
-                throw self::invalid('settings', "The setting {$key} must be a whole number between {$min} and {$max}.");
+                throw self::invalid('settings', new ErrorMessage('The setting :setting must be a whole number between :min and :max.', ['setting' => $key, 'min' => $min, 'max' => $max]));
             }
 
             $clean[$key] = $value;
@@ -99,7 +100,7 @@ final class SectionRules
         }
 
         if ($seconds === null || $seconds < self::DURATION_MIN_SECONDS || $seconds > $maxSeconds) {
-            throw self::invalid('duration_seconds', 'The section time must be between '.self::DURATION_MIN_SECONDS.' and '.$maxSeconds.' seconds.');
+            throw self::invalid('duration_seconds', new ErrorMessage('The section time must be between :min and :max seconds.', ['min' => self::DURATION_MIN_SECONDS, 'max' => $maxSeconds]));
         }
 
         return $seconds;
@@ -135,7 +136,7 @@ final class SectionRules
         }
     }
 
-    private static function invalid(string $field, string $message, string $code = 'invalid-section'): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message, string $code = 'invalid-section'): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, $code, extensions: ['errors' => [$field => [$message]]]);
     }

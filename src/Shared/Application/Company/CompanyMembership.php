@@ -44,7 +44,8 @@ final readonly class CompanyMembership
     {
         if (! $this->can($permission)) {
             throw new AccessDenied(
-                "This action needs the permission {$permission->value}.", 'company-permission-required', extensions: ['permission' => $permission->value],
+                'This action needs the permission :permission.', 'company-permission-required', extensions: ['permission' => $permission->value],
+                parameters: ['permission' => $permission->value],
             );
         }
     }

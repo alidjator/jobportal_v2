@@ -44,7 +44,7 @@ final readonly class GenerateCv
 
         foreach ($spec->include as $key) {
             $include[] = CvInclusion::tryFrom($key) ?? throw new BusinessRuleViolation(
-                "A CV cannot include {$key}.", 'invalid-cv', extensions: ['errors' => ['include' => ["A CV cannot include {$key}."]]],
+                'A CV cannot include :key.', 'invalid-cv', extensions: ['errors' => ['include' => ['A CV cannot include :key.']]], parameters: ['key' => $key],
             );
         }
 

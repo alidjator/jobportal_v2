@@ -5,6 +5,7 @@ namespace Src\Recruitment\Domain;
 use DateTimeImmutable;
 use DateTimeZone;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
@@ -65,19 +66,19 @@ final readonly class Offer
 
         $errors = match (true) {
             $position === '' => ['position' => 'Give the position that is offered.'],
-            mb_strlen($position) > self::POSITION_MAX => ['position' => 'The position can have at most '.self::POSITION_MAX.' characters.'],
-            $salary < 1 || $salary > self::SALARY_MAX => ['salary' => 'The monthly salary must be between 1 and '.self::SALARY_MAX.' Rupiah.'],
+            mb_strlen($position) > self::POSITION_MAX => ['position' => new ErrorMessage('The position can have at most :max characters.', ['max' => self::POSITION_MAX])],
+            $salary < 1 || $salary > self::SALARY_MAX => ['salary' => new ErrorMessage('The monthly salary must be between 1 and :max Rupiah.', ['max' => self::SALARY_MAX])],
             $startDate->format('Y-m-d') < $today => ['start_date' => 'The start date cannot be in the past.'],
-            $note !== null && mb_strlen($note) > self::NOTE_MAX => ['note' => 'The note can have at most '.self::NOTE_MAX.' characters.'],
+            $note !== null && mb_strlen($note) > self::NOTE_MAX => ['note' => new ErrorMessage('The note can have at most :max characters.', ['max' => self::NOTE_MAX])],
             $expiresAt <= $now => ['expires_at' => 'The deadline must be in the future.'],
-            $expiresAt > $now->modify('+'.self::VALID_DAYS_MAX.' days') => ['expires_at' => 'The deadline can be at most '.self::VALID_DAYS_MAX.' days away.'],
+            $expiresAt > $now->modify('+'.self::VALID_DAYS_MAX.' days') => ['expires_at' => new ErrorMessage('The deadline can be at most :days days away.', ['days' => self::VALID_DAYS_MAX])],
             default => [],
         };
 
         if ($errors !== []) {
-            $message = (string) reset($errors);
+            $message = reset($errors);
 
-            throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string $text): array => [$text], $errors)]);
+            throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string|ErrorMessage $text): array => [$text], $errors)]);
         }
 
         return new self($applicationId, $position, $salary, $startDate->setTime(0, 0), $note, $expiresAt, $createdBy, OfferStatus::Pending, null, null, $now, terms: $terms);

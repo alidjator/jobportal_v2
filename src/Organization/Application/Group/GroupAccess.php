@@ -49,7 +49,7 @@ final readonly class GroupAccess
         }
 
         if ($permission !== null && ! $member->can($permission)) {
-            throw new AccessDenied("The group permission {$permission->value} is needed.", 'group-permission-required');
+            throw new AccessDenied('The group permission :permission is needed.', 'group-permission-required', parameters: ['permission' => $permission->value]);
         }
 
         return new GroupContext($group, $member);

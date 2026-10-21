@@ -38,7 +38,7 @@ final readonly class FlowRules
     public function assertValid(FlowOwner $owner, int $groupId, ApprovalSubjectType $type, array $steps): void
     {
         if ($steps === [] || count($steps) > self::MAX_STEPS) {
-            throw new BusinessRuleViolation('A flow has 1 to '.self::MAX_STEPS.' steps.', 'invalid-flow-steps');
+            throw new BusinessRuleViolation('A flow has 1 to :max steps.', 'invalid-flow-steps', parameters: ['max' => self::MAX_STEPS]);
         }
 
         foreach ($steps as $step) {
@@ -50,14 +50,19 @@ final readonly class FlowRules
     private function assertConditions(ApprovalSubjectType $type, FlowStep $step): void
     {
         if (count($step->conditions) > self::MAX_CONDITIONS) {
-            throw new BusinessRuleViolation("Step {$step->position} has more than ".self::MAX_CONDITIONS.' conditions.', 'invalid-flow-condition');
+            throw new BusinessRuleViolation('Step :position has more than :max conditions.', 'invalid-flow-condition', parameters: ['position' => $step->position, 'max' => self::MAX_CONDITIONS]);
         }
 
         foreach ($step->conditions as $condition) {
-            $fact = $type->fact($condition->fact) ?? throw new BusinessRuleViolation("Step {$step->position}: {$type->code} has no fact {$condition->fact}.", 'invalid-flow-condition');
+            $fact = $type->fact($condition->fact) ?? throw new BusinessRuleViolation(
+                'Step :position: :type has no fact :fact.', 'invalid-flow-condition', parameters: ['position' => $step->position, 'type' => $type->code, 'fact' => $condition->fact],
+            );
 
             if (! $this->fits($fact, $condition)) {
-                throw new BusinessRuleViolation("Step {$step->position}: the condition on {$condition->fact} does not fit the fact (type {$fact->type}).", 'invalid-flow-condition');
+                throw new BusinessRuleViolation(
+                    'Step :position: the condition on :fact does not fit the fact (type :type).', 'invalid-flow-condition',
+                    parameters: ['position' => $step->position, 'fact' => $condition->fact, 'type' => $fact->type],
+                );
             }
         }
     }
@@ -86,7 +91,7 @@ final readonly class FlowRules
     private function assertApprovers(FlowOwner $owner, int $groupId, ApprovalSubjectType $type, FlowStep $step): void
     {
         if ($step->approvers === [] || count($step->approvers) > self::MAX_APPROVERS) {
-            throw new BusinessRuleViolation("Step {$step->position} has 1 to ".self::MAX_APPROVERS.' approvers.', 'invalid-flow-approver');
+            throw new BusinessRuleViolation('Step :position has 1 to :max approvers.', 'invalid-flow-approver', parameters: ['position' => $step->position, 'max' => self::MAX_APPROVERS]);
         }
 
         $seen = [];
@@ -95,7 +100,7 @@ final readonly class FlowRules
             $key = $approver->kind->value.':'.$approver->value;
 
             if (isset($seen[$key]) || ! $this->approverFits($owner, $groupId, $type, $approver)) {
-                throw new BusinessRuleViolation("Step {$step->position}: the approver {$key} is not valid or is named twice.", 'invalid-flow-approver');
+                throw new BusinessRuleViolation('Step :position: the approver :approver is not valid or is named twice.', 'invalid-flow-approver', parameters: ['position' => $step->position, 'approver' => $key]);
             }
 
             $seen[$key] = true;

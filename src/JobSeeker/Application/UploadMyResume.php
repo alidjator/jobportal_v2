@@ -47,7 +47,7 @@ final readonly class UploadMyResume
         $maxKb = $this->settings->integer(JobSeekerSettings::RESUME_MAX_SIZE_KB);
 
         if (strlen($contents) > $maxKb * 1024) {
-            throw new BusinessRuleViolation("The file is larger than the allowed {$maxKb} KB.", 'file-too-large', extensions: ['max_size_kb' => $maxKb]);
+            throw new BusinessRuleViolation('The file is larger than the allowed :max KB.', 'file-too-large', extensions: ['max_size_kb' => $maxKb], parameters: ['max' => $maxKb]);
         }
 
         ResumePdf::check($contents);
@@ -62,7 +62,7 @@ final readonly class UploadMyResume
                 $this->profiles->lock($userId, $now);
 
                 if ($this->resumes->count($userId) >= ResumePdf::RESUMES_MAX) {
-                    throw new StateConflict('A profile can have at most '.ResumePdf::RESUMES_MAX.' resumes.', 'resume-limit-reached');
+                    throw new StateConflict('A profile can have at most :max resumes.', 'resume-limit-reached', parameters: ['max' => ResumePdf::RESUMES_MAX]);
                 }
 
                 return $this->resumes->add(new Resume($userId, ResumePdf::cleanName($originalName), $path, strlen($contents), $now));

@@ -3,6 +3,7 @@
 namespace Src\Assessment\Domain;
 
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /** The content limits of the descriptive part of a test. */
 final class TestRules
@@ -22,7 +23,7 @@ final class TestRules
         $length = mb_strlen($title);
 
         if ($length < self::TITLE_MIN || $length > self::TITLE_MAX) {
-            throw self::invalid('title', 'The title must have between '.self::TITLE_MIN.' and '.self::TITLE_MAX.' characters.');
+            throw self::invalid('title', new ErrorMessage('The title must have between :min and :max characters.', ['min' => self::TITLE_MIN, 'max' => self::TITLE_MAX]));
         }
 
         return $title;
@@ -38,7 +39,7 @@ final class TestRules
         $text = $text === null ? '' : trim($text);
 
         if (mb_strlen($text) > self::TEXT_MAX) {
-            throw self::invalid($field, "The {$field} may have at most ".self::TEXT_MAX.' characters.');
+            throw self::invalid($field, new ErrorMessage("The {$field} may have at most :max characters.", ['max' => self::TEXT_MAX]));
         }
 
         return $text === '' ? null : $text;
@@ -57,7 +58,7 @@ final class TestRules
         $clean = array_map(static fn (string $capability): string => trim($capability), $capabilities);
 
         if (count($clean) > Test::CAPABILITIES_MAX) {
-            throw self::invalid('measured_capabilities', 'A test may list at most '.Test::CAPABILITIES_MAX.' measured capabilities.');
+            throw self::invalid('measured_capabilities', new ErrorMessage('A test may list at most :max measured capabilities.', ['max' => Test::CAPABILITIES_MAX]));
         }
 
         $seen = [];
@@ -66,7 +67,7 @@ final class TestRules
             $length = mb_strlen($capability);
 
             if ($length < 1 || $length > Test::CAPABILITY_MAX_LENGTH) {
-                throw self::invalid('measured_capabilities', 'Every capability must have between 1 and '.Test::CAPABILITY_MAX_LENGTH.' characters.');
+                throw self::invalid('measured_capabilities', new ErrorMessage('Every capability must have between 1 and :max characters.', ['max' => Test::CAPABILITY_MAX_LENGTH]));
             }
 
             $key = mb_strtolower($capability);
@@ -81,7 +82,7 @@ final class TestRules
         return $clean;
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-test', extensions: ['errors' => [$field => [$message]]]);
     }

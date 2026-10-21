@@ -55,7 +55,7 @@ final readonly class MessageComposer
         $body = $body === '' ? null : $body;
 
         if ($body !== null && mb_strlen($body) > MessagingRules::BODY_MAX_LENGTH) {
-            throw new BusinessRuleViolation('A message can have at most '.MessagingRules::BODY_MAX_LENGTH.' characters.', 'body-too-long');
+            throw new BusinessRuleViolation('A message can have at most :max characters.', 'body-too-long', parameters: ['max' => MessagingRules::BODY_MAX_LENGTH]);
         }
 
         if ($body === null && $input->uploads === []) {
@@ -63,7 +63,7 @@ final readonly class MessageComposer
         }
 
         if (count($input->uploads) > MessagingRules::ATTACHMENTS_MAX) {
-            throw new BusinessRuleViolation('A message can have at most '.MessagingRules::ATTACHMENTS_MAX.' files.', 'too-many-attachments');
+            throw new BusinessRuleViolation('A message can have at most :max files.', 'too-many-attachments', parameters: ['max' => MessagingRules::ATTACHMENTS_MAX]);
         }
 
         $maxBytes = $this->settings->integer(MessagingSettings::MAX_ATTACHMENT_BYTES);
@@ -72,7 +72,7 @@ final readonly class MessageComposer
 
         foreach ($input->uploads as $upload) {
             if (strlen($upload->contents) > $maxBytes) {
-                throw new BusinessRuleViolation('A file is larger than the allowed '.$maxBytes.' bytes.', 'file-too-large', extensions: ['max_bytes' => $maxBytes]);
+                throw new BusinessRuleViolation('A file is larger than the allowed :max bytes.', 'file-too-large', extensions: ['max_bytes' => $maxBytes], parameters: ['max' => $maxBytes]);
             }
 
             $mime = AttachmentContent::mimeOf($upload->contents);

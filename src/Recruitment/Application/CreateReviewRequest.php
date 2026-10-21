@@ -90,9 +90,9 @@ final readonly class CreateReviewRequest
         $due = DateTimeImmutable::createFromFormat('!Y-m-d', $dueOn, new DateTimeZone('Asia/Jakarta'));
 
         if ($due === false || $due < $today || $due > $today->add(new DateInterval('P'.ReviewRequest::DUE_MAX_DAYS.'D'))) {
-            $message = 'Choose a due date from today to '.ReviewRequest::DUE_MAX_DAYS.' days ahead.';
+            $message = 'Choose a due date from today to :days days ahead.';
 
-            throw new BusinessRuleViolation($message, 'invalid-due-date', extensions: ['errors' => ['due_on' => [$message]]]);
+            throw new BusinessRuleViolation($message, 'invalid-due-date', extensions: ['errors' => ['due_on' => [$message]]], parameters: ['days' => ReviewRequest::DUE_MAX_DAYS]);
         }
 
         return $due;

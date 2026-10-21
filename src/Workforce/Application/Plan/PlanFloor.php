@@ -27,7 +27,8 @@ final readonly class PlanFloor
         foreach ($this->requisitions->usedHiresByPosition($legalEntityId, $fiscalYear) as $positionId => $used) {
             if ($used > ($additions[$positionId] ?? 0)) {
                 throw new BusinessRuleViolation(
-                    "Requisitions already use {$used} hire(s) of position {$positionId}, so its additions cannot be lower.", 'plan-below-requisitions', extensions: ['position_id' => $positionId, 'used' => $used],
+                    'Requisitions already use :used hire(s) of position :position, so its additions cannot be lower.', 'plan-below-requisitions',
+                    extensions: ['position_id' => $positionId, 'used' => $used], parameters: ['used' => $used, 'position' => $positionId],
                 );
             }
         }

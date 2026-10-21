@@ -9,15 +9,15 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `account-not-correctable` | 409 | Identity | Psychologist accounts are managed through the assessment console, not here. |
 | `account-not-imported` | 409 | Identity | Only an account imported from karir.pkp gets an activation email. |
 | `account-suspended` | 403 | Identity | This account has been suspended. |
-| `activation-batch-limit-exceeded` | 422 | Identity |  |
+| `activation-batch-limit-exceeded` | 422 | Identity | The previous batch (:batch) had :bounces% bounces (limit :bounce_limit%) and :complaints% complaints (limit :complaint_limit%). Look at it before sending more. |
 | `activation-limit-invalid` | 422 | Identity | The settings identity.activation_bounce_limit_percent and identity.activation_complaint_limit_percent must be numbers. |
-| `activation-not-yet-open` | 422 | Identity |  |
+| `activation-not-yet-open` | 422 | Identity | Job seekers are not emailed before the date in identity.activation_job_seekers_not_before (empty: set it). |
 | `activation-support-contact-missing` | 422 | Identity | Set the setting platform.support_email before sending activation emails. |
 | `activation-url-missing` | 422 | Identity | Set the activation and sign-in page URLs (see .env.example) before sending activation emails. |
 | `admin-not-active` | 409 | Identity | Only an active administrator can be suspended. |
 | `admin-not-suspended` | 409 | Identity | Only a suspended administrator can be reactivated. |
 | `admin-only` | 403 | Dashboard, JobSeeker, Newsletter, Review | Only an admin has this dashboard. |
-| `alert-limit` | 422 | JobAlert |  |
+| `alert-limit` | 422 | JobAlert | You can have at most :max job alerts. Delete one first. |
 | `already-applied` | 409, 422 | JobInvitation, Recruitment | This candidate already applied to the job. |
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
 | `already-in-talent-pool` | 409 | TalentPool | This candidate is already in your talent pool. |
@@ -39,10 +39,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `approval-not-internal-tenant` | 422 | Approval | Approvals belong to the tenants of an ERP group. |
 | `approval-not-pending` | 409 | Approval | This approval has ended. |
 | `approval-reason-required` | 422 | Approval | A reason of 5 to 500 characters is required. |
-| `approval-requester-only-approver` | 422 | Approval |  |
+| `approval-requester-only-approver` | 422 | Approval | Step :position could only be approved by the requester. |
 | `approval-slot-not-open` | 409 | Approval | This approval place is not open. |
 | `approval-slot-not-vacant` | 409 | Approval | This approval place is not vacant. |
-| `approval-unknown-subject-type` | 422 | Approval |  |
+| `approval-unknown-subject-type` | 422 | Approval | The subject type :type is not registered for approval. |
 | `assessment-required` | 422 | Recruitment |  |
 | `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
 | `attempt-moved` | 409 | Assessment | This test is open on another device now. Start it again here to take it back. |
@@ -53,8 +53,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `before-first-version` | 422 | Organization | The change is dated before the first version exists. |
-| `body-too-long` | 422 | Messaging |  |
-| `call-attempts-used` | 409 | Recruitment |  |
+| `body-too-long` | 422 | Messaging | A message can have at most :max characters. |
+| `call-attempts-used` | 409 | Recruitment | The candidate was already called :attempts times. Reschedule the interview. |
 | `call-in-progress` | 409 | Recruitment | The candidate is already being called. |
 | `campaign-code-taken` | 409 | Campaign | This campaign code is already used. |
 | `campaign-has-registrations` | 409 | Campaign | Someone registered with this campaign; switch it off instead. |
@@ -67,8 +67,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `cannot-reset-self` | 409 | Company | You cannot reset your own second factor here. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
 | `cannot-suspend-self` | 409 | Company | You cannot suspend yourself. |
-| `category-limit` | 422 | TalentPool |  |
-| `category-name-invalid` | 422 | TalentPool |  |
+| `category-limit` | 422 | TalentPool | A company has at most :max categories. |
+| `category-name-invalid` | 422 | TalentPool | A category name has 1 to :max characters. |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `chunk-out-of-order` | 409 | Assessment | Send the chunks in order. |
@@ -82,7 +82,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | This company is suspended. |
 | `consent-required` | 422 | Assessment | Agree to the terms of the test to start it. |
 | `contact-not-available` | 403 | Recruitment | The resume opens when the application moves to screening, or once the company is verified. |
-| `contract-too-long` | 422 | Recruitment |  |
+| `contract-too-long` | 422 | Recruitment | An internship can last at most :max months. |
 | `conversation-blocked` | 409 | Messaging | The candidate closed this conversation. You cannot send messages in it. |
 | `conversation-closed` | 409 | Messaging | This conversation is closed. The company must reopen it first. |
 | `conversation-exists` | 409 | Messaging | This company already has a conversation with this job seeker, started by another member. |
@@ -95,14 +95,16 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `data-export-limit` | 429 | JobSeeker | You can ask for a copy of your data once a day. |
 | `data-export-running` | 409 | JobSeeker | A copy of your data is already being prepared. |
 | `default-stage-cannot-be-deleted` | 409 | Recruitment | A default stage cannot be deleted. |
-| `delete-window-over` | 409 | Messaging |  |
+| `delete-window-over` | 409 | Messaging | A message can only be deleted within :minutes minutes of sending it. |
 | `deletion-already-requested` | 409 | Identity | The deletion of this account was already requested. |
 | `deletion-not-requested` | 409 | Identity | No deletion of this account is pending. |
+| `demo-data-exists` | 409 | DemoData | The demo data already exists. Rebuild the database (migrate:fresh, db:seed) to seed it again. |
+| `demo-references-missing` | 409 | DemoData | The reference data has no active :master: run db:seed first. |
 | `document-approved` | 409 | Company | An approved document cannot be deleted; upload a new file to replace it. |
 | `document-changed` | 409 | Company | The company replaced this document after you opened it. Reload and review the latest file. |
 | `document-not-pending` | 409 | Company | Only a pending document can be reviewed. |
 | `document-type-inactive` | 422 | Company | This document type is not accepted at the moment. |
-| `education-limit-reached` | 409 | JobSeeker |  |
+| `education-limit-reached` | 409 | JobSeeker | A profile can have at most :max education entries. |
 | `email-already-registered` | 409 | Assessment, Company, Identity | An account with this email already exists. |
 | `email-already-verified` | 409 | Identity | The email address is already verified. |
 | `email-change-code-invalid` | 422 | Identity | The code is incorrect. |
@@ -115,12 +117,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `email-undeliverable` | 422 | Identity | This address does not receive email, so the code could not arrive. Use another address. |
 | `empty-message` | 422 | Messaging | A message needs a text or at least one file. |
 | `entry-unavailable` | 422 | JobInvitation | This candidate cannot be invited right now. |
-| `experience-limit-reached` | 409 | JobSeeker |  |
+| `experience-limit-reached` | 409 | JobSeeker | A profile can have at most :max work experiences. |
 | `explanation-required` | 422 | Assessment | Write the explanation for the candidate. |
-| `export-too-large` | 422 | Recruitment |  |
+| `export-too-large` | 422 | Recruitment | An export can hold at most :max hires; narrow the period or the job. |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
-| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging, Recruitment | A chunk is larger than the allowed 5 MB. |
+| `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging, Recruitment | The drawing is larger than the allowed :max MB. |
 | `filter-not-available` | 422 | JobSeeker | The religion, nationality, age and gender filters are not available. |
 | `forbidden` | 403 | Assessment, Company, Content, Identity, Job, Messaging, Organization, Platform, Platform | You are not allowed to perform this action. |
 | `google-email-not-verified` | 401 | Identity | Google has not verified this email address. |
@@ -130,7 +132,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `group-already-suspended` | 409 | Organization | The group is already suspended. |
 | `group-name-taken` | 409 | Organization | A group with this name already exists. |
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
-| `group-permission-required` | 403 | Organization, Workforce | Support access is read only. |
+| `group-permission-required` | 403 | Organization, Workforce | The group permission :permission is needed. |
 | `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
 | `image-not-found` | 404 | Company | Image not found. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
@@ -158,12 +160,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-coordinates` | 422 | Company, Shared | Give both the latitude and the longitude, or neither. |
 | `invalid-cost-centre` | 422 | Organization | The cost centre is not an active cost centre of the legal entity. |
 | `invalid-credentials` | 401 | Identity | The email or password is incorrect. |
-| `invalid-criteria` | 422 | JobAlert | The salary period must be a positive whole number. |
+| `invalid-criteria` | 422 | JobAlert | The keyword can have at most :words words and :characters characters. |
 | `invalid-cursor` | 422 | Messaging, Notification, Platform, Recruitment | The cursor is not valid. Start again without a cursor. |
 | `invalid-cv` | 422 | JobSeeker | The language of a CV is id or en. |
-| `invalid-decision` | 422 | Messaging |  |
+| `invalid-decision` | 422 | Messaging | Say what was done (at most :max characters). |
 | `invalid-delegate` | 422 | Approval | The delegate must be another member of a tenant of the same group. |
-| `invalid-delegation-range` | 422 | Approval |  |
+| `invalid-delegation-range` | 422 | Approval | A delegation starts today or later and lasts at most :max days. |
 | `invalid-document` | 422 | Company | The file must be a PDF or a JPEG, PNG or WebP image. |
 | `invalid-due-date` | 422 | Recruitment |  |
 | `invalid-education` | 422 | JobSeeker | The education level does not exist or is not active. |
@@ -171,9 +173,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-export-range` | 422 | Recruitment | The period must run from one day to a later or the same day, and last at most 366 days. |
-| `invalid-flow-approver` | 422 | Approval |  |
-| `invalid-flow-condition` | 422 | Approval |  |
-| `invalid-flow-steps` | 422 | Approval |  |
+| `invalid-flow-approver` | 422 | Approval | Step :position has 1 to :max approvers. |
+| `invalid-flow-condition` | 422 | Approval | Step :position has more than :max conditions. |
+| `invalid-flow-steps` | 422 | Approval | A flow has 1 to :max steps. |
 | `invalid-google-token` | 401 | Identity | The Google token is not valid. |
 | `invalid-grade` | 422 | Organization | The grade is not an active grade of the group. |
 | `invalid-grade-range` | 422 | Organization | The lowest grade ranks above the highest grade. |
@@ -195,7 +197,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker, Organization, Recruitment, Workforce | The address is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-location-name` | 422 | Company | The location name must have 1 to 100 characters. |
-| `invalid-name` | 422 | JobAlert |  |
+| `invalid-name` | 422 | JobAlert | The name must be 1 to :max characters. |
 | `invalid-name-change` | 422 | Company | The name change request is not valid. |
 | `invalid-navigation` | 422 | Assessment |  |
 | `invalid-norms` | 422 | Assessment |  |
@@ -219,11 +221,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-reports-to` | 422 | Organization | The position it reports to is not an active position of the legal entity that exists from the day of the change. |
 | `invalid-requisition` | 422 | Workforce | The requisition does not exist for this tenant. |
 | `invalid-requisition-field` | 422 | Workforce | The minimum salary is above the maximum. |
-| `invalid-resume` | 422 | JobSeeker |  |
+| `invalid-resume` | 422 | JobSeeker | The name must have between 1 and :max characters and no path or control characters. |
 | `invalid-reviewers` | 422 | Recruitment |  |
 | `invalid-role-name` | 422 | Identity | A role name is 3 to 50 lowercase letters, digits or underscores, starting with a letter. |
 | `invalid-schedule` | 422 | Recruitment |  |
-| `invalid-score` | 422 | Assessment |  |
+| `invalid-score` | 422 | Assessment | The score must be a whole number from 0 to :points. |
 | `invalid-scorecard` | 422 | Recruitment |  |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
@@ -234,7 +236,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-stage` | 422 | Job, Recruitment | The stage must be an active stage of the company. |
 | `invalid-stage-order` | 422 | Recruitment |  |
 | `invalid-support-admin` | 422 | Organization | This platform admin cannot receive support access. |
-| `invalid-support-duration` | 422 | Organization |  |
+| `invalid-support-duration` | 422 | Organization | Support access lasts 1 to :max hours. |
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-unit` | 422 | Organization | The unit is not an active unit of the legal entity that exists from the day of the change. |
@@ -255,7 +257,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invitation-not-started` | 409 | Assessment | Only a test that was started can be submitted. |
 | `job-deadline-passed` | 409 | Job | The deadline of this job has passed. |
 | `job-incomplete` | 422 | Job | The job is not complete. |
-| `job-locked-after-applications` | 409 | Job |  |
+| `job-locked-after-applications` | 409 | Job | This job already has applications, so :fields can no longer change. |
 | `job-not-active` | 409 | Job | Only a live job can be closed. |
 | `job-not-draft` | 409 | Job | Only a draft can be deleted; close the job instead. |
 | `job-not-editable` | 409 | Job, Recruitment | A job in this status cannot be edited. |
@@ -292,7 +294,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `location-limit-reached` | 422 | Company | The company has reached the largest number of locations. |
 | `location-name-taken` | 422 | Company | Another location of this company already has this name. |
 | `location-not-found` | 404 | Company | Location not found. |
-| `location-parent-required` | 422 | ReferenceData |  |
+| `location-parent-required` | 422 | ReferenceData | Filter by :parent to list the :level. |
 | `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
 | `membership-suspended` | 403 | Company | Your access to the company was suspended by a company admin. |
@@ -333,7 +335,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `not-note-author` | 403 | Recruitment | Only the author or a company admin can delete a note. |
 | `not-on-panel` | 403 | Recruitment | Only the members of the interview panel can fill a scorecard. |
 | `not-your-message` | 403 | Messaging | Only the sender can delete a message. |
-| `note-too-long` | 422 | JobInvitation, TalentPool |  |
+| `note-too-long` | 422 | JobInvitation, TalentPool | The note may have at most :max characters. |
 | `offer-expired` | 409 | Recruitment | This offer has expired. |
 | `offer-not-pending` | 409 | Recruitment | This offer is no longer pending. |
 | `offer-pending` | 409 | Recruitment | This application has a pending offer. |
@@ -341,14 +343,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `own-review` | 403 | Review | You cannot report your own review. |
 | `owner-required` | 403 | Company | Only the owner of the company can hand the ownership over. |
 | `owner-target-not-company-admin` | 409 | Company | The owner must be an active company admin of the company. |
-| `page-out-of-range` | 422 | Job |  |
+| `page-out-of-range` | 422 | Job | The search shows at most the first :max results; narrow it down instead. |
 | `parent-cycle` | 422 | Organization | The parent would make the unit its own ancestor. |
 | `password-not-set` | 409 | Identity | This account has no password. Set one through the password reset flow. |
 | `password-required` | 422 | Identity | Set a password before deleting the account. |
-| `permission-requires-review` | 422 | Company |  |
-| `permission-requires-view` | 422 | Company |  |
+| `permission-requires-review` | 422 | Company | The permission :permission needs applications.review. |
+| `permission-requires-view` | 422 | Company | The permission :permission needs applications.view. |
 | `permissions-required` | 422 | Company, Identity | A member needs at least one permission. |
-| `plan-below-requisitions` | 422 | Workforce |  |
+| `plan-below-requisitions` | 422 | Workforce | Requisitions already use :used hire(s) of position :position, so its additions cannot be lower. |
 | `plan-empty` | 422 | Workforce | A plan without lines cannot be submitted. |
 | `plan-entity-without-tenant` | 422 | Workforce | The legal entity has no tenant that could take the plan through approval. |
 | `plan-exists` | 409 | Workforce | This legal entity already has a plan for this fiscal year: change its open version or revise the one in force. |
@@ -359,9 +361,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `position-in-use` | 409 | Organization | An active position still reports to this position. |
 | `position-inactive` | 409 | Organization | The position is inactive. |
 | `probation-not-allowed` | 422 | Recruitment | A probation period is only allowed for a permanent employee. |
-| `probation-too-long` | 422 | Recruitment |  |
+| `probation-too-long` | 422 | Recruitment | A probation period can be at most :max months. |
 | `profile-incomplete` | 422 | Recruitment | Complete your profile before applying. |
-| `proposal-limit` | 409 | Recruitment |  |
+| `proposal-limit` | 409 | Recruitment | You already proposed another time :max times. Confirm or decline this interview. |
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
 | `provider-code-taken` | 409 | Assessment | A provider with this code already exists. |
 | `provider-name-taken` | 409 | Assessment | A provider with this name already exists. |
@@ -374,7 +376,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
 | `reason-required` | 422 | Organization, Recruitment | A change dated in the past needs a reason of 5 to 500 characters. |
-| `reason-too-long` | 422 | JobInvitation |  |
+| `reason-too-long` | 422 | JobInvitation | The reason may have at most :max characters. |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
 | `recording-consent-required` | 422 | Recruitment |  |
@@ -383,7 +385,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `recording-not-finished` | 409 | Recruitment | This recording is not finished yet. |
 | `recording-not-ready` | 409 | Recruitment | This recording has no file. |
 | `recording-started` | 409 | Recruitment | The interview was already recorded, so the consent can no longer be withdrawn. Ask the company to delete the recording. |
-| `reference-value-taken` | 409 | ReferenceData |  |
+| `reference-value-taken` | 409 | ReferenceData | The :field is already used. |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
 | `report-decided` | 409 | Messaging | This report was already decided. |
@@ -399,11 +401,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `requisition-not-cancellable` | 409 | Workforce | This requisition can no longer be cancelled. |
 | `requisition-not-editable` | 409 | Workforce | Only a draft or a rejected requisition can be submitted. |
 | `requisition-not-open` | 409 | Workforce | Only an approved requisition or one in recruitment can be amended. |
-| `requisition-quota-exceeded` | 422 | Workforce |  |
+| `requisition-quota-exceeded` | 422 | Workforce | The plan has :remaining hire(s) left for this position and fiscal year. |
 | `requisition-required` | 422 | Job | This tenant opens its jobs from an approved requisition, so a job cannot be cloned. |
 | `requisition-vacancies-exceeded` | 422 | Workforce | All the hires of this requisition are already open in jobs. |
-| `reschedule-too-late` | 409 | Recruitment |  |
-| `resume-limit-reached` | 409 | JobSeeker |  |
+| `reschedule-too-late` | 409 | Recruitment | The interview can no longer be moved: ask at least :hours hours before it starts. You can still decline it or write to the company. |
+| `resume-limit-reached` | 409 | JobSeeker | A profile can have at most :max resumes. |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
@@ -411,11 +413,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `review-request-closed` | 409 | Recruitment | This review request was closed. |
 | `review-requires-application` | 403 | Review | Only a job seeker who applied to this company can review it. |
 | `role-already-exists` | 409 | Identity |  |
-| `role-in-use` | 409 | Identity |  |
+| `role-in-use` | 409 | Identity | :count administrator(s) hold the role :role; give them another role first. |
 | `role-protected` | 409 | Identity | The super_admin role holds every permission and cannot be edited. |
 | `role-unchanged` | 409 | Identity |  |
 | `salary-period-required` | 422 | Job, JobAlert | A minimum salary needs the salary period it is meant in. |
-| `saved-jobs-limit` | 422 | Job |  |
+| `saved-jobs-limit` | 422 | Job | You can save at most :max jobs. Remove one first. |
 | `schedule-required` | 422 | Recruitment |  |
 | `scorecards-locked` | 403 | Recruitment | Send your own scorecard first: the other scorecards stay hidden until then. |
 | `scoring-locked` | 409 | Assessment | The application has left the assessment stage, so its scores can no longer be changed. |
@@ -424,7 +426,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `screening-disabled` | 403 | Recruitment | Screening questions are switched off for this company. |
 | `screening-limit-reached` | 409 | Recruitment | The job has reached its limit of screening questions. |
 | `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |
-| `setting-not-editable` | 422 | Platform |  |
+| `setting-not-editable` | 422 | Platform | The setting :key cannot be changed by a company. |
 | `setting-not-overridable` | 422 | Platform | This setting cannot be overridden per company. |
 | `slug-reserved` | 422 | Company | This slug is reserved. |
 | `slug-taken` | 409 | Company | This slug is already taken. |
@@ -437,7 +439,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `support-grant-exists` | 409 | Organization | This platform admin already has support access: revoke it first to change its duration. |
 | `support-grant-not-active` | 409 | Organization | The support access has already ended. |
 | `talent-pool-consent-missing` | 409 | TalentPool | The applicant did not allow the company to keep their profile in a talent pool. |
-| `talent-pool-limit` | 422 | TalentPool |  |
+| `talent-pool-limit` | 422 | TalentPool | A company keeps at most :max candidates in its talent pool. |
 | `team-not-connected` | 409 | Recruitment | Join the call from your browser before you dial the candidate. |
 | `template-unavailable` | 422 | JobSeeker | This CV template is not available. |
 | `tenant-link-in-use` | 409 | Organization | Members of this tenant hold group roles: remove them first. |
@@ -448,9 +450,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `test-locked` | 409 | Assessment | This test was already sent to candidates, so it can no longer be changed. Clone it to make a new version. |
 | `test-not-draft` | 409 | Assessment | Only a draft can be deleted. Archive the test instead. |
 | `test-not-psychological` | 422 | Assessment | Only a psychological battery issues reports. |
-| `too-many-applications` | 422 | Recruitment |  |
-| `too-many-attachments` | 422 | Messaging |  |
-| `too-many-recipients` | 422 | Messaging |  |
+| `too-many-applications` | 422 | Recruitment | Select at most :max applications at a time. |
+| `too-many-attachments` | 422 | Messaging | A message can have at most :max files. |
+| `too-many-recipients` | 422 | Messaging | A bulk message can go to at most :max applications. |
 | `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
 | `transfer-target-not-company-admin` | 409 | Company | The jobs can only go to an active company admin of the company. |
@@ -468,10 +470,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
-| `unknown-permission` | 422 | Identity |  |
+| `unknown-permission` | 422 | Identity | Unknown permission: :permissions. |
 | `unknown-team-action` | 422 | Company | This is not an action of the team history. |
 | `unknown-team-size` | 422 | Company |  |
-| `unsupported-language` | 422 | Platform |  |
+| `unsupported-language` | 422 | Platform | The language must be one of: :languages. |
 | `upload-deadline-passed` | 409 | Assessment | The time to send this recording has passed. |
 | `user-in-another-group` | 409 | Organization | The account holds a group role in another group. |
 | `user-not-in-group` | 422 | Organization | The account is not a member of a tenant of this group. |
@@ -488,11 +490,11 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `video-room-not-open` | 409 | Recruitment | The video room is not open yet. |
 | `video-server-unavailable` | 503 | Recruitment | The recording converter is not configured. |
 | `video-take-closed` | 409 | Assessment | This recording is closed. |
-| `video-too-large` | 422 | Assessment |  |
-| `video-window-closed` | 409 | Recruitment |  |
+| `video-too-large` | 422 | Assessment | The recording is larger than the allowed :max MB. |
+| `video-window-closed` | 409 | Recruitment | The video room is open from :before minutes before the interview until :after minutes after it ends. |
 | `voice-capacity-full` | 409 | Recruitment | Too many phone interviews are running right now. Try again in a few minutes. |
 | `voice-disabled` | 409 | Recruitment | Phone interviews are switched off. |
 | `voice-not-enabled` | 422 | Recruitment |  |
 | `voice-quota-used` | 409 | Recruitment | Your company used all its phone interview minutes of this month. |
 | `voice-server-unavailable` | 503 | Recruitment | The recording cannot be fetched. |
-| `voice-window-closed` | 409 | Recruitment |  |
+| `voice-window-closed` | 409 | Recruitment | Calls are possible from :before minutes before the interview until :after minutes after it ends. |

@@ -47,6 +47,9 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 **Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15, #20 and, since 2026-10-20, #34 (and endpoints
 the front end asks for) are coded; the other rows wait even when ready.
 
+**Front-end step 0, API part (2026-10-21, branch `frontend-step-0-api`):** `phase-8-demo-data.md` (`demo:seed`) and `phase-8-api-translations.md`
+(without its notification catalog) are coded, waiting for the user's check.
+
 | # | Document | Waits for |
 |---|---|---|
 | 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |
@@ -84,7 +87,7 @@ the front end asks for) are coded; the other rows wait even when ready.
 
 | Document | Note |
 |---|---|
-| `phase-8-api-translations.md` | coded after the legacy import |
+| `phase-8-api-translations.md` | translations coded 2026-10-21 for front-end step 0 (see "Next coding"); the notification catalog waits for page 11.6 |
 | `phase-8-user-management.md` | coded after the legacy import |
 
 Related, outside phase 8: time-to-fill is in `phase-4-business-intelligence.md` and assessment Part 7 in `phase-6-assessments.md` (both coded

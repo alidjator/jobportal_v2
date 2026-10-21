@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -40,7 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        $problems = new ProblemDetailsRenderer;
+        $problems = new ProblemDetailsRenderer(static fn (): Translator => Container::getInstance()->make(Translator::class));
 
         $exceptions->render(fn (Throwable $e, Request $request) => $problems->render($e, $request));
 

@@ -7,6 +7,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * The Jakarta days an analysis covers, both included. Data runs up to yesterday, so a range never reaches today. Without a start the range is the 30 days that end
@@ -38,13 +39,13 @@ final readonly class AnalyticsRange
         }
 
         if (AnalyticsDays::count($from, $to) > self::MAX_DAYS) {
-            throw self::invalid('from', 'The range can cover at most '.self::MAX_DAYS.' days.');
+            throw self::invalid('from', new ErrorMessage('The range can cover at most :max days.', ['max' => self::MAX_DAYS]));
         }
 
         return new self($from, $to);
     }
 
-    private static function invalid(string $field, string $message): BusinessRuleViolation
+    private static function invalid(string $field, string|ErrorMessage $message): BusinessRuleViolation
     {
         return new BusinessRuleViolation($message, 'invalid-range', extensions: ['errors' => [$field => [$message]]]);
     }

@@ -36,7 +36,7 @@ final readonly class CreateJobAlert
             $limit = $this->settings->integer(JobAlertSettings::MAX_ALERTS_PER_USER);
 
             if ($this->alerts->countOfUser($userId, forUpdate: true) >= $limit) {
-                throw new BusinessRuleViolation("You can have at most {$limit} job alerts. Delete one first.", 'alert-limit');
+                throw new BusinessRuleViolation('You can have at most :max job alerts. Delete one first.', 'alert-limit', parameters: ['max' => $limit]);
             }
 
             return $this->alerts->add($alert);

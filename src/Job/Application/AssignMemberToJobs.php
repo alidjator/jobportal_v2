@@ -15,6 +15,7 @@ use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
+use Src\Shared\Domain\Exceptions\ErrorMessage;
 
 /**
  * A company admin adds one member to many jobs of the company at once (the member page): the member is added as a recruiter, the assignees a job already has stay
@@ -64,7 +65,7 @@ final readonly class AssignMemberToJobs
 
             foreach ($jobIds as $position => $jobId) {
                 if ($this->jobs->find($jobId)?->companyId !== $member->companyId) {
-                    $errors["job_ids.{$position}"] = ["The job {$jobId} does not belong to the company."];
+                    $errors["job_ids.{$position}"] = [new ErrorMessage('The job :job does not belong to the company.', ['job' => $jobId])];
                 }
             }
 

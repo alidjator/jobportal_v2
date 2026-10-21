@@ -23,7 +23,8 @@ final readonly class CompanyCandidateMessageRules implements CandidateMessageRul
             throw new BusinessRuleViolation(
                 'A message to a candidate cannot carry a link or an email address, except one of your own website.',
                 'message-link-not-allowed',
-                extensions: ['errors' => [$field => ['Remove this link or address: '.mb_substr($link, 0, 60)]]],
+                extensions: ['errors' => [$field => ['Remove this link or address: :link']]],
+                parameters: ['link' => mb_substr($link, 0, 60)],
             );
         }
     }
