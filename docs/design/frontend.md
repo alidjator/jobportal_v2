@@ -507,10 +507,10 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D1 | Sign in and two-factor | `/masuk` | `POST admin/auth/login`, `POST admin/auth/two-factor` | none |
 | D2 | Dashboard | `/` | `GET admin/dashboard` with its operations card (failed and waiting queue jobs, the scheduler watch, `phase-8-platform-admin.md`); **#30:** queue watch; **#33:** WhatsApp counts | `dashboard.view` |
 | D3 | Analytics | `/analitik` | `GET admin/analytics/{report}` | `analytics.view` |
-| D4 | Companies: list, create, detail | `/perusahaan`, `/perusahaan/{id}` | `GET`/`POST admin/companies`, `GET .../{id}`, `suspend`, `restore`, `POST .../{id}/invitations` (first company admin), `PUT .../{id}/owner` | `companies.manage` |
+| D4 | Companies: list, create, detail | `/perusahaan`, `/perusahaan/{id}` | `GET`/`POST admin/companies`, `GET admin/companies/status-counts` (tab counts, `filter[q]`, `filter[verified]`), `GET .../{id}`, `suspend`, `restore`, `POST .../{id}/invitations` (first company admin), `PUT .../{id}/owner` | `companies.manage` |
 | D5 | Company verification documents | `/perusahaan/{id}/dokumen` | `GET .../{id}/documents`, `GET .../{typeId}/file`, `approve`, `reject` | `companies.manage` |
 | D6 | Company setting overrides | `/perusahaan/{id}/pengaturan` | `GET .../{id}/settings`, `PUT`/`DELETE .../settings/{key}` | `companies.manage` |
-| D7 | Job moderation | `/lowongan`, `/lowongan/{id}` | `GET admin/jobs[/{id}]`, `approve`, `reject`, `take-down`, `restore`; moderation flags | `jobs.manage` |
+| D7 | Job moderation | `/lowongan`, `/lowongan/{id}` | `GET admin/jobs[/{id}]`, `GET admin/jobs/status-counts` (tab counts, `filter[q]`), `approve`, `reject`, `take-down`, `restore`; moderation flags | `jobs.manage` |
 | D8 | Review moderation | `/ulasan` | `GET admin/reviews[/{id}]`, `approve`, `reject`, `remove`; `GET admin/review-replies`, `approve`, `reject`, `remove`; `GET admin/review-reports`, `dismiss` | `reviews.moderate` |
 | D9 | Campaigns | `/kampanye` | `admin/campaigns` (CRUD), `qr`, `results` | `campaigns.manage` |
 | D10 | Newsletter | `/newsletter` | `admin/newsletter/issues` (CRUD, `test`, `send`), `GET`/`DELETE admin/newsletter/subscribers` | `newsletter.manage` |

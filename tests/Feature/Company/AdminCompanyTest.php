@@ -98,6 +98,47 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->api('GET', '', token: $this->userToken($member))->assertStatus(401);
     }
 
+    // ----- the status counts -----
+
+    public function test_the_status_counts_need_the_permission(): void
+    {
+        $weak = $this->adminToken(['faqs.manage'], 'weak@example.test');
+
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        $this->json('GET', '/api/v1/admin/companies/status-counts')->assertStatus(401);
+        $this->api('GET', '/status-counts', token: $weak)->assertStatus(403);
+    }
+
+    public function test_the_status_counts_fill_a_zero_for_a_status_without_a_company(): void
+    {
+        $this->assertSame(['data' => ['all' => 0, 'active' => 0, 'suspended' => 0]], $this->api('GET', '/status-counts')->assertOk()->json());
+
+        $this->company('PT Satu', 'pt-satu');
+        $this->company('PT Dua', 'pt-dua');
+
+        $this->assertSame(['data' => ['all' => 2, 'active' => 2, 'suspended' => 0]], $this->api('GET', '/status-counts')->assertOk()->json());
+    }
+
+    public function test_the_status_counts_follow_the_search_and_the_verification_filter_but_not_a_status_filter(): void
+    {
+        $this->company('Aktif Terverifikasi', 'aktif-v', ['verified_at' => '2026-09-01 00:00:00']);
+        $this->company('Aktif Biasa', 'aktif-b');
+        $this->company('Tangguh Terverifikasi', 'tangguh-v', ['status' => 'suspended', 'verified_at' => '2026-09-01 00:00:00']);
+        $this->company('Tangguh Biasa', 'tangguh-b', ['status' => 'suspended']);
+
+        $counts = fn (string $query): array => $this->api('GET', '/status-counts'.$query)->assertOk()->json('data');
+
+        $this->assertSame(['all' => 4, 'active' => 2, 'suspended' => 2], $counts(''));
+        $this->assertSame(['all' => 2, 'active' => 1, 'suspended' => 1], $counts('?filter[verified]=true'));
+        $this->assertSame(['all' => 2, 'active' => 1, 'suspended' => 1], $counts('?filter[verified]=0'));
+        $this->assertSame(['all' => 2, 'active' => 2, 'suspended' => 0], $counts('?filter[q]=aktif'));
+        $this->assertSame(['all' => 1, 'active' => 0, 'suspended' => 1], $counts('?filter[q]=tangguh&filter[verified]=true'));
+
+        $this->api('GET', '/status-counts?filter[status]=active')->assertStatus(422);
+        $this->api('GET', '/status-counts?filter[verified]=maybe')->assertStatus(422);
+    }
+
     // ----- the list -----
 
     public function test_the_list_shows_every_company_newest_first_with_its_row_fields(): void

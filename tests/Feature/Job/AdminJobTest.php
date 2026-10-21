@@ -95,6 +95,51 @@ final class AdminJobTest extends FeatureTestCase
         $this->assertSame('pending_review', $this->jobRow($id)->status);
     }
 
+    // ----- the status counts -----
+
+    public function test_the_status_counts_need_the_permission(): void
+    {
+        [$weak] = $this->adminToken(['faqs.manage'], 'weak@example.test');
+
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        $this->json('GET', '/api/v1/admin/jobs/status-counts')->assertStatus(401);
+        $this->admin('GET', '/status-counts', token: $weak)->assertStatus(403);
+    }
+
+    public function test_the_status_counts_fill_a_zero_for_every_status_without_a_job(): void
+    {
+        $empty = ['all' => 0, 'draft' => 0, 'pending_review' => 0, 'active' => 0, 'closed' => 0, 'expired' => 0, 'rejected' => 0, 'taken_down' => 0];
+        $this->assertSame(['data' => $empty], $this->admin('GET', '/status-counts')->assertOk()->json());
+
+        $this->insertJob('One', 'active');
+        $this->insertJob('Two', 'active');
+        $this->insertJob('Three', 'draft', [$this->otherAdminId], $this->otherCompanyId);
+        $this->insertJob('Four', 'taken_down');
+
+        $this->assertSame(
+            ['data' => [...$empty, 'all' => 4, 'draft' => 1, 'active' => 2, 'taken_down' => 1]],
+            $this->admin('GET', '/status-counts')->assertOk()->json(),
+        );
+    }
+
+    public function test_the_status_counts_follow_the_search_of_the_list_and_ignore_a_status_filter(): void
+    {
+        $this->insertJob('Backend Developer', 'active');
+        $this->insertJob('Backend Tester', 'draft');
+        $this->insertJob('Designer', 'pending_review', [$this->otherAdminId], $this->otherCompanyId);
+        DB::table('company_companies')->where('id', $this->otherCompanyId)->update(['name' => 'Sinar Digital']);
+
+        $byTitle = $this->admin('GET', '/status-counts?filter[q]=backend')->assertOk()->json('data');
+        $this->assertSame([2, 1, 1, 0], [$byTitle['all'], $byTitle['active'], $byTitle['draft'], $byTitle['pending_review']]);
+
+        $byCompany = $this->admin('GET', '/status-counts?filter[q]=sinar')->assertOk()->json('data');
+        $this->assertSame([1, 1, 0], [$byCompany['all'], $byCompany['pending_review'], $byCompany['active']]);
+
+        $this->assertSame(0, $this->admin('GET', '/status-counts?filter[q]=nothing')->json('data.all'));
+        $this->admin('GET', '/status-counts?filter[status]=active')->assertStatus(422);
+    }
+
     // ----- the list -----
 
     public function test_an_admin_sees_the_jobs_of_every_company_with_their_company(): void

@@ -67,6 +67,20 @@ final readonly class DatabaseAdminJobReader implements AdminJobReader
         return new Page(array_map(fn (stdClass $row): AdminJobListItem => $this->toItem($row), $rows), $total, $request);
     }
 
+    public function countByStatus(AdminJobQuery $query): array
+    {
+        $builder = $this->connection->table('job_jobs');
+        $this->applyFilters($builder, new AdminJobQuery(null, $query->companyId, $query->search, $query->searchCompanyIds));
+
+        $counts = [];
+
+        foreach ($builder->selectRaw('job_jobs.status, count(*) as total')->groupBy('job_jobs.status')->get() as $row) {
+            $counts[(string) $row->status] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
     public function pendingTexts(): array
     {
         $texts = [];

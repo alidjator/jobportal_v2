@@ -258,3 +258,11 @@ the list is not); (2) the import's reset email run did not exist in code, so the
   `platform.scheduler_recovered`. `GET health/scheduler` (no sign-in) answers `{status: ok}` 200 while the heartbeat is under 5 minutes old, else `{status: down}` 503, and nothing else.
 - **Not coded / for later.** The front end pages. A parser for the chosen SMTP provider (`EmailEventParser`) and its webhook secret wait for the SMTP provider. The one-click opt-out is unrelated.
 - **Docs.** `ApiTags` gained the group `Operations` (webhooks and health) and patterns for the new admin routes; `docs/api/error-catalog.md` regenerated.
+
+## Coded: status counts for the Console tabs (2026-10-21, asked by the front end; waits for the user's check)
+
+`GET admin/jobs/status-counts` (`jobs.manage`, `filter[q]`) answers `{data: {all, draft, pending_review, active, closed, expired, rejected, taken_down}}`; `GET admin/companies/status-counts`
+(`companies.manage`, `filter[q]`, `filter[verified]`) answers `{data: {all, active, suspended}}`. The front end chose separate endpoints over counts in the list `meta` (option B). Interpretations: one
+`GROUP BY status` query each (`AdminJobReader::countByStatus`, `AdminCompanyReader::countByStatus`), applying the same private filter method as the list, so the search matches exactly what the list matches
+(a job also matches by its company name); a status without a row is 0; `all` is the sum, honours the search and `verified` but never a status; `filter[status]` and any other filter is refused with 422.
+Use cases `CountJobsByStatusForAdmin` and `CountCompaniesByStatus`; no migration; routes registered before `{id}`.

@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Company\Application\Admin\CountCompaniesByStatus;
 use Src\Company\Application\Admin\GetAdminCompany;
 use Src\Company\Application\Admin\ListCompanies;
 use Src\Company\Application\Admin\RestoreCompany;
@@ -13,6 +14,7 @@ use Src\Company\Application\Admin\SetCompanyOwner;
 use Src\Company\Application\Admin\SuspendCompany;
 use Src\Company\Application\CreateCompany;
 use Src\Company\Application\InviteCompanyAdminAgain;
+use Src\Company\Interface\Http\Requests\CountCompaniesRequest;
 use Src\Company\Interface\Http\Requests\CreateCompanyRequest;
 use Src\Company\Interface\Http\Requests\InviteCompanyAdminRequest;
 use Src\Company\Interface\Http\Requests\ListCompaniesRequest;
@@ -21,6 +23,7 @@ use Src\Company\Interface\Http\Requests\SetCompanyOwnerRequest;
 use Src\Company\Interface\Http\Requests\SuspendCompanyRequest;
 use Src\Company\Interface\Http\Resources\AdminCompanyDetailResource;
 use Src\Company\Interface\Http\Resources\AdminCompanyListResource;
+use Src\Company\Interface\Http\Resources\AdminCompanyStatusCountsResource;
 use Src\Company\Interface\Http\Resources\CreatedCompanyResource;
 use Src\Company\Interface\Http\Resources\IssuedInvitationResource;
 use Src\Shared\Application\RequestContext;
@@ -36,6 +39,11 @@ final class AdminCompanyController extends ApiController
         $page = $list->execute($actors->fromRequest($request), $request->toQuery(), $request->pageRequest());
 
         return AdminCompanyListResource::collection(PaginatedResources::paginator($page, $request));
+    }
+
+    public function statusCounts(CountCompaniesRequest $request, ActorResolver $actors, CountCompaniesByStatus $count): AdminCompanyStatusCountsResource
+    {
+        return new AdminCompanyStatusCountsResource($count->execute($actors->fromRequest($request), $request->toQuery()));
     }
 
     public function show(Request $request, int $id, ActorResolver $actors, GetAdminCompany $get): AdminCompanyDetailResource

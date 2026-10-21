@@ -5,15 +5,18 @@ namespace Src\Job\Interface\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Src\Job\Application\Admin\ApproveJob;
+use Src\Job\Application\Admin\CountJobsByStatusForAdmin;
 use Src\Job\Application\Admin\GetJobForAdmin;
 use Src\Job\Application\Admin\ListJobsForAdmin;
 use Src\Job\Application\Admin\RejectJob;
 use Src\Job\Application\Admin\RestoreJob;
 use Src\Job\Application\Admin\TakeDownJob;
+use Src\Job\Interface\Http\Requests\CountJobsForAdminRequest;
 use Src\Job\Interface\Http\Requests\JobDecisionReasonRequest;
 use Src\Job\Interface\Http\Requests\ListJobsForAdminRequest;
 use Src\Job\Interface\Http\Resources\AdminJobDetailResource;
 use Src\Job\Interface\Http\Resources\AdminJobListResource;
+use Src\Job\Interface\Http\Resources\AdminJobStatusCountsResource;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -27,6 +30,11 @@ final class AdminJobController extends ApiController
         $page = $list->execute($actors->fromRequest($request), $request->status(), $request->companyId(), $request->search(), $request->sort(), $request->pageRequest());
 
         return AdminJobListResource::collection(PaginatedResources::paginator($page, $request));
+    }
+
+    public function statusCounts(CountJobsForAdminRequest $request, ActorResolver $actors, CountJobsByStatusForAdmin $count): AdminJobStatusCountsResource
+    {
+        return new AdminJobStatusCountsResource($count->execute($actors->fromRequest($request), $request->search()));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJobForAdmin $get): AdminJobDetailResource

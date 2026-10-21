@@ -52,6 +52,20 @@ final readonly class DatabaseAdminCompanyReader implements AdminCompanyReader
         return new Page(array_map(fn (stdClass $row): CompanyListItem => $this->toItem($row), $rows), $total, $request);
     }
 
+    public function countByStatus(CompanyListQuery $query): array
+    {
+        $builder = $this->connection->table('company_companies');
+        $this->applyFilters($builder, new CompanyListQuery($query->search, null, $query->verified));
+
+        $counts = [];
+
+        foreach ($builder->selectRaw('status, count(*) as total')->groupBy('status')->get() as $row) {
+            $counts[(string) $row->status] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
     public function counts(int $companyId, DateTimeImmutable $now): CompanyCounts
     {
         return new CompanyCounts(
