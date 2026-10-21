@@ -8,6 +8,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: Vue with TypeScript; the public application on Nuxt (server-side rendering), Console a single-page application on Vite ([detail](#2-stack)).
 - 2026-10-13: the front end lives in its own repository, separate from the API ([detail](#3-repository-and-applications)).
 - 2026-10-20: application names: **ONESIS Career** (public), **ONESIS Workspace** (company and group members, was "back office"), **ONESIS Console** (platform admins, was "admin panel") with **Portal Mitra** for psychologists (was "psychologist area", `/mitra` unchanged); identifiers `public`, `workspace`, `console`; in the UI the platform role reads "Operator platform" or "Admin platform", never bare "Admin"; API paths `/api/v1/admin/**`, admin permissions and page numbers stay ([detail](#3-repository-and-applications), `naming.md`).
+- 2026-10-21: hosting paths: release folders `/usr/local/src/jobportal-frontend/releases/<app>/current`, Workspace's Node service on `127.0.0.1:3101` (Career takes 3100), a static "Segera hadir" page until the first build; nginx files for Workspace and Console written ([detail](#10-technical-foundation)).
 - 2026-10-20: one development domain per application: `karir.satu.solutions`, `workspace.satu.solutions` (was `preview.satu.solutions`), `console.satu.solutions` (was `admin-karir.satu.solutions`); API unchanged; `CORS_ALLOWED_ORIGINS` and the link contract follow ([detail](#4-domains), [links](#122-link-contract)).
 - 2026-10-19: **three applications**: the company dashboard and the ERP pages move into one SPA, ONESIS Workspace; the public Nuxt application keeps visitors and job seekers only; Console stays ([detail](#3-repository-and-applications)).
 - 2026-10-19: Workspace runs on Nuxt with `ssr: false`; its token stays in a sealed httpOnly cookie behind its own Nuxt proxy, as in 5.2 ([detail](#3-repository-and-applications)).
@@ -594,6 +595,11 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   folder. The public application and Workspace each run Nuxt's `node-server` output as a systemd service on `127.0.0.1` (two ports) behind
   nginx (the units need root: user lingering is off for `jobportal`). Console is static files served by nginx with a strict CSP:
   `script-src 'self'`; `style-src` needs `'unsafe-inline'` because Vuetify injects its theme as an inline style and a static site cannot give it a nonce.
+  **Paths (decided by the user on 2026-10-21):** releases under `/usr/local/src/jobportal-frontend/releases/<app>/<release>` with
+  `releases/<app>/current` as the live symlink (`workspace`, `console`, later `public`); Workspace's service listens on `127.0.0.1:3101`, Career's
+  on `127.0.0.1:3100`. Until a release exists (or while the Workspace service is down), nginx serves a static "Segera hadir" page from
+  `/usr/local/src/jobportal-frontend/placeholder/<app>/index.html`. The nginx files are kept in `/home/jobportal/nginx/` (copies of the live ones
+  in `/etc/nginx/conf.d/`, installed by the user); the Workspace systemd unit is written with the first build.
 
 
 ## 11. Interface design
