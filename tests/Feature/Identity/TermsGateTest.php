@@ -66,6 +66,13 @@ final class TermsGateTest extends FeatureTestCase
         $this->asUser('GET', 'me/terms-acceptance')->assertOk()->assertExactJson(['data' => ['accepted' => true, 'documents' => []]]);
     }
 
+    public function test_the_status_lists_each_document_with_its_state(): void
+    {
+        $this->publish('terms', 1);
+
+        $this->asUser('GET', 'me/terms-acceptance')->assertOk()->assertExactJson(['data' => ['accepted' => false, 'documents' => [['type' => 'terms', 'version' => 1, 'accepted' => false]]]]);
+    }
+
     public function test_a_user_who_has_not_accepted_is_refused_with_the_documents_to_accept(): void
     {
         $this->publish('terms', 3);

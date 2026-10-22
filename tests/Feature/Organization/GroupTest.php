@@ -146,7 +146,7 @@ final class GroupTest extends FeatureTestCase
         $this->assertSame($group, (int) $entry->subject_id);
         $this->assertSame('admin', $entry->actor_type);
 
-        $this->admin('GET', "groups/{$group}")->assertOk()->assertJsonPath('data.status_reason', null);
+        $this->admin('GET', "groups/{$group}")->assertOk()->assertJsonPath('data.status_reason', null)->assertJsonPath('data.suspended_at', null)->assertJsonMissingPath('data.my_permissions');
         $this->admin('GET', 'groups')->assertOk()->assertJsonPath('data.0.name', 'Grup Nusantara')->assertJsonPath('data.0.legal_entity_count', 1)->assertJsonPath('data.0.member_count', 0);
     }
 
@@ -286,7 +286,8 @@ final class GroupTest extends FeatureTestCase
             ->assertJsonPath('data.id', $ids['group'])
             ->assertJsonPath('data.my_permissions', ['group.structure.manage', 'group.members.manage', 'group.recruitment.view'])
             ->assertJsonPath('data.legal_entities.0.tenant.company_id', $this->holdingCompany)
-            ->assertJsonMissingPath('data.status_reason');
+            ->assertJsonMissingPath('data.status_reason')
+            ->assertJsonMissingPath('data.suspended_at');
 
         $this->asMember($this->subsidiaryMember, 'GET', 'group')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-group-member');
         $this->app['auth']->forgetGuards();
