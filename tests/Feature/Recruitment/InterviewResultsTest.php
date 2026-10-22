@@ -252,6 +252,7 @@ final class InterviewResultsTest extends FeatureTestCase
         $this->assertSame(['Budi', 'Ani', 'Citra'], $this->names($response));
         $response->assertJsonPath('kit.id', $kit)->assertJsonPath('kit.name', 'Backend round')
             ->assertJsonPath('kit.questions.0.anchors.score_5', 'Explains isolation levels')
+            ->assertJsonMissingPath('kit.questions.0.guidance')
             ->assertJsonPath('meta.total', 3);
 
         $ani = $response->json('data.1');

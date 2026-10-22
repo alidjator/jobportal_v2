@@ -31,7 +31,7 @@ final class CompanyJobListTest extends FeatureTestCase
     {
         $id = $this->insertJob();
 
-        foreach ([['GET', '/company/jobs'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
+        foreach ([['GET', '/company/jobs'], ['GET', '/company/jobs/status-counts'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
             ['DELETE', "/company/jobs/{$id}"], ['GET', "/company/jobs/{$id}/assignees"], ['PUT', "/company/jobs/{$id}/assignees"]] as [$method, $uri]) {
             $this->flushHeaders();
             $this->app['auth']->forgetGuards();
@@ -45,7 +45,7 @@ final class CompanyJobListTest extends FeatureTestCase
         $seeker = UserModel::query()->create(['type' => 'job_seeker', 'name' => 'Siti', 'email' => 'siti@example.test', 'status' => 'active', 'locale' => 'en']);
         $seekerToken = $this->tokenFor((int) $seeker->id);
 
-        foreach ([['GET', '/company/jobs'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
+        foreach ([['GET', '/company/jobs'], ['GET', '/company/jobs/status-counts'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
             ['DELETE', "/company/jobs/{$id}"], ['GET', "/company/jobs/{$id}/assignees"], ['PUT', "/company/jobs/{$id}/assignees"]] as [$method, $uri]) {
             $this->api($method, $uri, ['title' => 'Backend', 'user_ids' => [$this->adminId]], $seekerToken)->assertStatus(403)
                 ->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
@@ -53,7 +53,7 @@ final class CompanyJobListTest extends FeatureTestCase
 
         DB::table('company_companies')->where('id', $this->companyId)->update(['status' => 'suspended']);
 
-        foreach ([['GET', '/company/jobs'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
+        foreach ([['GET', '/company/jobs'], ['GET', '/company/jobs/status-counts'], ['POST', '/company/jobs'], ['GET', "/company/jobs/{$id}"], ['PATCH', "/company/jobs/{$id}"],
             ['DELETE', "/company/jobs/{$id}"], ['GET', "/company/jobs/{$id}/assignees"], ['PUT', "/company/jobs/{$id}/assignees"]] as [$method, $uri]) {
             $this->api($method, $uri, ['title' => 'Backend', 'user_ids' => [$this->adminId]])->assertStatus(403)
                 ->assertJsonPath('type', 'urn:onesis:error:company-suspended');
@@ -169,6 +169,50 @@ final class CompanyJobListTest extends FeatureTestCase
     }
 
     // ----- the detail -----
+
+    // ----- the status counts -----
+
+    public function test_the_status_counts_cover_the_own_company_with_a_zero_for_every_empty_status(): void
+    {
+        $empty = ['all' => 0, 'draft' => 0, 'pending_review' => 0, 'active' => 0, 'closed' => 0, 'expired' => 0, 'rejected' => 0, 'taken_down' => 0];
+        $this->assertSame(['data' => $empty], $this->api('GET', '/company/jobs/status-counts')->assertOk()->json());
+
+        $this->insertJob('One', 'active', [$this->adminId]);
+        $this->insertJob('Two', 'active', [$this->recruiterId]);
+        $this->insertJob('Three', 'draft', [$this->adminId]);
+        $this->insertJob('Theirs', 'active', [$this->otherAdminId], $this->otherCompanyId);
+
+        $this->assertSame(['data' => [...$empty, 'all' => 3, 'draft' => 1, 'active' => 2]], $this->api('GET', '/company/jobs/status-counts')->assertOk()->json());
+    }
+
+    public function test_the_status_counts_follow_the_visibility_and_the_filters_of_the_list(): void
+    {
+        $this->insertJob('Backend Developer', 'active', [$this->adminId, $this->recruiterId], attributes: ['deadline' => '2026-11-01']);
+        $this->insertJob('Backend Tester', 'draft', [$this->adminId], attributes: ['deadline' => '2026-12-01']);
+        $this->insertJob('Designer', 'active', [$this->secondRecruiterId]);
+
+        $recruiter = $this->api('GET', '/company/jobs/status-counts', token: $this->recruiterToken)->assertOk()->json('data');
+        $this->assertSame([1, 1, 0], [$recruiter['all'], $recruiter['active'], $recruiter['draft']]);
+
+        $byTitle = $this->api('GET', '/company/jobs/status-counts?filter[q]=backend')->assertOk()->json('data');
+        $this->assertSame([2, 1, 1], [$byTitle['all'], $byTitle['active'], $byTitle['draft']]);
+
+        $mine = $this->api('GET', '/company/jobs/status-counts?filter[assigned_to_me]=true')->assertOk()->json('data');
+        $this->assertSame([2, 1, 1], [$mine['all'], $mine['active'], $mine['draft']]);
+
+        $byDeadline = $this->api('GET', '/company/jobs/status-counts?filter[deadline_to]=2026-11-15')->assertOk()->json('data');
+        $this->assertSame([1, 1, 0], [$byDeadline['all'], $byDeadline['active'], $byDeadline['draft']]);
+
+        $withoutApplications = $this->api('GET', '/company/jobs/status-counts?filter[applications]=0')->assertOk()->json('data');
+        $this->assertSame(3, $withoutApplications['all']);
+    }
+
+    public function test_the_status_counts_refuse_a_status_filter_and_unknown_filters(): void
+    {
+        $this->api('GET', '/company/jobs/status-counts?filter[status]=active')->assertStatus(422);
+        $this->api('GET', '/company/jobs/status-counts?filter[nope]=1')->assertStatus(422);
+        $this->api('GET', '/company/jobs/status-counts?filter[applications]=1')->assertStatus(422);
+    }
 
     public function test_the_detail_shows_the_names_in_the_request_language_and_the_assignees(): void
     {

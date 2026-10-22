@@ -48,6 +48,7 @@ A company needs views to judge a job, and the platform records none today. Decis
 
 - **Profile completeness:** eight sections of 12.5 percent each: headline and summary, contact (phone), location, work experience, education, skills, languages, uploaded resume. Religion, gender, age, marital status, nationality and photo are **never** counted, so the system does not push anyone to fill them. The dashboard lists the sections still empty.
 - **Operations card (admin):** only what exists today: failed queue jobs of the last 24 hours per queue and the number of jobs waiting. The outcome of an email or a notification is not recorded, so a failed email shows up only as a failed job; no delivery log is added.
+- **Schedule card names (2026-10-22, asked by the front end, confirmed by the user):** each interview item also carries `candidate_name` (from the application's profile snapshot; "Deleted user" when the snapshot is gone, as in the interview comparison) and `job_title` (through the `JobDirectory` port); the other fields are unchanged.
 - **Cache:** 2 minutes for the job seeker and the company summaries, 5 minutes for the admin summary.
 - **Company roles:** every member sees the company dashboard, scoped by the access to jobs that already applies to applications: a company admin sees all jobs of the company, a recruiter only the jobs assigned to them (in every card, the job performance card included). The business intelligence analytics are for the company admin only.
 

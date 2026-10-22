@@ -50,6 +50,20 @@ final readonly class DatabaseJobReader implements JobReader
         return new Page(array_map(fn (stdClass $row): JobListItem => $this->toItem($row), $rows), $total, $request);
     }
 
+    public function countByStatus(JobListQuery $query): array
+    {
+        $builder = $this->connection->table('job_jobs')->where('job_jobs.company_id', $query->companyId);
+        $this->applyFilters($builder, new JobListQuery($query->companyId, $query->assignedToUserId, null, $query->search, deadlineTo: $query->deadlineTo, withoutApplications: $query->withoutApplications));
+
+        $counts = [];
+
+        foreach ($builder->selectRaw('job_jobs.status, count(*) as total')->groupBy('job_jobs.status')->get() as $row) {
+            $counts[(string) $row->status] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
     public function hiringManagerBoundaries(int $companyId): array
     {
         $boundaries = [];

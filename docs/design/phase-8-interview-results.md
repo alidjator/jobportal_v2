@@ -10,6 +10,7 @@ end may call the notes endpoint) and competency groups (the decision of 2026-10-
 
 - 2026-10-14: a **comparison of interview results** across the candidates of one job (chosen by the user).
 - 2026-10-14: optional **scale anchors** per question for the scores 1, 3 and 5 (chosen by the user).
+- 2026-10-22: the comparison response types `kit.questions` (position, text, weight, anchors) for the front end's header tooltips and leaves out `guidance`, which stays for the interviewers (asked by the front end, confirmed by the user; [detail](#2-scale-anchors)).
 - 2026-10-14: **duplicating a kit** instead of a question bank (chosen by the user).
 - 2026-10-14: **interview scores in the applicant export**; this lifts "interviews" from the export's "not in the export" list (chosen by the user).
 
@@ -40,6 +41,7 @@ end may call the notes endpoint) and competency groups (the decision of 2026-10-
   scorecard).
 - Shown in `GET company/interviews/{id}/questions` and the kit endpoints; the scorecard form shows them under the 1 to 5 buttons (scores 2 and 4 sit
   between). Never shown to the job seeker.
+- **In the comparison (2026-10-22):** the `kit` of the response carries each question as `{position, text, weight, anchors}`, in the order of `cells`, typed in the OpenAPI document. `guidance` is left out: whoever may read the comparison (`applications.view` or `applications.manage`) may read the anchors, but the kit endpoints (`jobs.create` or `interviews.manage`) and the guidance stay for the interviewers.
 
 ## 3. Duplicating a kit
 

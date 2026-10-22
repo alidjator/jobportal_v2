@@ -207,9 +207,24 @@ final class DashboardTest extends FeatureTestCase
         $this->assertSame(1, $recruiter['applications']['new']);
 
         $this->assertCount(2, $admin['schedule']['interviews']);
+        $name = (string) DB::table('recruitment_applications')->where('id', $this->applicationOf($admins))->value(DB::raw("profile_snapshot->>'name'"));
+        $this->assertSame([$admins, 'Frontend Developer', $name], [$admin['schedule']['interviews'][0]['job_id'], $admin['schedule']['interviews'][0]['job_title'], $admin['schedule']['interviews'][0]['candidate_name']]);
+        $this->assertSame([$this->applicationOf($admins), $this->recruiterId], [$admin['schedule']['interviews'][0]['application_id'], $admin['schedule']['interviews'][0]['interviewer_id']]);
         $this->assertSame(1, $admin['schedule']['offers_waiting']);
         $this->assertCount(1, $recruiter['schedule']['interviews']);
         $this->assertSame(0, $recruiter['schedule']['offers_waiting']);
+    }
+
+    public function test_the_schedule_card_names_a_deleted_candidate_as_deleted_user(): void
+    {
+        [$mine] = $this->companyJobs();
+        $this->interview($this->applicationOf($mine));
+        DB::table('recruitment_applications')->where('id', $this->applicationOf($mine))->update(['profile_snapshot' => null]);
+
+        $interviews = $this->company()->assertOk()->json('data.cards.schedule.interviews');
+
+        $this->assertSame('Deleted user', $interviews[0]['candidate_name']);
+        $this->assertSame('Backend Developer', $interviews[0]['job_title']);
     }
 
     public function test_the_job_performance_card_counts_views_and_applications_per_job(): void

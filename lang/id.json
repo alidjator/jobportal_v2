@@ -424,6 +424,8 @@
     "Only an administrator can change a provider.": "Hanya administrator yang dapat mengubah penyedia tes.",
     "Only an administrator can change a psychologist.": "Hanya administrator yang dapat mengubah data psikolog.",
     "Only an administrator can change an announcement.": "Hanya administrator yang dapat mengubah pengumuman.",
+    "Only an administrator can count companies.": "Hanya administrator yang dapat menghitung perusahaan.",
+    "Only an administrator can count the jobs of every company.": "Hanya administrator yang dapat menghitung lowongan semua perusahaan.",
     "Only an administrator can create a company.": "Hanya administrator yang dapat membuat perusahaan.",
     "Only an administrator can create a group.": "Hanya administrator yang dapat membuat grup.",
     "Only an administrator can decide a conversation report.": "Hanya administrator yang dapat memutuskan laporan percakapan.",

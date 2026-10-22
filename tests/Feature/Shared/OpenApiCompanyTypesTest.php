@@ -67,4 +67,15 @@ final class OpenApiCompanyTypesTest extends FeatureTestCase
 
         $this->assertSame('#/components/schemas/JobStatus', $this->schema('JobListResource')['properties']['status']['$ref']);
     }
+
+    public function test_the_interview_comparison_types_the_questions_of_its_kit_with_the_anchors(): void
+    {
+        $document = app(Generator::class)();
+        $kit = $document['paths']['/company/jobs/{id}/interview-results']['get']['responses']['200']['content']['application/json']['schema']['properties']['kit'];
+        $question = $kit['properties']['questions']['items'];
+
+        $this->assertSame(['position', 'text', 'weight', 'anchors'], $question['required']);
+        $this->assertArrayNotHasKey('guidance', $question['properties']);
+        $this->assertSame(['score_1', 'score_3', 'score_5'], $question['properties']['anchors']['required']);
+    }
 }

@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Src\Job\Application\AssignMemberToJobs;
 use Src\Job\Application\CloneJob;
 use Src\Job\Application\CloseJob;
+use Src\Job\Application\CountJobs;
 use Src\Job\Application\CreateJob;
 use Src\Job\Application\DeleteJob;
 use Src\Job\Application\GetJob;
@@ -21,6 +22,7 @@ use Src\Job\Application\ReplaceJobAssignees;
 use Src\Job\Application\SetHiringManagerBoundary;
 use Src\Job\Application\UpdateJob;
 use Src\Job\Interface\Http\Requests\AssignMemberToJobsRequest;
+use Src\Job\Interface\Http\Requests\CountJobsRequest;
 use Src\Job\Interface\Http\Requests\ListJobsRequest;
 use Src\Job\Interface\Http\Requests\ReopenJobRequest;
 use Src\Job\Interface\Http\Requests\ReplaceJobAssigneesRequest;
@@ -29,6 +31,7 @@ use Src\Job\Interface\Http\Requests\SetHiringManagerBoundaryRequest;
 use Src\Job\Interface\Http\Resources\JobDetailResource;
 use Src\Job\Interface\Http\Resources\JobListResource;
 use Src\Job\Interface\Http\Resources\JobPerformanceResource;
+use Src\Job\Interface\Http\Resources\JobStatusCountsResource;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -45,6 +48,11 @@ final class CompanyJobController extends ApiController
         $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest(), $request->deadlineTo(), $request->withoutApplications());
 
         return JobListResource::collection(PaginatedResources::paginator($page, $request));
+    }
+
+    public function statusCounts(CountJobsRequest $request, ActorResolver $actors, CountJobs $count): JobStatusCountsResource
+    {
+        return new JobStatusCountsResource($count->execute($actors->fromRequest($request), $request->search(), $request->assignedToMe(), $request->deadlineTo(), $request->withoutApplications()));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJob $get): JobDetailResource

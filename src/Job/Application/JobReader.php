@@ -11,6 +11,13 @@ interface JobReader
     public function page(JobListQuery $query, PageRequest $request): Page;
 
     /**
+     * How many jobs match the query (its status is ignored) hold each status; a status no job holds is missing.
+     *
+     * @return array<string, int> by status value
+     */
+    public function countByStatus(JobListQuery $query): array;
+
+    /**
      * Every job of the company assigned to the account, whatever its status, newest first. Not paginated: one member holds few jobs.
      *
      * @return list<JobListItem>
