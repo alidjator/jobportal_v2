@@ -267,8 +267,8 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         $renewed = $this->api('POST', '/me/two-factor/recovery-codes', ['code' => $this->code($secret, $this->recruiter->id)], $token)->assertOk()->assertJsonCount(10, 'data.recovery_codes')->json('data.recovery_codes');
         $this->assertEmpty(array_intersect($codes, $renewed));
 
-        $this->api('DELETE', '/me/two-factor', ['password' => 'wrong-password', 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-password');
-        $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertNoContent();
+        $this->api('POST', '/me/two-factor/disable', ['password' => 'wrong-password', 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-password');
+        $this->api('POST', '/me/two-factor/disable', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $token)->assertNoContent();
         $this->assertSame(0, DB::table('identity_user_two_factor')->where('user_id', $this->recruiter->id)->count());
         $this->assertSame(0, DB::table('identity_user_recovery_codes')->where('user_id', $this->recruiter->id)->count());
         $this->api('GET', '/me/two-factor', [], $token)->assertOk()->assertJsonPath('data.enabled', false);
@@ -284,7 +284,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         [$secret] = $this->enrolled($this->owner, $this->ownerToken);
 
         $this->api('GET', '/me/two-factor')->assertOk()->assertJsonPath('data.required', true)->assertJsonPath('data.enabled', true);
-        $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->owner->id)])
+        $this->api('POST', '/me/two-factor/disable', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->owner->id)])
             ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-required');
         $this->assertSame(1, DB::table('identity_user_two_factor')->where('user_id', $this->owner->id)->count());
     }
@@ -294,7 +294,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
         [$secret] = $this->enrolled($this->recruiter, $this->recruiterToken);
         $this->requireForCompany();
 
-        $this->api('DELETE', '/me/two-factor', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $this->recruiterToken)
+        $this->api('POST', '/me/two-factor/disable', ['password' => self::PASSWORD, 'code' => $this->code($secret, $this->recruiter->id)], $this->recruiterToken)
             ->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:two-factor-required');
     }
 

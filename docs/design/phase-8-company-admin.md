@@ -31,7 +31,7 @@ overrides) and the account erasure. Coded in a coding session.
   the usual 30-day token (and the recovery codes once at enrolment). Wrong codes count in the A1 throttle. Accepting a company admin invitation
   ends in the enrolment challenge, not a token.
 - **Own account:** `GET me/two-factor` (`enabled`, `required`, `recovery_codes_left`); `POST me/two-factor` (start enrolment: secret and QR);
-  `POST me/two-factor/confirm {code}` (recovery codes once); `DELETE me/two-factor {password, code}` (409 `two-factor-required` when required);
+  `POST me/two-factor/confirm {code}` (recovery codes once); `POST me/two-factor/disable {password, code}` (409 `two-factor-required` when required); **changed 2026-10-22 (decided by the user, option B):** it was `DELETE me/two-factor`, whose body the generated OpenAPI document cannot carry (`frontend.md` front-end ask);
   `POST me/two-factor/recovery-codes {code}`. The `me/*` routes are those of C25, shown to company members only.
 - **Becoming required** (promotion to `company_admin`, the company setting switched on, and the rollout migration for every existing company admin):
   for each affected account without a confirmed factor, every token is revoked in the same transaction and the email

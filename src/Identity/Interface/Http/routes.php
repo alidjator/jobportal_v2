@@ -44,7 +44,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('me/two-factor', [MyTwoFactorController::class, 'show']);
     Route::post('me/two-factor', [MyTwoFactorController::class, 'store']);
     Route::post('me/two-factor/confirm', [MyTwoFactorController::class, 'confirm']);
-    Route::delete('me/two-factor', [MyTwoFactorController::class, 'destroy']);
+    Route::post('me/two-factor/disable', [MyTwoFactorController::class, 'destroy']);
     Route::post('me/two-factor/recovery-codes', [MyTwoFactorController::class, 'recoveryCodes']);
 
     Route::get('me/avatar', [AvatarController::class, 'show']);
