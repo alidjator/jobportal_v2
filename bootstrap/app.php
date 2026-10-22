@@ -35,6 +35,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ResolveRequestLanguage::class,
             EnforceTermsAcceptance::class,
         ]);
+        // The Nuxt servers of Career and Workspace call from the loopback address and pass the visitor's address in `X-Forwarded-For` (`docs/design/frontend.md` 13.1):
+        // only that address is trusted and only that header is read, so the rate limits, audit and consent records see the visitor.
+        $middleware->trustProxies(at: ['127.0.0.1'], headers: Request::HEADER_X_FORWARDED_FOR);
+        // This API has no login page: a guest is always answered with the 401 problem document, also when the request does not ask for JSON.
+        $middleware->redirectGuestsTo(null);
         $middleware->alias([RequireVerifiedEmail::ALIAS => RequireVerifiedEmail::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

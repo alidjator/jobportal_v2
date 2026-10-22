@@ -995,5 +995,7 @@ Three points, decided by the user on 2026-10-21 before coding starts:
    passing on a header sent by the browser. Other requests are unchanged: their `REMOTE_ADDR` is the client's own address. The rate limiters,
    audit and consent records then hold the visitor's IP; the rate-limiter rules stay as they are. Coded in step 2 (the API part is work the front
    end asks for). Not chosen: no trust (one shared bucket for every visitor, the server's IP in the audit) or postponing again.
+   **Coded on 2026-10-22** in `bootstrap/app.php` (`trustProxies(at: ['127.0.0.1'], headers: HEADER_X_FORWARDED_FOR)`; tests `TrustedProxyTest`). Found with it: a guest
+   request without a JSON `Accept` answered 500 ("Route [login] not defined"); `redirectGuestsTo(null)` makes it the 401 problem document.
 3. **Go-live scope: steps 0 to 5.** They replace karir.pkp. Steps 6 (online tests, video and voice interviews) and 7 (ERP pages, Portal Mitra) come
    after go-live, so those features are not available at go-live.
