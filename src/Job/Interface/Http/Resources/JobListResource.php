@@ -6,6 +6,7 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\JobListItem;
+use Src\Job\Domain\JobStatus;
 
 /**
  * One row of the company's job list.
@@ -20,6 +21,7 @@ final class JobListResource extends JsonResource
         return [
             'id' => $this->resource->id,
             'title' => $this->resource->title,
+            /** @var JobStatus */
             'status' => $this->resource->status->value,
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'vacancies' => $this->resource->vacancies,

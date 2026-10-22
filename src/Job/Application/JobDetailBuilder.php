@@ -8,13 +8,27 @@ use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Recruitment\JobHires;
+use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 
-/** Adds what a client needs to show a job: the names of its skills and benefits in the request language, its assignees with their name and role, and its number of hires. */
+/** Adds what a client needs to show a job: the names of its classifications, skills and benefits in the request language, the names of its place, its assignees with their name and role, and its number of hires. */
 final readonly class JobDetailBuilder
 {
+    /** API field => [content property, master URL name]. */
+    private const array CLASSIFICATIONS = [
+        'category' => ['categoryId', 'job-categories'],
+        'role' => ['roleId', 'job-roles'],
+        'job_type' => ['jobTypeId', 'job-types'],
+        'job_level' => ['jobLevelId', 'job-levels'],
+        'work_time' => ['workTimeId', 'work-times'],
+        'experience_level' => ['experienceLevelId', 'experience-levels'],
+        'education_level' => ['educationLevelId', 'education-levels'],
+        'salary_period' => ['salaryPeriodId', 'salary-periods'],
+    ];
+
     public function __construct(
         private ReferenceValues $references,
+        private LocationReferences $locations,
         private JobAssignmentRepository $assignments,
         private CompanyTeam $team,
         private CompanyMemberAccounts $accounts,
@@ -23,12 +37,22 @@ final readonly class JobDetailBuilder
 
     public function build(Job $job, string $language): JobDetail
     {
+        $content = $job->content;
+        $names = [];
+
+        foreach (self::CLASSIFICATIONS as $field => [$property, $master]) {
+            $id = $content->{$property};
+            $names[$field] = $id === null ? null : $this->references->name($master, $id, $language);
+        }
+
         return new JobDetail(
             $job,
-            $this->named('skills', $job->content->skillIds, $language),
-            $this->named('benefits', $job->content->benefitIds, $language),
+            $this->named('skills', $content->skillIds, $language),
+            $this->named('benefits', $content->benefitIds, $language),
             $this->assignees($job),
             $this->hires->countPerJob([(int) $job->id])[(int) $job->id] ?? 0,
+            $names,
+            $this->locations->names($content->provinceId, $content->cityId, $content->subdistrictId, $content->villageId, $content->postalCodeId),
         );
     }
 

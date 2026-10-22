@@ -70,6 +70,33 @@ final class CompanyJobDraftTest extends FeatureTestCase
         $this->assertSame('draft', $data['status']);
     }
 
+    public function test_the_job_shows_the_names_next_to_the_ids_and_a_location_label(): void
+    {
+        $id = (int) $this->api('POST', '/company/jobs', $this->fullJobBody(), headers: ['Accept-Language' => 'en'])->assertCreated()->json('data.id');
+
+        $data = $this->api('GET', "/company/jobs/{$id}", headers: ['Accept-Language' => 'en'])->assertOk()->json('data');
+
+        $this->assertSame(
+            ['engineering', 'backend-developer', 'full-time', 'senior', 'day-shift', 'five-years', 'bachelor', 'monthly'],
+            [$data['category_name'], $data['role_name'], $data['job_type_name'], $data['job_level_name'], $data['work_time_name'], $data['experience_level_name'], $data['education_level_name'], $data['salary_period_name']],
+        );
+        $this->assertSame(['JAWA BARAT', 'BANDUNG', 'SUKASARI', 'GEGERKALONG'], [$data['province_name'], $data['city_name'], $data['subdistrict_name'], $data['village_name']]);
+        $this->assertSame('SUKASARI, BANDUNG, JAWA BARAT', $data['location_label']);
+        $this->assertIsInt($data['category_id']);
+    }
+
+    public function test_a_draft_without_classification_or_place_has_null_names_and_no_label(): void
+    {
+        $data = $this->api('POST', '/company/jobs', ['title' => 'Bare draft'])->assertCreated()->json('data');
+
+        foreach (['category', 'role', 'job_type', 'job_level', 'work_time', 'experience_level', 'education_level', 'salary_period', 'province', 'city', 'subdistrict', 'village'] as $field) {
+            $this->assertArrayHasKey("{$field}_name", $data);
+            $this->assertNull($data["{$field}_name"], $field);
+        }
+
+        $this->assertNull($data['location_label']);
+    }
+
     public function test_tags_are_normalised_and_registered_once(): void
     {
         $first = $this->api('POST', '/company/jobs', ['title' => 'One', 'tags' => ['PHP', '  Laravel  ', 'c++', 'C#', 'php']])->assertCreated();

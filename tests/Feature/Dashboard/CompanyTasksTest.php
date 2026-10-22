@@ -90,6 +90,19 @@ final class CompanyTasksTest extends FeatureTestCase
         );
     }
 
+    public function test_the_response_has_exactly_the_documented_shape(): void
+    {
+        $data = $this->tasks()->assertOk()->json('data');
+
+        $this->assertSame(['generated_at', 'items'], array_keys($data));
+
+        foreach ($data['items'] as $item) {
+            $this->assertSame(['key', 'count', 'filter'], array_keys($item));
+            $this->assertIsInt($item['count']);
+            $this->assertIsString($item['filter']);
+        }
+    }
+
     public function test_a_recruiter_counts_only_the_jobs_assigned_to_them_and_an_admin_counts_every_job(): void
     {
         $admin = $this->counts($this->adminToken);

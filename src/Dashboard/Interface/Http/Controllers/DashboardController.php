@@ -11,8 +11,11 @@ use Src\Dashboard\Application\GetCompanyDashboard;
 use Src\Dashboard\Application\GetCompanyTasks;
 use Src\Dashboard\Application\GetJobSeekerDashboard;
 use Src\Dashboard\Interface\Http\Requests\CompanyCalendarRequest;
+use Src\Dashboard\Interface\Http\Resources\AdminDashboardResource;
 use Src\Dashboard\Interface\Http\Resources\CalendarEventResource;
-use Src\Dashboard\Interface\Http\Resources\DashboardResource;
+use Src\Dashboard\Interface\Http\Resources\CompanyDashboardResource;
+use Src\Dashboard\Interface\Http\Resources\CompanyTasksResource;
+use Src\Dashboard\Interface\Http\Resources\JobSeekerDashboardResource;
 use Src\Shared\Application\Calendar\CalendarEvent;
 use Src\Shared\Application\Dashboard\DashboardAudience;
 use Src\Shared\Application\Dashboard\DashboardCards;
@@ -22,19 +25,19 @@ use Src\Shared\Interface\Http\ApiController;
 /** One summary document per kind of account; the details stay on the endpoints of each context. */
 final class DashboardController extends ApiController
 {
-    public function jobSeeker(Request $request, ActorResolver $actors, GetJobSeekerDashboard $get): DashboardResource
+    public function jobSeeker(Request $request, ActorResolver $actors, GetJobSeekerDashboard $get): JobSeekerDashboardResource
     {
-        return new DashboardResource($get->execute($actors->fromRequest($request)));
+        return new JobSeekerDashboardResource($get->execute($actors->fromRequest($request)));
     }
 
-    public function company(Request $request, ActorResolver $actors, GetCompanyDashboard $get): DashboardResource
+    public function company(Request $request, ActorResolver $actors, GetCompanyDashboard $get): CompanyDashboardResource
     {
-        return new DashboardResource($get->execute($actors->fromRequest($request)));
+        return new CompanyDashboardResource($get->execute($actors->fromRequest($request)));
     }
 
-    public function tasks(Request $request, ActorResolver $actors, GetCompanyTasks $get): JsonResponse
+    public function tasks(Request $request, ActorResolver $actors, GetCompanyTasks $get): CompanyTasksResource
     {
-        return response()->json(['data' => $get->execute($actors->fromRequest($request))]);
+        return new CompanyTasksResource($get->execute($actors->fromRequest($request)));
     }
 
     /** The recruitment calendar: interviews, test due times, offer deadlines and offer start dates in a range of at most 42 days. */
@@ -48,7 +51,7 @@ final class DashboardController extends ApiController
         ]);
     }
 
-    public function admin(Request $request, ActorResolver $actors, Gate $gate, DashboardCards $cards, GetAdminDashboard $get): DashboardResource
+    public function admin(Request $request, ActorResolver $actors, Gate $gate, DashboardCards $cards, GetAdminDashboard $get): AdminDashboardResource
     {
         $admin = $request->user('admin');
         $held = array_values(array_filter(
@@ -56,6 +59,6 @@ final class DashboardController extends ApiController
             fn (string $permission): bool => $gate->forUser($admin)->allows($permission),
         ));
 
-        return new DashboardResource($get->execute($actors->fromRequest($request), $held));
+        return new AdminDashboardResource($get->execute($actors->fromRequest($request), $held));
     }
 }

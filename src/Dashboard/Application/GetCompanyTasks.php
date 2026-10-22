@@ -24,7 +24,7 @@ final readonly class GetCompanyTasks
     public function __construct(private TaskProviders $providers, private CompanyDirectory $companies, private JobDirectory $jobs, private DashboardCache $cache, private Clock $clock) {}
 
     /**
-     * @return array<string, mixed> `generated_at` and `items`
+     * @return array{generated_at: string, items: list<array{key: string, count: int, filter: string}>}
      *
      * @throws AccessDenied `not-a-company-member` or `company-suspended`
      */
