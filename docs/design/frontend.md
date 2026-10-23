@@ -70,6 +70,8 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-workspace)).
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); Console starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 - 2026-10-23: the actions of a whole page sit at the top in a sticky action bar (`StickyActionCard`); actions of one item stay with the item ([detail](#113-key-page-layouts)).
+- 2026-10-23: the API of the job editor C4 is extended before the page is built (user): `summary`, `vacancies_visible`, `salary_note`, `reapply_after_days`, `location_ids` (several company locations, the first is the main one), `GET company/jobs/{id}/preview`
+  with `meta.publish_check`, `GET`/`PUT`/`DELETE company/jobs/{id}/assessments[/{stageId}]` (default test per assessment stage with the advance rule), more filters, sorts and columns on the job list C3 ([detail](phase-8-job-posting.md), [locations](company-locations.md), [assessments](phase-8-assessment-automation.md), [waiting period](phase-8-rejections.md)).
 - 2026-10-23: buttons carry icons selectively ("With Icons" buttons of Able Pro): the action buttons of work pages and actions with a well-known icon do; account pages, cancel buttons and text buttons do not ([detail](#112-common-states)).
 
 ## 1. Timing

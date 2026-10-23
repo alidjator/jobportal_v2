@@ -63,15 +63,29 @@ final readonly class MatchScorer implements MatchScoring
             return 1.0;
         }
 
-        if ($job->provinceId === null) {
+        $places = $job->places === [] ? [['province_id' => $job->provinceId, 'city_id' => $job->cityId]] : $job->places;
+        $best = null;
+
+        foreach ($places as $place) {
+            $score = $this->placeScore($candidate, $place['province_id'], $place['city_id']);
+            $best = $score === null ? $best : max($best ?? 0.0, $score);
+        }
+
+        return $best;
+    }
+
+    /** One place of a job against the candidate's: the same city is a full match, the same province half, null when the place has no province. */
+    private function placeScore(CandidateSignals $candidate, ?int $provinceId, ?int $cityId): ?float
+    {
+        if ($provinceId === null) {
             return null;
         }
 
-        if ($job->cityId !== null && $candidate->cityId === $job->cityId) {
+        if ($cityId !== null && $candidate->cityId === $cityId) {
             return 1.0;
         }
 
-        return $candidate->provinceId === $job->provinceId ? 0.5 : 0.0;
+        return $candidate->provinceId === $provinceId ? 0.5 : 0.0;
     }
 
     private function experience(CandidateSignals $candidate, JobSignals $job): ?float

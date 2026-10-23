@@ -8,21 +8,24 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Allowed: the filters of the job list except the status, with the same meaning: `filter[q]`, `filter[assigned_to_me]`, `filter[deadline_to]` and
- * `filter[applications]` (only `0`). Any other filter is refused with 422.
+ * `filter[applications]` (only `0`) and the filters of `ReadsJobListFilters`. Any other filter is refused with 422.
  */
 final class CountJobsRequest extends FormRequest
 {
+    use ReadsJobListFilters;
+
     private const int MAX_SEARCH_LENGTH = 100;
 
     /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            'filter' => ['nullable', 'array:q,assigned_to_me,deadline_to,applications'],
+            'filter' => ['nullable', 'array:q,assigned_to_me,deadline_to,applications,'.self::EXTRA_FILTER_KEYS],
             'filter.q' => ['nullable', 'string', 'max:'.self::MAX_SEARCH_LENGTH],
             'filter.assigned_to_me' => ['nullable', 'in:true,false,1,0'],
             'filter.deadline_to' => ['nullable', 'date_format:Y-m-d'],
             'filter.applications' => ['nullable', 'in:0'],
+            ...$this->extraFilterRules(),
         ];
     }
 

@@ -18,6 +18,7 @@ final readonly class PublicJobView
      * @param  array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null  $salary  null when the salary is hidden or empty
      * @param  list<array{id: int, name: string}>  $skills
      * @param  list<array{id: int, name: string}>  $benefits
+     * @param  list<array{id: int, name: string, type: string, province: ?string, city: ?string, subdistrict: ?string, village: ?string, postal_code: ?string, address_line: ?string}>  $places  the company locations of the job, the main one first
      */
     public function __construct(
         public Job $job,
@@ -29,15 +30,16 @@ final readonly class PublicJobView
         public array $benefits,
         public ?MatchScore $match = null,
         public ?bool $saved = null,
+        public array $places = [],
     ) {}
 
     public function withMatch(?MatchScore $match): self
     {
-        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $match ?? new MatchScore(null, []), $this->saved);
+        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $match ?? new MatchScore(null, []), $this->saved, $this->places);
     }
 
     public function withSaved(bool $saved): self
     {
-        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $this->match, $saved);
+        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $this->match, $saved, $this->places);
     }
 }

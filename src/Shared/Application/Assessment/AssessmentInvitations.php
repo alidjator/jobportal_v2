@@ -40,6 +40,16 @@ interface AssessmentInvitations
      */
     public function invite(InvitedApplication $application, int $invitedByUserId, AssessmentInvitationInput $input): array;
 
+    /**
+     * Sends the default test of the job for the stage the application is in (`$application->stageId`), the way a move into the stage does when the request names no test. Returns null when the job
+     * has no default for the stage; otherwise like `invite`.
+     *
+     * @return list<DomainEvent>|null
+     *
+     * @throws StateConflict `assessment-default-invalid` when the default no longer works (the test was archived, the battery is no longer granted, an assessor left the job), or `invitation-in-progress`
+     */
+    public function inviteWithDefault(InvitedApplication $application, int $invitedByUserId): ?array;
+
     /** Whether the application has an active test (invited or started). */
     public function hasActive(int $applicationId): bool;
 

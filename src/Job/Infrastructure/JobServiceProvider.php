@@ -75,6 +75,7 @@ use Src\Job\Infrastructure\Persistence\DatabaseJobSignalReader;
 use Src\Job\Infrastructure\Persistence\DatabaseJobViewLog;
 use Src\Job\Infrastructure\Persistence\DatabaseRequisitionJobs;
 use Src\Job\Infrastructure\Persistence\DatabaseSavedJobRepository;
+use Src\Job\Infrastructure\Persistence\JobLocationUsage;
 use Src\Job\Infrastructure\Tasks\JobsClosingTask;
 use Src\Job\Infrastructure\Tasks\JobsDraftTask;
 use Src\Job\Infrastructure\Tasks\JobsWithoutApplicantsTask;
@@ -83,6 +84,7 @@ use Src\Job\Interface\Console\FoldJobViewsCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
+use Src\Shared\Application\Company\CompanyLocationUsages;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Job\JobCloser;
 use Src\Shared\Application\Job\JobDirectory;
@@ -154,6 +156,10 @@ final class JobServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
             $catalog->add(...JobPermissions::definitions());
+        });
+
+        $this->callAfterResolving(CompanyLocationUsages::class, function (CompanyLocationUsages $usages): void {
+            $usages->add($this->app->make(JobLocationUsage::class));
         });
 
         $this->callAfterResolving(AnalyticsReports::class, function (AnalyticsReports $reports): void {

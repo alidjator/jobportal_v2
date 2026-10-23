@@ -33,6 +33,9 @@ final class AssessmentNotificationType
     /** To the candidate: the explanation of the result was revised, so it can be read again. */
     public const string EXPLANATION_REVISED = 'assessment.explanation_revised';
 
+    /** To the team: an application moved on by itself because the score of its test reached the threshold of the job's default test (`phase-8-assessment-automation.md` section 2). */
+    public const string AUTO_ADVANCED = 'application.auto_advanced';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

@@ -5,6 +5,7 @@ namespace Src\Company\Infrastructure\Persistence;
 use Src\Company\Domain\CompanyLocationRepository;
 use Src\Shared\Application\Company\CompanyLocationPlace;
 use Src\Shared\Application\Company\CompanyLocations;
+use Src\Shared\Application\Company\CompanyWorkPlace;
 use Src\Shared\Application\References\LocationReferences;
 
 final readonly class RepositoryCompanyLocations implements CompanyLocations
@@ -27,5 +28,18 @@ final readonly class RepositoryCompanyLocations implements CompanyLocations
         ));
 
         return new CompanyLocationPlace((int) $location->id, $location->name, $text);
+    }
+
+    public function activeWorkPlace(int $companyId, int $locationId): ?CompanyWorkPlace
+    {
+        $location = $this->locations->find($companyId, $locationId);
+
+        if ($location === null || ! $location->isActive()) {
+            return null;
+        }
+
+        $address = $location->address;
+
+        return new CompanyWorkPlace((int) $location->id, $location->name, $location->type->value, $address->provinceId, $address->cityId, $address->subdistrictId, $address->villageId, $address->postalCodeId, $address->line);
     }
 }

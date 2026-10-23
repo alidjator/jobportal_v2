@@ -27,14 +27,14 @@ final readonly class SuspiciousContentScanner
     /** @return list<JobFlag> */
     public function flags(JobContent $content): array
     {
-        return $this->flagsOf($content->title, $content->description);
+        return $this->flagsOf($content->title, $content->description, $content->summary, $content->salaryNote);
     }
 
     /** @return list<JobFlag> */
-    public function flagsOf(string $title, ?string $description): array
+    public function flagsOf(string $title, ?string $description, ?string $summary = null, ?string $salaryNote = null): array
     {
         $flags = [];
-        $fields = ['title' => $title, 'description' => (string) $description];
+        $fields = ['title' => $title, 'description' => (string) $description, 'summary' => (string) $summary, 'salary_note' => (string) $salaryNote];
 
         foreach ($this->phrases() as $phrase) {
             $pattern = '/(?<![\p{L}\p{N}])'.str_replace(' ', '\s+', preg_quote($phrase, '/')).'(?![\p{L}\p{N}])/iu';

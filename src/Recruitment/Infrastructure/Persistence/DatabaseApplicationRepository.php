@@ -31,6 +31,21 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         return $this->connection->table('recruitment_applications')->where('active_key', $userId.'-'.$jobId)->exists();
     }
 
+    public function rejectedApplicationOf(int $userId, int $jobId): ?array
+    {
+        $row = $this->connection->table('recruitment_applications')
+            ->where('active_key', $userId.'-'.$jobId)
+            ->where('stage_type', StageType::Rejected->value)
+            ->first(['id', 'stage_entered_at']);
+
+        return $row === null ? null : ['id' => (int) $row->id, 'rejected_at' => new DateTimeImmutable((string) $row->stage_entered_at, new DateTimeZone('UTC'))];
+    }
+
+    public function releaseActiveKey(int $applicationId): void
+    {
+        $this->connection->table('recruitment_applications')->where('id', $applicationId)->update(['active_key' => null]);
+    }
+
     public function countSubmittedSince(int $userId, DateTimeImmutable $since): int
     {
         return $this->connection->table('recruitment_applications')
@@ -97,6 +112,11 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         $this->recordTransition($before, $after, StageMoveActor::Recruiter, $actorId, $reason, $note, $at, hire: $hire);
     }
 
+    public function recordSystemMove(Application $before, Application $after, string $note, DateTimeImmutable $at): void
+    {
+        $this->recordTransition($before, $after, StageMoveActor::System, null, null, $note, $at);
+    }
+
     public function changeTalentPoolConsent(int $id, ?DateTimeImmutable $at): void
     {
         $this->connection->table('recruitment_applications')->where('id', $id)->update(['talent_pool_consent_at' => $at === null ? null : $this->utc($at)]);
@@ -133,10 +153,14 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
     {
         $time = $this->utc($at);
 
+        // An application that was released after a rejection (the applicant applied again) does not take the key back from the newer one.
+        $key = $after->activeKey();
+        $key = $key !== null && $this->connection->table('recruitment_applications')->where('active_key', $key)->where('id', '<>', $before->id)->exists() ? null : $key;
+
         $this->connection->table('recruitment_applications')->where('id', $before->id)->update([
             'stage_id' => $after->stageId,
             'stage_type' => $after->stageType->value,
-            'active_key' => $after->activeKey(),
+            'active_key' => $key,
             'stage_entered_at' => $time,
             'updated_at' => $time,
             ...($after->stageType === StageType::Hired ? ['join_date' => $hire?->joinDate->format('Y-m-d'), 'hire_note' => $hire?->note] : ($before->stageType === StageType::Hired ? ['join_date' => null, 'hire_note' => null] : [])),

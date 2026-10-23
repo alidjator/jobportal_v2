@@ -3,9 +3,10 @@
 namespace Src\Job\Application\Browse;
 
 use DateTimeImmutable;
+use Src\Job\Domain\JobWorkPlace;
 use Src\Job\Domain\WorkMode;
 
-/** One matching job as the reader returns it: ids only, for the use case to turn into names and the company card. */
+/** One matching job as the reader returns it: ids only, for the use case to turn into names and the company card. `places` are the company locations of the job, the main one first. */
 final readonly class JobSearchHit
 {
     public function __construct(
@@ -24,5 +25,9 @@ final readonly class JobSearchHit
         public bool $salaryVisible,
         public ?DateTimeImmutable $deadline,
         public ?DateTimeImmutable $publishedAt,
+        public ?string $summary = null,
+        public ?string $salaryNote = null,
+        /** @var list<JobWorkPlace> */
+        public array $places = [],
     ) {}
 }

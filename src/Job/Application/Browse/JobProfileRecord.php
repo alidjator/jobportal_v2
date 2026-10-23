@@ -10,7 +10,7 @@ use DateTimeImmutable;
 final readonly class JobProfileRecord
 {
     /**
-     * @param  array<string, int|null>  $ids  keyed by the name of the search filter
+     * @param  array<string, int|list<int>|null>  $ids  keyed by the name of the search filter; the province and the city are lists for a job with several company locations
      * @param  list<int>  $skillIds
      * @param  list<int>  $tagIds
      */

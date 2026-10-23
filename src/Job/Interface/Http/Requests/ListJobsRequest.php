@@ -11,12 +11,13 @@ use Src\Job\Domain\JobStatus;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
 /**
- * Allowed: `filter[q]` (title), `filter[status]` (one of the seven statuses), `filter[assigned_to_me]` (true or false), `filter[deadline_to]` (a day: deadline on or before it), `filter[applications]` (only `0`: jobs nobody applied to), `sort` (`updated_at`, `created_at`,
- * `title`, `deadline`, each with an optional `-`; default `-updated_at`), `page` and `per_page`. Any other filter is refused with 422.
+ * Allowed: `filter[q]` (title), `filter[status]` (one of the seven statuses), `filter[assigned_to_me]` (true or false), `filter[deadline_to]` (a day: deadline on or before it), `filter[applications]` (only `0`: jobs nobody applied to), the filters of `ReadsJobListFilters` (place, work mode, job type, category, published and deadline dates, creator, assignee, filled), `sort` (`updated_at`, `created_at`,
+ * `title`, `deadline`, `applications_count`, each with an optional `-`; default `-updated_at`), `page` and `per_page`. Any other filter is refused with 422.
  */
 final class ListJobsRequest extends FormRequest
 {
     use PaginatedRequest;
+    use ReadsJobListFilters;
 
     private const int MAX_SEARCH_LENGTH = 100;
 
@@ -25,12 +26,13 @@ final class ListJobsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:q,status,assigned_to_me,deadline_to,applications'],
+            'filter' => ['nullable', 'array:q,status,assigned_to_me,deadline_to,applications,'.self::EXTRA_FILTER_KEYS],
             'filter.q' => ['nullable', 'string', 'max:'.self::MAX_SEARCH_LENGTH],
             'filter.status' => ['nullable', 'string', Rule::enum(JobStatus::class)],
             'filter.assigned_to_me' => ['nullable', 'in:true,false,1,0'],
             'filter.deadline_to' => ['nullable', 'date_format:Y-m-d'],
             'filter.applications' => ['nullable', 'in:0'],
+            ...$this->extraFilterRules(),
             'sort' => ['nullable', 'string', Rule::enum(JobListSort::class)],
         ];
     }

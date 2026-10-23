@@ -16,6 +16,7 @@ final readonly class JobContent
      * @param  list<int>  $skillIds
      * @param  list<string>  $tags  normalised keywords (lower case)
      * @param  list<int>  $benefitIds
+     * @param  list<JobWorkPlace>  $workPlaces  the company locations the job is for, the main one first; empty for a job with its own address
      */
     public function __construct(
         public string $title,
@@ -43,6 +44,11 @@ final readonly class JobContent
         public array $skillIds,
         public array $tags,
         public array $benefitIds,
+        public ?string $summary = null,
+        public bool $vacanciesVisible = true,
+        public ?string $salaryNote = null,
+        public ?int $reapplyAfterDays = null,
+        public array $workPlaces = [],
     ) {}
 
     /** The content of a new draft: only the title, a visible salary and no lists. */
@@ -70,10 +76,6 @@ final readonly class JobContent
     }
 
     /**
-     * Whether a core field differs from the other content: the title, the description, the salary (amounts, period and visibility), the work mode and
-     * the location with its street address. These are what a reviewer approved, so changing one of them sends a live job back to review.
-     */
-    /**
      * The fields that identify the position and cannot change once the job has applications, among those that differ from the other content,
      * under their API names.
      *
@@ -90,10 +92,17 @@ final readonly class JobContent
         ]));
     }
 
+    /**
+     * Whether a core field differs from the other content: the title, the description, the summary, the salary (amounts, period, visibility and note), the work mode and
+     * the locations with their street address. These are what a reviewer approved, so changing one of them sends a live job back to review.
+     */
     public function coreDiffersFrom(self $other): bool
     {
         return $this->title !== $other->title
             || $this->description !== $other->description
+            || $this->summary !== $other->summary
+            || $this->salaryNote !== $other->salaryNote
+            || $this->locationIds() !== $other->locationIds()
             || $this->salaryMin !== $other->salaryMin
             || $this->salaryMax !== $other->salaryMax
             || $this->salaryPeriodId !== $other->salaryPeriodId
@@ -105,6 +114,12 @@ final readonly class JobContent
             || $this->villageId !== $other->villageId
             || $this->postalCodeId !== $other->postalCodeId
             || $this->addressLine !== $other->addressLine;
+    }
+
+    /** @return list<int> */
+    public function locationIds(): array
+    {
+        return array_map(static fn (JobWorkPlace $place): int => $place->locationId, $this->workPlaces);
     }
 
     public function hasSalaryAmount(): bool

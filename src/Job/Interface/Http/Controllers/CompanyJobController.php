@@ -16,6 +16,7 @@ use Src\Job\Application\GetJob;
 use Src\Job\Application\GetJobAssignees;
 use Src\Job\Application\GetJobPerformance;
 use Src\Job\Application\ListJobs;
+use Src\Job\Application\PreviewJob;
 use Src\Job\Application\PublishJob;
 use Src\Job\Application\ReopenJob;
 use Src\Job\Application\ReplaceJobAssignees;
@@ -32,6 +33,7 @@ use Src\Job\Interface\Http\Resources\JobDetailResource;
 use Src\Job\Interface\Http\Resources\JobListResource;
 use Src\Job\Interface\Http\Resources\JobPerformanceResource;
 use Src\Job\Interface\Http\Resources\JobStatusCountsResource;
+use Src\Job\Interface\Http\Resources\PublicJobResource;
 use Src\Shared\Application\RequestContext;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -45,19 +47,35 @@ final class CompanyJobController extends ApiController
 {
     public function index(ListJobsRequest $request, ActorResolver $actors, ListJobs $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest(), $request->deadlineTo(), $request->withoutApplications());
+        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->search(), $request->assignedToMe(), $request->sort(), $request->pageRequest(), $request->deadlineTo(), $request->withoutApplications(), $request->extraFilters());
 
         return JobListResource::collection(PaginatedResources::paginator($page, $request));
     }
 
     public function statusCounts(CountJobsRequest $request, ActorResolver $actors, CountJobs $count): JobStatusCountsResource
     {
-        return new JobStatusCountsResource($count->execute($actors->fromRequest($request), $request->search(), $request->assignedToMe(), $request->deadlineTo(), $request->withoutApplications()));
+        return new JobStatusCountsResource($count->execute($actors->fromRequest($request), $request->search(), $request->assignedToMe(), $request->deadlineTo(), $request->withoutApplications(), $request->extraFilters()));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJob $get): JobDetailResource
     {
         return new JobDetailResource($get->execute($actors->fromRequest($request), $id, $context->language));
+    }
+
+    /**
+     * The job as the public page will show it, in any status, from the saved fields. `meta.publish_check` says whether publishing would pass and, if not, which fields (by API name) are
+     * missing. Nothing is counted and the answer is never cached.
+     *
+     * @response array{data: \Src\Job\Interface\Http\Resources\PublicJobResource, meta: array{publish_check: array{ready: bool, missing: list<string>}}}
+     */
+    public function preview(Request $request, int $id, RequestContext $context, ActorResolver $actors, PreviewJob $preview): JsonResponse
+    {
+        $result = $preview->execute($actors->fromRequest($request), $id, $context->language);
+
+        return (new PublicJobResource($result['view']))
+            ->additional(['meta' => ['publish_check' => ['ready' => $result['ready'], 'missing' => $result['missing']]]])
+            ->response()
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function performance(Request $request, int $id, ActorResolver $actors, GetJobPerformance $get): JobPerformanceResource

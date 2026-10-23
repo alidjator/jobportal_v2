@@ -17,6 +17,7 @@ final readonly class JobDetail
      * @param  list<array{id: int, name: string}>  $benefits
      * @param  list<array{user_id: int, name: string, role: string, job_role: string}>  $assignees
      * @param  array<string, string|null>  $names
+     * @param  list<array{id: int, name: string, type: string, province: ?string, city: ?string, subdistrict: ?string, village: ?string, postal_code: ?string, address_line: ?string}>  $places  the company locations of the job, the main one first
      */
     public function __construct(
         public Job $job,
@@ -26,6 +27,7 @@ final readonly class JobDetail
         public int $hiresCount = 0,
         public array $names = [],
         public ?LocationNames $location = null,
+        public array $places = [],
     ) {}
 
     /** "Subdistrict, City, Province": the names of the place chain from the most specific to the province, null when the job has no place. */

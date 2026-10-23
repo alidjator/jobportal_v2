@@ -30,6 +30,15 @@ final readonly class DatabaseJobSignalReader implements JobSignalReader
             $skills[(int) $row->job_id][] = (int) $row->skill_id;
         }
 
+        $places = [];
+
+        foreach ($this->connection->table('job_job_locations')->whereIn('job_id', $jobIds)->orderBy('position')->get(['job_id', 'province_id', 'city_id']) as $row) {
+            $places[(int) $row->job_id][] = [
+                'province_id' => $row->province_id === null ? null : (int) $row->province_id,
+                'city_id' => $row->city_id === null ? null : (int) $row->city_id,
+            ];
+        }
+
         $signals = [];
 
         foreach ($this->connection->table('job_jobs as j')
@@ -60,6 +69,7 @@ final readonly class DatabaseJobSignalReader implements JobSignalReader
                 $row->city_id === null ? null : (int) $row->city_id,
                 $showsSalary ? (int) $salaryMax : null,
                 $showsSalary ? (int) $row->salary_period_id : null,
+                $places[$jobId] ?? [],
             );
         }
 

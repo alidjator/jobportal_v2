@@ -50,7 +50,7 @@ final readonly class CreateJob
             throw new BusinessRuleViolation('This tenant opens its jobs from an approved requisition.', 'requisition-required');
         }
 
-        $content = $this->changes->apply(JobContent::draft($title), $fields, isNew: true);
+        $content = $this->changes->apply(JobContent::draft($title), $fields, isNew: true, companyId: $member->companyId);
 
         return $this->transactions->run(function () use ($member, $content, $requisitionId): int {
             if ($requisitionId !== null) {

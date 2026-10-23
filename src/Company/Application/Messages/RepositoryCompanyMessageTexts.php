@@ -18,4 +18,9 @@ final readonly class RepositoryCompanyMessageTexts implements CompanyMessageText
     {
         return $this->defaults->find($companyId)->hired;
     }
+
+    public function assessment(int $companyId): ?string
+    {
+        return $this->defaults->find($companyId)->assessment;
+    }
 }

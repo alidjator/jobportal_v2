@@ -100,7 +100,7 @@ final readonly class ApplyToJob
                 $this->jobs->lock($jobId);
                 $companyId = $this->liveCompanyId($jobId);
 
-                $this->assertCanApply($userId, $jobId);
+                $release = $this->assertCanApply($userId, $jobId);
 
                 $submission = $input->cv !== null
                     ? $this->applicants->forApplicationWithResume($userId, $generated)
@@ -135,6 +135,12 @@ final readonly class ApplyToJob
                 $this->files->put($storedPath, $submission->resume->contents);
 
                 $appliedAt = $this->clock->now();
+
+                // A rejected application whose waiting period is over gives its key back, so the new one can take it.
+                if ($release !== null) {
+                    $this->applications->releaseActiveKey($release);
+                }
+
                 $source = $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation;
                 $snapshot = ['name' => $contact->name, 'email' => $contact->email] + $submission->snapshot;
 
@@ -204,16 +210,43 @@ final readonly class ApplyToJob
     }
 
     /**
-     * @throws StateConflict `already-applied`
+     * @return int|null the id of the rejected application to release, when the job allows applying again and its waiting period is over
+     *
+     * @throws StateConflict `already-applied`, with `reapply_on` (a date) while a waiting period runs
      * @throws TooManyAttempts `application-limit-reached`
      */
-    private function assertCanApply(int $userId, int $jobId): void
+    private function assertCanApply(int $userId, int $jobId): ?int
     {
-        if ($this->applications->hasLiveApplication($userId, $jobId)) {
+        $release = $this->applications->hasLiveApplication($userId, $jobId) ? $this->releasable($userId, $jobId) : null;
+
+        $this->assertBelowDailyLimit($userId);
+
+        return $release;
+    }
+
+    /**
+     * A rejected application frees its job after the waiting period the job sets (`phase-8-rejections.md` section 3); a hired, pending or any other application never does.
+     *
+     * @throws StateConflict `already-applied`
+     */
+    private function releasable(int $userId, int $jobId): int
+    {
+        $days = $this->jobs->reapplyAfterDays($jobId);
+        $rejected = $days === null ? null : $this->applications->rejectedApplicationOf($userId, $jobId);
+
+        if ($days === null || $rejected === null) {
             throw new StateConflict('You have already applied to this job.', 'already-applied');
         }
 
-        $this->assertBelowDailyLimit($userId);
+        $zone = new DateTimeZone(self::TIME_ZONE);
+        $on = new DateTimeImmutable($rejected['rejected_at']->setTimezone($zone)->format('Y-m-d'), $zone);
+        $on = $on->modify("+{$days} days");
+
+        if ($this->clock->now() < $on) {
+            throw new StateConflict('You have already applied to this job.', 'already-applied', extensions: ['reapply_on' => $on->format('Y-m-d')]);
+        }
+
+        return $rejected['id'];
     }
 
     private function coverLetter(?string $text): ?string

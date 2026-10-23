@@ -189,7 +189,7 @@ final class SettingsTest extends FeatureTestCase
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'platform.operations_email', 'platform.support_email', 'platform.support_whatsapp',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
-            'recruitment.interview_reschedule_cutoff_hours', 'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
+            'recruitment.interview_reschedule_cutoff_hours', 'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.reapply_after_days', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
             'workforce.fiscal_year_start_month',
         ], $keys);
 

@@ -190,7 +190,7 @@ final class RecommendationsTest extends FeatureTestCase
         // The row of the public search, plus the match.
         $this->assertSame('Backend Developer', $response->json('data.1.title'));
         $this->assertSame('PT-MAJU', $response->json('data.1.company.name'));
-        $this->assertSame(['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'deadline', 'published_at', 'match', 'saved'], array_keys($response->json('data.1')));
+        $this->assertSame(['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'salary_note', 'summary', 'deadline', 'published_at', 'match', 'saved'], array_keys($response->json('data.1')));
     }
 
     public function test_jobs_already_applied_to_or_invited_to_are_left_out(): void

@@ -5,9 +5,12 @@ namespace Src\Assessment\Application\Results;
 use Src\Assessment\Application\Attempts\AttemptContexts;
 use Src\Assessment\Application\Attempts\ScoreAttempt;
 use Src\Assessment\Domain\AnswerRepository;
+use Src\Assessment\Domain\Events\ResultFinalized;
 use Src\Assessment\Domain\QuestionType;
+use Src\Assessment\Domain\ResultStatus;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -26,6 +29,7 @@ final readonly class ScoreAnswer
         private AttemptContexts $contexts,
         private ScoreAttempt $scoring,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -37,7 +41,9 @@ final readonly class ScoreAnswer
      */
     public function execute(Actor $actor, int $invitationId, int $questionId, int $score): ScoringItem
     {
-        return $this->transactions->run(function () use ($actor, $invitationId, $questionId, $score): ScoringItem {
+        $finalized = null;
+
+        $item = $this->transactions->run(function () use ($actor, $invitationId, $questionId, $score, &$finalized): ScoringItem {
             $invitation = $this->access->invitation($actor, $invitationId, forUpdate: true);
             $attempt = $this->access->submittedAttempt($invitation);
             $this->access->assertScoringOpen($actor, $invitation);
@@ -66,9 +72,20 @@ final readonly class ScoreAnswer
             $this->answers->saveAssessorScore((int) $attempt->id, $questionId, (float) $score, (int) $actor->id);
 
             $context = $this->contexts->load($invitation, $attempt, $this->clock->now());
-            $this->scoring->execute($attempt, $invitation, $context->test, $context->sections);
+            $result = $this->scoring->execute($attempt, $invitation, $context->test, $context->sections);
+
+            if ($result->status === ResultStatus::Scored && $result->percentage !== null) {
+                $finalized = new ResultFinalized((int) $invitation->id, $invitation->applicationId, $invitation->jobId, $invitation->companyId, $result->percentage, $result->integrityTier->value, $this->clock->now());
+            }
 
             return new ScoringItem($questionId, $entry['question']->text, $points, $entry['question']->type === QuestionType::LongText ? (string) $entry['answer']->textValue : null, (float) $score, $entry['question']->type);
         });
+
+        // The result may have just become final: the automatic advance of the job's default test looks at it once the scores are saved.
+        if ($finalized !== null) {
+            $this->events->dispatch([$finalized]);
+        }
+
+        return $item;
     }
 }

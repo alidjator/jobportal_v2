@@ -46,7 +46,7 @@ final readonly class SendInvitation
                 throw new StateConflict('Move the application to an assessment stage before sending a test.', 'not-in-assessment-stage');
             }
 
-            return $this->placer->place(new InvitedApplication($applicationId, $application->companyId, $application->jobId, $application->applicantUserId), (int) $actor->id, $input);
+            return $this->placer->place(new InvitedApplication($applicationId, $application->companyId, $application->jobId, $application->applicantUserId, $application->stageId), (int) $actor->id, $input);
         });
 
         $this->events->dispatch([$placed->event]);

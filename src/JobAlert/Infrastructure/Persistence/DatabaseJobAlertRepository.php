@@ -138,8 +138,14 @@ final readonly class DatabaseJobAlertRepository implements JobAlertRepository
             $column = "criteria->'{$filter}'";
             $absent = "COALESCE(jsonb_array_length({$column}), 0) = 0";
 
-            if ($id === null) {
+            if ($id === null || $id === []) {
                 $query->whereRaw($absent);
+            } elseif (is_array($id)) {
+                // Several ids (the places of a job with several work locations): any of them in the alert's list is a fit.
+                $query->whereRaw(
+                    "({$absent} OR EXISTS (SELECT 1 FROM jsonb_array_elements_text({$column}) AS wanted(id) JOIN jsonb_array_elements_text(?::jsonb) AS offered(id) ON offered.id = wanted.id))",
+                    [json_encode($id, JSON_THROW_ON_ERROR)],
+                );
             } else {
                 $query->whereRaw("({$absent} OR {$column} @> ?::jsonb)", [json_encode($id, JSON_THROW_ON_ERROR)]);
             }

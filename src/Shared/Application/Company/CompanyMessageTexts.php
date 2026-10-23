@@ -10,4 +10,7 @@ interface CompanyMessageTexts
 
     /** The company's own note for a candidate who accepted an offer (the hire note), or null when it set none. */
     public function hired(int $companyId): ?string;
+
+    /** The company's own default note for the candidate of a test, used when a default test is sent with a move, or null when it set none. */
+    public function assessment(int $companyId): ?string;
 }

@@ -17,14 +17,14 @@ final readonly class PublicJobListItem
      * @param  array{id: int, name: string}|null  $jobType
      * @param  array{id: int, name: string}|null  $jobLevel
      * @param  array{min: ?int, max: ?int, period: array{id: int, name: string}|null}|null  $salary
+     * @param  list<array{id: int|null, name: string|null, type: string|null, city: string|null, province: string|null}>  $locations  the work locations, the main one first; empty for a remote job without a place
      */
     public function __construct(
         public int $id,
         public string $slug,
         public string $title,
         public PublicCompanyCard $company,
-        public ?string $city,
-        public ?string $province,
+        public array $locations,
         public ?array $jobType,
         public ?array $jobLevel,
         public ?WorkMode $workMode,
@@ -33,21 +33,23 @@ final readonly class PublicJobListItem
         public ?DateTimeImmutable $publishedAt,
         public ?MatchScore $match = null,
         public ?bool $saved = null,
+        public ?string $summary = null,
+        public ?string $salaryNote = null,
     ) {}
 
     public function withMatch(?MatchScore $match): self
     {
         return new self(
-            $this->id, $this->slug, $this->title, $this->company, $this->city, $this->province, $this->jobType, $this->jobLevel, $this->workMode, $this->salary,
-            $this->deadline, $this->publishedAt, $match ?? new MatchScore(null, []), $this->saved,
+            $this->id, $this->slug, $this->title, $this->company, $this->locations, $this->jobType, $this->jobLevel, $this->workMode, $this->salary,
+            $this->deadline, $this->publishedAt, $match ?? new MatchScore(null, []), $this->saved, $this->summary, $this->salaryNote,
         );
     }
 
     public function withSaved(bool $saved): self
     {
         return new self(
-            $this->id, $this->slug, $this->title, $this->company, $this->city, $this->province, $this->jobType, $this->jobLevel, $this->workMode, $this->salary,
-            $this->deadline, $this->publishedAt, $this->match, $saved,
+            $this->id, $this->slug, $this->title, $this->company, $this->locations, $this->jobType, $this->jobLevel, $this->workMode, $this->salary,
+            $this->deadline, $this->publishedAt, $this->match, $saved, $this->summary, $this->salaryNote,
         );
     }
 }

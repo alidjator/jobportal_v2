@@ -17,6 +17,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `admin-not-active` | 409 | Identity | Only an active administrator can be suspended. |
 | `admin-not-suspended` | 409 | Identity | Only a suspended administrator can be reactivated. |
 | `admin-only` | 403 | Dashboard, JobSeeker, Newsletter, Review | Only an admin has this dashboard. |
+| `advance-not-allowed` | 422 | Assessment |  |
 | `alert-limit` | 422 | JobAlert | You can have at most :max job alerts. Delete one first. |
 | `already-applied` | 409, 422 | JobInvitation, Recruitment | This candidate already applied to the job. |
 | `already-in-stage` | 409 | Recruitment | The application is already in this stage. |
@@ -43,7 +44,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `approval-slot-not-open` | 409 | Approval | This approval place is not open. |
 | `approval-slot-not-vacant` | 409 | Approval | This approval place is not vacant. |
 | `approval-unknown-subject-type` | 422 | Approval | The subject type :type is not registered for approval. |
-| `assessment-required` | 422 | Recruitment |  |
+| `assessment-default-invalid` | 409 | Assessment | The default test of this stage can no longer be sent. Choose another test or fix the default. |
+| `assessment-required` | 409, 422 | Recruitment | The target stage has no default test. |
 | `attempt-closed` | 409 | Assessment | This test is closed: it was submitted, ran out of time or was cancelled. |
 | `attempt-moved` | 409 | Assessment | This test is open on another device now. Start it again here to take it back. |
 | `attempt-not-started` | 409 | Assessment | This test was not started. |
@@ -142,6 +144,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `interview-not-pending` | 409 | Recruitment | This interview is not waiting for your answer. |
 | `interview-not-started` | 409 | Recruitment | The interview has not started yet. |
 | `interview-started` | 409 | Recruitment | This interview has started, so the answer can no longer change. |
+| `invalid-advance-stage` | 422 | Assessment |  |
 | `invalid-announcement` | 422 | Content |  |
 | `invalid-answer` | 422 | Assessment, Recruitment | The open section has no questions. |
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
@@ -433,6 +436,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `social-account-conflict` | 409 | Identity | A different Google account is already linked to this account. |
 | `stage-limit-reached` | 409 | Recruitment | The company has reached its limit of stages. |
 | `stage-name-taken` | 409 | Recruitment | Another stage of this company already has this name. |
+| `stage-not-assessment` | 422 | Assessment |  |
 | `stage-not-interview` | 422 | Recruitment |  |
 | `stage-type-not-allowed` | 422 | Recruitment | Extra stages can only be of the type screening, assessment, interview or offer. |
 | `support-access-required` | 403 | Organization | This group has not granted you support access, or the access has ended. |

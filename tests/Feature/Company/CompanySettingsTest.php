@@ -115,7 +115,7 @@ final class CompanySettingsTest extends FeatureTestCase
     {
         $keys = array_column($this->api('GET')->assertOk()->json('data'), 'key');
 
-        $this->assertSame([self::KEY, 'recruitment.stale_after_days'], $keys);
+        $this->assertSame([self::KEY, 'recruitment.reapply_after_days', 'recruitment.stale_after_days'], $keys);
         $this->assertNotContains('company.document_max_size_kb', $keys, 'overridable by the platform, not editable by the company');
     }
 

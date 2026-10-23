@@ -40,6 +40,15 @@ final readonly class DatabaseJobProfileReader implements JobProfileReader
             $ids[$filter] = $row->{$column} === null ? null : (int) $row->{$column};
         }
 
+        // A job with several company locations is in every one of their provinces and cities.
+        foreach (['province_id', 'city_id'] as $filter) {
+            $others = array_map('intval', $this->connection->table('job_job_locations')->where('job_id', $jobId)->whereNotNull($filter)->pluck($filter)->all());
+
+            if ($others !== []) {
+                $ids[$filter] = array_values(array_unique([...($ids[$filter] === null ? [] : [$ids[$filter]]), ...$others]));
+            }
+        }
+
         return new JobProfileRecord(
             (int) $row->id,
             (string) $row->title,

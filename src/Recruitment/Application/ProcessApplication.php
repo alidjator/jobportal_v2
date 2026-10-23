@@ -28,6 +28,7 @@ use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\Job\JobDirectory;
+use Src\Shared\Application\Recruitment\ApplicationAdvancer;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\DomainEvent;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -51,7 +52,7 @@ use Src\Shared\Domain\Exceptions\StateConflict;
  * moves out of `hired` again (`docs/design/phase-8-hiring.md` section 1). A move that brings the job's hires up to its vacancies also dispatches
  * {@see JobFilled} and says so in its return value (section 2).
  */
-final readonly class ProcessApplication
+final readonly class ProcessApplication implements ApplicationAdvancer
 {
     public const int NOTE_MAX = 1000;
 
@@ -72,6 +73,48 @@ final readonly class ProcessApplication
         private CandidateMessageRules $messageRules,
         private WatchJobFill $fill,
     ) {}
+
+    public function advance(int $applicationId, int $fromStageId, int $toStageId, string $note, int $senderUserId): bool
+    {
+        $events = $this->transactions->run(function () use ($applicationId, $fromStageId, $toStageId, $note, $senderUserId): ?array {
+            $before = $this->applications->find($applicationId, forUpdate: true);
+
+            if (! $before instanceof Application || $before->stageId !== $fromStageId || $this->jobs->isTakenDown($before->jobId)) {
+                return null;
+            }
+
+            $target = $this->companyStage($before->companyId, $toStageId);
+
+            if (! $target instanceof Stage || $toStageId === $fromStageId || ! in_array($target->type, [StageType::Assessment, StageType::Interview], true)) {
+                return null;
+            }
+
+            $moved = $before->moveTo($toStageId, $target->type);
+
+            try {
+                // An interview stage waits for the team to schedule ("schedule later"); an assessment stage sends its default test, and a move that cannot send it does not happen.
+                $extra = $target->type === StageType::Assessment
+                    ? ($this->assessments->inviteWithDefault($this->invited($moved), $senderUserId) ?? throw new StateConflict('The target stage has no default test.', 'assessment-required'))
+                    : $this->assessments->cancelActive($this->invited($before));
+            } catch (StateConflict) {
+                return null;
+            }
+
+            $now = $this->clock->now();
+            $this->applications->recordSystemMove($before, $moved, $note, $now);
+            $filled = $this->fill->afterMove($before, $moved, $now);
+
+            return [new ApplicationStageChanged($applicationId, $before->jobId, $before->companyId, $before->userId, $before->stageType, $moved->stageType, $now, null, $this->noticeCovered($moved->stageType, $extra)), ...$extra, ...($filled instanceof JobFilled ? [$filled] : [])];
+        });
+
+        if ($events === null) {
+            return false;
+        }
+
+        $this->events->dispatch($events);
+
+        return true;
+    }
 
     /**
      * @return bool whether this hire filled the job (its hires reached its vacancies), so the team can be offered to close it
@@ -279,11 +322,13 @@ final readonly class ProcessApplication
             return $this->assessments->invite($this->invited($application), $member->userId, $input);
         }
 
-        if (! $this->assessments->hasActive((int) $application->id)) {
-            $this->refuse('assessment-required', 'Send a test when moving an application to an assessment stage.', 'assessment');
+        if ($this->assessments->hasActive((int) $application->id)) {
+            return [];
         }
 
-        return [];
+        // No test in the request and none to keep: the job's default test for the stage goes out, if it has one.
+        return $this->assessments->inviteWithDefault($this->invited($application), $member->userId)
+            ?? $this->refuse('assessment-required', 'Send a test when moving an application to an assessment stage.', 'assessment');
     }
 
     /**
@@ -309,7 +354,7 @@ final readonly class ProcessApplication
 
     private function invited(Application $application): InvitedApplication
     {
-        return new InvitedApplication((int) $application->id, $application->companyId, $application->jobId, $application->userId);
+        return new InvitedApplication((int) $application->id, $application->companyId, $application->jobId, $application->userId, $application->stageId);
     }
 
     /** @return list<DomainEvent> */

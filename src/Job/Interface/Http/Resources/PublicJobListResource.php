@@ -30,12 +30,16 @@ final class PublicJobListResource extends JsonResource
                 'logo_url' => $company->logoUrl,
                 'verified' => $company->verified,
             ],
-            // One item for now (a job has one address until #20), none when the job shows no city and no province; `id`, `name` and `type` are those of a company work location and are null.
-            'locations' => $this->resource->city === null && $this->resource->province === null ? [] : [['id' => null, 'name' => null, 'type' => null, 'city' => $this->resource->city, 'province' => $this->resource->province]],
+            // The work locations, the main one first; a job with an address of its own has one item whose `id`, `name` and `type` are null, a remote job without a place none.
+            'locations' => $this->resource->locations,
             'job_type' => $this->resource->jobType,
             'job_level' => $this->resource->jobLevel,
             'work_mode' => $this->resource->workMode?->value,
             'salary' => $this->resource->salary,
+            /** @var string|null Shown even when the amounts are hidden. */
+            'salary_note' => $this->resource->salaryNote,
+            /** @var string|null One line for the search row; clients show nothing without it. */
+            'summary' => $this->resource->summary,
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),
             // Only for a signed-in job seeker with a complete profile; the percentage is null when too little is known about the job.

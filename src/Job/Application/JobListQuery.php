@@ -20,5 +20,6 @@ final readonly class JobListQuery
         public JobListSort $sort = JobListSort::UpdatedAtDescending,
         public ?DateTimeImmutable $deadlineTo = null,
         public bool $withoutApplications = false,
+        public JobListFilters $filters = new JobListFilters,
     ) {}
 }

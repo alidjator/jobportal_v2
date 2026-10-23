@@ -25,6 +25,8 @@ final class RecruitmentSettings
 
     public const string OFFER_LABOR_RULES = 'recruitment.offer_labor_rules';
 
+    public const string REAPPLY_AFTER_DAYS = 'recruitment.reapply_after_days';
+
     public const string INTERVIEW_RESCHEDULE_CUTOFF_HOURS = 'recruitment.interview_reschedule_cutoff_hours';
 
     /** @return list<SettingDefinition> */
@@ -68,6 +70,11 @@ final class RecruitmentSettings
             SettingDefinition::integer(
                 self::STALE_AFTER_DAYS, 7, 1, 60,
                 'After how many days in the applied or screening stage an application is marked stale. The company admin sets it on the company settings page.',
+                companyEditable: true,
+            ),
+            SettingDefinition::integer(
+                self::REAPPLY_AFTER_DAYS, 0, 0, 365,
+                'The waiting period, in days after a rejection, that a new job starts with before the same person may apply to it again (30 to 365). 0 means never. The company admin sets it on the company settings page; each job keeps its own value.',
                 companyEditable: true,
             ),
             SettingDefinition::boolean(

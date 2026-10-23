@@ -27,6 +27,7 @@ final readonly class TeamApplicationRefs implements TeamApplications
             $application->stageType === StageType::Assessment,
             $this->jobs->isTakenDown($application->jobId),
             $team->panelOnly,
+            $application->stageId,
         );
     }
 }

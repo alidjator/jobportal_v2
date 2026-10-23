@@ -22,6 +22,8 @@ final class SaveJobRequest extends FormRequest
 
     private const int BENEFITS_MAX = 15;
 
+    private const int LOCATIONS_MAX = 10;
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -51,6 +53,12 @@ final class SaveJobRequest extends FormRequest
             'village_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'postal_code_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'address_line' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'summary' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'vacancies_visible' => ['sometimes', 'required', 'boolean'],
+            'salary_note' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'reapply_after_days' => ['sometimes', 'nullable', 'integer', 'between:30,365'],
+            'location_ids' => ['sometimes', 'array', 'max:'.self::LOCATIONS_MAX],
+            'location_ids.*' => ['integer', 'min:1', 'distinct'],
             'skill_ids' => ['sometimes', 'array', 'max:'.self::SKILLS_MAX],
             'skill_ids.*' => ['integer', 'min:1', 'distinct'],
             'tags' => ['sometimes', 'array', 'max:'.(JobTags::MAX_TAGS * 3)],
@@ -71,7 +79,7 @@ final class SaveJobRequest extends FormRequest
         $validated = $this->validated();
         $changes = [];
 
-        foreach (['title' => 'title', 'description' => 'description', 'address_line' => 'addressLine'] as $field => $property) {
+        foreach (['title' => 'title', 'description' => 'description', 'address_line' => 'addressLine', 'summary' => 'summary', 'salary_note' => 'salaryNote'] as $field => $property) {
             if (array_key_exists($field, $validated)) {
                 $changes[$property] = $validated[$field];
             }
@@ -92,15 +100,21 @@ final class SaveJobRequest extends FormRequest
             $changes['deadline'] = $validated['deadline'] === null ? null : new DateTimeImmutable((string) $validated['deadline'], new DateTimeZone('UTC'));
         }
 
-        if (array_key_exists('salary_visible', $validated)) {
-            $changes['salaryVisible'] = (bool) $validated['salary_visible'];
+        foreach (['salary_visible' => 'salaryVisible', 'vacancies_visible' => 'vacanciesVisible'] as $field => $property) {
+            if (array_key_exists($field, $validated)) {
+                $changes[$property] = (bool) $validated[$field];
+            }
+        }
+
+        if (array_key_exists('reapply_after_days', $validated)) {
+            $changes['reapplyAfterDays'] = $validated['reapply_after_days'] === null ? null : (int) $validated['reapply_after_days'];
         }
 
         if (array_key_exists('work_mode', $validated)) {
             $changes['workMode'] = $validated['work_mode'] === null ? null : WorkMode::from((string) $validated['work_mode']);
         }
 
-        foreach (['skill_ids' => 'skillIds', 'benefit_ids' => 'benefitIds'] as $field => $property) {
+        foreach (['skill_ids' => 'skillIds', 'benefit_ids' => 'benefitIds', 'location_ids' => 'locationIds'] as $field => $property) {
             if (array_key_exists($field, $validated)) {
                 $changes[$property] = array_map('intval', $validated[$field]);
             }

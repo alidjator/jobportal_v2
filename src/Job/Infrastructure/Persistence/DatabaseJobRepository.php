@@ -9,6 +9,7 @@ use Src\Job\Domain\Job;
 use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
+use Src\Job\Domain\JobWorkPlace;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\References\TagRegistry;
@@ -132,6 +133,10 @@ final readonly class DatabaseJobRepository implements JobRepository
             'village_id' => $content->villageId,
             'postal_code_id' => $content->postalCodeId,
             'address_line' => $content->addressLine,
+            'summary' => $content->summary,
+            'vacancies_visible' => $content->vacanciesVisible,
+            'salary_note' => $content->salaryNote,
+            'reapply_after_days' => $content->reapplyAfterDays,
             'published_at' => $job->publishedAt?->format(self::TIME_FORMAT),
             'reviewed_at' => $job->reviewedAt?->format(self::TIME_FORMAT),
             'reviewed_by_admin_id' => $job->reviewedByAdminId,
@@ -147,6 +152,55 @@ final readonly class DatabaseJobRepository implements JobRepository
         $this->sync('job_job_skills', 'skill_id', $jobId, $content->skillIds);
         $this->sync('job_job_tags', 'tag_id', $jobId, $this->tags->idsFor($content->tags));
         $this->sync('job_job_benefits', 'benefit_id', $jobId, $content->benefitIds);
+        $this->syncPlaces($jobId, $content->workPlaces);
+    }
+
+    /** The places are replaced as a whole when they differ (the order and the copied address are part of them). @param  list<JobWorkPlace>  $places */
+    private function syncPlaces(int $jobId, array $places): void
+    {
+        $rows = array_map(static fn (JobWorkPlace $place, int $position): array => [
+            'job_id' => $jobId,
+            'location_id' => $place->locationId,
+            'position' => $position,
+            'name' => $place->name,
+            'type' => $place->type,
+            'address_line' => $place->addressLine,
+            'province_id' => $place->provinceId,
+            'city_id' => $place->cityId,
+            'subdistrict_id' => $place->subdistrictId,
+            'village_id' => $place->villageId,
+            'postal_code_id' => $place->postalCodeId,
+        ], $places, array_keys($places));
+
+        if ($this->places($jobId) == $places) {
+            return;
+        }
+
+        $this->connection->table('job_job_locations')->where('job_id', $jobId)->delete();
+
+        if ($rows !== []) {
+            $time = $this->clock->now()->format(self::TIME_FORMAT);
+            $this->connection->table('job_job_locations')->insert(array_map(static fn (array $row): array => [...$row, 'created_at' => $time], $rows));
+        }
+    }
+
+    /** @return list<JobWorkPlace> */
+    private function places(int $jobId): array
+    {
+        return array_map(
+            fn (stdClass $row): JobWorkPlace => new JobWorkPlace(
+                (int) $row->location_id,
+                (string) $row->name,
+                (string) $row->type,
+                $this->nullableInt($row->province_id),
+                $this->nullableInt($row->city_id),
+                $this->nullableInt($row->subdistrict_id),
+                $this->nullableInt($row->village_id),
+                $this->nullableInt($row->postal_code_id),
+                $row->address_line === null ? null : (string) $row->address_line,
+            ),
+            $this->connection->table('job_job_locations')->where('job_id', $jobId)->orderBy('position')->get()->all(),
+        );
     }
 
     /** @param  list<int>  $wanted */
@@ -215,6 +269,11 @@ final readonly class DatabaseJobRepository implements JobRepository
                 $this->listOf('job_job_skills', 'skill_id', $id),
                 array_values(array_filter(array_map(static fn (int $tagId): ?string => $tagNames[$tagId] ?? null, $tagIds), static fn (?string $name): bool => $name !== null)),
                 $this->listOf('job_job_benefits', 'benefit_id', $id),
+                $row->summary === null ? null : (string) $row->summary,
+                (bool) $row->vacancies_visible,
+                $row->salary_note === null ? null : (string) $row->salary_note,
+                $this->nullableInt($row->reapply_after_days),
+                $this->places($id),
             ),
             (int) $row->created_by_user_id,
             $row->published_at === null ? null : $this->time((string) $row->published_at),

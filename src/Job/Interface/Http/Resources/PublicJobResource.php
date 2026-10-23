@@ -27,6 +27,8 @@ final class PublicJobResource extends JsonResource
             'id' => $job->id,
             'slug' => $job->slug.'-'.$job->id,
             'title' => $content->title,
+            /** @var string|null One line for search results and sharing; clients show nothing without it. */
+            'summary' => $content->summary,
             'description' => $content->description,
             'company' => [
                 'id' => $company->id,
@@ -36,13 +38,16 @@ final class PublicJobResource extends JsonResource
                 'verified' => $company->verified,
             ],
             ...$this->resource->classification,
-            'vacancies' => $content->vacancies,
+            /** @var int|null Null when the company hides the number. */
+            'vacancies' => $content->vacanciesVisible ? $content->vacancies : null,
             'deadline' => $content->deadline?->format('Y-m-d'),
             'work_mode' => $content->workMode?->value,
             'salary' => $this->resource->salary,
-            // Until a job can have several work locations (#20) the list holds one item built from the job's own address, or none when the job has no province and no street line (a remote job);
-            // `id`, `name` and `type` are those of a company work location and are null.
-            'locations' => $location->province === null && $content->addressLine === null ? [] : [[
+            /** @var string|null Shown even when the amounts are hidden. */
+            'salary_note' => $content->salaryNote,
+            // The company locations of the job, the main one first. A job with an address of its own has one item whose `id`, `name` and `type` are null, and a remote job without a place has none.
+            /** @var list<array{id: int|null, name: string|null, type: string|null, province: string|null, city: string|null, subdistrict: string|null, village: string|null, postal_code: string|null, address_line: string|null}> */
+            'locations' => $this->resource->places !== [] ? $this->resource->places : ($location->province === null && $content->addressLine === null ? [] : [[
                 'id' => null,
                 'name' => null,
                 'type' => null,
@@ -52,7 +57,7 @@ final class PublicJobResource extends JsonResource
                 'village' => $location->village,
                 'postal_code' => $location->postalCode,
                 'address_line' => $content->addressLine,
-            ]],
+            ]]),
             'skills' => $this->resource->skills,
             'tags' => $content->tags,
             'benefits' => $this->resource->benefits,

@@ -58,6 +58,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_tests' => ['created_by_user_id'],
             'assessment_invitations' => ['applicant_user_id', 'invited_by_user_id'],
             'assessment_invitation_assessors' => ['user_id'],
+            'assessment_job_stage_tests' => ['updated_by'],
+            'assessment_job_stage_test_assessors' => ['user_id'],
             'assessment_answers' => ['scored_by_user_id'],
             'identity_user_two_factor' => ['user_id'],
             'identity_user_recovery_codes' => ['user_id'],
@@ -107,14 +109,14 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'assessment_invitations' => ['company_id'],
             'assessment_company_batteries' => ['company_id'],
         ],
-        'company_locations' => ['recruitment_interviews' => ['location_id'], 'workforce_requisitions' => ['location_id']],
+        'company_locations' => ['recruitment_interviews' => ['location_id'], 'workforce_requisitions' => ['location_id'], 'job_job_locations' => ['location_id']],
         'organization_legal_entities' => ['company_companies' => ['legal_entity_id']],
-        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id'], 'job_reports' => ['job_id']],
+        'job_jobs' => ['recruitment_applications' => ['job_id'], 'jobinvitation_invitations' => ['job_id'], 'recruitment_job_questions' => ['job_id'], 'recruitment_job_stage_kits' => ['job_id'], 'job_saved_jobs' => ['job_id'], 'assessment_invitations' => ['job_id'], 'assessment_job_stage_tests' => ['job_id'], 'job_reports' => ['job_id']],
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],
     ];
 
     /** @var list<string> attachments of a job: they go away with it, so a draft with one can still be deleted */
-    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits', 'job_reports.job_id'];
+    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits', 'assessment_job_stage_tests.job_id', 'job_reports.job_id'];
 
     /** @var array<string, list<string>> logs, views, audit, notifications, deliveries and summaries keep plain columns */
     private const array WITHOUT = [

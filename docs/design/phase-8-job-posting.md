@@ -1,4 +1,4 @@
-# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14, not coded)
+# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14; sections 1 to 4 coded 2026-10-23, 5 and 6 not coded)
 
 Gaps found against Mekari Talenta's job listings (help center articles 34576595122073, 34630221946009 and 34573329191321), chosen by the user from
 the advice of 2026-10-14. Not taken: splitting the description into three fields (the Markdown description stays one field; the front end offers
@@ -14,6 +14,9 @@ resume parsing, per-job stages and paid posting to other job boards. Extends `ph
 - 2026-10-14: a job may require **extra profile items** chosen from existing profile fields (no form builder), and a signed-in job seeker gets the
   job's **apply state** before applying (chosen by the user). This replaces "no eligibility pre-check endpoint" of `phase-1-applications.md`; the
   public job page stays cached and free of per-user data.
+- 2026-10-23: the front end asked for the job editor (C4), so **sections 1 to 4** are coded now (preview, summary, hidden vacancies, salary note, the job list
+  filters), together with the waiting period of `phase-8-rejections.md` and the work locations of `company-locations.md`. Sections 5 (requirements) and 6
+  (apply state) wait. The coded details are in "Coded (2026-10-23)" below.
 
 ## 1. Preview
 
@@ -96,12 +99,31 @@ resume parsing, per-job stages and paid posting to other job boards. Extends `ph
 - Front end: the job page calls it after sign-in; the "Lamar" button shows the first reason with its fix ("Verifikasi email", "Lengkapi
   profil: portofolio", "Anda sudah melamar", "Batas lamaran hari ini tercapai").
 
-## Changes in short
+## Coded (2026-10-23)
+
+Migration `2026_10_23_000186` (new, run on the test and the real database): `job_jobs.summary` (150), `vacancies_visible` (default true), `salary_note` (150),
+`reapply_after_days`, and `job_job_locations` (`company-locations.md` "Coded: #20").
+
+- **Preview (section 1):** `GET company/jobs/{id}/preview` answers `{data: <the public job detail>, meta: {publish_check: {ready, missing}}}` with `Cache-Control: no-store, private`. `missing` holds the
+  API field names `PublishJob` would refuse (the keys of `job-incomplete`, the deadline range included). Any member who may see the job gets it in every status. A company the public cannot see (hidden by
+  its own admin) still previews its jobs: the company shows under its name, `verified` from the company and without a logo. Nothing is counted or logged.
+- **Summary (section 2):** `invalid-summary` (422, `errors.summary`) for a text outside 20 to 150 characters or with a line break; the link rule answers `message-link-not-allowed` on `summary`. A blank text is stored
+  as null. Only a changed value is checked, so an old value never blocks an unrelated edit. **Shown (coded):** the public search row and detail, the company list and detail, the preview. **Not yet:** the job alert email,
+  the recommendation email (the rows of those emails are built outside Job). Core field: a change sends a live job back to review when the review policy asks for it.
+- **Hidden vacancies and salary note (section 3):** `vacancies_visible` (public `vacancies: null` when false; the company detail and list always show the number); `salary_note` (150, one line, link rule, `invalid-salary-note`),
+  a core field like the salary, shown on the public detail and search row even when `salary` is null. `vacancies_visible` is not a core field. Clone copies all of them.
+- **Company list filters (section 4):** every filter of the table is coded, comma-separated for the id lists (`province_id`, `city_id`, `work_mode`, `job_type_id`, `category_id`). A malformed value is refused by the
+  validation of the request (422 `validation-failed` with `errors`, like the applicant filters), **not** by an `invalid-filter` code: the design's code is dropped. The place filters match through any of the job's company
+  locations; `published_from` and `published_to` are Jakarta days (the last day counts); `filter[assignee]` is an extra condition, so a recruiter (who sees only their jobs) can only narrow their list with it;
+  `filter[filled]` compares the hired applications with the vacancies in SQL (a job without vacancies is never filled). The counts by status (`GET company/jobs/status-counts`) take the same filters. Sorts `deadline`
+  (already there) and `applications_count`. Rows gain `summary`, `applications_count` (active applications), `work_mode`, `location {city, province}` (the job's own address, the main location when it has
+  locations) and `created_by {id, name}`.
+- **Company detail:** `summary`, `vacancies_visible`, `salary_note`, `reapply_after_days`, `location_ids` and `locations`.
 
 | Piece | Change |
 |---|---|
-| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note`, `apply_requirements` |
+| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note` (coded `000186`), `apply_requirements` (not coded) |
 | API | `GET company/jobs/{id}/preview`; the three fields on the job form, the company detail, the public detail and search row, alerts and recommendation emails; new filters, sorts and row fields on `GET company/jobs`; `apply_requirements` on the job form and the public detail; `GET me/jobs/{id}/apply-state` |
 | Review | `summary` and `salary_note` are core fields |
-| Errors | 422 `invalid-summary`, `invalid-salary-note`, `message-link-not-allowed`, `invalid-filter`, `invalid-apply-requirements`; new `missing` codes in `profile-incomplete` |
+| Errors | 422 `invalid-summary`, `invalid-salary-note`, `message-link-not-allowed`, (`invalid-filter` dropped, see above), `invalid-apply-requirements`; new `missing` codes in `profile-incomplete` |
 | Front end | preview button and banner (C4, C5); summary with counter, Markdown outline, vacancies switch and salary note in the job form (C4); list filters and columns (C3); requirements picker in the job form; apply state on the job seeker's job page |

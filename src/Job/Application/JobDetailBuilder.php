@@ -2,6 +2,7 @@
 
 namespace Src\Job\Application;
 
+use Src\Job\Application\Browse\PublicJobViewBuilder;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobAssignee;
 use Src\Job\Domain\JobAssignmentRepository;
@@ -33,6 +34,7 @@ final readonly class JobDetailBuilder
         private CompanyTeam $team,
         private CompanyMemberAccounts $accounts,
         private JobHires $hires,
+        private PublicJobViewBuilder $views,
     ) {}
 
     public function build(Job $job, string $language): JobDetail
@@ -53,6 +55,7 @@ final readonly class JobDetailBuilder
             $this->hires->countPerJob([(int) $job->id])[(int) $job->id] ?? 0,
             $names,
             $this->locations->names($content->provinceId, $content->cityId, $content->subdistrictId, $content->villageId, $content->postalCodeId),
+            $this->views->places($content->workPlaces),
         );
     }
 

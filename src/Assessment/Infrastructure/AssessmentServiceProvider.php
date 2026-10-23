@@ -33,7 +33,9 @@ use Src\Assessment\Domain\Events\PsychologistInvited;
 use Src\Assessment\Domain\Events\PsychologistJoined;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
+use Src\Assessment\Domain\Events\ResultFinalized;
 use Src\Assessment\Domain\InvitationRepository;
+use Src\Assessment\Domain\JobStageTestRepository;
 use Src\Assessment\Domain\NormRepository;
 use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
@@ -45,6 +47,8 @@ use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Assessment\Domain\VideoTakeRepository;
 use Src\Assessment\Infrastructure\Calendar\AssessmentDueCalendarSource;
+use Src\Assessment\Infrastructure\Listeners\AdvanceApplicationListener;
+use Src\Assessment\Infrastructure\Listeners\CopyDefaultTestsWhenJobCloned;
 use Src\Assessment\Infrastructure\Listeners\EraseAssessmentDataWhenUserAnonymized;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfAttemptSubmissionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationChangeListener;
@@ -61,6 +65,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseAttemptOutcomeRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseAttemptRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseCompanyBatteryRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseInvitationRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseJobStageTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseNormRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseProviderRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepository;
@@ -78,6 +83,7 @@ use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
 use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Job\Domain\Events\JobCloned;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
@@ -109,6 +115,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
+        JobStageTestRepository::class => DatabaseJobStageTestRepository::class,
         AssessmentInvitations::class => AssessmentInvitationService::class,
         TestEmailSender::class => MailTestSender::class,
         TeamSubmissionSender::class => MailTeamSubmissionSender::class,
@@ -184,6 +191,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         Event::listen(InvitationChanged::class, [NotifyOfInvitationChangeListener::class, 'email']);
         Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'inApp']);
         Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'email']);
+        Event::listen(ResultFinalized::class, AdvanceApplicationListener::class);
+        Event::listen(JobCloned::class, CopyDefaultTestsWhenJobCloned::class);
         Event::listen(InvitationDeclined::class, NotifyOfInvitationDeclinedListener::class);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'inApp']);
         Event::listen(ReportSigned::class, [NotifyOfReportSignedListener::class, 'candidateInApp']);

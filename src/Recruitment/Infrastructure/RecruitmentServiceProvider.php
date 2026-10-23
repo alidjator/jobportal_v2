@@ -31,6 +31,7 @@ use Src\Recruitment\Application\MyInterviewReader;
 use Src\Recruitment\Application\OfferLetterRenderer;
 use Src\Recruitment\Application\OfferLetters;
 use Src\Recruitment\Application\PoolApplicationReader;
+use Src\Recruitment\Application\ProcessApplication;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
@@ -215,8 +216,10 @@ use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
+use Src\Shared\Application\Recruitment\ApplicationAdvancer;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
 use Src\Shared\Application\Recruitment\ApplicationVisibility;
+use Src\Shared\Application\Recruitment\CompanyStages;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
@@ -245,6 +248,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
         JobHires::class => DatabaseJobHires::class,
+        CompanyStages::class => RepositoryCompanyStages::class,
+        ApplicationAdvancer::class => ProcessApplication::class,
         ApplicantRelations::class => DatabaseApplicantRelations::class,
         TeamApplications::class => TeamApplicationRefs::class,
         PoolApplications::class => RecruitmentPoolApplications::class,

@@ -10,6 +10,17 @@ interface ApplicationRepository
     /** Whether the applicant has a live application (not withdrawn) for the job: applying again is not allowed. */
     public function hasLiveApplication(int $userId, int $jobId): bool;
 
+    /**
+     * The live application of the applicant for the job when a recruiter rejected it, as its id and the time it was rejected; null when there is none or it is in another stage.
+     * Only a rejected application can be released for applying again (`releaseActiveKey`).
+     *
+     * @return array{id: int, rejected_at: DateTimeImmutable}|null
+     */
+    public function rejectedApplicationOf(int $userId, int $jobId): ?array;
+
+    /** Frees the key of a rejected application so the applicant can apply to the job again; the application itself stays as it was. */
+    public function releaseActiveKey(int $applicationId): void;
+
     /** How many applications the applicant submitted since this moment, withdrawn ones included. */
     public function countSubmittedSince(int $userId, DateTimeImmutable $since): int;
 
@@ -48,6 +59,9 @@ interface ApplicationRepository
      * rejection reason and the note. A move into `hired` stores the hire details; a move out of `hired` clears them.
      */
     public function recordMove(Application $before, Application $after, ?int $actorId, ?RejectionReason $reason, ?string $note, DateTimeImmutable $at, ?HireDetails $hire = null): void;
+
+    /** Stores a move the platform made by itself (an automatic advance): the new stage and a history entry of the system actor with the note. */
+    public function recordSystemMove(Application $before, Application $after, string $note, DateTimeImmutable $at): void;
 
     /** Stores the acceptance of a job offer: the application moves to `hired` with its hire details, and a history entry by the applicant. */
     public function recordHire(Application $before, Application $after, DateTimeImmutable $at, ?HireDetails $hire = null): void;

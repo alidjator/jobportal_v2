@@ -212,4 +212,39 @@ final class ReverseAlertMatchingTest extends FeatureTestCase
 
         $this->assertSame([], json_decode((string) DB::table('jobalert_alerts')->where('id', $id)->value('keywords'), true));
     }
+
+    /** Gives the job a company work location (a copy of its place, as the job repository keeps it) at the position in the job's list. @param  array<string, int>  $chain */
+    private function workLocation(int $jobId, int $position, array $chain, string $name): void
+    {
+        $location = (int) DB::table('company_locations')->insertGetId([
+            'company_id' => $this->companyId, 'name' => $name, 'type' => 'branch', 'is_main' => false, 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        DB::table('job_job_locations')->insert([
+            'job_id' => $jobId, 'location_id' => $location, 'position' => $position, 'name' => $name, 'type' => 'branch', 'province_id' => $chain['province_id'], 'city_id' => $chain['city_id'], 'created_at' => now(),
+        ]);
+    }
+
+    public function test_a_job_with_several_work_locations_fits_the_alerts_of_any_of_its_places(): void
+    {
+        $province = (int) DB::table('reference_provinces')->insertGetId(['bps_code' => '31', 'name' => 'DKI JAKARTA']);
+        $second = ['province_id' => $province, 'city_id' => (int) DB::table('reference_cities')->insertGetId(['province_id' => $province, 'bps_code' => '3171', 'name' => 'JAKARTA SELATAN', 'type' => 'city'])];
+        $third = ['province_id' => (int) DB::table('reference_provinces')->insertGetId(['bps_code' => '33', 'name' => 'JAWA TENGAH']), 'city_id' => 0];
+
+        $multi = $this->live('Two sites', ['province_id' => $this->place['province_id'], 'city_id' => $this->place['city_id']]);
+        $this->workLocation($multi, 0, $this->place, 'Bandung');
+        $this->workLocation($multi, 1, $second, 'Jakarta');
+        $single = $this->live('One site', ['province_id' => $this->place['province_id'], 'city_id' => $this->place['city_id']]);
+
+        $first = $this->alert(['city_id' => [$this->place['city_id']]]);
+        $inSecond = $this->alert(['province_id' => [$second['province_id']]]);
+        $inSecondCity = $this->alert(['city_id' => [$second['city_id']]]);
+        $elsewhere = $this->alert(['province_id' => [$third['province_id']]]);
+        $either = $this->alert(['province_id' => [$third['province_id'], $second['province_id']]]);
+
+        $this->assertSameAlerts($multi, $single);
+        $this->assertSame([$first, $inSecond, $inSecondCity, $either], $this->reverse($multi));
+        $this->assertSame([$first], $this->reverse($single));
+        $this->assertNotContains($elsewhere, $this->reverse($multi));
+    }
 }

@@ -195,7 +195,7 @@ final class JobAlertTest extends FeatureTestCase
 
         $this->assertSame([$second, $first], array_column($response->json('data'), 'id'));
         $this->assertSame(
-            ['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'deadline', 'published_at', 'match', 'saved'],
+            ['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'salary_note', 'summary', 'deadline', 'published_at', 'match', 'saved'],
             array_keys($response->json('data.0')),
         );
         $this->assertSame(2, $response->json('meta.total'));

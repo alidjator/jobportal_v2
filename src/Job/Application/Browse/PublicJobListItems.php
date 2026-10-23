@@ -2,6 +2,7 @@
 
 namespace Src\Job\Application\Browse;
 
+use Src\Job\Domain\JobWorkPlace;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
@@ -21,8 +22,8 @@ final readonly class PublicJobListItems
         $jobTypes = $this->references->names('job-types', $this->ids($hits, static fn (JobSearchHit $hit): ?int => $hit->jobTypeId), $language);
         $jobLevels = $this->references->names('job-levels', $this->ids($hits, static fn (JobSearchHit $hit): ?int => $hit->jobLevelId), $language);
         $periods = $this->references->names('salary-periods', $this->ids($hits, static fn (JobSearchHit $hit): ?int => $hit->salaryPeriodId), $language);
-        $provinces = $this->locations->provinceNames($this->ids($hits, static fn (JobSearchHit $hit): ?int => $hit->provinceId));
-        $cities = $this->locations->cityNames($this->ids($hits, static fn (JobSearchHit $hit): ?int => $hit->cityId));
+        $provinces = $this->locations->provinceNames($this->placeIds($hits, true));
+        $cities = $this->locations->cityNames($this->placeIds($hits, false));
 
         $items = [];
 
@@ -37,18 +38,66 @@ final readonly class PublicJobListItems
                 $hit->slug,
                 $hit->title,
                 $cards[$hit->companyId],
-                $hit->cityId === null ? null : ($cities[$hit->cityId] ?? null),
-                $hit->provinceId === null ? null : ($provinces[$hit->provinceId] ?? null),
+                $this->places($hit, $provinces, $cities),
                 $this->named($hit->jobTypeId, $jobTypes),
                 $this->named($hit->jobLevelId, $jobLevels),
                 $hit->workMode,
                 $this->salary($hit, $periods),
                 $hit->deadline,
                 $hit->publishedAt,
+                summary: $hit->summary,
+                salaryNote: $hit->salaryNote,
             );
         }
 
         return $items;
+    }
+
+    /**
+     * The province ids (or city ids) of the job's own address and of all its company locations.
+     *
+     * @param  list<JobSearchHit>  $hits
+     * @return list<int>
+     */
+    private function placeIds(array $hits, bool $province): array
+    {
+        $ids = [];
+
+        foreach ($hits as $hit) {
+            $ids[] = $province ? $hit->provinceId : $hit->cityId;
+
+            foreach ($hit->places as $place) {
+                $ids[] = $province ? $place->provinceId : $place->cityId;
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (?int $id): bool => $id !== null)));
+    }
+
+    /**
+     * The locations of a row: the company locations when the job has them, else one item built from the job's own address (none when it shows no city and no province);
+     * `id`, `name` and `type` are those of a company location and null for an own address.
+     *
+     * @param  array<int, string>  $provinces
+     * @param  array<int, string>  $cities
+     * @return list<array{id: int|null, name: string|null, type: string|null, city: string|null, province: string|null}>
+     */
+    private function places(JobSearchHit $hit, array $provinces, array $cities): array
+    {
+        if ($hit->places === []) {
+            $city = $hit->cityId === null ? null : ($cities[$hit->cityId] ?? null);
+            $province = $hit->provinceId === null ? null : ($provinces[$hit->provinceId] ?? null);
+
+            return $city === null && $province === null ? [] : [['id' => null, 'name' => null, 'type' => null, 'city' => $city, 'province' => $province]];
+        }
+
+        return array_map(static fn (JobWorkPlace $place): array => [
+            'id' => $place->locationId,
+            'name' => $place->name,
+            'type' => $place->type,
+            'city' => $place->cityId === null ? null : ($cities[$place->cityId] ?? null),
+            'province' => $place->provinceId === null ? null : ($provinces[$place->provinceId] ?? null),
+        ], $hit->places);
     }
 
     /**

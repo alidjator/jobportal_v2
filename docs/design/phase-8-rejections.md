@@ -1,4 +1,4 @@
-# Phase 8: restricted candidates, undoing a rejection and re-applying (designed 2026-10-14, not coded)
+# Phase 8: restricted candidates, undoing a rejection and re-applying (designed 2026-10-14; the waiting period of section 3 coded 2026-10-23, the rest not coded)
 
 Gaps found against Mekari Talenta's rejection tools (help center articles 47788506571289, 48569275253913 and 34773101103385). Not copied on purpose:
 the "notify by email" toggle (the job seeker is always told, as for interviews), the AI auto-reject (it weighs gender and age, against the
@@ -15,6 +15,8 @@ right, through anonymisation). Extends `phase-1-pipeline.md` (rejection), `phase
 - 2026-10-14: a rejection waits an **undo window** before it takes effect, an admin setting, 10 minutes by default (decided by the user).
 - 2026-10-14: re-applying to the same job after a rejection is allowed after a **waiting period set per job** (default from a company setting;
   "never" stays the default) (decided by the user).
+- 2026-10-23: the waiting period of section 3 is coded for the job editor (C4): the column, the job form field, the apply flow and the company setting. The apply state, the "Pernah melamar" note for the
+  team and everything of sections 1 and 2 wait (see "Coded: the waiting period" below; user, 2026-10-23).
 
 ## 1. Restricted candidates
 
@@ -79,6 +81,19 @@ admin edits the existing one instead).
 - **Job seeker:** the apply state (`GET me/jobs/{id}/apply-state`, `phase-8-job-posting.md` section 6) carries the application and `reapply_on`,
   so the button reads "Anda dapat melamar lagi mulai {date}". (Corrected 2026-10-14: not on the public job page, which is cached and holds no
   per-user data.)
+
+## Coded: the waiting period (2026-10-23)
+
+Migration `2026_10_23_000186`: `job_jobs.reapply_after_days` (null: never; the job form allows 30 to 365).
+
+- **Job form:** `reapply_after_days` on `POST`/`PATCH company/jobs` (30 to 365 or null) and on the company detail. It is not a core field and a clone copies it.
+- **Company setting `recruitment.reapply_after_days`** (company admin on the company settings page): an integer from 0 to 365, **0 means never** (the settings catalogue has no null), default 0. It is only the value
+  the front end prefills in a new job; the job keeps its own. A value from 1 to 29 is accepted by the setting but refused by the job form.
+- **Apply:** a job seeker whose application to the job is **rejected** (`stage_type = rejected`, still holding the key) may apply again from the Jakarta day that is `reapply_after_days` days after the day it was rejected
+  (the time the application entered the rejected stage). The key of the old application is freed (the application itself stays rejected and keeps its history) and a new application starts at `applied`; the daily limit counts
+  it, and a second rejection starts a new waiting period. Earlier, 409 `already-applied` carries `reapply_on` (`Y-m-d`). A job without a waiting period, and any application that is `hired` or in another stage, answers
+  409 `already-applied` without `reapply_on`, as before. The recruiter moving the old application later never takes the key back from the newer one.
+- **Not coded:** `GET me/jobs/{id}/apply-state`, the "Pernah melamar" note on the new application, the restricted badge, restrictions, the undo window.
 
 ## Changes in short
 

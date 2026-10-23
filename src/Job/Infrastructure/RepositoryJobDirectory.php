@@ -134,6 +134,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return $this->jobs->find($jobId)?->content->vacancies;
     }
 
+    public function reapplyAfterDays(int $jobId): ?int
+    {
+        return $this->jobs->find($jobId)?->content->reapplyAfterDays;
+    }
+
     public function statusOf(int $jobId): ?string
     {
         return $this->jobs->find($jobId)?->status->value;

@@ -2,12 +2,14 @@
 
 namespace Src\Job\Application;
 
+use Src\Job\Domain\Events\JobCloned;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobAssignmentRepository;
 use Src\Job\Domain\JobRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -15,7 +17,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 /**
- * A member copies a job they may see into a new draft: every field, skill, tag and benefit, but no deadline, assigned only to the person cloning, and
+ * A member copies a job they may see into a new draft: every field, skill, tag, benefit and work location (the default tests of Assessment follow `JobCloned`), but no deadline, assigned only to the person cloning, and
  * without applications. Any status can be cloned, so an old job is easy to reopen as a fresh one.
  */
 final readonly class CloneJob
@@ -26,6 +28,7 @@ final readonly class CloneJob
         private JobAssignmentRepository $assignments,
         private RequisitionGate $requisitions,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -46,11 +49,15 @@ final readonly class CloneJob
             throw new BusinessRuleViolation('This tenant opens its jobs from an approved requisition, so a job cannot be cloned.', 'requisition-required');
         }
 
-        return $this->transactions->run(function () use ($member, $source): int {
+        $copyId = $this->transactions->run(function () use ($member, $source): int {
             $copy = $this->jobs->create(Job::draft($member->companyId, $source->slug, $source->content->with(['deadline' => null]), $member->userId));
             $this->assignments->add((int) $copy->id, $member->userId, null, $this->clock->now());
 
             return (int) $copy->id;
         });
+
+        $this->events->dispatch([new JobCloned((int) $source->id, $copyId, $member->companyId, $member->userId, $this->clock->now())]);
+
+        return $copyId;
     }
 }

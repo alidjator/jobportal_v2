@@ -118,6 +118,27 @@ final class JobReviewPolicyTest extends FeatureTestCase
         $this->assertSame(['from' => 'active', 'to' => 'pending_review'], json_decode((string) $entry->metadata, true));
     }
 
+    public function test_the_summary_and_the_salary_note_are_core_fields_and_the_visibility_of_the_vacancies_and_the_waiting_period_are_not(): void
+    {
+        $this->verify();
+        $id = $this->draft();
+        $this->publish($id);
+        $this->verify(false);
+
+        $this->api('PATCH', "/company/jobs/{$id}", ['vacancies_visible' => false, 'reapply_after_days' => 45], $this->adminToken)->assertOk()->assertJsonPath('data.status', 'active');
+        $this->api('PATCH', "/company/jobs/{$id}", ['summary' => 'Build the APIs of the job portal with a small team.'], $this->adminToken)->assertOk()->assertJsonPath('data.status', 'pending_review');
+    }
+
+    public function test_a_new_salary_note_sends_a_live_job_back_to_review(): void
+    {
+        $this->verify();
+        $id = $this->draft();
+        $this->publish($id);
+        $this->verify(false);
+
+        $this->api('PATCH', "/company/jobs/{$id}", ['salary_note' => 'Kompetitif'], $this->adminToken)->assertOk()->assertJsonPath('data.status', 'pending_review');
+    }
+
     // ----- suspicious text -----
 
     public function test_a_phrase_of_the_list_sends_the_job_of_a_verified_company_to_review_whatever_the_letter_case(): void
@@ -127,6 +148,15 @@ final class JobReviewPolicyTest extends FeatureTestCase
         $this->publish($this->draft('In the title', ['title' => 'Staff, BIAYA PENDAFTARAN Rp 50.000']))->assertJsonPath('data.status', 'pending_review');
         $this->publish($this->draft('In the description', ['description' => 'Kami membuka lowongan. Ada Biaya  Seragam yang harus dibayar di muka.']))->assertJsonPath('data.status', 'pending_review');
         $this->publish($this->draft('Clean'))->assertJsonPath('data.status', 'active');
+    }
+
+    public function test_a_phrase_of_the_list_in_the_summary_or_the_salary_note_sends_the_job_to_review(): void
+    {
+        $this->verify();
+
+        $this->publish($this->draft('In the summary', ['summary' => 'Staf baru, ada Biaya Pendaftaran yang harus dibayar.']))->assertJsonPath('data.status', 'pending_review');
+        $this->publish($this->draft('In the note', ['salary_note' => 'Gaji setelah biaya pendaftaran']))->assertJsonPath('data.status', 'pending_review');
+        $this->publish($this->draft('Clean summary', ['summary' => 'Build the APIs of the job portal with a small team.']))->assertJsonPath('data.status', 'active');
     }
 
     public function test_a_phrase_matches_whole_words_only(): void

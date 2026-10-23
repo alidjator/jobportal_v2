@@ -4,6 +4,7 @@ namespace Src\Job\Application\Browse;
 
 use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobRepository;
+use Src\Job\Domain\JobWorkPlace;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 
@@ -40,13 +41,23 @@ final readonly class JobContentSnapshot
             'title' => $content->title,
             'description' => $content->description,
             'work_mode' => $content->workMode?->value,
-            'locations' => $place->province === null && $content->addressLine === null ? [] : [['province' => $place->province, 'city' => $place->city, 'address_line' => $content->addressLine]],
+            'locations' => $content->workPlaces !== [] ? $this->places($content) : ($place->province === null && $content->addressLine === null ? [] : [['province' => $place->province, 'city' => $place->city, 'address_line' => $content->addressLine]]),
             'salary' => $this->salary($content),
             'skills' => $this->named('skills', $content->skillIds),
             'benefits' => $this->named('benefits', $content->benefitIds),
             'tags' => $content->tags,
             'as_of_migration' => false,
         ];
+    }
+
+    /** @return list<array{province: ?string, city: ?string, address_line: ?string}> the company locations of the job, the main one first */
+    private function places(JobContent $content): array
+    {
+        return array_map(function (JobWorkPlace $place): array {
+            $names = $this->locations->names($place->provinceId, $place->cityId, $place->subdistrictId, $place->villageId, $place->postalCodeId);
+
+            return ['province' => $names->province, 'city' => $names->city, 'address_line' => $place->addressLine];
+        }, $content->workPlaces);
     }
 
     /** @return array{min: ?int, max: ?int, period: array{id: int, name: array<string, string>}|null}|null */

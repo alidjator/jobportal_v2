@@ -13,4 +13,6 @@ enum JobListSort: string
     case TitleDescending = '-title';
     case DeadlineAscending = 'deadline';
     case DeadlineDescending = '-deadline';
+    case ApplicationsCountAscending = 'applications_count';
+    case ApplicationsCountDescending = '-applications_count';
 }

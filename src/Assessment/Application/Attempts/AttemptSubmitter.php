@@ -7,7 +7,10 @@ use Src\Assessment\Application\Reports\AutoIssueReport;
 use Src\Assessment\Application\Reports\ReportDrafter;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Events\AttemptSubmitted;
+use Src\Assessment\Domain\Events\ResultFinalized;
 use Src\Assessment\Domain\InvitationRepository;
+use Src\Assessment\Domain\ResultStatus;
+use Src\Assessment\Domain\TestKind;
 use Src\Assessment\Domain\VideoTakeRepository;
 use Src\Shared\Application\Settings\Settings;
 
@@ -36,8 +39,12 @@ final readonly class AttemptSubmitter
         $this->drafts->draft($attempt, $invitation, $context->test, $result);
         $issued = $this->issues->issue($attempt, $invitation, $context->test, $result);
 
+        $finalized = $result->status === ResultStatus::Scored && $result->percentage !== null && $context->test->kind() === TestKind::Skill
+            ? new ResultFinalized((int) $invitation->id, $invitation->applicationId, $invitation->jobId, $invitation->companyId, $result->percentage, $result->integrityTier->value, $context->now)
+            : null;
+
         return new SubmittedAttempt($attempt, new AttemptSubmitted(
             (int) $invitation->id, $invitation->applicationId, $invitation->jobId, $invitation->companyId, $auto, $context->now,
-        ), $issued);
+        ), $issued, $finalized);
     }
 }

@@ -19,12 +19,12 @@ final readonly class CountJobs
     ) {}
 
     /** @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended` */
-    public function execute(Actor $actor, ?string $search, bool $assignedToMe, ?DateTimeImmutable $deadlineTo = null, bool $withoutApplications = false): JobStatusCounts
+    public function execute(Actor $actor, ?string $search, bool $assignedToMe, ?DateTimeImmutable $deadlineTo = null, bool $withoutApplications = false, JobListFilters $filters = new JobListFilters): JobStatusCounts
     {
         $member = $this->access->member($actor);
 
         $found = $this->reader->countByStatus(
-            new JobListQuery($member->companyId, $member->viewsAll() && ! $assignedToMe ? null : $member->userId, null, $search, deadlineTo: $deadlineTo, withoutApplications: $withoutApplications),
+            new JobListQuery($member->companyId, $member->viewsAll() && ! $assignedToMe ? null : $member->userId, null, $search, deadlineTo: $deadlineTo, withoutApplications: $withoutApplications, filters: $filters),
         );
 
         $byStatus = [];

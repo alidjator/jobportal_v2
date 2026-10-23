@@ -91,6 +91,9 @@ interface JobDirectory
     /** The vacancies the job states, or null when it states none or does not exist. */
     public function vacancies(int $jobId): ?int;
 
+    /** The days after a rejection before the same person may apply to the job again, or null when the job says never (or does not exist). */
+    public function reapplyAfterDays(int $jobId): ?int;
+
     /** The status value of the job (`active`, `closed`, ...), or null when it does not exist. */
     public function statusOf(int $jobId): ?string;
 

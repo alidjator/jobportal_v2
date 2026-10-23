@@ -61,7 +61,7 @@ final readonly class UpdateJob
             $job = $this->access->job($member, $jobId);
             $job->assertEditable();
 
-            $content = $this->changes->apply($job->content, $changes, isNew: false);
+            $content = $this->changes->apply($job->content, $changes, isNew: false, companyId: $member->companyId);
             $this->assertPositionNotLocked($jobId, $content, $job->content);
 
             // The vacancies of a job opened for a requisition stay inside the hires of that requisition.

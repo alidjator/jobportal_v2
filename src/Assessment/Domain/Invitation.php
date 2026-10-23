@@ -6,7 +6,7 @@ use DateTimeImmutable;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A test sent to a candidate for one application. It is invited until the candidate starts (or declines it), then started until the attempt is submitted; the team
+ * A test sent to a candidate for one application (`stageId` is the assessment stage it was sent in, null for one sent by hand outside a move). It is invited until the candidate starts (or declines it), then started until the attempt is submitted; the team
  * can cancel an active one and an unstarted one expires at its due time. Cancelled, expired, declined and submitted invitations are kept as history. The test never
  * changes after the invitation is sent: a published test that has invitations is locked.
  */
@@ -32,6 +32,7 @@ final readonly class Invitation
         public ?string $location = null,
         public ?InvitationAttachment $attachment = null,
         public ?string $note = null,
+        public ?int $stageId = null,
     ) {}
 
     /** @param  list<int>  $assessorIds */
@@ -48,10 +49,11 @@ final readonly class Invitation
         InvitationMode $mode = InvitationMode::Online,
         ?string $location = null,
         ?string $note = null,
+        ?int $stageId = null,
     ): self {
         return new self(
             null, $applicationId, $companyId, $jobId, $applicantUserId, $testId, $startsAt, $dueAt, InvitationStatus::Invited, $invitedByUserId, $assessorIds,
-            mode: $mode, location: $mode === InvitationMode::Onsite ? $location : null, note: $note,
+            mode: $mode, location: $mode === InvitationMode::Onsite ? $location : null, note: $note, stageId: $stageId,
         );
     }
 
@@ -138,7 +140,7 @@ final readonly class Invitation
 
         return new self(
             $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
-            $this->status, $this->invitedByUserId, $this->assessorIds, $this->remindedAt, $this->closedAt, $this->createdAt, $this->mode, $this->location, $attachment, $this->note,
+            $this->status, $this->invitedByUserId, $this->assessorIds, $this->remindedAt, $this->closedAt, $this->createdAt, $this->mode, $this->location, $attachment, $this->note, $this->stageId,
         );
     }
 
@@ -151,7 +153,7 @@ final readonly class Invitation
     {
         return new self(
             $this->id, $this->applicationId, $this->companyId, $this->jobId, $this->applicantUserId, $this->testId, $this->startsAt, $this->dueAt,
-            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt, $this->mode, $this->location, $this->attachment, $this->note,
+            $status, $this->invitedByUserId, $this->assessorIds, $remindedAt, $closedAt, $this->createdAt, $this->mode, $this->location, $this->attachment, $this->note, $this->stageId,
         );
     }
 }

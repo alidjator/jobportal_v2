@@ -33,6 +33,8 @@ final class JobDetailResource extends JsonResource
             'status' => $job->status->value,
             /** @var string|null Only for `rejected` and `taken_down`. */
             'status_reason' => $this->when($job->status === JobStatus::Rejected || $job->status === JobStatus::TakenDown, $job->statusReason),
+            /** @var string|null One line for search results and sharing (20 to 150 characters). */
+            'summary' => $content->summary,
             'description' => $content->description,
             'category_id' => $content->categoryId,
             /** @var string|null The name in the request language. */
@@ -56,6 +58,10 @@ final class JobDetailResource extends JsonResource
             /** @var string|null The name in the request language. */
             'education_level_name' => $this->resource->names['education_level'] ?? null,
             'vacancies' => $content->vacancies,
+            /** @var bool Whether the public sees the number of vacancies; the company always does. */
+            'vacancies_visible' => $content->vacanciesVisible,
+            /** @var int|null Days after a rejection before the same person may apply again; null means never. */
+            'reapply_after_days' => $content->reapplyAfterDays,
             'hires_count' => $this->resource->hiresCount,
             'filled' => $this->resource->filled(),
             'deadline' => $content->deadline?->format('Y-m-d'),
@@ -65,6 +71,8 @@ final class JobDetailResource extends JsonResource
             /** @var string|null The name in the request language. */
             'salary_period_name' => $this->resource->names['salary_period'] ?? null,
             'salary_visible' => $content->salaryVisible,
+            /** @var string|null */
+            'salary_note' => $content->salaryNote,
             'work_mode' => $content->workMode?->value,
             'province_id' => $content->provinceId,
             /** @var string|null */
@@ -82,6 +90,9 @@ final class JobDetailResource extends JsonResource
             /** @var string|null "Subdistrict, City, Province", ready to show. */
             'location_label' => $this->resource->locationLabel(),
             'address_line' => $content->addressLine,
+            /** @var list<int> The company locations of the job, the main one first; the address above is that of the first one. */
+            'location_ids' => $content->locationIds(),
+            'locations' => $this->resource->places,
             'skills' => $this->resource->skills,
             'tags' => $content->tags,
             'benefits' => $this->resource->benefits,

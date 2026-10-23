@@ -138,7 +138,7 @@ final class JobSearchTest extends FeatureTestCase
         $this->assertSame(['min' => 10000000, 'max' => 15000000, 'period' => ['id' => $period, 'name' => 'monthly']], $row['salary']);
         $this->assertSame(['2026-12-31', '2026-10-01T08:00:00+00:00'], [$row['deadline'], $row['published_at']]);
         $this->assertSame(
-            ['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'deadline', 'published_at'],
+            ['id', 'slug', 'title', 'company', 'locations', 'job_type', 'job_level', 'work_mode', 'salary', 'salary_note', 'summary', 'deadline', 'published_at'],
             array_keys($row),
         );
     }

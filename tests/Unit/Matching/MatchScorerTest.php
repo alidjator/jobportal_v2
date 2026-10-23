@@ -52,6 +52,17 @@ final class MatchScorerTest extends TestCase
         $this->assertNull($this->signal('location', [], []));
     }
 
+    public function test_a_job_with_several_places_scores_the_best_of_them(): void
+    {
+        $places = [['province_id' => 11, 'city_id' => 110], ['province_id' => 10, 'city_id' => 100]];
+
+        $this->assertSame(100, $this->signal('location', [], ['provinceId' => 11, 'cityId' => 110, 'places' => $places]));
+        $this->assertSame(50, $this->signal('location', [], ['provinceId' => 11, 'cityId' => 110, 'places' => [['province_id' => 11, 'city_id' => 110], ['province_id' => 10, 'city_id' => 101]]]));
+        $this->assertSame(0, $this->signal('location', [], ['provinceId' => 11, 'cityId' => 110, 'places' => [['province_id' => 11, 'city_id' => 110], ['province_id' => 12, 'city_id' => 120]]]));
+        $this->assertNull($this->signal('location', [], ['places' => [['province_id' => null, 'city_id' => null]]]));
+        $this->assertSame(100, $this->signal('location', [], ['remote' => true, 'places' => $places]));
+    }
+
     public function test_experience_follows_the_range_of_the_level_and_never_punishes_more_experience(): void
     {
         // 28 months = 2.33 years.

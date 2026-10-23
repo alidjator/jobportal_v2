@@ -47,6 +47,9 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 **Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15, #20 and, since 2026-10-20, #34 (and endpoints
 the front end asks for) are coded; the other rows wait even when ready.
 
+**Job editor C4, API part (2026-10-23):** asked for by the front end and chosen by the user: `phase-8-job-posting.md` sections 1 to 4, the waiting period of `phase-8-rejections.md` section 3, the job locations of
+`company-locations.md` ("Coded: #20") and `phase-8-assessment-automation.md` sections 1 and 2 are coded (migrations `000186`, `000187`), waiting for the user's check. Their other sections stay open (rows 14, 20, 22).
+
 **Front-end step 0, API part (2026-10-21, branch `frontend-step-0-api`):** `phase-8-demo-data.md` (`demo:seed`) and `phase-8-api-translations.md`
 (without its notification catalog) are coded, waiting for the user's check.
 
@@ -54,10 +57,10 @@ the front end asks for) are coded; the other rows wait even when ready.
 |---|---|---|
 | 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |
 | 13 | **new** hand-off to Employee (after `phase-8-hiring.md`), with the pre-boarding documents (FG5, decided 2026-10-19) | a design session (`erp-direction.md` section 3) |
-| 14 | `phase-8-rejections.md` | restricted candidates: question 13 |
+| 14 | `phase-8-rejections.md` | restricted candidates: question 13; the waiting period (section 3) is coded since 2026-10-23, its apply state and team note wait |
 | 15 | `phase-8-candidate-experience.md` (section 5, the agenda, added 2026-10-19) | #14: the pending rejections of the rejections design carry the candidate message |
-| 20 | `phase-8-job-posting.md` | also jobs with several locations of `company_locations` (search, matching, alerts, recommendations; from #27, decided 2026-10-17) |
-| 22 | `phase-8-assessment-automation.md` | |
+| 20 | `phase-8-job-posting.md` | sections 1 to 4 and the jobs with several locations (search, matching, alerts, recommendations) are coded since 2026-10-23; open: sections 5 and 6, the summary in the alert and recommendation emails |
+| 22 | `phase-8-assessment-automation.md` | sections 1 and 2 are coded since 2026-10-23; open: section 3 (comparing results) |
 | 23 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
 | 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |

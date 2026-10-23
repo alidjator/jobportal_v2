@@ -46,6 +46,8 @@ branches. Coded in a coding session.
     amendment.
 17. **Interview text and location:** when `location_id` is given, `location` is filled from the location's address and a sent `location` is
     ignored. Room or floor details go in the interview `note`.
+18. **Job locations (user, 2026-10-23, #20):** a job may be posted for several company locations. A pivot keeps the choice with a copy of each place, the job's own address follows the
+    main one, and search, matching and alerts see every location (coded, "Coded: #20" below).
 
 ## 1. Table `company_locations`
 
@@ -179,3 +181,20 @@ with one item built from the job's own columns, as decision 12 says. The list it
 **Decided with the user (2026-10-19):** a job with no province and no street line (a remote job) returns `locations: []`, not an item of nulls, so the shape is already 0 to N items for #20. The list item keeps only city and
 province, the two places it showed before. Breaking change: `location` is now `locations` on the public list and detail (no client exists yet).
 
+## Coded: #20, the work locations of a job (2026-10-23)
+
+Migration `2026_10_23_000186` (also holds the posting fields of `phase-8-job-posting.md`): table `job_job_locations` (`job_id` CASCADE, `location_id` RESTRICT to `company_locations`, `position`, and the
+copy of the place: `name`, `type`, `address_line` and the five chain ids, each with a RESTRICT key to its `reference_*` table). Chosen by the user on 2026-10-23: a pivot with the address chain kept, and the full
+multi-location search.
+
+- **Write:** `location_ids` (at most 10, no duplicates) on `POST`/`PATCH company/jobs`. The first one is the main location: its address fills the job's own columns (`province_id` ... `address_line`), so everything that
+  reads those columns still works. A request that sends `location_ids` (not empty) together with an address field is refused (422 `invalid-job`, `errors.location_ids`); `location_ids: []` removes the locations and leaves the
+  address as it is (the job then has an address of its own). A new location must be an active location of the company (422 `invalid-job`, `errors.location_ids`); one the job already holds stays when it was deactivated later,
+  so an unrelated edit never fails. A location a job holds can be deactivated but not deleted (409 `location-in-use`, through `JobLocationUsage`).
+- **The copy:** the job shows the place as it was at the last save that sent `location_ids`; editing the location later does not change the jobs that hold it (like the interview address, decision 7). Sending the same
+  `location_ids` again takes the new address. A change of the locations is a core change (review) and a clone copies them.
+- **Read:** the company detail has `location_ids` and `locations`; the public detail `locations` (`id`, `name`, `type`, `province`, `city`, `subdistrict`, `village`, `postal_code`, `address_line`, the main one first; one item with
+  `id`, `name` and `type` null for an own address, none for a remote job without a place); the public row and the alert, saved-job and recommendation rows `locations` (`id`, `name`, `type`, `city`, `province`).
+- **Search, matching, alerts:** the public search filters `province_id` and `city_id` and the company list filters match through any location of the job (each filter on its own: the province may be matched by one
+  location and the city by another). The match score takes the best location (`JobSignals::places`). The job alerts match a job through any of its provinces and cities (`LiveJobProfile` gives lists for
+  `province_id` and `city_id`; the reverse statement of `DatabaseJobAlertRepository` accepts them). Market statistics (`job_market_daily`) and the salary insight keep using the job's own (main) province.

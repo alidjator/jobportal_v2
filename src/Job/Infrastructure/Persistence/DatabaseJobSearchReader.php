@@ -12,6 +12,7 @@ use Src\Job\Application\Browse\JobSearchReader;
 use Src\Job\Application\Browse\JobSearchSort;
 use Src\Job\Application\Browse\SimilarJobsQuery;
 use Src\Job\Domain\JobStatus;
+use Src\Job\Domain\JobWorkPlace;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -42,7 +43,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
     private const array COLUMNS = [
         'job_jobs.id', 'job_jobs.slug', 'job_jobs.title', 'job_jobs.company_id', 'job_jobs.province_id', 'job_jobs.city_id', 'job_jobs.job_type_id',
         'job_jobs.job_level_id', 'job_jobs.work_mode', 'job_jobs.salary_min', 'job_jobs.salary_max', 'job_jobs.salary_period_id', 'job_jobs.salary_visible',
-        'job_jobs.deadline', 'job_jobs.published_at',
+        'job_jobs.deadline', 'job_jobs.published_at', 'job_jobs.summary', 'job_jobs.salary_note',
     ];
 
     /**
@@ -67,14 +68,14 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
             ->get()
             ->all();
 
-        return new Page(array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows), $total, $request);
+        return new Page($this->toHits($rows), $total, $request);
     }
 
     public function topHits(JobSearchQuery $query, int $limit): array
     {
         $rows = $this->ordered($this->live($query)->select(self::COLUMNS), $query, byRelevance: true)->limit($limit)->get()->all();
 
-        return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows);
+        return $this->toHits($rows);
     }
 
     public function similarTo(JobSearchQuery $query, SimilarJobsQuery $subject, int $limit, int $perCompany): array
@@ -124,7 +125,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         $rows = $builder->select(self::COLUMNS)->orderByRaw(NullOrder::sql('job_jobs.published_at', 'desc'))->orderBy('job_jobs.id', 'desc')->limit($limit * 10)->get()->all();
 
         $perCompanyCount = [];
-        $hits = [];
+        $chosen = [];
 
         foreach ($rows as $row) {
             $company = (int) $row->company_id;
@@ -134,14 +135,14 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
             }
 
             $perCompanyCount[$company] = ($perCompanyCount[$company] ?? 0) + 1;
-            $hits[] = $this->toHit($row);
+            $chosen[] = $row;
 
-            if (count($hits) === $limit) {
+            if (count($chosen) === $limit) {
                 break;
             }
         }
 
-        return $hits;
+        return $this->toHits($chosen);
     }
 
     public function hitsOf(JobSearchQuery $query, array $jobIds): array
@@ -152,7 +153,7 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
 
         $rows = $this->live($query)->whereIn('job_jobs.id', $jobIds)->select(self::COLUMNS)->get()->all();
 
-        return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row), $rows);
+        return $this->toHits($rows);
     }
 
     /**
@@ -223,9 +224,24 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         $criteria = $query->criteria;
 
         foreach (self::ID_FILTERS as $property => $column) {
-            if ($criteria->{$property} !== []) {
-                $builder->whereIn("job_jobs.{$column}", $criteria->{$property});
+            if ($criteria->{$property} === []) {
+                continue;
             }
+
+            if ($column === 'province_id' || $column === 'city_id') {
+                // A job with several work locations matches a place filter through any of them.
+                $builder->where(fn (Builder $place) => $place
+                    ->whereIn("job_jobs.{$column}", $criteria->{$property})
+                    ->orWhereExists(fn (Builder $places) => $places
+                        ->selectRaw('1')
+                        ->from('job_job_locations')
+                        ->whereColumn('job_job_locations.job_id', 'job_jobs.id')
+                        ->whereIn("job_job_locations.{$column}", $criteria->{$property})));
+
+                continue;
+            }
+
+            $builder->whereIn("job_jobs.{$column}", $criteria->{$property});
         }
 
         if ($criteria->workModes !== []) {
@@ -255,7 +271,50 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
         }
     }
 
-    private function toHit(stdClass $row): JobSearchHit
+    /**
+     * @param  list<stdClass>  $rows
+     * @return list<JobSearchHit>
+     */
+    private function toHits(array $rows): array
+    {
+        $places = $this->placesOf(array_map(static fn (stdClass $row): int => (int) $row->id, $rows));
+
+        return array_map(fn (stdClass $row): JobSearchHit => $this->toHit($row, $places[(int) $row->id] ?? []), $rows);
+    }
+
+    /**
+     * The company locations of several jobs in one query, the main one of each job first.
+     *
+     * @param  list<int>  $jobIds
+     * @return array<int, list<JobWorkPlace>>
+     */
+    private function placesOf(array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        $places = [];
+
+        foreach ($this->connection->table('job_job_locations')->whereIn('job_id', $jobIds)->orderBy('job_id')->orderBy('position')->get() as $row) {
+            $places[(int) $row->job_id][] = new JobWorkPlace(
+                (int) $row->location_id,
+                (string) $row->name,
+                (string) $row->type,
+                $this->nullableInt($row->province_id),
+                $this->nullableInt($row->city_id),
+                $this->nullableInt($row->subdistrict_id),
+                $this->nullableInt($row->village_id),
+                $this->nullableInt($row->postal_code_id),
+                $row->address_line === null ? null : (string) $row->address_line,
+            );
+        }
+
+        return $places;
+    }
+
+    /** @param  list<JobWorkPlace>  $places */
+    private function toHit(stdClass $row, array $places): JobSearchHit
     {
         return new JobSearchHit(
             (int) $row->id,
@@ -273,6 +332,9 @@ final readonly class DatabaseJobSearchReader implements JobSearchReader
             (bool) $row->salary_visible,
             $row->deadline === null ? null : new DateTimeImmutable((string) $row->deadline, new DateTimeZone('UTC')),
             $row->published_at === null ? null : new DateTimeImmutable((string) $row->published_at, new DateTimeZone('UTC')),
+            $row->summary === null ? null : (string) $row->summary,
+            $row->salary_note === null ? null : (string) $row->salary_note,
+            $places,
         );
     }
 

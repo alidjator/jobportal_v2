@@ -6,6 +6,7 @@ use Src\Assessment\Interface\Http\Controllers\AttemptController;
 use Src\Assessment\Interface\Http\Controllers\BatteryController;
 use Src\Assessment\Interface\Http\Controllers\CatalogController;
 use Src\Assessment\Interface\Http\Controllers\InvitationController;
+use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
@@ -75,6 +76,13 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
         Route::get('videos/{questionId}', [ResultController::class, 'video']);
         Route::get('report.pdf', [ResultController::class, 'report']);
     });
+});
+
+// The default test of a job per assessment stage, set in the job editor.
+Route::middleware('auth:user')->group(function (): void {
+    Route::get('company/jobs/{id}/assessments', [JobDefaultController::class, 'index'])->whereNumber('id');
+    Route::put('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'put'])->whereNumber(['id', 'stageId']);
+    Route::delete('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'destroy'])->whereNumber(['id', 'stageId']);
 });
 
 // The tests a job seeker was asked to take.
