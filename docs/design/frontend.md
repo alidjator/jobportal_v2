@@ -69,6 +69,8 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-14: a recruitment calendar page C26 and a note for the candidate on interviews, designed in `phase-8-interview-calendar.md`.
 - 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-workspace)).
 - 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); Console starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
+- 2026-10-23: the actions of a whole page sit at the top in a sticky action bar (`StickyActionCard`); actions of one item stay with the item ([detail](#113-key-page-layouts)).
+- 2026-10-23: buttons carry icons selectively ("With Icons" buttons of Able Pro): the action buttons of work pages and actions with a well-known icon do; account pages, cancel buttons and text buttons do not ([detail](#112-common-states)).
 
 ## 1. Timing
 
@@ -701,11 +703,25 @@ One pattern per situation, used by every page of every application.
   - 503 (for example `training-unavailable`): a card in place of the content with "Coba lagi"; the API in maintenance mode shows the maintenance page.
   - No connection or 500: a snackbar with "Coba lagi"; the form keeps what was typed.
 - **Success:** a short snackbar; a new item opens or is highlighted.
+- **Snackbar (decided by the user on 2026-10-23):** one `NoticeSnackbar` of `packages/ui` per application (Workspace and Console), copied from the
+  "With Close + Action" snackbar of Able Pro (`ui-elements/advance/UiSnackbar.vue`): outlined in the colour of the message, bottom right, an icon per
+  kind (success, error, warning, info), "Coba lagi" when the notice has a retry, and a close button.
 - **Confirmation:** a dialog naming the thing for every destructive action (withdraw an application, reject, delete); account deletion asks the user
   to type a word.
 - **Unsaved changes:** long forms (profile, job editor, test editor, email templates, company profile) warn before leaving.
 - **Session end:** public 401 goes to sign-in and back to the page (5.2); the admin's 12-hour token ends with a dialog that leads to sign-in and then to
   the same page.
+- **Buttons (decided by the user on 2026-10-23, selective icons):** the text is the label; an icon is added only where it helps recognise the action,
+  as a "With Icons" button of Able Pro (`forms/components/VButtons.vue`): an 18px icon in the `prepend` slot, or in the `append` slot for a button that
+  moves forward (move to a stage, a menu's chevron).
+  - **With an icon:** the action buttons of work pages (toolbars, card headers, bulk actions of a table) and actions with a well-known icon (add,
+    delete, edit, save, export or download, reject, sign out).
+  - **Without an icon:** the buttons of the account pages (sign-in, password reset, invitation, terms, blocked account), cancel and close in dialogs,
+    text-style buttons (back, reset filters, clear selection, switch code method) and a lone call to action (error pages, "Coba lagi").
+  - **Dialog confirm buttons:** an icon (`confirm-icon` of `ConfirmDialog` and `ActionFormDialog`, none by default) only for a destructive action or
+    one with a well-known icon, the same icon as the button that opened it.
+  - Main buttons side by side are either all with or all without icons (a cancel or text-style button beside them stays plain); one action has one icon across the applications; icon-only buttons keep their
+    `aria-label`.
 - **Updates:** small toggles (save a job, mark as read) change at once and roll back on error; everything else waits for the API.
 
 **Decided by the user on 2026-10-13:**
@@ -724,6 +740,14 @@ One pattern per situation, used by every page of every application.
 Agreed by the user on 2026-10-13.
 
 Wireframes were shown to the user for P2, P3, J1 and C6; the other pages follow the closest Able Pro page.
+
+**Sticky action bar (decided by the user on 2026-10-23):** the actions of a whole page of Workspace sit at the top in the sticky action bar of Able
+Pro (`forms/layouts/StickyActionBar.vue`), as the shared `StickyActionCard` of `packages/ui`: an outlined card holding the page, headed by the toolbar
+that stays under the header (`top` 74px, the header's height) while the page scrolls. The bar has the template's background (`bg-containerBg`), the buttons on the right and no title; it is hidden when the viewer has no action; on a phone it is compact and secondary
+buttons become icon buttons with an `aria-label`. Actions of one item (a table row, a note, the member's own rating, a row of the security tab) and
+the bulk actions of a selection stay next to their item. The buttons of a small form stay under the form (the password
+form of the account page, kept so by the user the same day). Used by C5 (applicants and lifecycle actions) and C7 (resume, the action of the open
+tab, the stage actions with the less common ones in an "Aksi lain" menu).
 
 - **P1 Home:** search box (keyword, location) over the banner; job categories; latest jobs; verified companies (from P12); salary insight and training
   teasers; newsletter in the footer. Signed-in job seekers see their recommendations first.
