@@ -51,7 +51,7 @@ final class DefaultStagesTest extends FeatureTestCase
         $stages = DB::table('recruitment_stages')->where('company_id', $companyId)->orderBy('position')->get();
 
         $this->assertSame(self::DEFAULT_ORDER, $stages->pluck('type')->all());
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $stages->pluck('name')->all());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $stages->pluck('name')->all());
         $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], $stages->pluck('position')->map(fn ($position) => (int) $position)->all());
         $this->assertSame([1], $stages->pluck('is_default')->map(fn ($flag) => (int) $flag)->unique()->all());
     }
@@ -101,7 +101,7 @@ final class DefaultStagesTest extends FeatureTestCase
     private function insertLegacyStages(int $companyId): void
     {
         foreach (['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as $index => $type) {
-            $this->insertStage($companyId, $type, ucfirst($type), $index + 1, true);
+            $this->insertStage($companyId, $type, StageType::from($type)->defaultName(), $index + 1, true);
         }
     }
 
@@ -111,14 +111,14 @@ final class DefaultStagesTest extends FeatureTestCase
         $this->insertLegacyStages($companyId);
         $this->insertStage($companyId, 'interview', 'Panel', 8, false);
         DB::table('recruitment_stages')->where('company_id', $companyId)->where('name', 'Panel')->update(['position' => 4]);
-        DB::table('recruitment_stages')->where('company_id', $companyId)->whereIn('name', ['Offer', 'Hired', 'Rejected', 'Withdrawn'])->increment('position');
+        DB::table('recruitment_stages')->where('company_id', $companyId)->whereIn('name', ['Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'])->increment('position');
 
         $this->artisan('recruitment:provision-default-stages')->assertSuccessful();
         $this->artisan('recruitment:provision-default-stages')->assertSuccessful();
 
         $stages = DB::table('recruitment_stages')->where('company_id', $companyId)->orderBy('position')->get();
 
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Panel', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $stages->pluck('name')->all());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Panel', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $stages->pluck('name')->all());
         $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9], $stages->pluck('position')->map(fn ($position) => (int) $position)->all());
         $this->assertSame(1, $stages->where('type', 'assessment')->count());
         $this->assertTrue((bool) $stages->firstWhere('type', 'assessment')->is_default);
@@ -128,13 +128,13 @@ final class DefaultStagesTest extends FeatureTestCase
     {
         $companyId = $this->companyRowId();
         $this->insertLegacyStages($companyId);
-        $this->insertStage($companyId, 'screening', 'assessment', 8, false);
+        $this->insertStage($companyId, 'screening', 'asesmen', 8, false);
 
         $this->app->make(DefaultStageProvisioner::class)->provision($companyId);
 
         $row = DB::table('recruitment_stages')->where('company_id', $companyId)->where('type', 'assessment')->where('is_default', true)->first();
 
-        $this->assertSame('Assessment (default)', $row->name);
+        $this->assertSame('Asesmen (bawaan)', $row->name);
         $this->assertSame(3, (int) $row->position);
     }
 

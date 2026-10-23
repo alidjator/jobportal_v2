@@ -65,7 +65,7 @@ final readonly class ProvisionDefaultStages implements DefaultStageProvisioner
         $name = StageType::Assessment->defaultName();
         $taken = array_map(static fn (Stage $stage): string => mb_strtolower($stage->name), $current);
 
-        return in_array(mb_strtolower($name), $taken, true) ? $name.' (default)' : $name;
+        return in_array(mb_strtolower($name), $taken, true) ? $name.' (bawaan)' : $name;
     }
 
     /** @param  list<Stage>  $stages */

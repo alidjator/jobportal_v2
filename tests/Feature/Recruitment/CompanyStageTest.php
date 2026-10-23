@@ -62,7 +62,7 @@ final class CompanyStageTest extends FeatureTestCase
 
             $this->assertSame(['applied', 'screening', 'assessment', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'], array_column($response->json('data'), 'type'));
             $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], array_column($response->json('data'), 'position'));
-            $this->assertSame('Applied', $response->json('data.0.name'));
+            $this->assertSame('Dilamar', $response->json('data.0.name'));
             $this->assertTrue($response->json('data.0.is_default'));
         }
     }
@@ -72,7 +72,7 @@ final class CompanyStageTest extends FeatureTestCase
         $response = $this->api('GET', '/company/stages', token: $this->otherAdminToken)->assertOk();
 
         $this->assertCount(8, $response->json('data'));
-        $this->assertNotContains($this->stageId('Applied'), array_column($response->json('data'), 'id'));
+        $this->assertNotContains($this->stageId('Dilamar'), array_column($response->json('data'), 'id'));
     }
 
     public function test_a_suspended_company_cannot_use_its_stages(): void
@@ -85,7 +85,7 @@ final class CompanyStageTest extends FeatureTestCase
 
     public function test_changes_are_for_company_admins_only(): void
     {
-        $id = $this->stageId('Screening');
+        $id = $this->stageId('Penyaringan');
 
         foreach ([
             ['POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview']],
@@ -105,7 +105,7 @@ final class CompanyStageTest extends FeatureTestCase
 
         $response->assertJsonPath('data.name', 'Technical Interview')->assertJsonPath('data.type', 'interview')
             ->assertJsonPath('data.position', 7)->assertJsonPath('data.is_default', false);
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Technical Interview', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Penawaran', 'Diterima', 'Technical Interview', 'Ditolak', 'Mengundurkan diri'], $this->names());
         $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9], $this->positions());
     }
 
@@ -128,7 +128,7 @@ final class CompanyStageTest extends FeatureTestCase
 
     public function test_names_are_unique_in_the_company_whatever_the_letter_case(): void
     {
-        $this->api('POST', '/company/stages', ['name' => 'interview', 'type' => 'interview'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:stage-name-taken');
+        $this->api('POST', '/company/stages', ['name' => 'wawancara', 'type' => 'interview'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:stage-name-taken');
         $this->api('POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview'])->assertCreated();
         $this->api('POST', '/company/stages', ['name' => 'PANEL', 'type' => 'offer'])->assertStatus(409);
         $this->assertCount(9, $this->names());
@@ -161,29 +161,29 @@ final class CompanyStageTest extends FeatureTestCase
 
     public function test_any_stage_can_be_renamed_and_keeps_its_place(): void
     {
-        $id = $this->stageId('Interview');
+        $id = $this->stageId('Wawancara');
 
-        $this->api('PATCH', "/company/stages/{$id}", ['name' => '  Wawancara  '])->assertOk()
-            ->assertJsonPath('data.name', 'Wawancara')->assertJsonPath('data.type', 'interview')->assertJsonPath('data.position', 4)->assertJsonPath('data.is_default', true);
+        $this->api('PATCH', "/company/stages/{$id}", ['name' => '  Wawancara User  '])->assertOk()
+            ->assertJsonPath('data.name', 'Wawancara User')->assertJsonPath('data.type', 'interview')->assertJsonPath('data.position', 4)->assertJsonPath('data.is_default', true);
 
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Wawancara', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara User', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $this->names());
     }
 
     public function test_a_rename_cannot_take_the_name_of_another_stage_but_may_change_only_the_case(): void
     {
-        $id = $this->stageId('Interview');
+        $id = $this->stageId('Wawancara');
 
-        $this->api('PATCH', "/company/stages/{$id}", ['name' => 'OFFER'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:stage-name-taken');
-        $this->api('PATCH', "/company/stages/{$id}", ['name' => 'INTERVIEW'])->assertOk()->assertJsonPath('data.name', 'INTERVIEW');
+        $this->api('PATCH', "/company/stages/{$id}", ['name' => 'PENAWARAN'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:stage-name-taken');
+        $this->api('PATCH', "/company/stages/{$id}", ['name' => 'WAWANCARA'])->assertOk()->assertJsonPath('data.name', 'WAWANCARA');
     }
 
     public function test_a_stage_of_another_company_does_not_exist(): void
     {
-        $foreign = $this->stageId('Interview', $this->otherCompanyId);
+        $foreign = $this->stageId('Wawancara', $this->otherCompanyId);
 
         $this->api('PATCH', "/company/stages/{$foreign}", ['name' => 'Hacked'])->assertStatus(404);
         $this->api('DELETE', "/company/stages/{$foreign}")->assertStatus(404);
-        $this->assertSame('Interview', DB::table('recruitment_stages')->where('id', $foreign)->value('name'));
+        $this->assertSame('Wawancara', DB::table('recruitment_stages')->where('id', $foreign)->value('name'));
     }
 
     public function test_an_extra_stage_can_be_deleted_and_the_positions_close_up(): void
@@ -192,13 +192,13 @@ final class CompanyStageTest extends FeatureTestCase
 
         $this->api('DELETE', "/company/stages/{$id}")->assertNoContent();
 
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $this->names());
         $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8], $this->positions());
     }
 
     public function test_a_default_stage_cannot_be_deleted(): void
     {
-        $this->api('DELETE', '/company/stages/'.$this->stageId('Offer'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:default-stage-cannot-be-deleted');
+        $this->api('DELETE', '/company/stages/'.$this->stageId('Penawaran'))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:default-stage-cannot-be-deleted');
         $this->assertCount(8, $this->names());
     }
 
@@ -207,7 +207,7 @@ final class CompanyStageTest extends FeatureTestCase
         $panel = (int) $this->api('POST', '/company/stages', ['name' => 'Panel', 'type' => 'interview'])->json('data.id');
         $ids = fn (array $names): array => array_map(fn (string $name): int => $name === 'Panel' ? $panel : $this->stageId($name), $names);
 
-        $wanted = ['Applied', 'Panel', 'Offer', 'Screening', 'Assessment', 'Interview', 'Hired', 'Withdrawn', 'Rejected'];
+        $wanted = ['Dilamar', 'Panel', 'Penawaran', 'Penyaringan', 'Asesmen', 'Wawancara', 'Diterima', 'Mengundurkan diri', 'Ditolak'];
         $response = $this->api('PUT', '/company/stages/order', ['stage_ids' => $ids($wanted)])->assertOk();
 
         $this->assertSame($wanted, array_column($response->json('data'), 'name'));
@@ -218,25 +218,25 @@ final class CompanyStageTest extends FeatureTestCase
     public function test_the_order_must_name_every_stage_once(): void
     {
         $ids = DB::table('recruitment_stages')->where('company_id', $this->companyId)->orderBy('position')->pluck('id')->map(fn ($id) => (int) $id)->all();
-        $foreign = $this->stageId('Applied', $this->otherCompanyId);
+        $foreign = $this->stageId('Dilamar', $this->otherCompanyId);
 
         $this->api('PUT', '/company/stages/order', ['stage_ids' => array_slice($ids, 0, 6)])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage-order');
         $this->api('PUT', '/company/stages/order', ['stage_ids' => [...array_slice($ids, 0, 6), $foreign]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage-order');
         $this->api('PUT', '/company/stages/order', ['stage_ids' => [...$ids, $ids[0]]])->assertStatus(422);
         $this->api('PUT', '/company/stages/order', [])->assertStatus(422);
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $this->names());
     }
 
     public function test_applied_must_stay_first_and_the_terminal_stages_last(): void
     {
         $id = fn (string $name): int => $this->stageId($name);
 
-        $appliedNotFirst = [$id('Screening'), $id('Applied'), $id('Assessment'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Rejected'), $id('Withdrawn')];
-        $terminalInTheMiddle = [$id('Applied'), $id('Screening'), $id('Rejected'), $id('Assessment'), $id('Interview'), $id('Offer'), $id('Hired'), $id('Withdrawn')];
+        $appliedNotFirst = [$id('Penyaringan'), $id('Dilamar'), $id('Asesmen'), $id('Wawancara'), $id('Penawaran'), $id('Diterima'), $id('Ditolak'), $id('Mengundurkan diri')];
+        $terminalInTheMiddle = [$id('Dilamar'), $id('Penyaringan'), $id('Ditolak'), $id('Asesmen'), $id('Wawancara'), $id('Penawaran'), $id('Diterima'), $id('Mengundurkan diri')];
 
         $this->api('PUT', '/company/stages/order', ['stage_ids' => $appliedNotFirst])->assertStatus(422)
             ->assertJsonPath('type', 'urn:onesis:error:invalid-stage-order')->assertJsonStructure(['errors' => ['stage_ids']]);
         $this->api('PUT', '/company/stages/order', ['stage_ids' => $terminalInTheMiddle])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-stage-order');
-        $this->assertSame(['Applied', 'Screening', 'Assessment', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'], $this->names());
+        $this->assertSame(['Dilamar', 'Penyaringan', 'Asesmen', 'Wawancara', 'Penawaran', 'Diterima', 'Ditolak', 'Mengundurkan diri'], $this->names());
     }
 }

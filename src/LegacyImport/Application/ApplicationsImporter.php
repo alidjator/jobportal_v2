@@ -346,6 +346,18 @@ final class ApplicationsImporter implements Importer, ValidatesMappings
             return $fallback;
         }
 
+        // A group named after a stage type ("Interview", "Screening") carries the English name the default stages had before 2026-10-23, so it stands for the
+        // default stage of that type: the same type reuses it, another type counts as a taken name.
+        $former = StageType::tryFrom(mb_strtolower($name));
+
+        if ($former !== null) {
+            if ($former !== $type) {
+                $report->note(self::ENTITY, 'stage-name-taken');
+            }
+
+            return $fallback;
+        }
+
         $existing = $this->writer->stageByName($companyId, $name);
 
         if ($existing !== null) {

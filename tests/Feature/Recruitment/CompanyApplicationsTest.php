@@ -147,7 +147,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertSame(28, $row['applicant']['age']);
         $this->assertNull($row['meets_must_have']);
         $this->assertSame('applied', $row['stage']['type']);
-        $this->assertSame('Applied', $row['stage']['name']);
+        $this->assertSame('Dilamar', $row['stage']['name']);
         $this->assertSame('2026-10-05T09:00:00+00:00', $row['applied_at']);
 
         $body = (string) json_encode($response->json());
@@ -232,7 +232,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $response = $this->show($this->firstId)->assertOk();
 
         $response->assertJsonPath('data.job', ['id' => $this->job, 'title' => 'Backend Developer'])
-            ->assertJsonPath('data.stage.name', 'Applied')
+            ->assertJsonPath('data.stage.name', 'Dilamar')
             ->assertJsonPath('data.cover_letter', 'Please hire me.')
             ->assertJsonPath('data.resume', ['name' => 'Siti CV.pdf'])
             ->assertJsonPath('data.applicant.is_deleted', false)
@@ -242,7 +242,7 @@ final class CompanyApplicationsTest extends FeatureTestCase
             ->assertJsonPath('data.applicant.experiences.0.job_title', 'Backend Developer')
             ->assertJsonPath('data.history.0.from', null)
             ->assertJsonPath('data.history.0.to.type', 'applied')
-            ->assertJsonPath('data.history.0.to.name', 'Applied')
+            ->assertJsonPath('data.history.0.to.name', 'Dilamar')
             ->assertJsonPath('data.history.0.by', 'applicant')
             ->assertJsonPath('data.history.0.reason', null);
 
@@ -265,8 +265,8 @@ final class CompanyApplicationsTest extends FeatureTestCase
 
         $this->assertCount(3, $history);
         $this->assertSame(['id' => $this->recruiterId, 'name' => 'Rina Rekruter'], $history[1]['actor']);
-        $this->assertSame('Interview', $history[1]['to']['name']);
-        $this->assertSame('Applied', $history[1]['from']['name']);
+        $this->assertSame('Wawancara', $history[1]['to']['name']);
+        $this->assertSame('Dilamar', $history[1]['from']['name']);
         $this->assertNull($history[1]['reason']);
         $this->assertSame('position_filled', $history[2]['reason']);
         $this->assertSame('Filled internally', $history[2]['note']);

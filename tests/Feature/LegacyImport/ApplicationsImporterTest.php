@@ -282,7 +282,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
         $this->assertSame(range(1, 9), DB::table('recruitment_stages')->orderBy('position')->pluck('position')->map(fn ($position): int => (int) $position)->all());
     }
 
-    public function test_an_extra_stage_with_the_name_of_a_default_stage_of_the_same_type_is_reused(): void
+    public function test_an_extra_stage_with_the_former_name_of_a_default_stage_of_the_same_type_reuses_the_default_stage(): void
     {
         $this->application('Interview');
 
@@ -290,6 +290,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
 
         $this->assertSame(8, DB::table('recruitment_stages')->count());
         $this->assertSame('interview', DB::table('recruitment_applications')->value('stage_type'));
+        $this->assertSame('Wawancara', DB::table('recruitment_stages')->where('id', DB::table('recruitment_applications')->value('stage_id'))->value('name'));
     }
 
     public function test_an_unmapped_custom_group_goes_to_applied_and_is_reported_by_group_name(): void
@@ -327,7 +328,7 @@ final class ApplicationsImporterTest extends FeatureTestCase
             $runner->run($step, true);
         }
 
-        // The company already has its eight default stages (no limit applies to migrated data), and "Screening" is the name of the default stage of another type.
+        // The company already has its eight default stages (no limit applies to migrated data), and "Screening" is the former English name of the default stage of another type.
         $report = $this->import(maps: ['groups' => [$taken => ['stage' => 'offer', 'create_stage' => true], $limit => ['stage' => 'offer', 'create_stage' => true]]]);
 
         $this->assertSame(['offer', 'offer'], DB::table('recruitment_applications')->orderBy('id')->pluck('stage_type')->all());

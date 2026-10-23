@@ -44,9 +44,18 @@ enum StageType: string
         };
     }
 
-    /** The name a default stage starts with; the company may rename it. */
+    /** The name a default stage starts with (the product is Indonesian); the company may rename it, and the name is data, never translated afterwards. */
     public function defaultName(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::Applied => 'Dilamar',
+            self::Screening => 'Penyaringan',
+            self::Assessment => 'Asesmen',
+            self::Interview => 'Wawancara',
+            self::Offer => 'Penawaran',
+            self::Hired => 'Diterima',
+            self::Rejected => 'Ditolak',
+            self::Withdrawn => 'Mengundurkan diri',
+        };
     }
 }

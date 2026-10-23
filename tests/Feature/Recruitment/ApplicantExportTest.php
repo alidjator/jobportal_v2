@@ -105,7 +105,7 @@ final class ApplicantExportTest extends FeatureTestCase
 
         $first = $lines[2];
         $this->assertSame([(string) $this->firstId, '2026-10-05T09:00:00Z', 'Siti Rahma', 'siti@example.test'], array_slice($first, 0, 4));
-        $this->assertSame(['Applied', '3', '2'], [$first[12], $first[14], $first[15]]);
+        $this->assertSame(['Dilamar', '3', '2'], [$first[12], $first[14], $first[15]]);
         $this->assertSame(['', '', '', ''], array_slice($first, 16, 4));
         $this->assertSame(['yes', 'Git; Docker'], array_slice($first, 20));
     }
@@ -147,7 +147,7 @@ final class ApplicantExportTest extends FeatureTestCase
 
         $this->assertSame([(string) $this->firstId, '2026-10-05T09:00:00Z', 'Deleted account'], array_slice($row, 0, 3));
         $this->assertSame(array_fill(0, 8, ''), array_slice($row, 3, 8));
-        $this->assertSame('Applied', $row[12]);
+        $this->assertSame('Dilamar', $row[12]);
     }
 
     public function test_every_export_is_audited_without_personal_data(): void
