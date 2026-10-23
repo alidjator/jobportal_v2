@@ -38,6 +38,7 @@ final class ApiDocumentation
                     $used = [...$used, ...$operation->tags];
                 }
             }
+            ApplicantBlockDiscriminator::apply($openApi);
             $openApi->tags = array_values(array_filter(ApiTags::tags(), static fn (Tag $tag): bool => in_array($tag->name, $used, true)));
             $openApi->setInfo(InfoWithContact::from($openApi->info, (array) config('scramble.info.contact', []), is_string($title = config('scramble.info.title')) ? $title : null));
             $openApi->info->setDescription(trim($openApi->info->description."\n\n## Errors\n\n".ErrorCatalogDocument::section(new ErrorCatalog(base_path('src')))));
