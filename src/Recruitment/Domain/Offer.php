@@ -24,6 +24,9 @@ final readonly class Offer
 
     public const int VALID_DAYS_MAX = 30;
 
+    /** An unanswered offer ending within this many days is "expiring" (the task and the applicant list filter). */
+    public const int EXPIRING_DAYS = 3;
+
     private const string ZONE = 'Asia/Jakarta';
 
     public function __construct(

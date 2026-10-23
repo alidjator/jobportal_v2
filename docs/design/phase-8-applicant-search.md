@@ -63,6 +63,7 @@ Added to `GET company/jobs/{id}/applications` and the new list across jobs; any 
 | `filter[applied_from]`, `filter[applied_to]` | Jakarta dates |
 | `filter[invited]`, `filter[returning]` | true or false |
 | `filter[state]` | `interview_scheduled` (a pending or confirmed interview), `offer_pending`, `test_pending` (an assessment invitation not submitted yet, through the existing Assessment port); comma-separated, any matches |
+| `filter[offer_expiring]` | true keeps the applications with an unanswered offer that ends within `Offer::EXPIRING_DAYS` (3) days, the rule of the `offers_expiring` task; false or absent does not narrow (decided 2026-10-23: the task link `filter[state]=offer_pending&filter[offer_expiring]=1` was refused with 422 before) |
 
 - **Sort:** `applied_at` (default, newest first), `match_score`, `rating` (average; unrated last), each with `-` for the other direction.
 - **Counts per stage** follow the filters, so the pipeline columns show the filtered numbers.

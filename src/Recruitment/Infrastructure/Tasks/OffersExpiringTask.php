@@ -2,13 +2,12 @@
 
 namespace Src\Recruitment\Infrastructure\Tasks;
 
+use Src\Recruitment\Domain\Offer;
 use Src\Shared\Application\Tasks\TaskScope;
 
 /** Of the offers waiting for an answer, the ones that expire within three days. */
 final class OffersExpiringTask extends OffersWaitingTask
 {
-    private const int DAYS = 3;
-
     public function key(): string
     {
         return 'offers_expiring';
@@ -26,6 +25,6 @@ final class OffersExpiringTask extends OffersWaitingTask
 
     protected function expiringWithinDays(): int
     {
-        return self::DAYS;
+        return Offer::EXPIRING_DAYS;
     }
 }

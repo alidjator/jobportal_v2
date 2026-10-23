@@ -12,7 +12,7 @@ use Src\Recruitment\Application\RecruiterApplicationQuery;
 trait ApplicantListFilters
 {
     /** The filter keys of the profile, score, origin and process filters, to add to the `array:` rule of the request. */
-    private const string APPLICANT_FILTER_KEYS = 'province_id,city_id,education_min,experience_min,experience_max,skill_ids,salary_max,match_min,rating_min,applied_from,applied_to,invited,returning,state';
+    private const string APPLICANT_FILTER_KEYS = 'province_id,city_id,education_min,experience_min,experience_max,skill_ids,salary_max,match_min,rating_min,applied_from,applied_to,invited,returning,state,offer_expiring';
 
     private const string ID_LIST = '/^[1-9][0-9]*(,[1-9][0-9]*)*$/';
 
@@ -40,7 +40,9 @@ trait ApplicantListFilters
             'filter.applied_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:filter.applied_from'],
             'filter.invited' => ['nullable', 'in:true,false,1,0'],
             'filter.returning' => ['nullable', 'in:true,false,1,0'],
+            /** Comma-separated list of process states, any of which matches: `interview_scheduled`, `offer_pending`, `test_pending`. */
             'filter.state' => ['nullable', 'string', 'regex:'.self::STATE_LIST],
+            'filter.offer_expiring' => ['nullable', 'in:true,false,1,0'],
             'sort' => ['nullable', 'in:'.implode(',', [...self::SORTS, ...array_map(static fn (string $sort): string => '-'.$sort, self::SORTS)])],
         ];
     }
@@ -68,6 +70,7 @@ trait ApplicantListFilters
             $this->filled('filter.invited') ? $this->boolean('filter.invited') : null,
             $this->filled('filter.returning') ? $this->boolean('filter.returning') : null,
             $this->filled('filter.state') ? array_values(array_unique(explode(',', $this->string('filter.state')->toString()))) : [],
+            offerExpiring: $this->boolean('filter.offer_expiring'),
         );
     }
 

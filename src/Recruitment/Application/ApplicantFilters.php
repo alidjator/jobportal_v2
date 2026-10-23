@@ -4,7 +4,7 @@ namespace Src\Recruitment\Application;
 
 /**
  * The profile, score, origin and process filters of the applicant lists (`docs/design/phase-8-applicant-search.md` section 3). Every part is optional and parts combine
- * with "and". Experience is in whole years. `$states` are `interview_scheduled`, `offer_pending` and `test_pending`; any of them matches.
+ * with "and". Experience is in whole years. `$offerExpiring` keeps the applications with an unanswered offer that ends within `Offer::EXPIRING_DAYS` (the rule of the `offers_expiring` task). `$states` are `interview_scheduled`, `offer_pending` and `test_pending`; any of them matches.
  *
  * `$educationRankMin` and `$pendingTestApplicationIds` are not read from the request: `ApplicantFilterResolver` fills them from the education level id and from the
  * Assessment port before the reader runs.
@@ -43,6 +43,7 @@ final readonly class ApplicantFilters
         public array $states = [],
         public ?int $educationRankMin = null,
         public ?array $pendingTestApplicationIds = null,
+        public bool $offerExpiring = false,
     ) {}
 
     /** Whether any filter reads the facets (the applicant's profile as it was when applying). */

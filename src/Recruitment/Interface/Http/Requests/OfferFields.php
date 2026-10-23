@@ -40,8 +40,9 @@ final class OfferFields
             $prefix.'work_location' => ['nullable', 'string'],
             $prefix.'salary_basis' => [$presence, Rule::enum(SalaryBasis::class)],
             $prefix.'allowances' => ['nullable', 'array'],
-            $prefix.'allowances.*.name' => ['required', 'string'],
-            $prefix.'allowances.*.amount' => ['required', 'integer'],
+            // `$presence` rather than a plain `required`: the offer is optional in a move, and a plain `required` here would mark the whole `offer` object required in the API document.
+            $prefix.'allowances.*.name' => [$presence, 'string'],
+            $prefix.'allowances.*.amount' => [$presence, 'integer'],
             $prefix.'benefit_ids' => ['nullable', 'array', 'max:'.self::BENEFITS_MAX],
             $prefix.'benefit_ids.*' => ['integer'],
             $prefix.'letter_upload_id' => ['nullable', 'integer'],

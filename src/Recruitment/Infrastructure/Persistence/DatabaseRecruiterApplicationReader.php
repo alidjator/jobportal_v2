@@ -18,6 +18,7 @@ use Src\Recruitment\Application\RecruiterHistoryEntry;
 use Src\Recruitment\Application\StageClock;
 use Src\Recruitment\Application\UntouchedImport;
 use Src\Recruitment\Domain\HireDetails;
+use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageType;
@@ -188,6 +189,8 @@ final readonly class DatabaseRecruiterApplicationReader implements RecruiterAppl
             ->when($filters->appliedTo !== null, fn (Builder $b) => $b->where('a.applied_at', '<', $this->jakartaDayStart((string) $filters->appliedTo, '+1 day')))
             ->when($filters->invited !== null, fn (Builder $b) => $b->where('f.from_invitation', $filters->invited))
             ->when($filters->returning !== null, fn (Builder $b) => $b->where('f.returning', $filters->returning))
+            ->when($filters->offerExpiring, fn (Builder $b) => $b->whereExists(fn (Builder $q) => $q->selectRaw('1')->from('recruitment_offers as eo')->whereColumn('eo.application_id', 'a.id')->where('eo.status', 'pending')
+                ->where('eo.expires_at', '<=', $this->clock->now()->modify('+'.Offer::EXPIRING_DAYS.' days')->format('Y-m-d H:i:s'))))
             ->when($filters->states !== [], fn (Builder $b) => $b->where(function (Builder $any) use ($filters): void {
                 foreach ($filters->states as $state) {
                     match ($state) {
