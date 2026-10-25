@@ -73,6 +73,7 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-23: the API of the job editor C4 is extended before the page is built (user): `summary`, `vacancies_visible`, `salary_note`, `reapply_after_days`, `location_ids` (several company locations, the first is the main one), `GET company/jobs/{id}/preview`
   with `meta.publish_check`, `GET`/`PUT`/`DELETE company/jobs/{id}/assessments[/{stageId}]` (default test per assessment stage with the advance rule), more filters, sorts and columns on the job list C3 ([detail](phase-8-job-posting.md), [locations](company-locations.md), [assessments](phase-8-assessment-automation.md), [waiting period](phase-8-rejections.md)).
 - 2026-10-23: buttons carry icons selectively ("With Icons" buttons of Able Pro): the action buttons of work pages and actions with a well-known icon do; account pages, cancel buttons and text buttons do not ([detail](#112-common-states)).
+- 2026-10-25: **Workspace opens pages as tabs** under the header (Able Pro "Basic Tabs", `dist/elements/bc_tabs.html`): at most 12, the Dashboard is permanent, only open tabs stay alive (keep-alive), tabs survive a refresh in `sessionStorage`, a right-click menu closes one, the others or all; the tab bar stays pinned under the header and the sticky bars of pages sit below it; a tab is titled after its menu entry (with its icon), a detail page adds the job's or applicant's name ([detail](#111-layouts-and-navigation)).
 
 ## 1. Timing
 
@@ -645,6 +646,16 @@ job seekers and company members get their audience too). At most two show, `impo
 **Language (decided by the user on 2026-10-19):** Indonesian by default; the ID/EN switch in the header is kept in a cookie per application and sent
 as `Accept-Language`. Public indexed pages keep the `/en` paths of section 7; the job seeker area, Workspace and Console have
 no language in the path, and links from emails never carry one (section 12).
+
+**Multi-tab workspace (decided by the user on 2026-10-25; Workspace only, Console does not use it):** a strip of tabs under the header of the `dashboard` layout.
+Built from "Basic Tabs" of Able Pro (`dist/elements/bc_tabs.html`: `ul.nav-tabs`, the bordered active tab opens into the page); the close button
+(`btn btn-icon btn-link-secondary`) and the scroll arrows (as in `UiTabNav`) are the elements the user approved on 2026-10-25 and 2026-10-24.
+- **Which pages:** every page of the Workspace menu and its detail pages; not the `blank` layout, `public` pages, pages with `meta.noTab` and paths the menu does not know. One tab per path: a changed query of an open page updates its tab. The Dashboard (`meta.affix`) is always first and cannot be closed. At most 12 tabs; the 13th page is refused with a notice and the member stays on the active tab.
+- **Title and icon:** `meta.title` (an i18n key) or the label and icon of the menu entry for the path (a detail page takes its list's); a detail page names its tab with `useTabDetail` once its data is loaded ("Lowongan · Data Analyst", "Detail pelamar · Citra Lestari").
+- **Closing:** the × of a tab, a middle click, or the right-click menu (close, close others, close all; the permanent tab stays). Closing the active tab opens its right neighbour, else the left one. Only the pages of open tabs stay in keep-alive, so closing a tab drops its cached state; a page needs a unique `defineOptions({ name })` for that (the coded pages of the menu have one). The key of the cached page is Nuxt's route key (path with its parameters), not `fullPath`, so a changed filter does not reset the page.
+- **Refresh and sign-out:** the tabs (not the cached page state) are kept in `sessionStorage` (`onesis_workspace_tabs`, validated on read: in-app paths only); they are cleared when the member's data is cleared (`permissions.reset()`) and on the sign-in page.
+- **Layout:** the tab bar is pinned under the header (`.pc-tabbar`, `--spacing-tabbar-height` 33px in the theme); the sticky bars of pages (`sticky top-header-height`) pin below it by one rule in `layouts/common.css`. A row that does not fit scrolls (wheel, touch, arrows); the active tab scrolls into view.
+- **Code:** `apps/workspace/app`: `stores/tabs.ts`, `components/layout/TabBar.vue`, `plugins/03.tabs.client.ts` (`router.afterEach`), `composables/useTabDetail.ts`, `utils/tabs-storage.ts`, `utils/menu.ts` (`tabEntryForPath`), `DashboardLayout`'s `tabs` slot in `packages/ui`. Moves to `packages/ui` when Console needs it.
 
 **Public header:** logo; Lowongan, Perusahaan, Gaji, Pelatihan; Untuk Perusahaan; language switch (ID/EN); Masuk and Daftar, with "Masuk perusahaan"
 (to B1) under Masuk. Signed in (job seekers only): notification bell and the avatar menu (Dasbor, Profil, Lamaran, Keluar). On a phone the links fold
