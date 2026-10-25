@@ -69,10 +69,10 @@ final readonly class DemoJobSeekers
                 0, $seeker['last_job'], 'PT Contoh Karya Mandiri', null, null, new DateTimeImmutable('2021-02-01', $utc), new DateTimeImmutable('2024-06-01', $utc), false, null,
             ));
             $this->replaceSkills->execute($actor, array_slice($skills, $index % 3, 3));
-            $this->replaceLanguages->execute($actor, array_values(array_filter([
+            $this->replaceLanguages->execute($actor, array_filter([
                 new LanguageEntry($languages[0], LanguageProficiency::Native),
                 isset($languages[1]) ? new LanguageEntry($languages[1], LanguageProficiency::Conversational) : null,
-            ])));
+            ]));
             $this->replaceLinks->execute($actor, $this->links($seeker['name'], $index));
             $resume = $this->uploadResume->execute($actor, DemoPdf::make([
                 $seeker['name'], $seeker['headline'], $seeker['email'], 'Demo resume: fictitious person, not a real record.',

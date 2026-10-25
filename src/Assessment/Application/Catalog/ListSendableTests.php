@@ -41,10 +41,10 @@ final readonly class ListSendableTests
             SendableTest::BATTERY => $this->access->psychologicalEnabled($companyId) ? $this->tests->pageGrantedTo($companyId, $search, $page)->items : [],
         ];
 
-        $totals = $this->sections->totalsOf(array_values(array_map(
+        $totals = $this->sections->totalsOf(array_map(
             static fn (Test $test): int => (int) $test->id,
             array_merge(...array_values($found)),
-        )));
+        ));
 
         $list = [];
 
