@@ -416,6 +416,7 @@ final class CompanyProfileTest extends FeatureTestCase
 
         $english = $this->publicPage()->assertOk();
         $english->assertJsonPath('data.name', 'PT Maju Bersama')
+            ->assertJsonPath('data.id', $this->companyId)
             ->assertJsonPath('data.slug', 'pt-maju-bersama')
             ->assertJsonPath('data.bio', 'Bio **bold**')
             ->assertJsonPath('data.vision', 'Vision')
@@ -447,7 +448,6 @@ final class CompanyProfileTest extends FeatureTestCase
         $this->assertStringNotContainsString('021 000 111', $body);
         $this->assertArrayNotHasKey('contact_email', $english->json('data'));
         $this->assertArrayNotHasKey('contact_phone', $english->json('data'));
-        $this->assertArrayNotHasKey('id', $english->json('data'));
     }
 
     public function test_a_minimal_company_has_empty_optional_parts_and_no_badge(): void

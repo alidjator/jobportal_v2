@@ -10,7 +10,7 @@ use Src\Company\Application\Profile\PublicCompanyLocation;
 use Src\Company\Application\Profile\PublicCompanyView;
 
 /**
- * The public company page. No contact data, no ids of other contexts; the classifications and places are names. The active work locations are listed, the main one first.
+ * The public company page. No contact data, no ids of other contexts (its own `id` is public: the job resources show it too, and `GET jobs?filter[company_id]` needs it); the classifications and places are names. The active work locations are listed, the main one first.
  *
  * @property PublicCompanyView $resource
  */
@@ -22,6 +22,7 @@ final class PublicCompanyResource extends JsonResource
         $view = $this->resource;
 
         return [
+            'id' => $view->id,
             'name' => $view->name,
             'slug' => $view->slug,
             'bio' => $view->bio,

@@ -35,6 +35,7 @@ final readonly class GetPublicCompany
         $profile = $company->profile();
 
         return new PublicCompanyView(
+            (int) $company->id,
             $profile->name,
             $company->slug(),
             $profile->bio,
