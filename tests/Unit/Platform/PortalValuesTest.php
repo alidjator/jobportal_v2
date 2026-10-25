@@ -22,6 +22,21 @@ final class PortalValuesTest extends TestCase
         $this->assertTrue(PortalBrandValues::default()->equals(PortalBrandValues::fromArray([])));
     }
 
+    public function test_the_appearance_settings_fall_back_to_their_defaults_when_unknown(): void
+    {
+        $brand = PortalBrandValues::fromArray(['theme_mode' => 'sepia', 'width' => 'wide', 'contrast' => 'maybe', 'header_color' => '1']);
+
+        $this->assertSame('light', $brand->themeMode);
+        $this->assertSame('container', $brand->width);
+        $this->assertFalse($brand->contrast);
+        $this->assertTrue($brand->headerColor);
+
+        $chosen = PortalBrandValues::fromArray(['theme_mode' => 'system', 'width' => 'full', 'contrast' => true]);
+
+        $this->assertSame(['system', 'full', true], [$chosen->themeMode, $chosen->width, $chosen->contrast]);
+        $this->assertFalse(PortalBrandValues::default()->equals($chosen));
+    }
+
     public function test_an_identity_keeps_distinct_integer_company_ids(): void
     {
         $identity = PortalIdentity::fromArray(['mode' => 'company', 'scope' => 'group', 'company_ids' => ['2', 1, 2]]);

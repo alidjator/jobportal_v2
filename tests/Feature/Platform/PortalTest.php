@@ -122,7 +122,7 @@ final class PortalTest extends FeatureTestCase
     {
         return [
             'name' => 'Karier Nusantara', 'tagline_id' => 'Bergabunglah bersama kami', 'tagline_en' => 'Join us', 'welcome_id' => 'Selamat datang', 'welcome_en' => 'Welcome',
-            'preset' => 4, ...$changes,
+            'preset' => 4, 'theme_mode' => 'dark', 'contrast' => true, 'width' => 'full', 'header_color' => true, ...$changes,
         ];
     }
 
@@ -259,7 +259,8 @@ final class PortalTest extends FeatureTestCase
         $this->asMember($this->holdingAdmin, 'POST', 'organization/portal/draft/publish')->assertOk()->assertJsonPath('data.draft', null)->assertJsonPath('data.live.name', 'Karier Nusantara')->assertJsonPath('data.live_is_default', false);
 
         $this->portal(['Accept-Language' => 'en'])->assertJsonPath('data.name', 'Karier Nusantara')->assertJsonPath('data.tagline', 'Join us')->assertJsonPath('data.welcome', 'Welcome')->assertJsonPath('data.preset', 4);
-        $this->portal(['Accept-Language' => 'id'])->assertJsonPath('data.tagline', 'Bergabunglah bersama kami')->assertJsonPath('data.welcome', 'Selamat datang');
+        $this->portal(['Accept-Language' => 'id'])->assertJsonPath('data.tagline', 'Bergabunglah bersama kami')->assertJsonPath('data.welcome', 'Selamat datang')
+            ->assertJsonPath('data.theme_mode', 'dark')->assertJsonPath('data.contrast', true)->assertJsonPath('data.width', 'full')->assertJsonPath('data.header_color', true);
 
         $entry = DB::table('platform_audit_logs')->where('action', 'portal.brand_published')->first();
         $this->assertSame($this->group, (int) $entry->group_id);
@@ -277,8 +278,11 @@ final class PortalTest extends FeatureTestCase
         $this->asMember($stranger, 'PUT', 'organization/portal/draft', $this->brand())->assertForbidden();
 
         $this->asMember($this->holdingAdmin, 'POST', 'organization/portal/draft/publish')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:portal-draft-missing');
-        $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['preset' => 11]))->assertStatus(422);
+        $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['preset' => 19]))->assertStatus(422);
         $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['name' => str_repeat('a', 121)]))->assertStatus(422);
+        $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['theme_mode' => 'sepia']))->assertStatus(422);
+        $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['width' => 'wide']))->assertStatus(422);
+        $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['contrast' => 'maybe']))->assertStatus(422);
         $this->asMember($this->holdingAdmin, 'PUT', 'organization/portal/draft', $this->brand(['welcome_id' => str_repeat('a', 501)]))->assertStatus(422);
     }
 
@@ -287,7 +291,7 @@ final class PortalTest extends FeatureTestCase
         $this->publishIdentity('company', [$this->holding]);
 
         $this->asMember($this->holdingAdmin, 'GET', 'company/portal')->assertOk()->assertJsonPath('data.default_name', 'PT-HOLDING')->assertJsonPath('data.live_is_default', true);
-        $this->asMember($this->holdingAdmin, 'PUT', 'company/portal/draft', $this->brand(['name' => '', 'preset' => 7]))->assertOk()->assertJsonPath('data.draft.name', null);
+        $this->asMember($this->holdingAdmin, 'PUT', 'company/portal/draft', $this->brand(['name' => '', 'preset' => 7]))->assertOk()->assertJsonPath('data.draft.name', null)->assertJsonPath('data.draft.theme_mode', 'dark');
         $this->asMember($this->holdingAdmin, 'POST', 'company/portal/draft/publish')->assertOk();
 
         $this->portal(['Accept-Language' => 'id'])->assertOk()->assertJsonPath('data.name', 'PT-HOLDING')->assertJsonPath('data.preset', 7)->assertJsonPath('data.tagline', 'Bergabunglah bersama kami');
@@ -297,6 +301,17 @@ final class PortalTest extends FeatureTestCase
 
         $this->asMember($this->holdingAdmin, 'PUT', 'company/portal/draft', $this->brand())->assertOk();
         $this->asMember($this->holdingAdmin, 'DELETE', 'company/portal/draft')->assertOk()->assertJsonPath('data.draft', null)->assertJsonPath('data.live.preset', 7);
+    }
+
+    public function test_a_brand_without_appearance_settings_gets_the_defaults(): void
+    {
+        $this->publishIdentity('company', [$this->holding]);
+
+        $this->asMember($this->holdingAdmin, 'PUT', 'company/portal/draft', ['preset' => 2, 'name' => 'Karier'])->assertOk()
+            ->assertJsonPath('data.draft.theme_mode', 'light')->assertJsonPath('data.draft.contrast', false)->assertJsonPath('data.draft.width', 'container')->assertJsonPath('data.draft.header_color', false);
+        $this->asMember($this->holdingAdmin, 'POST', 'company/portal/draft/publish')->assertOk();
+
+        $this->portal()->assertJsonPath('data.theme_mode', 'light')->assertJsonPath('data.contrast', false)->assertJsonPath('data.width', 'container')->assertJsonPath('data.header_color', false);
     }
 
     public function test_the_brand_of_a_company_needs_the_company_profile_permission(): void

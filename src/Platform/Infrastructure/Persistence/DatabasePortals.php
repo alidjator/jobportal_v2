@@ -70,7 +70,7 @@ final class DatabasePortals implements Portals
     {
         $row = $this->connection->table('platform_portal_brands')
             ->where('owner_type', $owner->type->value)->where('owner_id', $owner->id)
-            ->first(['name', 'tagline_id', 'tagline_en', 'welcome_id', 'welcome_en', 'preset']);
+            ->first(['name', 'tagline_id', 'tagline_en', 'welcome_id', 'welcome_en', 'preset', 'theme_mode', 'contrast', 'width', 'header_color']);
 
         return $row === null ? null : PortalBrandValues::fromArray((array) $row);
     }

@@ -5,7 +5,7 @@ namespace Src\Shared\Interface\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Src\Shared\Application\Portal\PortalBrandValues;
 
-/** The whole brand of a career site, as the draft of a company or group; a blank text clears it (the site shows its default). Shared by the company and group screens. */
+/** The whole brand of a career site, as the draft of a company or group; a blank text clears it (the site shows its default), a missing appearance setting is its default. Shared by the company and group screens. */
 final class PortalBrandRequest extends FormRequest
 {
     /** @return array<string, list<string>> */
@@ -18,6 +18,10 @@ final class PortalBrandRequest extends FormRequest
             'welcome_id' => ['nullable', 'string', 'max:'.PortalBrandValues::WELCOME_MAX],
             'welcome_en' => ['nullable', 'string', 'max:'.PortalBrandValues::WELCOME_MAX],
             'preset' => ['required', 'integer', 'between:1,'.PortalBrandValues::PRESETS],
+            'theme_mode' => ['sometimes', 'string', 'in:'.implode(',', PortalBrandValues::THEME_MODES)],
+            'contrast' => ['sometimes', 'boolean'],
+            'width' => ['sometimes', 'string', 'in:'.implode(',', PortalBrandValues::WIDTHS)],
+            'header_color' => ['sometimes', 'boolean'],
         ];
     }
 

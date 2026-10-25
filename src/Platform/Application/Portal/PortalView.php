@@ -20,5 +20,9 @@ final readonly class PortalView
         public int $preset,
         public array $companies,
         public bool $preview,
+        public string $themeMode = 'light',
+        public bool $contrast = false,
+        public string $width = 'container',
+        public bool $headerColor = false,
     ) {}
 }

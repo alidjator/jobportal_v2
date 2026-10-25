@@ -357,3 +357,9 @@ Steps 1 to 5 of 12.5 are coded; the tests of step 6 are written and wait for the
 - The Console picks companies through the existing admin company list; `GET admin/portal` returns the live identity, the draft and the skipped companies, not a list of companies to pick from.
 - `GET portal` is cached a minute (public, ETag); with `X-Portal-Preview` it is `private, no-store`. It varies on `Accept-Language` and `X-Portal-Preview`.
 
+- Precedence on the career site (decided 2026-10-25, changed from "the environment overrides"): the portal of the API always wins; `NUXT_PUBLIC_CAREER_*` is only the fallback for a
+  moment when `GET portal` cannot be read. Until an identity is published the site is the marketplace.
+- Colour presets: 18, the ones of the Able Pro style switcher ("Custom Theme"), not 10 (changed 2026-10-25); the brand screens show the same swatches.
+- Appearance (decided 2026-10-25): next to the colour preset the brand carries the settings of the Able Pro style switcher that fit a career site: theme mode (`light`, `dark`,
+  `system`), contrast, page width (`container`, `full`) and a header in the brand colour (`color-header`). Left out: the sidebar layouts, the sidebar caption and RTL (a career site has no
+  sidebar and only Indonesian and English). The brand's theme mode is the starting look; a visitor's own choice (the cookie of the avatar menu) wins. Migration `000189` adds the columns.

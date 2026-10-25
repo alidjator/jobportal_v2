@@ -25,6 +25,12 @@ final class PortalResource extends JsonResource
             'tagline' => $this->resource->tagline,
             'welcome' => $this->resource->welcome,
             'preset' => $this->resource->preset,
+            /** `light`, `dark` or `system` (the visitor's own setting decides) */
+            'theme_mode' => $this->resource->themeMode,
+            'contrast' => $this->resource->contrast,
+            /** `container` or `full` */
+            'width' => $this->resource->width,
+            'header_color' => $this->resource->headerColor,
             'preview' => $this->resource->preview,
             'companies' => array_map(fn (PublicCompanyCard $card): array => [
                 'id' => $card->id,

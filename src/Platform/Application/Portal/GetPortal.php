@@ -58,6 +58,10 @@ final readonly class GetPortal
             $brand->preset,
             $cards,
             $preview,
+            $brand->themeMode,
+            $brand->contrast,
+            $brand->width,
+            $brand->headerColor,
         );
     }
 

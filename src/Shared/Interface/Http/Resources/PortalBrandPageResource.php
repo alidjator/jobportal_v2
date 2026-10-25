@@ -28,7 +28,7 @@ final class PortalBrandPageResource extends JsonResource
         ];
     }
 
-    /** @return array{name: string|null, tagline_id: string|null, tagline_en: string|null, welcome_id: string|null, welcome_en: string|null, preset: int} */
+    /** @return array{name: string|null, tagline_id: string|null, tagline_en: string|null, welcome_id: string|null, welcome_en: string|null, preset: int, theme_mode: string, contrast: bool, width: string, header_color: bool} */
     private function brand(PortalBrandValues $brand): array
     {
         return $brand->toArray();
