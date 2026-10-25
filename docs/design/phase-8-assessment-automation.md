@@ -87,6 +87,11 @@ exists), `updated_by` RESTRICT, unique `job_id` + `stage_id`), `assessment_job_s
   get the in-app notification `application.auto_advanced` (`application_id`, `job_id`, `from_stage_id`, `to_stage_id`, `percentage`). Running again for the same result does nothing, because the application has left the stage.
   Not coded because the feature does not exist yet: the check for a pending rejection (`phase-8-rejections.md` section 2).
 - **Clone and stage deletion:** `JobCloned` (new Job event) makes Assessment copy the defaults (`updated_by` is the member who cloned); deleting a stage deletes its defaults (cascade) and the invitations keep a null stage.
+- **Lists for the "send a test" dialog (2026-10-23, no migration, asked by the front end, user's choice):** `GET company/assessment/sendable-tests` (`assessments.send`; optional `filter[q]` on the title; not paginated, at most
+  100 per source) answers `{data: [{id, title, kind, source, description, section_count, total_seconds}]}`: the company's own published skill tests (`source: company`), the published library tests (`library`) and the
+  batteries granted to the company (`battery`, only while `assessment.psychological_enabled`; otherwise they are left out, not an error), each source by title. `kind` is the test kind, `skill` or `psychological`.
+  Every id is accepted by `InvitationChecks`. `GET company/jobs/{id}/assessors` (`assessments.send` and a job the member may see) answers `{data: [{id, name}]}` by name: the active members who may see the job, company
+  admins included whether assigned or not, the set `InvitationChecks::assertAssessors` accepts (at most 5 are chosen per test).
 - **Front end:** the "Acak soal" label is a front-end label for `draw_count`, no API change.
 
 

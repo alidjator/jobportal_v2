@@ -26,6 +26,21 @@ final readonly class DatabaseSectionRepository implements SectionRepository
         );
     }
 
+    public function totalsOf(array $testIds): array
+    {
+        if ($testIds === []) {
+            return [];
+        }
+
+        $totals = [];
+
+        foreach ($this->connection->table(self::TABLE)->whereIn('test_id', $testIds)->groupBy('test_id')->selectRaw('test_id, count(*) as sections, coalesce(sum(duration_seconds), 0) as seconds')->get() as $row) {
+            $totals[(int) $row->test_id] = ['sections' => (int) $row->sections, 'seconds' => (int) $row->seconds];
+        }
+
+        return $totals;
+    }
+
     public function find(int $id): ?Section
     {
         $row = $this->connection->table(self::TABLE)->where('id', $id)->first();

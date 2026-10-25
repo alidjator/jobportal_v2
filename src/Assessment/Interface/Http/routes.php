@@ -55,6 +55,7 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
 
     Route::get('library', [CatalogController::class, 'library']);
     Route::get('batteries', [CatalogController::class, 'batteries']);
+    Route::get('sendable-tests', [CatalogController::class, 'sendable']);
     Route::get('catalog/{id}', [CatalogController::class, 'show'])->whereNumber('id');
 
     // The tests sent to the candidates, for the members who may see the application.
@@ -81,6 +82,7 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
 // The default test of a job per assessment stage, set in the job editor.
 Route::middleware('auth:user')->group(function (): void {
     Route::get('company/jobs/{id}/assessments', [JobDefaultController::class, 'index'])->whereNumber('id');
+    Route::get('company/jobs/{id}/assessors', [JobDefaultController::class, 'assessors'])->whereNumber('id');
     Route::put('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'put'])->whereNumber(['id', 'stageId']);
     Route::delete('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'destroy'])->whereNumber(['id', 'stageId']);
 });
