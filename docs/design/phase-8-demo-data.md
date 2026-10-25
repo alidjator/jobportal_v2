@@ -26,7 +26,7 @@ database is rebuilt as for a second run.
 
 `src/DemoData` drives the use cases of the other contexts as a client does (like a controller, from outside the context): `CreateAdmin`, `CreateGroup`,
 `CreateCompany`, `AcceptInvitation`, `InviteMember`, `SetGroupRole`, `CreateLegalEntity`, `LinkTenant`, the document submit and approve use cases,
-`CreateJob`, `ReplaceJobAssignees`, `PublishJob`, `ApproveJob`, `RegisterJobSeeker`, `VerifyEmail`, the profile use cases, `ApplyToJob`,
+`CreateJob`, `ReplaceJobAssignees`, `PublishJob`, `ApproveJob`, `RegisterJobSeeker`, `VerifyEmail`, the profile use cases (`UpdateMyProfile`, `AddMyExperience`, `ReplaceMySkills`, `ReplaceMyLanguages`, `ReplaceMyLinks`, `UploadMyResume`), `ApplyToJob`,
 `ProcessApplication`, `RespondToOffer`, `WithdrawMyApplication` and `CloseJob`. The reference ids come from the reference use cases (the first active
 items, the first city of the first province). So the history, events, audit and analytics records are those of real use.
 
@@ -44,7 +44,7 @@ second-factor challenge (a company admin always enrols one, at the first real si
 | Group | "Grup Demo Nusantara", two legal entities, one per company; both companies have `recruitment.requisition_required` overridden to off |
 | PT Demo Sinar Teknologi | verified (its required documents approved); company admin (also a group member with every group permission), recruiter, hiring manager, interviewer (`*.sinar@demo.onesis.test`) |
 | PT Demo Arunika Ritel | company admin only (`admin.arunika@demo.onesis.test`); required documents submitted and waiting for review (Console D5) |
-| Job seekers | 8, verified email, profile with phone, location, one past job and one PDF resume (`<first>.<last>@demo.onesis.test`) |
+| Job seekers | 8, verified email, profile with phone, location, one past job, three skills, two languages, a LinkedIn link (and a GitHub link for every second one) and one PDF resume (`<first>.<last>@demo.onesis.test`) |
 | Jobs | Sinar: Backend Developer, UI/UX Designer, Data Analyst (active), Mobile Developer (draft), Customer Support Officer (closed); Arunika: Store Supervisor, Merchandiser (active at once: a tenant of a group counts as verified, `erp-governance.md` 1.2) |
 | Second factor | the group asks every member of its tenants for one, so every Workspace account enrols TOTP at its first sign-in, like the platform admin |
 | Applications | 14: applied 5, screening 3, interview 2 (online, with the interviewer, from three days ahead), offer 1, hired 1 (an accepted offer), rejected 1, withdrawn 1 (by the job seeker) |

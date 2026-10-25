@@ -120,6 +120,11 @@ final class SeedDemoDataTest extends FeatureTestCase
         $applications = $this->withToken($this->signIn($seeker['email'], $password))->getJson('/api/v1/me/applications')->assertOk();
         $this->assertCount(2, $applications->json('data'));
         $this->assertNotNull(DB::table('identity_users')->where('email', $seeker['email'])->value('email_verified_at'));
+
+        $userId = (int) DB::table('identity_users')->where('email', $seeker['email'])->value('id');
+        $this->assertSame(3, DB::table('jobseeker_skills')->where('user_id', $userId)->count());
+        $this->assertSame(2, DB::table('jobseeker_languages')->where('user_id', $userId)->count());
+        $this->assertSame(2, DB::table('jobseeker_links')->where('user_id', $userId)->count());
     }
 
     public function test_it_leaves_no_session_open(): void
