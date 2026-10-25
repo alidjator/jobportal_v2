@@ -76,7 +76,11 @@ final class InterviewersListTest extends FeatureTestCase
         $this->api('GET', '/company/interviewers', [], $this->seekerToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
 
         $manager = $this->memberWith(['interviews.manage'], 'manager@example.test');
-        $this->assertSame([$this->adminId, $this->recruiterId, $this->secondRecruiterId], $this->ids($manager['token']), 'It reads the list without being on it.');
+        $this->assertSame(
+            [$this->adminId, $viewer['id'], $this->recruiterId, $this->secondRecruiterId],
+            $this->ids($manager['token']),
+            'It reads the list without being on it; the viewer above is on it because that member may take part.',
+        );
 
         $this->flushHeaders();
         $this->app['auth']->forgetGuards();
