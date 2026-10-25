@@ -360,6 +360,14 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `plan-not-editable` | 409 | Workforce | Only a draft or a rejected plan can be submitted. |
 | `plan-not-in-force` | 409 | Workforce | Only the version in force can be revised. |
 | `plan-revision-open` | 409 | Workforce | This fiscal year already has a version being worked on. |
+| `portal-companies-not-in-one-group` | 422 | Platform | The companies of a group site must all belong to the same group. |
+| `portal-company-needs-one-company` | 422 | Platform | A site of one company needs exactly one company. |
+| `portal-company-not-live` | 422 | Platform | These companies are missing, suspended or hidden: :ids. |
+| `portal-draft-missing` | 422 | Platform | There is no draft to preview. |
+| `portal-group-needs-companies` | 422 | Platform | A site of a group needs at least one company. |
+| `portal-marketplace-takes-no-companies` | 422 | Platform | The marketplace takes no scope and no company. |
+| `portal-mode-unknown` | 422 | Platform | The mode must be marketplace or company. |
+| `portal-scope-required` | 422 | Platform | A company site needs a scope: company or group. |
 | `position-code-taken` | 409 | Organization | The legal entity already has a position with this code. |
 | `position-in-use` | 409 | Organization | An active position still reports to this position. |
 | `position-inactive` | 409 | Organization | The position is inactive. |
