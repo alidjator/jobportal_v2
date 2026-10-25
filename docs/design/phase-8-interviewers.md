@@ -23,6 +23,7 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
 - 2026-10-15: scorecard follow-up at **24 hours** (in-app and email) and **72 hours** (again, plus the scheduler and the main interviewer)
   (chosen by the user).
 - 2026-10-15: team interview emails follow the preference **`team_interview_changes`** (chosen by the user).
+- 2026-10-23: a list `GET company/interviewers` for the panel picker, readable by `interviews.manage` (user, asked by the front end) ("Coded: the picker list").
 
 ## 1. Access through the panel
 
@@ -79,6 +80,12 @@ the team an **in-app notice only**, to the main interviewer and whoever schedule
 - **Preference:** the scorecard emails get their own key **`team_scorecard_reminders`** (on by default); `team_scoring` of
   `phase-8-recruiter-workday.md` (off by default) keeps the assessor work only. The in-app notices are always written.
 - Interviews whose application became final get no reminder, as today; the lookback of 7 days stays.
+
+## Coded: the picker list (2026-10-23, no migration)
+
+Asked for by the front end for the scheduling dialog (C7), because `GET company/members` is for company admins only. `GET company/interviewers` answers `{data: [{id, name}]}` (the account id to send as `interviewer_id`
+or in `participant_ids`), by name, not paginated: the active accounts among the members who hold `interviews.participate` and the company admins, the set `CompanyTeam::interviewerUserIds` gives and
+`InterviewScheduler` accepts. Permission `interviews.manage` (what `PUT company/applications/{id}/interview` needs), else 403 `company-permission-required`. A suspended account is left out.
 
 ## Changes in short
 

@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Recruitment\Application\GetInterviewCalendarFile;
 use Src\Recruitment\Application\ListApplicationInterviews;
+use Src\Recruitment\Application\ListInterviewers;
 use Src\Recruitment\Application\ListMyInterviews;
 use Src\Recruitment\Application\ManageInterview;
 use Src\Recruitment\Application\ScheduleInterview;
@@ -17,6 +18,7 @@ use Src\Recruitment\Interface\Http\Requests\RefuseInterviewProposalRequest;
 use Src\Recruitment\Interface\Http\Requests\ScheduleInterviewRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateInterviewNoteRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyInterviewResource;
+use Src\Recruitment\Interface\Http\Resources\InterviewerResource;
 use Src\Recruitment\Interface\Http\Resources\MyInterviewResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -44,6 +46,12 @@ final class InterviewController extends ApiController
         $result = $schedule->execute($actors->fromRequest($request), $id, $request->toInput());
 
         return (new CompanyInterviewResource($result['view']))->response()->setStatusCode($result['replaced'] ? Response::HTTP_OK : Response::HTTP_CREATED);
+    }
+
+    /** The members who may be chosen as main interviewer or panel member, by name, not paginated (`interviews.manage`). */
+    public function interviewers(Request $request, ActorResolver $actors, ListInterviewers $list): AnonymousResourceCollection
+    {
+        return InterviewerResource::collection($list->execute($actors->fromRequest($request)));
     }
 
     /** Changes only the note for the candidate; the interview is not rescheduled. */
