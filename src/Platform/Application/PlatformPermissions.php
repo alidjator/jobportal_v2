@@ -15,6 +15,8 @@ final class PlatformPermissions
 
     public const string EMAIL_TEMPLATES_MANAGE = 'email_templates.manage';
 
+    public const string PORTAL_MANAGE = 'portal.manage';
+
     /** @return list<PermissionDefinition> */
     public static function definitions(): array
     {
@@ -22,6 +24,7 @@ final class PlatformPermissions
             new PermissionDefinition(self::AUDIT_LOGS_VIEW, self::GROUP),
             new PermissionDefinition(self::SETTINGS_MANAGE, self::GROUP),
             new PermissionDefinition(self::EMAIL_TEMPLATES_MANAGE, self::GROUP),
+            new PermissionDefinition(self::PORTAL_MANAGE, self::GROUP),
         ];
     }
 }

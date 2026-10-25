@@ -7,6 +7,7 @@ use Src\Company\Interface\Http\Controllers\CompanyDocumentController;
 use Src\Company\Interface\Http\Controllers\CompanyImageController;
 use Src\Company\Interface\Http\Controllers\CompanyLocationController;
 use Src\Company\Interface\Http\Controllers\CompanyNameChangeController;
+use Src\Company\Interface\Http\Controllers\CompanyPortalController;
 use Src\Company\Interface\Http\Controllers\CompanyProfileController;
 use Src\Company\Interface\Http\Controllers\CompanySettingsController;
 use Src\Company\Interface\Http\Controllers\CurrentCompanyController;
@@ -95,6 +96,13 @@ Route::middleware('auth:user')->group(function (): void {
     // The company settings page: any member reads, a company admin changes the settings that belong to the company.
     Route::get('company/settings', [CompanySettingsController::class, 'show']);
     Route::patch('company/settings', [CompanySettingsController::class, 'update']);
+
+    // The brand of the career site of the own company (`company.profile`): a draft that is previewed and then published.
+    Route::get('company/portal', [CompanyPortalController::class, 'show']);
+    Route::put('company/portal/draft', [CompanyPortalController::class, 'saveDraft']);
+    Route::delete('company/portal/draft', [CompanyPortalController::class, 'discardDraft']);
+    Route::post('company/portal/draft/publish', [CompanyPortalController::class, 'publish']);
+    Route::post('company/portal/draft/preview', [CompanyPortalController::class, 'preview']);
 
     // The default texts that prefill the note of an interview, a test and an offer: any member reads them, a member who may change the profile sets them.
     Route::get('company/message-defaults', [MessageDefaultsController::class, 'show']);

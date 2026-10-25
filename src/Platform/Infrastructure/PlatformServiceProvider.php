@@ -20,6 +20,11 @@ use Src\Platform\Application\EmailSuppression\EmailEventParsers;
 use Src\Platform\Application\EmailSuppression\EmailSuppressionRepository;
 use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\PlatformSettings;
+use Src\Platform\Application\Portal\EditPortalBrand;
+use Src\Platform\Application\Portal\PortalAlerts;
+use Src\Platform\Application\Portal\PortalEmailTemplates;
+use Src\Platform\Application\Portal\PortalPreviewTokens;
+use Src\Platform\Application\Portal\Portals;
 use Src\Platform\Application\Scheduler\ScheduledTaskRunRepository;
 use Src\Platform\Application\Scheduler\ScheduledTasks;
 use Src\Platform\Application\Scheduler\SchedulerAlerts;
@@ -32,14 +37,18 @@ use Src\Platform\Infrastructure\Dashboard\OperationsCard;
 use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
 use Src\Platform\Infrastructure\Listeners\DropSuppressedRecipients;
 use Src\Platform\Infrastructure\Listeners\RecordScheduledTaskEvents;
+use Src\Platform\Infrastructure\Mail\MailPortalAlerts;
 use Src\Platform\Infrastructure\Mail\MailSchedulerAlerts;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseEmailSuppressionRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseEmailTemplateOverrideRepository;
+use Src\Platform\Infrastructure\Persistence\DatabasePortals;
 use Src\Platform\Infrastructure\Persistence\DatabaseScheduledTaskRunRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
+use Src\Platform\Infrastructure\Portal\EncryptedPortalPreviewTokens;
 use Src\Platform\Infrastructure\Scheduler\LaravelScheduledTasks;
+use Src\Platform\Interface\Console\CheckPortalCommand;
 use Src\Platform\Interface\Console\CheckScheduledTasksCommand;
 use Src\Platform\Interface\Console\PurgeAuditLogsCommand;
 use Src\Platform\Interface\Console\RecordSchedulerTickCommand;
@@ -52,6 +61,7 @@ use Src\Shared\Application\Email\EmailSuppressions;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Portal\PortalBrandEditor;
 use Src\Shared\Application\Settings\CompanySettingsEditor;
 use Src\Shared\Application\Settings\GroupSettingsEditor;
 use Src\Shared\Application\Settings\Settings;
@@ -80,6 +90,10 @@ final class PlatformServiceProvider extends ContextServiceProvider
         ScheduledTaskRunRepository::class => DatabaseScheduledTaskRunRepository::class,
         ScheduledTasks::class => LaravelScheduledTasks::class,
         SchedulerAlerts::class => MailSchedulerAlerts::class,
+        PortalAlerts::class => MailPortalAlerts::class,
+        Portals::class => DatabasePortals::class,
+        PortalPreviewTokens::class => EncryptedPortalPreviewTokens::class,
+        PortalBrandEditor::class => EditPortalBrand::class,
     ];
 
     /** One store per request, so the in-memory copy of the values is shared and dropped on every write. @var array<class-string, class-string> */
@@ -105,13 +119,14 @@ final class PlatformServiceProvider extends ContextServiceProvider
         });
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
-            $catalog->add(...SchedulerEmailTemplates::definitions());
+            $catalog->add(...SchedulerEmailTemplates::definitions(), ...PortalEmailTemplates::definitions());
         });
 
-        $this->commands([PurgeAuditLogsCommand::class, CheckScheduledTasksCommand::class, RecordSchedulerTickCommand::class]);
+        $this->commands([PurgeAuditLogsCommand::class, CheckScheduledTasksCommand::class, RecordSchedulerTickCommand::class, CheckPortalCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(PurgeAuditLogsCommand::class)->dailyAt('03:00')->withoutOverlapping()->onOneServer();
+            $schedule->command(CheckPortalCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
             $schedule->command(RecordSchedulerTickCommand::class)->everyMinute();
             $schedule->command(CheckScheduledTasksCommand::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
         });

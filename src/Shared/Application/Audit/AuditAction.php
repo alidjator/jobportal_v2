@@ -356,4 +356,8 @@ final class AuditAction
     public const string MESSAGE_REPORT_DISMISSED = 'messaging.report_dismissed';
 
     public const string MESSAGE_REPORT_ACTIONED = 'messaging.report_actioned';
+
+    public const string PORTAL_IDENTITY_PUBLISHED = 'portal.identity_published';
+
+    public const string PORTAL_BRAND_PUBLISHED = 'portal.brand_published';
 }

@@ -32,6 +32,10 @@ billing, payments, orders and invoices stay out of scope.
   on the PKP installation), not the marketplace; the marketplace gets its own host when it is launched, which is not decided (decided by the user;
   [section 2](#2-where-the-host-and-the-mode-meet)).
 
+- 2026-10-25: **the portal is configured in the application, not only in the environment** (decided by the user; [section 11](#11-portal-settings-in-the-application)):
+  the identity of a portal (mode, scope, companies) by the platform admin in Console, the brand by the company admin (group admin for a group site) in Workspace,
+  with the environment kept as the fallback and the override; the welcome text and slogan in Indonesian and English; a change is a draft, previewed, then published.
+
 All questions of sections 1 to 9 are answered; [section 8](#8-open-questions) keeps them as history. Section 10 has its own open questions.
 
 ## 1. Modes
@@ -105,8 +109,8 @@ All questions of sections 1 to 9 are answered; [section 8](#8-open-questions) ke
 - **The API must enforce the lock**, not only hide in the interface: a request of a company site for another company's data is refused. That needs a way to
   tell the API which company a site belongs to (a header or a token claim signed by the Nuxt server; not decided), and a rule that the answers of
   `jobs`, `jobs/{job}`, `jobs/{job}/similar` and `companies/{slug}` stay within it. Designed when the first company site is built.
-- Applications made on a company site belong to that company as they do today; whether the job seeker also sees the application in another site is open
-  question 1.
+- Applications made on a company site belong to that company as they do today. A portal is its own installation (section 6), so a job seeker has no
+  applications on another portal.
 
 ## 6. Where the data of a portal lives
 
@@ -185,3 +189,171 @@ company stays the source of the job and the place of the application; the boards
 2. Feed format: one neutral JSON feed plus an XML variant for the aggregators, or only what the first board needs?
 3. Does the marketplace (its own host, section 2) count as a channel of a company portal (a job shown on both), and who decides: the company per job, or always?
 4. Who pays or signs for a board's agreement, ONESIS for all customers or each customer for itself?
+
+## 11. Portal settings in the application
+
+Decided 2026-10-25 (the user agreed to the proposal and to its three recommended answers): the settings of a portal can be changed in the application.
+
+### 11.1 What is set where
+
+| Setting | Who changes it | Where |
+|---|---|---|
+| mode (`marketplace` or `company`), scope (`group` or `company`), the companies of the portal | the platform admin only (it changes the whole site) | Console |
+| name, slogan (id, en), welcome text (id, en), colour preset 1 to 10 | the company admin; for a group site the group admin (`group.settings.manage`) | Workspace |
+| `NUXT_API_BASE_URL`, `NUXT_SESSION_PASSWORD`, `NUXT_SITE_ORIGIN` | the operator of the installation | the environment (needed before the API can be asked) |
+
+- The environment variables of section 2 stay as the **fallback and the override**: a deployment with no portal settings in the API behaves as it does today (the
+  marketplace, or what the environment says), so stage 1 is not thrown away.
+- A change is saved as a **draft**, previewed and then **published** (decided 2026-10-25, [section 11.6](#116-screens-and-a-portal-that-is-set-wrongly); shape in 11.7).
+
+### 11.2 Shape (confirmed in 11.3)
+
+- **No new table for the brand.** The settings system of the Platform context already layers a value for the platform, the group and the company
+  (`SettingDefinition` with `companyEditable` and `groupEditable`, edited on the existing company and group settings pages, audited). The brand is a set of new
+  keys: `portal.name`, `portal.tagline.id`, `portal.tagline.en`, `portal.welcome.id`, `portal.welcome.en` (text) and `portal.preset` (integer 1 to 10). Their
+  labels and hints go to the two languages of Workspace.
+- **The identity needs an action of its own, not a generic setting.** The companies of a portal are chosen among existing tenants (of one group for a group
+  site) and the settings types have no single choice and no list of ids: `PUT admin/portal` (mode, scope, company ids) validates that the companies exist,
+  are live and are of one group when the scope is `group`, and stores the values; it is audited. The Console screen is a small form (a switch, a choice, a
+  company picker).
+- **The logo is the logo of the main company** (the first company of the portal, or the company of the scope `company`), already stored by `company/profile`;
+  no new upload. A group site with its own logo is a later addition.
+- **One public read:** `GET portal` (no sign-in, cached like the public job page, one minute) answers `{ mode, scope, brand: { name, tagline, welcome, preset,
+  logo_url }, companies: [{ id, slug, name, logo_url }] }`, the text of the language of the request. Without portal settings it answers the marketplace.
+- **Career reads it on the server** (the plugin of stage 1 reads the profile of each company one by one; it now reads `GET portal` once, kept ten minutes in
+  memory like the master lists), and the environment overrides what it reads.
+- **Where the code lives:** the settings keys and the `PUT admin/portal` action in the Platform context (which owns settings and the admin panel); the public
+  read joins the portal with the public company profile through a port, so Platform does not import Company (`architecture.md`).
+
+### 11.3 Decisions on the shape (2026-10-25, the user agreed to all three proposals)
+
+1. **The existing settings system, no new table** (the brand as keys under `portal.`; the identity by the action `PUT admin/portal`).
+2. **The logo of the main company**; no upload for the portal.
+3. **`GET portal`, `PUT admin/portal` and the brand keys under `portal.`**; the permission name of `PUT admin/portal` is an admin permission of the platform
+   admin role, chosen when coded.
+
+### 11.4 A company without a group
+
+- A portal of one company needs no group: the scope is `company`, the platform admin picks the company in Console, the brand is the company's own setting
+  (the layers are platform, then company), the logo is the company's logo, and "Tentang kami" leads to its profile.
+- A group exists only for internal tenants (legal entities); a client with several legal entities holds its own group **in its own installation**
+  (one group per installation, one installation per company). So one company means the scope `company`, and several legal entities of one group mean the
+  scope `group`.
+- `PUT admin/portal` refuses what does not fit: the scope `company` needs exactly one live company; the scope `group` needs live companies that are all tenants of
+  the same group, and refuses a company without a group; the mode `marketplace` takes no companies.
+
+### 11.5 Order of work
+
+1. API: the brand keys, `PUT admin/portal`, `GET portal`, tests; the API cache (`scramble:cache`) and the generated types of the frontend.
+2. Console: the screen of the identity. Workspace: the labels of the brand keys, with a colour choice for the preset.
+3. Career: read `GET portal` (environment as override) instead of reading each company.
+
+### 11.6 Screens and a portal that is set wrongly
+
+Decided 2026-10-25 (the user):
+
+- **The screens are detailed and carry a preview**: Console for the identity (mode, scope, companies) and Workspace for the brand (name, slogan, welcome text in two
+  languages, colour preset). The preview shows the header, the home banner and a job card as the portal would draw them with the values on the screen.
+- **A company of the portal that is inactive or deleted:** Career stays up, the missing company is **skipped** (its jobs and its page are gone, the others stay), and
+  the **platform admin is warned**. A portal left with no company shows the notice of an empty portal, not an error page.
+
+Decided 2026-10-25 (the user agreed to the warning; the preview was **corrected by the user the same day**):
+
+- ~~The preview is a live panel~~ **corrected 2026-10-25: draft, then publish.** A change is saved as a **draft**, previewed on the real portal through an address
+  that only the admin can open, and then **published**; it is not live until published.
+- **The warning to the platform admin is a notice and a daily email**: the Console portal screen names each company that was skipped and why (inactive,
+  deleted), and a daily check of the scheduler emails the operations address (`platform.operations_email`, as the scheduler alerts do) while the portal has a
+  missing company, once per change. `GET portal` leaves the missing company out and says nothing else to the public.
+
+### 11.7 Draft and publish: proposed shape (confirmed 2026-10-25)
+
+The settings system has no draft, so this **replaces the decision "no new table" of 11.3 for the draft** (the live values stay in the settings system and the
+identity as decided; only the draft is new).
+
+- **One new table, `portal_drafts`** (Platform context): `owner_type` (`platform`, `group`, `company`), `owner_id`, `payload` (the draft values as JSON: the identity
+  for the platform, the brand for a group or a company), `updated_by`, `updated_at`, unique on the owner. At most one draft per owner; saving again replaces it.
+  The migration is run by the user.
+- **Who drafts what:** the platform admin the identity (mode, scope, companies); the company admin the brand of the company; the group admin the brand of the
+  group (`group.settings.manage`). Each publishes only his own draft; the identity and the brand are two drafts, not one.
+- **Publish** validates the draft as `PUT admin/portal` and the settings pages validate today (11.4), writes the live values in one transaction, records the audit
+  entry (who, from what to what), and deletes the draft. A draft that no longer validates (a company that became inactive) cannot be published, and says why.
+- **Preview** is a signed, short-lived token (for example two hours) that the API makes for an authorised admin (`POST ...portal/draft/preview`) and that opens the
+  portal at its address with `?pratinjau=<token>`. Career keeps the token in its own cookie for the visit, sends it to `GET portal` (`X-Portal-Preview`), and the
+  API answers the portal **as the draft would make it** (the live values overlaid with the draft of that owner), `private, no-store`, never cached. The preview
+  pages answer `noindex` and carry a banner "Pratinjau, belum diterbitkan".
+- **The screen** (Console, Workspace): the form, "Simpan draf", "Pratinjau" (opens the portal in a new tab; showing it inside the screen is a later addition, it
+  needs the portal to allow framing by the two hosts), "Terbitkan" and "Buang draf"; a notice while a draft differs from the live values.
+
+Decided 2026-10-25 (the user agreed to all three): (1) the new table `portal_drafts` instead of a second layer of settings keys; (2) the preview opens in a new
+tab first, not inside the screen; (3) the identity and the brand are separate drafts, each published by its own admin.
+
+Section 11 is ready to code in the order of 11.5; the work starts with the API.
+
+## 12. API plan (2026-10-25, to confirm before coding)
+
+Written after reading the Platform code (`SettingsStore`, `StoredSettings`, `EditCompanySettings`, `EditGroupSettings`, `PublicCompanies`, `CompanyDirectory`,
+`GroupDirectory`, the scheduler and its alert emails). It finds one problem with section 11.3 that the draft decision of 11.7 causes.
+
+### 12.1 The problem: the settings system cannot hold a portal that needs a draft
+
+- The generic pages (`company/settings`, `organization/settings`, `admin/settings`) are driven by flags on the definitions. A brand key flagged for the company
+  admin would be changed there **live, with no draft**; a raw identity key (`portal.mode`, `portal.company_ids`) would be editable on the generic admin page
+  **without the validation of `PUT admin/portal`**. The flags cannot hide a key from a generic page.
+- So the live values of the portal move into **two small tables** next to the draft table. The settings system is not used for the portal. This replaces point 1
+  of 11.3 for the live values (the brand as keys under `portal.`); points 2 and 3 stand.
+
+### 12.2 Tables (Platform context, prefix `platform_`; the migration is run by the user)
+
+| Table | Holds |
+|---|---|
+| `platform_portal_identity` | one row: `mode`, `scope`, `company_ids` (JSON), `alert_signature` (what the last warning email named), `updated_by`, `updated_at` |
+| `platform_portal_brands` | per owner (`group` or `company`, unique): `name`, `tagline_id`, `tagline_en`, `welcome_id`, `welcome_en`, `preset`, `updated_by`, `updated_at` |
+| `platform_portal_drafts` | per owner (`platform`, `group`, `company`, unique): `payload` (JSON), `updated_by`, `updated_at` |
+
+Without a row the portal is the marketplace (no identity row) or has the default brand (the name of the company or of the group, the first preset, no slogan).
+
+### 12.3 Endpoints
+
+| Who | Endpoint | Does |
+|---|---|---|
+| public | `GET portal` | the portal for the language of the request: mode, scope, brand, the companies that may be shown; with `X-Portal-Preview` the portal as the draft would make it, `private, no-store` |
+| platform admin (`portal.manage`, a new admin permission) | `GET admin/portal` | live identity, its draft, the warnings, the companies to pick from |
+| | `PUT admin/portal/draft`, `DELETE admin/portal/draft` | save, discard |
+| | `POST admin/portal/draft/publish`, `POST admin/portal/draft/preview` | publish after validation (11.4); a preview token and address |
+| company admin (`company.profile`) | `GET`/`PUT`/`DELETE company/portal/draft`, `POST company/portal/draft/publish`, `POST company/portal/draft/preview`, `GET company/portal` | the brand of the company |
+| group admin (`group.settings.manage`) | the same under `organization/portal` | the brand of the group |
+
+### 12.4 Pieces
+
+- **Application (Platform):** `PortalIdentity`, `PortalBrand`, `PortalView`; use cases `GetPortal`, `GetPortalForAdmin`, `SavePortalDraft`, `DiscardPortalDraft`,
+  `PublishPortalIdentity`, `PublishPortalBrand`, `CreatePortalPreview`, and `PortalHealth` (the companies that are skipped and why).
+- **Ports in `Shared`:** `PublicCompanies::cards` (already there) decides who is shown; `CompanyDirectory::summaries` names the reason (inactive, hidden, missing);
+  `GroupDirectory` gets the name of a group (a new method, provided by Organization).
+- **Preview token:** an encrypted payload (owner, expiry two hours) made with the application key behind a `PortalPreviewTokens` port; Platform never reads another
+  context's tables.
+- **Audit:** `PORTAL_IDENTITY_PUBLISHED` and `PORTAL_BRAND_PUBLISHED` in `AuditAction`, with the values before and after.
+- **Daily check:** a command `portal:check` (03:30, `withoutOverlapping`, `onOneServer`) emails the operations address with the new template `platform.portal_company_missing`
+  (Indonesian and English) when the set of skipped companies differs from `alert_signature`, and again when it is empty (recovered).
+- **Tests:** feature tests per endpoint (permissions, validation of 11.4, draft then preview then publish, the skipped company), unit tests for the overlay of a draft and the
+  warning signature; no test runs while coding (the user runs them).
+
+### 12.5 Order of coding
+
+1. Migration, models, repositories, `PortalIdentity`, `PortalBrand`, the validation of 11.4.
+2. `GetPortal` and `GET portal` (live values only), the missing-company rule.
+3. Drafts, publish, audit, for the identity (Console) and then the brand (company, group).
+4. Preview token and the preview read.
+5. `portal:check` and its email template.
+6. Tests, `scramble:clear` and `scramble:cache`, the generated types of the frontend (`pnpm api:refresh`).
+
+### 12.6 Built (2026-10-25)
+
+Steps 1 to 5 of 12.5 are coded; the tests of step 6 are written and wait for the user to run them. Where the code differs from 12.4:
+
+- The brand screens of a company and a group go through the Shared port `PortalBrandEditor` (provided by Platform): `ManageCompanyPortal` (Company, `company.profile`) and `ManageGroupPortal`
+  (Organization, `group.settings.manage`) check who may act, as the settings pages do. `GET company/portal` and `GET organization/portal` need the same permission as the changes.
+- `GroupDirectory` got `nameOfGroup`. The preview answer is `{token, expires_at}`; the career site builds its own address (`?pratinjau=<token>`), because the API does not know the host of the career site.
+- A second template `platform.portal_recovered` carries the "recovered" email; `platform.portal_company_missing` carries the warning. Both go out in English like the scheduler alerts (`OperationsMail`).
+- The Console picks companies through the existing admin company list; `GET admin/portal` returns the live identity, the draft and the skipped companies, not a list of companies to pick from.
+- `GET portal` is cached a minute (public, ETag); with `X-Portal-Preview` it is `private, no-store`. It varies on `Accept-Language` and `X-Portal-Preview`.
+

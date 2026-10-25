@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Src\Dashboard\Interface\Http\Controllers\AnalyticsController;
 use Src\Job\Interface\Http\Controllers\CompanyJobController;
 use Src\Organization\Interface\Http\Controllers\GroupActivityController;
+use Src\Organization\Interface\Http\Controllers\GroupPortalController;
 use Src\Organization\Interface\Http\Controllers\GroupRoleController;
 use Src\Organization\Interface\Http\Controllers\GroupSettingsController;
 use Src\Organization\Interface\Http\Controllers\GroupTenantController;
@@ -50,6 +51,13 @@ Route::middleware('auth:user')->group(function (): void {
     // The settings page of the group: any member reads, `group.settings.manage` changes the settings that belong to the group.
     Route::get('organization/settings', [GroupSettingsController::class, 'show']);
     Route::patch('organization/settings', [GroupSettingsController::class, 'update']);
+
+    // The brand of the career site of the group (`group.settings.manage`): a draft that is previewed and then published.
+    Route::get('organization/portal', [GroupPortalController::class, 'show']);
+    Route::put('organization/portal/draft', [GroupPortalController::class, 'saveDraft']);
+    Route::delete('organization/portal/draft', [GroupPortalController::class, 'discardDraft']);
+    Route::post('organization/portal/draft/publish', [GroupPortalController::class, 'publish']);
+    Route::post('organization/portal/draft/preview', [GroupPortalController::class, 'preview']);
 
     // Temporary support access for a named platform admin (`group.members.manage`): who may receive it, who has it, give it for 1 to 72 hours, end it at once.
     Route::get('organization/support-admins', [SupportGrantController::class, 'admins']);
