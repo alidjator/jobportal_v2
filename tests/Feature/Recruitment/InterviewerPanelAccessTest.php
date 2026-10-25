@@ -165,6 +165,38 @@ final class InterviewerPanelAccessTest extends FeatureTestCase
         $this->assertSame(1, DB::table('recruitment_interview_scorecards')->where('member_id', $this->interviewerId)->where('status', 'submitted')->count());
     }
 
+    // ----- one interview -----
+
+    public function test_a_panel_member_opens_one_interview_by_its_id_with_the_job_the_candidate_and_the_panel(): void
+    {
+        $this->openInterview();
+
+        $this->api('GET', "/company/interviews/{$this->interview}", [], $this->interviewerToken)->assertOk()
+            ->assertJsonPath('data.id', $this->interview)
+            ->assertJsonPath('data.application_id', $this->applicationId)
+            ->assertJsonPath('data.status', 'confirmed')
+            ->assertJsonPath('data.job.id', $this->job)
+            ->assertJsonPath('data.job.title', 'Backend Developer')
+            ->assertJsonPath('data.candidate_name', 'Siti Rahma')
+            ->assertJsonPath('data.kit.name', 'Backend round')
+            ->assertJsonCount(1, 'data.participants')
+            ->assertJsonPath('data.participants.0.id', $this->interviewerId)
+            ->assertJsonPath('data.participants.0.rsvp.answer', 'pending');
+    }
+
+    public function test_the_team_of_the_job_opens_the_interview_and_a_stranger_does_not(): void
+    {
+        $this->openInterview();
+
+        $this->api('GET', "/company/interviews/{$this->interview}", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.job.title', 'Backend Developer');
+        $this->api('GET', "/company/interviews/{$this->interview}", [], $this->strangerToken)->assertForbidden()->assertJsonPath('permission', 'applications.view');
+        $this->api('GET', '/company/interviews/999999', [], $this->recruiterToken)->assertNotFound();
+
+        // The guard keeps the member of the last call in this process: forget it before calling without a token.
+        $this->app['auth']->forgetGuards();
+        $this->flushHeaders()->getJson("/api/v1/company/interviews/{$this->interview}")->assertUnauthorized();
+    }
+
     // ----- my interviews -----
 
     public function test_my_interviews_lists_what_the_member_sits_on(): void

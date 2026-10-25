@@ -89,6 +89,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::patch('company/applications/{id}/interview', [InterviewController::class, 'updateNote'])->whereNumber('id');
     Route::get('company/interviewers', [InterviewController::class, 'interviewers']);
     Route::get('company/interviews', [InterviewController::class, 'mine']);
+    Route::get('company/interviews/{id}', [InterviewController::class, 'show'])->whereNumber('id');
     Route::get('company/interviews/{id}/calendar.ics', [InterviewController::class, 'calendarFile'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/accept-proposal', [InterviewController::class, 'acceptProposal'])->whereNumber('id');
     Route::post('company/applications/{id}/interview/refuse-proposal', [InterviewController::class, 'refuseProposal'])->whereNumber('id');

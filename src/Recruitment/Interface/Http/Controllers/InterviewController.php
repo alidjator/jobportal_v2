@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Recruitment\Application\GetCompanyInterview;
 use Src\Recruitment\Application\GetInterviewCalendarFile;
 use Src\Recruitment\Application\ListApplicationInterviews;
 use Src\Recruitment\Application\ListInterviewers;
@@ -17,6 +18,7 @@ use Src\Recruitment\Interface\Http\Requests\MarkInterviewNoShowRequest;
 use Src\Recruitment\Interface\Http\Requests\RefuseInterviewProposalRequest;
 use Src\Recruitment\Interface\Http\Requests\ScheduleInterviewRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateInterviewNoteRequest;
+use Src\Recruitment\Interface\Http\Resources\CompanyInterviewDetailResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyInterviewResource;
 use Src\Recruitment\Interface\Http\Resources\InterviewerResource;
 use Src\Recruitment\Interface\Http\Resources\MyInterviewResource;
@@ -33,6 +35,12 @@ final class InterviewController extends ApiController
         $page = $list->execute($actors->fromRequest($request), $request->upcoming(), $request->scorecardPending(), $request->rsvp(), $request->allOfCompany(), $request->cursorRequest(), $request->proposalOpen());
 
         return MyInterviewResource::collection($page->items)->additional(CursorResources::envelope($page, $request));
+    }
+
+    /** One interview with its panel, the job and the candidate, for the interview page (the links of notifications and emails carry only its id). */
+    public function show(Request $request, int $id, ActorResolver $actors, GetCompanyInterview $get): CompanyInterviewDetailResource
+    {
+        return new CompanyInterviewDetailResource($get->execute($actors->fromRequest($request), $id));
     }
 
     public function index(Request $request, int $id, ActorResolver $actors, ListApplicationInterviews $list): AnonymousResourceCollection
