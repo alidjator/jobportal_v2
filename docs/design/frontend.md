@@ -68,11 +68,17 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-13: the team page shows the jobs each member is assigned to: new `GET company/members/{userId}/jobs` (company admin; every status with its status, newest first; company admins too, only their own assignments), coded the same day.
 - 2026-10-14: a recruitment calendar page C26 and a note for the candidate on interviews, designed in `phase-8-interview-calendar.md`.
 - 2026-10-13: company members get per-feature permissions (preset plus checkboxes; presets Company admin, Recruiter, Interviewer), designed in `phase-8-company-permissions.md`, coded before go-live; the company menu and the Role column of section 8 then follow `GET company/me` permissions ([detail](#8-page-map-workspace)).
-- 2026-10-13: UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); Console starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
+- 2026-10-13 (**replaced 2026-10-24** by Able Pro Tailwind, see the first 2026-10-24 entry): UI on the user's Able Pro Vue 1.7.0 template (Vuetify 3); Console starts from its `seed`, the public Nuxt application ports its layouts and components through `vuetify-nuxt-module` ([detail](#6-ui-template)).
 - 2026-10-23: the actions of a whole page sit at the top in a sticky action bar (`StickyActionCard`); actions of one item stay with the item ([detail](#113-key-page-layouts)).
 - 2026-10-23: the API of the job editor C4 is extended before the page is built (user): `summary`, `vacancies_visible`, `salary_note`, `reapply_after_days`, `location_ids` (several company locations, the first is the main one), `GET company/jobs/{id}/preview`
   with `meta.publish_check`, `GET`/`PUT`/`DELETE company/jobs/{id}/assessments[/{stageId}]` (default test per assessment stage with the advance rule), more filters, sorts and columns on the job list C3 ([detail](phase-8-job-posting.md), [locations](company-locations.md), [assessments](phase-8-assessment-automation.md), [waiting period](phase-8-rejections.md)).
+- 2026-10-23: `GET company/interviewers` (`{id, name}`, `interviews.manage`) feeds the panel picker of the interview dialog (C7); `GET company/members` stays for company admins ([detail](phase-8-interviewers.md)).
+- 2026-10-23: the "send a test" dialog (C7) reads `GET company/assessment/sendable-tests` and `GET company/jobs/{id}/assessors` ([detail](phase-8-assessment-automation.md)).
 - 2026-10-23: buttons carry icons selectively ("With Icons" buttons of Able Pro): the action buttons of work pages and actions with a well-known icon do; account pages, cancel buttons and text buttons do not ([detail](#112-common-states)).
+- 2026-10-24: **the UI template changes to Able Pro Tailwind 1.2.0** (the Vue template's layouts are too limited): markup from its `dist` HTML, CSS compiled from its `src/assets/scss` with Tailwind v4 in the build; Vue/Nuxt stays, Vuetify is dropped, and every existing Vuetify page is rewritten in one migration step; replaces the 2026-10-13 template decision ([detail](#6-ui-template)).
+- 2026-10-24: the migration to Able Pro Tailwind is coded (every page of Console, Workspace and Career; Vuetify removed); the user decided the Font Awesome chevrons in place of the Tabler font, the Vue components `UiSelect`, `UiRating`, `UiTooltip` and `UiTimeline` for the plugins and the timeline the template does not have as Vue ([detail](#6-ui-template)).
+- 2026-10-25: the icon variant changes from Font Awesome Pro light to **regular** (front-end `CLAUDE.md` rule 8: `fa-regular.json`, the sprite `fa-regular.svg`, the chevrons of `style.css`); the user runs `pnpm icons:build` to write the sprite.
+- 2026-10-24 and 2026-10-25: the user approved a **compact density** edited in the template SCSS (13px base font, 52px header, 224px sidebar, 32px buttons and inputs, `p-4` cards, smaller icons, heading sizes in rem), the **job description editors** (CKEditor 5 Visual tab writing Markdown, EasyMDE Markdown tab, `MarkdownContent` for display; the description stays Markdown) and a **job editor with one card for each section**; the values are in front-end `CLAUDE.md` rules 11 to 14 ([detail](#6-ui-template)).
 - 2026-10-25: **Workspace opens pages as tabs** under the header (Able Pro "Basic Tabs", `dist/elements/bc_tabs.html`): at most 12, the Dashboard is permanent, only open tabs stay alive (keep-alive), tabs survive a refresh in `sessionStorage`, a right-click menu closes one, the others or all; the tab bar stays pinned under the header and the sticky bars of pages sit below it; a tab is titled after its menu entry (with its icon), a detail page adds the job's or applicant's name ([detail](#111-layouts-and-navigation)).
 
 ## 1. Timing
@@ -231,10 +237,45 @@ sign-in; a token never passes from one to the other. Where they differ, the item
 template's markup and classes exactly and change only the content; import its CSS as it is and write no new styles (no exception, also not for
 contrast); split pages into reusable Vue/Nuxt components; replace template JavaScript or jQuery with Vue/Nuxt equivalents; ask the user before
 adding an element that is not in the template. Elements this design already decided (the `focus` layout, the bottom navigation, the announcement
-banner, the pickers of 11.7, the complex screens of 11.5) count as approved, but the Able Pro or Vuetify component each is built from is shown to
+banner, the pickers of 11.7, the complex screens of 11.5) count as approved, but the Able Pro element each is built from is shown to
 the user before it is written.
 
-Decided by the user on 2026-10-13, after both templates the user owns were read (files only, nothing run; both folders are read-only):
+**Template since 2026-10-24 (decided by the user):** Able Pro Tailwind 1.2.0 (`/usr/local/src/able-pro-tailwind-v1.2.0`, read-only), chosen because
+the layouts of the Vue template are too limited.
+
+- **Markup:** copied from the HTML pages of `dist` (194 pages: `layouts`, `dashboard`, `application`, `admins`, `elements`, `forms`, `table`,
+  `pages`, `widget`, `other`); the shared parts of the page frame are in `dist/layouts` (`sidebar`, `header-content`, `breadcrumb`, `footer-block`).
+- **CSS:** compiled from `src/assets/scss` (`style.scss`, `layouts`, `partial`, `themes`) with Tailwind v4 in the applications' build, imported as it
+  is (rule 2), so every Tailwind utility is available for rule 7. Not the compiled `dist/assets/css/style.css`.
+- **Stack:** Vue/Nuxt stays as decided in sections 2 and 3; **Vuetify and `vuetify-nuxt-module` are dropped**. The template's vanilla JavaScript and
+  plugins (`dist/assets/js`: dropdowns, modals, offcanvas, simplebar, simple-datatables, choices, flatpickr, ...) are replaced by Vue components and
+  composables (rule 4); a plugin without a Vue equivalent is a decision for the user.
+- **Icons:** the template's icon fonts (Tabler, Feather, Phosphor, Material, Font Awesome) are not used; icons are Font Awesome Pro 7.1 regular (light until 2026-10-25)
+  (11.2, front-end `CLAUDE.md` rule 8).
+- **Compact density (2026-10-24 and 2026-10-25):** the template SCSS is edited in place (front-end `CLAUDE.md` rule 11); rule 2 of that file no longer holds without this exception. The job description
+  is edited in a Visual (CKEditor 5) or a Markdown (EasyMDE) tab and shown through `MarkdownContent` (rule 12); the job editor is one card for each section (rule 13, an exception to 11.3 below).
+- **Migration (done 2026-10-24):** the pages and components that were written on Vuetify (115 `.vue` files) are rewritten on the Tailwind template: `packages/ui`
+  (the stylesheet copied unchanged, the page frame, shared components) first, then every page of Console, Workspace and Career; Vuetify, `vuetify-nuxt-module`,
+  `vue3-easy-data-table` and `vue3-perfect-scrollbar` left the dependencies. The mapping of the old references is: `UiSnackbar.vue` → `ac_notification`,
+  `VButtons.vue` → `bc_button` ("Button With Icon"), `v-data-table-server` → `ServerTable` (`tbl_bootstrap`, `tbl_dt-simple`, `bc_pagination`),
+  the CSP note on Vuetify's inline theme → the nonce of ApexCharts only (10, Hosting), the layout table → 11.1.
+  - **Build:** the stylesheet is compiled by `@tailwindcss/vite` (plugin of the Vite SPA, `vite.plugins` of the Nuxt applications). The template's `style.scss` is plain
+    Tailwind CSS, not Sass, and `packages/ui/src/style.css` imports it and adds `@source` for the shared components.
+  - **Template JavaScript as Vue (rule 4):** dropdown, modal, offcanvas, tooltip, slide up and down, tabs, the code boxes and the sidebar are components of
+    `packages/ui` (`UiDropdown`, `UiModal`, `UiOffcanvas`, `UiTooltip`, `UiSlide`, `UiTabNav`, `OtpInput`, `VerticalSidebar`); simplebar is `simplebar-vue`; the
+    template's simple-datatables is `ServerTable` (sort and page come from the API).
+  - **Decided by the user on 2026-10-24:** the three pseudo-elements of the template that draw with the Tabler icon font (dropdown caret, breadcrumb separator,
+    accordion arrow) use Font Awesome Regular chevrons (`packages/ui/src/style.css`); the searchable select of Choices.js is the Vue component `UiSelect` (the Choices markup
+    and CSS, no library); the stars are the Vue component `UiRating` (the markup and stylesheet of star-rating.js); the tooltip is `UiTooltip` (the markup of the
+    template's script); the timeline of the status tabs and the history is `UiTimeline` (the "Tasks" card of `dist/widget/w_data.html`).
+  - **One account page:** Console's two account pages (the Vue template's `profile2` for a super admin, `user-profile` for the others) become one page, the `account-profile.html`
+    layout, for every admin.
+- **Still valid from the 2026-10-13 decision below:** the list of template logic that must be replaced (auth store, fetch wrapper, mock APIs,
+  locales, overlapping dependencies) as far as the Tailwind template has it, and the server-rendering rules (theme cookie, `<ClientOnly>` for charts),
+  without the Vuetify-specific `ssr.clientWidth`.
+
+Decided by the user on 2026-10-13 (**replaced 2026-10-24** by the template above), after both templates the user owns were read (files only,
+nothing run; both folders are read-only):
 
 - **Chosen:** Able Pro Vue 1.7.0 (`/usr/local/src/able-pro-vue-v1.7.0`): Vue 3.5, TypeScript 5.9, Vite 7, Vuetify 3.10, Pinia, vue-router, vue-i18n,
   vee-validate. `seed` is the clean starting point (dashboard layout, vertical and horizontal sidebar, header, customizer, i18n); `full-version` is the
@@ -415,7 +456,7 @@ Decided by the user on 2026-10-19 (section 3): Workspace has its own sign-in; no
 | C5 | Job detail and lifecycle | `/lowongan/{id}` | `GET company/jobs/{id}` (with the moderation state: held, rejected, taken down, with the reason), `publish`, `close`, `reopen`, `clone`, `fill` ("Tandai terpenuhi"), `GET .../performance`; "Bandingkan hasil interview" (`GET company/jobs/{id}/interview-results`, anchors as header tooltips). **#22:** "Bandingkan hasil tes" (`GET .../assessment-results`). **#15:** close dialog with "Tolak pelamar yang masih aktif" (`reject-remaining`). **#31:** "Tambah kandidat" and the "Menunggu kandidat" list. **#20:** "Pratinjau". | `applications.view`; actions `jobs.publish`, `jobs.create` |
 | C5b | All applicants | `/pelamar` | `GET company/applications` (keyword, filters, facets, sorts across the jobs the member reads) | `applications.view` |
 | C6 | Applicant pipeline of a job | `/lowongan/{id}/pelamar` | `GET company/jobs/{id}/applications` (filter panel with facets, score column `match_score`, rating, time in stage and the stale mark, review answers, interview and RSVP state badges); `POST company/applications/{id}/move` (hire dialog with join date and note when moving to hired; `meta.job_filled` → "Tandai terpenuhi" prompt), `reject`; bulk `move` (interview slots), `reject`, `message`; `GET .../applications/export` (`applications.export`); "Minta review" from the selection (`POST`/`GET company/jobs/{id}/review-requests`, due date and message); "Tandai mengundurkan diri" (C7). A bound hiring manager sees only the stages from the boundary, with "Lamaran lain dikirim oleh recruiter". **#14:** restrict option in reject, restricted badge, "Batalkan" on pending rejections (`DELETE .../pending-rejection`, `DELETE company/rejection-batches/{batchId}`; reject answers 202 with `commit_at`). **#15:** candidate message in the reject dialogs. | `applications.view`; actions `applications.manage` |
-| C7 | Application detail | `/pelamar/{id}` | `GET company/applications/{id}` (stage history, withdrawal reason and actor, `reviews[]`, `review_summary`, other applications of the candidate, `retention_due_on` notice), `resume`; notes (CRUD); `PUT`/`DELETE rating`; `PATCH .../hire` (join date and note, changed later); `POST .../withdraw` ("Tandai mengundurkan diri" with reason and note); "Simpan ke talent pool" (`POST company/talent-pool`); offer dialog (`PUT offer` with terms, benefits, allowances, deadline, the generated letter or an own PDF through `offer-letter-uploads`; `GET offers`, `GET offers/{offerId}/letter.pdf`, `withdraw`); interview (`PUT`/`PATCH interview` with the place from the company locations or a link, the panel and the note; `GET interviews`; proposal banner "Terima / Tolak / Jadwalkan lain" (`accept-proposal`, `refuse-proposal`); reschedule-request banner; `cancel`; `complete`; "Tidak hadir" after the start (`no-show`)); the note of the schedule, test and offer dialogs prefilled from `company/message-defaults` with "Pratinjau email" (`POST .../email-preview`); assessment (`PUT company/assessment/applications/{id}/invitation` with window, assessors and attachment, `GET .../invitations`). A member who reaches the application only through an interview panel (`interviews.participate`, `phase-8-interviewers.md`) gets the limited layout: resume and files, screening answers, assessment results, the interview; no notes, ratings, offer or stage actions. **#14:** restriction (`POST .../restriction`). **#15:** candidate message. **#32:** "Cek pra-kerja" panel and the condition box in the offer form. **#12 section 3:** `evidence.pdf`. | `applications.view` or a panel seat; actions per permission (`applications.manage`, `offers.manage`, `interviews.manage`, `assessments.send`, `talent_pool.manage`) |
+| C7 | Application detail | `/pelamar/{id}` | `GET company/applications/{id}` (stage history, withdrawal reason and actor, `reviews[]`, `review_summary`, other applications of the candidate, `retention_due_on` notice), `resume`; notes (CRUD); `PUT`/`DELETE rating`; `PATCH .../hire` (join date and note, changed later); `POST .../withdraw` ("Tandai mengundurkan diri" with reason and note); "Simpan ke talent pool" (`POST company/talent-pool`); offer dialog (`PUT offer` with terms, benefits, allowances, deadline, the generated letter or an own PDF through `offer-letter-uploads`; `GET offers`, `GET offers/{offerId}/letter.pdf`, `withdraw`); interview (the panel picker reads `GET company/interviewers`; `PUT`/`PATCH interview` with the place from the company locations or a link, the panel and the note; `GET interviews`; proposal banner "Terima / Tolak / Jadwalkan lain" (`accept-proposal`, `refuse-proposal`); reschedule-request banner; `cancel`; `complete`; "Tidak hadir" after the start (`no-show`)); the note of the schedule, test and offer dialogs prefilled from `company/message-defaults` with "Pratinjau email" (`POST .../email-preview`); assessment (the test picker reads `GET company/assessment/sendable-tests`, the assessor picker `GET company/jobs/{id}/assessors`; `PUT company/assessment/applications/{id}/invitation` with window, assessors and attachment, `GET .../invitations`). A member who reaches the application only through an interview panel (`interviews.participate`, `phase-8-interviewers.md`) gets the limited layout: resume and files, screening answers, assessment results, the interview; no notes, ratings, offer or stage actions. **#14:** restriction (`POST .../restriction`). **#15:** candidate message. **#32:** "Cek pra-kerja" panel and the condition box in the offer form. **#12 section 3:** `evidence.pdf`. | `applications.view` or a panel seat; actions per permission (`applications.manage`, `offers.manage`, `interviews.manage`, `assessments.send`, `talent_pool.manage`) |
 | C8 | Interview workspace | `/wawancara/{id}` | `GET`/`PUT company/interviews/{id}/participants` (panel with RSVP badges), `questions`, `scorecard` (draft, `submit`; scale anchors), `GET scorecards`, revisions, `attendance`, `calls`, `recordings` (list, file, delete); RSVP buttons (`POST .../rsvp`); `GET .../calendar.ics` | panel seat (`interviews.participate`) or `interviews.manage` |
 | C9 | Video interview room | `/pelamar/{id}/wawancara/video` | `GET .../interview/video/lobby`, `join`, `admit`, `recording/start`, `stop` (Janus; full screen) | panel seat or `interviews.manage` |
 | C10 | Voice interview | `/pelamar/{id}/wawancara/telepon` | `POST .../interview/voice/join`, `call`, `hangup`, `recording/start`, `stop` (Asterisk browser account) | panel seat or `interviews.manage` |
@@ -495,7 +536,7 @@ across tenants are audited per applicant, which the page says.
 ## 9. Page map: Console and Portal Mitra
 
 Built on 2026-10-13 from the API routes (`/api/v1/admin/**`, `/api/v1/provider/**`) and agreed by the user the same day; **rewritten on
-2026-10-19** (page-map session) from the routes of that day. Vite SPA on `console.satu.solutions` from the Able Pro `seed` (`apps/console`),
+2026-10-19** (page-map session) from the routes of that day. Vite SPA on `console.satu.solutions` on the Able Pro Tailwind template (`apps/console`),
 token in `sessionStorage` (section 5.1). Two sign-ins in one application: `/masuk` for admins, `/mitra/masuk` for psychologists, whose pages all
 live under `/mitra/...` (decided 2026-10-13); each has its own layout and menu, and the token of one is never sent to the other's endpoints. Paths
 are Indonesian without an `/en` variant; the language comes from the language cookie (section 11.1).
@@ -584,8 +625,8 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   `/usr/local/src/jobportal-frontend/onesis-talent`:
   - `apps/public`: Nuxt (server-side rendering), public site and job seeker area (section 7);
   - `apps/workspace`: Nuxt with `ssr: false`, ONESIS Workspace for company and group members (section 8), added 2026-10-19;
-  - `apps/console`: Vite SPA from the Able Pro `seed`, Console and Portal Mitra (section 9);
-  - `packages/ui`: the Able Pro theme, SCSS, layouts and shared components (section 11.7), including the job detail component that P3 and the
+  - `apps/console`: Vite SPA on the Able Pro Tailwind template, Console and Portal Mitra (section 9);
+  - `packages/ui`: the Able Pro Tailwind stylesheet (copied unchanged), layouts and shared components (section 11.7), including the job detail component that P3 and the
     Workspace preview share;
   - `packages/api`: generated API types, the client and the problem parser;
   - `packages/i18n`: shared `id` and `en` interface messages, the wording of in-app notifications per `type` and their targets (section 12.4)
@@ -607,12 +648,12 @@ Agreed by the user on 2026-10-13 (repository, API client, build and error langua
   two-factor, apply, pipeline move, Workspace sign-in and landing per preset, admin two-factor). Two coverage tests: every notification type of the
   catalog has a sentence and a target (11.6, 12.4), and every task key of the API has a link-entry mapping (12.3).
 - **Build (decided):** on the server, **run by the user**; a session prepares the commands only. The server has 7 GB of memory with about 1 GB free
-  (2026-10-13) while a Nuxt and Vuetify build can take 2 to 4 GB, so the build commands limit Node's heap and may need swap; build when traffic is low,
+  (2026-10-13) while a Nuxt build can take 2 to 4 GB, so the build commands limit Node's heap and may need swap; build when traffic is low,
   and build one application at a time.
 - **Hosting (agreed):** each build goes into its own release folder and a `current` symlink is switched, so the live site never runs from the working
   folder. The public application and Workspace each run Nuxt's `node-server` output as a systemd service on `127.0.0.1` (two ports) behind
   nginx (the units need root: user lingering is off for `jobportal`). Console is static files served by nginx with a strict CSP:
-  `script-src 'self'`; `style-src` needs `'unsafe-inline'` because Vuetify injects its theme as an inline style and a static site cannot give it a nonce.
+  `script-src 'self'`; `style-src 'self' 'nonce-…'`: the Tailwind stylesheet is a file, and the only inline `<style>` is the one ApexCharts injects, which carries the nonce nginx writes into `<meta name="csp-nonce">` (`sub_filter`).
   **Paths (decided by the user on 2026-10-21):** releases under `/usr/local/src/jobportal-frontend/releases/<app>/<release>` with
   `releases/<app>/current` as the live symlink (`workspace`, `console`, later `public`); Workspace's service listens on `127.0.0.1:3101`, Career's
   on `127.0.0.1:3100`. Until a release exists (or while the Workspace service is down), nginx serves a static "Segera hadir" page from
@@ -629,13 +670,13 @@ Worked out with the user from 2026-10-13, after the page maps and the technical 
 
 Agreed by the user on 2026-10-13; rewritten on 2026-10-19 for the three applications (menus, banner and language decided that day).
 
-Built from the Able Pro parts (`full-version/src/layouts`, `views/pages/landingpage`, `views/authentication/auth1`, `views/pages/maintenance`).
+Built from the Able Pro Tailwind pages (`dist/layouts/layout-vertical.html` with `sidebar`, `header-content`, `breadcrumb`, `footer-block`; `dist/pages/login-v2` and the other `-v2` account pages; `dist/pages/error-404`, `error-500`; `pages/contact-us` and `price-v1` for the public header and footer).
 
 | Layout | Used by | From Able Pro |
 |---|---|---|
-| `public` | P1 to P15 | landing page `AppBarMenu` and `FooterSection` |
-| `blank` | A1 to A6, B1 to B5, D1, M1, M2, error pages | `BlankLayout`, `auth1` pages, `maintenance/error` |
-| `dashboard` | `/me`, Workspace, Console, `/mitra` | `DashboardLayout` with the vertical sidebar and header (`NotificationDD`, `LanguageDD`, `ProfileDD`) |
+| `public` | P1 to P15 | the header and footer of `dist/pages/contact-us.html` (built with the public pages) |
+| `blank` | A1 to A6, B1 to B5, D1, M1, M2, error pages | `BlankLayout`, `AuthShell` (`login-v2` frame), `ErrorNotFound` and `ErrorServer` (`error-404`, `error-500`) |
+| `dashboard` | `/me`, Workspace, Console, `/mitra` | `DashboardLayout`: the vertical layout (`pc-sidebar`, `pc-header` with the notification dropdown, language dropdown and profile dropdown, `pc-container`, `pc-footer`) |
 | `focus` | J4 apply, J6 and C9 video rooms, J7 test runner, C10 voice call | new: no sidebar, a top bar with the title and an exit; full screen where the page needs it |
 
 **Announcement banner (decided by the user on 2026-10-19, FEG8):** a strip above the header in the `public` and `dashboard` layouts of the public
@@ -696,7 +737,7 @@ referensi, Pengaturan, Email tidak terkirim (D25), Log audit · Dukungan grup (D
   layout, colours and menu direction are fixed by the application.
 - **Vertical sidebar** in every dashboard; on a phone it becomes the drawer.
 - **Bottom navigation on phones for `/me`:** Dasbor, Cari (to `/lowongan`), Lamaran, Pesan (unread count), Profil; the drawer keeps the full menu. A new
-  component (Vuetify `v-bottom-navigation`), not in the template. Workspace, Console and Portal Mitra use the drawer only.
+  component, not in the template (the Tailwind template has none: shown to the user before it is written, template rule 5). Workspace, Console and Portal Mitra use the drawer only.
 
 ### 11.2 Common states
 
@@ -716,17 +757,17 @@ One pattern per situation, used by every page of every application.
   - 503 (for example `training-unavailable`): a card in place of the content with "Coba lagi"; the API in maintenance mode shows the maintenance page.
   - No connection or 500: a snackbar with "Coba lagi"; the form keeps what was typed.
 - **Success:** a short snackbar; a new item opens or is highlighted.
-- **Snackbar (decided by the user on 2026-10-23):** one `NoticeSnackbar` of `packages/ui` per application (Workspace and Console), copied from the
-  "With Close + Action" snackbar of Able Pro (`ui-elements/advance/UiSnackbar.vue`): outlined in the colour of the message, bottom right, an icon per
-  kind (success, error, warning, info), "Coba lagi" when the notice has a retry, and a close button.
+- **Snackbar (decided by the user on 2026-10-23):** one `NoticeSnackbar` of `packages/ui` per application (Workspace and Console), the
+  notification of Able Pro Tailwind (`dist/elements/ac_notification.html`, the `notifier` classes and stylesheet): top right, the border in the colour of
+  the message, an icon per kind (success, error, warning, info), "Coba lagi" when the notice has a retry, a close button, and it closes after 6 seconds.
 - **Confirmation:** a dialog naming the thing for every destructive action (withdraw an application, reject, delete); account deletion asks the user
   to type a word.
 - **Unsaved changes:** long forms (profile, job editor, test editor, email templates, company profile) warn before leaving.
 - **Session end:** public 401 goes to sign-in and back to the page (5.2); the admin's 12-hour token ends with a dialog that leads to sign-in and then to
   the same page.
 - **Buttons (decided by the user on 2026-10-23, selective icons):** the text is the label; an icon is added only where it helps recognise the action,
-  as a "With Icons" button of Able Pro (`forms/components/VButtons.vue`): an 18px icon in the `prepend` slot, or in the `append` slot for a button that
-  moves forward (move to a stage, a menu's chevron).
+  as the "Button With Icon" of Able Pro Tailwind (`dist/elements/bc_button.html`): an 18px icon before the text, or after it for a button that
+  moves forward (move to a stage, a menu's chevron). `UiActionButton` hides the text below the `sm` breakpoint and keeps the icon.
   - **With an icon:** the action buttons of work pages (toolbars, card headers, bulk actions of a table) and actions with a well-known icon (add,
     delete, edit, save, export or download, reject, sign out).
   - **Without an icon:** the buttons of the account pages (sign-in, password reset, invitation, terms, blocked account), cancel and close in dialogs,
@@ -742,7 +783,7 @@ One pattern per situation, used by every page of every application.
 - **Public lists scroll on** (jobs, companies, training): the next page loads as the visitor reaches the end. So that search engines still reach every
   page (P2 and P12 are indexed), it follows the crawlable pattern: the server renders `?page=N` on its own, the end of the list carries a real link to
   `?page=N+1`, and the address bar follows the page in view (`history.replaceState`), so a shared link opens where the visitor was. Dashboard tables
-  keep page numbers (`v-data-table-server`); messages and notifications load older items at the end (cursor lists).
+  keep page numbers (`ServerTable` of `packages/ui`: the table of `dist/table/tbl_bootstrap.html`, the sortable header of `tbl_dt-simple.html` and the pagination of `elements/bc_pagination.html`); messages and notifications load older items at the end (cursor lists).
 - **Time zone:** times come from the API in UTC and are shown in the device's zone with its label (WIB, WITA, WIT; other zones by their offset). An
   interview time also shows the zone in the invitation and the confirmation.
 - **Accessibility:** WCAG 2.1 AA: keyboard use, visible focus, labels on every field, errors announced to screen readers, and the Able Pro colours
@@ -755,9 +796,9 @@ Agreed by the user on 2026-10-13.
 Wireframes were shown to the user for P2, P3, J1 and C6; the other pages follow the closest Able Pro page.
 
 **Sticky action bar (decided by the user on 2026-10-23):** the actions of a whole page of Workspace sit at the top in the sticky action bar of Able
-Pro (`forms/layouts/StickyActionBar.vue`), as the shared `StickyActionCard` of `packages/ui`: an outlined card holding the page, headed by the toolbar
-that stays under the header (`top` 74px, the header's height) while the page scrolls. The bar has the template's background (`bg-containerBg`), the buttons on the right and no title; it is hidden when the viewer has no action; on a phone it is compact and secondary
-buttons become icon buttons with an `aria-label`. Actions of one item (a table row, a note, the member's own rating, a row of the security tab) and
+Pro Tailwind (`dist/forms/form2_lay-stickyactionbars.html`, `#sticky-action`), as the shared `StickyActionCard` of `packages/ui`: a card holding the page, headed by the card header
+that stays under the header (`top-header-height`) while the page scrolls. The bar shows the card title (the label) on the left and the buttons on the right; it is hidden when the viewer has no action; on a phone
+the buttons of `UiActionButton` become icon buttons with an `aria-label`. Actions of one item (a table row, a note, the member's own rating, a row of the security tab) and
 the bulk actions of a selection stay next to their item. The buttons of a small form stay under the form (the password
 form of the account page, kept so by the user the same day). Used by C5 (applicants and lifecycle actions) and C7 (resume, the action of the open
 tab, the stage actions with the less common ones in an "Aksi lain" menu).
@@ -775,7 +816,7 @@ tab, the stage actions with the less common ones in an "Aksi lain" menu).
 - **J2 Profile:** one page of sections (basics, experience, education, skills, languages, links, avatar), each edited in a dialog; completeness shown
   at the top.
 - **C6 Pipeline:** job header with the switch between table and kanban; **the table is the default (decided by the user on 2026-10-13)**:
-  `v-data-table-server` with selection for bulk move, reject and message; kanban (Able Pro kanban, one column per stage with counts, cards dragged to
+  `ServerTable` with selection for bulk move, reject and message; kanban (not in the Tailwind template: an element the user decides when it is built; one column per stage with counts, cards dragged to
   move) one click away, and the last choice is remembered per user in the browser. Filters and export on both.
 - **C7 Application detail:** candidate column (profile, resume viewer, screening answers) and a work column with tabs: notes, rating, interviews,
   assessments, offer, history; stage actions at the top.
