@@ -4,7 +4,6 @@ namespace Src\Assessment\Application\Defaults;
 
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
-use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Domain\Exceptions\AccessDenied;
