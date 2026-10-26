@@ -101,7 +101,7 @@ final class HiringManagerTest extends FeatureTestCase
         $this->assertFalse(collect($applicants)->firstWhere('permission', 'applications.review')['requires_review']);
 
         $presets = collect($catalog['presets'])->keyBy('preset');
-        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate'], $presets['hiring_manager']['permissions']);
+        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate', 'workforce.plans.view', 'workforce.requisitions.create', 'workforce.requisitions.view'], $presets['hiring_manager']['permissions']);
         $this->assertContains('applications.review', $presets['recruiter']['permissions']);
     }
 

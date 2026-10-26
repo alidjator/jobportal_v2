@@ -158,3 +158,11 @@ Interpretations, where the design left room:
   member) and `review_summary {advance, decline, maybe, pending}` on the pipeline rows (over the requests that are not closed, null when none names the application; a locked reviewer sees only their own pending answer counted).
 - **Erasure:** the reasons of reviews about an erased applicant are cleared with the other personal text; the decisions stay.
 - **Not coded:** the assessment summary on the review card, and a recruiter-facing "remind now" (not in the design).
+
+## Changed 2026-10-27: requisition permissions in the preset
+
+The Hiring Manager preset gains `workforce.plans.view`, `workforce.requisitions.create` and `workforce.requisitions.view` (user decision after the front end audit,
+`docs/analysis/implementation-gap-audit.md` H4 and H5): the person whose unit needs the position is the one who raises the requisition (`erp-requisitions.md`), so the
+menu entries and the form of the requisition must not wait for an admin to tick three boxes. The preset now holds seven permissions. Members and invitations that exist keep what
+they hold; the permissions only act in an internal tenant (an external tenant answers 403 `not-an-internal-tenant`).
+

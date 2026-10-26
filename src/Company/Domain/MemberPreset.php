@@ -31,6 +31,7 @@ enum MemberPreset: string
             self::Interviewer => [CompanyPermission::InterviewsParticipate],
             self::HiringManager => [
                 CompanyPermission::ApplicationsView, CompanyPermission::ApplicationsReview, CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate,
+                CompanyPermission::WorkforcePlansView, CompanyPermission::WorkforceRequisitionsCreate, CompanyPermission::WorkforceRequisitionsView,
             ],
         };
     }

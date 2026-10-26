@@ -41,9 +41,9 @@ final class MemberPermissionRulesTest extends TestCase
         $this->assertSame(['applications.view', 'applications.manage', 'applications.review'], MemberPermissionRules::validated(['applications.review', 'applications.manage', 'applications.view']));
     }
 
-    public function test_the_hiring_manager_preset_reads_reviews_and_runs_interviews_only(): void
+    public function test_the_hiring_manager_preset_reads_reviews_runs_interviews_and_raises_requisitions(): void
     {
-        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate'], MemberPreset::HiringManager->permissionNames());
+        $this->assertSame(['applications.view', 'applications.review', 'interviews.manage', 'interviews.participate', 'workforce.plans.view', 'workforce.requisitions.create', 'workforce.requisitions.view'], MemberPreset::HiringManager->permissionNames());
     }
 
     public function test_permissions_that_need_no_reading_stand_alone_and_come_back_in_catalog_order_without_duplicates(): void
