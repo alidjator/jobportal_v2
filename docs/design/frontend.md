@@ -80,6 +80,8 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-25: the icon variant changes from Font Awesome Pro light to **regular** (front-end `CLAUDE.md` rule 8: `fa-regular.json`, the sprite `fa-regular.svg`, the chevrons of `style.css`); the user runs `pnpm icons:build` to write the sprite.
 - 2026-10-24 and 2026-10-25: the user approved a **compact density** edited in the template SCSS (13px base font, 52px header, 224px sidebar, 32px buttons and inputs, `p-4` cards, smaller icons, heading sizes in rem), the **job description editors** (CKEditor 5 Visual tab writing Markdown, EasyMDE Markdown tab, `MarkdownContent` for display; the description stays Markdown) and a **job editor with one card for each section**; the values are in front-end `CLAUDE.md` rules 11 to 14 ([detail](#6-ui-template)).
 - 2026-10-25: **Workspace opens pages as tabs** under the header (Able Pro "Basic Tabs", `dist/elements/bc_tabs.html`): at most 12, the Dashboard is permanent, only open tabs stay alive (keep-alive), tabs survive a refresh in `sessionStorage`, a right-click menu closes one, the others or all; the tab bar stays pinned under the header and the sticky bars of pages sit below it; a tab is titled after its menu entry (with its icon), a detail page adds the job's or applicant's name ([detail](#111-layouts-and-navigation)).
+- 2026-10-26: Workspace polish decided by the user: the tabs can be switched off in the avatar menu (a toggle, kept in `localStorage`); the member's own account links move into a collapsible user card of the sidebar; the approval flow editor is a diagram with a side inspector and a tester; the workforce plan is edited as a spreadsheet grid; the applicant kanban is also on "Semua pelamar"; list rows that open a page are whole-row links with a chevron ([detail](#111-layouts-and-navigation)).
+- 2026-10-27: a candidate's picture looks the same wherever the Workspace shows them (`CandidateAvatar`: round, the photo when the candidate can be found and has one, else the initials); other people are a round `UiAvatar`, icon tiles stay rounded squares ([detail](#111-layouts-and-navigation)).
 
 ## 1. Timing
 
@@ -694,9 +696,16 @@ Built from "Basic Tabs" of Able Pro (`dist/elements/bc_tabs.html`: `ul.nav-tabs`
 - **Which pages:** every page of the Workspace menu and its detail pages; not the `blank` layout, `public` pages, pages with `meta.noTab` and paths the menu does not know. One tab per path: a changed query of an open page updates its tab. The Dashboard (`meta.affix`) is always first and cannot be closed. At most 12 tabs; the 13th page is refused with a notice and the member stays on the active tab.
 - **Title and icon:** `meta.title` (an i18n key) or the label and icon of the menu entry for the path (a detail page takes its list's); a detail page names its tab with `useTabDetail` once its data is loaded ("Lowongan · Data Analyst", "Detail pelamar · Citra Lestari").
 - **Closing:** the × of a tab, a middle click, or the right-click menu (close, close others, close all; the permanent tab stays). Closing the active tab opens its right neighbour, else the left one. Only the pages of open tabs stay in keep-alive, so closing a tab drops its cached state; a page needs a unique `defineOptions({ name })` for that (the coded pages of the menu have one). The key of the cached page is Nuxt's route key (path with its parameters), not `fullPath`, so a changed filter does not reset the page.
+- **Switch (2026-10-26):** a toggle in the avatar menu turns the tabs off and on; the choice is kept in `localStorage` (`utils/tabs-storage.ts`, `stores/ui.ts` `tabsEnabled`). Off, pages open one at a time and keep-alive is not used (`app.vue`).
 - **Refresh and sign-out:** the tabs (not the cached page state) are kept in `sessionStorage` (`onesis_workspace_tabs`, validated on read: in-app paths only); they are cleared when the member's data is cleared (`permissions.reset()`) and on the sign-in page.
 - **Layout:** the tab bar is pinned under the header (`.pc-tabbar`, `--spacing-tabbar-height` 33px in the theme); the sticky bars of pages (`sticky top-header-height`) pin below it by one rule in `layouts/common.css`. A row that does not fit scrolls (wheel, touch, arrows); the active tab scrolls into view.
 - **Code:** `apps/workspace/app`: `stores/tabs.ts`, `components/layout/TabBar.vue`, `plugins/03.tabs.client.ts` (`router.afterEach`), `composables/useTabDetail.ts`, `utils/tabs-storage.ts`, `utils/menu.ts` (`tabEntryForPath`), `DashboardLayout`'s `tabs` slot in `packages/ui`. Moves to `packages/ui` when Console needs it.
+
+**Sidebar user card (decided by the user on 2026-10-26; Workspace):** `SidebarUserCard` (`packages/ui`, the `user` slot of the vertical sidebar, the `pc-user-card` of `dist/layouts/sidebar.html`) shows the member's name and company and starts collapsed; its button unfolds the account links (Akun, Keluar and the others of `accountLinks` in `utils/menu.ts`), so the "Akun" group is no longer in the menu. The avatar menu keeps the theme choice, the tabs toggle and the language switch; no picture or profile block repeats the name there.
+
+**Avatars (decided by the user on 2026-10-27):** a person is round, an icon tile (notification kind, location, document, team invitation) is a rounded square. A candidate uses `CandidateAvatar` (`components/candidate`): the photo from `GET company/candidates/{slug}/avatar` when `has_avatar` and a slug are given (the candidate search, `candidate.has_avatar` of a talent pool entry, `candidate_has_avatar` of an application), the initials when not or when the file does not load. Not yet photos: conversations (`ConversationResource` has no candidate data and is shared with the job seeker side) and the group's read-only applicant page (the picture route is the member's own company).
+
+**Row links:** a list row that opens a page is one link over the whole row with a chevron at the end (`LayoutRowLink`); actions inside the row stay separate buttons.
 
 **Public header:** logo; Lowongan, Perusahaan, Gaji, Pelatihan; Untuk Perusahaan; language switch (ID/EN); Masuk and Daftar, with "Masuk perusahaan"
 (to B1) under Masuk. Signed in (job seekers only): notification bell and the avatar menu (Dasbor, Profil, Lamaran, Keluar). On a phone the links fold
@@ -823,7 +832,7 @@ tab, the stage actions with the less common ones in an "Aksi lain" menu).
   at the top.
 - **C6 Pipeline:** job header with the switch between table and kanban; **the table is the default (decided by the user on 2026-10-13)**:
   `ServerTable` with selection for bulk move, reject and message; kanban (not in the Tailwind template: an element the user decides when it is built; one column per stage with counts, cards dragged to
-  move) one click away, and the last choice is remembered per user in the browser. Filters and export on both.
+  move) one click away, and the last choice is remembered per user in the browser. Filters and export on both. The same switch is on C5b "Semua pelamar" (2026-10-27): the columns read `GET company/applications` with `filter[stage_id]`, a card shows its job, and a move that needs a form (interview, test, offer, hire) takes the job from the card; a card without a job can only go to a plain stage. An applicant opens in a wide offcanvas beside the table or the board.
 - **C7 Application detail:** candidate column (profile, resume viewer, screening answers) and a work column with tabs: notes, rating, interviews,
   assessments, offer, history; stage actions at the top.
 - **Console lists** (D4, D7, D8, D21, D22): the same server table with filters on top and the detail in a page, actions in the detail header.
@@ -1072,6 +1081,8 @@ sign-in, the proxy and the permissions before many pages depend on them. The thr
 
 Throughout: an element marked **#N** is built with its page once its API item is coded (#38 to #44 wait for the front end); **frozen** and **after
 import** elements (P6b, P12, P13, D22, the suspend and reactivate actions of D21) come last.
+
+**Status on 2026-10-27 (Workspace).** Step 5 is coded except C9 and C10 (step 6). Step 7 is coded for E1 to E15 (E14 with the analytics tab, a menu count badge for reviews, messages and approvals); E16 (assessment providers of the group, #24 section 8) is not coded: it waits for the API part. None of the Workspace pages added on 2026-10-26 and 2026-10-27 was tried in a browser by Claude: the user ran lint, typecheck and tests (green). Console (D27, D28), Portal Mitra and the rest of Career (P5 to P7, P9, P10, J8 to J17) are not started.
 
 ### 13.1 Before step 0
 

@@ -13,21 +13,22 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 | History | `docs/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
 | Front end | `/usr/local/src/jobportal-frontend/onesis-talent` (its `CLAUDE.md`: template rules 1 to 15), design `docs/design/frontend.md` (`## Decisions` first) |
 
-## Current state (2026-10-25)
+## Current state (2026-10-27)
 
 **API (this repository)**
 
-- Latest tag `v0.9.1` (3296 tests); `master` is 46 commits past it; push state: `git status -sb`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (alias `github-jobportal`).
-- Phases 0 to 7 coded and committed. Phase 8 per item: `phase-8-index.md`. Multi-persona items: #34 to #37 coded; #38 maybe coded, not started; #39 to #44 designed, wait for the front end. API coding is limited to #38 and what the front end asks for (`decisions.md` section 5).
-- Branches: `job-editor-api` (C4: migrations `000186`, `000187`) is merged into `master`; `frontend-step-0-api` holds one commit not on `master` (status-count endpoints for the Console tabs): check before deleting. The working tree has uncommitted changes (Assessment, Recruitment, DemoData, docs): see `git status`.
+- Latest tag `v0.9.1` (3296 tests); `master` is 66 commits past it (12 not pushed on 2026-10-27); push state: `git status -sb`. Remote `origin`: private GitHub `alidjator/jobportal_v2` (alias `github-jobportal`).
+- Phases 0 to 7 coded and committed. Added for the front end 2026-10-26/27: `GET company/workforce/options`, `candidate_slug`, `candidate_has_avatar`, talent pool `candidate.has_avatar`. Phase 8 per item: `phase-8-index.md`. Multi-persona items: #34 to #37 coded; #38 maybe coded, not started; #39 to #44 designed, wait for the front end. API coding is limited to #38 and what the front end asks for (`decisions.md` section 5).
+- Branches: `job-editor-api` (C4: migrations `000186`, `000187`) is merged into `master`; `frontend-step-0-api` holds one commit not on `master` (status-count endpoints for the Console tabs): check before deleting. Branches `phase-8-activation` and `workspace-api-gaps` also exist: check before deleting.
 - PostgreSQL `jobportal_v2` was at `000176` on 2026-10-19; migrations go to `000187`: check `migrate:status` (the user runs `migrate`). Reference data only until the final import (`demo:seed` for development).
 - Go-live readiness first (`docs/deployment-checklist.md`); the dev site is this folder, so code with a new migration fails until `migrate`. Name: ONESIS (`naming.md`).
 
 **Front end** (Career `apps/public`, Workspace, Console; shared `packages/ui`, `api`, `i18n`)
 
 - Able Pro Tailwind 1.2.0, compact density (rules 11 to 14), Font Awesome Pro regular; the job description is Markdown (CKEditor Visual or EasyMDE tab); Workspace opens pages as tabs (`frontend.md` 11.1, rule 15; coded 2026-10-25, not yet tried in a browser).
-- Coding order `frontend.md` section 13: steps 0 to 3 done; step 4 (Career) has the public pages, apply and `/me` (P5 to P7, P9, P10, J8 to J17 left). Workspace step 5 is coded except C9 and C10 (step 6). Coded 2026-10-26, **not tried in a browser**: C2, C14 (polls every 15 s until Reverb; `?mulai=<user id>&nama=` starts a thread, no page links to it yet), C15 (company skill tests only), C16, C23, C24, C27, C28, C31 (menu entry for every member). Left out: the #23 and #24 extras of C16.
-- Git: five local commits on `main` since `5ff64d5` (author `alidjator@gmail.com`); no remote and no identity configured there; `backup/before-reauthor` may be deleted.
+- Coding order `frontend.md` section 13 (its status paragraph of 2026-10-27 is the list of what is coded). Workspace steps 5 and 7 are coded except C9, C10 (step 6) and E16 (waits for #24 section 8). Career step 4 has the public pages, apply and `/me` (P5 to P7, P9, P10, J8 to J17 left). Console and Portal Mitra: see the section 13 status. Decisions of 2026-10-26 and 2026-10-27 (tabs switch, sidebar user card, avatars, row links, applicant kanban on all jobs) are in `frontend.md` Decisions and 11.1. **Not tried in a browser**: the ERP pages, the kanban across jobs, the MPP grid, the approval flow editor.
+- Open front end questions: card header icons (icons for form-section cards only, or none; then a rule in `CLAUDE.md`), icon audit finding D (`AccountSecurityTab`), photos in conversations and in the group's applicant page, more approval flow features (templates, change history), `LayoutRowLink` in older lists.
+- Git: local commits on `main` (last `18b6df9`, 2026-10-27) (author `alidjator@gmail.com`); no remote and no identity configured there; `backup/before-reauthor` may be deleted.
 - Deploy: `pnpm release:<app>` builds and switches `releases/<app>/current`; run it as `jobportal`, never root (root-owned files break the next build); Workspace then needs `systemctl restart onesis-workspace` as root. The user runs `pnpm install`, `icons:build`, builds, tests and pushes.
 
 ## Open work (not started)
