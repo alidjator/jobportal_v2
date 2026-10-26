@@ -28,6 +28,7 @@ final readonly class SignReport
     public function __construct(
         private ReviewAccess $access,
         private ReviewViews $views,
+        private ReviewClaims $claims,
         private ReportRepository $reports,
         private ProviderRepository $providers,
         private AttemptRepository $attempts,
@@ -41,7 +42,7 @@ final readonly class SignReport
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended`, `provider-suspended` or `cannot-sign-reports`
      * @throws EntityNotFound
-     * @throws StateConflict `report-signed`
+     * @throws StateConflict `report-signed` or `claim-required`
      * @throws BusinessRuleViolation `explanation-required`, `drawings-unscored` or `scales-not-normed`
      */
     public function execute(Actor $actor, int $reportId, ?string $ipAddress, ?string $userAgent): ReviewView
@@ -55,6 +56,7 @@ final readonly class SignReport
                 throw new StateConflict('This report is signed and cannot be changed.', 'report-signed');
             }
 
+            $this->claims->assertHeld($psychologist, $report);
             $this->assertReady($this->views->build($psychologist, $report));
 
             $now = $this->clock->now();
@@ -67,6 +69,7 @@ final readonly class SignReport
             $signed = $report->sign(
                 ReportRenderer::signed($report->body, $number, $now->format('Y-m-d'), $name), $number, $year, $sequence, $psychologist, $name, $now,
             );
+            $signed = $signed->claimReleased();
             $this->reports->update($signed);
 
             $attempt = $this->attempts->find($report->attemptId) ?? throw EntityNotFound::of('Attempt', $report->attemptId);

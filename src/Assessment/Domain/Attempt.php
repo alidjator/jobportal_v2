@@ -28,12 +28,20 @@ final readonly class Attempt
         public ?string $lastIp,
         public ?DateTimeImmutable $videoConsentedAt = null,
         public ?string $sessionHash = null,
+        public ?int $normAge = null,
+        public ?int $normEducationRank = null,
     ) {}
 
     /** @param  list<int>  $durations  the seconds of each section, in order */
-    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip, bool $videoConsent = false, ?string $sessionHash = null): self
+    public static function begin(int $invitationId, DateTimeImmutable $now, array $durations, int $seed, ?string $ip, bool $videoConsent = false, ?string $sessionHash = null, NormCandidate $candidate = new NormCandidate): self
     {
-        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip, $videoConsent ? $now : null, $sessionHash);
+        return new self(null, $invitationId, $now, $now, 1, $now, 0, $now->modify('+'.array_sum($durations).' seconds'), null, false, $seed, $ip, $videoConsent ? $now : null, $sessionHash, $candidate->age, $candidate->educationRank);
+    }
+
+    /** The age and the education rank of the candidate at the time of applying, copied at the start; they choose the norm group. */
+    public function normCandidate(): NormCandidate
+    {
+        return new NormCandidate($this->normAge, $this->normEducationRank);
     }
 
     public function isSubmitted(): bool
@@ -142,6 +150,8 @@ final readonly class Attempt
             $lastIp ?? $this->lastIp,
             $this->videoConsentedAt,
             $sessionHash ?? $this->sessionHash,
+            $this->normAge,
+            $this->normEducationRank,
         );
     }
 }

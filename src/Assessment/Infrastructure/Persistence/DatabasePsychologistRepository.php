@@ -39,6 +39,21 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
         return $row === null ? null : $this->toPsychologist($row);
     }
 
+    public function userIdsOf(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $users = [];
+
+        foreach ($this->connection->table(self::TABLE)->whereIn('id', $ids)->get(['id', 'user_id']) as $row) {
+            $users[(int) $row->id] = (int) $row->user_id;
+        }
+
+        return $users;
+    }
+
     public function save(Psychologist $psychologist): Psychologist
     {
         $now = $this->clock->now();

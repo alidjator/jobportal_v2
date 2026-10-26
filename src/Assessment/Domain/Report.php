@@ -36,6 +36,9 @@ final readonly class Report
         public ?DateTimeImmutable $reviewedAt = null,
         public ?int $reviewedByPsychologistId = null,
         public int $revision = 0,
+        public ?int $claimedByPsychologistId = null,
+        public ?DateTimeImmutable $claimedAt = null,
+        public ?DateTimeImmutable $claimTouchedAt = null,
     ) {}
 
     public static function draft(int $attemptId, int $providerId, string $body): self
@@ -46,6 +49,39 @@ final readonly class Report
     public function isSigned(): bool
     {
         return $this->status === ReportStatus::Signed;
+    }
+
+    /** A claim lapses after this long without a write by its holder (`docs/design/phase-8-provider-tools.md` section 3). */
+    public const string CLAIM_LAPSE = '-24 hours';
+
+    /** Whether a psychologist holds the report and has written to it within the last 24 hours. */
+    public function hasLiveClaim(DateTimeImmutable $now): bool
+    {
+        return $this->claimedByPsychologistId !== null && $this->claimTouchedAt !== null && $this->claimTouchedAt > $now->modify(self::CLAIM_LAPSE);
+    }
+
+    public function isClaimedBy(int $psychologistId, DateTimeImmutable $now): bool
+    {
+        return $this->claimedByPsychologistId === $psychologistId && $this->hasLiveClaim($now);
+    }
+
+    /** The psychologist takes the report (a live claim of someone else is checked by the caller); the time of an earlier own live claim stays. */
+    public function claimedBy(Psychologist $psychologist, DateTimeImmutable $now): self
+    {
+        $own = $this->isClaimedBy((int) $psychologist->id, $now);
+
+        return $this->with(['claimedByPsychologistId' => $psychologist->id, 'claimedAt' => $own ? $this->claimedAt : $now, 'claimTouchedAt' => $now]);
+    }
+
+    /** The holder wrote to the report: the claim lives another 24 hours. */
+    public function claimTouched(DateTimeImmutable $now): self
+    {
+        return $this->claimedByPsychologistId === null ? $this : $this->with(['claimTouchedAt' => $now]);
+    }
+
+    public function claimReleased(): self
+    {
+        return $this->with(['claimedByPsychologistId' => null, 'claimedAt' => null, 'claimTouchedAt' => null]);
     }
 
     /** The number without the revision suffix. */

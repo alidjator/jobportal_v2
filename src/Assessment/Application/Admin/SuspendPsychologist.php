@@ -4,6 +4,7 @@ namespace Src\Assessment\Application\Admin;
 
 use Src\Assessment\Domain\Events\PsychologistChanged;
 use Src\Assessment\Domain\PsychologistRepository;
+use Src\Assessment\Domain\ReportRepository;
 use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
@@ -12,11 +13,12 @@ use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
-/** Suspends a psychologist: the account is deactivated and its tokens are revoked, so the psychologist is signed out everywhere. */
+/** Suspends a psychologist: the account is deactivated and its tokens are revoked, so the psychologist is signed out everywhere, and the reports they held are released. */
 final readonly class SuspendPsychologist
 {
     public function __construct(
         private PsychologistRepository $psychologists,
+        private ReportRepository $reports,
         private PsychologistAccounts $accounts,
         private TransactionManager $transactions,
         private EventDispatcher $events,
@@ -36,6 +38,7 @@ final readonly class SuspendPsychologist
 
             $psychologist->suspend();
             $this->psychologists->save($psychologist);
+            $this->reports->releaseClaimsOf($psychologistId);
             $this->accounts->deactivate($psychologist->userId);
         });
 

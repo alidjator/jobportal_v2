@@ -81,7 +81,7 @@ final readonly class AutoIssueReport
         $signerName = isset($signer[$responsible->userId]) ? $signer[$responsible->userId]->name : '';
         $candidate = $this->applicants->names([$invitation->applicantUserId])[$invitation->applicantUserId] ?? '';
 
-        $explanation = ReportRenderer::explanation($template, $candidate, $test->title(), $number, $signedOn, $signerName, $result->scaleScores, $this->norms->ofTest((int) $test->id));
+        $explanation = ReportRenderer::explanation($template, $candidate, $test->title(), $number, $signedOn, $signerName, $result->scaleScores, $this->norms->ofTest((int) $test->id), $attempt->normCandidate());
 
         if ($explanation === null) {
             return null;

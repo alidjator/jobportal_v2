@@ -18,5 +18,9 @@ final readonly class ReportSummary
         public ?DateTimeImmutable $signedAt,
         public bool $autoIssued = false,
         public ?DateTimeImmutable $reviewedAt = null,
+        public ?int $jobId = null,
+        public ?int $companyId = null,
+        public ?int $claimedByPsychologistId = null,
+        public ?DateTimeImmutable $claimTouchedAt = null,
     ) {}
 }

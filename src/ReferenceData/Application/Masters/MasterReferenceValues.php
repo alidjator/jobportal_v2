@@ -53,6 +53,17 @@ final readonly class MasterReferenceValues implements ReferenceValues
         );
     }
 
+    public function educationLevelName(int $rank, string $language): ?string
+    {
+        foreach ($this->masters->all($this->definition('education-levels'), new MasterQuery(onlyActive: false, language: $language)) as $item) {
+            if ((int) ($item->extras['rank'] ?? -1) === $rank) {
+                return $item->name->resolve($language);
+            }
+        }
+
+        return null;
+    }
+
     private function definition(string $master): MasterDefinition
     {
         return MasterCatalog::find($master) ?? throw new InvalidArgumentException("Unknown master {$master}.");

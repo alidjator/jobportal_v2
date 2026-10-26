@@ -13,6 +13,7 @@ use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestKind;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Job\JobDirectory;
 
 /**
  * Builds the draft report of a submitted psychological attempt from the test's report template, the raw scores and the norms, and leaves it for the
@@ -28,6 +29,7 @@ final readonly class ReportDrafter
         private ReportTemplateRepository $templates,
         private NormRepository $norms,
         private ApplicantContacts $accounts,
+        private JobDirectory $jobs,
     ) {}
 
     public function draft(Attempt $attempt, Invitation $invitation, Test $test, AttemptResult $result): void
@@ -44,6 +46,8 @@ final readonly class ReportDrafter
             $test->title(),
             $result->scaleScores ?? [],
             $this->norms->ofTest((int) $test->id),
+            $attempt->normCandidate(),
+            $this->jobs->titles([$invitation->jobId])[$invitation->jobId] ?? null,
         );
 
         $existing = $this->reports->findByAttempt($attempt->id, forUpdate: true);

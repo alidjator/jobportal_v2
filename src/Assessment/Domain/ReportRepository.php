@@ -28,9 +28,12 @@ interface ReportRepository
     public function invitationIdOf(int $reportId): ?int;
 
     /**
-     * The provider's reports, oldest submission first; `$reviewed` keeps those a psychologist has (true) or has not (false) reviewed, whatever the way they were signed.
+     * The provider's reports, oldest submission first; `$claimed` (`mine`, `others` or `none`, by live claim of `$psychologistId`) narrows them; `$reviewed` keeps those a psychologist has (true) or has not (false) reviewed, whatever the way they were signed.
      *
      * @return Page<ReportSummary>
      */
-    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request): Page;
+    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null): Page;
+
+    /** Lets go of every report the psychologist holds (a suspended psychologist cannot finish them). */
+    public function releaseClaimsOf(int $psychologistId): void;
 }

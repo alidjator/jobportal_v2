@@ -220,6 +220,18 @@ final class AutoIssueTest extends FeatureTestCase
         $this->assertFalse((bool) DB::table('assessment_tests')->where('id', $battery)->value('auto_issue'));
     }
 
+    public function test_automatic_issue_needs_a_norm_row_without_a_group_for_every_scale(): void
+    {
+        $this->allow()->assertOk();
+        $battery = $this->battery();
+        $this->provider('PUT', "tests/{$battery}/norms", ['norms' => [
+            ['scale_key' => 'extraversion', 'raw_min' => 0, 'raw_max' => 10, 'standard_score' => 50, 'band' => 'Mid', 'explanation' => 'Balanced.', 'age_min' => 18, 'age_max' => 25],
+        ]])->assertOk();
+
+        $problems = $this->enable($battery)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->json('errors.test');
+        $this->assertContains('The scale extraversion needs a norm row without an age or education group, so that no candidate falls through.', $problems);
+    }
+
     public function test_a_battery_with_a_drawing_question_cannot_issue_automatically(): void
     {
         $this->allow()->assertOk();

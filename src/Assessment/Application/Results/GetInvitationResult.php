@@ -46,7 +46,7 @@ final readonly class GetInvitationResult
 
         $result = $this->outcomes->resultOf((int) $attempt->id);
         $report = $view->testKind === TestKind::Psychological ? $this->reports->findByAttempt((int) $attempt->id) : null;
-        $scales = $report !== null && $report->isSigned() && $result?->scaleScores !== null ? $this->scales->rows($invitation->testId, $result->scaleScores) : [];
+        $scales = $report !== null && $report->isSigned() && $result?->scaleScores !== null ? $this->scales->rows($invitation->testId, $result->scaleScores, $attempt->normCandidate()) : [];
 
         return new InvitationResult($view, $attempt, $result, $report, $scales);
     }

@@ -53,6 +53,14 @@ final readonly class AutoIssueChecks
             }
         }
 
+        $norms = $this->norms->ofTest((int) $test->id);
+
+        foreach ($this->questions->scalesOfTest((int) $test->id) as $scale) {
+            if (array_filter($norms, static fn ($norm): bool => $norm->scaleKey === $scale && $norm->isGeneral()) === []) {
+                $problems[] = new ErrorMessage('The scale :scale needs a norm row without an age or education group, so that no candidate falls through.', ['scale' => $scale]);
+            }
+        }
+
         if ($this->templates->explanationTemplateOf((int) $test->id) === null) {
             $problems[] = 'The battery needs an explanation template.';
         }

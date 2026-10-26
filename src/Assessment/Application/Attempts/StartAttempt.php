@@ -10,6 +10,7 @@ use Src\Assessment\Domain\IntegrityEventType;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\InvitationStatus;
+use Src\Assessment\Domain\NormCandidate;
 use Src\Assessment\Domain\QuestionDraw;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
@@ -19,6 +20,7 @@ use Src\Assessment\Domain\SectionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Recruitment\ApplicantNormData;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -40,6 +42,7 @@ final readonly class StartAttempt
         private QuestionRepository $questions,
         private SectionRepository $sections,
         private AttemptGate $gate,
+        private ApplicantNormData $normData,
         private AttemptViews $views,
         private TransactionManager $transactions,
         private Clock $clock,
@@ -98,7 +101,7 @@ final readonly class StartAttempt
             }
 
             [$token, $hash] = AttemptSessionToken::issue();
-            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip, $videoConsent, $hash);
+            $attempt = Attempt::begin($invitationId, $now, array_map(static fn (Section $section): int => $section->durationSeconds, $sections), random_int(1, 2_147_483_647), $ip, $videoConsent, $hash, $this->normCandidate($invitation));
             $this->invitations->update($opened);
             $this->attempts->add($attempt, $this->draw($sections, $attempt->seed));
 
@@ -108,6 +111,14 @@ final readonly class StartAttempt
         $view = $this->gate->run($actor, $invitationId, $ip, fn (AttemptContext $context): AttemptView => $this->views->build($context), readOnly: true, checkSession: false);
 
         return ['view' => $view->withSession($started[1]), 'created' => $started[0], 'session' => $started[1]];
+    }
+
+    /** The age and the education rank of the application, copied onto the attempt so a later erasure of the snapshot does not change a report. */
+    private function normCandidate(Invitation $invitation): NormCandidate
+    {
+        $facts = $this->normData->of($invitation->applicationId);
+
+        return new NormCandidate($facts->age, $facts->educationRank);
     }
 
     /**

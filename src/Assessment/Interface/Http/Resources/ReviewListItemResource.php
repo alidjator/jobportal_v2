@@ -20,6 +20,10 @@ final class ReviewListItemResource extends JsonResource
             'invitation_id' => $summary->invitationId,
             'candidate_name' => $this->resource->candidateName,
             'test_title' => $summary->testTitle,
+            'job_title' => $this->resource->jobTitle,
+            'company_name' => $this->resource->companyName,
+            /** @var array{id: int, name: string, mine: bool}|null The holder of the live claim. */
+            'claimed_by' => $this->resource->claimedBy,
             'status' => $summary->status->value,
             'report_number' => $summary->number,
             'submitted_at' => $summary->submittedAt->format(DateTimeInterface::ATOM),

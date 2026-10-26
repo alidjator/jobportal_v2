@@ -28,6 +28,7 @@ final readonly class ReviseReport
     public function __construct(
         private ReviewAccess $access,
         private ReviewViews $views,
+        private ReviewClaims $claims,
         private ReportRepository $reports,
         private ProviderRepository $providers,
         private AttemptRepository $attempts,
@@ -41,7 +42,7 @@ final readonly class ReviseReport
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended`, `provider-suspended` or `cannot-sign-reports`
      * @throws EntityNotFound
-     * @throws StateConflict `report-not-auto-issued`
+     * @throws StateConflict `report-not-auto-issued` or `claim-required`
      * @throws BusinessRuleViolation `invalid-report` or `explanation-required`
      */
     public function execute(Actor $actor, int $reportId, string $body, string $explanation, ?string $ipAddress, ?string $userAgent): ReviewView
@@ -72,8 +73,10 @@ final readonly class ReviseReport
             $name = isset($accounts[(int) $actor->id]) ? $accounts[(int) $actor->id]->name : '';
 
             $revised = $report->revised($body, $explanation, $psychologist, $name, $now);
+            $this->claims->assertHeld($psychologist, $report);
             $revised = $revised->withBody(ReportRenderer::signed($revised->body, (string) $revised->number, $now->format('Y-m-d'), $name));
 
+            $revised = $revised->claimReleased();
             $this->reports->keepVersion($report, $now);
             $this->reports->update($revised);
 

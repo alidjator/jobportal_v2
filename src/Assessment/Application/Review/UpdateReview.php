@@ -25,6 +25,7 @@ final readonly class UpdateReview
         private ReviewAccess $access,
         private ReportRepository $reports,
         private ReviewViews $views,
+        private ReviewClaims $claims,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -32,7 +33,7 @@ final readonly class UpdateReview
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended` or `provider-suspended`
      * @throws EntityNotFound
-     * @throws StateConflict `report-signed`
+     * @throws StateConflict `report-signed` or `claim-required`
      * @throws BusinessRuleViolation `invalid-report`
      */
     public function execute(Actor $actor, int $reportId, string $body, ?string $explanation, ?string $reviewNotes): ReviewView
@@ -48,9 +49,10 @@ final readonly class UpdateReview
             }
 
             $updated = $report->edit($body, $this->clean($explanation), $this->clean($reviewNotes), $this->clock->now());
-            $this->reports->update($updated);
+            $this->claims->assertHeld($psychologist, $report);
+            $this->reports->update($updated->claimTouched($this->clock->now()));
 
-            return $this->views->build($psychologist, $updated);
+            return $this->views->build($psychologist, $updated->claimTouched($this->clock->now()));
         });
     }
 

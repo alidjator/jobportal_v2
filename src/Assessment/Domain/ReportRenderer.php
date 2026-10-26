@@ -15,12 +15,17 @@ final class ReportRenderer
      * @param  array<string, float>  $scaleScores
      * @param  list<Norm>  $norms
      */
-    public static function draft(string $template, string $candidateName, string $testTitle, array $scaleScores, array $norms): string
+    public static function draft(string $template, string $candidateName, string $testTitle, array $scaleScores, array $norms, NormCandidate $candidate = new NormCandidate, ?string $jobTitle = null): string
     {
-        $values = ['candidate_name' => $candidateName, 'test_title' => $testTitle];
+        $values = [
+            'candidate_name' => $candidateName,
+            'test_title' => $testTitle,
+            'candidate_age' => $candidate->age === null ? self::NOT_AVAILABLE : (string) $candidate->age,
+            'job_title' => $jobTitle ?? self::NOT_AVAILABLE,
+        ];
 
         foreach ($scaleScores as $scale => $raw) {
-            $norm = NormConverter::convert($norms, (string) $scale, $raw);
+            $norm = NormConverter::convert($norms, (string) $scale, $raw, $candidate);
             $values["scale:{$scale}:raw"] = self::number($raw);
             $values["scale:{$scale}:standard"] = $norm === null ? self::NOT_AVAILABLE : self::number($norm->standardScore);
             $values["scale:{$scale}:band"] = $norm === null ? self::NOT_AVAILABLE : $norm->band;
@@ -37,12 +42,12 @@ final class ReportRenderer
      * @param  array<string, float>  $scaleScores
      * @param  list<Norm>  $norms
      */
-    public static function explanation(string $template, string $candidateName, string $testTitle, string $number, string $signedOn, string $psychologistName, array $scaleScores, array $norms): ?string
+    public static function explanation(string $template, string $candidateName, string $testTitle, string $number, string $signedOn, string $psychologistName, array $scaleScores, array $norms, NormCandidate $candidate = new NormCandidate): ?string
     {
         $values = ['candidate_name' => $candidateName, 'test_title' => $testTitle, 'report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName];
 
         foreach ($scaleScores as $scale => $raw) {
-            $norm = NormConverter::convert($norms, (string) $scale, $raw);
+            $norm = NormConverter::convert($norms, (string) $scale, $raw, $candidate);
 
             if ($norm === null || $norm->explanation === null) {
                 return null;

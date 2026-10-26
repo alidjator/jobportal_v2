@@ -209,6 +209,28 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->assertSame(0, DB::table('assessment_norms')->where('test_id', $id)->count());
     }
 
+    public function test_a_norm_row_may_hold_for_an_age_and_an_education_group(): void
+    {
+        $id = $this->newTest('provider');
+        $this->sectionWithQuestion('provider', $id, $this->likert());
+        $row = ['scale_key' => 'extraversion', 'raw_min' => 0, 'raw_max' => 10, 'standard_score' => 90, 'band' => 'Mid'];
+
+        $this->provider('PUT', "tests/{$id}/norms", ['norms' => [
+            $row,
+            [...$row, 'age_min' => 18, 'age_max' => 25, 'education_rank_min' => 3],
+            [...$row, 'age_min' => 26],
+        ]])->assertOk()->assertJsonCount(3, 'data');
+
+        $this->assertSame(
+            [[null, null, null, null], [18, 25, 3, null], [26, null, null, null]],
+            array_map(static fn (object $norm): array => [$norm->age_min, $norm->age_max, $norm->education_rank_min, $norm->education_rank_max], DB::table('assessment_norms')->where('test_id', $id)->orderBy('id')->get()->sortBy('age_min')->values()->all()),
+        );
+
+        $this->provider('PUT', "tests/{$id}/norms", ['norms' => [[...$row, 'age_min' => 30, 'age_max' => 20]]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-norms');
+        $this->provider('PUT', "tests/{$id}/norms", ['norms' => [[...$row, 'age_max' => 130]]])->assertStatus(422);
+        $this->provider('PUT', "tests/{$id}/norms", ['norms' => [[...$row, 'age_min' => 18], [...$row, 'age_min' => 18, 'raw_min' => 5, 'raw_max' => 12]]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-norms');
+    }
+
     public function test_ranges_of_different_scales_may_overlap(): void
     {
         $id = $this->newTest('provider');

@@ -91,7 +91,12 @@ final readonly class DatabaseReportRepository implements ReportRepository
         return $id === null ? null : (int) $id;
     }
 
-    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request): Page
+    public function releaseClaimsOf(int $psychologistId): void
+    {
+        $this->connection->table(self::TABLE)->where('claimed_by_psychologist_id', $psychologistId)->update(['claimed_by_psychologist_id' => null, 'claimed_at' => null, 'claim_touched_at' => null]);
+    }
+
+    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null): Page
     {
         $builder = $this->connection->table(self::TABLE.' as reports')
             ->join('assessment_attempts as attempts', 'attempts.id', '=', 'reports.attempt_id')
@@ -112,9 +117,20 @@ final readonly class DatabaseReportRepository implements ReportRepository
             }
         }
 
+        if ($claimed !== null) {
+            $live = $this->clock->now()->modify(Report::CLAIM_LAPSE);
+            $hold = static fn ($query) => $query->whereNotNull('reports.claimed_by_psychologist_id')->where('reports.claim_touched_at', '>', $live);
+
+            match ($claimed) {
+                'mine' => $builder->where($hold)->where('reports.claimed_by_psychologist_id', $psychologistId),
+                'others' => $builder->where($hold)->where('reports.claimed_by_psychologist_id', '!=', $psychologistId),
+                default => $builder->whereNot($hold),
+            };
+        }
+
         $total = (clone $builder)->count();
         $rows = $builder
-            ->select(['reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'tests.title'])
+            ->select(['reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'reports.claimed_by_psychologist_id', 'reports.claim_touched_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'invitations.job_id', 'invitations.company_id', 'tests.title'])
             ->orderBy('attempts.submitted_at')
             ->orderBy('reports.id')
             ->offset($request->offset())
@@ -132,6 +148,10 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->signed_at === null ? null : $this->time((string) $row->signed_at),
             (bool) $row->auto_issued,
             $row->reviewed_at === null ? null : $this->time((string) $row->reviewed_at),
+            (int) $row->job_id,
+            (int) $row->company_id,
+            $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
+            $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
         ), $rows->all()), $total, $request);
     }
 
@@ -156,6 +176,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'reviewed_at' => $report->reviewedAt,
             'reviewed_by_psychologist_id' => $report->reviewedByPsychologistId,
             'revision' => $report->revision,
+            'claimed_by_psychologist_id' => $report->claimedByPsychologistId,
+            'claimed_at' => $report->claimedAt,
+            'claim_touched_at' => $report->claimTouchedAt,
             'updated_at' => $this->clock->now(),
         ];
     }
@@ -184,6 +207,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->reviewed_at === null ? null : $this->time((string) $row->reviewed_at),
             $row->reviewed_by_psychologist_id === null ? null : (int) $row->reviewed_by_psychologist_id,
             (int) $row->revision,
+            $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
+            $row->claimed_at === null ? null : $this->time((string) $row->claimed_at),
+            $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
         );
     }
 

@@ -5,7 +5,7 @@ namespace Src\Assessment\Domain;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\ErrorMessage;
 
-/** The rules of a norm table: well-formed rows, and no two ranges of one scale overlapping. */
+/** The rules of a norm table: well-formed rows, and no two ranges of one scale and one group overlapping (different groups may overlap: the more specific one wins). */
 final class NormRules
 {
     public const int ROWS_MAX = 500;
@@ -13,6 +13,10 @@ final class NormRules
     public const float SCORE_MAX = 9999.99;
 
     public const int EXPLANATION_MAX = 2000;
+
+    public const int AGE_MAX = 120;
+
+    public const int EDUCATION_RANK_MAX = 100;
 
     /**
      * @param  list<Norm>  $norms
@@ -54,18 +58,37 @@ final class NormRules
                 throw self::invalid(new ErrorMessage('An explanation may have at most :max characters.', ['max' => self::EXPLANATION_MAX]));
             }
 
-            $clean[] = new Norm($norm->scaleKey, $norm->rawMin, $norm->rawMax, round($norm->standardScore, 2), $band, $explanation === '' ? null : $explanation);
+            self::checkGroup($norm);
+
+            $clean[] = new Norm(
+                $norm->scaleKey, $norm->rawMin, $norm->rawMax, round($norm->standardScore, 2), $band, $explanation === '' ? null : $explanation,
+                $norm->ageMin, $norm->ageMax, $norm->educationRankMin, $norm->educationRankMax,
+            );
         }
 
-        usort($clean, static fn (Norm $a, Norm $b): int => [$a->scaleKey, $a->rawMin] <=> [$b->scaleKey, $b->rawMin]);
+        usort($clean, static fn (Norm $a, Norm $b): int => [$a->scaleKey, $a->groupKey(), $a->rawMin] <=> [$b->scaleKey, $b->groupKey(), $b->rawMin]);
 
         for ($i = 1; $i < count($clean); $i++) {
-            if ($clean[$i]->scaleKey === $clean[$i - 1]->scaleKey && $clean[$i]->rawMin <= $clean[$i - 1]->rawMax) {
+            if ($clean[$i]->scaleKey === $clean[$i - 1]->scaleKey && $clean[$i]->groupKey() === $clean[$i - 1]->groupKey() && $clean[$i]->rawMin <= $clean[$i - 1]->rawMax) {
                 throw self::invalid(new ErrorMessage('The ranges of the scale :scale overlap.', ['scale' => $clean[$i]->scaleKey]));
             }
         }
 
         return $clean;
+    }
+
+    /** @throws BusinessRuleViolation `invalid-norms` */
+    private static function checkGroup(Norm $norm): void
+    {
+        foreach ([[$norm->ageMin, $norm->ageMax, self::AGE_MAX], [$norm->educationRankMin, $norm->educationRankMax, self::EDUCATION_RANK_MAX]] as [$min, $max, $limit]) {
+            if (($min !== null && ($min < 0 || $min > $limit)) || ($max !== null && ($max < 0 || $max > $limit))) {
+                throw self::invalid(new ErrorMessage('A norm group lies between 0 and :max.', ['max' => $limit]));
+            }
+
+            if ($min !== null && $max !== null && $min > $max) {
+                throw self::invalid('The lowest value of a norm group cannot exceed its highest.');
+            }
+        }
     }
 
     private static function invalid(string|ErrorMessage $message): BusinessRuleViolation

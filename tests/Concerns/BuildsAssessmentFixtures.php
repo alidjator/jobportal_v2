@@ -65,6 +65,18 @@ trait BuildsAssessmentFixtures
         return [$providerId, $user->createToken('provider', ['*'], now()->addHour())->plainTextToken];
     }
 
+    /** Another active psychologist of the provider; returns the token. */
+    protected function colleagueOf(int $providerId, string $email): string
+    {
+        $user = UserModel::query()->create(['type' => 'psychologist', 'name' => 'Rekan '.$email, 'email' => $email, 'status' => 'active', 'locale' => 'id', 'email_verified_at' => '2026-10-01 00:00:00']);
+        DB::table('assessment_psychologists')->insert([
+            'user_id' => $user->id, 'provider_id' => $providerId, 'str_number' => 'STR-2', 'str_valid_until' => '2030-01-31',
+            'silp_number' => 'SIPP-2', 'silp_valid_until' => '2030-01-31', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return $user->createToken('provider', ['*'], now()->addHour())->plainTextToken;
+    }
+
     /** @param  array<string, mixed>  $body */
     protected function company(string $method, string $uri, array $body = [], ?string $token = null): TestResponse
     {
@@ -74,7 +86,14 @@ trait BuildsAssessmentFixtures
     /** @param  array<string, mixed>  $body */
     protected function provider(string $method, string $uri, array $body = [], ?string $token = null): TestResponse
     {
-        return $this->api($method, '/provider/'.$uri, $body, $token ?? $this->psychologistToken);
+        $token ??= $this->psychologistToken;
+
+        // A write to a report needs the psychologist's own claim (`phase-8-provider-tools.md` section 3): take it first, as the screen does. The tests of the claim itself call `api()`.
+        if ($method !== 'GET' && preg_match('#^reviews/(\d+)(?:$|/(?!claim|release))#', $uri, $match) === 1) {
+            $this->api('POST', "/provider/reviews/{$match[1]}/claim", [], $token);
+        }
+
+        return $this->api($method, '/provider/'.$uri, $body, $token);
     }
 
     /** @param  array<string, mixed>  $body */

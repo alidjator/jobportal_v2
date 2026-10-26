@@ -74,6 +74,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
 | `channel-required` | 422 | JobAlert | Turn on at least one way to be told: email or in-app. |
 | `chunk-out-of-order` | 409 | Assessment | Send the chunks in order. |
+| `claim-required` | 409 | Assessment | Claim this report before you change it. |
 | `column-already-submitted` | 409 | Assessment | This column was already handed in. |
 | `company-admin-required` | 403 | Company | Only a company admin can manage the team. |
 | `company-already-linked` | 409 | Organization | The company is already linked to a legal entity. |
@@ -418,6 +419,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reschedule-too-late` | 409 | Recruitment | The interview can no longer be moved: ask at least :hours hours before it starts. You can still decline it or write to the company. |
 | `resume-limit-reached` | 409 | JobSeeker | A profile can have at most :max resumes. |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
+| `review-claimed` | 409 | Assessment | Another psychologist holds this report. The body names the holder in `holder`. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
 | `review-not-published` | 409 | Review |  |

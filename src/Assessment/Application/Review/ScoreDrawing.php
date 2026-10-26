@@ -4,7 +4,9 @@ namespace Src\Assessment\Application\Review;
 
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\QuestionRepository;
+use Src\Assessment\Domain\ReportRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Clock;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -24,13 +26,16 @@ final readonly class ScoreDrawing
         private AnswerRepository $answers,
         private QuestionRepository $questions,
         private ReviewViews $views,
+        private ReviewClaims $claims,
+        private ReportRepository $reports,
         private TransactionManager $transactions,
+        private Clock $clock,
     ) {}
 
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended` or `provider-suspended`
      * @throws EntityNotFound
-     * @throws StateConflict `report-signed`
+     * @throws StateConflict `report-signed` or `claim-required`
      * @throws BusinessRuleViolation `invalid-score`
      */
     public function execute(Actor $actor, int $reportId, int $questionId, float $score, ?string $note): ReviewView
@@ -42,6 +47,8 @@ final readonly class ScoreDrawing
             if ($report->isSigned()) {
                 throw new StateConflict('This report is signed and cannot be changed.', 'report-signed');
             }
+
+            $this->claims->assertHeld($psychologist, $report);
 
             if (! isset($this->answers->drawingsOf($report->attemptId)[$questionId])) {
                 throw EntityNotFound::of('Drawing', $questionId);
@@ -58,7 +65,10 @@ final readonly class ScoreDrawing
             $note = $note === null || trim($note) === '' ? null : trim($note);
             $this->answers->scoreDrawing($report->attemptId, $questionId, round($score, 2), $note);
 
-            return $this->views->build($psychologist, $report);
+            $touched = $report->claimTouched($this->clock->now());
+            $this->reports->update($touched);
+
+            return $this->views->build($psychologist, $touched);
         });
     }
 }

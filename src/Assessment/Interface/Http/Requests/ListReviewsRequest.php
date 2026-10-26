@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
-/** Allowed: `filter[status]` (`pending_review` or `signed`), `filter[reviewed]` (boolean), `page` and `per_page`. Any other filter is refused with 422. */
+/** Allowed: `filter[status]` (`pending_review` or `signed`), `filter[reviewed]` (boolean), `filter[claimed]` (`mine`, `others` or `none`: by the live claim), `page` and `per_page`. Any other filter is refused with 422. */
 final class ListReviewsRequest extends FormRequest
 {
     use PaginatedRequest;
@@ -17,9 +17,10 @@ final class ListReviewsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:status,reviewed'],
+            'filter' => ['nullable', 'array:status,reviewed,claimed'],
             'filter.status' => ['nullable', 'string', Rule::enum(ReportStatus::class)],
             'filter.reviewed' => ['nullable', 'boolean'],
+            'filter.claimed' => ['nullable', 'string', Rule::in(['mine', 'others', 'none'])],
         ];
     }
 
@@ -27,6 +28,11 @@ final class ListReviewsRequest extends FormRequest
     public function reviewed(): ?bool
     {
         return $this->filled('filter.reviewed') ? $this->boolean('filter.reviewed') : null;
+    }
+
+    public function claimed(): ?string
+    {
+        return $this->filled('filter.claimed') ? $this->string('filter.claimed')->toString() : null;
     }
 
     public function status(): ?ReportStatus

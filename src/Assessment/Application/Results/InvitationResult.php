@@ -14,7 +14,7 @@ use Src\Assessment\Domain\Report;
 final readonly class InvitationResult
 {
     /**
-     * @param  list<array{scale: string, raw: float, standard: float|null, band: string|null}>  $scales
+     * @param  list<array{scale: string, raw: float, standard: float|null, band: string|null, norm_group: array{age_min: int|null, age_max: int|null, education_rank_min: int|null, education_rank_max: int|null}|null}>  $scales
      */
     public function __construct(
         public InvitationView $invitation,

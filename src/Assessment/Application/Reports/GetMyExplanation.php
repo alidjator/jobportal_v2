@@ -59,7 +59,7 @@ final readonly class GetMyExplanation
             $report->signedAt,
             (string) $report->signerName,
             (string) $report->explanation,
-            $result?->scaleScores === null ? [] : $this->scales->rows($invitation->testId, $result->scaleScores),
+            $result?->scaleScores === null ? [] : $this->scales->rows($invitation->testId, $result->scaleScores, $attempt->normCandidate()),
         );
     }
 }

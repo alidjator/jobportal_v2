@@ -45,4 +45,7 @@ interface ReferenceValues
      * @return array<int, int>
      */
     public function educationRanks(array $levelIds): array;
+
+    /** The name, in the language, of the education level with this rank (the first when several share it, active or not); null when no level has it. */
+    public function educationLevelName(int $rank, string $language): ?string;
 }

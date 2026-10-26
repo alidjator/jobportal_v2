@@ -14,8 +14,10 @@ use Src\Job\Domain\JobRepository;
 use Src\Job\Domain\JobStatus;
 use Src\Shared\Application\Company\PublicCompanies;
 use Src\Shared\Application\Job\AssignedJob;
+use Src\Shared\Application\Job\JobClassification;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Job\JobSummary;
+use Src\Shared\Application\References\ReferenceValues;
 
 final readonly class RepositoryJobDirectory implements JobDirectory
 {
@@ -27,6 +29,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         private JobReader $reader,
         private JobNotificationRecipients $recipients,
         private JobContentSnapshot $contentSnapshots,
+        private ReferenceValues $references,
     ) {}
 
     public function visibleToMember(int $jobId, int $companyId, int $userId, bool $seesAllJobs): ?JobSummary
@@ -115,6 +118,21 @@ final readonly class RepositoryJobDirectory implements JobDirectory
     public function titles(array $jobIds): array
     {
         return $this->jobs->titles($jobIds);
+    }
+
+    public function classification(int $jobId, string $language): ?JobClassification
+    {
+        $content = $this->jobs->find($jobId)?->content;
+
+        if ($content === null) {
+            return null;
+        }
+
+        return new JobClassification(
+            $content->title,
+            $content->jobLevelId === null ? null : $this->references->name('job-levels', $content->jobLevelId, $language),
+            $content->categoryId === null ? null : $this->references->name('job-categories', $content->categoryId, $language),
+        );
     }
 
     public function isOnHold(int $jobId): bool

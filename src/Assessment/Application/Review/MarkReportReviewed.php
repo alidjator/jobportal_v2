@@ -17,6 +17,7 @@ final readonly class MarkReportReviewed
         private ReviewAccess $access,
         private ReportRepository $reports,
         private ReviewViews $views,
+        private ReviewClaims $claims,
         private TransactionManager $transactions,
         private Clock $clock,
     ) {}
@@ -24,7 +25,7 @@ final readonly class MarkReportReviewed
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended`, `provider-suspended` or `cannot-sign-reports`
      * @throws EntityNotFound
-     * @throws StateConflict `report-not-auto-issued`
+     * @throws StateConflict `report-not-auto-issued` or `claim-required`
      */
     public function execute(Actor $actor, int $reportId): ReviewView
     {
@@ -37,7 +38,13 @@ final readonly class MarkReportReviewed
             }
 
             $reviewed = $report->markedReviewed($psychologist, $this->clock->now());
-            $this->reports->update($reviewed);
+
+            // Marking a report that was reviewed already changes nothing, so it needs no claim.
+            if ($reviewed !== $report) {
+                $this->claims->assertHeld($psychologist, $report);
+                $reviewed = $reviewed->claimReleased();
+                $this->reports->update($reviewed);
+            }
 
             return $this->views->build($psychologist, $reviewed);
         });

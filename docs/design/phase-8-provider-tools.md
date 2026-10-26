@@ -97,6 +97,20 @@ with a legal review of the purpose). Extends `phase-6-assessments.md` (Assessmen
   formula guard, 10 per hour), audit `assessment.register_exported`. It answers UU 23/2022 Pasal 37 (keeping a record of the reports).
 - The platform admin reads the same register per provider under `/admin/assessment/providers/{id}/register`.
 
+## Coded
+
+**Section 1 (norms by group), coded 2026-10-27** (migration `000190`):
+
+- `assessment_norms.age_min`, `age_max`, `education_rank_min`, `education_rank_max` and `assessment_attempts.norm_age`, `norm_education_rank`. `NormCandidate` (age, education rank) is copied onto the attempt at start through the new Shared port `ApplicantNormData` (`DatabaseApplicantNormData` in Recruitment: the `age` of `profile_snapshot` and `recruitment_application_facets.education_rank`); the assessment erasure step clears both.
+- `NormConverter::convert` takes the candidate: a row whose group the candidate does not fit does not apply, and a restricted field the candidate does not carry never matches, so such a candidate reads only the general rows. The most specific row wins (two groups, then one, then none; then the narrower age range).
+- `PUT .../norms` accepts the four group fields (age 0 to 120, rank 0 to 100, lowest not above highest) and refuses overlapping raw ranges only within one scale and one group (422 `invalid-norms`). Publishing an `auto_issue` battery (`test-incomplete`) needs a row without a group for every scale.
+- `scales[]` of the review, the result, the explanation and the PDF document gain `norm_group` (the group fields of the row used, null for a general row). Not coded: a text label of the group in the report body (the front end prints it from the fields).
+
+**Sections 2 and 3 (candidate context, claiming a review), coded 2026-10-27** (migration `000191`):
+
+- `GET provider/reviews/{id}` gains `context {age, education_level {rank, name}, job {title, level, category}, company_name}` (the age and the education rank are the copy on the attempt; the names come through `JobDirectory::classification` and `ReferenceValues::educationLevelName`). The queue gains `job_title`, `company_name` and `claimed_by`. The report text (not the explanation) knows `{{candidate_age}}` and `{{job_title}}` (`n/a` when unknown); the PDF shows neither unless the template uses them. The company never receives the age.
+- `assessment_reports.claimed_by_psychologist_id`, `claimed_at`, `claim_touched_at`. `POST reviews/{id}/claim` and `/release` (409 `review-claimed` with `holder` when another psychologist holds a live claim; a report signed by hand cannot be claimed, 409 `report-signed`). Editing, scoring a drawing, signing, marking reviewed and revising need the caller's own live claim (409 `claim-required`); a write by the holder keeps it alive; signing, marking reviewed and revising release it; a claim lapses after 24 hours without a write. Marking a report that was reviewed already changes nothing and needs no claim. `filter[claimed]=mine|others|none` on the queue. Suspending a psychologist releases the reports they hold.
+
 ## Changes in short
 
 | Piece | Change |

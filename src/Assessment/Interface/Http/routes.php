@@ -39,6 +39,8 @@ Route::prefix('provider')->group(function (): void {
         Route::get('reviews', [ReviewController::class, 'index']);
         Route::prefix('reviews/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
             Route::get('', [ReviewController::class, 'show']);
+            Route::post('claim', [ReviewController::class, 'claim']);
+            Route::post('release', [ReviewController::class, 'release']);
             Route::put('', [ReviewController::class, 'update']);
             Route::get('drawings/{questionId}', [ReviewController::class, 'drawing']);
             Route::put('drawings/{questionId}', [ReviewController::class, 'scoreDrawing']);

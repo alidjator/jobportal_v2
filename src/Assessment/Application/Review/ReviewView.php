@@ -14,10 +14,12 @@ use Src\Assessment\Domain\SpeedColumnResult;
 final readonly class ReviewView
 {
     /**
-     * @param  list<array{scale: string, raw: float, standard: float|null, band: string|null}>  $scales
+     * @param  list<array{scale: string, raw: float, standard: float|null, band: string|null, norm_group: array{age_min: int|null, age_max: int|null, education_rank_min: int|null, education_rank_max: int|null}|null}>  $scales
      * @param  list<SpeedColumnResult>  $columns
      * @param  list<array{question_id: int, text: string, max_score: int, score: float|null, note: string|null, mime_type: string}>  $drawings
      * @param  list<string>  $signingProblems
+     * @param  array{age: int|null, education_level: array{rank: int, name: string|null}|null, job: array{title: string, level: string|null, category: string|null}|null, company_name: string|null}|null  $context  what the psychologist may know about the candidate to read the scores: their age and education when they applied, the job and the company
+     * @param  array{id: int, name: string, mine: bool}|null  $claimedBy  the psychologist who holds the report now (a claim older than 24 hours without a write counts as none)
      */
     public function __construct(
         public Report $report,
@@ -30,5 +32,7 @@ final readonly class ReviewView
         public array $columns,
         public array $drawings,
         public array $signingProblems,
+        public ?array $context = null,
+        public ?array $claimedBy = null,
     ) {}
 }

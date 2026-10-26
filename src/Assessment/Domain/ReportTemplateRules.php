@@ -8,7 +8,7 @@ use Src\Shared\Domain\Exceptions\ErrorMessage;
 /**
  * The text of a psychologist's report with placeholders in double braces. The report is rendered when it is drafted (part 6) from these:
  * `{{candidate_name}}`, `{{test_title}}`, `{{report_number}}`, `{{signed_on}}`, `{{psychologist_name}}` and, per scale, `{{scale:KEY:raw}}`,
- * `{{scale:KEY:standard}}` and `{{scale:KEY:band}}`. The explanation template of a battery (the plain-language text an automatic report gives the candidate) also
+ * `{{scale:KEY:standard}}` and `{{scale:KEY:band}}`; the report text (not the explanation) also knows `{{candidate_age}}` and `{{job_title}}`. The explanation template of a battery (the plain-language text an automatic report gives the candidate) also
  * knows `{{scale:KEY:explanation}}`, the explanation of the norm range the candidate's raw score falls in.
  */
 final class ReportTemplateRules
@@ -16,6 +16,9 @@ final class ReportTemplateRules
     public const int BODY_MAX = 20000;
 
     public const array FIXED_PLACEHOLDERS = ['candidate_name', 'test_title', 'report_number', 'signed_on', 'psychologist_name'];
+
+    /** Known in the report text only (never in the explanation the candidate reads): the candidate's age when they applied and the job. */
+    public const array DRAFT_PLACEHOLDERS = ['candidate_age', 'job_title'];
 
     public const array SCALE_VALUES = ['raw', 'standard', 'band'];
 
@@ -39,7 +42,7 @@ final class ReportTemplateRules
         foreach ($matches[1] as $token) {
             $token = trim($token);
 
-            if (in_array($token, self::FIXED_PLACEHOLDERS, true)) {
+            if (in_array($token, self::FIXED_PLACEHOLDERS, true) || (! $forExplanation && in_array($token, self::DRAFT_PLACEHOLDERS, true))) {
                 continue;
             }
 

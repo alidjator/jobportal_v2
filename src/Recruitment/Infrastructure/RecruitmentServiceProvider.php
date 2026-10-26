@@ -133,6 +133,7 @@ use Src\Recruitment\Infrastructure\Mail\MailTeamSender;
 use Src\Recruitment\Infrastructure\Pdf\DompdfOfferLetterRenderer;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantNormData;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantRelations;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationFacetRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationJobSnapshots;
@@ -215,6 +216,7 @@ use Src\Shared\Application\Notifications\NotificationChannel;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
+use Src\Shared\Application\Recruitment\ApplicantNormData;
 use Src\Shared\Application\Recruitment\ApplicantRelations;
 use Src\Shared\Application\Recruitment\ApplicationAdvancer;
 use Src\Shared\Application\Recruitment\ApplicationCounts;
@@ -253,6 +255,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicantRelations::class => DatabaseApplicantRelations::class,
         TeamApplications::class => TeamApplicationRefs::class,
         PoolApplications::class => RecruitmentPoolApplications::class,
+        ApplicantNormData::class => DatabaseApplicantNormData::class,
         PoolApplicationReader::class => DatabasePoolApplicationReader::class,
         HiringManagerVisibility::class => DatabaseHiringManagerVisibility::class,
         HiringManagerBoundary::class => DatabaseHiringManagerVisibility::class,

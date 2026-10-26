@@ -82,6 +82,9 @@ interface JobDirectory
      */
     public function titles(array $jobIds): array;
 
+    /** The title, level and category of the job whatever its status, with the names of the master items in the language; null when the job does not exist. */
+    public function classification(int $jobId, string $language): ?JobClassification;
+
     /** Whether the job is live but on a report hold (enough job seekers reported it; an admin has not decided yet): it takes no new application. A job that does not exist is not on hold. */
     public function isOnHold(int $jobId): bool;
 

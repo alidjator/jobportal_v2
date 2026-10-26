@@ -681,6 +681,137 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->assertSame('', DB::table('assessment_reports')->value('body'));
     }
 
+    public function test_the_psychologist_reads_the_context_of_the_candidate_and_the_queue_names_the_job_and_the_company(): void
+    {
+        DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['profile_snapshot' => json_encode(['age' => 31])]);
+        DB::table('recruitment_application_facets')->where('application_id', $this->applicationId)->update(['education_rank' => 4]);
+        $reportId = $this->takeBattery($this->battery('Age {{candidate_age}} for {{job_title}}: {{scale:extraversion:band}}.'));
+
+        $this->assertSame('Age 31 for Backend Developer: High.', DB::table('assessment_reports')->where('id', $reportId)->value('body'));
+        $review = $this->provider('GET', "reviews/{$reportId}")->assertOk()
+            ->assertJsonPath('data.context.age', 31)
+            ->assertJsonPath('data.context.education_level.rank', 4)
+            ->assertJsonPath('data.context.job.title', 'Backend Developer')
+            ->assertJsonPath('data.context.company_name', DB::table('company_companies')->where('id', $this->companyId)->value('name'));
+        $this->assertNotNull($review->json('data.context.education_level.name'));
+        $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.job_title', 'Backend Developer')->assertJsonPath('data.0.company_name', $review->json('data.context.company_name'));
+    }
+
+    public function test_a_report_is_written_only_by_the_psychologist_who_claimed_it(): void
+    {
+        $reportId = $this->takeBattery();
+        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $write = fn (?string $token = null) => $this->api('PUT', "/provider/reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'You like people.', 'review_notes' => null], $token ?? $this->psychologistToken);
+
+        // Nobody holds it yet: every write is refused, reading stays open.
+        $write()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:claim-required');
+        $this->api('PUT', "/provider/reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 5], $this->psychologistToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:claim-required');
+        $this->api('POST', "/provider/reviews/{$reportId}/sign", [], $this->psychologistToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:claim-required');
+        $this->api('GET', "/provider/reviews/{$reportId}", [], $colleague)->assertOk()->assertJsonPath('data.claimed_by', null);
+
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk()->assertJsonPath('data.claimed_by.mine', true);
+        $write()->assertOk();
+
+        // The colleague sees who holds it and can neither take it nor write to it.
+        $holder = $this->api('GET', "/provider/reviews/{$reportId}", [], $colleague)->assertOk()->assertJsonPath('data.claimed_by.mine', false)->json('data.claimed_by.name');
+        $this->assertSame('Psikolog Lembaga Psikologi Contoh', $holder);
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-claimed')->assertJsonPath('holder.name', $holder);
+        $write($colleague)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:claim-required');
+        $this->api('POST', "/provider/reviews/{$reportId}/release", [], $colleague)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:review-claimed');
+
+        // The holder claims again (it renews) and lets go; then the colleague may take it.
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk();
+        $this->api('POST', "/provider/reviews/{$reportId}/release", [], $this->psychologistToken)->assertOk()->assertJsonPath('data.claimed_by', null);
+        $this->api('POST', "/provider/reviews/{$reportId}/release", [], $this->psychologistToken)->assertOk();
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertOk()->assertJsonPath('data.claimed_by.mine', true);
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->otherPsychologistToken)->assertNotFound();
+    }
+
+    public function test_a_claim_lapses_after_a_day_without_a_write_and_a_write_keeps_it_alive(): void
+    {
+        $reportId = $this->takeBattery();
+        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk();
+
+        DB::table('assessment_reports')->where('id', $reportId)->update(['claim_touched_at' => now()->subHours(23)]);
+        $this->api('PUT', "/provider/reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'x', 'review_notes' => null], $this->psychologistToken)->assertOk();
+        $this->assertTrue(now()->subMinute()->lessThan(DB::table('assessment_reports')->where('id', $reportId)->value('claim_touched_at')));
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertStatus(409);
+
+        DB::table('assessment_reports')->where('id', $reportId)->update(['claim_touched_at' => now()->subHours(25)]);
+        $this->api('GET', "/provider/reviews/{$reportId}", [], $colleague)->assertOk()->assertJsonPath('data.claimed_by', null);
+        $this->api('PUT', "/provider/reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'x', 'review_notes' => null], $this->psychologistToken)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:claim-required');
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertOk()->assertJsonPath('data.claimed_by.mine', true);
+    }
+
+    public function test_the_queue_filters_by_who_holds_the_report_and_signing_releases_it(): void
+    {
+        $reportId = $this->takeBattery();
+        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $ids = fn (string $filter, string $token): array => array_column($this->api('GET', "/provider/reviews?filter[claimed]={$filter}", [], $token)->assertOk()->json('data'), 'id');
+
+        $this->assertSame([$reportId], $ids('none', $this->psychologistToken));
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk();
+        $this->assertSame([[], [$reportId], []], [$ids('none', $this->psychologistToken), $ids('mine', $this->psychologistToken), $ids('others', $this->psychologistToken)]);
+        $this->assertSame([[], [], [$reportId]], [$ids('none', $colleague), $ids('mine', $colleague), $ids('others', $colleague)]);
+        $this->api('GET', '/provider/reviews', [], $colleague)->assertOk()->assertJsonPath('data.0.claimed_by.mine', false);
+        $this->api('GET', '/provider/reviews?filter[claimed]=all', [], $colleague)->assertStatus(422);
+
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk()->assertJsonPath('data.claimed_by', null);
+        $this->assertNull(DB::table('assessment_reports')->where('id', $reportId)->value('claimed_by_psychologist_id'));
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
+    }
+
+    public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk();
+        $psychologistId = (int) DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->value('id');
+
+        $this->assessmentAdmin('POST', "psychologists/{$psychologistId}/suspend")->assertNoContent();
+
+        $this->assertNull(DB::table('assessment_reports')->where('id', $reportId)->value('claimed_by_psychologist_id'));
+    }
+
+    public function test_the_attempt_keeps_the_age_and_education_of_the_application_and_the_norm_group_follows_it(): void
+    {
+        DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['profile_snapshot' => json_encode(['age' => 22])]);
+        DB::table('recruitment_application_facets')->where('application_id', $this->applicationId)->update(['education_rank' => 4]);
+        $battery = $this->battery();
+        $row = ['scale_key' => 'extraversion', 'standard_score' => 60, 'raw_min' => 3, 'raw_max' => 10];
+        $this->provider('PUT', "tests/{$battery}/norms", ['norms' => [
+            [...$row, 'raw_min' => 0, 'raw_max' => 2, 'standard_score' => 40, 'band' => 'Low'],
+            [...$row, 'band' => 'High'],
+            [...$row, 'standard_score' => 70, 'band' => 'High for the young', 'age_min' => 18, 'age_max' => 25],
+            [...$row, 'standard_score' => 80, 'band' => 'High for the old', 'age_min' => 40],
+        ]])->assertOk()->assertJsonPath('data.2.age_min', 18)->assertJsonPath('data.2.age_max', 25);
+
+        $reportId = $this->takeBattery($battery);
+
+        $attempt = (array) DB::table('assessment_attempts')->first();
+        $this->assertSame([22, 4], [$attempt['norm_age'], $attempt['norm_education_rank']]);
+        $this->assertStringContainsString('(High for the young, 70)', (string) DB::table('assessment_reports')->where('id', $reportId)->value('body'));
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()
+            ->assertJsonPath('data.scales.0.band', 'High for the young')
+            ->assertJsonPath('data.scales.0.norm_group', ['age_min' => 18, 'age_max' => 25, 'education_rank_min' => null, 'education_rank_max' => null]);
+    }
+
+    public function test_a_candidate_whose_age_is_unknown_reads_only_the_general_norm_row(): void
+    {
+        DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['profile_snapshot' => json_encode(['name' => 'No age'])]);
+        $battery = $this->battery();
+        $this->provider('PUT', "tests/{$battery}/norms", ['norms' => [
+            ['scale_key' => 'extraversion', 'raw_min' => 3, 'raw_max' => 10, 'standard_score' => 60, 'band' => 'High'],
+            ['scale_key' => 'extraversion', 'raw_min' => 3, 'raw_max' => 10, 'standard_score' => 70, 'band' => 'High for the young', 'age_min' => 18, 'age_max' => 25],
+        ]])->assertOk();
+
+        $reportId = $this->takeBattery($battery);
+
+        $this->assertNull(DB::table('assessment_attempts')->value('norm_age'));
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.scales.0.band', 'High')->assertJsonPath('data.scales.0.norm_group', null);
+    }
+
     // ----- units -----
 
     public function test_a_norm_covers_the_rounded_raw_score_of_its_scale_only(): void

@@ -19,6 +19,10 @@ final class NormResource extends JsonResource
             'standard_score' => $this->resource->standardScore,
             'band' => $this->resource->band,
             'explanation' => $this->resource->explanation,
+            'age_min' => $this->resource->ageMin,
+            'age_max' => $this->resource->ageMax,
+            'education_rank_min' => $this->resource->educationRankMin,
+            'education_rank_max' => $this->resource->educationRankMax,
         ];
     }
 }

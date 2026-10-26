@@ -6,6 +6,7 @@ use Src\Assessment\Application\Reports\ReportDocument;
 use Src\Assessment\Application\Reports\ReportFile;
 use Src\Assessment\Application\Reports\ReportPdfRenderer;
 use Src\Assessment\Application\Reports\ScaleSummaries;
+use Src\Assessment\Domain\Attempt;
 use Src\Assessment\Domain\AttemptOutcomeRepository;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Invitation;
@@ -56,7 +57,7 @@ final readonly class DownloadReport
             throw new StateConflict('The report is not signed yet.', 'report-not-signed');
         }
 
-        $file = new ReportFile($this->fileName($report), $this->renderer->render($this->document($invitation, $report)));
+        $file = new ReportFile($this->fileName($report), $this->renderer->render($this->document($invitation, $report, $attempt)));
 
         $this->audit->record(new AuditEntry(
             AuditActorType::User, $actor->id, AuditAction::ASSESSMENT_REPORT_DOWNLOADED, 'assessment_invitation', $invitationId, [], $ipAddress, $userAgent, $this->clock->now(),
@@ -65,7 +66,7 @@ final readonly class DownloadReport
         return $file;
     }
 
-    private function document(Invitation $invitation, Report $report): ReportDocument
+    private function document(Invitation $invitation, Report $report, Attempt $attempt): ReportDocument
     {
         $test = $this->tests->find($invitation->testId) ?? throw EntityNotFound::of('Test', $invitation->testId);
         $provider = $this->providers->findById($report->providerId) ?? throw EntityNotFound::of('Provider', $report->providerId);
@@ -78,7 +79,7 @@ final readonly class DownloadReport
             $test->title(),
             $this->accounts->names([$invitation->applicantUserId])[$invitation->applicantUserId] ?? '',
             $report->body,
-            $result?->scaleScores === null ? [] : $this->scales->rows($invitation->testId, $result->scaleScores),
+            $result?->scaleScores === null ? [] : $this->scales->rows($invitation->testId, $result->scaleScores, $attempt->normCandidate()),
             (string) $report->signerName,
             (string) $report->signerStrNumber,
             (string) $report->signerSilpNumber,

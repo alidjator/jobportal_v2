@@ -5,10 +5,12 @@ namespace Src\Assessment\Interface\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Assessment\Application\Review\ClaimReview;
 use Src\Assessment\Application\Review\GetReview;
 use Src\Assessment\Application\Review\GetReviewDrawing;
 use Src\Assessment\Application\Review\ListReviews;
 use Src\Assessment\Application\Review\MarkReportReviewed;
+use Src\Assessment\Application\Review\ReleaseReview;
 use Src\Assessment\Application\Review\ReviseReport;
 use Src\Assessment\Application\Review\ScoreDrawing;
 use Src\Assessment\Application\Review\SignReport;
@@ -28,7 +30,7 @@ final class ReviewController extends ApiController
 {
     public function index(ListReviewsRequest $request, ActorResolver $actors, ListReviews $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->reviewed(), $request->pageRequest());
+        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->reviewed(), $request->pageRequest(), $request->claimed());
 
         return ReviewListItemResource::collection(PaginatedResources::paginator($page, $request));
     }
@@ -36,6 +38,16 @@ final class ReviewController extends ApiController
     public function show(Request $request, int $id, ActorResolver $actors, GetReview $get): ReviewResource
     {
         return new ReviewResource($get->execute($actors->fromRequest($request), $id));
+    }
+
+    public function claim(Request $request, int $id, ActorResolver $actors, ClaimReview $claim): ReviewResource
+    {
+        return new ReviewResource($claim->execute($actors->fromRequest($request), $id));
+    }
+
+    public function release(Request $request, int $id, ActorResolver $actors, ReleaseReview $release): ReviewResource
+    {
+        return new ReviewResource($release->execute($actors->fromRequest($request), $id));
     }
 
     public function update(UpdateReviewRequest $request, int $id, ActorResolver $actors, UpdateReview $update): ReviewResource

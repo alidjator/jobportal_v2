@@ -44,6 +44,10 @@ final class ReviewResource extends JsonResource
             'reviewed' => ! $report->autoIssued || $report->reviewedAt !== null,
             'reviewed_at' => $report->reviewedAt?->format(DateTimeInterface::ATOM),
             'revision' => $report->revision,
+            /** @var array{age: int|null, education_level: array{rank: int, name: string|null}|null, job: array{title: string, level: string|null, category: string|null}|null, company_name: string|null}|null For the psychologist only. */
+            'context' => $this->resource->context,
+            /** @var array{id: int, name: string, mine: bool}|null The holder of the live claim; editing, scoring, signing, marking reviewed and revising need your own (409 `claim-required`). */
+            'claimed_by' => $this->resource->claimedBy,
         ];
     }
 }
