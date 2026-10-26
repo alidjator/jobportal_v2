@@ -47,7 +47,7 @@ final class ConversationController extends ApiController
 
     public function startAsCompany(StartCompanyConversationRequest $request, ActorResolver $actors, StartCompanyConversation $start): JsonResponse
     {
-        return $this->started($start->execute($actors->fromRequest($request), $request->jobSeekerUserId(), $request->toInput()));
+        return $this->started($start->execute($actors->fromRequest($request), $request->jobSeekerUserId(), $request->candidate(), $request->applicationId(), $request->toInput()));
     }
 
     public function startAsSeeker(StartSeekerConversationRequest $request, ActorResolver $actors, StartSeekerConversation $start): JsonResponse

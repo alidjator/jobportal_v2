@@ -4,7 +4,9 @@ namespace Src\Messaging\Application;
 
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Candidate\CandidateDirectory;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -26,6 +28,8 @@ final readonly class StartCompanyConversation
         private ConversationReader $reader,
         private MessagingViews $views,
         private ApplicantContacts $contacts,
+        private CandidateDirectory $candidates,
+        private TeamApplications $teamApplications,
         private TransactionManager $transactions,
         private EventDispatcher $events,
     ) {}
@@ -37,9 +41,10 @@ final readonly class StartCompanyConversation
      * @throws StateConflict `conversation-exists`, `conversation-closed` or `recipient-unavailable`
      * @throws TooManyAttempts `daily-limit`
      */
-    public function execute(Actor $actor, int $jobSeekerUserId, MessageInput $input): StartedConversation
+    public function execute(Actor $actor, ?int $userId, ?string $candidateSlug, ?int $applicationId, MessageInput $input): StartedConversation
     {
         $sender = $this->access->companyMember($actor);
+        $jobSeekerUserId = $this->recipient($actor, $userId, $candidateSlug, $applicationId);
 
         if (! $this->contacts->isActiveJobSeeker($jobSeekerUserId)) {
             throw EntityNotFound::of('Job seeker', $jobSeekerUserId);
@@ -70,5 +75,23 @@ final readonly class StartCompanyConversation
         $row = $this->reader->one($this->access->audience($sender), $event->conversationId) ?? throw EntityNotFound::of('Conversation', $event->conversationId);
 
         return new StartedConversation($this->views->conversation($row, $sender->side), $created);
+    }
+
+    /**
+     * The account to write to: given directly, as a candidate the search finds (by slug), or as the applicant of an application the member may see.
+     *
+     * @throws EntityNotFound the candidate or the application
+     */
+    private function recipient(Actor $actor, ?int $userId, ?string $candidateSlug, ?int $applicationId): int
+    {
+        if ($applicationId !== null) {
+            return $this->teamApplications->find($actor, $applicationId)->applicantUserId;
+        }
+
+        if ($candidateSlug !== null) {
+            return ($this->candidates->findable($candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug))->userId;
+        }
+
+        return $userId ?? throw EntityNotFound::of('Job seeker', 0);
     }
 }

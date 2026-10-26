@@ -47,6 +47,25 @@ final class ChatTest extends FeatureTestCase
         $this->assertSame(2, DB::table('messaging_messages')->where('conversation_id', $id)->count());
     }
 
+    public function test_a_member_can_start_a_conversation_from_an_application_of_the_company(): void
+    {
+        $response = $this->multipartWithFiles('POST', '/company/conversations', ['application_id' => $this->applicationId, 'body' => 'About your application'], [], $this->recruiterToken)->assertCreated();
+
+        $this->assertSame($this->seekerId, $response->json('data.job_seeker.id'));
+        $this->assertSame(1, DB::table('messaging_conversations')->count());
+
+        $this->multipartWithFiles('POST', '/company/conversations', ['application_id' => $this->applicationId, 'body' => 'Again'], [], $this->recruiterToken)->assertOk();
+        $this->assertSame(1, DB::table('messaging_conversations')->count());
+    }
+
+    public function test_the_recipient_is_named_by_exactly_one_field_and_an_application_of_another_company_is_not_found(): void
+    {
+        $this->multipartWithFiles('POST', '/company/conversations', ['application_id' => $this->applicationId, 'user_id' => $this->seekerId, 'body' => 'Hi'], [], $this->recruiterToken)->assertUnprocessable();
+        $this->multipartWithFiles('POST', '/company/conversations', ['body' => 'Hi'], [], $this->recruiterToken)->assertUnprocessable();
+        $this->multipartWithFiles('POST', '/company/conversations', ['application_id' => $this->applicationId, 'body' => 'Hi'], [], $this->otherAdminToken)->assertNotFound();
+        $this->multipartWithFiles('POST', '/company/conversations', ['candidate' => 'nobody-here', 'body' => 'Hi'], [], $this->recruiterToken)->assertNotFound();
+    }
+
     public function test_an_application_that_was_withdrawn_or_rejected_still_lets_the_job_seeker_write(): void
     {
         $this->api('POST', "/me/applications/{$this->applicationId}/withdraw", token: $this->seekerToken)->assertNoContent();
