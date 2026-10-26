@@ -765,17 +765,23 @@ One pattern per situation, used by every page of every application.
 - **Unsaved changes:** long forms (profile, job editor, test editor, email templates, company profile) warn before leaving.
 - **Session end:** public 401 goes to sign-in and back to the page (5.2); the admin's 12-hour token ends with a dialog that leads to sign-in and then to
   the same page.
-- **Buttons (decided by the user on 2026-10-23, selective icons):** the text is the label; an icon is added only where it helps recognise the action,
-  as the "Button With Icon" of Able Pro Tailwind (`dist/elements/bc_button.html`): an 18px icon before the text, or after it for a button that
-  moves forward (move to a stage, a menu's chevron). `UiActionButton` hides the text below the `sm` breakpoint and keeps the icon.
-  - **With an icon:** the action buttons of work pages (toolbars, card headers, bulk actions of a table) and actions with a well-known icon (add,
-    delete, edit, save, export or download, reject, sign out).
-  - **Without an icon:** the buttons of the account pages (sign-in, password reset, invitation, terms, blocked account), cancel and close in dialogs,
-    text-style buttons (back, reset filters, clear selection, switch code method) and a lone call to action (error pages, "Coba lagi").
-  - **Dialog confirm buttons:** an icon (`confirm-icon` of `ConfirmDialog` and `ActionFormDialog`, none by default) only for a destructive action or
-    one with a well-known icon, the same icon as the button that opened it.
-  - Main buttons side by side are either all with or all without icons (a cancel or text-style button beside them stays plain); one action has one icon across the applications; icon-only buttons keep their
-    `aria-label`.
+- **Buttons (decided by the user on 2026-10-23 and 2026-10-25, merged into one rule on 2026-10-26; the rule is item 9 of the front end's `CLAUDE.md`):** the label is the button;
+  an icon is optional and only helps recognise the action, as the "Button With Icon" of Able Pro Tailwind (`dist/elements/bc_button.html`): a 16px icon before the text, or after it for a
+  button that moves forward (move to a stage, a menu's chevron). `UiActionButton` hides the text below the `sm` breakpoint and keeps the icon.
+  - **With an icon, when all three hold:** the button is an action of a work page (toolbars, card headers, bulk actions of a table, the page's action bar); the action has a row in the
+    icon table (one action, one icon, everywhere); its sibling buttons follow the same choice (side by side: all with or all without).
+  - **Without an icon:** Save, Send, Cancel, Close, Confirm, Continue, Sign in, Search and Retry on forms and dialogs; every button of the account pages (sign-in, password reset,
+    invitation, terms, blocked account); text-style buttons (back, reset filters, clear selection, switch code method); a lone call to action (error pages); a cancel or text button
+    beside icon buttons; an action whose icon would be abstract.
+  - **Dialog confirm buttons:** an icon (`confirm-icon` of `ConfirmDialog` and `ActionFormDialog`, none by default) only for a destructive action or one with a row in the icon table,
+    the same icon as the button that opened it. Icon-only buttons keep their `aria-label`.
+  - **References for the principles** (the lists above are this project's own decisions): the label carries the meaning and the icon supports it, a button with a label needs no icon,
+    an icon belongs to a simple and recognisable action, an icon-only button needs an accessible name, one icon per button, and icons are used consistently in repeated elements. Sources:
+    [IBM Carbon, Button](https://carbondesignsystem.com/components/button/usage), [Material Web, Buttons](https://github.com/isalvaus/material-web/blob/main/docs/components/button.md),
+    [Primer, Button](https://primer.style/components/button) and [Icon](https://primer.style/components/icon), [Atlassian, Iconography](https://atlassian.design/foundations/iconography),
+    [Shopify Polaris, Button](https://polaris.shopify.com/components/actions/button), [Shopify, Visual design](https://shopify.dev/docs/apps/design/visual-design),
+    [Queensland Design System, Button](https://www.designsystem.qld.gov.au/components/button), [Elastic UI](https://eui.elastic.co/pr_8109/new-docs/docs/navigation/button/guidelines),
+    [Michigan, Iconography](https://digitalguidelines.michigan.gov/docs/foundations/iconography).
 - **Updates:** small toggles (save a job, mark as read) change at once and roll back on error; everything else waits for the API.
 
 **Decided by the user on 2026-10-13:**

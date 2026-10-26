@@ -11,7 +11,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 | Legacy flow, benchmarks, gaps | `docs/analysis/` |
 | API-document rules, error catalog | `docs/api/` |
 | History | `docs/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
-| Front end | `/usr/local/src/jobportal-frontend/onesis-talent` (its `CLAUDE.md`: template rules 1 to 14), design `docs/design/frontend.md` (`## Decisions` first) |
+| Front end | `/usr/local/src/jobportal-frontend/onesis-talent` (its `CLAUDE.md`: template rules 1 to 15), design `docs/design/frontend.md` (`## Decisions` first) |
 
 ## Current state (2026-10-25)
 
@@ -26,7 +26,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 **Front end** (Career `apps/public`, Workspace, Console; shared `packages/ui`, `api`, `i18n`)
 
 - Able Pro Tailwind 1.2.0, compact density (rules 11 to 14), Font Awesome Pro regular; the job description is Markdown (CKEditor Visual or EasyMDE tab); Workspace opens pages as tabs (`frontend.md` 11.1, rule 15; coded 2026-10-25, not yet tried in a browser).
-- Coding order `frontend.md` section 13: steps 0 to 2 done; step 3 (Workspace recruitment core) has C1, C3 to C7, C5b, C19, C32; **missing: C17, C18, C20, C21, C22, C29**. Step 4 (Career) not started: `apps/public` holds a placeholder page. Steps 5 to 7 wait.
+- Coding order `frontend.md` section 13: steps 0 to 3 done; step 4 (Career) has the public pages, apply and `/me` (P5 to P7, P9, P10, J8 to J17 left). Workspace step 5 is coded except C9 and C10 (step 6). Coded 2026-10-26, **not tried in a browser**: C2, C14 (polls every 15 s until Reverb; `?mulai=<user id>&nama=` starts a thread, no page links to it yet), C15 (company skill tests only), C16, C23, C24, C27, C28, C31 (menu entry for every member). Left out: the #23 and #24 extras of C16.
 - Git: five local commits on `main` since `5ff64d5` (author `alidjator@gmail.com`); no remote and no identity configured there; `backup/before-reauthor` may be deleted.
 - Deploy: `pnpm release:<app>` builds and switches `releases/<app>/current`; run it as `jobportal`, never root (root-owned files break the next build); Workspace then needs `systemctl restart onesis-workspace` as root. The user runs `pnpm install`, `icons:build`, builds, tests and pushes.
 
