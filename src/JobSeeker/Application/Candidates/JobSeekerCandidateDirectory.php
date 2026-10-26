@@ -17,7 +17,7 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
     {
         $row = $this->candidates->findBySlug($slug);
 
-        return $row === null ? null : new CandidateRef($row->userId, $row->slug, $row->name);
+        return $row === null ? null : new CandidateRef($row->userId, $row->slug, $row->name, $row->avatarPath !== null);
     }
 
     public function findableIds(array $userIds): array
@@ -49,6 +49,7 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
                 $row->cityId === null ? null : ($cities[$row->cityId] ?? null),
                 $positions[$row->userId] ?? null,
                 array_values(array_filter(array_map(static fn (int $id): ?string => $skillNames[$id] ?? null, $skillIds[$row->userId] ?? []))),
+                $row->avatarPath !== null,
             );
         }
 
@@ -60,7 +61,7 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
         $refs = [];
 
         foreach ($this->candidates->namesOfUsers($userIds) as $userId => $row) {
-            $refs[$userId] = new CandidateRef($userId, $row['slug'], $row['name']);
+            $refs[$userId] = new CandidateRef($userId, $row['slug'], $row['name'], $row['has_avatar']);
         }
 
         return $refs;

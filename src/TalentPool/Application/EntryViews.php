@@ -83,6 +83,7 @@ final readonly class EntryViews
                 $summary->skills ?? $snapshot->skills ?? [],
                 $isAvailable ? ($applications[$userId] ?? null) : null,
                 $isAvailable ? ($invitations[$userId] ?? null) : null,
+                $summary->hasAvatar ?? false,
             );
         }, $entries);
     }

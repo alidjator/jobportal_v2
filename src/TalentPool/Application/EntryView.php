@@ -36,6 +36,7 @@ final readonly class EntryView
         public array $skills = [],
         public ?PoolApplicationRef $lastApplication = null,
         public ?LatestInvitation $lastInvitation = null,
+        public bool $hasAvatar = false,
     ) {}
 
     public function isAvailable(): bool

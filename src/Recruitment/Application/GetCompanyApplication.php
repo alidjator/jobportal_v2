@@ -9,6 +9,7 @@ use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Candidate\CandidateDirectory;
+use Src\Shared\Application\Candidate\CandidateRef;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -78,6 +79,7 @@ final readonly class GetCompanyApplication
         [$otherApplications, $othersHidden] = $team->panelOnly ? [[], 0] : $this->others->of($member, $data);
         $untouched = UntouchedImport::applies($data->migratedAt, $data->stageEnteredAt);
         $days = StageClock::days($data->stageEnteredAt, $this->clock->now());
+        $candidate = $team->panelOnly ? null : $this->candidate($data->userId);
 
         return new CompanyApplicationView(
             $data,
@@ -93,17 +95,18 @@ final readonly class GetCompanyApplication
             $othersHidden,
             $team->panelOnly ? [] : $this->reviews->forApplication($id, $member->userId),
             $this->contacts->undeliverable([$data->userId]) === [],
-            $team->panelOnly ? null : $this->candidateSlug($data->userId),
+            $candidate?->slug,
+            $candidate->hasAvatar ?? false,
         );
     }
 
-    /** The slug of the applicant's profile in the candidate search, only while they can be found right now (opted in, active, complete profile); null otherwise. */
-    private function candidateSlug(int $userId): ?string
+    /** The applicant's profile in the candidate search, only while they can be found right now (opted in, active, complete profile); null otherwise. */
+    private function candidate(int $userId): ?CandidateRef
     {
         if ($this->candidates->findableIds([$userId]) === []) {
             return null;
         }
 
-        return ($this->candidates->refs([$userId])[$userId] ?? null)?->slug;
+        return $this->candidates->refs([$userId])[$userId] ?? null;
     }
 }

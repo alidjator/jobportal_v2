@@ -2,7 +2,7 @@
 
 namespace Src\Shared\Application\Candidate;
 
-/** A findable candidate as a company's list shows them: the slug and name plus headline, city, latest position and up to five skill names. */
+/** A findable candidate as a company's list shows them: the slug and name plus headline, city, latest position, up to five skill names and whether they have a profile picture. */
 final readonly class CandidateSummary
 {
     /**
@@ -17,5 +17,6 @@ final readonly class CandidateSummary
         public ?string $city,
         public ?array $latestPosition,
         public array $skills,
+        public bool $hasAvatar = false,
     ) {}
 }

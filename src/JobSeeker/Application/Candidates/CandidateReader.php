@@ -64,7 +64,7 @@ interface CandidateReader
      * The slug and name of these accounts whether or not they can be found now; an account without a slug or whose account was anonymised is missing.
      *
      * @param  list<int>  $userIds
-     * @return array<int, array{slug: string, name: string}> by account id
+     * @return array<int, array{slug: string, name: string, has_avatar: bool}> by account id
      */
     public function namesOfUsers(array $userIds): array;
 

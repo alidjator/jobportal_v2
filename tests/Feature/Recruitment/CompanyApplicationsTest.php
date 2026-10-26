@@ -93,7 +93,11 @@ final class CompanyApplicationsTest extends FeatureTestCase
         DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->update(['is_discoverable' => true]);
         $slug = (string) DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->value('slug');
 
-        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_slug', $slug);
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_slug', $slug)->assertJsonPath('data.candidate_has_avatar', false);
+
+        DB::table('identity_users')->where('id', $this->budiId)->update(['avatar_path' => 'avatars/budi.jpg']);
+
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_has_avatar', true);
 
         DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->update(['is_discoverable' => false]);
 

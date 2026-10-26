@@ -119,8 +119,8 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         foreach ($this->connection->table('jobseeker_profiles as p')
             ->join('identity_users as u', 'u.id', '=', 'p.user_id')
             ->whereIn('p.user_id', $userIds)->whereNotNull('p.slug')->whereNull('u.anonymized_at')
-            ->get(['p.user_id', 'p.slug', 'u.name']) as $row) {
-            $names[(int) $row->user_id] = ['slug' => (string) $row->slug, 'name' => (string) $row->name];
+            ->get(['p.user_id', 'p.slug', 'u.name', 'u.avatar_path']) as $row) {
+            $names[(int) $row->user_id] = ['slug' => (string) $row->slug, 'name' => (string) $row->name, 'has_avatar' => $row->avatar_path !== null];
         }
 
         return $names;

@@ -30,5 +30,6 @@ final readonly class CompanyApplicationView
         public array $reviews = [],
         public bool $emailDeliverable = true,
         public ?string $candidateSlug = null,
+        public bool $candidateHasAvatar = false,
     ) {}
 }

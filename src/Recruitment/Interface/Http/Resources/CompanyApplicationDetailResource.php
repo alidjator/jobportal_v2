@@ -36,6 +36,8 @@ final class CompanyApplicationDetailResource extends JsonResource
             'email_deliverable' => $view->emailDeliverable,
             /** The slug of the applicant's current profile (`GET company/candidates/{slug}`), only while they can be found; null otherwise, and for a member who sits only on an interview panel. */
             'candidate_slug' => $view->candidateSlug,
+            /** Whether the profile at `candidate_slug` has a picture (`GET company/candidates/{slug}/avatar`); false when there is no slug. */
+            'candidate_has_avatar' => $view->candidateHasAvatar,
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
             'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),
