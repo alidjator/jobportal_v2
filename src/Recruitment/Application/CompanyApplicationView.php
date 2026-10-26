@@ -29,5 +29,6 @@ final readonly class CompanyApplicationView
         public int $othersHidden = 0,
         public array $reviews = [],
         public bool $emailDeliverable = true,
+        public ?string $candidateSlug = null,
     ) {}
 }

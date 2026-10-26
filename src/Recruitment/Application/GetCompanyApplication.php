@@ -8,6 +8,7 @@ use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Candidate\CandidateDirectory;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Settings\Settings;
@@ -32,6 +33,7 @@ final readonly class GetCompanyApplication
         private Settings $settings,
         private Clock $clock,
         private ApplicantContacts $contacts,
+        private CandidateDirectory $candidates,
     ) {}
 
     /**
@@ -91,6 +93,17 @@ final readonly class GetCompanyApplication
             $othersHidden,
             $team->panelOnly ? [] : $this->reviews->forApplication($id, $member->userId),
             $this->contacts->undeliverable([$data->userId]) === [],
+            $team->panelOnly ? null : $this->candidateSlug($data->userId),
         );
+    }
+
+    /** The slug of the applicant's profile in the candidate search, only while they can be found right now (opted in, active, complete profile); null otherwise. */
+    private function candidateSlug(int $userId): ?string
+    {
+        if ($this->candidates->findableIds([$userId]) === []) {
+            return null;
+        }
+
+        return ($this->candidates->refs([$userId])[$userId] ?? null)?->slug;
     }
 }

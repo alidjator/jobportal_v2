@@ -86,6 +86,20 @@ final class CompanyApplicationsTest extends FeatureTestCase
         $this->assertEquals([$this->firstId => false, $this->secondId => true], array_column($across, 'email_deliverable', 'id'));
     }
 
+    public function test_the_detail_names_the_current_profile_only_while_the_candidate_can_be_found(): void
+    {
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_slug', null);
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->update(['is_discoverable' => true]);
+        $slug = (string) DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->value('slug');
+
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_slug', $slug);
+
+        DB::table('jobseeker_profiles')->where('user_id', $this->budiId)->update(['is_discoverable' => false]);
+
+        $this->show($this->secondId)->assertOk()->assertJsonPath('data.candidate_slug', null);
+    }
+
     public function test_a_member_who_may_not_read_the_application_gets_no_flag(): void
     {
         $this->suppressEmailOf($this->firstId);

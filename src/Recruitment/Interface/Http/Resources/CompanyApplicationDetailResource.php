@@ -34,6 +34,8 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
             /** False when the applicant's email address no longer receives email: reach them by phone or chat. Never says why. */
             'email_deliverable' => $view->emailDeliverable,
+            /** The slug of the applicant's current profile (`GET company/candidates/{slug}`), only while they can be found; null otherwise, and for a member who sits only on an interview panel. */
+            'candidate_slug' => $view->candidateSlug,
             'meets_must_have' => $data->meetsMustHave,
             'applied_at' => $data->appliedAt->format(DATE_ATOM),
             'stage_entered_at' => $data->stageEnteredAt->format(DATE_ATOM),
