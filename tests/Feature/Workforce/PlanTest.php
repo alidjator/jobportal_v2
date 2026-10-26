@@ -345,4 +345,36 @@ final class PlanTest extends FeatureTestCase
         $this->as($this->reviewer, 'POST', "/company/approvals/{$approval}/approve")->assertOk()->assertJsonCount(1, 'data.steps');
         $this->as($this->admin, 'GET', "/company/workforce/plans/{$id}")->assertJsonPath('data.status', 'approved');
     }
+
+    // ----- the choices of the forms -----
+
+    public function test_a_planner_reads_the_structure_of_their_own_legal_entity_for_the_forms(): void
+    {
+        $cost = (int) $this->as($this->admin, 'POST', '/organization/cost-centres', ['legal_entity_id' => $this->entity, 'code' => 'CC1', 'name' => 'Head office'])->assertCreated()->json('data.id');
+        $this->as($this->admin, 'POST', '/organization/grades', ['code' => 'G1', 'name' => 'Staff', 'rank' => 1])->assertCreated();
+
+        $response = $this->as($this->planner, 'GET', '/company/workforce/options')->assertOk();
+
+        $this->assertSame($this->entity, $response->json('data.legal_entity_id'));
+        $this->assertSame(['ACC', 'CLK'], array_column($response->json('data.positions'), 'code'));
+        $this->assertSame(['Position ACC', 'Position CLK'], array_column($response->json('data.positions'), 'title'));
+        $this->assertSame(['FIN'], array_column($response->json('data.units'), 'code'));
+        $this->assertSame(['G1'], array_column($response->json('data.grades'), 'code'));
+        $this->assertSame([$cost], array_column($response->json('data.cost_centres'), 'id'));
+        $this->assertContains($this->planner->id, array_column($response->json('data.hiring_managers'), 'id'));
+    }
+
+    public function test_the_choices_are_closed_to_a_viewer_to_an_outsider_and_to_an_external_tenant(): void
+    {
+        $this->as($this->viewer, 'GET', '/company/workforce/options')->assertStatus(403);
+        $this->as($this->nobody, 'GET', '/company/workforce/options')->assertStatus(403);
+        $this->as($this->outsider, 'GET', '/company/workforce/options')->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-an-internal-tenant');
+    }
+
+    public function test_a_deactivated_position_is_not_offered(): void
+    {
+        $this->as($this->admin, 'POST', "/organization/positions/{$this->clerk}/deactivate")->assertOk();
+
+        $this->assertSame(['ACC'], array_column($this->as($this->planner, 'GET', '/company/workforce/options')->assertOk()->json('data.positions'), 'code'));
+    }
 }

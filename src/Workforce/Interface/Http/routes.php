@@ -7,6 +7,8 @@ use Src\Workforce\Interface\Http\Controllers\RequisitionController;
 // The manpower plans of the signed-in member's tenant (`workforce.plans.view` or `.manage` reads, `.manage` changes) and of the group (`group.workforce.view` or `.manage`
 // reads, `.manage` changes). `PUT` replaces the lines of a draft or rejected plan; `revise` starts a new version from the one in force.
 Route::middleware('auth:user')->group(function (): void {
+    // The choices of the plan and requisition forms for a member of an internal tenant (`workforce.plans.manage` or `workforce.requisitions.create`), read only.
+    Route::get('company/workforce/options', [PlanController::class, 'options']);
     Route::get('company/workforce/plans', [PlanController::class, 'companyIndex']);
     Route::post('company/workforce/plans', [PlanController::class, 'companyStore']);
     Route::get('company/workforce/plans/{id}', [PlanController::class, 'companyShow'])->whereNumber('id');

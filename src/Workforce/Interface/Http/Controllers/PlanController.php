@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
+use Src\Workforce\Application\GetWorkforceOptions;
 use Src\Workforce\Application\Plan\CreatePlan;
 use Src\Workforce\Application\Plan\GetPlan;
 use Src\Workforce\Application\Plan\ListPlans;
@@ -19,10 +20,17 @@ use Src\Workforce\Interface\Http\Requests\ListPlansRequest;
 use Src\Workforce\Interface\Http\Requests\SavePlanRequest;
 use Src\Workforce\Interface\Http\Resources\PlanResource;
 use Src\Workforce\Interface\Http\Resources\PlanSummaryResource;
+use Src\Workforce\Interface\Http\Resources\WorkforceOptionsResource;
 
 /** The manpower plans of the signed-in member's own tenant (`company/workforce/plans`) or, for a group member, of every legal entity of the group (`organization/workforce/plans`). */
 final class PlanController extends ApiController
 {
+    /** The choices of the plan and requisition forms of the member's own legal entity (positions, units, grades, cost centres, hiring managers); read only. */
+    public function options(Request $request, ActorResolver $actors, GetWorkforceOptions $options): WorkforceOptionsResource
+    {
+        return new WorkforceOptionsResource($options->execute($actors->fromRequest($request)));
+    }
+
     public function companyIndex(ListPlansRequest $request, ActorResolver $actors, ListPlans $list): AnonymousResourceCollection
     {
         return $this->index($request, $actors, $list, PlanSide::Company);

@@ -246,3 +246,11 @@ Interpretations, where the design left room:
   `amendment_rejected`, `amendment_returned`, with the tenant's `company_id` and the `group_id`.
 - **Left out:** `filled` and hires counting (hiring phase), the requisition-to-hire reports (dashboards after the TA core).
 
+
+## Coded: the choices of the forms for a tenant (2026-10-26)
+
+The front end (E4, E5) found that a member of an internal tenant holds no group role, so `organization/*` is closed to them and they could not list the positions, grades, cost centres and possible hiring managers that a plan line
+and a requisition name. Decided by the user on 2026-10-26: **one read-only endpoint**, not a wider access to `organization/*`. `GET company/workforce/options` gives, for the member's own legal entity as it is today: the active
+positions (`id`, `code`, `title`, `unit_id`, `min_grade_id`, `max_grade_id`), the active units (`id`, `code`, `name`, `cost_centre_id`), the active grades of the group (`id`, `code`, `name`, `rank`), the active cost centres and the
+active accounts of the tenant as `hiring_managers` (`id`, `name`). It needs `workforce.plans.manage` or `workforce.requisitions.create` (others get 403); an external tenant gets 403 `not-an-internal-tenant`. New ports:
+`StructureDirectory::gradeOptions`, `costCentreOptions` and `unitOptions` (Organization provides them); use case `Workforce\Application\GetWorkforceOptions`. Tests: `PlanTest` (the options, who is refused, a deactivated position is left out).
