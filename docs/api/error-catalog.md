@@ -137,7 +137,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
 | `group-permission-required` | 403 | Organization, Workforce | The group permission :permission is needed. |
 | `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
-| `image-not-found` | 404 | Company | Image not found. |
+| `image-not-found` | 404 | Assessment, Company | The institution has no logo. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
 | `interview-edit-denied` | 403 | Recruitment | Only the member who scheduled the interview, its interviewer or a company admin can change its questions. |
 | `interview-not-active` | 409 | Recruitment | This interview is no longer active. |
@@ -233,6 +233,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-schedule` | 422 | Recruitment |  |
 | `invalid-score` | 422 | Assessment | The score must be a whole number from 0 to :points. |
 | `invalid-scorecard` | 422 | Recruitment |  |
+| `invalid-screening-preset` | 422 | Recruitment | The screening preset is not valid. |
 | `invalid-screening-question` | 422 | Recruitment | Every option id must be a different option of this question. |
 | `invalid-section` | 422 | Assessment | The format of a section cannot be changed. Add a new section instead. |
 | `invalid-setting-value` | 422 | Platform, Shared | Some values are not valid. |
@@ -391,7 +392,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `psychologist-account-managed` | 403 | Identity | A psychologist account is closed by an administrator. |
 | `psychologist-suspended` | 403 | Assessment | This psychologist account is suspended. |
 | `public-account-required` | 403 | Identity | Only a job seeker or a company member has a profile picture. |
-| `question-in-use` | 409 | Recruitment | This question is attached to a job or has answers, so it can only be archived. |
+| `question-in-use` | 409 | Recruitment | This question is attached to a job or a preset, or has answers, so it can only be archived. |
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
 | `reason-required` | 422 | Organization, Recruitment | A change dated in the past needs a reason of 5 to 500 characters. |

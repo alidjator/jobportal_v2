@@ -103,17 +103,24 @@ final readonly class DatabaseScreeningQuestionRepository implements ScreeningQue
 
     public function isAttached(int $id): bool
     {
-        return $this->connection->table('recruitment_job_questions')->where('question_id', $id)->exists();
+        return $this->connection->table('recruitment_job_questions')->where('question_id', $id)->exists()
+            || $this->connection->table('recruitment_screening_preset_questions')->where('question_id', $id)->exists();
     }
 
     public function idealOptionIds(int $id): array
     {
-        return array_map('intval', $this->connection->table('recruitment_job_question_ideal_options')
-            ->join('recruitment_screening_question_options', 'recruitment_screening_question_options.id', '=', 'recruitment_job_question_ideal_options.option_id')
-            ->where('recruitment_screening_question_options.question_id', $id)
-            ->distinct()
-            ->pluck('recruitment_job_question_ideal_options.option_id')
-            ->all());
+        $options = [];
+
+        foreach (['recruitment_job_question_ideal_options', 'recruitment_screening_preset_ideal_options'] as $table) {
+            $options = [...$options, ...$this->connection->table($table)
+                ->join('recruitment_screening_question_options', 'recruitment_screening_question_options.id', '=', "{$table}.option_id")
+                ->where('recruitment_screening_question_options.question_id', $id)
+                ->distinct()
+                ->pluck("{$table}.option_id")
+                ->all()];
+        }
+
+        return array_values(array_unique(array_map('intval', $options)));
     }
 
     /**

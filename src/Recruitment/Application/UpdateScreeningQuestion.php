@@ -103,7 +103,7 @@ final readonly class UpdateScreeningQuestion
         }
 
         if (array_diff($this->questions->idealOptionIds($question->id), $kept) !== []) {
-            throw new StateConflict('A job uses a choice that would be deleted as its ideal answer.', 'question-in-use');
+            throw new StateConflict('A job or a preset uses a choice that would be deleted as its ideal answer.', 'question-in-use');
         }
 
         $this->questions->replaceOptions(

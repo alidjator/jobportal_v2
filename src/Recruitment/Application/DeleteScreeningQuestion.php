@@ -40,7 +40,7 @@ final readonly class DeleteScreeningQuestion
             }
 
             if ($this->usage->isLocked($id) || $this->questions->isAttached($id)) {
-                throw new StateConflict('This question is attached to a job or has answers, so it can only be archived.', 'question-in-use');
+                throw new StateConflict('This question is attached to a job or a preset, or has answers, so it can only be archived.', 'question-in-use');
             }
 
             $this->questions->delete($id);

@@ -2,12 +2,9 @@
 
 namespace Src\Recruitment\Application;
 
-use Src\Recruitment\Domain\IdealAnswer;
 use Src\Recruitment\Domain\JobQuestion;
 use Src\Recruitment\Domain\JobQuestionDraft;
 use Src\Recruitment\Domain\JobQuestionRepository;
-use Src\Recruitment\Domain\ScreeningQuestion;
-use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
@@ -33,7 +30,7 @@ final readonly class ReplaceJobScreeningQuestions
         private JobDirectory $jobs,
         private JobApplicationCheck $applications,
         private JobQuestionRepository $jobQuestions,
-        private ScreeningQuestionRepository $library,
+        private ScreeningItemDrafter $drafter,
         private Settings $settings,
         private TransactionManager $transactions,
         private Clock $clock,
@@ -68,7 +65,7 @@ final readonly class ReplaceJobScreeningQuestions
             }
 
             $currentIds = array_map(static fn (JobQuestion $current): int => $current->question->id, $this->jobQuestions->forJob($jobId));
-            $drafts = $this->drafts($member->companyId, $items, $currentIds);
+            $drafts = $this->drafter->drafts($member->companyId, $items, $currentIds, 'invalid-job-questions', 'The questions of the job are not valid.');
 
             $newIds = array_map(static fn (JobQuestionDraft $draft): int => $draft->questionId, $drafts);
 
@@ -80,70 +77,5 @@ final readonly class ReplaceJobScreeningQuestions
         });
 
         return $this->jobQuestions->forJob($jobId);
-    }
-
-    /**
-     * @param  list<array{question_id: int, required: bool, must_have: bool, ideal: array<string, mixed>|null}>  $items
-     * @param  list<int>  $currentIds
-     * @return list<JobQuestionDraft>
-     *
-     * @throws BusinessRuleViolation
-     */
-    private function drafts(int $companyId, array $items, array $currentIds): array
-    {
-        $library = $this->library->findMany(array_map(static fn (array $item): int => $item['question_id'], $items));
-        $errors = [];
-        $drafts = [];
-
-        foreach ($items as $index => $item) {
-            $question = $library[$item['question_id']] ?? null;
-
-            if ($question === null || $question->companyId !== $companyId || ($question->isArchived() && ! in_array($question->id, $currentIds, true))) {
-                $errors["questions.{$index}.question_id"][] = 'This is not an active question of your library.';
-
-                continue;
-            }
-
-            try {
-                $drafts[] = $this->draft($question, $index + 1, $item);
-            } catch (BusinessRuleViolation $violation) {
-                foreach ($violation->extensions()['errors'] ?? [] as $field => $messages) {
-                    $errors["questions.{$index}.{$field}"] = $messages;
-                }
-            }
-        }
-
-        if ($errors !== []) {
-            throw new BusinessRuleViolation('The questions of the job are not valid.', 'invalid-job-questions', extensions: ['errors' => $errors]);
-        }
-
-        return $drafts;
-    }
-
-    /**
-     * @param  array{question_id: int, required: bool, must_have: bool, ideal: array<string, mixed>|null}  $item
-     *
-     * @throws BusinessRuleViolation with `errors` on `must_have` or `ideal`
-     */
-    private function draft(ScreeningQuestion $question, int $position, array $item): JobQuestionDraft
-    {
-        if (! $item['must_have']) {
-            if ($item['ideal'] !== null) {
-                throw new BusinessRuleViolation('Only a must-have question has an ideal answer.', 'invalid-job-questions', extensions: ['errors' => ['ideal' => ['Only a must-have question has an ideal answer.']]]);
-            }
-
-            return new JobQuestionDraft($question->id, $position, $item['required'], false, null);
-        }
-
-        if (! $question->type->supportsMustHave()) {
-            throw new BusinessRuleViolation('A text question cannot be marked must-have.', 'invalid-job-questions', extensions: ['errors' => ['must_have' => ['A text question cannot be marked must-have.']]]);
-        }
-
-        if ($item['ideal'] === null) {
-            throw new BusinessRuleViolation('A must-have question needs an ideal answer.', 'invalid-job-questions', extensions: ['errors' => ['ideal' => ['A must-have question needs an ideal answer.']]]);
-        }
-
-        // A must-have question is always required, so there is an answer to check.
-        return new JobQuestionDraft($question->id, $position, true, true, IdealAnswer::from($question->type, $item['ideal'], $question->optionIds()));
     }
 }

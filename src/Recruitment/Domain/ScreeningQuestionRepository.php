@@ -39,11 +39,11 @@ interface ScreeningQuestionRepository
 
     public function delete(int $id): void;
 
-    /** Whether any job has this question attached. */
+    /** Whether any job or preset has this question attached. */
     public function isAttached(int $id): bool;
 
     /**
-     * The ids of the choices of this question that a job uses as an ideal answer.
+     * The ids of the choices of this question that a job or a preset uses as an ideal answer.
      *
      * @return list<int>
      */

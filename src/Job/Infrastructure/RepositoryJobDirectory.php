@@ -44,7 +44,7 @@ final readonly class RepositoryJobDirectory implements JobDirectory
             return null;
         }
 
-        return new JobSummary($jobId, $companyId, $job->status->isEditable());
+        return new JobSummary($jobId, $companyId, $job->status->isEditable(), $job->content->jobLevelId);
     }
 
     public function assignedJobIds(int $companyId, int $userId): array

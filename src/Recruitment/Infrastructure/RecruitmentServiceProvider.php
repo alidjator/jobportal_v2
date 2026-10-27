@@ -39,6 +39,7 @@ use Src\Recruitment\Application\RecruitmentPoolApplications;
 use Src\Recruitment\Application\RecruitmentSettings;
 use Src\Recruitment\Application\ReviewNotificationType;
 use Src\Recruitment\Application\ReviewPageLink;
+use Src\Recruitment\Application\ScreeningPresetReader;
 use Src\Recruitment\Application\ScreeningQuestionReader;
 use Src\Recruitment\Application\ScreeningQuestionUsage;
 use Src\Recruitment\Application\StageChangeEmailSender;
@@ -88,6 +89,7 @@ use Src\Recruitment\Domain\OfferRepository;
 use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\ScorecardEraser;
 use Src\Recruitment\Domain\ScorecardRepository;
+use Src\Recruitment\Domain\ScreeningPresetRepository;
 use Src\Recruitment\Domain\ScreeningQuestionRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\Video\AttendanceRepository;
@@ -159,6 +161,8 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReade
 use Src\Recruitment\Infrastructure\Persistence\DatabaseReviewRequestRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScorecardRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningPresetReader;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningPresetRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
@@ -244,6 +248,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicationCounts::class => DatabaseApplicationCounts::class,
         StageRepository::class => DatabaseStageRepository::class,
         DefaultStageProvisioner::class => ProvisionDefaultStages::class,
+        ScreeningPresetRepository::class => DatabaseScreeningPresetRepository::class,
+        ScreeningPresetReader::class => DatabaseScreeningPresetReader::class,
         ScreeningQuestionRepository::class => DatabaseScreeningQuestionRepository::class,
         ScreeningQuestionReader::class => DatabaseScreeningQuestionReader::class,
         ScreeningQuestionUsage::class => DatabaseApplicationUsage::class,

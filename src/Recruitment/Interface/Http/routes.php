@@ -25,6 +25,7 @@ use Src\Recruitment\Interface\Http\Controllers\MyVideoInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\OfferController;
 use Src\Recruitment\Interface\Http\Controllers\ReviewRequestController;
 use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
+use Src\Recruitment\Interface\Http\Controllers\ScreeningPresetController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningQuestionController;
 use Src\Recruitment\Interface\Http\Controllers\VideoInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\VoiceInterviewController;
@@ -52,8 +53,16 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/screening-questions/{id}/archive', [ScreeningQuestionController::class, 'archive'])->whereNumber('id');
     Route::post('company/screening-questions/{id}/restore', [ScreeningQuestionController::class, 'restore'])->whereNumber('id');
 
+    Route::get('company/screening-presets', [ScreeningPresetController::class, 'index']);
+    Route::post('company/screening-presets', [ScreeningPresetController::class, 'store']);
+    Route::get('company/screening-presets/{id}', [ScreeningPresetController::class, 'show'])->whereNumber('id');
+    Route::put('company/screening-presets/{id}', [ScreeningPresetController::class, 'update'])->whereNumber('id');
+    Route::delete('company/screening-presets/{id}', [ScreeningPresetController::class, 'destroy'])->whereNumber('id');
+
     Route::get('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'index'])->whereNumber('id');
     Route::put('company/jobs/{id}/screening-questions', [JobScreeningQuestionController::class, 'replace'])->whereNumber('id');
+    Route::post('company/jobs/{id}/screening-questions/apply-preset', [JobScreeningQuestionController::class, 'applyPreset'])->whereNumber('id');
+    Route::get('company/jobs/{id}/screening-presets', [JobScreeningQuestionController::class, 'presets'])->whereNumber('id');
 
     Route::get('company/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
     Route::get('company/applications', [CompanyApplicationController::class, 'all']);

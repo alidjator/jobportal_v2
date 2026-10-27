@@ -48,6 +48,21 @@ final readonly class IdealAnswer
         return new self($type, $yes, $optionIds, $min, $max);
     }
 
+    /**
+     * The ideal answer in the shape a caller sends it (see `from`), so a stored ideal can be written again, for example to copy a preset to a job.
+     *
+     * @return array<string, mixed>
+     */
+    public function toInput(): array
+    {
+        return match ($this->type) {
+            QuestionType::YesNo => ['yes' => $this->yes],
+            QuestionType::SingleChoice, QuestionType::MultipleChoice => ['option_ids' => $this->optionIds],
+            QuestionType::Number => ['min' => $this->min, 'max' => $this->max],
+            QuestionType::Text => [],
+        };
+    }
+
     /** Whether an answer meets the ideal. The answer is a bool, the id of the chosen option, the ids of the chosen options or a whole number, by type. */
     public function isMetBy(bool|int|array $answer): bool
     {
