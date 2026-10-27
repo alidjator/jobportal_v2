@@ -16,10 +16,10 @@ Status: **Gap** = API coded, no screen; **Partial** = a screen exists but leaves
 | # | What | API | Status | Effect |
 |---|---|---|---|---|
 | A1 | Screening questions of a job | `GET`/`PUT company/jobs/{id}/screening-questions` | **Done 2026-10-27** (tab Screening of the job: `JobScreeningTab`, `JobScreeningDialog`) | The bank (C18) can be filled, but no job can use it: applicants never get screening questions. |
-| A2 | Ask colleagues to review candidates | `GET`/`POST company/jobs/{id}/review-requests` | Gap | The inbox of the reviewers exists; nobody can send the request. |
+| A2 | Ask colleagues to review candidates | `GET`/`POST company/jobs/{id}/review-requests` | **Done 2026-10-27** ("Minta review" in the selection of the pipeline) | The inbox of the reviewers exists; nobody can send the request. |
 | A3 | Notification preferences (daily digest, team emails) | `GET`/`PUT me/notification-preferences[/{key}/{channel}]` | Gap | No member can switch the digest or the team emails off. |
-| A4 | Default test per assessment stage, with the advance rule (#22) | `company/jobs/{id}/assessments` (`GET`, `PUT`, `DELETE`) | Gap | The automation of sending a test on entering a stage cannot be set up. |
-| A5 | Interview kit per stage of a job | `company/jobs/{id}/interview-kits` | Gap | A kit is chosen only when scheduling, never fixed per stage. |
+| A4 | Default test per assessment stage, with the advance rule (#22) | `company/jobs/{id}/assessments` (`GET`, `PUT`, `DELETE`) | **Done 2026-10-27** (tab Stages: `JobStagesTab`, `JobDefaultDialog`) | The automation of sending a test on entering a stage cannot be set up. |
+| A5 | Interview kit per stage of a job | `company/jobs/{id}/interview-kits` | **Done 2026-10-27** (tab Stages) | A kit is chosen only when scheduling, never fixed per stage. |
 | A6 | Stage boundary of a hiring manager | `PUT company/jobs/{id}/hiring-manager-boundary` | **Done 2026-10-27** (the stage choice in `JobTeamDialog`) | A hiring manager always sees applicants from the default stage. |
 | A7 | Message many applicants | `POST company/jobs/{id}/applications/bulk-message` | Gap | The bulk actions are move and reject only. |
 | A8 | Delete a draft job | `DELETE company/jobs/{id}` | **Done 2026-10-27** (action "Hapus draf" of the job page) | A wrong draft can only be closed or duplicated. |
@@ -43,10 +43,10 @@ at once).
 | # | What | API | Status | Effect for a recruiter |
 |---|---|---|---|---|
 | R1 | Screening questions of a job (A1) | `company/jobs/{id}/screening-questions` | **Done 2026-10-27** (A1) | They create jobs (`jobs.create`) but cannot attach questions to them. |
-| R2 | Ask colleagues to review (A2) | `POST company/jobs/{id}/review-requests` (`reviewer_ids`) | Gap | The shortlist step with a hiring manager cannot start from the Workspace. |
+| R2 | Ask colleagues to review (A2) | `POST company/jobs/{id}/review-requests` (`reviewer_ids`) | **Done 2026-10-27** (A2) | The shortlist step with a hiring manager cannot start from the Workspace. |
 | R3 | Message many applicants (A7) | `POST company/jobs/{id}/applications/bulk-message` | Gap | A rejection or an invitation to many is one message at a time. |
 | R4 | Email preview (A10) | `POST company/applications/{id}/email-preview` | Gap | Interview, test and offer emails go out unseen. |
-| R5 | Interview kit and default test per stage of a job (A4, A5) | `company/jobs/{id}/interview-kits`, `.../assessments` (`due_days`) | Gap | The job editor ends at the content; the stage setup of a job is left to the scheduling dialog. |
+| R5 | Interview kit and default test per stage of a job (A4, A5) | `company/jobs/{id}/interview-kits`, `.../assessments` (`due_days`) | **Done 2026-10-27** (A4, A5) | The job editor ends at the content; the stage setup of a job is left to the scheduling dialog. |
 | R6 | Delete a draft job (A8) | `DELETE company/jobs/{id}` | **Done 2026-10-27** (A8) | |
 | R7 | Applicant list filters | `filter[education_min]`, `filter[experience_min]`, `filter[experience_max]`, `filter[stage_type]` | Partial | The API filters by education level, experience range and stage type; the filter bar offers none of them. |
 | R8 | Job list filters | `filter[published_from]`, `filter[published_to]`, `filter[deadline_from]`, `filter[created_by]` | Partial | No date range and no "created by" in the job list. |
@@ -76,7 +76,7 @@ the calendar; the requisition and plan pages need the `workforce.*` permissions,
 
 | # | What | API / where | Status | Effect for a hiring manager |
 |---|---|---|---|---|
-| H1 | Requests to review reach them | `POST company/jobs/{id}/review-requests` (A2, R2) | Gap | The review inbox and the answer page exist (Lanjut, Tidak, Mungkin, close), but no recruiter can send a request from the Workspace, so the inbox stays empty. |
+| H1 | Requests to review reach them | `POST company/jobs/{id}/review-requests` (A2, R2) | **Done 2026-10-27** (A2) | The review inbox and the answer page exist (Lanjut, Tidak, Mungkin, close), but no recruiter can send a request from the Workspace, so the inbox stays empty. |
 | H2 | Stage boundary | `PUT company/jobs/{id}/hiring-manager-boundary` (A6) | Gap | The boundary cannot be set, and the pipeline does not say that it hides the earlier stages (only the count of other applications by recruiters is explained). |
 | H3 | **"Approvals waiting" on the dashboard** | task key `approvals_waiting` (`company/approvals?as=approver`) | **Fixed 2026-10-27** (see G1) | The task list of the dashboard has no text for the key (it would show `talent.dashboard.tasks.approvals_waiting`) and `utils/link-entry.ts` has no link for it, so the row has a count and opens nothing. It hits every approver, not only a hiring manager. The coverage test lists the keys by hand, so a key added after 2026-10-19 slipped through. |
 | H4 | Create and track requisitions | `company/requisitions` (E5) | **Done 2026-10-27** (preset) | The design lets a hiring manager create, submit, amend and track a requisition, but the Hiring manager preset has no `workforce.requisitions.view` or `.create`: the menu entry is hidden until a company admin ticks them one by one. The permission is decided by the user; see the point below. |
