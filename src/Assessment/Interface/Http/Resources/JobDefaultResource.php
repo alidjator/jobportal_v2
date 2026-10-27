@@ -20,17 +20,13 @@ final class JobDefaultResource extends JsonResource
     {
         return [
             'stage_id' => $this->resource->stageId,
-            /** @var string|null */
             'stage_name' => $this->resource->stageName,
             'test_id' => $this->resource->testId,
-            /** @var string|null */
             'test_title' => $this->resource->testTitle,
             'due_days' => $this->resource->dueDays,
-            /** @var list<array{user_id: int, name: string}> */
             'assessors' => $this->resource->assessors,
-            /** @var array{min_percentage: int, to_stage_id: int, to_stage_name: string|null}|null The score a skill test must reach to move the application on, and where it goes. */
+            /** The score a skill test must reach to move the application on, and where it goes. */
             'advance' => $this->resource->advance,
-            /** @var string|null */
             'problem' => $this->resource->problem,
             'updated_at' => $this->resource->updatedAt?->format(DateTimeInterface::ATOM),
         ];

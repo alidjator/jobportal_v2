@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Results\ScoringQueueEntry;
 
-/** A test waiting for the member to score: the invitation fields plus the candidate, the job and the submission time. @property ScoringQueueEntry $resource */
+/**
+ * A test waiting for the member to score: the invitation fields plus the candidate, the job and the submission time.
+ *
+ * @property ScoringQueueEntry $resource
+ */
 final class ScoringQueueResource extends JsonResource
 {
     /** @return array<string, mixed> */

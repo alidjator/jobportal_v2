@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Reports\MyExplanation;
 
-/** The explanation of a signed psychological result, as the candidate reads it. @property MyExplanation $resource */
+/**
+ * The explanation of a signed psychological result, as the candidate reads it.
+ *
+ * @property MyExplanation $resource
+ */
 final class MyExplanationResource extends JsonResource
 {
     /** @return array<string, mixed> */

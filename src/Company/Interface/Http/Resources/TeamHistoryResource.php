@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Company\Application\Team\TeamHistoryRow;
 use Src\Shared\Application\Audit\AuditActorType;
 
-/** One change of the team. A platform admin shows as `actor_type` `admin` without a name. It has no IP address or user agent. @property TeamHistoryRow $resource */
+/**
+ * One change of the team. A platform admin shows as `actor_type` `admin` without a name. It has no IP address or user agent.
+ *
+ * @property TeamHistoryRow $resource
+ */
 final class TeamHistoryResource extends JsonResource
 {
     /** @return array<string, mixed> */

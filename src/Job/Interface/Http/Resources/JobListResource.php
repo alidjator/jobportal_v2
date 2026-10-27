@@ -21,7 +21,6 @@ final class JobListResource extends JsonResource
         return [
             'id' => $this->resource->id,
             'title' => $this->resource->title,
-            /** @var string|null */
             'summary' => $this->resource->summary,
             /** @var JobStatus */
             'status' => $this->resource->status->value,
@@ -30,10 +29,10 @@ final class JobListResource extends JsonResource
             'hires_count' => $this->resource->hiresCount,
             'filled' => $this->resource->filled(),
             'assignees_count' => $this->resource->assigneesCount,
-            /** @var int Active applications. */
+            /** Active applications. */
             'applications_count' => $this->resource->applicationsCount,
             'work_mode' => $this->resource->workMode?->value,
-            /** @var array{city: string|null, province: string|null} The job's own address; a job with company locations shows its main one. */
+            /** The job's own address; a job with company locations shows its main one. */
             'location' => ['city' => $this->resource->city, 'province' => $this->resource->province],
             /** @var array{id: int, name: string|null}|null */
             'created_by' => $this->resource->createdBy === null ? null : ['id' => $this->resource->createdBy, 'name' => $this->resource->createdByName],

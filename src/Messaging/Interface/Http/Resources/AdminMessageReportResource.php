@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Messaging\Domain\MessageReport;
 
-/** One row of the admin report list: no names, no text. @property MessageReport $resource */
+/**
+ * One row of the admin report list: no names, no text.
+ *
+ * @property MessageReport $resource
+ */
 final class AdminMessageReportResource extends JsonResource
 {
     /** @return array<string, mixed> */

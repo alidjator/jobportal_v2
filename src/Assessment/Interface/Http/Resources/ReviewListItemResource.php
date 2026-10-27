@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Review\ReviewListItem;
 
-/** One line of the psychologist's review queue. @property ReviewListItem $resource */
+/**
+ * One line of the psychologist's review queue.
+ *
+ * @property ReviewListItem $resource
+ */
 final class ReviewListItemResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -22,7 +26,7 @@ final class ReviewListItemResource extends JsonResource
             'test_title' => $summary->testTitle,
             'job_title' => $this->resource->jobTitle,
             'company_name' => $this->resource->companyName,
-            /** @var array{id: int, name: string, mine: bool}|null The holder of the live claim. */
+            /** The holder of the live claim. */
             'claimed_by' => $this->resource->claimedBy,
             'status' => $summary->status->value,
             'report_number' => $summary->number,

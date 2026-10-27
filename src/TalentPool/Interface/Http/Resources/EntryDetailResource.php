@@ -22,7 +22,7 @@ final class EntryDetailResource extends JsonResource
     {
         return [
             ...(new EntryResource($this->resource->view))->toArray($request),
-            /** @var array<string, mixed>|null the snapshot without contact data; null for a findable person and for an entry that is not available */
+            /** the snapshot without contact data; null for a findable person and for an entry that is not available */
             'profile' => $this->resource->profile,
             /** @var list<array{id: int|null, job_title: string|null, status: string, applied_at: string}> */
             'applications' => array_map(static fn (PoolApplicationRef $application): array => [

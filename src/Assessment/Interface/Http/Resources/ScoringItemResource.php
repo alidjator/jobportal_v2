@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Results\ScoringItem;
 
-/** A written or video answer (the text is null for a video) with the score its assessor gave it, if any. @property ScoringItem $resource */
+/**
+ * A written or video answer (the text is null for a video) with the score its assessor gave it, if any.
+ *
+ * @property ScoringItem $resource
+ */
 final class ScoringItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

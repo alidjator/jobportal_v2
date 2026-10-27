@@ -3,6 +3,7 @@
 namespace Src\Identity\Interface\Http\Controllers;
 
 use Src\Identity\Application\Activation\GetActivationProgress;
+use Src\Identity\Interface\Http\Payloads\ActivationProgressPayload;
 use Src\Identity\Interface\Http\Requests\ActivationReportRequest;
 use Src\Identity\Interface\Http\Resources\ActivationProgressResource;
 use Src\Shared\Interface\Http\ActorResolver;
@@ -13,6 +14,6 @@ final class AdminActivationController extends ApiController
 {
     public function report(ActivationReportRequest $request, ActorResolver $actors, GetActivationProgress $progress): ActivationProgressResource
     {
-        return new ActivationProgressResource($progress->execute($actors->fromRequest($request), $request->audience()));
+        return new ActivationProgressResource(new ActivationProgressPayload($progress->execute($actors->fromRequest($request), $request->audience())));
     }
 }

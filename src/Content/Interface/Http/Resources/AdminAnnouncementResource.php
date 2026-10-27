@@ -8,7 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Content\Domain\Announcement;
 
-/** An announcement for the admin pages, with where it stands now (`scheduled`, `live` or `ended`). @property Announcement $resource */
+/**
+ * An announcement for the admin pages, with where it stands now (`scheduled`, `live` or `ended`).
+ *
+ * @property Announcement $resource
+ */
 final class AdminAnnouncementResource extends JsonResource
 {
     /** @return array<string, mixed> */

@@ -4,9 +4,14 @@ namespace Src\Workforce\Interface\Http\Resources;
 
 use DateTimeInterface;
 use Illuminate\Http\Request;
+use Src\Workforce\Application\Requisition\RequisitionView;
 use Src\Workforce\Domain\RequisitionAmendment;
 
-/** A requisition with its amendments, the jobs opened for it and, for a `planned` one, the quota of its plan line. */
+/**
+ * A requisition with its amendments, the jobs opened for it and, for a `planned` one, the quota of its plan line.
+ *
+ * @property RequisitionView $resource
+ */
 final class RequisitionResource extends RequisitionSummaryResource
 {
     /** @return array<string, mixed> */

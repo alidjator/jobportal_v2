@@ -36,9 +36,9 @@ final class PublicJobListResource extends JsonResource
             'job_level' => $this->resource->jobLevel,
             'work_mode' => $this->resource->workMode?->value,
             'salary' => $this->resource->salary,
-            /** @var string|null Shown even when the amounts are hidden. */
+            /** Shown even when the amounts are hidden. */
             'salary_note' => $this->resource->salaryNote,
-            /** @var string|null One line for the search row; clients show nothing without it. */
+            /** One line for the search row; clients show nothing without it. */
             'summary' => $this->resource->summary,
             'deadline' => $this->resource->deadline?->format('Y-m-d'),
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),

@@ -34,7 +34,6 @@ final class WorkforceOptionsResource extends JsonResource
             'units' => array_map(static fn (UnitOption $unit): array => ['id' => $unit->id, 'code' => $unit->code, 'name' => $unit->name, 'cost_centre_id' => $unit->costCentreId], $this->resource->units),
             'grades' => array_map(static fn (GradeOption $grade): array => ['id' => $grade->id, 'code' => $grade->code, 'name' => $grade->name, 'rank' => $grade->rank], $this->resource->grades),
             'cost_centres' => array_map(static fn (CostCentreOption $centre): array => ['id' => $centre->id, 'code' => $centre->code, 'name' => $centre->name], $this->resource->costCentres),
-            /** @var list<array{id: int, name: string}> */
             'hiring_managers' => $this->resource->managers,
         ];
     }

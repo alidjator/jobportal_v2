@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Messaging\Application\Reports\MessageReportDetail;
 
-/** A report as the admin reads it: the snapshot of the reported messages (never the live thread; null once cleared), the note and the decision. @property MessageReportDetail $resource */
+/**
+ * A report as the admin reads it: the snapshot of the reported messages (never the live thread; null once cleared), the note and the decision.
+ *
+ * @property MessageReportDetail $resource
+ */
 final class AdminMessageReportDetailResource extends JsonResource
 {
     /** @return array<string, mixed> */

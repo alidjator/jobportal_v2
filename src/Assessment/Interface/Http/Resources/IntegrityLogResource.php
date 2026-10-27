@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Results\IntegrityLog;
 
-/** The integrity signals of one attempt with their times and the tier they add up to. @property IntegrityLog $resource */
+/**
+ * The integrity signals of one attempt with their times and the tier they add up to.
+ *
+ * @property IntegrityLog $resource
+ */
 final class IntegrityLogResource extends JsonResource
 {
     /** @return array<string, mixed> */

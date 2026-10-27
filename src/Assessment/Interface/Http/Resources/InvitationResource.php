@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Delivery\InvitationView;
 
-/** A test sent for an application, as the team sees it. @property InvitationView $resource */
+/**
+ * A test sent for an application, as the team sees it.
+ *
+ * @property InvitationView $resource
+ */
 final class InvitationResource extends JsonResource
 {
     /** @return array<string, mixed> */

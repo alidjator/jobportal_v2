@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Review\ReviewView;
 use Src\Assessment\Domain\SpeedColumnResult;
 
-/** One report as the psychologist reviews it. @property ReviewView $resource */
+/**
+ * One report as the psychologist reviews it.
+ *
+ * @property ReviewView $resource
+ */
 final class ReviewResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -46,9 +50,9 @@ final class ReviewResource extends JsonResource
             'reviewed' => ! $report->autoIssued || $report->reviewedAt !== null,
             'reviewed_at' => $report->reviewedAt?->format(DateTimeInterface::ATOM),
             'revision' => $report->revision,
-            /** @var array{age: int|null, education_level: array{rank: int, name: string|null}|null, job: array{title: string, level: string|null, category: string|null}|null, company_name: string|null}|null For the psychologist only. */
+            /** For the psychologist only. */
             'context' => $this->resource->context,
-            /** @var array{id: int, name: string, mine: bool}|null The holder of the live claim; editing, scoring, signing, marking reviewed and revising need your own (409 `claim-required`). */
+            /** The holder of the live claim; editing, scoring, signing, marking reviewed and revising need your own (409 `claim-required`). */
             'claimed_by' => $this->resource->claimedBy,
         ];
     }

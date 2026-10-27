@@ -10,6 +10,7 @@ use Src\Dashboard\Application\GetCompanyCalendar;
 use Src\Dashboard\Application\GetCompanyDashboard;
 use Src\Dashboard\Application\GetCompanyTasks;
 use Src\Dashboard\Application\GetJobSeekerDashboard;
+use Src\Dashboard\Interface\Http\Payloads\CompanyTasksPayload;
 use Src\Dashboard\Interface\Http\Requests\CompanyCalendarRequest;
 use Src\Dashboard\Interface\Http\Resources\AdminDashboardResource;
 use Src\Dashboard\Interface\Http\Resources\CalendarEventResource;
@@ -37,7 +38,7 @@ final class DashboardController extends ApiController
 
     public function tasks(Request $request, ActorResolver $actors, GetCompanyTasks $get): CompanyTasksResource
     {
-        return new CompanyTasksResource($get->execute($actors->fromRequest($request)));
+        return new CompanyTasksResource(CompanyTasksPayload::of($get->execute($actors->fromRequest($request))));
     }
 
     /** The recruitment calendar: interviews, test due times, offer deadlines and offer start dates in a range of at most 42 days. */

@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\BulkItemResult;
 
-/** What "mark as filled" did to one application: rejected, or skipped with a code. @property BulkItemResult $resource */
+/**
+ * What "mark as filled" did to one application: rejected, or skipped with a code.
+ *
+ * @property BulkItemResult $resource
+ */
 final class FillJobItemResource extends JsonResource
 {
     /** @return array<string, mixed> */

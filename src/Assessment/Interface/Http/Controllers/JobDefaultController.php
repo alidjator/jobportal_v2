@@ -14,6 +14,7 @@ use Src\Assessment\Interface\Http\Resources\AssessorResource;
 use Src\Assessment\Interface\Http\Resources\JobDefaultResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
+use Src\Shared\Interface\Http\MemberChoice;
 
 /** The default test of a job per assessment stage, set in the job editor: a move into the stage sends it, and its advance rule moves the application on by itself. */
 final class JobDefaultController extends ApiController
@@ -26,7 +27,7 @@ final class JobDefaultController extends ApiController
     /** The members who may be chosen as assessors of a test on this job (`assessors`, at most 5 per test). */
     public function assessors(Request $request, int $id, ActorResolver $actors, ListJobAssessors $list): AnonymousResourceCollection
     {
-        return AssessorResource::collection($list->execute($actors->fromRequest($request), $id));
+        return AssessorResource::collection(MemberChoice::listOf($list->execute($actors->fromRequest($request), $id)));
     }
 
     public function put(SetJobDefaultRequest $request, int $id, int $stageId, ActorResolver $actors, SetJobDefault $set): JobDefaultResource

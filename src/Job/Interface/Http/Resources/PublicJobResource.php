@@ -27,7 +27,7 @@ final class PublicJobResource extends JsonResource
             'id' => $job->id,
             'slug' => $job->slug.'-'.$job->id,
             'title' => $content->title,
-            /** @var string|null One line for search results and sharing; clients show nothing without it. */
+            /** One line for search results and sharing; clients show nothing without it. */
             'summary' => $content->summary,
             'description' => $content->description,
             'company' => [
@@ -38,12 +38,12 @@ final class PublicJobResource extends JsonResource
                 'verified' => $company->verified,
             ],
             ...$this->resource->classification,
-            /** @var int|null Null when the company hides the number. */
+            /** Null when the company hides the number. */
             'vacancies' => $content->vacanciesVisible ? $content->vacancies : null,
             'deadline' => $content->deadline?->format('Y-m-d'),
             'work_mode' => $content->workMode?->value,
             'salary' => $this->resource->salary,
-            /** @var string|null Shown even when the amounts are hidden. */
+            /** Shown even when the amounts are hidden. */
             'salary_note' => $content->salaryNote,
             // The company locations of the job, the main one first. A job with an address of its own has one item whose `id`, `name` and `type` are null, and a remote job without a place has none.
             /** @var list<array{id: int|null, name: string|null, type: string|null, province: string|null, city: string|null, subdistrict: string|null, village: string|null, postal_code: string|null, address_line: string|null}> */

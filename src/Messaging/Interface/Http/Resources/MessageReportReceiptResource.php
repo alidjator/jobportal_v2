@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Messaging\Domain\MessageReport;
 
-/** What the reporter gets back: the report and nothing about what happens next. @property MessageReport $resource */
+/**
+ * What the reporter gets back: the report and nothing about what happens next.
+ *
+ * @property MessageReport $resource
+ */
 final class MessageReportReceiptResource extends JsonResource
 {
     /** @return array<string, mixed> */

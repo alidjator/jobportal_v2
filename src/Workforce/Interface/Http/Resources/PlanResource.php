@@ -3,9 +3,14 @@
 namespace Src\Workforce\Interface\Http\Resources;
 
 use Illuminate\Http\Request;
+use Src\Workforce\Application\Plan\PlanView;
 use Src\Workforce\Domain\PlanLine;
 
-/** A plan with its lines, by position code. */
+/**
+ * A plan with its lines, by position code.
+ *
+ * @property PlanView $resource
+ */
 final class PlanResource extends PlanSummaryResource
 {
     /** @return array<string, mixed> */

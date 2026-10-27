@@ -26,7 +26,7 @@ final class EntryResource extends JsonResource
         return [
             'id' => $view->id,
             'available' => $view->isAvailable(),
-            /** @var array{slug: string|null, name: string|null, has_avatar: bool}|null `has_avatar` is true only with a slug: the picture is `GET company/candidates/{slug}/avatar` */
+            /** `has_avatar` is true only with a slug: the picture is `GET company/candidates/{slug}/avatar` */
             'candidate' => $view->isAvailable() || ($view->source === EntrySource::Legacy && $view->candidateName !== null) ? ['slug' => $view->candidateSlug, 'name' => $view->candidateName, 'has_avatar' => $view->hasAvatar] : null,
             'category' => $view->categoryId === null || $view->categoryName === null ? null : ['id' => $view->categoryId, 'name' => $view->categoryName],
             'note' => $view->note,
@@ -36,9 +36,8 @@ final class EntryResource extends JsonResource
             'saved_at' => $view->createdAt->format(DateTimeInterface::ATOM),
             'headline' => $view->headline,
             'city' => $view->city,
-            /** @var array{title: string, employer: string}|null */
             'latest_position' => $view->latestPosition,
-            /** @var list<string> up to five */
+            /** up to five */
             'skills' => $view->skills,
             /** @var array{id: int|null, job_title: string|null, status: string, applied_at: string}|null `id` only when the member may see the application */
             'last_application' => $view->lastApplication === null ? null : [

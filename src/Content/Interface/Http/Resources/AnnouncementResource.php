@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Content\Domain\Announcement;
 
-/** A live announcement as the banner needs it. @property Announcement $resource */
+/**
+ * A live announcement as the banner needs it.
+ *
+ * @property Announcement $resource
+ */
 final class AnnouncementResource extends JsonResource
 {
     /** @return array<string, mixed> */

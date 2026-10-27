@@ -25,6 +25,7 @@ use Src\Recruitment\Interface\Http\Resources\MyInterviewResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\CursorResources;
+use Src\Shared\Interface\Http\MemberChoice;
 
 /** The interviews of an application, for the members who may see its job. */
 final class InterviewController extends ApiController
@@ -59,7 +60,7 @@ final class InterviewController extends ApiController
     /** The members who may be chosen as main interviewer or panel member, by name, not paginated (`interviews.manage`). */
     public function interviewers(Request $request, ActorResolver $actors, ListInterviewers $list): AnonymousResourceCollection
     {
-        return InterviewerResource::collection($list->execute($actors->fromRequest($request)));
+        return InterviewerResource::collection(MemberChoice::listOf($list->execute($actors->fromRequest($request))));
     }
 
     /** Changes only the note for the candidate; the interview is not rescheduled. */

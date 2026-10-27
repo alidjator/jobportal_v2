@@ -35,9 +35,8 @@ final class InterviewComparisonRowResource extends JsonResource
                 'kit' => $row->interview->kitId === null ? null : ['id' => $row->interview->kitId, 'name' => $row->interview->kitName],
             ],
             'locked' => $row->interview->locked,
-            /** @var float|null the average score of the sent scorecards */
+            /** the average score of the sent scorecards */
             'score' => $result?->score,
-            /** @var array{strong_no: int, no: int, yes: int, strong_yes: int}|null */
             'recommendations' => $result?->recommendations,
             'scorecards_sent' => $result?->scorecardsSent,
             'panel_size' => $row->panelSize,
@@ -46,7 +45,7 @@ final class InterviewComparisonRowResource extends JsonResource
                 static fn (QuestionScore $cell): array => ['question' => $cell->text, 'average' => $cell->average, 'count' => $cell->count],
                 $row->cells,
             ),
-            /** @var int|null how well the applicant fitted the job when applying, 0 to 100 */
+            /** how well the applicant fitted the job when applying, 0 to 100 */
             'match_score' => $application->matchScore,
             'rating_average' => $application->ratingAverage,
         ];

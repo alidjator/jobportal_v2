@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Company\Application\Team\TeamRow;
 
-/** A row of the team list: a member (`id` is the account id) or an open invitation (`id` is the invitation id). @property TeamRow $resource */
+/**
+ * A row of the team list: a member (`id` is the account id) or an open invitation (`id` is the invitation id).
+ *
+ * @property TeamRow $resource
+ */
 final class TeamRowResource extends JsonResource
 {
     /** @return array<string, mixed> */

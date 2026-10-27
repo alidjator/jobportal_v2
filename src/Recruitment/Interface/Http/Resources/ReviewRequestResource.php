@@ -35,7 +35,6 @@ final class ReviewRequestResource extends JsonResource
             'overdue' => $view->overdue,
             'created_at' => $review->createdAt->format(DATE_ATOM),
             'reviewers' => $view->reviewers,
-            /** @var array{answered: int, total: int} */
             'progress' => $view->progress,
             'pending_for_me' => $view->pendingForMe,
             'items' => array_map(fn (ReviewItemView $item): array => [

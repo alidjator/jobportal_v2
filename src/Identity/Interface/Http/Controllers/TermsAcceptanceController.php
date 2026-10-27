@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Src\Identity\Application\Terms\AcceptTerms;
 use Src\Identity\Application\Terms\GetTermsStatus;
+use Src\Identity\Interface\Http\Payloads\TermsStatusPayload;
 use Src\Identity\Interface\Http\Requests\AcceptTermsRequest;
 use Src\Identity\Interface\Http\Resources\TermsStatusResource;
 use Src\Shared\Application\RequestContext;
@@ -19,7 +20,7 @@ final class TermsAcceptanceController extends ApiController
     {
         $requirements = $getStatus->execute($actors->fromRequest($request));
 
-        return new TermsStatusResource($requirements);
+        return new TermsStatusResource(new TermsStatusPayload($requirements));
     }
 
     public function store(AcceptTermsRequest $request, RequestContext $context, ActorResolver $actors, AcceptTerms $acceptTerms): Response
