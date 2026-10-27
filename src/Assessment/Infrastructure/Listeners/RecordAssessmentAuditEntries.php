@@ -4,6 +4,7 @@ namespace Src\Assessment\Infrastructure\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use InvalidArgumentException;
+use Src\Assessment\Domain\Events\LicenceDecided;
 use Src\Assessment\Domain\Events\ProviderAutoIssueChanged;
 use Src\Assessment\Domain\Events\ProviderRegistered;
 use Src\Assessment\Domain\Events\PsychologistChanged;
@@ -27,6 +28,8 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
     private const string PROVIDER_SUBJECT = 'assessment_provider';
 
     private const string PSYCHOLOGIST_SUBJECT = 'assessment_psychologist';
+
+    private const string LICENCE_SUBJECT = 'assessment_licence_submission';
 
     private const string REPORT_SUBJECT = 'assessment_report';
 
@@ -121,6 +124,14 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
         $this->trail->record(new AuditEntry(
             AuditActorType::User, $event->userId, AuditAction::ASSESSMENT_PSYCHOLOGIST_JOINED,
             self::PROVIDER_SUBJECT, $event->providerId, ['psychologist_id' => $event->psychologistId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onLicenceDecided(LicenceDecided $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::Admin, $event->adminId, $event->approved ? AuditAction::ASSESSMENT_LICENCE_APPROVED : AuditAction::ASSESSMENT_LICENCE_REJECTED,
+            self::LICENCE_SUBJECT, $event->submissionId, ['psychologist_id' => $event->psychologistId, 'kind' => $event->kind], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
 

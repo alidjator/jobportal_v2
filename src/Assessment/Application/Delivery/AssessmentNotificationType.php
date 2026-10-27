@@ -36,6 +36,12 @@ final class AssessmentNotificationType
     /** To the team: an application moved on by itself because the score of its test reached the threshold of the job's default test (`phase-8-assessment-automation.md` section 2). */
     public const string AUTO_ADVANCED = 'application.auto_advanced';
 
+    /** To the psychologist: the platform admin approved the licence they submitted, so it is in force. */
+    public const string LICENCE_APPROVED = 'assessment.licence_approved';
+
+    /** To the psychologist: the platform admin rejected the licence they submitted; the note is on the submission. */
+    public const string LICENCE_REJECTED = 'assessment.licence_rejected';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

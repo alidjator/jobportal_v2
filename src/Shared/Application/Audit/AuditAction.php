@@ -213,6 +213,10 @@ final class AuditAction
 
     public const string ASSESSMENT_PSYCHOLOGIST_CREDENTIALS_CHANGED = 'assessment.psychologist_credentials_changed';
 
+    public const string ASSESSMENT_LICENCE_APPROVED = 'assessment.licence_approved';
+
+    public const string ASSESSMENT_LICENCE_REJECTED = 'assessment.licence_rejected';
+
     public const string ASSESSMENT_PSYCHOLOGIST_ROLE_CHANGED = 'assessment.psychologist_role_changed';
 
     public const string ASSESSMENT_PSYCHOLOGIST_SUSPENDED = 'assessment.psychologist_suspended';

@@ -198,6 +198,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-kit` | 422 | Recruitment |  |
 | `invalid-languages` | 422 | JobSeeker | The languages are not valid. |
 | `invalid-letter` | 422 | Recruitment | The letter must be a PDF file. |
+| `invalid-licence-document` | 422 | Assessment | The document must be a PDF. |
 | `invalid-links` | 422 | JobSeeker | The links are not valid. |
 | `invalid-location` | 422 | Company, JobSeeker, Organization, Recruitment, Workforce | The address is not a matching chain: each level must belong to the one above it, and a level needs the levels above it. |
 | `invalid-location-name` | 422 | Company | The location name must have 1 to 100 characters. |
@@ -294,6 +295,9 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-entity-has-tenant` | 409 | Organization | The legal entity already has a tenant. |
 | `legal-entity-inactive` | 409 | Organization | The legal entity is inactive. |
 | `legal-entity-name-taken` | 409 | Organization | The group already has a legal entity with this name. |
+| `licence-already-expired` | 422 | Assessment | The licence has expired already. |
+| `licence-decided` | 409 | Assessment | This licence was decided already. |
+| `licence-pending` | 409 | Assessment | A submission of this licence is waiting for a decision. |
 | `location-in-use` | 409 | Company | Something still points to this location: deactivate it instead. |
 | `location-inactive` | 409 | Company | An inactive location cannot be the main location: activate it first. |
 | `location-is-main` | 409 | Company | The main location cannot be deactivated: make another location the main one first. |
@@ -382,7 +386,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `proposal-pending` | 409 | Recruitment | Your proposed time is waiting for an answer from the company. |
 | `provider-code-taken` | 409 | Assessment | A provider with this code already exists. |
 | `provider-name-taken` | 409 | Assessment | A provider with this name already exists. |
-| `provider-suspended` | 403 | Assessment | The provider of this psychologist is suspended. |
+| `provider-suspended` | 403 | Assessment | This provider is suspended. |
 | `psychological-disabled` | 403 | Assessment | Psychological tests are not enabled for this company. |
 | `psychologist-account-managed` | 403 | Identity | A psychologist account is closed by an administrator. |
 | `psychologist-suspended` | 403 | Assessment | This psychologist account is suspended. |

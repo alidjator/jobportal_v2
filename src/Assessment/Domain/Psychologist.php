@@ -98,6 +98,20 @@ final class Psychologist
         $this->silpValidUntil = $silpValidUntil;
     }
 
+    /** A licence renewal the platform admin approved: the number and the date of one licence. */
+    public function renewLicence(LicenceKind $kind, string $number, DateTimeImmutable $validUntil): void
+    {
+        if ($kind === LicenceKind::Str) {
+            $this->strNumber = $number;
+            $this->strValidUntil = $validUntil;
+
+            return;
+        }
+
+        $this->silpNumber = $number;
+        $this->silpValidUntil = $validUntil;
+    }
+
     public function changeRole(PsychologistRole $role): void
     {
         $this->role = $role;

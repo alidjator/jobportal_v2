@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Src\Assessment\Application\AssessmentPermissions;
 use Src\Assessment\Interface\Http\AuthoringRoutes;
 use Src\Assessment\Interface\Http\Controllers\AdminCompanyBatteryController;
+use Src\Assessment\Interface\Http\Controllers\AdminLicenceController;
 use Src\Assessment\Interface\Http\Controllers\AdminProviderController;
 use Src\Assessment\Interface\Http\Controllers\AdminProviderRegisterController;
 use Src\Assessment\Interface\Http\Controllers\AdminPsychologistController;
@@ -25,6 +26,11 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::post('assessment/psychologists/{id}/suspend', [AdminPsychologistController::class, 'suspend'])->whereNumber('id');
         Route::post('assessment/psychologists/{id}/restore', [AdminPsychologistController::class, 'restore'])->whereNumber('id');
         Route::post('assessment/psychologists/{id}/reset-two-factor', [AdminPsychologistController::class, 'resetTwoFactor'])->whereNumber('id');
+
+        Route::get('assessment/licence-submissions', [AdminLicenceController::class, 'index']);
+        Route::get('assessment/licence-submissions/{id}/document', [AdminLicenceController::class, 'document'])->whereNumber('id');
+        Route::post('assessment/licence-submissions/{id}/approve', [AdminLicenceController::class, 'approve'])->whereNumber('id');
+        Route::post('assessment/licence-submissions/{id}/reject', [AdminLicenceController::class, 'reject'])->whereNumber('id');
 
         Route::get('assessment/providers/{id}/invitations', [AdminPsychologistInvitationController::class, 'index'])->whereNumber('id');
         Route::post('assessment/providers/{id}/invitations', [AdminPsychologistInvitationController::class, 'store'])->whereNumber('id');

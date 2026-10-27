@@ -8,6 +8,7 @@ use Src\Assessment\Interface\Http\Controllers\BatteryController;
 use Src\Assessment\Interface\Http\Controllers\CatalogController;
 use Src\Assessment\Interface\Http\Controllers\InvitationController;
 use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
+use Src\Assessment\Interface\Http\Controllers\LicenceController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
@@ -27,6 +28,8 @@ Route::prefix('provider')->group(function (): void {
     // The consumer terms do not apply to psychologists; the use cases refuse every other kind of account.
     Route::middleware('auth:user')->withoutMiddleware(EnforceTermsAcceptance::class)->group(function (): void {
         Route::get('me', ProviderProfileController::class);
+        Route::get('me/licences', [LicenceController::class, 'index']);
+        Route::post('me/licences', [LicenceController::class, 'store']);
 
         AuthoringRoutes::register();
 

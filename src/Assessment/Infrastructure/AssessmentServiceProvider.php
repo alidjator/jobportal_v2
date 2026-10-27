@@ -29,6 +29,7 @@ use Src\Assessment\Domain\CompanyBatteryRepository;
 use Src\Assessment\Domain\Events\AttemptSubmitted;
 use Src\Assessment\Domain\Events\InvitationChanged;
 use Src\Assessment\Domain\Events\InvitationDeclined;
+use Src\Assessment\Domain\Events\LicenceDecided;
 use Src\Assessment\Domain\Events\ProviderAutoIssueChanged;
 use Src\Assessment\Domain\Events\ProviderRegistered;
 use Src\Assessment\Domain\Events\PsychologistChanged;
@@ -40,6 +41,7 @@ use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Assessment\Domain\Events\ResultFinalized;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\JobStageTestRepository;
+use Src\Assessment\Domain\LicenceSubmissionRepository;
 use Src\Assessment\Domain\NormRepository;
 use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
@@ -58,6 +60,7 @@ use Src\Assessment\Infrastructure\Listeners\EraseAssessmentDataWhenUserAnonymize
 use Src\Assessment\Infrastructure\Listeners\NotifyOfAttemptSubmissionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationChangeListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationDeclinedListener;
+use Src\Assessment\Infrastructure\Listeners\NotifyOfLicenceDecisionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfReportSignedListener;
 use Src\Assessment\Infrastructure\Listeners\RecordAssessmentAuditEntries;
 use Src\Assessment\Infrastructure\Mail\MailInvitationSender;
@@ -71,6 +74,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseAttemptRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseCompanyBatteryRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseJobStageTestRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseLicenceSubmissionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseNormRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseProviderRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepository;
@@ -84,6 +88,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
 use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
+use Src\Assessment\Interface\Console\CreatePsychologistCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
 use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
 use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
@@ -114,6 +119,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
     public array $bindings = [
         ProviderRepository::class => DatabaseProviderRepository::class,
         PsychologistRepository::class => DatabasePsychologistRepository::class,
+        LicenceSubmissionRepository::class => DatabaseLicenceSubmissionRepository::class,
         PsychologistInvitationRepository::class => DatabasePsychologistInvitationRepository::class,
         TestRepository::class => DatabaseTestRepository::class,
         SectionRepository::class => DatabaseSectionRepository::class,
@@ -151,7 +157,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(AssessmentDueCalendarSource::class));
         });
 
-        $this->commands([ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
+        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInvitationRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
@@ -193,6 +199,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             PsychologistInvited::class => 'onPsychologistInvited',
             PsychologistJoined::class => 'onPsychologistJoined',
             PsychologistChanged::class => 'onPsychologistChanged',
+            LicenceDecided::class => 'onLicenceDecided',
             ReportSigned::class => 'onReportSigned',
             ReportRevised::class => 'onReportRevised',
             ReportRegisterExported::class => 'onReportRegisterExported',
@@ -205,6 +212,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         Event::listen(InvitationChanged::class, [NotifyOfInvitationChangeListener::class, 'email']);
         Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'inApp']);
         Event::listen(AttemptSubmitted::class, [NotifyOfAttemptSubmissionListener::class, 'email']);
+        Event::listen(LicenceDecided::class, NotifyOfLicenceDecisionListener::class);
         Event::listen(ResultFinalized::class, AdvanceApplicationListener::class);
         Event::listen(JobCloned::class, CopyDefaultTestsWhenJobCloned::class);
         Event::listen(InvitationDeclined::class, NotifyOfInvitationDeclinedListener::class);

@@ -73,6 +73,22 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   audit `assessment.licence_approved`, `_rejected`. A queue card on the admin dashboard. Typing a licence directly stays possible for the admin.
 - Documents of decided submissions are kept while the psychologist exists (they back the reports signed under that licence).
 
+**Section 2, coded 2026-10-27** (migration `000194`):
+
+- `assessment_licence_submissions` as designed, plus `document_name` (the client's name, cleaned, for display) and `document_size`. CHECKs on `kind` and `status`; the partial unique
+  index `one_pending` keeps one pending submission per psychologist and kind. The document is a PDF checked by its content (the PDF signature), at most 10 MB, on the private
+  disk under `assessment/licences/{psychologistId}/`.
+- Psychologist: `GET`/`POST provider/me/licences` (multipart `kind`, `number`, `valid_until`, `file`). Errors: 409 `licence-pending`, 422 `licence-already-expired` (a day
+  before today), `invalid-licence-document`, `file-too-large`. The licence in force stays until the admin approves; a suspended psychologist cannot submit. The psychologist has
+  no endpoint for the document itself (the admin reads it).
+- Admin (`assessment_providers.manage`): `GET admin/assessment/licence-submissions` (`filter[status]`; pending first, oldest first), `GET .../{id}/document` (a download with
+  `nosniff`), `POST .../{id}/approve` and `.../{id}/reject {note}` (note required, 3 to 1000 characters). A decided submission answers 409 `licence-decided`. Approving copies the number and
+  date onto the psychologist; the audit actions are `assessment.licence_approved` and `assessment.licence_rejected` (subject `assessment_licence_submission`).
+- In-app notice to the psychologist (`assessment.licence_approved`, `assessment.licence_rejected`, data `submission_id` and `kind`), written by a queued listener. Portal Mitra has
+  no notice list yet, so the licence screen shows the status itself. The queue card on the admin dashboard is not built yet.
+- Code: `LicenceKind`, `LicenceStatus`, `LicenceSubmission`, `LicenceQueueRow`, `LicenceSubmissionRepository` (Domain); `Application/Licence/{SubmitLicence,ListMyLicences,ListLicenceSubmissions,GetLicenceDocument,DecideLicence,LicenceDocument}`; `NotifyOfLicenceDecisionListener`.
+- Tests: `ProviderLicenceTest`.
+
 ## 3. Institution identity and signature on the report
 
 - **Institution:** `assessment_providers` gains `address` (≤500), `practice_licence_number` (≤100), `phone`, `email`, `logo_path` (PNG or JPG,
