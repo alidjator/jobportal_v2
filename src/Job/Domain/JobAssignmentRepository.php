@@ -16,6 +16,14 @@ interface JobAssignmentRepository
     /** @return list<int> the ids of the jobs the account is assigned to */
     public function jobIdsOf(int $userId): array;
 
+    /**
+     * How many jobs each of these accounts is assigned to; an account with none is missing.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, int>
+     */
+    public function countsOfUsers(array $userIds): array;
+
     /** @return list<int> the ids of the jobs of the account where it is assigned as a hiring manager */
     public function hiringManagerJobIdsOf(int $userId): array;
 

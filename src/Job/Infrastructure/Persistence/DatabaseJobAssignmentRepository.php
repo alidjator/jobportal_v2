@@ -32,6 +32,21 @@ final readonly class DatabaseJobAssignmentRepository implements JobAssignmentRep
         return array_map('intval', $this->connection->table('job_assignments')->where('user_id', $userId)->orderBy('job_id')->pluck('job_id')->all());
     }
 
+    public function countsOfUsers(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $counts = [];
+
+        foreach ($this->connection->table('job_assignments')->whereIn('user_id', $userIds)->groupBy('user_id')->selectRaw('user_id, count(*) as total')->get() as $row) {
+            $counts[(int) $row->user_id] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
     public function hiringManagerJobIdsOf(int $userId): array
     {
         return array_map('intval', $this->connection->table('job_assignments')->where('user_id', $userId)->where('role', JobAssignmentRole::HiringManager->value)->orderBy('job_id')->pluck('job_id')->all());

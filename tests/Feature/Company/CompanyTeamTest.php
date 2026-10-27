@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
 use Src\Company\Domain\MemberPreset;
@@ -408,11 +409,67 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame([
             'type' => 'member', 'id' => $this->admin->id, 'name' => 'Andi Admin', 'email' => 'andi@example.test', 'role' => 'company_admin', 'status' => 'active',
             'permissions' => CompanyPermission::values(), 'actions' => ['edit'], 'is_owner' => true,
-            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00', 'two_factor' => 'pending',
+            'joined_at' => '2026-10-05T09:00:00+00:00', 'last_login_at' => '2026-10-04T07:00:00+00:00', 'two_factor' => 'pending', 'assigned_job_count' => 0, 'has_avatar' => false,
         ], $response->json('data.0'));
         $this->assertNull($response->json('data.3.last_login_at'));
         $this->assertSame(4, $response->json('meta.member_count'));
         $this->assertSame(4, $response->json('meta.total'));
+    }
+
+    public function test_the_member_list_counts_the_jobs_of_each_member_and_an_invitation_has_no_count(): void
+    {
+        $this->insertAssignedJob('Backend Developer', 'active', [$this->recruiter->id, $this->admin->id], '2026-10-01 08:00:00');
+        $this->insertAssignedJob('Data Analyst', 'closed', [$this->recruiter->id], '2026-09-01 08:00:00');
+
+        $rows = collect($this->api('GET', '/members')->assertOk()->json('data'))->keyBy('id');
+
+        // Every assigned job counts, whatever its status.
+        $this->assertSame([1, 2], [$rows[$this->admin->id]['assigned_job_count'], $rows[$this->recruiter->id]['assigned_job_count']]);
+    }
+
+    public function test_the_member_options_are_the_active_members_by_name_for_whoever_may_assign_jobs(): void
+    {
+        $this->makeMember($this->companyId, 'Bambang Rekruter', 'bambang@example.test', 'recruiter');
+        $suspended = $this->makeMember($this->companyId, 'Cici Skors', 'cici@example.test', 'recruiter');
+        $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'company_admin');
+        $this->api('POST', "/members/{$suspended->id}/suspend")->assertNoContent();
+
+        $response = $this->api('GET', '/members/options')->assertOk();
+
+        $this->assertSame(['Andi Admin', 'Bambang Rekruter', 'Rina Rekruter'], array_column($response->json('data'), 'name'));
+        $this->assertSame(['company_admin', 'member', 'member'], array_column($response->json('data'), 'role'));
+        $this->assertSame(['id', 'name', 'role'], array_keys($response->json('data.0')));
+
+        // A recruiter without `jobs.assign` has no list; one who holds it has, without learning any email address.
+        $this->api('GET', '/members/options', token: $this->recruiterToken)->assertForbidden()->assertJsonPath('permission', 'jobs.assign');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['applications.view', 'jobs.assign']])->assertNoContent();
+        $this->api('GET', '/members/options', token: $this->recruiterToken)->assertOk()->assertJsonCount(3, 'data');
+    }
+
+    public function test_a_member_with_a_picture_shows_it_to_the_colleagues_of_the_same_company_only(): void
+    {
+        Storage::fake();
+        Storage::put('identity/avatars/rina.png', 'PNGDATA');
+        DB::table('identity_users')->where('id', $this->recruiter->id)->update(['avatar_path' => 'identity/avatars/rina.png']);
+        $other = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'company_admin');
+
+        $rows = collect($this->api('GET', '/members')->assertOk()->json('data'))->keyBy('id');
+        $this->assertSame([false, true], [$rows[$this->admin->id]['has_avatar'], $rows[$this->recruiter->id]['has_avatar']]);
+        $this->api('GET', "/members/{$this->recruiter->id}")->assertOk()->assertJsonPath('data.has_avatar', true);
+
+        // The admin and the member herself read it; the headers keep it from being cached or run.
+        $picture = $this->api('GET', "/members/{$this->recruiter->id}/avatar")->assertOk();
+        $this->assertSame('PNGDATA', $picture->getContent());
+        $this->assertSame('image/png', $picture->headers->get('Content-Type'));
+        $this->assertSame('nosniff', $picture->headers->get('X-Content-Type-Options'));
+        $this->api('GET', "/members/{$this->recruiter->id}/avatar", token: $this->recruiterToken)->assertOk();
+
+        // Another company, a member without a picture, a missing file and a job seeker.
+        $this->api('GET', "/members/{$other->id}/avatar")->assertNotFound();
+        $this->api('GET', "/members/{$this->admin->id}/avatar")->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:avatar-not-found');
+        Storage::delete('identity/avatars/rina.png');
+        $this->api('GET', "/members/{$this->recruiter->id}/avatar")->assertNotFound();
+        $this->api('GET', "/members/{$this->recruiter->id}/avatar", token: $other->createToken('phone', ['*'], now()->addDay())->plainTextToken)->assertNotFound();
     }
 
     // ----- jobs of a member -----

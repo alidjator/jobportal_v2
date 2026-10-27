@@ -321,3 +321,11 @@ Interpretations made while coding (to confirm):
    or invitation from the live records, so they are empty once an account or invitation is gone.
 7. **The team list is built in memory** (a team is small), so `per_page` slices the sorted list; a pending invitation sits in the group of its role.
 8. `member_count` counts members only (invitations excluded), search aside.
+
+## Coded 2026-10-27: member picker, job counts and pictures (implementation audit)
+
+- `GET company/members/options` (`jobs.assign`): the active members of the company as `{id, name, role}`, by name, no email and no permissions. It serves the team of a job for a holder of `jobs.assign` who is not a company admin (the team list stays admin only).
+- The member rows of `GET company/members` carry `assigned_job_count` (every assigned job, whatever its status, read for the whole list at once through `JobDirectory::assignedJobCounts`) and `has_avatar`; the member detail carries `has_avatar`.
+- `GET company/members/{userId}/avatar`: the profile picture of a colleague of the same company, for every member (no permission; 404 `avatar-not-found` without one, another company's member is 404). A member sets their own with `POST me/avatar` (account page, tab "Akun").
+- Not coded: the personal data export of a company member (`me/data-export` is `job-seeker-only`); it needs a decision on what belongs to the member (`docs/legal-review.md`).
+

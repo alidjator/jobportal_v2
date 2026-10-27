@@ -39,6 +39,9 @@ interface CompanyMemberAccounts
      */
     public function summaries(array $userIds): array;
 
+    /** The profile picture of the account, or null when it has none or the file has gone missing. */
+    public function avatar(int $userId): ?AccountAvatar;
+
     /** Changes the name of the account. Runs inside the caller's transaction. */
     public function rename(int $userId, string $name): void;
 

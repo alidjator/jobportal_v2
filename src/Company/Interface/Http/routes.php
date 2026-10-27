@@ -84,7 +84,9 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/invitations/{id}/resend', [TeamInvitationController::class, 'resend'])->whereNumber('id');
     Route::delete('company/invitations/{id}', [TeamInvitationController::class, 'destroy'])->whereNumber('id');
     Route::get('company/members', [TeamMemberController::class, 'index']);
+    Route::get('company/members/options', [TeamMemberController::class, 'options']);
     Route::get('company/members/{userId}', [TeamMemberController::class, 'show'])->whereNumber('userId');
+    Route::get('company/members/{userId}/avatar', [TeamMemberController::class, 'avatar'])->whereNumber('userId');
     Route::get('company/members/{userId}/jobs', [TeamMemberController::class, 'jobs'])->whereNumber('userId');
     Route::get('company/members/{userId}/activity', [TeamMemberController::class, 'activity'])->whereNumber('userId');
     Route::delete('company/members/{userId}', [TeamMemberController::class, 'destroy'])->whereNumber('userId');

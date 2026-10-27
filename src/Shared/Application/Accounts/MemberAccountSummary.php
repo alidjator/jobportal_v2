@@ -14,5 +14,6 @@ final readonly class MemberAccountSummary
         public string $status,
         public ?DateTimeImmutable $lastLoginAt,
         public string $locale = 'id',
+        public bool $hasAvatar = false,
     ) {}
 }

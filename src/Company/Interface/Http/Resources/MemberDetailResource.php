@@ -30,6 +30,8 @@ final class MemberDetailResource extends JsonResource
             'last_login_at' => $member->lastLoginAt?->format(DateTimeInterface::ATOM),
             'assigned_job_count' => $member->assignedJobCount,
             'two_factor' => $member->twoFactor,
+            /** Whether the member has a profile picture (`GET company/members/{userId}/avatar`). */
+            'has_avatar' => $member->hasAvatar,
         ];
     }
 }

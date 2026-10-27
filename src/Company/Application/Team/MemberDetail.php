@@ -24,5 +24,6 @@ final readonly class MemberDetail
         public ?DateTimeImmutable $lastLoginAt,
         public int $assignedJobCount,
         public string $twoFactor,
+        public bool $hasAvatar = false,
     ) {}
 }

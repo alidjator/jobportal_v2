@@ -12,22 +12,27 @@ use Src\Identity\Domain\Events\SignedIn;
 use Src\Identity\Domain\Events\UserRegistered;
 use Src\Identity\Domain\User;
 use Src\Identity\Domain\UserRepository;
+use Src\Shared\Application\Accounts\AccountAvatar;
 use Src\Shared\Application\Accounts\AccountSession;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Accounts\MemberAccountSummary;
 use Src\Shared\Application\Accounts\TwoFactorChallengeRequired;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\FileStorage;
 
 /** Identity's side of the Company context's needs: company-member accounts are created and signed in here, nowhere else. */
 final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccounts
 {
+    private const array MIME_TYPES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
+
     public function __construct(
         private UserRepository $users,
         private PasswordHasher $hasher,
         private AccessTokenIssuer $tokens,
         private MemberTwoFactorGate $twoFactor,
         private MemberTokenLifetime $lifetime,
+        private FileStorage $files,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -58,6 +63,14 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         $this->tokens->revokeAllForUser($userId);
     }
 
+    public function avatar(int $userId): ?AccountAvatar
+    {
+        $path = $this->users->findById($userId)?->avatarPath();
+        $contents = $path === null ? null : $this->files->get($path);
+
+        return $path === null || $contents === null ? null : new AccountAvatar($contents, self::MIME_TYPES[strtolower(pathinfo($path, PATHINFO_EXTENSION))] ?? 'application/octet-stream');
+    }
+
     public function rename(int $userId, string $name): void
     {
         $user = $this->users->findById($userId) ?? throw new RuntimeException("Account {$userId} does not exist.");
@@ -81,7 +94,7 @@ final readonly class IdentityCompanyMemberAccounts implements CompanyMemberAccou
         $summaries = [];
 
         foreach ($this->users->findByIds($userIds) as $id => $user) {
-            $summaries[$id] = new MemberAccountSummary($id, $user->name(), $user->email(), $user->status()->value, $user->lastLoginAt(), $user->locale());
+            $summaries[$id] = new MemberAccountSummary($id, $user->name(), $user->email(), $user->status()->value, $user->lastLoginAt(), $user->locale(), $user->avatarPath() !== null);
         }
 
         return $summaries;

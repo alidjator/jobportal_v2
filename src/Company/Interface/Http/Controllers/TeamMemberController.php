@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Company\Application\Team\GetMember;
+use Src\Company\Application\Team\GetMemberAvatar;
 use Src\Company\Application\Team\ListMemberActivity;
 use Src\Company\Application\Team\ListMemberJobs;
+use Src\Company\Application\Team\ListMemberOptions;
 use Src\Company\Application\Team\ListMembers;
 use Src\Company\Application\Team\MakeOwner;
 use Src\Company\Application\Team\ReactivateMember;
@@ -24,10 +26,12 @@ use Src\Company\Interface\Http\Requests\UpdateMemberRequest;
 use Src\Company\Interface\Http\Resources\MemberActivityResource;
 use Src\Company\Interface\Http\Resources\MemberDetailResource;
 use Src\Company\Interface\Http\Resources\MemberJobResource;
+use Src\Company\Interface\Http\Resources\MemberOptionResource;
 use Src\Company\Interface\Http\Resources\TeamRowResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\CursorResources;
+use Src\Shared\Interface\Http\MemberOption;
 use Src\Shared\Interface\Http\PaginatedResources;
 
 /** The members of the signed-in company admin's own company. */
@@ -39,6 +43,26 @@ final class TeamMemberController extends ApiController
         $team = $list->execute($actors->fromRequest($request), $request->search(), $request->pageRequest());
 
         return TeamRowResource::collection(PaginatedResources::paginator($team->page, $request))->additional(['meta' => ['member_count' => $team->memberCount]]);
+    }
+
+    /** The members that may be put on a job, by name, for the holder of `jobs.assign` (the team of a job). */
+    public function options(Request $request, ActorResolver $actors, ListMemberOptions $list): AnonymousResourceCollection
+    {
+        return MemberOptionResource::collection(MemberOption::listOf($list->execute($actors->fromRequest($request))));
+    }
+
+    /** The profile picture of a colleague of the same company. */
+    public function avatar(Request $request, int $userId, ActorResolver $actors, GetMemberAvatar $get): Response
+    {
+        $image = $get->execute($actors->fromRequest($request), $userId);
+
+        return new Response($image->contents, Response::HTTP_OK, [
+            'Content-Type' => $image->mimeType,
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'",
+        ]);
     }
 
     public function show(Request $request, int $userId, ActorResolver $actors, GetMember $get): MemberDetailResource

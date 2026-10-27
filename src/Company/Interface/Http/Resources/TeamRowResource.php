@@ -42,6 +42,10 @@ final class TeamRowResource extends JsonResource
             'joined_at' => $row->joinedAt?->format(DateTimeInterface::ATOM),
             'last_login_at' => $row->lastLoginAt?->format(DateTimeInterface::ATOM),
             'two_factor' => $row->twoFactor,
+            /** How many jobs the member is assigned to, whatever their status. */
+            'assigned_job_count' => $row->assignedJobs ?? 0,
+            /** Whether the member has a profile picture (`GET company/members/{userId}/avatar`). */
+            'has_avatar' => $row->hasAvatar,
         ];
     }
 }

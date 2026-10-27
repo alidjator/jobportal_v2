@@ -55,6 +55,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         ));
     }
 
+    public function assignedJobCounts(array $userIds): array
+    {
+        return $this->assignments->countsOfUsers($userIds);
+    }
+
     public function hiringManagerJobIds(int $companyId, int $userId): array
     {
         return array_values(array_filter(

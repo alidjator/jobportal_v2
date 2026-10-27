@@ -27,12 +27,12 @@ Status: **Gap** = API coded, no screen; **Partial** = a screen exists but leaves
 | A10 | Preview of the email before it is sent | `POST company/applications/{id}/email-preview` | Gap | Interview, test and offer emails go out unseen. |
 | A11 | Own account: photo, change email, delete account, export data | `me/avatar`, `me/email-change`, `me/deletion`, `me/data-export` | **Partly done 2026-10-27**: email change and account deletion are in the tab Akun. A photo has no place in the Workspace yet, and the data export is for job seekers only in the API (`job-seeker-only`): a company member has no export | The account page has information, password and security only; the erasure and export rights apply to company members too. |
 | A12 | Announcement banner (decided for Workspace in `frontend.md` 11.1) | `GET announcements` | Gap | Only Career shows it. |
-| A13 | Assign people to a job; assign a member to jobs | `PUT company/jobs/{id}/assignees`, `POST company/members/{id}/jobs` | **Done 2026-10-27** (`JobTeamDialog`, `TeamAssignJobsDialog`) | The job team dialog reads `GET company/members`, which only a company admin may read; a non-admin with `jobs.assign` gets an error. |
+| A13 | Assign people to a job; assign a member to jobs | `PUT company/jobs/{id}/assignees`, `POST company/members/{id}/jobs` | **Done 2026-10-27** (`JobTeamDialog`, `TeamAssignJobsDialog`) | The job team dialog reads `GET company/members`, which only a company admin may read; a non-admin with `jobs.assign` gets an error (**fixed 2026-10-27**: `GET company/members/options`). |
 | A14 | Interview recordings, calls, attendance, video and voice rooms | `company/interviews/{id}/...`, `.../interview/video|voice/...` | Waits | Step 6: Janus, coturn and Asterisk. |
 | A15 | Assessment providers of the group (E16) | `organization/assessment-*` | Waits | API #24 section 8 is not coded. |
 
 API-side gaps seen from the company admin: no report of work per member (the member activity log and the analytics "fill" report per assignee are the nearest); the team
-list shows no jobs per member; no way to list the jobs without an assignee; no member picker for a non-admin who holds `jobs.assign`.
+list shows no jobs per member; no way to list the jobs without an assignee; no member picker for a non-admin who holds `jobs.assign` (**done 2026-10-27**, `GET company/members/options`); the team list now shows the jobs per member (`assigned_job_count`, done 2026-10-27); a job always keeps at least one assignee, so there are no jobs without one to list.
 
 ## 2. Recruiter
 

@@ -19,6 +19,14 @@ interface JobDirectory
     public function assignedJobIds(int $companyId, int $userId): array;
 
     /**
+     * How many jobs each of these accounts is assigned to, whatever the status of the job; an account with none is missing. One read for the whole list of a team.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, int>
+     */
+    public function assignedJobCounts(array $userIds): array;
+
+    /**
      * The ids of the jobs of the company where the account is assigned as a hiring manager: on those jobs they see applications only from the stage boundary.
      *
      * @return list<int>

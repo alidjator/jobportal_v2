@@ -462,7 +462,7 @@ final class CompanyTeamManagementTest extends FeatureTestCase
             'user_id' => $this->recruiter->id, 'name' => 'Rina Rekruter', 'email' => 'rina@example.test', 'role' => 'member', 'is_owner' => false,
             'preset' => 'recruiter', 'permissions' => MemberPreset::Recruiter->permissionNames(), 'status' => 'suspended',
             'suspended_at' => '2026-10-05T09:00:00+00:00', 'suspended_by' => 'Andi Admin', 'joined_at' => '2026-10-05T09:00:00+00:00',
-            'last_login_at' => '2026-10-04T07:00:00+00:00', 'assigned_job_count' => 1, 'two_factor' => 'off',
+            'last_login_at' => '2026-10-04T07:00:00+00:00', 'assigned_job_count' => 1, 'two_factor' => 'off', 'has_avatar' => false,
         ]);
         $this->api('GET', "/members/{$this->owner->id}")->assertOk()->assertJsonPath('data.preset', 'company_admin')->assertJsonPath('data.is_owner', true);
 

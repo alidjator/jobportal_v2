@@ -11,6 +11,7 @@ use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyPermission;
+use Src\Shared\Application\Job\JobDirectory;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
 use Src\Shared\Domain\Exceptions\AccessDenied;
@@ -30,6 +31,7 @@ final readonly class ListMembers
         private LastCompanyAdminRule $lastAdmin,
         private CompanyMemberAccounts $accounts,
         private MemberTwoFactorStatuses $twoFactor,
+        private JobDirectory $jobs,
         private Clock $clock,
     ) {}
 
@@ -49,6 +51,7 @@ final readonly class ListMembers
         $accounts = $this->accounts->summaries([...array_map(fn (CompanyMember $m): int => $m->userId, $members), ...$inviterIds]);
         $activeAdmins = count(array_filter($members, fn (CompanyMember $m): bool => $m->isCompanyAdmin() && ! $m->isSuspended()));
         $twoFactor = $this->twoFactor->of($companyId, $members);
+        $jobCounts = $this->jobs->assignedJobCounts(array_map(fn (CompanyMember $m): int => $m->userId, $members));
         $callerIsOwner = $actor->id !== null && $this->members->ownerUserId($companyId) === $actor->id;
 
         $rows = [];
@@ -62,7 +65,7 @@ final readonly class ListMembers
 
             $rows[] = new TeamRow(
                 TeamRow::TYPE_MEMBER, $member->userId, $account->name, $account->email, $member->role, $member->isOwner, $member->status->value,
-                $member->effectivePermissions(), $this->memberActions($member, (int) $actor->id, $callerIsOwner, $activeAdmins), $member->joinedAt, $account->lastLoginAt, null, null, null, $twoFactor[$member->userId] ?? null,
+                $member->effectivePermissions(), $this->memberActions($member, (int) $actor->id, $callerIsOwner, $activeAdmins), $member->joinedAt, $account->lastLoginAt, null, null, null, $twoFactor[$member->userId] ?? null, $jobCounts[$member->userId] ?? 0, $account->hasAvatar,
             );
         }
 
