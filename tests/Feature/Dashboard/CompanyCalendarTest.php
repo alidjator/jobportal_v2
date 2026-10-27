@@ -89,11 +89,32 @@ final class CompanyCalendarTest extends FeatureTestCase
         $this->calendar(['filter' => ['type' => 'interview,party']])->assertStatus(422)->assertJsonValidationErrors(['filter.type']);
     }
 
-    public function test_only_a_member_who_may_read_applicants_has_a_calendar(): void
+    public function test_only_a_member_who_may_read_applicants_or_sits_on_a_panel_has_a_calendar(): void
     {
         $this->calendar(token: $this->seekerToken)->assertForbidden();
         $none = $this->memberWith(['company.profile'], 'none@example.test');
         $this->calendar(token: $none['token'])->assertForbidden()->assertJsonPath('permission', 'applications.view');
+    }
+
+    public function test_an_interviewer_has_a_calendar_of_the_interviews_they_sit_on_and_nothing_else(): void
+    {
+        $interviewer = $this->memberWith(['interviews.participate'], 'panel@example.test');
+        $mine = $this->interview($this->applicationId, '2026-10-12T02:00:00Z', ['participant_ids' => [$interviewer['id']]]);
+        $this->interview($this->otherApplicationId, '2026-10-13T02:00:00Z');
+        $this->offer($this->applicationId, 'pending', '2026-10-20 10:00:00', '2026-11-01', $this->recruiterId);
+
+        // Only their interview: not the other one, no offer, and no test, even when they ask for them.
+        $this->assertSame(["interview:{$mine}"], $this->ids($this->calendar(token: $interviewer['token'])));
+        $this->assertSame([], $this->ids($this->calendar(['filter' => ['type' => 'offer_deadline,start_date']], $interviewer['token'])));
+
+        $event = $this->calendar(token: $interviewer['token'])->json('data.0');
+        $this->assertTrue($event['involves_me']);
+        $this->assertSame('pending', $event['details']['my_rsvp']);
+        $this->assertSame(['view_application', 'download_ics'], $event['actions']);
+
+        // Not on any panel: an empty calendar, not a refusal.
+        $outsider = $this->memberWith(['interviews.participate'], 'outsider@example.test');
+        $this->calendar(token: $outsider['token'])->assertOk()->assertJsonCount(0, 'data');
     }
 
     // ----- interviews -----

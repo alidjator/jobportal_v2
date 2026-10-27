@@ -230,3 +230,10 @@ reschedule), `interview_updated` takes `note` (required, may be null), `assessme
 ## Coded: the team's `.ics` page link (2026-10-19)
 
 The `.ics` files of the company team (the panel invitation and cancellation, the download `GET company/interviews/{id}/calendar.ics`, the cancellation when the team withdraws an application) carry the team's application page `COMPANY_APPLICATION_URL` (`config app.company_application_url`) in `URL` and `DESCRIPTION`, through `InterviewCalendar::forTeam()`; they used the job seeker's page before (`frontend.md` 12.5, decided by the user). The job seeker's files keep `JOB_SEEKER_APPLICATION_URL`. Tests: `InterviewNoteAndCalendarTest`, `InterviewRsvpTest`, `TeamWithdrawalTest`.
+
+## Changed 2026-10-27: the calendar of a panel member
+
+`GET company/calendar` also answers a member who holds `interviews.participate` but not `applications.view` (the Interviewer preset; `frontend.md` C26: "`applications.view` or a panel seat"). They
+get only the interviews they sit on (`mine` is forced, no job restriction, the types are cut to `interview`); tests, offers and other people's interviews never reach them, whatever the
+`filter[type]`. A member with neither permission still gets 403 `company-permission-required` for `applications.view`. Found by the implementation audit (`docs/analysis/implementation-gap-audit.md`, I1).
+

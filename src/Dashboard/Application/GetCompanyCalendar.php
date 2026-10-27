@@ -20,7 +20,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 /**
  * The recruitment calendar of a company member (`docs/design/phase-8-interview-calendar.md` section 1): interviews, test due times, offer deadlines and the start dates of accepted
  * offers in a range of Jakarta days (`to` included, at most 42 days), for the jobs the member may see (every job for `jobs.view_all`, the assigned jobs for anyone else; a hiring manager
- * bound to the stage boundary of a job sees only the applications that reached it). Each context fills it through a source; this class checks the range, merges and sorts. At most
+ * bound to the stage boundary of a job sees only the applications that reached it). A member who holds `interviews.participate` but not `applications.view` (the Interviewer preset) gets the interviews they sit on and nothing else. Each context fills it through a source; this class checks the range, merges and sorts. At most
  * {@see self::LIMIT} events: beyond that the answer says it was cut and the client narrows the range or the filters. The calendar only reads.
  */
 final readonly class GetCompanyCalendar
@@ -37,7 +37,7 @@ final readonly class GetCompanyCalendar
      * @param  list<string>  $types  the types asked for; empty for all
      * @return array{events: list<CalendarEvent>, truncated: bool}
      *
-     * @throws AccessDenied `not-a-company-member`, `company-permission-required` or `company-suspended`
+     * @throws AccessDenied `not-a-company-member`, `company-permission-required` (`applications.view`, or `interviews.participate` for the interviews alone) or `company-suspended`
      * @throws BusinessRuleViolation `invalid-calendar-range`
      */
     public function execute(Actor $actor, string $from, string $to, array $types = [], ?int $jobId = null, bool $mine = false): array
@@ -46,7 +46,13 @@ final readonly class GetCompanyCalendar
             throw new AccessDenied('Only a company member has a calendar.', 'not-a-company-member');
         }
 
-        $actor->membership->require(CompanyPermission::ApplicationsView);
+        // A member who may not read applicants but sits on interview panels (the Interviewer preset) has a calendar of the interviews they sit on, and nothing else.
+        $panelOnly = ! $actor->can(CompanyPermission::ApplicationsView);
+
+        if ($panelOnly && ! $actor->can(CompanyPermission::InterviewsParticipate)) {
+            $actor->membership->require(CompanyPermission::ApplicationsView);
+        }
+
         $companyId = $actor->membership->companyId;
 
         if (! $this->companies->isActive($companyId)) {
@@ -54,8 +60,9 @@ final readonly class GetCompanyCalendar
         }
 
         [$start, $end] = $this->window($from, $to);
-        $viewsAll = $actor->can(CompanyPermission::JobsViewAll);
+        $viewsAll = $actor->can(CompanyPermission::JobsViewAll) || $panelOnly;
         $now = $this->clock->now();
+        $asked = $types === [] ? CalendarEvent::TYPES : $types;
 
         $scope = new CalendarScope(
             $actor->id,
@@ -64,9 +71,9 @@ final readonly class GetCompanyCalendar
             $viewsAll ? [] : $this->jobs->hiringManagerJobIds($companyId, $actor->id),
             $start,
             $end,
-            $types === [] ? CalendarEvent::TYPES : $types,
+            $panelOnly ? array_values(array_intersect($asked, [CalendarEvent::INTERVIEW])) : $asked,
             $jobId,
-            $mine,
+            $mine || $panelOnly,
             $actor->membership->effectivePermissions(),
             $now,
             self::LIMIT + 1,
