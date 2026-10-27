@@ -5,6 +5,7 @@ use Src\Assessment\Application\AssessmentPermissions;
 use Src\Assessment\Interface\Http\AuthoringRoutes;
 use Src\Assessment\Interface\Http\Controllers\AdminCompanyBatteryController;
 use Src\Assessment\Interface\Http\Controllers\AdminProviderController;
+use Src\Assessment\Interface\Http\Controllers\AdminProviderRegisterController;
 use Src\Assessment\Interface\Http\Controllers\AdminPsychologistController;
 use Src\Assessment\Interface\Http\Controllers\AdminPsychologistInvitationController;
 
@@ -18,6 +19,7 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::post('assessment/providers/{id}/suspend', [AdminProviderController::class, 'suspend'])->whereNumber('id');
         Route::post('assessment/providers/{id}/restore', [AdminProviderController::class, 'restore'])->whereNumber('id');
 
+        Route::get('assessment/providers/{id}/register', [AdminProviderRegisterController::class, 'index'])->whereNumber('id');
         Route::get('assessment/providers/{id}/psychologists', [AdminPsychologistController::class, 'index'])->whereNumber('id');
         Route::put('assessment/psychologists/{id}', [AdminPsychologistController::class, 'update'])->whereNumber('id');
         Route::post('assessment/psychologists/{id}/suspend', [AdminPsychologistController::class, 'suspend'])->whereNumber('id');

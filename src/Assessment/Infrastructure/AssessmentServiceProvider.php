@@ -2,8 +2,11 @@
 
 namespace Src\Assessment\Infrastructure;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Src\Assessment\Application\AssessmentEmailTemplates;
 use Src\Assessment\Application\AssessmentPermissions;
 use Src\Assessment\Application\AssessmentSettings;
@@ -31,6 +34,7 @@ use Src\Assessment\Domain\Events\ProviderRegistered;
 use Src\Assessment\Domain\Events\PsychologistChanged;
 use Src\Assessment\Domain\Events\PsychologistInvited;
 use Src\Assessment\Domain\Events\PsychologistJoined;
+use Src\Assessment\Domain\Events\ReportRegisterExported;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Assessment\Domain\Events\ResultFinalized;
@@ -102,6 +106,10 @@ use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class AssessmentServiceProvider extends ContextServiceProvider
 {
+    public const string REGISTER_EXPORT_LIMITER = 'assessment-register-export';
+
+    private const int REGISTER_EXPORTS_PER_HOUR = 10;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         ProviderRepository::class => DatabaseProviderRepository::class,
@@ -178,6 +186,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for(self::REGISTER_EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REGISTER_EXPORTS_PER_HOUR)->by('assessment-register-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         foreach ([
             ProviderRegistered::class => 'onProviderRegistered',
             PsychologistInvited::class => 'onPsychologistInvited',
@@ -185,6 +195,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             PsychologistChanged::class => 'onPsychologistChanged',
             ReportSigned::class => 'onReportSigned',
             ReportRevised::class => 'onReportRevised',
+            ReportRegisterExported::class => 'onReportRegisterExported',
             ProviderAutoIssueChanged::class => 'onProviderAutoIssueChanged',
         ] as $event => $method) {
             Event::listen($event, [RecordAssessmentAuditEntries::class, $method]);

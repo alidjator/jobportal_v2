@@ -225,6 +225,8 @@ final class AuditAction
 
     public const string ASSESSMENT_REPORT_REVISED = 'assessment.report_revised';
 
+    public const string ASSESSMENT_REGISTER_EXPORTED = 'assessment.register_exported';
+
     public const string ASSESSMENT_PROVIDER_AUTO_ISSUE_CHANGED = 'assessment_provider.auto_issue_changed';
 
     public const string GROUP_CREATED = 'group.created';

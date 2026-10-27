@@ -34,6 +34,23 @@ interface ReportRepository
      */
     public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null): Page;
 
+    /**
+     * The provider's signed and automatically issued reports for the register, newest signature first.
+     *
+     * @return Page<RegisterEntry>
+     */
+    public function registerOfProvider(int $providerId, RegisterFilter $filter, PageRequest $request): Page;
+
+    /** How many reports the register holds for the filter. */
+    public function registerCount(int $providerId, RegisterFilter $filter): int;
+
+    /**
+     * The same reports as `registerOfProvider`, one by one and without a page (for an export): at most `$limit`, read in chunks so memory stays flat.
+     *
+     * @return iterable<RegisterEntry>
+     */
+    public function registerRows(int $providerId, RegisterFilter $filter, int $limit): iterable;
+
     /** Lets go of every report the psychologist holds (a suspended psychologist cannot finish them). */
     public function releaseClaimsOf(int $psychologistId): void;
 }

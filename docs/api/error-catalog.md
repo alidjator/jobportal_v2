@@ -52,7 +52,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `attempt-not-submitted` | 409 | Assessment | The candidate has not submitted this test yet. |
 | `attempt-session-required` | 409 | Assessment | Send the attempt session you got when the test started in the header X-Attempt-Session. |
 | `auto-issue-not-allowed` | 422 | Assessment | The provider is not allowed to issue reports automatically. A platform admin allows it after review. |
-| `avatar-not-found` | 404 | Identity, JobSeeker | There is no profile picture. |
+| `avatar-not-found` | 404 | Company, Identity, JobSeeker | There is no profile picture. |
 | `battery-not-published` | 409 | Assessment | Only a published battery can be granted. |
 | `before-first-version` | 422 | Organization | The change is dated before the first version exists. |
 | `body-too-long` | 422 | Messaging | A message can have at most :max characters. |
@@ -122,7 +122,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `entry-unavailable` | 422 | JobInvitation | This candidate cannot be invited right now. |
 | `experience-limit-reached` | 409 | JobSeeker | A profile can have at most :max work experiences. |
 | `explanation-required` | 422 | Assessment | Write the explanation for the candidate. |
-| `export-too-large` | 422 | Recruitment | An export can hold at most :max hires; narrow the period or the job. |
+| `export-too-large` | 422 | Assessment, Recruitment | An export can hold at most :max reports; narrow the filters. |
 | `faq-category-not-empty` | 409 | Content | The category still has questions. Move or delete them first, or deactivate the category. |
 | `faq-category-not-found` | 422 | Content | The category does not exist. |
 | `file-too-large` | 422 | Assessment, Company, Identity, JobSeeker, Messaging, Recruitment | The drawing is larger than the allowed :max MB. |
@@ -218,7 +218,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-question` | 422 | Assessment |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
-| `invalid-recommendation-rules` | 422 | Assessment | The key scales and the two thresholds of the recommendation rule are not acceptable (an unknown scale, thresholds the wrong way round). The body names the field. |
+| `invalid-recommendation-rules` | 422 | Assessment |  |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
 | `invalid-report` | 422 | Assessment, Job, Messaging | The report text cannot be empty. |
@@ -392,7 +392,6 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reason-too-long` | 422 | JobInvitation | The reason may have at most :max characters. |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
-| `recommendation-required` | 422 | Assessment | Choose the recommendation before signing. |
 | `recording-consent-required` | 422 | Recruitment |  |
 | `recording-in-progress` | 409 | Recruitment | This interview is already being recorded. |
 | `recording-not-allowed` | 409 | Recruitment | This interview may not be recorded: the job seeker has not given their consent. |
@@ -400,6 +399,8 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `recording-not-ready` | 409 | Recruitment | This recording has no file. |
 | `recording-started` | 409 | Recruitment | The interview was already recorded, so the consent can no longer be withdrawn. Ask the company to delete the recording. |
 | `reference-value-taken` | 409 | ReferenceData | The :field is already used. |
+| `register-range-required` | 422 | Assessment | Give the first and the last day of the export. |
+| `register-range-too-long` | 422 | Assessment | An export can span at most :max days. |
 | `rejection-note-required` | 422 | Company | A note is required when the reason is "other". |
 | `reply-not-pending` | 409 | Review |  |
 | `report-decided` | 409 | Messaging | This report was already decided. |
@@ -421,7 +422,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reschedule-too-late` | 409 | Recruitment | The interview can no longer be moved: ask at least :hours hours before it starts. You can still decline it or write to the company. |
 | `resume-limit-reached` | 409 | JobSeeker | A profile can have at most :max resumes. |
 | `retake-limit` | 409 | Assessment | You have used every recording this question allows. |
-| `review-claimed` | 409 | Assessment | Another psychologist holds this report. The body names the holder in `holder`. |
+| `review-claimed` | 409 | Assessment | Another psychologist holds this report. |
 | `review-not-editable` | 409 | Review | A review that was taken down cannot be edited. |
 | `review-not-pending` | 409 | Review |  |
 | `review-not-published` | 409 | Review |  |

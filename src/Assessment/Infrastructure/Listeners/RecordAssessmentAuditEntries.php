@@ -9,6 +9,7 @@ use Src\Assessment\Domain\Events\ProviderRegistered;
 use Src\Assessment\Domain\Events\PsychologistChanged;
 use Src\Assessment\Domain\Events\PsychologistInvited;
 use Src\Assessment\Domain\Events\PsychologistJoined;
+use Src\Assessment\Domain\Events\ReportRegisterExported;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Shared\Application\Audit\AuditAction;
@@ -19,7 +20,7 @@ use Src\Shared\Infrastructure\Queue\QueueName;
 
 /**
  * Writes the audit entries for the Assessment context: providers registered, psychologists invited, joined and changed by an admin (they
- * decide who may sign psychological reports), reports signed (by a psychologist, or issued automatically, which the system records), revised reports and the platform admin's gate for automatic issue. Runs on the `default` queue, retried 3 times with a growing delay. The entries never hold an email address.
+ * decide who may sign psychological reports), reports signed (by a psychologist, or issued automatically, which the system records), revised reports, the download of the report register and the platform admin's gate for automatic issue. Runs on the `default` queue, retried 3 times with a growing delay. The entries never hold an email address.
  */
 final class RecordAssessmentAuditEntries implements ShouldQueue
 {
@@ -93,6 +94,15 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
             AuditActorType::User, $event->psychologistUserId, AuditAction::ASSESSMENT_REPORT_REVISED,
             self::REPORT_SUBJECT, $event->reportId,
             ['report_number' => $event->reportNumber, 'revision' => $event->revision, 'invitation_id' => $event->invitationId, 'provider_id' => $event->providerId],
+            $event->ipAddress, $event->userAgent, $event->occurredAt(),
+        ));
+    }
+
+    public function onReportRegisterExported(ReportRegisterExported $event): void
+    {
+        $this->trail->record(new AuditEntry(
+            AuditActorType::User, $event->psychologistUserId, AuditAction::ASSESSMENT_REGISTER_EXPORTED,
+            self::PROVIDER_SUBJECT, $event->providerId, ['filters' => $event->filters, 'row_count' => $event->rowCount],
             $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }

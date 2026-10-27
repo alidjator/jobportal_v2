@@ -5,12 +5,16 @@ namespace Src\Assessment\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use LogicException;
 use Src\Assessment\Domain\Recommendation;
+use Src\Assessment\Domain\RegisterEntry;
+use Src\Assessment\Domain\RegisterFilter;
 use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReportSummary;
+use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -155,6 +159,78 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
             $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
         ), $rows->all()), $total, $request);
+    }
+
+    public function registerOfProvider(int $providerId, RegisterFilter $filter, PageRequest $request): Page
+    {
+        $builder = $this->registerQuery($providerId, $filter);
+        $total = (clone $builder)->count();
+        $rows = $builder->offset($request->offset())->limit($request->perPage)->get();
+
+        return new Page(array_map($this->toEntry(...), $rows->all()), $total, $request);
+    }
+
+    public function registerCount(int $providerId, RegisterFilter $filter): int
+    {
+        return $this->registerQuery($providerId, $filter)->count();
+    }
+
+    public function registerRows(int $providerId, RegisterFilter $filter, int $limit): iterable
+    {
+        foreach ($this->registerQuery($providerId, $filter)->limit($limit)->cursor() as $row) {
+            yield $this->toEntry($row);
+        }
+    }
+
+    /** The signed reports of the provider, narrowed by the filter, newest signature first. */
+    private function registerQuery(int $providerId, RegisterFilter $filter): Builder
+    {
+        $builder = $this->connection->table(self::TABLE.' as reports')
+            ->join('assessment_attempts as attempts', 'attempts.id', '=', 'reports.attempt_id')
+            ->join('assessment_invitations as invitations', 'invitations.id', '=', 'attempts.invitation_id')
+            ->join('assessment_tests as tests', 'tests.id', '=', 'invitations.test_id')
+            ->where('reports.provider_id', $providerId)
+            ->where('reports.status', ReportStatus::Signed->value);
+
+        if ($filter->from !== null) {
+            $builder->where('reports.signed_at', '>=', AnalyticsDays::startUtc($filter->from));
+        }
+
+        if ($filter->to !== null) {
+            $builder->where('reports.signed_at', '<', AnalyticsDays::endUtc($filter->to));
+        }
+
+        if ($filter->psychologistId !== null) {
+            $builder->where('reports.signed_by_psychologist_id', $filter->psychologistId);
+        }
+
+        if ($filter->testId !== null) {
+            $builder->where('invitations.test_id', $filter->testId);
+        }
+
+        return $builder
+            ->select(['reports.id', 'reports.report_number', 'reports.revision', 'reports.signed_at', 'reports.signed_by_psychologist_id', 'reports.signer_name', 'reports.auto_issued', 'reports.reviewed_at', 'reports.recommendation', 'reports.body', 'invitations.test_id', 'invitations.company_id', 'tests.title'])
+            ->orderByDesc('reports.signed_at')
+            ->orderByDesc('reports.id');
+    }
+
+    private function toEntry(stdClass $row): RegisterEntry
+    {
+        return new RegisterEntry(
+            (int) $row->id,
+            (string) $row->report_number,
+            (int) $row->revision,
+            $this->time((string) $row->signed_at),
+            $row->signed_by_psychologist_id === null ? null : (int) $row->signed_by_psychologist_id,
+            $row->signer_name,
+            (int) $row->test_id,
+            (string) $row->title,
+            $row->company_id === null ? null : (int) $row->company_id,
+            (bool) $row->auto_issued,
+            $row->reviewed_at === null ? null : $this->time((string) $row->reviewed_at),
+            $row->recommendation === null ? null : Recommendation::from((string) $row->recommendation),
+            (string) $row->body === '',
+        );
     }
 
     /** @return array<string, mixed> */

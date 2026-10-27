@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Assessment\Infrastructure\AssessmentServiceProvider;
 use Src\Assessment\Interface\Http\AuthoringRoutes;
 use Src\Assessment\Interface\Http\Controllers\AttemptController;
 use Src\Assessment\Interface\Http\Controllers\BatteryController;
@@ -10,6 +11,7 @@ use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
+use Src\Assessment\Interface\Http\Controllers\ReportRegisterController;
 use Src\Assessment\Interface\Http\Controllers\ResultController;
 use Src\Assessment\Interface\Http\Controllers\ReviewController;
 use Src\Assessment\Interface\Http\Controllers\VideoTakeController;
@@ -39,6 +41,9 @@ Route::prefix('provider')->group(function (): void {
         Route::put('tests/{id}/auto-issue', [BatteryController::class, 'autoIssue'])->whereNumber('id');
 
         // The review of the reports of the provider's batteries: the queue, the draft, the drawings, the edit and the signature.
+        Route::get('register', [ReportRegisterController::class, 'index']);
+        Route::get('register/export', [ReportRegisterController::class, 'export'])->middleware('throttle:'.AssessmentServiceProvider::REGISTER_EXPORT_LIMITER);
+
         Route::get('reviews', [ReviewController::class, 'index']);
         Route::prefix('reviews/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
             Route::get('', [ReviewController::class, 'show']);
