@@ -72,6 +72,7 @@ final class CompanyTasksTest extends FeatureTestCase
         return array_combine(array_column($items, 'key'), array_column($items, 'count'));
     }
 
+    /** The keys here are the ones of `TASK_LINKS` in the Workspace (`utils/link-entry.ts`) and of `talent.dashboard.tasks.*` in both languages: a new key fails this test until the front end has them. */
     public function test_the_list_counts_what_waits_for_the_member_in_order_with_the_query_that_opens_it(): void
     {
         $response = $this->tasks()->assertOk();
