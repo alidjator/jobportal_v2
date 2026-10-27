@@ -6,6 +6,7 @@ use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\ProviderRepository;
+use Src\Assessment\Domain\Recommendation;
 use Src\Assessment\Domain\ReportRenderer;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Shared\Application\Accounts\PsychologistAccounts;
@@ -45,9 +46,9 @@ final readonly class ReviseReport
      * @throws StateConflict `report-not-auto-issued` or `claim-required`
      * @throws BusinessRuleViolation `invalid-report` or `explanation-required`
      */
-    public function execute(Actor $actor, int $reportId, string $body, string $explanation, ?string $ipAddress, ?string $userAgent): ReviewView
+    public function execute(Actor $actor, int $reportId, string $body, string $explanation, ?string $ipAddress, ?string $userAgent, ?Recommendation $recommendation = null): ReviewView
     {
-        [$view, $event] = $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $ipAddress, $userAgent): array {
+        [$view, $event] = $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $ipAddress, $userAgent, $recommendation): array {
             $psychologist = $this->access->psychologist($actor);
             // The provider row first, as signing does.
             $this->providers->findById($psychologist->providerId, forUpdate: true) ?? throw EntityNotFound::of('Provider', $psychologist->providerId);
@@ -72,9 +73,9 @@ final readonly class ReviseReport
             $accounts = $this->accounts->summaries([(int) $actor->id]);
             $name = isset($accounts[(int) $actor->id]) ? $accounts[(int) $actor->id]->name : '';
 
-            $revised = $report->revised($body, $explanation, $psychologist, $name, $now);
+            $revised = $report->revised($body, $explanation, $psychologist, $name, $now, $recommendation);
             $this->claims->assertHeld($psychologist, $report);
-            $revised = $revised->withBody(ReportRenderer::signed($revised->body, (string) $revised->number, $now->format('Y-m-d'), $name));
+            $revised = $revised->withBody(ReportRenderer::signed($revised->body, (string) $revised->number, $now->format('Y-m-d'), $name, $revised->recommendation));
 
             $revised = $revised->claimReleased();
             $this->reports->keepVersion($report, $now);

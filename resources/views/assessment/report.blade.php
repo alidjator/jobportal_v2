@@ -36,6 +36,9 @@
 <table class="meta">
     <tr><td class="label">Candidate</td><td>{{ $report->candidateName }}</td></tr>
     <tr><td class="label">Signed on</td><td>{{ $report->signedAt->format('d F Y') }}</td></tr>
+    @if ($report->recommendation)
+        <tr><td class="label">Recommendation</td><td>{{ $report->recommendation }}</td></tr>
+    @endif
 </table>
 
 @if ($report->scales)

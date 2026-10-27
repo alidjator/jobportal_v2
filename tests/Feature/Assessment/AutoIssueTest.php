@@ -95,6 +95,7 @@ final class AutoIssueTest extends FeatureTestCase
             ['scale_key' => 'extraversion', 'raw_min' => 0, 'raw_max' => 2, 'standard_score' => 40, 'band' => 'Low', 'explanation' => $explainNorms ? 'You prefer quiet settings.' : null],
             ['scale_key' => 'extraversion', 'raw_min' => 3, 'raw_max' => 10, 'standard_score' => 60, 'band' => 'High', 'explanation' => $explainNorms ? 'You like people and often seek company.' : null],
         ]])->assertOk();
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", ['key_scales' => ['extraversion'], 'recommended_min' => 55, 'not_yet_below' => 45])->assertOk();
         $this->provider('PUT', "tests/{$id}/report-template", ['body' => 'Dear {{candidate_name}}: {{test_title}} - extraversion {{scale:extraversion:raw}} ({{scale:extraversion:band}}). No. {{report_number}} by {{psychologist_name}} on {{signed_on}}.'])->assertOk();
 
         if ($explanationTemplate !== null) {
@@ -260,8 +261,10 @@ final class AutoIssueTest extends FeatureTestCase
 
         $this->enable($id)->assertOk();
         $this->provider('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')
-            ->assertJsonFragment(['The battery needs an explanation template.']);
+            ->assertJsonFragment(['The battery needs an explanation template.'])
+            ->assertJsonFragment(['The battery needs a recommendation rule: the key scales and the two thresholds that work out the recommendation.']);
 
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", ['key_scales' => ['extraversion'], 'recommended_min' => 55, 'not_yet_below' => 45])->assertOk();
         $this->provider('PUT', "tests/{$id}/explanation-template", ['body' => 'Hello {{candidate_name}}'])->assertOk();
         $this->provider('PUT', "tests/{$id}/norms", ['norms' => [['scale_key' => 'extraversion', 'raw_min' => 0, 'raw_max' => 10, 'standard_score' => 50, 'band' => 'Mid', 'explanation' => 'Balanced.']]])->assertOk();
         $this->provider('POST', "tests/{$id}/publish")->assertOk()->assertJsonPath('data.auto_issue', true);
@@ -324,6 +327,58 @@ final class AutoIssueTest extends FeatureTestCase
         $this->assertStringStartsWith('%PDF', (string) $pdf->getContent());
 
         $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/explanation", [], $this->seekerToken)->assertOk();
+    }
+
+    public function test_an_automatic_report_carries_the_recommendation_the_rule_works_out(): void
+    {
+        $battery = $this->readyBattery();
+        $reportId = $this->takeBattery($battery);
+
+        // Raw score 3 reads standard score 60: at or above 55, so recommended.
+        $this->assertSame('recommended', $this->report()['recommendation']);
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.recommendation', 'recommended');
+        $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()
+            ->assertJsonPath('data.result.report.recommendation', 'recommended')
+            ->assertJsonPath('data.result.report.recommendation_label', 'Disarankan');
+
+        // The candidate's explanation never carries the advice.
+        $explanation = $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/explanation", [], $this->seekerToken)->assertOk()->json();
+        $this->assertStringNotContainsString('recommend', strtolower((string) json_encode($explanation)));
+    }
+
+    /** @return array<string, array{float, float, string}> */
+    public static function thresholds(): array
+    {
+        return [
+            'at or above the upper threshold' => [60.0, 40.0, 'recommended'],
+            'between the two' => [70.0, 40.0, 'consider'],
+            'below the lower threshold' => [80.0, 65.0, 'not_yet'],
+        ];
+    }
+
+    #[DataProvider('thresholds')]
+    public function test_the_thresholds_decide_between_recommended_consider_and_not_yet(float $recommendedMin, float $notYetBelow, string $expected): void
+    {
+        $this->allow()->assertOk();
+        $battery = $this->battery();
+        $this->provider('PUT', "tests/{$battery}/recommendation-rules", ['key_scales' => ['extraversion'], 'recommended_min' => $recommendedMin, 'not_yet_below' => $notYetBelow])->assertOk();
+        $this->enable($battery)->assertOk();
+
+        $this->takeBattery($battery);
+
+        $this->assertSame($expected, $this->report()['recommendation']);
+    }
+
+    public function test_a_report_whose_key_scale_has_no_standard_score_is_left_for_a_psychologist(): void
+    {
+        $battery = $this->readyBattery();
+        // The norm that covers the raw score is gone, so the rule cannot decide.
+        DB::table('assessment_norms')->where('band', 'High')->delete();
+
+        $reportId = $this->takeBattery($battery);
+
+        $this->assertSame(['pending_review', null], [$this->report()['status'], $this->report()['recommendation']]);
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.recommendation', null);
     }
 
     public function test_the_automatic_report_waits_in_the_queue_until_a_psychologist_reviews_it(): void
@@ -412,7 +467,7 @@ final class AutoIssueTest extends FeatureTestCase
         $this->allow()->assertOk();
         $battery = $this->battery();
         $reportId = $this->takeBattery($battery);
-        $this->provider('PUT', "reviews/{$reportId}", ['body' => (string) $this->report()['body'], 'explanation' => 'You like people.', 'review_notes' => null])->assertOk();
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => (string) $this->report()['body'], 'explanation' => 'You like people.', 'review_notes' => null, 'recommendation' => 'consider'])->assertOk();
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
 
         $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
@@ -438,6 +493,7 @@ final class AutoIssueTest extends FeatureTestCase
         [$secondId, $secondToken] = $this->secondPsychologist();
 
         Carbon::setTestNow(now()->addMinutes(30));
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $secondToken)->assertOk();
         $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Revised text for {{candidate_name}}. Ref {{report_number}} by {{psychologist_name}}.', 'explanation' => 'Revised explanation.'], $secondToken)->assertOk()
             ->assertJsonPath('data.report_number', 'LEMB/2026/00001-R1')
             ->assertJsonPath('data.revision', 1)
@@ -458,7 +514,8 @@ final class AutoIssueTest extends FeatureTestCase
         $this->assertSame(['assessment.report_revised'], DB::table('notifications')->where('notifiable_id', $this->recruiterId)->where('type', 'assessment.report_revised')->pluck('type')->all());
         $this->assertSame(['assessment.explanation_revised'], DB::table('notifications')->where('notifiable_id', $this->seekerId)->where('type', 'assessment.explanation_revised')->pluck('type')->all());
 
-        // A second revision becomes -R2 and keeps the first one too.
+        // A second revision becomes -R2 and keeps the first one too (the first one released the claim).
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $secondToken)->assertOk();
         $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Second text', 'explanation' => 'Second explanation'], $secondToken)->assertOk()->assertJsonPath('data.report_number', 'LEMB/2026/00001-R2');
         $this->assertSame([0, 1], DB::table('assessment_report_revisions')->orderBy('revision')->pluck('revision')->map(fn ($n): int => (int) $n)->all());
         $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->assertJsonPath('data.result.report.number', 'LEMB/2026/00001-R2');

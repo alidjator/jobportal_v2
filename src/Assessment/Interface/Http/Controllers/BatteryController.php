@@ -5,15 +5,20 @@ namespace Src\Assessment\Interface\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Src\Assessment\Application\Authoring\ConfigureAutoIssue;
 use Src\Assessment\Application\Authoring\GetExplanationTemplate;
 use Src\Assessment\Application\Authoring\GetNorms;
+use Src\Assessment\Application\Authoring\GetRecommendationRules;
 use Src\Assessment\Application\Authoring\GetReportTemplate;
 use Src\Assessment\Application\Authoring\ReplaceNorms;
 use Src\Assessment\Application\Authoring\SaveExplanationTemplate;
+use Src\Assessment\Application\Authoring\SaveRecommendationRules;
 use Src\Assessment\Application\Authoring\SaveReportTemplate;
+use Src\Assessment\Domain\RecommendationRules;
 use Src\Assessment\Interface\Http\Requests\AutoIssueRequest;
 use Src\Assessment\Interface\Http\Requests\NormsRequest;
+use Src\Assessment\Interface\Http\Requests\RecommendationRulesRequest;
 use Src\Assessment\Interface\Http\Requests\ReportTemplateRequest;
 use Src\Assessment\Interface\Http\Resources\NormResource;
 use Src\Assessment\Interface\Http\Resources\TestResource;
@@ -31,6 +36,23 @@ final class BatteryController extends ApiController
     public function replaceNorms(NormsRequest $request, int $id, ActorResolver $actors, ReplaceNorms $replace): AnonymousResourceCollection
     {
         return NormResource::collection($replace->execute($actors->fromRequest($request), $id, $request->norms()));
+    }
+
+    public function recommendationRules(Request $request, int $id, ActorResolver $actors, GetRecommendationRules $get): JsonResponse
+    {
+        return response()->json(['data' => $this->rulesPayload($get->execute($actors->fromRequest($request), $id))]);
+    }
+
+    public function saveRecommendationRules(RecommendationRulesRequest $request, int $id, ActorResolver $actors, SaveRecommendationRules $save): JsonResponse
+    {
+        return response()->json(['data' => $this->rulesPayload($save->execute($actors->fromRequest($request), $id, $request->keyScales(), $request->recommendedMin(), $request->notYetBelow()))]);
+    }
+
+    public function deleteRecommendationRules(Request $request, int $id, ActorResolver $actors, SaveRecommendationRules $save): Response
+    {
+        $save->execute($actors->fromRequest($request), $id, null);
+
+        return response()->noContent();
     }
 
     public function reportTemplate(Request $request, int $id, ActorResolver $actors, GetReportTemplate $get): JsonResponse
@@ -57,5 +79,11 @@ final class BatteryController extends ApiController
     public function saveReportTemplate(ReportTemplateRequest $request, int $id, ActorResolver $actors, SaveReportTemplate $save): JsonResponse
     {
         return response()->json(['data' => ['body' => $save->execute($actors->fromRequest($request), $id, $request->body())]]);
+    }
+
+    /** @return array{key_scales: list<string>, recommended_min: float, not_yet_below: float}|null */
+    private function rulesPayload(?RecommendationRules $rules): ?array
+    {
+        return $rules === null ? null : ['key_scales' => $rules->keyScales, 'recommended_min' => $rules->recommendedMin, 'not_yet_below' => $rules->notYetBelow];
     }
 }

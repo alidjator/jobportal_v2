@@ -231,6 +231,37 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->provider('PUT', "tests/{$id}/norms", ['norms' => [[...$row, 'age_min' => 18], [...$row, 'age_min' => 18, 'raw_min' => 5, 'raw_max' => 12]]])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-norms');
     }
 
+    public function test_the_recommendation_rule_of_a_battery_is_set_read_checked_and_removed(): void
+    {
+        $id = $this->newTest('provider');
+        $this->sectionWithQuestion('provider', $id, $this->likert());
+        $rule = ['key_scales' => ['extraversion', 'extraversion'], 'recommended_min' => 55, 'not_yet_below' => 45];
+
+        $this->provider('GET', "tests/{$id}/recommendation-rules")->assertOk()->assertJsonPath('data', null);
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", $rule)->assertOk()
+            ->assertJsonPath('data.key_scales', ['extraversion'])->assertJsonPath('data.recommended_min', 55)->assertJsonPath('data.not_yet_below', 45);
+        $this->provider('GET', "tests/{$id}/recommendation-rules")->assertOk()->assertJsonPath('data.recommended_min', 55);
+
+        $invalid = fn (array $body, string $field) => $this->provider('PUT', "tests/{$id}/recommendation-rules", $body)->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-recommendation-rules')->assertJsonStructure(['errors' => [$field]]);
+        $invalid([...$rule, 'key_scales' => ['unknown_scale']], 'key_scales');
+        $invalid([...$rule, 'recommended_min' => 40, 'not_yet_below' => 45], 'not_yet_below');
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", [...$rule, 'key_scales' => []])->assertStatus(422)->assertJsonValidationErrors(['key_scales']);
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", ['key_scales' => ['extraversion']])->assertStatus(422)->assertJsonValidationErrors(['recommended_min', 'not_yet_below']);
+        $this->provider('GET', "tests/{$id}/recommendation-rules")->assertOk()->assertJsonPath('data.recommended_min', 55);
+
+        $other = $this->otherPsychologistToken;
+        $this->provider('GET', "tests/{$id}/recommendation-rules", [], $other)->assertNotFound();
+        $this->provider('PUT', "tests/{$id}/recommendation-rules", $rule, $other)->assertNotFound();
+
+        $this->provider('POST', "tests/{$id}/clone")->assertCreated();
+        $copy = (int) DB::table('assessment_tests')->orderByDesc('id')->value('id');
+        $this->provider('GET', "tests/{$copy}/recommendation-rules")->assertOk()->assertJsonPath('data.not_yet_below', 45);
+
+        $this->provider('DELETE', "tests/{$id}/recommendation-rules")->assertNoContent();
+        $this->provider('GET', "tests/{$id}/recommendation-rules")->assertOk()->assertJsonPath('data', null);
+        $this->assertSame(0, DB::table('assessment_recommendation_rules')->where('test_id', $id)->count());
+    }
+
     public function test_ranges_of_different_scales_may_overlap(): void
     {
         $id = $this->newTest('provider');

@@ -78,7 +78,7 @@ the calendar; the requisition and plan pages need the `workforce.*` permissions,
 |---|---|---|---|---|
 | H1 | Requests to review reach them | `POST company/jobs/{id}/review-requests` (A2, R2) | Gap | The review inbox and the answer page exist (Lanjut, Tidak, Mungkin, close), but no recruiter can send a request from the Workspace, so the inbox stays empty. |
 | H2 | Stage boundary | `PUT company/jobs/{id}/hiring-manager-boundary` (A6) | Gap | The boundary cannot be set, and the pipeline does not say that it hides the earlier stages (only the count of other applications by recruiters is explained). |
-| H3 | **"Approvals waiting" on the dashboard** | task key `approvals_waiting` (`company/approvals?as=approver`) | Gap | The task list of the dashboard has no text for the key (it would show `talent.dashboard.tasks.approvals_waiting`) and `utils/link-entry.ts` has no link for it, so the row has a count and opens nothing. It hits every approver, not only a hiring manager. The coverage test lists the keys by hand, so a key added after 2026-10-19 slipped through. |
+| H3 | **"Approvals waiting" on the dashboard** | task key `approvals_waiting` (`company/approvals?as=approver`) | **Fixed 2026-10-27** (see G1) | The task list of the dashboard has no text for the key (it would show `talent.dashboard.tasks.approvals_waiting`) and `utils/link-entry.ts` has no link for it, so the row has a count and opens nothing. It hits every approver, not only a hiring manager. The coverage test lists the keys by hand, so a key added after 2026-10-19 slipped through. |
 | H4 | Create and track requisitions | `company/requisitions` (E5) | **Done 2026-10-27** (preset) | The design lets a hiring manager create, submit, amend and track a requisition, but the Hiring manager preset has no `workforce.requisitions.view` or `.create`: the menu entry is hidden until a company admin ticks them one by one. The permission is decided by the user; see the point below. |
 | H5 | Plan of the unit | `company/workforce/plans` (E4) | **Done 2026-10-27** (preset) | `workforce.plans.view` is now in the preset. |
 | H6 | Hires and join dates of a requisition | (none) | Waits | API gap FG13: the requisition links to its jobs but there is no rollup of hires. |
@@ -105,7 +105,7 @@ shows Wawancara saya, Penilaian tes saya (only when named an assessor) and Kalen
 
 | # | What | Where | Status | Effect for an interviewer |
 |---|---|---|---|---|
-| I1 | **Calendar** | menu entry `calendar` allows `interviews.participate`; `GET company/calendar` (`GetCompanyCalendar`) and the page `/kalender` need `applications.view` | **Bug** | The entry shows in the menu and opens a refusal. `frontend.md` C26 says "`applications.view` or a panel seat", so the API and the page do not follow the design. |
+| I1 | **Calendar** | menu entry `calendar` allows `interviews.participate`; `GET company/calendar` (`GetCompanyCalendar`) and the page `/kalender` needed `applications.view` | **Fixed 2026-10-27** (option a: the API and the page admit a panel seat, with the interviews they sit on only) | The entry shows in the menu and opens a refusal. `frontend.md` C26 says "`applications.view` or a panel seat", so the API and the page do not follow the design. |
 | I2 | Answer the invitation, scorecard, questions of the kit, `.ics` | `company/interviews/{id}/rsvp`, `.../scorecard`, `.../scorecards`, `.../questions`, `.../calendar.ics` | Done | All used by `/wawancara` and `/wawancara/{id}`. |
 | I3 | Join the video or voice room | `company/applications/{id}/interview/video|voice/...` | Waits | Step 6: Janus, coturn, Asterisk. Until then an interview of this format has only the link the scheduler typed. |
 | I4 | Notification preferences (A3) | `me/notification-preferences` | Gap | The reminder and the change emails of an interview cannot be tuned. |
@@ -163,7 +163,7 @@ requisitions with amendments and jobs, and the reads across tenants are all ther
 
 | # | What | Where | Status | Effect |
 |---|---|---|---|---|
-| G1 | **"Approvals waiting" on the dashboard** (H3) | task `approvals_waiting`, `utils/link-entry.ts`, `talent.dashboard.tasks.*` | Gap | The row shows the raw key and opens nothing; hits every approver and delegate. The menu badge of the inbox does work. |
+| G1 | **"Approvals waiting" on the dashboard** (H3) | task `approvals_waiting`, `utils/link-entry.ts`, `talent.dashboard.tasks.*` | **Fixed 2026-10-27** (label in both languages, link to `/persetujuan`, coverage test of labels) | The row shows the raw key and opens nothing; hits every approver and delegate. The menu badge of the inbox does work. |
 | G2 | Filters of the read-only screens across tenants | `organization/read/jobs`: `filter[published_from|to]`, `filter[deadline_from]`, `filter[created_by]`; `organization/read/jobs/{id}/applications`: `filter[education_min]`, `filter[experience_min|max]`, `filter[stage_type]` | Partial | Same as R7 and R8: the API filters, the filter bars do not offer them. |
 | G3 | Notification preferences (A3) | `me/notification-preferences` | Gap | An approver cannot tune the approval reminders. |
 | G4 | Own account (A11) | `me/*` | Gap | |
@@ -189,7 +189,7 @@ context and norm groups added on 2026-10-27 (`phase-8-provider-tools.md`, sectio
 | S2 | The platform admin's side: register a provider, invite and manage its psychologists, grant batteries, library | Gap (Console, see the platform admin round) | Without it nothing creates the providers the portal would serve. |
 | S3 | Account security of a psychologist | Gap in the API | No password change and no recovery-code endpoint for the psychologist account (FEG13): M6 would show none until one is designed. |
 | S4 | Report register (M7), institution profile and team (M8), licences and signature (M6 additions) | Waits | #23 section 8 and #24 are designed, not coded. |
-| S5 | Recommendation on a report, notifications for psychologists, example report, public verification of a report (P14) | Waits | #23 sections 4 to 7: the rule of the automatic recommendation waits for the user (bands have no order; standard scores proposed). |
+| S5 | Recommendation on a report (**API coded 2026-10-27**, standard-score rule), notifications for psychologists, example report, public verification of a report (P14) | Waits | #23 sections 5 to 7 are not coded; the recommendation has no screen until Portal Mitra. |
 | S6 | Self-management of the team by an institution lead, licence renewals with the document, institution identity and signature on the report, revising a signed report, review targets, questions about a report | Waits | #24 sections 1 to 7. |
 | S7 | In-house psychologists of a group (private providers, E16) | Waits | #24 section 8, after the rest of #24. |
 

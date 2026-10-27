@@ -43,7 +43,7 @@ final readonly class SignReport
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended`, `provider-suspended` or `cannot-sign-reports`
      * @throws EntityNotFound
      * @throws StateConflict `report-signed` or `claim-required`
-     * @throws BusinessRuleViolation `explanation-required`, `drawings-unscored` or `scales-not-normed`
+     * @throws BusinessRuleViolation `explanation-required`, `drawings-unscored`, `scales-not-normed` or `recommendation-required`
      */
     public function execute(Actor $actor, int $reportId, ?string $ipAddress, ?string $userAgent): ReviewView
     {
@@ -67,7 +67,7 @@ final readonly class SignReport
             $name = isset($accounts[(int) $actor->id]) ? $accounts[(int) $actor->id]->name : '';
 
             $signed = $report->sign(
-                ReportRenderer::signed($report->body, $number, $now->format('Y-m-d'), $name), $number, $year, $sequence, $psychologist, $name, $now,
+                ReportRenderer::signed($report->body, $number, $now->format('Y-m-d'), $name, $report->recommendation), $number, $year, $sequence, $psychologist, $name, $now,
             );
             $signed = $signed->claimReleased();
             $this->reports->update($signed);
@@ -91,7 +91,7 @@ final readonly class SignReport
 
     /**
      * @throws AccessDenied `cannot-sign-reports`
-     * @throws BusinessRuleViolation `explanation-required`, `drawings-unscored` or `scales-not-normed`
+     * @throws BusinessRuleViolation `explanation-required`, `drawings-unscored`, `scales-not-normed` or `recommendation-required`
      */
     private function assertReady(ReviewView $view): void
     {
@@ -105,6 +105,7 @@ final readonly class SignReport
             ReviewViews::EXPLANATION_REQUIRED => ['explanation', 'Write the explanation for the candidate before signing.'],
             ReviewViews::DRAWINGS_UNSCORED => ['drawings', 'Score every drawing before signing.'],
             ReviewViews::SCALES_NOT_NORMED => ['norms', 'Some scales have no norm for the raw score, so the report cannot be signed.'],
+            ReviewViews::RECOMMENDATION_REQUIRED => ['recommendation', 'Choose the recommendation before signing.'],
         ];
 
         foreach ($messages as $code => [$field, $message]) {

@@ -218,6 +218,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-question` | 422 | Assessment |  |
 | `invalid-range` | 422 | Dashboard | Only days up to yesterday can be summarised. |
 | `invalid-rating` | 422 | Recruitment | Rate from 1 to 5 stars. |
+| `invalid-recommendation-rules` | 422 | Assessment | The key scales and the two thresholds of the recommendation rule are not acceptable (an unknown scale, thresholds the wrong way round). The body names the field. |
 | `invalid-reference` | 422 | Job | Some of the values do not exist or are not active. |
 | `invalid-rejection` | 422 | Recruitment |  |
 | `invalid-report` | 422 | Assessment, Job, Messaging | The report text cannot be empty. |
@@ -391,6 +392,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `reason-too-long` | 422 | JobInvitation | The reason may have at most :max characters. |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |
+| `recommendation-required` | 422 | Assessment | Choose the recommendation before signing. |
 | `recording-consent-required` | 422 | Recruitment |  |
 | `recording-in-progress` | 409 | Recruitment | This interview is already being recorded. |
 | `recording-not-allowed` | 409 | Recruitment | This interview may not be recorded: the job seeker has not given their consent. |

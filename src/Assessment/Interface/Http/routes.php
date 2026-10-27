@@ -29,6 +29,9 @@ Route::prefix('provider')->group(function (): void {
 
         Route::get('tests/{id}/norms', [BatteryController::class, 'norms'])->whereNumber('id');
         Route::put('tests/{id}/norms', [BatteryController::class, 'replaceNorms'])->whereNumber('id');
+        Route::get('tests/{id}/recommendation-rules', [BatteryController::class, 'recommendationRules'])->whereNumber('id');
+        Route::put('tests/{id}/recommendation-rules', [BatteryController::class, 'saveRecommendationRules'])->whereNumber('id');
+        Route::delete('tests/{id}/recommendation-rules', [BatteryController::class, 'deleteRecommendationRules'])->whereNumber('id');
         Route::get('tests/{id}/report-template', [BatteryController::class, 'reportTemplate'])->whereNumber('id');
         Route::put('tests/{id}/report-template', [BatteryController::class, 'saveReportTemplate'])->whereNumber('id');
         Route::get('tests/{id}/explanation-template', [BatteryController::class, 'explanationTemplate'])->whereNumber('id');

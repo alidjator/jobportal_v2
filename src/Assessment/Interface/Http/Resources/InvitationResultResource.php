@@ -63,6 +63,9 @@ final class InvitationResultResource extends JsonResource
                 'signed_at' => $report->signedAt?->format(DateTimeInterface::ATOM),
                 'signer_name' => $report->signerName,
                 'text' => $report->body,
+                /** @var 'recommended'|'consider'|'not_yet'|null The hiring advice of the report, for the company only: never in the explanation the candidate reads. */
+                'recommendation' => $report->recommendation?->value,
+                'recommendation_label' => $report->recommendation?->label(),
             ],
         ];
     }

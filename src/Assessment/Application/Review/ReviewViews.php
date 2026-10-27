@@ -33,6 +33,8 @@ final readonly class ReviewViews
 
     public const string SCALES_NOT_NORMED = 'scales-not-normed';
 
+    public const string RECOMMENDATION_REQUIRED = 'recommendation-required';
+
     public function __construct(
         private AttemptRepository $attempts,
         private InvitationRepository $invitations,
@@ -147,6 +149,10 @@ final readonly class ReviewViews
 
         if (array_filter($scales, static fn (array $row): bool => $row['standard'] === null) !== []) {
             $problems[] = self::SCALES_NOT_NORMED;
+        }
+
+        if ($report->recommendation === null) {
+            $problems[] = self::RECOMMENDATION_REQUIRED;
         }
 
         return $problems;

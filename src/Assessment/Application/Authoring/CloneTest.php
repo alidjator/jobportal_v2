@@ -6,6 +6,7 @@ use Src\Assessment\Application\AssessmentSettings;
 use Src\Assessment\Domain\NormRepository;
 use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionRepository;
+use Src\Assessment\Domain\RecommendationRuleRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\Section;
 use Src\Assessment\Domain\SectionRepository;
@@ -28,6 +29,7 @@ final readonly class CloneTest
         private SectionRepository $sections,
         private QuestionRepository $questions,
         private NormRepository $norms,
+        private RecommendationRuleRepository $recommendationRules,
         private ReportTemplateRepository $templates,
         private Settings $settings,
         private TransactionManager $transactions,
@@ -75,6 +77,7 @@ final readonly class CloneTest
             }
 
             $this->norms->replace((int) $copy->id, $this->norms->ofTest((int) $source->id));
+            $this->recommendationRules->replace((int) $copy->id, $this->recommendationRules->ofTest((int) $source->id));
             $body = $this->templates->bodyOf((int) $source->id);
 
             if ($body !== null) {

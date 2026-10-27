@@ -27,6 +27,8 @@ final class ReviewResource extends JsonResource
             'body' => $report->body,
             'explanation' => $report->explanation,
             'review_notes' => $report->reviewNotes,
+            /** @var 'recommended'|'consider'|'not_yet'|null The hiring advice; the rule of the battery proposes it, the psychologist decides, and it is required to sign. */
+            'recommendation' => $report->recommendation?->value,
             'edited_at' => $report->editedAt?->format(DateTimeInterface::ATOM),
             'scales' => $this->resource->scales,
             'speed_columns' => array_map(static fn (SpeedColumnResult $column): array => [

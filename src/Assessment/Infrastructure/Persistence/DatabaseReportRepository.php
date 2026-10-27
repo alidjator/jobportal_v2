@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use LogicException;
+use Src\Assessment\Domain\Recommendation;
 use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
@@ -69,6 +70,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'signer_name' => $report->signerName,
             'signer_str_number' => $report->signerStrNumber,
             'signer_silp_number' => $report->signerSilpNumber,
+            'recommendation' => $report->recommendation?->value,
             'signed_at' => $report->signedAt,
             'superseded_at' => $supersededAt,
             'created_at' => $now,
@@ -179,6 +181,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'claimed_by_psychologist_id' => $report->claimedByPsychologistId,
             'claimed_at' => $report->claimedAt,
             'claim_touched_at' => $report->claimTouchedAt,
+            'recommendation' => $report->recommendation?->value,
             'updated_at' => $this->clock->now(),
         ];
     }
@@ -210,6 +213,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
             $row->claimed_at === null ? null : $this->time((string) $row->claimed_at),
             $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
+            $row->recommendation === null ? null : Recommendation::from((string) $row->recommendation),
         );
     }
 

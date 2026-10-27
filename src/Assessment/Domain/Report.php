@@ -39,6 +39,7 @@ final readonly class Report
         public ?int $claimedByPsychologistId = null,
         public ?DateTimeImmutable $claimedAt = null,
         public ?DateTimeImmutable $claimTouchedAt = null,
+        public ?Recommendation $recommendation = null,
     ) {}
 
     public static function draft(int $attemptId, int $providerId, string $body): self
@@ -130,14 +131,14 @@ final readonly class Report
      *
      * @throws StateConflict `report-signed`
      */
-    public function issueAutomatically(string $body, string $explanation, string $number, int $year, int $sequence, Psychologist $responsible, string $signerName, DateTimeImmutable $now): self
+    public function issueAutomatically(string $body, string $explanation, string $number, int $year, int $sequence, Psychologist $responsible, string $signerName, DateTimeImmutable $now, ?Recommendation $recommendation = null): self
     {
         $this->assertOpen();
 
         return $this->with([
             'status' => ReportStatus::Signed, 'body' => $body, 'explanation' => $explanation, 'number' => $number, 'year' => $year, 'sequence' => $sequence,
             'signedByPsychologistId' => $responsible->id, 'signerName' => $signerName, 'signerStrNumber' => $responsible->strNumber(), 'signerSilpNumber' => $responsible->silpNumber(),
-            'signedAt' => $now, 'autoIssued' => true,
+            'signedAt' => $now, 'autoIssued' => true, 'recommendation' => $recommendation ?? $this->recommendation,
         ]);
     }
 
@@ -158,7 +159,7 @@ final readonly class Report
      *
      * @throws StateConflict `report-not-auto-issued`
      */
-    public function revised(string $body, string $explanation, Psychologist $reviser, string $signerName, DateTimeImmutable $now): self
+    public function revised(string $body, string $explanation, Psychologist $reviser, string $signerName, DateTimeImmutable $now, ?Recommendation $recommendation = null): self
     {
         $this->assertAutoIssued();
 
@@ -167,8 +168,14 @@ final readonly class Report
         return $this->with([
             'body' => $body, 'explanation' => $explanation, 'number' => $this->baseNumber().'-R'.$revision, 'revision' => $revision, 'signedByPsychologistId' => $reviser->id,
             'signerName' => $signerName, 'signerStrNumber' => $reviser->strNumber(), 'signerSilpNumber' => $reviser->silpNumber(), 'signedAt' => $now,
-            'reviewedAt' => $now, 'reviewedByPsychologistId' => $reviser->id,
+            'reviewedAt' => $now, 'reviewedByPsychologistId' => $reviser->id, 'recommendation' => $recommendation ?? $this->recommendation,
         ]);
+    }
+
+    /** The same report with the hiring advice the psychologist chose (or the rule worked out); null takes it away. */
+    public function withRecommendation(?Recommendation $recommendation): self
+    {
+        return $this->with(['recommendation' => $recommendation]);
     }
 
     /** The same report with another text (the placeholders of the signature filled in). */

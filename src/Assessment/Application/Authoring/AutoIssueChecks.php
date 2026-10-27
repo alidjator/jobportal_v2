@@ -7,6 +7,7 @@ use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistRepository;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
+use Src\Assessment\Domain\RecommendationRuleRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\Test;
 use Src\Shared\Domain\Exceptions\ErrorMessage;
@@ -23,6 +24,7 @@ final readonly class AutoIssueChecks
         private PsychologistRepository $psychologists,
         private QuestionRepository $questions,
         private NormRepository $norms,
+        private RecommendationRuleRepository $recommendationRules,
         private ReportTemplateRepository $templates,
     ) {}
 
@@ -59,6 +61,10 @@ final readonly class AutoIssueChecks
             if (array_filter($norms, static fn ($norm): bool => $norm->scaleKey === $scale && $norm->isGeneral()) === []) {
                 $problems[] = new ErrorMessage('The scale :scale needs a norm row without an age or education group, so that no candidate falls through.', ['scale' => $scale]);
             }
+        }
+
+        if ($this->recommendationRules->ofTest((int) $test->id) === null) {
+            $problems[] = 'The battery needs a recommendation rule: the key scales and the two thresholds that work out the recommendation.';
         }
 
         if ($this->templates->explanationTemplateOf((int) $test->id) === null) {

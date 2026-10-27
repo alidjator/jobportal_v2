@@ -41,6 +41,7 @@ use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
 use Src\Assessment\Domain\PsychologistRepository;
 use Src\Assessment\Domain\QuestionRepository;
+use Src\Assessment\Domain\RecommendationRuleRepository;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionRepository;
@@ -71,6 +72,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseProviderRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseQuestionRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseRecommendationRuleRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportTemplateRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
@@ -109,6 +111,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         SectionRepository::class => DatabaseSectionRepository::class,
         QuestionRepository::class => DatabaseQuestionRepository::class,
         NormRepository::class => DatabaseNormRepository::class,
+        RecommendationRuleRepository::class => DatabaseRecommendationRuleRepository::class,
         ReportTemplateRepository::class => DatabaseReportTemplateRepository::class,
         CompanyBatteryRepository::class => DatabaseCompanyBatteryRepository::class,
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,

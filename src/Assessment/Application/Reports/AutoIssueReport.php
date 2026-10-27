@@ -38,6 +38,7 @@ final readonly class AutoIssueReport
         private NormRepository $norms,
         private AnswerRepository $answers,
         private ApplicantContacts $applicants,
+        private RecommendationAdvisor $advisor,
         private Clock $clock,
     ) {}
 
@@ -81,13 +82,20 @@ final readonly class AutoIssueReport
         $signerName = isset($signer[$responsible->userId]) ? $signer[$responsible->userId]->name : '';
         $candidate = $this->applicants->names([$invitation->applicantUserId])[$invitation->applicantUserId] ?? '';
 
+        // A report is issued without a psychologist only when the rule of the battery gives it a recommendation.
+        $recommendation = $this->advisor->advise((int) $test->id, $result->scaleScores, $attempt->normCandidate());
+
+        if ($recommendation === null) {
+            return null;
+        }
+
         $explanation = ReportRenderer::explanation($template, $candidate, $test->title(), $number, $signedOn, $signerName, $result->scaleScores, $this->norms->ofTest((int) $test->id), $attempt->normCandidate());
 
         if ($explanation === null) {
             return null;
         }
 
-        $issued = $report->issueAutomatically(ReportRenderer::signed($report->body, $number, $signedOn, $signerName), $explanation, $number, $year, $sequence, $responsible, $signerName, $now);
+        $issued = $report->issueAutomatically(ReportRenderer::signed($report->body, $number, $signedOn, $signerName, $recommendation), $explanation, $number, $year, $sequence, $responsible, $signerName, $now, $recommendation);
         $this->reports->update($issued);
 
         return new ReportSigned(

@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Review;
 
+use Src\Assessment\Domain\Recommendation;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRules;
 use Src\Shared\Application\Actor;
@@ -12,7 +13,7 @@ use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
-/** The psychologist edits the draft: the text of the report, the explanation for the candidate and their own notes. All three are sent every time. */
+/** The psychologist edits the draft: the text of the report, the explanation for the candidate and their own notes (all three are sent every time) and, when sent, the recommendation. */
 final readonly class UpdateReview
 {
     public const int TEXT_MAX = ReportTemplateRules::BODY_MAX;
@@ -36,9 +37,9 @@ final readonly class UpdateReview
      * @throws StateConflict `report-signed` or `claim-required`
      * @throws BusinessRuleViolation `invalid-report`
      */
-    public function execute(Actor $actor, int $reportId, string $body, ?string $explanation, ?string $reviewNotes): ReviewView
+    public function execute(Actor $actor, int $reportId, string $body, ?string $explanation, ?string $reviewNotes, ?Recommendation $recommendation = null): ReviewView
     {
-        return $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $reviewNotes): ReviewView {
+        return $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $reviewNotes, $recommendation): ReviewView {
             $psychologist = $this->access->psychologist($actor);
             $report = $this->access->report($psychologist, $reportId, forUpdate: true);
 
@@ -49,6 +50,12 @@ final readonly class UpdateReview
             }
 
             $updated = $report->edit($body, $this->clean($explanation), $this->clean($reviewNotes), $this->clock->now());
+
+            // A recommendation that is not sent stays as it is.
+            if ($recommendation !== null) {
+                $updated = $updated->withRecommendation($recommendation);
+            }
+
             $this->claims->assertHeld($psychologist, $report);
             $this->reports->update($updated->claimTouched($this->clock->now()));
 

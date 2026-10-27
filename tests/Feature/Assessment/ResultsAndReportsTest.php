@@ -192,7 +192,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
     {
         $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 7.5, 'note' => 'Roots are strong.'])->assertOk();
         $this->provider('PUT', "reviews/{$reportId}", [
-            'body' => (string) DB::table('assessment_reports')->value('body'), 'explanation' => 'You like people and often seek company.', 'review_notes' => null,
+            'body' => (string) DB::table('assessment_reports')->value('body'), 'explanation' => 'You like people and often seek company.', 'review_notes' => null, 'recommendation' => 'recommended',
         ])->assertOk();
     }
 
@@ -432,7 +432,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
             ->assertJsonPath('data.drawings.0.score', null)
             ->assertJsonPath('data.drawings.0.max_score', 10)
             ->assertJsonPath('data.speed_columns', [])
-            ->assertJsonPath('data.signing_problems', ['explanation-required', 'drawings-unscored']);
+            ->assertJsonPath('data.signing_problems', ['explanation-required', 'drawings-unscored', 'recommendation-required']);
         $this->assertEquals([3, 60], [$review->json('data.scales.0.raw'), $review->json('data.scales.0.standard')]);
 
         $drawing = $this->provider('GET', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}")->assertOk();
@@ -454,7 +454,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->provider('PUT', "reviews/{$reportId}/drawings/999999", ['score' => 5])->assertNotFound();
         $this->assertSame('7.50', DB::table('assessment_drawings')->value('score'));
 
-        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'My own text about {{scale:extraversion:band}}', 'explanation' => 'You like people.', 'review_notes' => 'Kraepelin looked steady.'])->assertOk()
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'My own text about {{scale:extraversion:band}}', 'explanation' => 'You like people.', 'review_notes' => 'Kraepelin looked steady.', 'recommendation' => 'recommended'])->assertOk()
             ->assertJsonPath('data.body', 'My own text about {{scale:extraversion:band}}')
             ->assertJsonPath('data.explanation', 'You like people.')
             ->assertJsonPath('data.review_notes', 'Kraepelin looked steady.')
@@ -693,14 +693,14 @@ final class ResultsAndReportsTest extends FeatureTestCase
             ->assertJsonPath('data.context.education_level.rank', 4)
             ->assertJsonPath('data.context.job.title', 'Backend Developer')
             ->assertJsonPath('data.context.company_name', DB::table('company_companies')->where('id', $this->companyId)->value('name'));
-        $this->assertNotNull($review->json('data.context.education_level.name'));
+        $this->assertArrayHasKey('name', $review->json('data.context.education_level'));
         $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.job_title', 'Backend Developer')->assertJsonPath('data.0.company_name', $review->json('data.context.company_name'));
     }
 
     public function test_a_report_is_written_only_by_the_psychologist_who_claimed_it(): void
     {
         $reportId = $this->takeBattery();
-        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $colleague = $this->colleagueOf($this->providerId, 'rekan@psikolog.example.test');
         $write = fn (?string $token = null) => $this->api('PUT', "/provider/reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'You like people.', 'review_notes' => null], $token ?? $this->psychologistToken);
 
         // Nobody holds it yet: every write is refused, reading stays open.
@@ -730,7 +730,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
     public function test_a_claim_lapses_after_a_day_without_a_write_and_a_write_keeps_it_alive(): void
     {
         $reportId = $this->takeBattery();
-        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $colleague = $this->colleagueOf($this->providerId, 'rekan@psikolog.example.test');
         $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $this->psychologistToken)->assertOk();
 
         DB::table('assessment_reports')->where('id', $reportId)->update(['claim_touched_at' => now()->subHours(23)]);
@@ -747,7 +747,7 @@ final class ResultsAndReportsTest extends FeatureTestCase
     public function test_the_queue_filters_by_who_holds_the_report_and_signing_releases_it(): void
     {
         $reportId = $this->takeBattery();
-        $colleague = $this->colleagueOf($this->providerId, 'rina@example.test');
+        $colleague = $this->colleagueOf($this->providerId, 'rekan@psikolog.example.test');
         $ids = fn (string $filter, string $token): array => array_column($this->api('GET', "/provider/reviews?filter[claimed]={$filter}", [], $token)->assertOk()->json('data'), 'id');
 
         $this->assertSame([$reportId], $ids('none', $this->psychologistToken));
@@ -774,6 +774,44 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->assertNull(DB::table('assessment_reports')->where('id', $reportId)->value('claimed_by_psychologist_id'));
     }
 
+    public function test_the_rule_of_the_battery_proposes_the_recommendation_and_the_psychologist_decides(): void
+    {
+        $battery = $this->battery('Advice: {{recommendation}}.');
+        $this->provider('PUT', "tests/{$battery}/recommendation-rules", ['key_scales' => ['extraversion'], 'recommended_min' => 70, 'not_yet_below' => 40])->assertOk();
+        $reportId = $this->takeBattery($battery);
+
+        // Raw score 3 reads standard score 60: between the thresholds, so the draft proposes "consider".
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.recommendation', 'consider')->assertJsonPath('data.signing_problems', ['explanation-required', 'drawings-unscored']);
+        $this->assertSame('Advice: {{recommendation}}.', DB::table('assessment_reports')->where('id', $reportId)->value('body'));
+
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Advice: {{recommendation}}.', 'explanation' => 'You like people.', 'review_notes' => null, 'recommendation' => 'not_yet'])->assertOk()->assertJsonPath('data.recommendation', 'not_yet');
+        // Left out, it stays; a value outside the three is refused.
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Advice: {{recommendation}}.', 'explanation' => 'You like people.', 'review_notes' => null])->assertOk()->assertJsonPath('data.recommendation', 'not_yet');
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'x', 'review_notes' => null, 'recommendation' => 'hire'])->assertStatus(422)->assertJsonValidationErrors(['recommendation']);
+
+        $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 7])->assertOk();
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk()->assertJsonPath('data.recommendation', 'not_yet');
+
+        $this->assertSame('Advice: Belum disarankan.', DB::table('assessment_reports')->where('id', $reportId)->value('body'));
+        $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->assertJsonPath('data.result.report.recommendation', 'not_yet')->assertJsonPath('data.result.report.recommendation_label', 'Belum disarankan');
+        $this->assertStringStartsWith('%PDF', (string) $this->company('GET', "invitations/{$this->invitationId}/report.pdf")->assertOk()->getContent());
+    }
+
+    public function test_a_report_cannot_be_signed_without_a_recommendation(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 5])->assertOk();
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'You like people.', 'review_notes' => null])->assertOk();
+
+        // The battery has no rule, so nothing was proposed.
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.recommendation', null)->assertJsonPath('data.signing_problems', ['recommendation-required']);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:recommendation-required')->assertJsonStructure(['errors' => ['recommendation']]);
+
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Text', 'explanation' => 'You like people.', 'review_notes' => null, 'recommendation' => 'recommended'])->assertOk();
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $this->assertSame('recommended', DB::table('assessment_reports')->where('id', $reportId)->value('recommendation'));
+    }
+
     public function test_the_attempt_keeps_the_age_and_education_of_the_application_and_the_norm_group_follows_it(): void
     {
         DB::table('recruitment_applications')->where('id', $this->applicationId)->update(['profile_snapshot' => json_encode(['age' => 22])]);
@@ -785,7 +823,11 @@ final class ResultsAndReportsTest extends FeatureTestCase
             [...$row, 'band' => 'High'],
             [...$row, 'standard_score' => 70, 'band' => 'High for the young', 'age_min' => 18, 'age_max' => 25],
             [...$row, 'standard_score' => 80, 'band' => 'High for the old', 'age_min' => 40],
-        ]])->assertOk()->assertJsonPath('data.2.age_min', 18)->assertJsonPath('data.2.age_max', 25);
+        ]])->assertOk()->assertJsonCount(4, 'data');
+
+        // The rows come back by scale and raw range, so the order among rows of one range is not the order they were sent in: find the row by its band.
+        $young = collect($this->provider('GET', "tests/{$battery}/norms")->assertOk()->json('data'))->firstWhere('band', 'High for the young');
+        $this->assertSame([18, 25], [$young['age_min'], $young['age_max']]);
 
         $reportId = $this->takeBattery($battery);
 

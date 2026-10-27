@@ -30,6 +30,7 @@ final readonly class ReportDrafter
         private NormRepository $norms,
         private ApplicantContacts $accounts,
         private JobDirectory $jobs,
+        private RecommendationAdvisor $advisor,
     ) {}
 
     public function draft(Attempt $attempt, Invitation $invitation, Test $test, AttemptResult $result): void
@@ -50,14 +51,18 @@ final readonly class ReportDrafter
             $this->jobs->titles([$invitation->jobId])[$invitation->jobId] ?? null,
         );
 
+        // The rule of the battery, when it has one and every key scale has a standard score, proposes the recommendation; the psychologist may change it.
+        $advice = $this->advisor->advise((int) $test->id, $result->scaleScores, $attempt->normCandidate());
         $existing = $this->reports->findByAttempt($attempt->id, forUpdate: true);
 
         if ($existing instanceof Report) {
-            $this->reports->update($existing->redrafted($body));
+            $redrafted = $existing->redrafted($body);
+
+            $this->reports->update($redrafted === $existing ? $existing : $redrafted->withRecommendation($advice));
 
             return;
         }
 
-        $this->reports->add(Report::draft($attempt->id, $providerId, $body));
+        $this->reports->add(Report::draft($attempt->id, $providerId, $body)->withRecommendation($advice));
     }
 }

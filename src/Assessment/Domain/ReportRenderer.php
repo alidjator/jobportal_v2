@@ -64,9 +64,15 @@ final class ReportRenderer
         return preg_match('/\{\{.*?\}\}/s', $text) === 1 ? null : $text;
     }
 
-    public static function signed(string $body, string $number, string $signedOn, string $psychologistName): string
+    public static function signed(string $body, string $number, string $signedOn, string $psychologistName, ?Recommendation $recommendation = null): string
     {
-        return self::fill($body, ['report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName]);
+        $values = ['report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName];
+
+        if ($recommendation !== null) {
+            $values['recommendation'] = $recommendation->label();
+        }
+
+        return self::fill($body, $values);
     }
 
     public static function number(float $value): string
