@@ -17,7 +17,7 @@ Status: **Gap** = API coded, no screen; **Partial** = a screen exists but leaves
 |---|---|---|---|---|
 | A1 | Screening questions of a job | `GET`/`PUT company/jobs/{id}/screening-questions` | **Done 2026-10-27** (tab Screening of the job: `JobScreeningTab`, `JobScreeningDialog`) | The bank (C18) can be filled, but no job can use it: applicants never get screening questions. |
 | A2 | Ask colleagues to review candidates | `GET`/`POST company/jobs/{id}/review-requests` | **Done 2026-10-27** ("Minta review" in the selection of the pipeline) | The inbox of the reviewers exists; nobody can send the request. |
-| A3 | Notification preferences (daily digest, team emails) | `GET`/`PUT me/notification-preferences[/{key}/{channel}]` | Gap | No member can switch the digest or the team emails off. |
+| A3 | Notification preferences (daily digest, team emails) | `GET`/`PUT me/notification-preferences[/{key}/{channel}]` | **Done 2026-10-27** (tab Notifikasi of the account page) | No member can switch the digest or the team emails off. |
 | A4 | Default test per assessment stage, with the advance rule (#22) | `company/jobs/{id}/assessments` (`GET`, `PUT`, `DELETE`) | **Done 2026-10-27** (tab Stages: `JobStagesTab`, `JobDefaultDialog`) | The automation of sending a test on entering a stage cannot be set up. |
 | A5 | Interview kit per stage of a job | `company/jobs/{id}/interview-kits` | **Done 2026-10-27** (tab Stages) | A kit is chosen only when scheduling, never fixed per stage. |
 | A6 | Stage boundary of a hiring manager | `PUT company/jobs/{id}/hiring-manager-boundary` | **Done 2026-10-27** (the stage choice in `JobTeamDialog`) | A hiring manager always sees applicants from the default stage. |
@@ -25,7 +25,7 @@ Status: **Gap** = API coded, no screen; **Partial** = a screen exists but leaves
 | A8 | Delete a draft job | `DELETE company/jobs/{id}` | **Done 2026-10-27** (action "Hapus draf" of the job page) | A wrong draft can only be closed or duplicated. |
 | A9 | Summary of what the karir.pkp import carried | `GET company/import-summary`, `POST .../dismiss` | Gap | A migrated company admin sees nothing of the import; matters at go-live. |
 | A10 | Preview of the email before it is sent | `POST company/applications/{id}/email-preview` | Gap | Interview, test and offer emails go out unseen. |
-| A11 | Own account: photo, change email, delete account, export data | `me/avatar`, `me/email-change`, `me/deletion`, `me/data-export` | Gap | The account page has information, password and security only; the erasure and export rights apply to company members too. |
+| A11 | Own account: photo, change email, delete account, export data | `me/avatar`, `me/email-change`, `me/deletion`, `me/data-export` | **Partly done 2026-10-27**: email change and account deletion are in the tab Akun. A photo has no place in the Workspace yet, and the data export is for job seekers only in the API (`job-seeker-only`): a company member has no export | The account page has information, password and security only; the erasure and export rights apply to company members too. |
 | A12 | Announcement banner (decided for Workspace in `frontend.md` 11.1) | `GET announcements` | Gap | Only Career shows it. |
 | A13 | Assign people to a job; assign a member to jobs | `PUT company/jobs/{id}/assignees`, `POST company/members/{id}/jobs` | **Done 2026-10-27** (`JobTeamDialog`, `TeamAssignJobsDialog`) | The job team dialog reads `GET company/members`, which only a company admin may read; a non-admin with `jobs.assign` gets an error. |
 | A14 | Interview recordings, calls, attendance, video and voice rooms | `company/interviews/{id}/...`, `.../interview/video|voice/...` | Waits | Step 6: Janus, coturn and Asterisk. |
@@ -51,8 +51,8 @@ at once).
 | R7 | Applicant list filters | `filter[education_min]`, `filter[experience_min]`, `filter[experience_max]`, `filter[stage_type]` | Partial | The API filters by education level, experience range and stage type; the filter bar offers none of them. |
 | R8 | Job list filters | `filter[published_from]`, `filter[published_to]`, `filter[deadline_from]`, `filter[created_by]` | Partial | No date range and no "created by" in the job list. |
 | R9 | Invite a person of the talent pool to one job | `CreateInvitationRequest.talent_pool_entry_id` | Partial | The bulk dialog is used; a single invitation from an entry is not. |
-| R10 | Notification preferences (A3) | `me/notification-preferences` | Gap | A recruiter cannot choose which of the digest and event emails they receive. |
-| R11 | Own account (A11) | `me/*` | Gap | |
+| R10 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | A recruiter cannot choose which of the digest and event emails they receive. |
+| R11 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 | R12 | Candidate search by age, religion, nationality | `filter[age_min]`, `filter[age_max]`, `filter[religion_id]`, `filter[nationality_id]` | Deliberate | Sensitive filters stay off until the legal review (`docs/legal-review.md`). |
 | R13 | Undo a rejection; reject the rest when a job closes | (none) | Waits | Designed in #14 and #15, no endpoint yet. |
 | R14 | Add a candidate by hand (walk-in, referral) | (none) | Waits | Designed in #31. |
@@ -83,8 +83,8 @@ the calendar; the requisition and plan pages need the `workforce.*` permissions,
 | H5 | Plan of the unit | `company/workforce/plans` (E4) | **Done 2026-10-27** (preset) | `workforce.plans.view` is now in the preset. |
 | H6 | Hires and join dates of a requisition | (none) | Waits | API gap FG13: the requisition links to its jobs but there is no rollup of hires. |
 | H7 | Assessment summary on the review card | (none) | Waits | Designed in #23, not coded. |
-| H8 | Notification preferences (A3) | `me/notification-preferences` | Gap | Reminders of reviews and interviews cannot be tuned. |
-| H9 | Own account (A11) | `me/*` | Gap | |
+| H8 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | Reminders of reviews and interviews cannot be tuned. |
+| H9 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 
 Done and checked in the code: the interview scorecard and the results comparison of a job (`interview-results`), the answer page of a review with its decision, the
 read-only board (no moves without `applications.manage`), the tabs of an application gated by `applications.review`, and the approval inbox (approve, reject, return,
@@ -108,8 +108,8 @@ shows Wawancara saya, Penilaian tes saya (only when named an assessor) and Kalen
 | I1 | **Calendar** | menu entry `calendar` allows `interviews.participate`; `GET company/calendar` (`GetCompanyCalendar`) and the page `/kalender` needed `applications.view` | **Fixed 2026-10-27** (option a: the API and the page admit a panel seat, with the interviews they sit on only) | The entry shows in the menu and opens a refusal. `frontend.md` C26 says "`applications.view` or a panel seat", so the API and the page do not follow the design. |
 | I2 | Answer the invitation, scorecard, questions of the kit, `.ics` | `company/interviews/{id}/rsvp`, `.../scorecard`, `.../scorecards`, `.../questions`, `.../calendar.ics` | Done | All used by `/wawancara` and `/wawancara/{id}`. |
 | I3 | Join the video or voice room | `company/applications/{id}/interview/video|voice/...` | Waits | Step 6: Janus, coturn, Asterisk. Until then an interview of this format has only the link the scheduler typed. |
-| I4 | Notification preferences (A3) | `me/notification-preferences` | Gap | The reminder and the change emails of an interview cannot be tuned. |
-| I5 | Own account (A11) | `me/*` | Gap | |
+| I4 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | The reminder and the change emails of an interview cannot be tuned. |
+| I5 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 | I6 | Briefing page for the interviewer; telling them the outcome | (none) | Deliberate | Not taken (`phase-8-interviewers.md`). |
 | I7 | Offer another time instead of declining | (none) | Deliberate | Not taken (interviewer availability, G12): the interviewer declines with a note and the scheduler gets the task `panel_declined`. |
 
@@ -165,8 +165,8 @@ requisitions with amendments and jobs, and the reads across tenants are all ther
 |---|---|---|---|---|
 | G1 | **"Approvals waiting" on the dashboard** (H3) | task `approvals_waiting`, `utils/link-entry.ts`, `talent.dashboard.tasks.*` | **Fixed 2026-10-27** (label in both languages, link to `/persetujuan`, coverage test of labels) | The row shows the raw key and opens nothing; hits every approver and delegate. The menu badge of the inbox does work. |
 | G2 | Filters of the read-only screens across tenants | `organization/read/jobs`: `filter[published_from|to]`, `filter[deadline_from]`, `filter[created_by]`; `organization/read/jobs/{id}/applications`: `filter[education_min]`, `filter[experience_min|max]`, `filter[stage_type]` | Partial | Same as R7 and R8: the API filters, the filter bars do not offer them. |
-| G3 | Notification preferences (A3) | `me/notification-preferences` | Gap | An approver cannot tune the approval reminders. |
-| G4 | Own account (A11) | `me/*` | Gap | |
+| G3 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | An approver cannot tune the approval reminders. |
+| G4 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 | G5 | Subjects an approval flow can govern | `workforce.plan`, `workforce.requisition`, `workforce.requisition_amendment` only | Waits | An offer or a hire cannot be sent through an approval for an internal tenant (#12, "approval needs a design"). |
 | G6 | Assessment providers of the group (E16) | `organization/assessment-*` | Waits | API #24 section 8. |
 | G7 | Approve from an email or a notification | (none) | Waits | FG15, P3: the approver decides inside the Workspace only. |
