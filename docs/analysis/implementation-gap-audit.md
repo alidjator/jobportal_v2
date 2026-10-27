@@ -21,7 +21,7 @@ Status: **Gap** = API coded, no screen; **Partial** = a screen exists but leaves
 | A4 | Default test per assessment stage, with the advance rule (#22) | `company/jobs/{id}/assessments` (`GET`, `PUT`, `DELETE`) | **Done 2026-10-27** (tab Stages: `JobStagesTab`, `JobDefaultDialog`) | The automation of sending a test on entering a stage cannot be set up. |
 | A5 | Interview kit per stage of a job | `company/jobs/{id}/interview-kits` | **Done 2026-10-27** (tab Stages) | A kit is chosen only when scheduling, never fixed per stage. |
 | A6 | Stage boundary of a hiring manager | `PUT company/jobs/{id}/hiring-manager-boundary` | **Done 2026-10-27** (the stage choice in `JobTeamDialog`) | A hiring manager always sees applicants from the default stage. |
-| A7 | Message many applicants | `POST company/jobs/{id}/applications/bulk-message` | Gap | The bulk actions are move and reject only. |
+| A7 | Message many applicants | `POST company/jobs/{id}/applications/bulk-message` | **Done 2026-10-27** (`ApplicantList`: "Kirim pesan" in the selection bar, text only; the answer is counted as sent and skipped) | The bulk actions are move and reject only. |
 | A8 | Delete a draft job | `DELETE company/jobs/{id}` | **Done 2026-10-27** (action "Hapus draf" of the job page) | A wrong draft can only be closed or duplicated. |
 | A9 | Summary of what the karir.pkp import carried | `GET company/import-summary`, `POST .../dismiss` | Gap | A migrated company admin sees nothing of the import; matters at go-live. |
 | A10 | Preview of the email before it is sent | `POST company/applications/{id}/email-preview` | Gap | Interview, test and offer emails go out unseen. |
@@ -44,7 +44,7 @@ at once).
 |---|---|---|---|---|
 | R1 | Screening questions of a job (A1) | `company/jobs/{id}/screening-questions` | **Done 2026-10-27** (A1) | They create jobs (`jobs.create`) but cannot attach questions to them. |
 | R2 | Ask colleagues to review (A2) | `POST company/jobs/{id}/review-requests` (`reviewer_ids`) | **Done 2026-10-27** (A2) | The shortlist step with a hiring manager cannot start from the Workspace. |
-| R3 | Message many applicants (A7) | `POST company/jobs/{id}/applications/bulk-message` | Gap | A rejection or an invitation to many is one message at a time. |
+| R3 | Message many applicants (A7) | `POST company/jobs/{id}/applications/bulk-message` | **Done 2026-10-27** (`ApplicantList`: "Kirim pesan" in the selection bar, text only; the answer is counted as sent and skipped) | A rejection or an invitation to many is one message at a time. |
 | R4 | Email preview (A10) | `POST company/applications/{id}/email-preview` | Gap | Interview, test and offer emails go out unseen. |
 | R5 | Interview kit and default test per stage of a job (A4, A5) | `company/jobs/{id}/interview-kits`, `.../assessments` (`due_days`) | **Done 2026-10-27** (A4, A5) | The job editor ends at the content; the stage setup of a job is left to the scheduling dialog. |
 | R6 | Delete a draft job (A8) | `DELETE company/jobs/{id}` | **Done 2026-10-27** (A8) | |
