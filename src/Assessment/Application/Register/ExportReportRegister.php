@@ -102,7 +102,7 @@ final readonly class ExportReportRegister
                 $entry->companyId === null ? '' : ($names[$entry->companyId] ?? ''),
                 $entry->autoIssued ? 'yes' : 'no',
                 $entry->reviewed() ? 'yes' : 'no',
-                $entry->recommendation?->value ?? '',
+                $entry->recommendation->value ?? '',
                 $entry->erased ? 'yes' : 'no',
             ];
         }

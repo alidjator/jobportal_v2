@@ -21,9 +21,9 @@ final class PsychologistProfileResource extends JsonResource
             'email' => $this->resource->account?->email,
             'provider' => ['id' => $provider->id, 'name' => $provider->name(), 'status' => $provider->status()->value],
             'str_number' => $psychologist->strNumber(),
-            'str_valid_until' => $psychologist->strValidUntil()->format('Y-m-d'),
+            'str_valid_until' => $psychologist->strValidUntil()?->format('Y-m-d'),
             'silp_number' => $psychologist->silpNumber(),
-            'silp_valid_until' => $psychologist->silpValidUntil()->format('Y-m-d'),
+            'silp_valid_until' => $psychologist->silpValidUntil()?->format('Y-m-d'),
             'status' => $psychologist->status()->value,
             'can_sign_reports' => $this->resource->canSignReports,
         ];

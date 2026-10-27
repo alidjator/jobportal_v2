@@ -68,7 +68,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
 | `cannot-reset-self` | 409 | Company | You cannot reset your own second factor here. |
 | `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
-| `cannot-suspend-self` | 409 | Company | You cannot suspend yourself. |
+| `cannot-suspend-self` | 409 | Assessment, Company | You cannot suspend yourself. |
 | `category-limit` | 422 | TalentPool | A company has at most :max categories. |
 | `category-name-invalid` | 422 | TalentPool | A category name has 1 to :max characters. |
 | `category-name-taken` | 409 | TalentPool | Your company already has a category with this name. |
@@ -279,6 +279,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `kit-limit-reached` | 409 | Recruitment | The company has reached its limit of interview kits. |
 | `kit-name-taken` | 409 | Recruitment | Another kit of this company already has this name. |
 | `last-company-admin` | 409 | Company | A company needs at least one company admin. |
+| `last-lead` | 409 | Assessment | An institution keeps at least one active lead. |
 | `last-section` | 409 | Assessment | This is the last section: submit the test to finish it. |
 | `last-super-admin` | 409 | Identity | This is the only active super_admin; give another administrator that role first. |
 | `legal-document-incomplete` | 422 | Content | The title and the body must be filled in every language before publishing. |
@@ -325,6 +326,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `no-recording-consent` | 409 | Recruitment | You have not given consent to record this interview. |
 | `not-a-company-member` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Identity, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | Only a company member can do this. |
 | `not-a-group-member` | 403 | Organization | This account holds no group role. |
+| `not-a-lead` | 403 | Assessment | Only a lead of the institution can manage its team. |
 | `not-a-participant` | 403 | Messaging | Only a job seeker or a company member can use chat. |
 | `not-a-psychologist` | 403 | Assessment | Only a psychologist can review reports. |
 | `not-a-video-interview` | 409 | Recruitment | This interview is not held in the platform. |

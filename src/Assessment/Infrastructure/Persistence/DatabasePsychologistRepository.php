@@ -7,6 +7,7 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Src\Assessment\Domain\Psychologist;
 use Src\Assessment\Domain\PsychologistRepository;
+use Src\Assessment\Domain\PsychologistRole;
 use Src\Assessment\Domain\PsychologistStatus;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
@@ -59,10 +60,11 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
         $now = $this->clock->now();
         $values = [
             'str_number' => $psychologist->strNumber(),
-            'str_valid_until' => $psychologist->strValidUntil()->format(self::DATE_FORMAT),
+            'str_valid_until' => $psychologist->strValidUntil()?->format(self::DATE_FORMAT),
             'silp_number' => $psychologist->silpNumber(),
-            'silp_valid_until' => $psychologist->silpValidUntil()->format(self::DATE_FORMAT),
+            'silp_valid_until' => $psychologist->silpValidUntil()?->format(self::DATE_FORMAT),
             'status' => $psychologist->status()->value,
+            'role' => $psychologist->role()->value,
             'updated_at' => $now,
         ];
 
@@ -81,8 +83,23 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
 
         return new Psychologist(
             (int) $id, $psychologist->userId, $psychologist->providerId, $psychologist->strNumber(), $psychologist->strValidUntil(),
-            $psychologist->silpNumber(), $psychologist->silpValidUntil(), $psychologist->status(), $now,
+            $psychologist->silpNumber(), $psychologist->silpValidUntil(), $psychologist->status(), $psychologist->role(), $now,
         );
+    }
+
+    public function ofProvider(int $providerId): array
+    {
+        return array_map(
+            fn (stdClass $row): Psychologist => $this->toPsychologist($row),
+            $this->connection->table(self::TABLE)->where('provider_id', $providerId)->orderBy('id')->get()->all(),
+        );
+    }
+
+    public function activeLeadCount(int $providerId): int
+    {
+        return $this->connection->table(self::TABLE)
+            ->where('provider_id', $providerId)->where('role', PsychologistRole::Lead->value)->where('status', PsychologistStatus::Active->value)
+            ->count();
     }
 
     public function pageOfProvider(int $providerId, PageRequest $request): Page
@@ -103,11 +120,12 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
             (int) $row->id,
             (int) $row->user_id,
             (int) $row->provider_id,
-            (string) $row->str_number,
-            new DateTimeImmutable((string) $row->str_valid_until, $utc),
-            (string) $row->silp_number,
-            new DateTimeImmutable((string) $row->silp_valid_until, $utc),
+            $row->str_number === null ? null : (string) $row->str_number,
+            $row->str_valid_until === null ? null : new DateTimeImmutable((string) $row->str_valid_until, $utc),
+            $row->silp_number === null ? null : (string) $row->silp_number,
+            $row->silp_valid_until === null ? null : new DateTimeImmutable((string) $row->silp_valid_until, $utc),
             PsychologistStatus::from($row->status),
+            PsychologistRole::from($row->role),
             new DateTimeImmutable((string) $row->created_at, $utc),
         );
     }

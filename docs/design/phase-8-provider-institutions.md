@@ -47,6 +47,20 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   responsible psychologist is suspended.
 - Reset of two-factor stays with the platform admin.
 
+**Section 1, coded 2026-10-27** (migration `000193`):
+
+- `assessment_psychologists.role` (`member` default, `lead`; CHECK) and `assessment_psychologist_invitations.role` (the role the invitee joins with). Both tables' licence columns
+  are nullable (a lead's invitation carries none); `Psychologist::canSignReports` is false until all four licence values are there. `invited_by_admin_id` is nullable,
+  `invited_by_psychologist_id` is added, and a CHECK demands exactly one of them. Rolling the migration back keeps the columns nullable.
+- Lead endpoints under `provider/team` as designed: `GET team`, `GET`/`POST team/invitations`, `DELETE team/invitations/{invitationId}`, `POST team/{id}/suspend` and `/restore`,
+  `PUT team/{id}/role`. A member gets 403 `not-a-lead`; a psychologist of another institution is a 404. The list shows no pending submissions yet (section 2).
+- The admin: `PUT admin/assessment/psychologists/{id}` and the admin invitation take an optional `role`. The rule "keep at least one active lead" (409 `last-lead`) binds
+  the admin too: it stops suspending the last active lead and making them a member. The provider row is locked first, so two leads cannot remove each other at once.
+- Code: `PsychologistRole` (Domain), `Application/Team/{TeamAccess,TeamMemberChanges,ListTeam,ListTeamInvitations,InviteTeamMember,RevokeTeamInvitation,ChangeTeamMember}`,
+  `Invitations/IssueInvitation` (the part shared by the admin and the lead: no account for the email, one pending invitation per email, 60-second cooldown). Audit: the existing
+  psychologist actions plus `assessment.psychologist_role_changed`; a lead's actions are recorded with actor type `user`.
+- Tests: `ProviderTeamTest`.
+
 ## 2. Licence renewals with the document
 
 - **Table** `assessment_licence_submissions`: `psychologist_id` (FK cascade), `kind` (`str`, `silp`), `number`, `valid_until`, `document_path`

@@ -32,6 +32,7 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
 
     private const array CHANGE_ACTIONS = [
         'credentials_changed' => AuditAction::ASSESSMENT_PSYCHOLOGIST_CREDENTIALS_CHANGED,
+        'role_changed' => AuditAction::ASSESSMENT_PSYCHOLOGIST_ROLE_CHANGED,
         'suspended' => AuditAction::ASSESSMENT_PSYCHOLOGIST_SUSPENDED,
         'restored' => AuditAction::ASSESSMENT_PSYCHOLOGIST_RESTORED,
         'two_factor_reset' => AuditAction::ASSESSMENT_PSYCHOLOGIST_TWO_FACTOR_RESET,
@@ -63,7 +64,7 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
     public function onPsychologistInvited(PsychologistInvited $event): void
     {
         $this->trail->record(new AuditEntry(
-            AuditActorType::Admin, $event->adminId, AuditAction::ASSESSMENT_PSYCHOLOGIST_INVITED,
+            $event->adminId === null ? AuditActorType::User : AuditActorType::Admin, $event->adminId ?? $event->userId, AuditAction::ASSESSMENT_PSYCHOLOGIST_INVITED,
             self::PROVIDER_SUBJECT, $event->providerId, ['invitation_id' => $event->invitationId], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));
     }
@@ -126,7 +127,7 @@ final class RecordAssessmentAuditEntries implements ShouldQueue
     public function onPsychologistChanged(PsychologistChanged $event): void
     {
         $this->trail->record(new AuditEntry(
-            AuditActorType::Admin, $event->adminId,
+            $event->adminId === null ? AuditActorType::User : AuditActorType::Admin, $event->adminId ?? $event->userId,
             self::CHANGE_ACTIONS[$event->change] ?? throw new InvalidArgumentException("Unknown psychologist change {$event->change}."),
             self::PSYCHOLOGIST_SUBJECT, $event->psychologistId, [], $event->ipAddress, $event->userAgent, $event->occurredAt(),
         ));

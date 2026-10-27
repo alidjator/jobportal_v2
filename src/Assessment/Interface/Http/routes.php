@@ -14,6 +14,7 @@ use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ReportRegisterController;
 use Src\Assessment\Interface\Http\Controllers\ResultController;
 use Src\Assessment\Interface\Http\Controllers\ReviewController;
+use Src\Assessment\Interface\Http\Controllers\TeamController;
 use Src\Assessment\Interface\Http\Controllers\VideoTakeController;
 use Src\Assessment\Interface\Http\Middleware\ReadAttemptSession;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
@@ -43,6 +44,15 @@ Route::prefix('provider')->group(function (): void {
         // The review of the reports of the provider's batteries: the queue, the draft, the drawings, the edit and the signature.
         Route::get('register', [ReportRegisterController::class, 'index']);
         Route::get('register/export', [ReportRegisterController::class, 'export'])->middleware('throttle:'.AssessmentServiceProvider::REGISTER_EXPORT_LIMITER);
+
+        // The team of the institution, for its leads.
+        Route::get('team', [TeamController::class, 'index']);
+        Route::get('team/invitations', [TeamController::class, 'invitations']);
+        Route::post('team/invitations', [TeamController::class, 'invite']);
+        Route::delete('team/invitations/{invitationId}', [TeamController::class, 'revoke'])->whereNumber('invitationId');
+        Route::post('team/{psychologistId}/suspend', [TeamController::class, 'suspend'])->whereNumber('psychologistId');
+        Route::post('team/{psychologistId}/restore', [TeamController::class, 'restore'])->whereNumber('psychologistId');
+        Route::put('team/{psychologistId}/role', [TeamController::class, 'role'])->whereNumber('psychologistId');
 
         Route::get('reviews', [ReviewController::class, 'index']);
         Route::prefix('reviews/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {

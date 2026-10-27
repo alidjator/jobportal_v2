@@ -23,6 +23,16 @@ interface PsychologistRepository
     public function save(Psychologist $psychologist): Psychologist;
 
     /**
+     * Every psychologist of the provider, oldest first: a team is small enough to read at once.
+     *
+     * @return list<Psychologist>
+     */
+    public function ofProvider(int $providerId): array;
+
+    /** How many active leads the provider has. */
+    public function activeLeadCount(int $providerId): int;
+
+    /**
      * @return Page<Psychologist>
      */
     public function pageOfProvider(int $providerId, PageRequest $request): Page;

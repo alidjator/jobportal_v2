@@ -5,8 +5,8 @@ namespace Src\Assessment\Domain;
 use DateTimeImmutable;
 
 /**
- * An invitation to become a psychologist of a provider, valid for 7 days and usable once. It holds what the admin entered about the
- * psychologist; the psychologist record is created when it is accepted. Only the hash of its token is stored; the plain token travels in the email.
+ * An invitation to become a psychologist of a provider, valid for 7 days and usable once. It holds what the admin or lead entered about the
+ * psychologist (a lead enters no licence); the psychologist record is created when it is accepted. Only the hash of its token is stored; the plain token travels in the email.
  */
 final class PsychologistInvitation
 {
@@ -17,19 +17,22 @@ final class PsychologistInvitation
         public readonly int $providerId,
         public readonly string $email,
         public readonly string $name,
-        public readonly string $strNumber,
-        public readonly DateTimeImmutable $strValidUntil,
-        public readonly string $silpNumber,
-        public readonly DateTimeImmutable $silpValidUntil,
+        public readonly ?string $strNumber,
+        public readonly ?DateTimeImmutable $strValidUntil,
+        public readonly ?string $silpNumber,
+        public readonly ?DateTimeImmutable $silpValidUntil,
         public readonly string $tokenHash,
-        public readonly int $invitedByAdminId,
+        public readonly ?int $invitedByAdminId,
+        public readonly ?int $invitedByPsychologistId,
+        public readonly PsychologistRole $role,
         public readonly DateTimeImmutable $sentAt,
         public readonly DateTimeImmutable $expiresAt,
         private ?DateTimeImmutable $acceptedAt,
         private ?DateTimeImmutable $revokedAt,
     ) {}
 
-    public static function issue(
+    /** An admin's invitation: the admin types the licence. */
+    public static function byAdmin(
         int $providerId,
         string $email,
         string $name,
@@ -37,13 +40,30 @@ final class PsychologistInvitation
         DateTimeImmutable $strValidUntil,
         string $silpNumber,
         DateTimeImmutable $silpValidUntil,
+        PsychologistRole $role,
         string $tokenHash,
-        int $invitedByAdminId,
+        int $adminId,
         DateTimeImmutable $now,
     ): self {
         return new self(
             null, $providerId, $email, $name, $strNumber, $strValidUntil, $silpNumber, $silpValidUntil,
-            $tokenHash, $invitedByAdminId, $now, $now->modify(self::VALIDITY), null, null,
+            $tokenHash, $adminId, null, $role, $now, $now->modify(self::VALIDITY), null, null,
+        );
+    }
+
+    /** A lead's invitation: no licence, the psychologist submits it after accepting. */
+    public static function byLead(
+        int $providerId,
+        string $email,
+        string $name,
+        PsychologistRole $role,
+        string $tokenHash,
+        int $leadId,
+        DateTimeImmutable $now,
+    ): self {
+        return new self(
+            null, $providerId, $email, $name, null, null, null, null,
+            $tokenHash, null, $leadId, $role, $now, $now->modify(self::VALIDITY), null, null,
         );
     }
 

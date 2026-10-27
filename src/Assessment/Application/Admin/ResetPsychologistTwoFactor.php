@@ -35,6 +35,6 @@ final readonly class ResetPsychologistTwoFactor
 
         $this->transactions->run(fn () => $this->accounts->resetTwoFactor($psychologist->userId));
 
-        $this->events->dispatch([new PsychologistChanged($psychologistId, 'two_factor_reset', (int) $actor->id, $ipAddress, $userAgent, $this->clock->now())]);
+        $this->events->dispatch([new PsychologistChanged($psychologistId, 'two_factor_reset', (int) $actor->id, null, $ipAddress, $userAgent, $this->clock->now())]);
     }
 }

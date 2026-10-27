@@ -7,6 +7,7 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Src\Assessment\Domain\PsychologistInvitation;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
+use Src\Assessment\Domain\PsychologistRole;
 use Src\Shared\Application\Clock;
 use stdClass;
 
@@ -42,11 +43,13 @@ final readonly class DatabasePsychologistInvitationRepository implements Psychol
             'email' => $invitation->email,
             'name' => $invitation->name,
             'str_number' => $invitation->strNumber,
-            'str_valid_until' => $invitation->strValidUntil->format(self::DATE_FORMAT),
+            'str_valid_until' => $invitation->strValidUntil?->format(self::DATE_FORMAT),
             'silp_number' => $invitation->silpNumber,
-            'silp_valid_until' => $invitation->silpValidUntil->format(self::DATE_FORMAT),
+            'silp_valid_until' => $invitation->silpValidUntil?->format(self::DATE_FORMAT),
+            'role' => $invitation->role->value,
             'token_hash' => $invitation->tokenHash,
             'invited_by_admin_id' => $invitation->invitedByAdminId,
+            'invited_by_psychologist_id' => $invitation->invitedByPsychologistId,
             'sent_at' => $invitation->sentAt->format(self::TIME_FORMAT),
             'expires_at' => $invitation->expiresAt->format(self::TIME_FORMAT),
             'created_at' => $now,
@@ -56,7 +59,7 @@ final readonly class DatabasePsychologistInvitationRepository implements Psychol
         return new PsychologistInvitation(
             (int) $id, $invitation->providerId, $invitation->email, $invitation->name, $invitation->strNumber, $invitation->strValidUntil,
             $invitation->silpNumber, $invitation->silpValidUntil, $invitation->tokenHash, $invitation->invitedByAdminId,
-            $invitation->sentAt, $invitation->expiresAt, $invitation->acceptedAt(), $invitation->revokedAt(),
+            $invitation->invitedByPsychologistId, $invitation->role, $invitation->sentAt, $invitation->expiresAt, $invitation->acceptedAt(), $invitation->revokedAt(),
         );
     }
 
@@ -99,12 +102,14 @@ final readonly class DatabasePsychologistInvitationRepository implements Psychol
             (int) $row->provider_id,
             (string) $row->email,
             (string) $row->name,
-            (string) $row->str_number,
-            $this->time($row->str_valid_until),
-            (string) $row->silp_number,
-            $this->time($row->silp_valid_until),
+            $row->str_number === null ? null : (string) $row->str_number,
+            $row->str_valid_until === null ? null : $this->time($row->str_valid_until),
+            $row->silp_number === null ? null : (string) $row->silp_number,
+            $row->silp_valid_until === null ? null : $this->time($row->silp_valid_until),
             (string) $row->token_hash,
-            (int) $row->invited_by_admin_id,
+            $row->invited_by_admin_id === null ? null : (int) $row->invited_by_admin_id,
+            $row->invited_by_psychologist_id === null ? null : (int) $row->invited_by_psychologist_id,
+            PsychologistRole::from($row->role),
             $this->time($row->sent_at),
             $this->time($row->expires_at),
             $row->accepted_at === null ? null : $this->time($row->accepted_at),

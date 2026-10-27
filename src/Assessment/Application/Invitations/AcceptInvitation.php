@@ -53,7 +53,7 @@ final readonly class AcceptInvitation
 
             $userId = $this->accounts->register($invitation->name, $invitation->email, $command->password, $command->language);
             $psychologist = $this->psychologists->save(Psychologist::join(
-                $userId, (int) $provider->id, $invitation->strNumber, $invitation->strValidUntil, $invitation->silpNumber, $invitation->silpValidUntil,
+                $userId, (int) $provider->id, $invitation->strNumber, $invitation->strValidUntil, $invitation->silpNumber, $invitation->silpValidUntil, $invitation->role,
             ));
 
             $invitation->accept($now);

@@ -31,7 +31,7 @@ final class AdminPsychologistController extends ApiController
     {
         $item = $update->execute(
             $actors->fromRequest($request), $id, $request->strNumber(), $request->strValidUntil(), $request->silpNumber(),
-            $request->silpValidUntil(), $request->ip(), $request->userAgent(),
+            $request->silpValidUntil(), $request->role(), $request->ip(), $request->userAgent(),
         );
 
         return new PsychologistResource($item);

@@ -3,6 +3,7 @@
 namespace Src\Assessment\Application\Invitations;
 
 use DateTimeImmutable;
+use Src\Assessment\Domain\PsychologistRole;
 
 final readonly class InvitePsychologistCommand
 {
@@ -14,6 +15,7 @@ final readonly class InvitePsychologistCommand
         public DateTimeImmutable $strValidUntil,
         public string $silpNumber,
         public DateTimeImmutable $silpValidUntil,
+        public PsychologistRole $role,
         public string $language,
         public ?string $ipAddress,
         public ?string $userAgent,

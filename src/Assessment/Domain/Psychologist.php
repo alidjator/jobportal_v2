@@ -6,7 +6,8 @@ use DateTimeImmutable;
 
 /**
  * A psychologist of a provider, tied to the account that signs in. The STR (registration certificate) and SILP (practice licence) numbers
- * and their validity dates decide whether the psychologist may sign reports: both must be valid through the day of signing.
+ * and their validity dates decide whether the psychologist may sign reports: both must be valid through the day of signing. A psychologist
+ * invited by a lead of the institution has no licence until they submit one, and cannot sign meanwhile.
  */
 final class Psychologist
 {
@@ -14,41 +15,43 @@ final class Psychologist
         public readonly ?int $id,
         public readonly int $userId,
         public readonly int $providerId,
-        private string $strNumber,
-        private DateTimeImmutable $strValidUntil,
-        private string $silpNumber,
-        private DateTimeImmutable $silpValidUntil,
+        private ?string $strNumber,
+        private ?DateTimeImmutable $strValidUntil,
+        private ?string $silpNumber,
+        private ?DateTimeImmutable $silpValidUntil,
         private PsychologistStatus $status,
+        private PsychologistRole $role = PsychologistRole::Member,
         public readonly ?DateTimeImmutable $createdAt = null,
     ) {}
 
     public static function join(
         int $userId,
         int $providerId,
-        string $strNumber,
-        DateTimeImmutable $strValidUntil,
-        string $silpNumber,
-        DateTimeImmutable $silpValidUntil,
+        ?string $strNumber,
+        ?DateTimeImmutable $strValidUntil,
+        ?string $silpNumber,
+        ?DateTimeImmutable $silpValidUntil,
+        PsychologistRole $role = PsychologistRole::Member,
     ): self {
-        return new self(null, $userId, $providerId, $strNumber, $strValidUntil, $silpNumber, $silpValidUntil, PsychologistStatus::Active);
+        return new self(null, $userId, $providerId, $strNumber, $strValidUntil, $silpNumber, $silpValidUntil, PsychologistStatus::Active, $role);
     }
 
-    public function strNumber(): string
+    public function strNumber(): ?string
     {
         return $this->strNumber;
     }
 
-    public function strValidUntil(): DateTimeImmutable
+    public function strValidUntil(): ?DateTimeImmutable
     {
         return $this->strValidUntil;
     }
 
-    public function silpNumber(): string
+    public function silpNumber(): ?string
     {
         return $this->silpNumber;
     }
 
-    public function silpValidUntil(): DateTimeImmutable
+    public function silpValidUntil(): ?DateTimeImmutable
     {
         return $this->silpValidUntil;
     }
@@ -56,6 +59,16 @@ final class Psychologist
     public function status(): PsychologistStatus
     {
         return $this->status;
+    }
+
+    public function role(): PsychologistRole
+    {
+        return $this->role;
+    }
+
+    public function isLead(): bool
+    {
+        return $this->role->isLead();
     }
 
     public function isActive(): bool
@@ -69,8 +82,8 @@ final class Psychologist
         $today = $now->format('Y-m-d');
 
         return $this->isActive()
-            && $this->strValidUntil->format('Y-m-d') >= $today
-            && $this->silpValidUntil->format('Y-m-d') >= $today;
+            && $this->strValidUntil !== null && $this->strValidUntil->format('Y-m-d') >= $today
+            && $this->silpValidUntil !== null && $this->silpValidUntil->format('Y-m-d') >= $today;
     }
 
     public function updateCredentials(
@@ -83,6 +96,11 @@ final class Psychologist
         $this->strValidUntil = $strValidUntil;
         $this->silpNumber = $silpNumber;
         $this->silpValidUntil = $silpValidUntil;
+    }
+
+    public function changeRole(PsychologistRole $role): void
+    {
+        $this->role = $role;
     }
 
     public function suspend(): void

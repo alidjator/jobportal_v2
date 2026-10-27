@@ -2,22 +2,18 @@
 
 namespace Src\Assessment\Application\Admin;
 
+use Src\Assessment\Application\Team\TeamMemberChanges;
 use Src\Assessment\Domain\Events\PsychologistChanged;
-use Src\Assessment\Domain\PsychologistRepository;
-use Src\Shared\Application\Accounts\PsychologistAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
-use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
 final readonly class RestorePsychologist
 {
     public function __construct(
-        private PsychologistRepository $psychologists,
-        private PsychologistAccounts $accounts,
-        private TransactionManager $transactions,
+        private TeamMemberChanges $changes,
         private EventDispatcher $events,
         private Clock $clock,
     ) {}
@@ -30,14 +26,8 @@ final readonly class RestorePsychologist
     {
         AdminOnly::assert($actor, 'restore a psychologist');
 
-        $this->transactions->run(function () use ($psychologistId): void {
-            $psychologist = $this->psychologists->findById($psychologistId, forUpdate: true) ?? throw EntityNotFound::of('Psychologist', $psychologistId);
+        $this->changes->restore($psychologistId, null);
 
-            $psychologist->restore();
-            $this->psychologists->save($psychologist);
-            $this->accounts->reactivate($psychologist->userId);
-        });
-
-        $this->events->dispatch([new PsychologistChanged($psychologistId, 'restored', (int) $actor->id, $ipAddress, $userAgent, $this->clock->now())]);
+        $this->events->dispatch([new PsychologistChanged($psychologistId, 'restored', (int) $actor->id, null, $ipAddress, $userAgent, $this->clock->now())]);
     }
 }

@@ -23,9 +23,11 @@ final class PsychologistInvitationResource extends JsonResource
             'email' => $this->resource->email,
             'name' => $this->resource->name,
             'str_number' => $this->resource->strNumber,
-            'str_valid_until' => $this->resource->strValidUntil->format('Y-m-d'),
+            'str_valid_until' => $this->resource->strValidUntil?->format('Y-m-d'),
             'silp_number' => $this->resource->silpNumber,
-            'silp_valid_until' => $this->resource->silpValidUntil->format('Y-m-d'),
+            'silp_valid_until' => $this->resource->silpValidUntil?->format('Y-m-d'),
+            'role' => $this->resource->role->value,
+            'invited_by' => $this->resource->invitedByPsychologistId === null ? 'admin' : 'lead',
             'sent_at' => $this->resource->sentAt->format(DateTimeInterface::ATOM),
             'expires_at' => $this->resource->expiresAt->format(DateTimeInterface::ATOM),
         ];
