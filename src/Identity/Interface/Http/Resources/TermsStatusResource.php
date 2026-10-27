@@ -19,6 +19,7 @@ final class TermsStatusResource extends JsonResource
     {
         return [
             'accepted' => ! in_array(false, array_map(static fn (TermsRequirement $requirement): bool => $requirement->accepted, $this->resource->requirements), true),
+            /** @var list<array{type: string, version: int, accepted: bool}> */
             'documents' => array_map(static fn (TermsRequirement $requirement): array => ['type' => $requirement->type, 'version' => $requirement->version, 'accepted' => $requirement->accepted], $this->resource->requirements),
         ];
     }

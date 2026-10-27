@@ -34,7 +34,7 @@ final class MyApplicationDetailResource extends JsonResource
             'migrated' => $row->migratedAt !== null,
             'migrated_at' => $row->migratedAt?->format(DATE_ATOM),
             'rejection_reason' => $rejection?->value,
-            /** the job as the candidate read it when they applied (title, description, work mode, locations, salary when shown, skills, benefits, tags), in the language of the request; `as_of_migration` says it was filled later from the job as it was then; null while an application has none */
+            /** @var array{version: int, title: string, description: string|null, work_mode: string|null, locations: list<array{province: string|null, city: string|null, address_line: string|null}>, salary: array{min: int|null, max: int|null, period: array{id: int, name: array<string, string>}|null}|null, skills: list<array{id: int, name: array<string, string>}>, benefits: list<array{id: int, name: array<string, string>}>, tags: list<string>, as_of_migration: bool}|null the job as the candidate read it when they applied (title, description, work mode, locations, salary when shown, skills, benefits, tags), in the language of the request; `as_of_migration` says it was filled later from the job as it was then; null while an application has none */
             'job_content' => $this->resource->jobContent,
             'cover_letter' => $data->coverLetter,
             'resume' => $data->resumeName === null ? null : ['name' => $data->resumeName],
