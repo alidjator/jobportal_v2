@@ -25,7 +25,7 @@ final class PositionRequest extends FormRequest
         $presence = $new ? 'required' : 'sometimes';
 
         return [
-            'legal_entity_id' => [...($new ? ['required'] : ['prohibited']), 'integer', 'min:1'],
+            'legal_entity_id' => [...($new ? ['nullable'] : ['prohibited']), 'integer', 'min:1'],
             'code' => [...($new ? ['required'] : ['prohibited']), 'string', 'max:30', 'regex:/^[A-Za-z0-9._-]+$/'],
             'title' => [$presence, 'string', 'min:2', 'max:150'],
             'unit_id' => [$presence, 'integer', 'min:1'],
@@ -37,9 +37,10 @@ final class PositionRequest extends FormRequest
         ];
     }
 
-    public function legalEntityId(): int
+    /** The legal entity the call is about; none on a `single` installation, which has one (`StructureEntity`). */
+    public function legalEntityId(): ?int
     {
-        return $this->integer('legal_entity_id');
+        return $this->filled('legal_entity_id') ? $this->integer('legal_entity_id') : null;
     }
 
     public function code(): string

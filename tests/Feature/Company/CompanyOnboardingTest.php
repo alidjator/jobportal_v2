@@ -122,6 +122,18 @@ final class CompanyOnboardingTest extends FeatureTestCase
         return $this->withToken($token)->getJson('/api/v1/company/me');
     }
 
+    public function test_a_single_installation_takes_one_company_only(): void
+    {
+        DB::table('platform_portal_identity')->insert(['mode' => 'company', 'scope' => 'company', 'company_ids' => json_encode([]), 'updated_at' => now()]);
+
+        $this->createCompany()->assertCreated();
+        $this->createCompany(['name' => 'PT Kedua', 'admin_email' => 'second@example.test'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:single-company-installation');
+        $this->assertSame(1, DB::table('company_companies')->count());
+
+        DB::table('platform_portal_identity')->update(['scope' => 'group']);
+        $this->createCompany(['name' => 'PT Kedua', 'admin_email' => 'second@example.test'])->assertCreated();
+    }
+
     public function test_creating_a_company_needs_an_admin_with_the_permission(): void
     {
         $this->postJson('/api/v1/admin/companies', [])->assertStatus(401);

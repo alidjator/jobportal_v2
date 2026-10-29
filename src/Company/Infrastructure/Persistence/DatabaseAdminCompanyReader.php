@@ -94,6 +94,12 @@ final readonly class DatabaseAdminCompanyReader implements AdminCompanyReader
         } elseif ($query->verified === false) {
             $builder->whereNull('verified_at');
         }
+
+        if ($query->linked === true) {
+            $builder->whereNotNull('legal_entity_id');
+        } elseif ($query->linked === false) {
+            $builder->whereNull('legal_entity_id');
+        }
     }
 
     private function toItem(stdClass $row): CompanyListItem

@@ -24,6 +24,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
 7. **Out of scope for now:** plans, billing, payments, invoices, pay-per-job and featured promotion.
 8. **Terms in user stories (decided 2026-10-13):** "Admin" in a user story means the company admin, not the platform admin.
 9. **Front-end builds** on the server are run by the user (decided 2026-10-13): give the commands, never run them.
+10. **Commands with a full path (decided 2026-10-29):** every command given to the user starts with `cd <project directory> && ` (this repository: `/usr/local/src/jobportal`; the front end: `/usr/local/src/jobportal-frontend/onesis-talent`) and names files and folders by absolute path, never the bare command, because the user's terminal may be in any directory.
 
 ## Code standard
 

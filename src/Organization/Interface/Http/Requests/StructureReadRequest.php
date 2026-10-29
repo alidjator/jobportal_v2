@@ -5,18 +5,19 @@ namespace Src\Organization\Interface\Http\Requests;
 use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 
-/** A read of units, positions or cost centres: `legal_entity_id` for a list and `as_of` (a day, today by default) for units and positions. */
+/** A read of units, positions or cost centres: `legal_entity_id` for a list (none on a `single` installation) and `as_of` (a day, today by default) for units and positions. */
 final class StructureReadRequest extends FormRequest
 {
     /** @return array<string, list<string>> */
     public function rules(): array
     {
-        return ['legal_entity_id' => [$this->route('id') === null ? 'required' : 'sometimes', 'integer', 'min:1'], 'as_of' => ['nullable', 'date_format:Y-m-d']];
+        return ['legal_entity_id' => ['nullable', 'integer', 'min:1'], 'as_of' => ['nullable', 'date_format:Y-m-d']];
     }
 
-    public function legalEntityId(): int
+    /** The legal entity the call is about; none on a `single` installation, which has one (`StructureEntity`). */
+    public function legalEntityId(): ?int
     {
-        return $this->integer('legal_entity_id');
+        return $this->filled('legal_entity_id') ? $this->integer('legal_entity_id') : null;
     }
 
     public function asOf(): ?DateTimeImmutable

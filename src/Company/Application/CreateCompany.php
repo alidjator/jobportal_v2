@@ -18,6 +18,7 @@ use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Portal\SingleCompany;
 use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Application\TransactionManager;
@@ -46,17 +47,22 @@ final readonly class CreateCompany
         private EventDispatcher $events,
         private Clock $clock,
         private DefaultStageProvisioner $stages,
+        private SingleCompany $single,
     ) {}
 
     /**
      * @throws AccessDenied when the actor is not an admin
      * @throws BusinessRuleViolation `unknown-industry` or `unknown-organization-type` for a classification that is missing or inactive
-     * @throws StateConflict `email-already-registered` when the email already has an account
+     * @throws StateConflict `email-already-registered` when the email already has an account, `single-company-installation` when the installation is `single` and already holds a company
      */
     public function execute(Actor $actor, CreateCompanyCommand $command): CreatedCompany
     {
         if (! $actor->isAdmin()) {
             throw new AccessDenied('Only an administrator can create a company.');
+        }
+
+        if ($this->single->enforced() && $this->companies->count() > 0) {
+            throw new StateConflict('This installation is for one company and already has it.', 'single-company-installation');
         }
 
         if (! $this->references->isActive('industries', $command->industryId)) {

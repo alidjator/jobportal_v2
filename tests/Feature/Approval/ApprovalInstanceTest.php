@@ -314,6 +314,21 @@ final class ApprovalInstanceTest extends FeatureTestCase
         $this->as($this->outsider, 'GET', '/company/approvals/1')->assertNotFound();
     }
 
+    public function test_company_me_tells_who_takes_part_in_approvals_even_after_their_step_is_decided(): void
+    {
+        $part = fn (UserModel $user): bool => $this->as($user, 'GET', '/company/me')->assertOk()->json('data.takes_part_in_approvals');
+
+        $this->assertFalse($part($this->manager), 'nothing yet');
+        $id = $this->submit(1);
+
+        $this->assertTrue($part($this->requester), 'asked for one');
+        $this->assertTrue($part($this->manager), 'one waits for them');
+        $this->assertFalse($part($this->outsider));
+
+        $this->as($this->manager, 'POST', "/company/approvals/{$id}/approve")->assertOk();
+        $this->assertTrue($part($this->manager), 'a decided place still counts');
+    }
+
     public function test_a_cancelled_approval_takes_no_more_decisions(): void
     {
         $id = $this->submit(1);

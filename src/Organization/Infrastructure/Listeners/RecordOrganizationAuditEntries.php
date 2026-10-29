@@ -120,6 +120,7 @@ final class RecordOrganizationAuditEntries implements ShouldQueue
             'created' => AuditAction::GROUP_UNIT_CREATED,
             'deactivated' => AuditAction::GROUP_UNIT_DEACTIVATED,
             'reactivated' => AuditAction::GROUP_UNIT_REACTIVATED,
+            'reordered' => AuditAction::GROUP_UNITS_REORDERED,
             default => AuditAction::GROUP_UNIT_RESTRUCTURED,
         };
 

@@ -305,6 +305,25 @@ final class StructureTest extends FeatureTestCase
         $this->error($this->manage('PATCH', "units/{$a}", ['parent_unit_id' => $b, 'valid_from' => '2026-11-01']), 422, 'parent-cycle');
     }
 
+    public function test_units_are_put_in_order_and_the_units_not_named_keep_their_places(): void
+    {
+        $type = $this->unitType();
+        [$a, $b, $c, $d] = [$this->unit('AAA', $type), $this->unit('BBB', $type), $this->unit('CCC', $type), $this->unit('DDD', $type)];
+        $codes = fn (): array => $this->manage('GET', "units?legal_entity_id={$this->entity}")->assertOk()->json('data.*.code');
+
+        $this->assertSame(['AAA', 'BBB', 'CCC', 'DDD'], $codes());
+
+        $this->manage('PUT', 'units/order', ['legal_entity_id' => $this->entity, 'unit_ids' => [$d, $b]])->assertNoContent();
+        $this->assertSame(['AAA', 'DDD', 'CCC', 'BBB'], $codes());
+
+        $this->manage('PUT', 'units/order', ['legal_entity_id' => $this->entity, 'unit_ids' => [$c, $d, $a]])->assertNoContent();
+        $this->assertSame(['CCC', 'DDD', 'AAA', 'BBB'], $codes());
+
+        $this->error($this->manage('PUT', 'units/order', ['legal_entity_id' => $this->entity, 'unit_ids' => [$a, 999999]]), 422, 'invalid-unit-order');
+        $this->as($this->viewer, 'PUT', 'units/order', ['legal_entity_id' => $this->entity, 'unit_ids' => [$a, $b]])->assertForbidden();
+        $this->assertSame(2, DB::table('platform_audit_logs')->where('action', 'group.units_reordered')->count());
+    }
+
     public function test_a_unit_is_deactivated_once_nothing_depends_on_it_and_a_deactivated_unit_is_not_a_parent(): void
     {
         $type = $this->unitType();

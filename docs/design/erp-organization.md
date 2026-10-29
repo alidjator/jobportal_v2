@@ -200,8 +200,9 @@ Migration `000144` (`organization_grades`, `organization_unit_types`, `organizat
   or an active position as its unit, and a position that an active position reports to, each now or later, are refused (409 `grade-in-use`, `unit-type-in-use`,
   `cost-centre-in-use`, `unit-in-use`, `position-in-use`); 409 `already-inactive` and `already-active`. A change to an inactive unit or position is 409 `unit-inactive`,
   `position-inactive`.
+- **Order of the units (2026-10-28, decided by the user: dragging in the Workspace table).** `organization_units.sort_order` is the place of a unit among the units of its entity (a list of the entity is by `sort_order`, then code; a new unit goes last); it belongs to the unit and is not dated. `PUT organization/units/order` (`group.structure.manage`, active entity) takes `legal_entity_id` and `unit_ids`, the units in the wanted order, and the named units take each other's places while the others keep theirs: 204, 422 `invalid-unit-order` when an id is not a unit of the entity or repeats.
 - **Audit and events.** `group.grade_*`, `group.unit_type_*`, `group.cost_centre_*` (created, updated, deactivated, reactivated), `group.unit_created`, `.unit_restructured`,
-  `.unit_deactivated`, `.unit_reactivated`, `group.position_created`, `.position_changed`, `.position_deactivated`, `.position_reactivated`. A dated change keeps `valid_from`,
+  `.unit_deactivated`, `.unit_reactivated`, `.units_reordered`, `group.position_created`, `.position_changed`, `.position_deactivated`, `.position_reactivated`. A dated change keeps `valid_from`,
   `reason` and the version `before` and `after`. Events `StructureItemChanged`, `UnitRestructured`, `PositionChanged` (`LegalEntityCreated` and
   `TenantLinkedToLegalEntity` exist from part A).
 

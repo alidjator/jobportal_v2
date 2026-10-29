@@ -32,13 +32,23 @@ billing, payments, orders and invoices stay out of scope.
   on the PKP installation), not the marketplace; the marketplace gets its own host when it is launched, which is not decided (decided by the user;
   [section 2](#2-where-the-host-and-the-mode-meet)).
 
+- 2026-10-28: **the verification of companies is a marketplace feature** (decided by the user): in `company` mode there are no verification documents, no "verified" mark, no name-change requests of a verified company, and the two rules that follow the
+  verification are switched off; the mode is the live portal identity of the platform ([section 3b](#3b-verification-of-companies)).
+
+- 2026-10-28: **on a company portal of one company (`company` mode, scope `company`) the group level of the ERP is off, the structure stays** (decided by the user, who corrected the first cut): what is about the group itself answers 404 `groups-unavailable`; the group of the
+  company, its legal entities, the structure (unit types, units, positions, grades, cost centres) and the platform admin's pages that set them up stay ([section 3c](#3c-groups-on-a-portal-of-one-company)).
+
 - 2026-10-25: **the portal is configured in the application, not only in the environment** (decided by the user; [section 11](#11-portal-settings-in-the-application)):
   the identity of a portal (mode, scope, companies) by the platform admin in Console, the brand by the company admin (group admin for a group site) in Workspace,
   with the environment kept as the fallback and the override; the welcome text and slogan in Indonesian and English; a change is a draft, previewed, then published.
 
+- 2026-10-28: **the modes sit under an installation type** (decided by the user, option A): `single` (one company), `multi` of one group (`company` mode, scope `group`) and `multi` of independent companies (`marketplace`); the marketplace is `multi` plus the job portal adaptations, not a third type ([erp-installation-type.md](erp-installation-type.md)).
+
 All questions of sections 1 to 9 are answered; [section 8](#8-open-questions) keeps them as history. Section 10 has its own open questions.
 
 ## 1. Modes
+
+The two modes sit under the installation type (`single`, or `multi` of a group or of independent companies): `marketplace` is `multi` of independent companies, `company` with the scope `company` is `single`, and `company` with the scope `group` is `multi` of a group ([erp-installation-type.md](erp-installation-type.md) section 1).
 
 | | `marketplace` | `company` |
 |---|---|---|
@@ -78,6 +88,31 @@ All questions of sections 1 to 9 are answered; [section 8](#8-open-questions) ke
 | P4 Company | becomes "About us" (the company profile, locations and open jobs); on a group site the group page lists its entities, each leads to its own profile; reviews, "Ikuti" and the verification badge stay hidden |
 | Header and footer | the company's brand; no link to the marketplace, no newsletter, no portal-wide legal links |
 | A1 to A6, J1 to J5, apply, interview, offer | unchanged |
+
+## 3b. Verification of companies
+
+*Since 2026-10-28 the gate reads the kind of the installation type: verification exists on `multi` of independent companies, which today is the marketplace ([erp-installation-type.md](erp-installation-type.md) section 2).*
+
+The verification of companies (the documents a company sends, their review, the "verified" mark, and the name that is locked once verified) exists on the **marketplace only**. On a company portal the company is the operator, so there is nobody to be verified for.
+
+- **Source of the mode for the API:** the live portal identity (`platform_portal_identity`; no identity is the marketplace), read through the port `Shared\Application\Portal\VerificationFeature` that the Platform context provides (`PortalVerificationFeature`).
+- **Routes:** the company routes `company/documents*` and `company/name-change-requests*`, and the admin routes `companies/{id}/documents*`, `company-name-changes*` and `company-document-types*`, answer `404 verification-unavailable` in `company` mode (middleware `RequireVerification`).
+- **Rules that follow the verification are switched off, not satisfied:** the approval of the jobs of an unverified company (`job.approval_for_unverified`, `JobReviewPolicy`) and the closed contacts of an applicant in `applied` (`ContactVisibility`) do not apply, so a company portal behaves as if every company could be trusted.
+- **Console, Workspace and Career** read the mode (`GET portal`) and leave out what belongs to it: the "Name changes" page, the document pages of a company, the types of document, the verified filter, column and marks and the two work queues of the dashboard (Console); the "Documents" page (Workspace); the verified badge (Career).
+- Unchanged: an internal tenant of an ERP group still counts as verified on the marketplace (`erp-governance.md` section 1.2); the data (`verified_at`, the documents) is kept, only hidden, so switching the portal back to the marketplace brings it back.
+
+## 3c. Groups on a portal of one company
+
+*Since 2026-10-28 the Workspace page "Group and entities" is also left out on `single` and the units are the first page of the structure (decided by the user; [erp-installation-type.md](erp-installation-type.md) section 4c). The rest of this section is as decided before. This is the installation type `single`: the group level is off on it, and it takes one company and one tenant only (409 `single-company-installation`, [erp-installation-type.md](erp-installation-type.md) sections 2 and 4b).*
+
+A portal of one company has no group to run, but its company still has a structure: units, positions, grades and cost centres belong to a legal entity, and the legal entity to a group that has the company as its tenant. So only the **group level** is switched off; the structure stays.
+The gate is the port `Shared\Application\Portal\GroupFeature` (Platform context, from the live portal identity: off only for `company` mode with scope `company`) and the middleware `Shared\Interface\Http\Middleware\RequireGroups`.
+
+- **Off (404 `groups-unavailable`):** `organization/group` and the changes to the legal entities (`organization/legal-entities*`, since 2026-10-28; the structure uses the one legal entity of the company by itself, [erp-installation-type.md](erp-installation-type.md) section 4c), `organization/activity`, `settings`, `portal*`, `support-*`, `tenants`, `read/*` (reads across the tenants), `members*` (the group roles in Workspace), the group side of the workforce (`organization/workforce/plans*`, `organization/requisitions*`), the group
+  approval flows (`organization/approval-flows*`) and the support routes `admin/support/*`.
+- **Stays:** `grades`, `unit-types`, `cost-centres`, `units` and `positions`, the company side of the workforce and the approvals, and the platform admin's pages for groups (`admin/groups*`: create the group and its legal entity, link the company as
+  its tenant, grant the first group roles), which is how a one-company installation is set up. A member still needs a group role to open the structure, so the admin grants it there.
+- **Workspace:** the menu entries and pages of the group level (members, plans and requisitions of the group, recruitment, settings, career site, log, support access) are left out; the group page, units, positions, grades and cost centres stay. **Console** keeps its Groups pages.
 
 ## 3a. Scope: group or company
 

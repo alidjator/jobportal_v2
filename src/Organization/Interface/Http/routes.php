@@ -15,15 +15,11 @@ use Src\Organization\Interface\Http\Controllers\SupportGrantController;
 use Src\Organization\Interface\Http\Controllers\UnitController;
 use Src\Organization\Interface\Http\Middleware\ReadAsGroup;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
+use Src\Shared\Interface\Http\Middleware\RequireGroups;
 
 // The group of the signed-in company member. Every use case checks that the caller holds a group role in a group that is not suspended, and the permission the
 // action needs (`group.structure.manage` for the legal entities, `group.members.manage` for the group roles).
 Route::middleware('auth:user')->group(function (): void {
-    Route::get('organization/group', [OrganizationController::class, 'group']);
-    Route::post('organization/legal-entities', [OrganizationController::class, 'storeLegalEntity']);
-    Route::patch('organization/legal-entities/{id}', [OrganizationController::class, 'updateLegalEntity'])->whereNumber('id');
-    Route::post('organization/legal-entities/{id}/deactivate', [OrganizationController::class, 'deactivateLegalEntity'])->whereNumber('id');
-    Route::post('organization/legal-entities/{id}/reactivate', [OrganizationController::class, 'reactivateLegalEntity'])->whereNumber('id');
 
     // The structure of the group (`erp-organization.md` sections 5 and 6): any group member reads, `group.structure.manage` changes. Units and positions are effective-dated:
     // a change is a new version from `valid_from`, and reads take `as_of`.
@@ -45,44 +41,58 @@ Route::middleware('auth:user')->group(function (): void {
         Route::post("organization/{$path}/{id}/reactivate", [$controller, 'reactivate'])->whereNumber('id');
     }
 
-    // The activity log of the group (`group.audit.view`): its own changes, its internal tenants' members and the platform's actions on it; no IP address.
-    Route::get('organization/activity', [GroupActivityController::class, 'index']);
+    Route::put('organization/units/order', [UnitController::class, 'reorder']);
 
-    // The settings page of the group: any member reads, `group.settings.manage` changes the settings that belong to the group.
-    Route::get('organization/settings', [GroupSettingsController::class, 'show']);
-    Route::patch('organization/settings', [GroupSettingsController::class, 'update']);
+    // What is about the group itself and not about the structure exists where groups do (`RequireGroups`): on the portal of one company the structure above and the reading of the group stay, these (the changes to the legal entities included) answer
+    // 404 `groups-unavailable`.
+    Route::middleware(RequireGroups::class)->group(function (): void {
+        // The group of the signed-in member with its legal entities: where there are groups the structure picks its legal entity from them, and a `single` installation has one, which the structure uses by itself (`StructureEntity`). The group
+        // permissions of a member are in `GET company/me`, which is available everywhere. The platform admin sets the legal entities up in Console, so managing them is the group's work and closes with the rest.
+        Route::get('organization/group', [OrganizationController::class, 'group']);
+        Route::post('organization/legal-entities', [OrganizationController::class, 'storeLegalEntity']);
+        Route::patch('organization/legal-entities/{id}', [OrganizationController::class, 'updateLegalEntity'])->whereNumber('id');
+        Route::post('organization/legal-entities/{id}/deactivate', [OrganizationController::class, 'deactivateLegalEntity'])->whereNumber('id');
+        Route::post('organization/legal-entities/{id}/reactivate', [OrganizationController::class, 'reactivateLegalEntity'])->whereNumber('id');
 
-    // The brand of the career site of the group (`group.settings.manage`): a draft that is previewed and then published.
-    Route::get('organization/portal', [GroupPortalController::class, 'show']);
-    Route::put('organization/portal/draft', [GroupPortalController::class, 'saveDraft']);
-    Route::delete('organization/portal/draft', [GroupPortalController::class, 'discardDraft']);
-    Route::post('organization/portal/draft/publish', [GroupPortalController::class, 'publish']);
-    Route::post('organization/portal/draft/preview', [GroupPortalController::class, 'preview']);
+        // The activity log of the group (`group.audit.view`): its own changes, its internal tenants' members and the platform's actions on it; no IP address.
+        Route::get('organization/activity', [GroupActivityController::class, 'index']);
 
-    // Temporary support access for a named platform admin (`group.members.manage`): who may receive it, who has it, give it for 1 to 72 hours, end it at once.
-    Route::get('organization/support-admins', [SupportGrantController::class, 'admins']);
-    Route::get('organization/support-grants', [SupportGrantController::class, 'index']);
-    Route::post('organization/support-grants', [SupportGrantController::class, 'store']);
-    Route::delete('organization/support-grants/{id}', [SupportGrantController::class, 'destroy'])->whereNumber('id');
+        // The settings page of the group: any member reads, `group.settings.manage` changes the settings that belong to the group.
+        Route::get('organization/settings', [GroupSettingsController::class, 'show']);
+        Route::patch('organization/settings', [GroupSettingsController::class, 'update']);
 
-    // Reading the recruitment of the group's tenants (`group.recruitment.view`): the tenants, then the recruiter's own read routes with `?tenant_id=<company>`, answered as a read-only
-    // member of that tenant. Only GET routes exist here; reads of applicants are audited. Acting on applications still needs a membership of that tenant.
-    Route::get('organization/tenants', [GroupTenantController::class, 'index']);
+        // The brand of the career site of the group (`group.settings.manage`): a draft that is previewed and then published.
+        Route::get('organization/portal', [GroupPortalController::class, 'show']);
+        Route::put('organization/portal/draft', [GroupPortalController::class, 'saveDraft']);
+        Route::delete('organization/portal/draft', [GroupPortalController::class, 'discardDraft']);
+        Route::post('organization/portal/draft/publish', [GroupPortalController::class, 'publish']);
+        Route::post('organization/portal/draft/preview', [GroupPortalController::class, 'preview']);
 
-    Route::middleware(ReadAsGroup::class)->group(function (): void {
-        Route::get('organization/read/jobs', [CompanyJobController::class, 'index']);
-        Route::get('organization/read/jobs/{id}', [CompanyJobController::class, 'show'])->whereNumber('id');
-        Route::get('organization/read/jobs/{id}/performance', [CompanyJobController::class, 'performance'])->whereNumber('id');
-        Route::get('organization/read/analytics/{report}', [AnalyticsController::class, 'show'])->where('report', '[a-z_]+');
+        // Temporary support access for a named platform admin (`group.members.manage`): who may receive it, who has it, give it for 1 to 72 hours, end it at once.
+        Route::get('organization/support-admins', [SupportGrantController::class, 'admins']);
+        Route::get('organization/support-grants', [SupportGrantController::class, 'index']);
+        Route::post('organization/support-grants', [SupportGrantController::class, 'store']);
+        Route::delete('organization/support-grants/{id}', [SupportGrantController::class, 'destroy'])->whereNumber('id');
+
+        // Reading the recruitment of the group's tenants (`group.recruitment.view`): the tenants, then the recruiter's own read routes with `?tenant_id=<company>`, answered as a read-only
+        // member of that tenant. Only GET routes exist here; reads of applicants are audited. Acting on applications still needs a membership of that tenant.
+        Route::get('organization/tenants', [GroupTenantController::class, 'index']);
+
+        Route::middleware(ReadAsGroup::class)->group(function (): void {
+            Route::get('organization/read/jobs', [CompanyJobController::class, 'index']);
+            Route::get('organization/read/jobs/{id}', [CompanyJobController::class, 'show'])->whereNumber('id');
+            Route::get('organization/read/jobs/{id}/performance', [CompanyJobController::class, 'performance'])->whereNumber('id');
+            Route::get('organization/read/analytics/{report}', [AnalyticsController::class, 'show'])->where('report', '[a-z_]+');
+        });
+
+        Route::middleware(ReadAsGroup::class.':audited')->group(function (): void {
+            Route::get('organization/read/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
+            Route::get('organization/read/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
+            Route::get('organization/read/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
+        });
+
+        Route::get('organization/members', [GroupRoleController::class, 'index']);
+        Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');
+        Route::delete('organization/members/{userId}', [GroupRoleController::class, 'remove'])->whereNumber('userId');
     });
-
-    Route::middleware(ReadAsGroup::class.':audited')->group(function (): void {
-        Route::get('organization/read/jobs/{id}/applications', [CompanyApplicationController::class, 'index'])->whereNumber('id');
-        Route::get('organization/read/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
-        Route::get('organization/read/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
-    });
-
-    Route::get('organization/members', [GroupRoleController::class, 'index']);
-    Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');
-    Route::delete('organization/members/{userId}', [GroupRoleController::class, 'remove'])->whereNumber('userId');
 });

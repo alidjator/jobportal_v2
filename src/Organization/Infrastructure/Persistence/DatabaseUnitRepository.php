@@ -29,8 +29,9 @@ final readonly class DatabaseUnitRepository implements UnitRepository
     public function create(Unit $unit): Unit
     {
         $now = $this->clock->now()->format(self::TIME_FORMAT);
+        $last = (int) $this->connection->table('organization_units')->where('legal_entity_id', $unit->legalEntityId)->max('sort_order');
         $id = (int) $this->connection->table('organization_units')->insertGetId([
-            'legal_entity_id' => $unit->legalEntityId, 'code' => $unit->code, 'status' => $unit->status->value, 'created_at' => $now, 'updated_at' => $now,
+            'legal_entity_id' => $unit->legalEntityId, 'code' => $unit->code, 'status' => $unit->status->value, 'sort_order' => $last + 1, 'created_at' => $now, 'updated_at' => $now,
         ]);
 
         return $this->find($id) ?? throw new \LogicException("Unit {$id} was just created.");
@@ -43,9 +44,20 @@ final readonly class DatabaseUnitRepository implements UnitRepository
 
     public function ofEntity(int $legalEntityId): array
     {
-        return $this->connection->table('organization_units')->where('legal_entity_id', $legalEntityId)->orderBy('code')->get()
+        return $this->connection->table('organization_units')->where('legal_entity_id', $legalEntityId)->orderBy('sort_order')->orderBy('code')->get()
             ->map(fn (stdClass $row): Unit => $this->toUnit($row))
             ->all();
+    }
+
+    public function saveOrders(array $orders): void
+    {
+        $now = $this->clock->now()->format(self::TIME_FORMAT);
+
+        $this->connection->transaction(function () use ($orders, $now): void {
+            foreach ($orders as $unitId => $order) {
+                $this->connection->table('organization_units')->where('id', $unitId)->update(['sort_order' => $order, 'updated_at' => $now]);
+            }
+        });
     }
 
     public function codeTaken(int $legalEntityId, string $code): bool
@@ -132,6 +144,6 @@ final readonly class DatabaseUnitRepository implements UnitRepository
 
     private function toUnit(stdClass $row): Unit
     {
-        return new Unit((int) $row->id, (int) $row->legal_entity_id, (string) $row->code, ItemStatus::from((string) $row->status));
+        return new Unit((int) $row->id, (int) $row->legal_entity_id, (string) $row->code, ItemStatus::from((string) $row->status), (int) $row->sort_order);
     }
 }

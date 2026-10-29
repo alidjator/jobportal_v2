@@ -129,7 +129,7 @@ final class PortalTest extends FeatureTestCase
     public function test_without_a_published_identity_the_portal_is_the_marketplace(): void
     {
         $this->portal()->assertOk()
-            ->assertJsonPath('data.mode', 'marketplace')->assertJsonPath('data.scope', null)->assertJsonPath('data.companies', [])->assertJsonPath('data.preview', false);
+            ->assertJsonPath('data.mode', 'marketplace')->assertJsonPath('data.scope', null)->assertJsonPath('data.installation_type', 'multi')->assertJsonPath('data.multi_kind', 'independent')->assertJsonPath('data.companies', [])->assertJsonPath('data.preview', false);
 
         $this->admin('GET', 'portal')->assertOk()->assertJsonPath('data.live_is_default', true)->assertJsonPath('data.live.mode', 'marketplace')->assertJsonPath('data.draft', null);
     }
@@ -160,7 +160,7 @@ final class PortalTest extends FeatureTestCase
 
         $this->admin('POST', 'portal/draft/publish')->assertOk()->assertJsonPath('data.draft', null)->assertJsonPath('data.live.scope', 'group')->assertJsonPath('data.live_is_default', false);
 
-        $this->portal()->assertOk()->assertJsonPath('data.mode', 'company')->assertJsonPath('data.scope', 'group')->assertJsonPath('data.name', 'Grup Nusantara')
+        $this->portal()->assertOk()->assertJsonPath('data.mode', 'company')->assertJsonPath('data.scope', 'group')->assertJsonPath('data.installation_type', 'multi')->assertJsonPath('data.multi_kind', 'group')->assertJsonPath('data.name', 'Grup Nusantara')
             ->assertJsonPath('data.preset', 1)->assertJsonPath('data.tagline', null);
         $this->assertSame(['pt-holding', 'pt-saudara'], array_column($this->portal()->json('data.companies'), 'slug'));
 
@@ -200,7 +200,7 @@ final class PortalTest extends FeatureTestCase
     {
         $this->publishIdentity('company', [$this->outsider]);
 
-        $this->portal()->assertOk()->assertJsonPath('data.scope', 'company')->assertJsonPath('data.name', 'PT-LUAR')->assertJsonPath('data.companies.0.slug', 'pt-luar');
+        $this->portal()->assertOk()->assertJsonPath('data.scope', 'company')->assertJsonPath('data.installation_type', 'single')->assertJsonPath('data.multi_kind', null)->assertJsonPath('data.name', 'PT-LUAR')->assertJsonPath('data.companies.0.slug', 'pt-luar');
     }
 
     public function test_publishing_without_a_draft_and_the_shape_of_a_draft_are_refused(): void

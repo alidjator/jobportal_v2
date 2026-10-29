@@ -12,6 +12,7 @@ use Src\Organization\Interface\Http\Controllers\StructureCatalogController;
 use Src\Organization\Interface\Http\Controllers\SupportGrantController;
 use Src\Organization\Interface\Http\Controllers\UnitController;
 use Src\Organization\Interface\Http\Middleware\ActAsSupport;
+use Src\Shared\Interface\Http\Middleware\RequireGroups;
 
 // Creating a group and linking tenants stays with the platform admin, as creating companies does (`companies.manage`).
 Route::prefix('admin')->middleware(['auth:admin', 'can:'.CompanyPermissions::COMPANIES_MANAGE])->group(function (): void {
@@ -30,7 +31,7 @@ Route::prefix('admin')->middleware(['auth:admin', 'can:'.CompanyPermissions::COM
 
 // Temporary support access (`erp-governance.md` section 1.1): a platform admin with `groups.support` reads a group's structure and activity log only while a group admin's
 // grant to them is active, always with `?group_id=<group>`, read only, and every read is audited. The paths mirror the group member's reads under `organization/`.
-Route::prefix('admin/support')->middleware(['auth:admin', 'can:'.OrganizationPermissions::GROUPS_SUPPORT])->group(function (): void {
+Route::prefix('admin/support')->middleware(['auth:admin', 'can:'.OrganizationPermissions::GROUPS_SUPPORT, RequireGroups::class])->group(function (): void {
     Route::get('groups', [SupportGrantController::class, 'groupsOfAdmin']);
 
     Route::middleware(ActAsSupport::class)->group(function (): void {

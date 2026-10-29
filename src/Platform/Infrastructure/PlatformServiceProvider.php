@@ -23,8 +23,11 @@ use Src\Platform\Application\PlatformSettings;
 use Src\Platform\Application\Portal\EditPortalBrand;
 use Src\Platform\Application\Portal\PortalAlerts;
 use Src\Platform\Application\Portal\PortalEmailTemplates;
+use Src\Platform\Application\Portal\PortalGroupFeature;
 use Src\Platform\Application\Portal\PortalPreviewTokens;
 use Src\Platform\Application\Portal\Portals;
+use Src\Platform\Application\Portal\PortalSingleCompany;
+use Src\Platform\Application\Portal\PortalVerificationFeature;
 use Src\Platform\Application\Scheduler\ScheduledTaskRunRepository;
 use Src\Platform\Application\Scheduler\ScheduledTasks;
 use Src\Platform\Application\Scheduler\SchedulerAlerts;
@@ -61,7 +64,10 @@ use Src\Shared\Application\Email\EmailSuppressions;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Portal\GroupFeature;
 use Src\Shared\Application\Portal\PortalBrandEditor;
+use Src\Shared\Application\Portal\SingleCompany;
+use Src\Shared\Application\Portal\VerificationFeature;
 use Src\Shared\Application\Settings\CompanySettingsEditor;
 use Src\Shared\Application\Settings\GroupSettingsEditor;
 use Src\Shared\Application\Settings\Settings;
@@ -94,6 +100,9 @@ final class PlatformServiceProvider extends ContextServiceProvider
         Portals::class => DatabasePortals::class,
         PortalPreviewTokens::class => EncryptedPortalPreviewTokens::class,
         PortalBrandEditor::class => EditPortalBrand::class,
+        VerificationFeature::class => PortalVerificationFeature::class,
+        GroupFeature::class => PortalGroupFeature::class,
+        SingleCompany::class => PortalSingleCompany::class,
     ];
 
     /** One store per request, so the in-memory copy of the values is shared and dropped on every write. @var array<class-string, class-string> */

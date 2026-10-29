@@ -197,6 +197,78 @@ final class GroupTest extends FeatureTestCase
         $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'group.tenant_linked')->count());
     }
 
+    public function test_the_company_list_tells_the_companies_that_are_linked_from_those_that_are_free(): void
+    {
+        $ids = $this->linkedGroup();
+        $listed = fn (string $linked): array => array_map('intval', array_column($this->admin('GET', "companies?filter[linked]={$linked}&per_page=100")->assertOk()->json('data'), 'id'));
+
+        $this->assertSame([$this->holdingCompany], $listed('true'));
+        $this->assertNotContains($this->holdingCompany, $listed('false'));
+        $this->assertContains($this->subsidiaryCompany, $listed('false'));
+        $this->admin('GET', 'companies?filter[linked]=maybe')->assertStatus(422);
+
+        $this->admin('DELETE', "groups/{$ids['group']}/legal-entities/{$ids['entity']}/tenant")->assertNoContent();
+        $this->assertContains($this->holdingCompany, $listed('false'));
+    }
+
+    public function test_the_group_level_is_off_on_the_portal_of_one_company_but_the_structure_and_the_setup_stay(): void
+    {
+        $ids = $this->groupWithAdmin();
+        $off = fn (string $uri) => $this->asMember($this->holdingAdmin, 'GET', $uri)->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:groups-unavailable');
+
+        $this->asMember($this->holdingAdmin, 'GET', 'members')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'units')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:legal-entity-required');
+        $other = (int) $this->asMember($this->holdingAdmin, 'POST', 'legal-entities', $this->entityBody('PT Lain Lagi', ['legal_form' => 'cv']))->assertCreated()->json('data.id');
+
+        DB::table('platform_portal_identity')->insert(['mode' => 'company', 'scope' => 'company', 'company_ids' => json_encode([$this->holdingCompany]), 'updated_at' => now()]);
+
+        foreach (['members', 'settings', 'portal', 'activity', 'tenants', 'support-grants'] as $uri) {
+            $off($uri);
+        }
+
+        // Changing the legal entities is the group's work and closes; reading the group, the structure and the platform admin's pages to set them up stay.
+        $this->asMember($this->holdingAdmin, 'POST', 'legal-entities', $this->entityBody('PT Baru'))->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:groups-unavailable');
+        $this->asMember($this->holdingAdmin, 'PATCH', "legal-entities/{$ids['entity']}", ['legal_name' => 'PT Lain'])->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:groups-unavailable');
+        $this->asMember($this->holdingAdmin, 'POST', "legal-entities/{$ids['entity']}/deactivate")->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:groups-unavailable');
+        $this->asMember($this->holdingAdmin, 'POST', "legal-entities/{$ids['entity']}/reactivate")->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:groups-unavailable');
+        $off('group');
+
+        // The group permissions of the member come with `GET company/me`; the structure uses the one legal entity of the company, by itself, and no other one is reachable.
+        $this->app['auth']->forgetGuards();
+        $this->withToken($this->tokenOf($this->holdingAdmin))->getJson('/api/v1/company/me')->assertOk()->assertJsonPath('data.group.name', 'Grup Nusantara')
+            ->assertJsonPath('data.group.permissions', ['group.structure.manage', 'group.members.manage', 'group.recruitment.view']);
+        $this->asMember($this->holdingAdmin, 'GET', 'units')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'positions')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'cost-centres')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'units?legal_entity_id='.$ids['entity'])->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', "units?legal_entity_id={$other}")->assertNotFound();
+        $this->asMember($this->holdingAdmin, 'GET', 'unit-types')->assertOk();
+        $this->admin('GET', 'groups')->assertOk();
+
+        DB::table('platform_portal_identity')->update(['scope' => 'group']);
+        $this->asMember($this->holdingAdmin, 'GET', 'members')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'group')->assertOk();
+        $this->asMember($this->holdingAdmin, 'GET', 'units')->assertStatus(422);
+        $this->asMember($this->holdingAdmin, 'POST', 'legal-entities', $this->entityBody('PT Baru'))->assertCreated();
+
+        DB::table('platform_portal_identity')->delete();
+        $this->asMember($this->holdingAdmin, 'GET', 'members')->assertOk();
+    }
+
+    public function test_a_single_installation_links_no_second_tenant(): void
+    {
+        $ids = $this->groupWithAdmin();
+        $anak = (int) $this->asMember($this->holdingAdmin, 'POST', 'legal-entities', $this->entityBody('PT Anak Usaha', ['legal_form' => 'cv']))->assertCreated()->json('data.id');
+        $link = fn () => $this->admin('PUT', "groups/{$ids['group']}/legal-entities/{$anak}/tenant", ['company_id' => $this->subsidiaryCompany]);
+
+        DB::table('platform_portal_identity')->insert(['mode' => 'company', 'scope' => 'company', 'company_ids' => json_encode([$this->holdingCompany]), 'updated_at' => now()]);
+        $link()->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:single-company-installation');
+        $this->assertNull(DB::table('company_companies')->where('id', $this->subsidiaryCompany)->value('legal_entity_id'));
+
+        DB::table('platform_portal_identity')->update(['scope' => 'group']);
+        $link()->assertOk();
+    }
+
     public function test_one_entity_has_one_tenant_and_one_company_one_entity(): void
     {
         $ids = $this->linkedGroup();

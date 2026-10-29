@@ -33,6 +33,9 @@ interface ApprovalInstanceRepository
     /** @return list<int> the ids of the approvals the account asked for, newest first */
     public function ofRequester(int $userId): array;
 
+    /** Whether the account asked for an approval or holds (or held) a place in one, as itself or as the one who decided or stood in for another. */
+    public function involves(int $userId): bool;
+
     /** @return list<int> the ids of the running approvals with a user slot of this account that is not approved yet */
     public function pendingWithSlotOf(int $userId): array;
 }

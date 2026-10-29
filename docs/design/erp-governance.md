@@ -100,3 +100,8 @@ The ERP has no public content, so it needs no moderation. Its controls:
 4. ~~No default platform admin access to customer ERP data~~ decided 2026-10-15 (section 1.1).
 5. ~~Internal tenants counted as verified~~ decided 2026-10-15 (section 1.2).
 6. ~~A group status~~ decided 2026-10-15 (`erp-organization.md` section 7).
+
+## Coded: who sees the approval pages (2026-10-29)
+
+An approver holds no permission of their own (`erp-requisitions.md` section 4), so a menu that followed permissions hid the approval pages from a recruiter who was named in a flow. `GET company/me` now carries `takes_part_in_approvals` (port `Shared\Application\Approval\ApprovalParticipation`, provided by Approval): true when the member asked for an approval, holds or held a place in one (as the account, or as the one who decided or stood in for another), or has one waiting (also through a delegation or a group role). Workspace shows the approvals and delegations entries, and the count of what waits, to such a member besides those who hold an approvals or workforce permission or a group role. The pages themselves were always open to any member; the API decides what a member sees in them.
+

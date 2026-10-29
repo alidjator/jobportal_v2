@@ -80,6 +80,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `company-already-linked` | 409 | Organization | The company is already linked to a legal entity. |
 | `company-already-suspended` | 409 | Company | The company is already suspended. |
 | `company-not-found` | 404 | Company | Company not found. |
+| `company-not-linked` | 409 | Organization | The company is not linked to a legal entity yet. |
 | `company-not-suspended` | 409 | Company | The company is not suspended. |
 | `company-permission-required` | 403 | Assessment, Shared | Psychological results are closed to the interview panel. |
 | `company-suspended` | 403 | Approval, Assessment, Campaign, Company, Dashboard, Job, JobInvitation, JobSeeker, Messaging, Recruitment, Review, TalentPool, Workforce | This company is suspended. |
@@ -101,8 +102,12 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `delete-window-over` | 409 | Messaging | A message can only be deleted within :minutes minutes of sending it. |
 | `deletion-already-requested` | 409 | Identity | The deletion of this account was already requested. |
 | `deletion-not-requested` | 409 | Identity | No deletion of this account is pending. |
+| `demo-campaigns-need-demo-data` | 409 | DemoData | The demo platform admin does not exist. Run demo:seed first. |
 | `demo-data-exists` | 409 | DemoData | The demo data already exists. Rebuild the database (migrate:fresh, db:seed) to seed it again. |
+| `demo-presets-need-demo-data` | 409 | DemoData | The demo account :email does not exist. Run demo:seed first. |
 | `demo-references-missing` | 409 | DemoData | The reference data has no active :master: run db:seed first. |
+| `demo-structure-needs-demo-data` | 409 | DemoData | The demo group admin does not exist. Run demo:seed first. |
+| `demo-workforce-needs-structure` | 409 | DemoData | The demo structure does not exist. Run demo:seed-structure first. |
 | `document-approved` | 409 | Company | An approved document cannot be deleted; upload a new file to replace it. |
 | `document-changed` | 409 | Company | The company replaced this document after you opened it. Reload and review the latest file. |
 | `document-not-pending` | 409 | Company | Only a pending document can be reviewed. |
@@ -137,6 +142,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `group-not-suspended` | 409 | Organization | The group is not suspended. |
 | `group-permission-required` | 403 | Organization, Workforce | The group permission :permission is needed. |
 | `group-suspended` | 403, 409 | Organization | The group is suspended: restore it before linking a tenant. |
+| `groups-unavailable` | 404 | Shared | Groups are not available on this portal. |
 | `image-not-found` | 404 | Assessment, Company | The institution has no logo. |
 | `internal-error` | 500 | Platform | An unexpected error occurred. |
 | `interview-edit-denied` | 403 | Recruitment | Only the member who scheduled the interview, its interviewer or a company admin can change its questions. |
@@ -247,6 +253,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-test` | 422 | Assessment |  |
 | `invalid-two-factor-code` | 401, 422 | Identity | The verification code is incorrect. |
 | `invalid-unit` | 422 | Organization | The unit is not an active unit of the legal entity that exists from the day of the change. |
+| `invalid-unit-order` | 422 | Organization |  |
 | `invalid-unit-type` | 422 | Organization | The unit type is not an active unit type of the group. |
 | `invalid-verification-code` | 422 | Identity | The verification code is incorrect. |
 | `invalid-video` | 422 | Assessment | No part of the recording was sent. |
@@ -296,6 +303,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-entity-has-tenant` | 409 | Organization | The legal entity already has a tenant. |
 | `legal-entity-inactive` | 409 | Organization | The legal entity is inactive. |
 | `legal-entity-name-taken` | 409 | Organization | The group already has a legal entity with this name. |
+| `legal-entity-required` | 422 | Organization | The legal entity is required. |
 | `licence-already-expired` | 422 | Assessment | The licence has expired already. |
 | `licence-decided` | 409 | Assessment | This licence was decided already. |
 | `licence-pending` | 409 | Assessment | A submission of this licence is waiting for a decision. |
@@ -451,6 +459,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `section-limit-reached` | 409 | Assessment | The test has reached its limit of sections. |
 | `setting-not-editable` | 422 | Platform | The setting :key cannot be changed by a company. |
 | `setting-not-overridable` | 422 | Platform | This setting cannot be overridden per company. |
+| `single-company-installation` | 409 | Company, Organization | This installation is for one company and already has it. |
 | `slug-reserved` | 422 | Company | This slug is reserved. |
 | `slug-taken` | 409 | Company | This slug is already taken. |
 | `social-account-conflict` | 409 | Identity | A different Google account is already linked to this account. |
@@ -505,6 +514,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `verification-code-cooldown` | 429 | Identity | Wait a moment before requesting another code. |
 | `verification-code-expired` | 422 | Identity | The verification code has expired or is no longer valid. Request a new one. |
 | `verification-code-limit-reached` | 429 | Identity | Too many codes were requested. Try again later. |
+| `verification-unavailable` | 404 | Company | Company verification is not available on this portal. |
 | `video-capacity-full` | 409 | Recruitment | Too many video interviews are running right now. Try again in a few minutes. |
 | `video-consent-required` | 422 | Assessment |  |
 | `video-disabled` | 409 | Recruitment | Interviews in the platform are switched off. |

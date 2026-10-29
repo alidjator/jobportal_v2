@@ -12,8 +12,13 @@ interface UnitRepository
 
     public function save(Unit $unit): void;
 
-    /** @return list<Unit> by code */
+    /** @return list<Unit> by sort order, then code */
     public function ofEntity(int $legalEntityId): array;
+
+    /**
+     * @param  array<int, int>  $orders  sort order by unit id
+     */
+    public function saveOrders(array $orders): void;
 
     public function codeTaken(int $legalEntityId, string $code): bool;
 

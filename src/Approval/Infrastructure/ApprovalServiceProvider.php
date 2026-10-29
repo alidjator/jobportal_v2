@@ -8,6 +8,7 @@ use Src\Approval\Application\ApprovalEmailSender;
 use Src\Approval\Application\ApprovalEmailTemplates;
 use Src\Approval\Application\ApprovalNotificationType;
 use Src\Approval\Application\ApprovalSettings;
+use Src\Approval\Application\Instance\ApprovalParticipants;
 use Src\Approval\Application\Instance\SubmitForApproval;
 use Src\Approval\Domain\ApprovalInstanceRepository;
 use Src\Approval\Domain\DelegationRepository;
@@ -25,6 +26,7 @@ use Src\Approval\Infrastructure\Tasks\ApprovalsWaitingTask;
 use Src\Approval\Interface\Console\SendApprovalRemindersCommand;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Shared\Application\ActorKind;
+use Src\Shared\Application\Approval\ApprovalParticipation;
 use Src\Shared\Application\Approval\Approvals;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -41,6 +43,7 @@ final class ApprovalServiceProvider extends ContextServiceProvider
     public array $bindings = [
         FlowRepository::class => DatabaseFlowRepository::class,
         ApprovalInstanceRepository::class => DatabaseApprovalInstanceRepository::class,
+        ApprovalParticipation::class => ApprovalParticipants::class,
         DelegationRepository::class => DatabaseDelegationRepository::class,
         Approvals::class => SubmitForApproval::class,
         ApprovalEmailSender::class => MailApprovalEmailSender::class,

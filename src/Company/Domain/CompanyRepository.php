@@ -8,6 +8,9 @@ interface CompanyRepository
 
     public function findBySlug(string $slug): ?Company;
 
+    /** How many companies the installation holds, whatever their status. */
+    public function count(): int;
+
     /** Whether a company other than `$exceptId` already uses the slug. */
     public function slugExists(string $slug, ?int $exceptId = null): bool;
 

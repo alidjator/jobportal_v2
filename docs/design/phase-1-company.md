@@ -183,7 +183,7 @@ Four wishes were named; **company document verification becomes its own slice ri
 types and sizes, the list of rejection reasons). This slice holds three parts, all guard `admin`:
 
 - **List and detail (permission `companies.manage`):** `GET /api/v1/admin/companies` is **offset-paginated** (`page`, `per_page` 1 to 100, default 20, with the total) with `filter[q]`
-  (name or slug, case-insensitive), `filter[status]=active|suspended`, `filter[verified]=true|false` and `sort` (`name`, `-name`, `created_at`, `-created_at`; default newest first). Each
+  (name or slug, case-insensitive), `filter[status]=active|suspended`, `filter[verified]=true|false`, `filter[linked]=true|false` (the company is, or is not yet, the tenant of a legal entity of an ERP group; added 2026-10-28 for the lookup of the tenant link in Console) and `sort` (`name`, `-name`, `created_at`, `-created_at`; default newest first). Each
   row: `id`, `name`, `slug`, `status`, `verified`, `members_count`, `created_at`. `GET /api/v1/admin/companies/{id}` adds the whole profile (as the company sees it), pending invitations count,
   `created_by_admin_id`, and `suspended_at` and `suspension_reason` while suspended.
 - **Suspend and restore (permission `companies.manage`):** `POST .../{id}/suspend {reason}` (reason **required**, 5 to 1,000 characters) and `POST .../{id}/restore {note}` (note optional, up

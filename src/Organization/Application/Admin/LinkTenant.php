@@ -11,6 +11,7 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyTeam;
 use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\EventDispatcher;
+use Src\Shared\Application\Portal\SingleCompany;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -31,12 +32,13 @@ final readonly class LinkTenant
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
+        private SingleCompany $single,
     ) {}
 
     /**
      * @throws AccessDenied when the actor is not an admin
      * @throws EntityNotFound the group, the entity of that group or the company is missing
-     * @throws StateConflict `group-suspended`, `legal-entity-inactive`, `legal-entity-has-tenant` or `company-already-linked`
+     * @throws StateConflict `group-suspended`, `legal-entity-inactive`, `legal-entity-has-tenant`, `company-already-linked` or `single-company-installation` (a `single` installation has a tenant already)
      */
     public function execute(Actor $actor, int $groupId, int $legalEntityId, int $companyId, ?string $ipAddress, ?string $userAgent): void
     {
@@ -69,6 +71,10 @@ final readonly class LinkTenant
 
             if ($this->tenants->legalEntityOf($companyId) !== null) {
                 throw new StateConflict('The company is already linked to a legal entity.', 'company-already-linked');
+            }
+
+            if ($this->single->enforced() && $this->tenants->linkedCount() > 0) {
+                throw new StateConflict('This installation is for one company and already has its tenant.', 'single-company-installation');
             }
 
             $this->tenants->link($companyId, $legalEntityId);

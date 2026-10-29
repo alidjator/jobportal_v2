@@ -5,6 +5,7 @@ namespace Src\Job\Application\Review;
 use Src\Job\Application\JobSettings;
 use Src\Job\Domain\JobContent;
 use Src\Shared\Application\Company\CompanyDirectory;
+use Src\Shared\Application\Portal\VerificationFeature;
 use Src\Shared\Application\Settings\Settings;
 
 /**
@@ -18,6 +19,7 @@ final readonly class JobReviewPolicy
     public function __construct(
         private Settings $settings,
         private CompanyDirectory $companies,
+        private VerificationFeature $verification,
         private SuspiciousContentScanner $scanner,
     ) {}
 
@@ -27,7 +29,7 @@ final readonly class JobReviewPolicy
             return true;
         }
 
-        if ($this->settings->boolean(JobSettings::APPROVAL_FOR_UNVERIFIED) && ! $this->companies->isVerified($companyId)) {
+        if ($this->verification->enabled() && $this->settings->boolean(JobSettings::APPROVAL_FOR_UNVERIFIED) && ! $this->companies->isVerified($companyId)) {
             return true;
         }
 

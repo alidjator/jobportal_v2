@@ -11,6 +11,7 @@ use Src\Organization\Application\Structure\ChangePositionStatus;
 use Src\Organization\Application\Structure\CreatePosition;
 use Src\Organization\Application\Structure\GetPosition;
 use Src\Organization\Application\Structure\ListPositions;
+use Src\Organization\Application\Structure\StructureEntity;
 use Src\Organization\Interface\Http\Requests\PositionRequest;
 use Src\Organization\Interface\Http\Requests\StructureReadRequest;
 use Src\Organization\Interface\Http\Resources\PositionResource;
@@ -21,9 +22,11 @@ use Src\Shared\Interface\Http\ApiController;
 /** The positions of a legal entity; `?as_of=<day>` reads the structure as it was or will be on that day. */
 final class PositionController extends ApiController
 {
-    public function index(StructureReadRequest $request, ActorResolver $actors, ListPositions $list): AnonymousResourceCollection
+    public function index(StructureReadRequest $request, ActorResolver $actors, StructureEntity $entity, ListPositions $list): AnonymousResourceCollection
     {
-        return PositionResource::collection($list->execute($actors->fromRequest($request), $request->legalEntityId(), $request->asOf()));
+        $actor = $actors->fromRequest($request);
+
+        return PositionResource::collection($list->execute($actor, $entity->resolve($actor, $request->legalEntityId()), $request->asOf()));
     }
 
     public function show(StructureReadRequest $request, int $id, ActorResolver $actors, GetPosition $get): PositionResource
@@ -36,10 +39,11 @@ final class PositionController extends ApiController
         return PositionVersionResource::collection($get->history($actors->fromRequest($request), $id));
     }
 
-    public function store(PositionRequest $request, ActorResolver $actors, CreatePosition $create): JsonResponse
+    public function store(PositionRequest $request, ActorResolver $actors, StructureEntity $entity, CreatePosition $create): JsonResponse
     {
+        $actor = $actors->fromRequest($request);
         $position = $create->execute(
-            $actors->fromRequest($request), $request->legalEntityId(), $request->code(), $request->position(), $request->validFrom(), $request->reason(), $request->ip(), $request->userAgent(),
+            $actor, $entity->resolve($actor, $request->legalEntityId()), $request->code(), $request->position(), $request->validFrom(), $request->reason(), $request->ip(), $request->userAgent(),
         );
 
         return (new PositionResource($position))->response()->setStatusCode(Response::HTTP_CREATED);

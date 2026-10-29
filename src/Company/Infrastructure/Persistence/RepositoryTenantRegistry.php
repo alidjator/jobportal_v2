@@ -35,6 +35,11 @@ final readonly class RepositoryTenantRegistry implements TenantRegistry
         return $tenants;
     }
 
+    public function linkedCount(): int
+    {
+        return $this->connection->table('company_companies')->whereNotNull('legal_entity_id')->count();
+    }
+
     public function exists(int $companyId): bool
     {
         return $this->connection->table('company_companies')->where('id', $companyId)->exists();

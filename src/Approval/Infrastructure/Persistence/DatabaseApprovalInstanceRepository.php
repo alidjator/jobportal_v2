@@ -152,6 +152,14 @@ final readonly class DatabaseApprovalInstanceRepository implements ApprovalInsta
         return $this->connection->table('approval_instances')->where('requester_id', $userId)->orderByDesc('id')->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
     }
 
+    public function involves(int $userId): bool
+    {
+        return $this->connection->table('approval_instances')->where('requester_id', $userId)->exists()
+            || $this->connection->table('approval_instance_slots')
+                ->where(fn ($match) => $match->where('user_id', $userId)->orWhere('decided_by_user_id', $userId)->orWhere('on_behalf_of_user_id', $userId))
+                ->exists();
+    }
+
     public function pendingWithSlotOf(int $userId): array
     {
         return $this->connection->table('approval_instances as instance')

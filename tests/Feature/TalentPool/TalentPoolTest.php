@@ -91,7 +91,7 @@ final class TalentPoolTest extends FeatureTestCase
 
         $this->assertSame($id, $row['id']);
         $this->assertTrue($row['available']);
-        $this->assertSame(['slug' => $this->ana['slug'], 'name' => 'Ana Putri'], $row['candidate']);
+        $this->assertSame(['slug' => $this->ana['slug'], 'name' => 'Ana Putri', 'has_avatar' => false], $row['candidate']);
         $this->assertNull($row['category']);
         $this->assertNotNull($row['saved_at']);
 

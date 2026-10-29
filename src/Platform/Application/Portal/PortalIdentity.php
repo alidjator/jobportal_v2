@@ -16,6 +16,16 @@ final readonly class PortalIdentity
 
     public const string SCOPE_COMPANY = 'company';
 
+    /** The ERP characters (`docs/design/erp-installation-type.md`): one company, or several. */
+    public const string TYPE_SINGLE = 'single';
+
+    public const string TYPE_MULTI = 'multi';
+
+    /** The kinds of `multi`: the legal entities of one group, or companies with no relation to each other (the marketplace). */
+    public const string KIND_GROUP = 'group';
+
+    public const string KIND_INDEPENDENT = 'independent';
+
     /** @param  list<int>  $companyIds */
     public function __construct(public string $mode, public ?string $scope, public array $companyIds) {}
 
@@ -45,6 +55,32 @@ final readonly class PortalIdentity
     public function isMarketplace(): bool
     {
         return $this->mode === self::MARKETPLACE;
+    }
+
+    /** `single` for a company portal of one company; `multi` for every other portal. */
+    public static function installationTypeOf(string $mode, ?string $scope): string
+    {
+        return $mode === self::COMPANY && $scope === self::SCOPE_COMPANY ? self::TYPE_SINGLE : self::TYPE_MULTI;
+    }
+
+    /** The kind of a `multi` portal (`group` or `independent`); null for `single`. */
+    public static function multiKindOf(string $mode, ?string $scope): ?string
+    {
+        if (self::installationTypeOf($mode, $scope) === self::TYPE_SINGLE) {
+            return null;
+        }
+
+        return $mode === self::MARKETPLACE ? self::KIND_INDEPENDENT : self::KIND_GROUP;
+    }
+
+    public function installationType(): string
+    {
+        return self::installationTypeOf($this->mode, $this->scope);
+    }
+
+    public function multiKind(): ?string
+    {
+        return self::multiKindOf($this->mode, $this->scope);
     }
 
     public function equals(self $other): bool

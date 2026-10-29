@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Organization\Application\Structure\CostCentreCatalog;
 use Src\Organization\Application\Structure\GradeCatalog;
+use Src\Organization\Application\Structure\StructureEntity;
 use Src\Organization\Application\Structure\UnitTypeCatalog;
 use Src\Organization\Interface\Http\Requests\CostCentreRequest;
 use Src\Organization\Interface\Http\Requests\GradeRequest;
@@ -76,14 +77,17 @@ final class StructureCatalogController extends ApiController
         return new UnitTypeResource($catalog->changeStatus($actors->fromRequest($request), $id, true, $request->ip(), $request->userAgent()));
     }
 
-    public function costCentres(StructureReadRequest $request, ActorResolver $actors, CostCentreCatalog $catalog): AnonymousResourceCollection
+    public function costCentres(StructureReadRequest $request, ActorResolver $actors, StructureEntity $entity, CostCentreCatalog $catalog): AnonymousResourceCollection
     {
-        return CostCentreResource::collection($catalog->list($actors->fromRequest($request), $request->legalEntityId()));
+        $actor = $actors->fromRequest($request);
+
+        return CostCentreResource::collection($catalog->list($actor, $entity->resolve($actor, $request->legalEntityId())));
     }
 
-    public function storeCostCentre(CostCentreRequest $request, ActorResolver $actors, CostCentreCatalog $catalog): JsonResponse
+    public function storeCostCentre(CostCentreRequest $request, ActorResolver $actors, StructureEntity $entity, CostCentreCatalog $catalog): JsonResponse
     {
-        $centre = $catalog->create($actors->fromRequest($request), $request->legalEntityId(), $request->code(), $request->name(), $request->ip(), $request->userAgent());
+        $actor = $actors->fromRequest($request);
+        $centre = $catalog->create($actor, $entity->resolve($actor, $request->legalEntityId()), $request->code(), $request->name(), $request->ip(), $request->userAgent());
 
         return (new CostCentreResource($centre))->response()->setStatusCode(Response::HTTP_CREATED);
     }

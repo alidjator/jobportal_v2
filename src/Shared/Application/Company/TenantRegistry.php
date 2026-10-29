@@ -21,6 +21,9 @@ interface TenantRegistry
      */
     public function tenantsOf(array $legalEntityIds): array;
 
+    /** How many companies are linked to a legal entity, in the whole installation. */
+    public function linkedCount(): int;
+
     /** Whether the company exists. */
     public function exists(int $companyId): bool;
 

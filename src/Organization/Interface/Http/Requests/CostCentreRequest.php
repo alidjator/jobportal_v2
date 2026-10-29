@@ -13,15 +13,16 @@ final class CostCentreRequest extends FormRequest
         $new = $this->isMethod('POST');
 
         return [
-            'legal_entity_id' => [...($new ? ['required'] : ['prohibited']), 'integer', 'min:1'],
+            'legal_entity_id' => [...($new ? ['nullable'] : ['prohibited']), 'integer', 'min:1'],
             'code' => [...($new ? ['required'] : ['prohibited']), 'string', 'max:20', 'regex:/^[A-Za-z0-9._-]+$/'],
             'name' => ['required', 'string', 'min:2', 'max:150'],
         ];
     }
 
-    public function legalEntityId(): int
+    /** The legal entity the call is about; none on a `single` installation, which has one (`StructureEntity`). */
+    public function legalEntityId(): ?int
     {
-        return $this->integer('legal_entity_id');
+        return $this->filled('legal_entity_id') ? $this->integer('legal_entity_id') : null;
     }
 
     public function code(): string

@@ -25,4 +25,16 @@ final readonly class PortalView
         public string $width = 'container',
         public bool $headerColor = false,
     ) {}
+
+    /** The installation type of the portal, `single` or `multi` (`docs/design/erp-installation-type.md`). */
+    public function installationType(): string
+    {
+        return PortalIdentity::installationTypeOf($this->mode, $this->scope);
+    }
+
+    /** The kind of a `multi` portal, `group` or `independent`; null for `single`. */
+    public function multiKind(): ?string
+    {
+        return PortalIdentity::multiKindOf($this->mode, $this->scope);
+    }
 }

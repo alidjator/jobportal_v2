@@ -37,6 +37,11 @@ final readonly class DatabaseCompanyRepository implements CompanyRepository
         return $row === null ? null : $this->toCompany($row);
     }
 
+    public function count(): int
+    {
+        return $this->connection->table('company_companies')->count();
+    }
+
     public function slugExists(string $slug, ?int $exceptId = null): bool
     {
         return $this->connection->table('company_companies')

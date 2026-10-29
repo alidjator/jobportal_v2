@@ -150,7 +150,7 @@ final class TalentPoolApplicantsTest extends FeatureTestCase
         $response->assertCreated()
             ->assertJsonPath('data.available', true)
             ->assertJsonPath('data.source', 'application')
-            ->assertJsonPath('data.candidate', ['slug' => null, 'name' => 'Ana Putri'])
+            ->assertJsonPath('data.candidate', ['slug' => null, 'name' => 'Ana Putri', 'has_avatar' => false])
             ->assertJsonPath('data.headline', 'Backend developer')
             ->assertJsonPath('data.city', 'BANDUNG')
             ->assertJsonPath('data.latest_position', ['title' => 'Backend Developer', 'employer' => 'PT Lama'])
@@ -379,7 +379,7 @@ final class TalentPoolApplicantsTest extends FeatureTestCase
 
         $row = $this->listing()->json('data.0');
 
-        $this->assertSame(['slug' => $this->budi['slug'], 'name' => 'Budi Candidate'], $row['candidate']);
+        $this->assertSame(['slug' => $this->budi['slug'], 'name' => 'Budi Candidate', 'has_avatar' => false], $row['candidate']);
         $this->assertSame('search', $row['source']);
         $this->assertSame('Backend developer', $row['headline']);
         $this->assertSame('BANDUNG', $row['city']);
@@ -474,7 +474,7 @@ final class TalentPoolApplicantsTest extends FeatureTestCase
 
         $response = $this->api('GET', "/company/talent-pool/{$id}", token: $this->recruiterToken)->assertOk();
 
-        $response->assertJsonPath('data.candidate', ['slug' => null, 'name' => 'Ana Putri'])
+        $response->assertJsonPath('data.candidate', ['slug' => null, 'name' => 'Ana Putri', 'has_avatar' => false])
             ->assertJsonPath('data.profile.headline', 'Backend developer')
             ->assertJsonPath('data.profile.experiences.0.job_title', 'Backend Developer')
             ->assertJsonPath('data.applications.0.id', $applicationId)

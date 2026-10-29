@@ -341,6 +341,8 @@ final class AuditAction
 
     public const string GROUP_UNIT_REACTIVATED = 'group.unit_reactivated';
 
+    public const string GROUP_UNITS_REORDERED = 'group.units_reordered';
+
     public const string GROUP_POSITION_CREATED = 'group.position_created';
 
     public const string GROUP_POSITION_CHANGED = 'group.position_changed';

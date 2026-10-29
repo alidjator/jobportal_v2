@@ -5,7 +5,7 @@ namespace Src\Organization\Domain\Events;
 use DateTimeImmutable;
 use Src\Shared\Domain\DomainEvent;
 
-/** A unit was created, restructured (a new dated version) or changed in status: `change` is `created`, `restructured`, `deactivated` or `reactivated`. A dated change keeps the version before and after and, when dated in the past, the reason. */
+/** A unit was created, restructured (a new dated version), changed in status or put in a new order: `change` is `created`, `restructured`, `deactivated`, `reactivated` or `reordered` (some units put in a new order: `before` and `after` hold their ids). A dated change keeps the version before and after and, when dated in the past, the reason. */
 final readonly class UnitRestructured implements DomainEvent
 {
     public function __construct(

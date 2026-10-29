@@ -10,7 +10,7 @@ use Src\Company\Domain\CompanyStatus;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
 /**
- * Allowed: `filter[q]` (name or slug), `filter[status]` (`active` or `suspended`), `filter[verified]` (true or false), `sort` (`name`, `-name`,
+ * Allowed: `filter[q]` (name or slug), `filter[status]` (`active` or `suspended`), `filter[verified]` (true or false), `filter[linked]` (true: the tenant of a legal entity of an ERP group; false: not yet), `sort` (`name`, `-name`,
  * `created_at`, `-created_at`; default newest first), `page` and `per_page`. Any other filter is refused with 422.
  */
 final class ListCompaniesRequest extends FormRequest
@@ -24,10 +24,11 @@ final class ListCompaniesRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:q,status,verified'],
+            'filter' => ['nullable', 'array:q,status,verified,linked'],
             'filter.q' => ['nullable', 'string', 'max:'.self::MAX_SEARCH_LENGTH],
             'filter.status' => ['nullable', 'string', Rule::enum(CompanyStatus::class)],
             'filter.verified' => ['nullable', 'in:true,false,1,0'],
+            'filter.linked' => ['nullable', 'in:true,false,1,0'],
             'sort' => ['nullable', 'string', Rule::enum(CompanyListSort::class)],
         ];
     }
@@ -39,6 +40,7 @@ final class ListCompaniesRequest extends FormRequest
             $this->filled('filter.status') ? CompanyStatus::from($this->string('filter.status')->toString()) : null,
             $this->filled('filter.verified') ? $this->boolean('filter.verified') : null,
             $this->filled('sort') ? CompanyListSort::from($this->string('sort')->toString()) : CompanyListSort::NewestFirst,
+            $this->filled('filter.linked') ? $this->boolean('filter.linked') : null,
         );
     }
 }

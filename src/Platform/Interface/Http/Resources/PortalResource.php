@@ -21,6 +21,10 @@ final class PortalResource extends JsonResource
         return [
             'mode' => $this->resource->mode,
             'scope' => $this->resource->scope,
+            /** `single` (one company) or `multi` (several companies) */
+            'installation_type' => $this->resource->installationType(),
+            /** `group` or `independent` for `multi`; null for `single` */
+            'multi_kind' => $this->resource->multiKind(),
             'name' => $this->resource->name,
             'tagline' => $this->resource->tagline,
             'welcome' => $this->resource->welcome,

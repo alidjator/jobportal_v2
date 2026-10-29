@@ -139,6 +139,32 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->api('GET', '/status-counts?filter[verified]=maybe')->assertStatus(422);
     }
 
+    // ----- the verification is a marketplace feature -----
+
+    public function test_the_verification_routes_exist_on_the_marketplace_only(): void
+    {
+        $id = $this->company('PT Bebas', 'pt-bebas');
+        $routes = ["/api/v1/admin/companies/{$id}/documents", '/api/v1/admin/company-document-types', '/api/v1/admin/company-name-changes'];
+        $get = function (string $path): TestResponse {
+            $this->app['auth']->forgetGuards();
+
+            return $this->withToken($this->token)->json('GET', $path);
+        };
+
+        $get($routes[1])->assertOk();
+
+        DB::table('platform_portal_identity')->insert(['mode' => 'company', 'scope' => 'company', 'company_ids' => json_encode([$id]), 'updated_at' => now()]);
+
+        foreach ($routes as $path) {
+            $get($path)->assertNotFound()->assertJsonPath('type', 'urn:onesis:error:verification-unavailable');
+        }
+
+        $this->api('GET', '')->assertOk();
+
+        DB::table('platform_portal_identity')->delete();
+        $get($routes[1])->assertOk();
+    }
+
     // ----- the list -----
 
     public function test_the_list_shows_every_company_newest_first_with_its_row_fields(): void

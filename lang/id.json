@@ -430,7 +430,6 @@
     "The threshold for \"not yet\" cannot be above the threshold for \"recommended\".": "Ambang batas \"belum\" tidak boleh lebih tinggi dari ambang batas \"direkomendasikan\".",
     "This is not an active job level.": "Ini bukan level pekerjaan yang aktif.",
     "This licence was decided already.": "Lisensi ini sudah diputuskan.",
-    "Image not found.": "Gambar tidak ditemukan.",
     "The institution has no logo.": "Lembaga belum memiliki logo.",
     "This question is archived. Restore it or remove it from the preset first.": "Pertanyaan ini diarsipkan. Pulihkan atau keluarkan dari preset terlebih dahulu.",
     "You have no signature image.": "Anda belum memiliki gambar tanda tangan.",
@@ -1198,5 +1197,19 @@
     "Your company reached its daily limit of chat messages. Try again tomorrow.": "Perusahaan Anda sudah mencapai batas harian pesan chat. Coba lagi besok.",
     "Your company reached its daily limit of job invitations. Try again tomorrow.": "Perusahaan Anda sudah mencapai batas harian undangan lowongan. Coba lagi besok.",
     "Your company used all its phone interview minutes of this month.": "Perusahaan Anda sudah memakai semua menit interview telepon bulan ini.",
-    "Your proposed time is waiting for an answer from the company.": "Usulan waktu Anda sedang menunggu jawaban dari perusahaan."
+    "Your proposed time is waiting for an answer from the company.": "Usulan waktu Anda sedang menunggu jawaban dari perusahaan.",
+    "Company verification is not available on this portal.": "Verifikasi perusahaan tidak tersedia di portal ini.",
+    "Groups are not available on this portal.": "Grup tidak tersedia di portal ini.",
+    "This installation is for one company and already has it.": "Instalasi ini hanya untuk satu perusahaan dan perusahaannya sudah ada.",
+    "This installation is for one company and already has its tenant.": "Instalasi ini hanya untuk satu perusahaan dan tenant-nya sudah ada.",
+    "The list must name units of the legal entity, each once.": "Daftar harus menyebut unit badan hukum tersebut, masing-masing sekali.",
+    "The demo account :email does not exist. Run demo:seed first.": "Akun demo :email belum ada. Jalankan demo:seed terlebih dahulu.",
+    "The legal entity :name does not exist. Run demo:seed first.": "Badan hukum :name belum ada. Jalankan demo:seed terlebih dahulu.",
+    "The job type :slug does not exist.": "Jenis pekerjaan :slug tidak ada.",
+    "The demo group has no legal entity for the tenant.": "Grup demo belum punya badan hukum untuk tenant ini.",
+    "The demo structure does not exist. Run demo:seed-structure first.": "Struktur demo belum ada. Jalankan demo:seed-structure terlebih dahulu.",
+    "The demo group admin does not exist. Run demo:seed first.": "Admin grup demo belum ada. Jalankan demo:seed terlebih dahulu.",
+    "The demo platform admin does not exist. Run demo:seed first.": "Admin platform demo belum ada. Jalankan demo:seed terlebih dahulu.",
+    "The legal entity is required.": "Badan hukum wajib diisi.",
+    "The company is not linked to a legal entity yet.": "Perusahaan belum ditautkan ke badan hukum."
 }

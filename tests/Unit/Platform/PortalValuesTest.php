@@ -37,6 +37,17 @@ final class PortalValuesTest extends TestCase
         $this->assertFalse(PortalBrandValues::default()->equals($chosen));
     }
 
+    public function test_the_installation_type_and_kind_follow_from_the_mode_and_the_scope(): void
+    {
+        $single = new PortalIdentity(PortalIdentity::COMPANY, PortalIdentity::SCOPE_COMPANY, [1]);
+        $group = new PortalIdentity(PortalIdentity::COMPANY, PortalIdentity::SCOPE_GROUP, [1, 2]);
+        $marketplace = PortalIdentity::marketplace();
+
+        $this->assertSame([PortalIdentity::TYPE_SINGLE, null], [$single->installationType(), $single->multiKind()]);
+        $this->assertSame([PortalIdentity::TYPE_MULTI, PortalIdentity::KIND_GROUP], [$group->installationType(), $group->multiKind()]);
+        $this->assertSame([PortalIdentity::TYPE_MULTI, PortalIdentity::KIND_INDEPENDENT], [$marketplace->installationType(), $marketplace->multiKind()]);
+    }
+
     public function test_an_identity_keeps_distinct_integer_company_ids(): void
     {
         $identity = PortalIdentity::fromArray(['mode' => 'company', 'scope' => 'group', 'company_ids' => ['2', 1, 2]]);

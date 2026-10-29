@@ -19,6 +19,7 @@ use Src\Company\Interface\Http\Controllers\PublicCompanyController;
 use Src\Company\Interface\Http\Controllers\TeamInvitationController;
 use Src\Company\Interface\Http\Controllers\TeamMemberController;
 use Src\Company\Interface\Http\Controllers\TeamSettingsController;
+use Src\Company\Interface\Http\Middleware\RequireVerification;
 
 // Public: the invitee has no account yet, the token in the URL is the credential.
 Route::get('auth/invitations/{token}', [InvitationController::class, 'show']);
@@ -48,16 +49,19 @@ Route::middleware('auth:user')->group(function (): void {
         Route::delete("company/{$kind}", [CompanyImageController::class, 'destroy'])->defaults('kind', $kind);
     }
 
-    // A verified company's name is locked: a member who may change the profile asks for a change with a PDF that proves it (a multipart POST); one request waits at a time.
-    Route::get('company/name-change-requests', [CompanyNameChangeController::class, 'index']);
-    Route::post('company/name-change-requests', [CompanyNameChangeController::class, 'store']);
-    Route::post('company/name-change-requests/{id}/cancel', [CompanyNameChangeController::class, 'cancel'])->whereNumber('id');
+    // The verification of companies exists on the marketplace only (`RequireVerification`): the name-change requests of a verified company and the verification documents.
+    Route::middleware(RequireVerification::class)->group(function (): void {
+        // A verified company's name is locked: a member who may change the profile asks for a change with a PDF that proves it (a multipart POST); one request waits at a time.
+        Route::get('company/name-change-requests', [CompanyNameChangeController::class, 'index']);
+        Route::post('company/name-change-requests', [CompanyNameChangeController::class, 'store']);
+        Route::post('company/name-change-requests/{id}/cancel', [CompanyNameChangeController::class, 'cancel'])->whereNumber('id');
 
-    // The verification documents of the own company; every use case checks that the caller is a company admin of an active company.
-    Route::get('company/documents', [CompanyDocumentController::class, 'index']);
-    Route::post('company/documents/{typeId}', [CompanyDocumentController::class, 'store'])->whereNumber('typeId');
-    Route::delete('company/documents/{typeId}', [CompanyDocumentController::class, 'destroy'])->whereNumber('typeId');
-    Route::get('company/documents/{typeId}/file', [CompanyDocumentController::class, 'file'])->whereNumber('typeId');
+        // The verification documents of the own company; every use case checks that the caller is a company admin of an active company.
+        Route::get('company/documents', [CompanyDocumentController::class, 'index']);
+        Route::post('company/documents/{typeId}', [CompanyDocumentController::class, 'store'])->whereNumber('typeId');
+        Route::delete('company/documents/{typeId}', [CompanyDocumentController::class, 'destroy'])->whereNumber('typeId');
+        Route::get('company/documents/{typeId}/file', [CompanyDocumentController::class, 'file'])->whereNumber('typeId');
+    });
 
     // What the karir.pkp import carried for the own company (company admins; `404 no-import-summary` for a company that was not imported).
     Route::get('company/import-summary', [ImportSummaryController::class, 'show']);
