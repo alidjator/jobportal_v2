@@ -254,3 +254,10 @@ and a requisition name. Decided by the user on 2026-10-26: **one read-only endpo
 positions (`id`, `code`, `title`, `unit_id`, `min_grade_id`, `max_grade_id`), the active units (`id`, `code`, `name`, `cost_centre_id`), the active grades of the group (`id`, `code`, `name`, `rank`), the active cost centres and the
 active accounts of the tenant as `hiring_managers` (`id`, `name`). It needs `workforce.plans.manage` or `workforce.requisitions.create` (others get 403); an external tenant gets 403 `not-an-internal-tenant`. New ports:
 `StructureDirectory::gradeOptions`, `costCentreOptions` and `unitOptions` (Organization provides them); use case `Workforce\Application\GetWorkforceOptions`. Tests: `PlanTest` (the options, who is refused, a deactivated position is left out).
+
+## Coded: the requisition in the job forms (2026-10-29)
+
+- **New job:** the form of a new job (Workspace) asks for the requisition. `GET company/jobs/requisition-options` (`jobs.create`) answers `required` (the tenant opens its jobs from a requisition) and the requisitions still open for the tenant, approved or in recruitment with hires left (`id`, `position_title`, `hires`, `remaining`, `target_join_date`); the port `RequisitionGate::open` gives them. Choosing one fills the title and the vacancies when they are empty and shows what is left; `POST company/jobs` then carries `requisition_id`. When the rule is on and none is chosen the form refuses; when none is open it says so and points to the requisitions.
+- **Job details:** a job that was opened for a requisition shows it among its position rows, with a link to it for a member who may read requisitions.
+- The requisition of a job never changes after it is created (`requisition_id` is refused on `PATCH`).
+- **Decided 2026-10-29 (the user): the rule stays on by default on a `single` installation too.** Its company is an internal tenant, so a job is opened from an approved requisition there as anywhere else; the company admin may switch the setting off for the company.

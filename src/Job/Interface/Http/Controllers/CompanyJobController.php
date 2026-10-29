@@ -15,6 +15,7 @@ use Src\Job\Application\DeleteJob;
 use Src\Job\Application\GetJob;
 use Src\Job\Application\GetJobAssignees;
 use Src\Job\Application\GetJobPerformance;
+use Src\Job\Application\ListJobRequisitions;
 use Src\Job\Application\ListJobs;
 use Src\Job\Application\PreviewJob;
 use Src\Job\Application\PublishJob;
@@ -32,6 +33,7 @@ use Src\Job\Interface\Http\Requests\SetHiringManagerBoundaryRequest;
 use Src\Job\Interface\Http\Resources\JobDetailResource;
 use Src\Job\Interface\Http\Resources\JobListResource;
 use Src\Job\Interface\Http\Resources\JobPerformanceResource;
+use Src\Job\Interface\Http\Resources\JobRequisitionChoicesResource;
 use Src\Job\Interface\Http\Resources\JobStatusCountsResource;
 use Src\Job\Interface\Http\Resources\PublicJobResource;
 use Src\Shared\Application\RequestContext;
@@ -55,6 +57,12 @@ final class CompanyJobController extends ApiController
     public function statusCounts(CountJobsRequest $request, ActorResolver $actors, CountJobs $count): JobStatusCountsResource
     {
         return new JobStatusCountsResource($count->execute($actors->fromRequest($request), $request->search(), $request->assignedToMe(), $request->deadlineTo(), $request->withoutApplications(), $request->extraFilters()));
+    }
+
+    /** The choices for the form of a new job: whether the tenant opens its jobs from a requisition, and the requisitions still open for it. */
+    public function requisitionOptions(Request $request, ActorResolver $actors, ListJobRequisitions $choices): JobRequisitionChoicesResource
+    {
+        return new JobRequisitionChoicesResource($choices->execute($actors->fromRequest($request)));
     }
 
     public function show(Request $request, int $id, RequestContext $context, ActorResolver $actors, GetJob $get): JobDetailResource

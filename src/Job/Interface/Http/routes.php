@@ -54,6 +54,7 @@ Route::middleware('auth:user')->group(function (): void {
 Route::middleware('auth:user')->group(function (): void {
     Route::get('company/jobs', [CompanyJobController::class, 'index']);
     Route::get('company/jobs/status-counts', [CompanyJobController::class, 'statusCounts']);
+    Route::get('company/jobs/requisition-options', [CompanyJobController::class, 'requisitionOptions']);
     Route::post('company/jobs', [CompanyJobController::class, 'store']);
     Route::get('company/jobs/{id}', [CompanyJobController::class, 'show'])->whereNumber('id');
     Route::get('company/jobs/{id}/preview', [CompanyJobController::class, 'preview'])->whereNumber('id');

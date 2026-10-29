@@ -12,6 +12,13 @@ interface RequisitionGate
     public function isRequired(int $companyId): bool;
 
     /**
+     * The requisitions of the company a job may still be opened for, newest first: approved or in recruitment, with hires left that its other jobs have not taken (none for a tenant that is not an internal one).
+     *
+     * @return list<OpenRequisition>
+     */
+    public function open(int $companyId): array;
+
+    /**
      * Reserves vacancies of the requisition for a job, in the caller's transaction: the requisition is one of the tenant's, approved or already in recruitment, and the vacancies of its other jobs
      * plus these do not exceed its hires. The requisition moves to `in_recruitment`. `$exceptJobId` is the job whose own vacancies are being changed.
      *

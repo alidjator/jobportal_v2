@@ -520,6 +520,27 @@ final class RequisitionTest extends FeatureTestCase
         $this->as($this->requester, 'POST', '/company/jobs', ['title' => 'Accountant', 'vacancies' => 1])->assertStatus(422);
     }
 
+    public function test_the_form_of_a_new_job_lists_the_requisitions_still_open(): void
+    {
+        $this->flows();
+        $none = $this->as($this->requester, 'GET', '/company/jobs/requisition-options')->assertOk()->assertJsonPath('data.required', true);
+        $this->assertSame([], $none->json('data.requisitions'));
+
+        $draft = $this->draft(['hires' => 3]);
+        $this->assertSame([], $this->as($this->requester, 'GET', '/company/jobs/requisition-options')->json('data.requisitions'), 'a draft is not open');
+        $this->approve($draft);
+
+        $this->as($this->requester, 'GET', '/company/jobs/requisition-options')->assertOk()
+            ->assertJsonPath('data.requisitions.0.id', $draft)->assertJsonPath('data.requisitions.0.hires', 3)->assertJsonPath('data.requisitions.0.remaining', 3)
+            ->assertJsonPath('data.requisitions.0.position_title', fn ($title): bool => is_string($title) && $title !== '');
+
+        $this->as($this->requester, 'POST', '/company/jobs', ['title' => 'Accountant', 'requisition_id' => $draft, 'vacancies' => 2])->assertCreated();
+        $this->as($this->requester, 'GET', '/company/jobs/requisition-options')->assertJsonPath('data.requisitions.0.remaining', 1);
+
+        $this->as($this->requester, 'POST', '/company/jobs', ['title' => 'Accountant', 'requisition_id' => $draft, 'vacancies' => 1])->assertCreated();
+        $this->assertSame([], $this->as($this->requester, 'GET', '/company/jobs/requisition-options')->json('data.requisitions'), 'a requisition with no hires left is not offered');
+    }
+
     public function test_the_jobs_of_a_requisition_stay_inside_its_hires(): void
     {
         $this->flows();

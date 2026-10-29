@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Src\Shared\Interface\Http\Middleware\RequireGroups;
 use Src\Workforce\Interface\Http\Controllers\PlanController;
 use Src\Workforce\Interface\Http\Controllers\RequisitionController;
 
@@ -16,12 +17,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/workforce/plans/{id}/submit', [PlanController::class, 'companySubmit'])->whereNumber('id');
     Route::post('company/workforce/plans/{id}/revise', [PlanController::class, 'companyRevise'])->whereNumber('id');
 
-    Route::get('organization/workforce/plans', [PlanController::class, 'groupIndex']);
-    Route::post('organization/workforce/plans', [PlanController::class, 'groupStore']);
-    Route::get('organization/workforce/plans/{id}', [PlanController::class, 'groupShow'])->whereNumber('id');
-    Route::put('organization/workforce/plans/{id}', [PlanController::class, 'groupUpdate'])->whereNumber('id');
-    Route::post('organization/workforce/plans/{id}/submit', [PlanController::class, 'groupSubmit'])->whereNumber('id');
-    Route::post('organization/workforce/plans/{id}/revise', [PlanController::class, 'groupRevise'])->whereNumber('id');
+    // The group side exists where groups do (`RequireGroups`).
+    Route::middleware(RequireGroups::class)->group(function (): void {
+        Route::get('organization/workforce/plans', [PlanController::class, 'groupIndex']);
+        Route::post('organization/workforce/plans', [PlanController::class, 'groupStore']);
+        Route::get('organization/workforce/plans/{id}', [PlanController::class, 'groupShow'])->whereNumber('id');
+        Route::put('organization/workforce/plans/{id}', [PlanController::class, 'groupUpdate'])->whereNumber('id');
+        Route::post('organization/workforce/plans/{id}/submit', [PlanController::class, 'groupSubmit'])->whereNumber('id');
+        Route::post('organization/workforce/plans/{id}/revise', [PlanController::class, 'groupRevise'])->whereNumber('id');
+    });
 
     // Requisitions: `workforce.requisitions.view` or `.create` reads, `.create` drafts, submits, amends, closes and cancels; the group reads them with `group.workforce.view`.
     // `PUT` replaces what a draft or rejected requisition says; `jobs` opens a draft job for an approved one.
@@ -35,6 +39,8 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/requisitions/{id}/cancel', [RequisitionController::class, 'cancel'])->whereNumber('id');
     Route::post('company/requisitions/{id}/jobs', [RequisitionController::class, 'openJob'])->whereNumber('id');
 
-    Route::get('organization/requisitions', [RequisitionController::class, 'groupIndex']);
-    Route::get('organization/requisitions/{id}', [RequisitionController::class, 'groupShow'])->whereNumber('id');
+    Route::middleware(RequireGroups::class)->group(function (): void {
+        Route::get('organization/requisitions', [RequisitionController::class, 'groupIndex']);
+        Route::get('organization/requisitions/{id}', [RequisitionController::class, 'groupShow'])->whereNumber('id');
+    });
 });

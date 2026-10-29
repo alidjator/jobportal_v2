@@ -7,6 +7,7 @@ use Src\Shared\Application\Company\TenantRegistry;
 use Src\Shared\Application\Job\RequisitionJobs;
 use Src\Shared\Application\Organization\PositionDirectory;
 use Src\Shared\Application\Settings\Settings;
+use Src\Shared\Application\Workforce\OpenRequisition;
 use Src\Shared\Application\Workforce\RequisitionGate;
 use Src\Shared\Application\Workforce\RequisitionTerms;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -30,6 +31,28 @@ final readonly class RequisitionGateService implements RequisitionGate
     public function isRequired(int $companyId): bool
     {
         return $this->tenants->legalEntityOf($companyId) !== null && $this->settings->boolean(WorkforceSettings::REQUISITION_REQUIRED, $companyId);
+    }
+
+    public function open(int $companyId): array
+    {
+        $entityId = $this->tenants->legalEntityOf($companyId);
+
+        if ($entityId === null) {
+            return [];
+        }
+
+        $positions = $this->positions->ofEntity($entityId, $this->clock->now());
+        $open = [];
+
+        foreach ($this->requisitions->search($companyId, null, null, null, null) as $requisition) {
+            $remaining = $requisition->hires - $this->jobs->openVacancies((int) $requisition->id);
+
+            if ($requisition->status->isOpen() && $remaining > 0) {
+                $open[] = new OpenRequisition((int) $requisition->id, $positions[$requisition->positionId]->title ?? '', $requisition->hires, $remaining, $requisition->targetJoinDate->format('Y-m-d'));
+            }
+        }
+
+        return $open;
     }
 
     public function claim(int $companyId, int $requisitionId, int $vacancies, ?int $exceptJobId = null): RequisitionTerms
