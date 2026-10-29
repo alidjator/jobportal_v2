@@ -101,6 +101,19 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   `{{provider_licence}}`, `{{signature_image}}`. The stored PDF of `phase-8-provider-tools.md` section 7 renders them.
 - **Candidate:** the explanation page shows the institution's name, address, phone and email ("Untuk konsultasi, hubungi lembaga").
 
+**Section 3, first part coded 2026-10-27** (migration `000195`: the identity, the logo and the signature; the report columns `signer_signature_path`, on `assessment_reports` and
+`assessment_report_revisions`, are there for the second part and unused until then):
+
+- `assessment_providers` gets `address` (500), `practice_licence_number` (100), `phone` (40), `email` (255), `logo_path`; `assessment_psychologists` gets `signature_path`. `ProviderIdentity` (Domain) holds them.
+- `GET`/`PUT provider/institution` (any psychologist of the institution reads, a lead changes; only the fields sent change, a blank one clears), `GET`/`POST`/`DELETE provider/institution/logo` (a lead
+  writes; any psychologist of it reads), `GET`/`POST`/`DELETE provider/me/signature` (the psychologist's own). `POST` takes a multipart `file`; the picture is checked by content and size (logo 2 MB, shrunk to
+  800x400; signature 1 MB, shrunk to 600x300), decoded and encoded again (PNG when it has transparency, else JPEG; 422 `invalid-image`, `file-too-large`) and kept on the private disk under a random name.
+  Replacing or removing deletes the old file last. `has_logo` is on the provider resource and `has_signature` on `GET provider/me`. The platform admin edits the same four text fields through `PUT admin/assessment/providers/{id}`.
+- Code: `ProviderIdentity`; `Application/Institution/{PrivateImages,GetInstitution,UpdateInstitution,ChangeInstitutionLogo,GetInstitutionLogo}` and `Application/Provider/{ChangeMySignature,GetMySignature}`.
+- Tests: `ProviderInstitutionTest`.
+- **Still to code (second part):** the placeholders `{{provider_letterhead}}`, `{{provider_address}}`, `{{provider_licence}}` and `{{signature_image}}` in the report template and the PDF, the copy of the
+  signature into the report when it is signed, auto-issued or revised, and the institution's contact on the explanation page of the candidate.
+
 ## 4. Revising a manually signed report
 
 - `POST /provider/reviews/{id}/revise` accepts every `signed` report, not only auto-issued ones, by any psychologist of the institution with a valid

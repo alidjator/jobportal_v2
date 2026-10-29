@@ -6,10 +6,12 @@ use Src\Assessment\Interface\Http\AuthoringRoutes;
 use Src\Assessment\Interface\Http\Controllers\AttemptController;
 use Src\Assessment\Interface\Http\Controllers\BatteryController;
 use Src\Assessment\Interface\Http\Controllers\CatalogController;
+use Src\Assessment\Interface\Http\Controllers\InstitutionController;
 use Src\Assessment\Interface\Http\Controllers\InvitationController;
 use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
 use Src\Assessment\Interface\Http\Controllers\LicenceController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
+use Src\Assessment\Interface\Http\Controllers\MySignatureController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ReportRegisterController;
@@ -30,6 +32,16 @@ Route::prefix('provider')->group(function (): void {
         Route::get('me', ProviderProfileController::class);
         Route::get('me/licences', [LicenceController::class, 'index']);
         Route::post('me/licences', [LicenceController::class, 'store']);
+        Route::get('me/signature', [MySignatureController::class, 'show']);
+        Route::post('me/signature', [MySignatureController::class, 'store']);
+        Route::delete('me/signature', [MySignatureController::class, 'destroy']);
+
+        // The institution: any of its psychologists reads it, its leads change the identity and the logo.
+        Route::get('institution', [InstitutionController::class, 'show']);
+        Route::put('institution', [InstitutionController::class, 'update']);
+        Route::get('institution/logo', [InstitutionController::class, 'logo']);
+        Route::post('institution/logo', [InstitutionController::class, 'storeLogo']);
+        Route::delete('institution/logo', [InstitutionController::class, 'destroyLogo']);
 
         AuthoringRoutes::register();
 

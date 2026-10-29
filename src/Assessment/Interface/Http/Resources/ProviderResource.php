@@ -20,6 +20,11 @@ final class ProviderResource extends JsonResource
             'legal_name' => $this->resource->legalName(),
             'status' => $this->resource->status()->value,
             'auto_issue_allowed' => $this->resource->autoIssueAllowed(),
+            'address' => $this->resource->identity()->address,
+            'practice_licence_number' => $this->resource->identity()->practiceLicenceNumber,
+            'phone' => $this->resource->identity()->phone,
+            'email' => $this->resource->identity()->email,
+            'has_logo' => $this->resource->identity()->logoPath !== null,
             'created_at' => $this->resource->createdAt?->format(DateTimeInterface::ATOM),
         ];
     }

@@ -7,6 +7,7 @@ use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Src\Assessment\Domain\Provider;
+use Src\Assessment\Domain\ProviderIdentity;
 use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\ProviderStatus;
 use Src\Shared\Application\Clock;
@@ -43,6 +44,11 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
                 'legal_name' => $provider->legalName(),
                 'status' => $provider->status()->value,
                 'auto_issue_allowed' => $provider->autoIssueAllowed(),
+                'address' => $provider->identity()->address,
+                'practice_licence_number' => $provider->identity()->practiceLicenceNumber,
+                'phone' => $provider->identity()->phone,
+                'email' => $provider->identity()->email,
+                'logo_path' => $provider->identity()->logoPath,
                 'updated_at' => $now,
             ]);
 
@@ -111,6 +117,13 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
             ProviderStatus::from($row->status),
             new DateTimeImmutable((string) $row->created_at, new DateTimeZone('UTC')),
             (bool) $row->auto_issue_allowed,
+            new ProviderIdentity(
+                $row->address === null ? null : (string) $row->address,
+                $row->practice_licence_number === null ? null : (string) $row->practice_licence_number,
+                $row->phone === null ? null : (string) $row->phone,
+                $row->email === null ? null : (string) $row->email,
+                $row->logo_path === null ? null : (string) $row->logo_path,
+            ),
         );
     }
 }

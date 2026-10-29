@@ -14,11 +14,13 @@ final readonly class UpdateProvider
     public function __construct(private ProviderRepository $providers) {}
 
     /**
+     * @param  array<string, string|null>  $identityChanges  the identity fields that were sent (`address`, `practice_licence_number`, `phone`, `email`); the others stay
+     *
      * @throws AccessDenied when the actor is not an admin
      * @throws EntityNotFound
      * @throws StateConflict `provider-name-taken` or `provider-code-taken`
      */
-    public function execute(Actor $actor, int $providerId, string $code, string $name, string $legalName): Provider
+    public function execute(Actor $actor, int $providerId, string $code, string $name, string $legalName, array $identityChanges = []): Provider
     {
         AdminOnly::assert($actor, 'change a provider');
 
@@ -34,6 +36,7 @@ final readonly class UpdateProvider
         }
 
         $provider->rename($code, $name, trim($legalName));
+        $provider->changeIdentity($provider->identity()->with($identityChanges));
 
         return $this->providers->save($provider);
     }

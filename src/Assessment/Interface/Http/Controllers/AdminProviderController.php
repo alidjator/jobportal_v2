@@ -45,7 +45,7 @@ final class AdminProviderController extends ApiController
 
     public function update(ProviderRequest $request, int $id, ActorResolver $actors, UpdateProvider $update): ProviderResource
     {
-        return new ProviderResource($update->execute($actors->fromRequest($request), $id, $request->code(), $request->name(), $request->legalName()));
+        return new ProviderResource($update->execute($actors->fromRequest($request), $id, $request->code(), $request->name(), $request->legalName(), $request->identityChanges()));
     }
 
     /** The platform admin allows or stops the automatic issue of the provider's reports. */

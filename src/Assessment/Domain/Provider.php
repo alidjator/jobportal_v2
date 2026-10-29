@@ -15,6 +15,7 @@ final class Provider
         private ProviderStatus $status,
         public readonly ?DateTimeImmutable $createdAt = null,
         private bool $autoIssueAllowed = false,
+        private ProviderIdentity $identity = new ProviderIdentity,
     ) {}
 
     public static function register(string $code, string $name, string $legalName): self
@@ -57,6 +58,16 @@ final class Provider
     public function allowAutoIssue(bool $allowed): void
     {
         $this->autoIssueAllowed = $allowed;
+    }
+
+    public function identity(): ProviderIdentity
+    {
+        return $this->identity;
+    }
+
+    public function changeIdentity(ProviderIdentity $identity): void
+    {
+        $this->identity = $identity;
     }
 
     public function rename(string $code, string $name, string $legalName): void

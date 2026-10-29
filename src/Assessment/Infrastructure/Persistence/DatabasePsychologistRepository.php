@@ -65,6 +65,7 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
             'silp_valid_until' => $psychologist->silpValidUntil()?->format(self::DATE_FORMAT),
             'status' => $psychologist->status()->value,
             'role' => $psychologist->role()->value,
+            'signature_path' => $psychologist->signaturePath(),
             'updated_at' => $now,
         ];
 
@@ -83,7 +84,7 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
 
         return new Psychologist(
             (int) $id, $psychologist->userId, $psychologist->providerId, $psychologist->strNumber(), $psychologist->strValidUntil(),
-            $psychologist->silpNumber(), $psychologist->silpValidUntil(), $psychologist->status(), $psychologist->role(), $now,
+            $psychologist->silpNumber(), $psychologist->silpValidUntil(), $psychologist->status(), $psychologist->role(), $now, $psychologist->signaturePath(),
         );
     }
 
@@ -127,6 +128,7 @@ final readonly class DatabasePsychologistRepository implements PsychologistRepos
             PsychologistStatus::from($row->status),
             PsychologistRole::from($row->role),
             new DateTimeImmutable((string) $row->created_at, $utc),
+            $row->signature_path === null ? null : (string) $row->signature_path,
         );
     }
 }

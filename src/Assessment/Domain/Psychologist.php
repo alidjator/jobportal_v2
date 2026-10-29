@@ -22,6 +22,7 @@ final class Psychologist
         private PsychologistStatus $status,
         private PsychologistRole $role = PsychologistRole::Member,
         public readonly ?DateTimeImmutable $createdAt = null,
+        private ?string $signaturePath = null,
     ) {}
 
     public static function join(
@@ -64,6 +65,17 @@ final class Psychologist
     public function role(): PsychologistRole
     {
         return $this->role;
+    }
+
+    /** The path of the signature image on the private disk, or null when the psychologist has not uploaded one. */
+    public function signaturePath(): ?string
+    {
+        return $this->signaturePath;
+    }
+
+    public function changeSignature(?string $path): void
+    {
+        $this->signaturePath = $path;
     }
 
     public function isLead(): bool

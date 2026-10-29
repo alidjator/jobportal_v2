@@ -25,6 +25,7 @@ final class PsychologistProfileResource extends JsonResource
             'silp_number' => $psychologist->silpNumber(),
             'silp_valid_until' => $psychologist->silpValidUntil()?->format('Y-m-d'),
             'role' => $psychologist->role()->value,
+            'has_signature' => $psychologist->signaturePath() !== null,
             'status' => $psychologist->status()->value,
             'can_sign_reports' => $this->resource->canSignReports,
         ];
