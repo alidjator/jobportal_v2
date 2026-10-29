@@ -26,9 +26,9 @@ use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 
 /**
- * The applications of `DemoCast::applications()`: each job seeker applies with their resume, then the team moves the application to where it ends (the
- * recruiter in the verified company, the company admin in the other one). An interview is scheduled online with the interviewer, an offer is sent with
- * the move, a hire is an offer the job seeker accepts, and a withdrawal is the job seeker's own. Jobs meant to end closed are closed last.
+ * The applications of `DemoCast::applications()`: each job seeker applies with their resume and the answers to the job's screening questions, then the team moves the application to where it ends (the
+ * recruiter in the verified company, the company admin in the other one). An interview is scheduled online with the interviewer, a move to the assessment stage sends the job's default test,
+ * an offer is sent with the move, a hire is an offer the job seeker accepts, and a withdrawal is the job seeker's own. Jobs meant to end closed are closed last.
  */
 final readonly class DemoApplications
 {
@@ -47,13 +47,14 @@ final readonly class DemoApplications
      * @param  array<string, array{company_id: int, admin_id: int, members: array<string, int>}>  $teams
      * @param  array<string, int>  $jobIds
      * @param  list<array{user_id: int, resume_id: int}>  $seekers
-     * @return int how many applications were made
+     * @return array<string, int> the id of each application by `"{job key}:{seeker}"`
      */
-    public function build(array $teams, array $jobIds, array $seekers): int
+    public function build(array $teams, array $jobIds, array $seekers, DemoScreeningAnswers $screening): array
     {
         $jobs = DemoCast::jobs();
-        $interviewerId = $teams[DemoCast::SINAR]['members'][MemberPreset::Interviewer->value];
+        $members = $teams[DemoCast::SINAR]['members'];
         $interviews = 0;
+        $ids = [];
 
         foreach (DemoCast::applications() as $plan) {
             $seeker = $seekers[$plan['seeker']];
@@ -61,10 +62,11 @@ final readonly class DemoApplications
             $team = $this->teamActor($teams, $job['company']);
             $seekerActor = Actor::jobSeeker($seeker['user_id']);
 
-            $application = $this->apply->execute($seekerActor, $jobIds[$plan['job']], new ApplyToJobInput($seeker['resume_id'], null, []));
+            $application = $this->apply->execute($seekerActor, $jobIds[$plan['job']], new ApplyToJobInput($seeker['resume_id'], null, $screening->forApplication($plan['job'], $plan['seeker'])));
             $id = (int) $application->id;
+            $ids["{$plan['job']}:{$plan['seeker']}"] = $id;
 
-            $this->advance($plan['outcome'], $team, $seekerActor, $id, $job, $interviewerId, $interviews);
+            $this->advance($plan['outcome'], $team, $seekerActor, $id, $job, $members[$plan['interviewer'] ?? MemberPreset::Interviewer->value], $interviews);
         }
 
         foreach ($jobs as $key => $job) {
@@ -73,7 +75,7 @@ final readonly class DemoApplications
             }
         }
 
-        return count(DemoCast::applications());
+        return $ids;
     }
 
     /** @param  array{title: string, salary: array{int, int}}  $job */
@@ -89,6 +91,9 @@ final readonly class DemoApplications
             $this->withdraw->execute($seeker, $id, null);
         } elseif ($outcome === StageType::Screening) {
             $this->process->move($team, $id, $this->stageId($team, StageType::Screening));
+        } elseif ($outcome === StageType::Assessment) {
+            // The job's default test goes out with the move.
+            $this->process->move($team, $id, $this->stageId($team, StageType::Assessment));
         } elseif ($outcome === StageType::Interview) {
             $this->process->move($team, $id, $this->stageId($team, StageType::Interview), $this->interview($interviewerId, $interviews++));
         } elseif ($outcome === StageType::Offer || $outcome === StageType::Hired) {

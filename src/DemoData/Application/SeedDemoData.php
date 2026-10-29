@@ -20,9 +20,21 @@ final readonly class SeedDemoData
         private CompanyMemberAccounts $accounts,
         private CreateAdmin $createAdmin,
         private DemoOrganization $organization,
+        private DemoStructure $structure,
+        private DemoActors $actors,
+        private DemoProvider $provider,
+        private DemoLibrary $library,
+        private DemoBatteries $batteries,
         private DemoJobs $jobs,
+        private DemoInterviewKits $interviewKits,
+        private DemoScreening $screening,
+        private DemoAssessments $assessments,
         private DemoJobSeekers $jobSeekers,
         private DemoApplications $applications,
+        private DemoMyWork $myWork,
+        private DemoWorkforce $workforce,
+        private DemoCampaigns $campaigns,
+        private DemoPresets $presets,
     ) {}
 
     /**
@@ -30,7 +42,7 @@ final readonly class SeedDemoData
      *
      * @throws StateConflict `demo-data-exists` when an account of the demo already exists, `demo-references-missing` without the reference data
      */
-    public function execute(string $password): array
+    public function execute(string $password, bool $fullBatteries = false): array
     {
         foreach (DemoCast::userEmails() as $email) {
             if ($this->accounts->emailIsRegistered($email)) {
@@ -42,9 +54,21 @@ final readonly class SeedDemoData
         $adminActor = Actor::admin((int) $admin->id);
 
         $teams = $this->organization->build($adminActor, $password);
+        $this->structure->build($this->actors->member($teams[DemoCast::SINAR]['admin_id']));
+        $leadPsychologistId = $this->provider->build($adminActor, $password);
+        $this->library->build($adminActor);
+        $this->batteries->build($adminActor, $leadPsychologistId, $teams[DemoCast::SINAR]['company_id'], $fullBatteries);
         $jobIds = $this->jobs->build($adminActor, $teams);
-        $seekers = $this->jobSeekers->build($password);
-        $this->applications->build($teams, $jobIds, $seekers);
+        $this->interviewKits->build($teams, $jobIds);
+        $screening = $this->screening->build($teams, $jobIds);
+        $this->presets->build();
+        $this->assessments->build($teams, $jobIds);
+        $this->campaigns->campaigns($adminActor, array_map(static fn (array $team): int => $team['company_id'], $teams));
+        $seekers = $this->jobSeekers->build($password, DemoCampaignContent::seekerCampaigns());
+        $applicationIds = $this->applications->build($teams, $jobIds, $seekers, $screening);
+        $this->myWork->build($teams, $jobIds, $applicationIds, $seekers);
+        $this->workforce->build();
+        $this->campaigns->registrants($password);
 
         return $this->accountList();
     }
@@ -64,6 +88,10 @@ final readonly class SeedDemoData
         }
 
         $accounts[] = new DemoAccount('Workspace', MemberPreset::CompanyAdmin->value.', '.$arunika['name'], $arunika['admin_name'], $arunika['admin_email']);
+
+        foreach (DemoCast::psychologists() as $psychologist) {
+            $accounts[] = new DemoAccount('Portal Mitra', 'psychologist ('.$psychologist['role']->value.'), '.DemoCast::PROVIDER_NAME, $psychologist['name'], $psychologist['email']);
+        }
 
         foreach (DemoCast::jobSeekers() as $seeker) {
             $accounts[] = new DemoAccount('Career', 'job seeker', $seeker['name'], $seeker['email']);

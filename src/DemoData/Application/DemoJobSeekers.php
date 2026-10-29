@@ -42,8 +42,11 @@ final readonly class DemoJobSeekers
         private DemoInbox $inbox,
     ) {}
 
-    /** @return list<array{user_id: int, resume_id: int}> in the order of `DemoCast::jobSeekers()` */
-    public function build(string $password): array
+    /**
+     * @param  array<int, string>  $campaignCodes  the campaign code each job seeker signs up through, by index (none for the others)
+     * @return list<array{user_id: int, resume_id: int}> in the order of `DemoCast::jobSeekers()`
+     */
+    public function build(string $password, array $campaignCodes = []): array
     {
         $place = $this->references->place();
         $skills = $this->references->ids('skills', 5);
@@ -53,7 +56,7 @@ final readonly class DemoJobSeekers
 
         foreach (DemoCast::jobSeekers() as $index => $seeker) {
             $registered = $this->register->execute(new RegisterJobSeekerCommand(
-                $seeker['name'], $seeker['email'], $password, DemoCast::LANGUAGE, null, DemoCast::USER_AGENT, null, DemoCast::USER_AGENT,
+                $seeker['name'], $seeker['email'], $password, DemoCast::LANGUAGE, $campaignCodes[$index] ?? null, DemoCast::USER_AGENT, null, DemoCast::USER_AGENT,
             ));
             $actor = Actor::jobSeeker((int) $registered->user->id);
             $this->verifyEmail->execute($actor, $this->inbox->verificationCode($seeker['email']));

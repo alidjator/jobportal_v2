@@ -17,7 +17,7 @@ final class SeedDemoDataCommand extends Command
 {
     private const int PASSWORD_LENGTH = 20;
 
-    protected $signature = 'demo:seed';
+    protected $signature = 'demo:seed {--full-batteries : Also write the full-size psychological batteries (about 3,300 questions; adds several minutes)}';
 
     protected $description = 'Fill a development database with fictitious demo accounts, companies, jobs and applications (refused in production)';
 
@@ -33,7 +33,7 @@ final class SeedDemoDataCommand extends Command
         $password = Str::password(self::PASSWORD_LENGTH, symbols: false);
 
         try {
-            $accounts = $this->laravel->make(SeedDemoData::class)->execute($password);
+            $accounts = $this->laravel->make(SeedDemoData::class)->execute($password, (bool) $this->option('full-batteries'));
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 

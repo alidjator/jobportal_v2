@@ -6,13 +6,17 @@ use Illuminate\Contracts\Container\Container;
 use Src\Company\Application\Invitations\InvitationLinkBuilder;
 use Src\Company\Application\Invitations\InvitationSender;
 use Src\DemoData\Application\DemoInbox;
+use Src\DemoData\Interface\Console\SeedDemoCampaignsCommand;
 use Src\DemoData\Interface\Console\SeedDemoDataCommand;
+use Src\DemoData\Interface\Console\SeedDemoPresetsCommand;
+use Src\DemoData\Interface\Console\SeedDemoStructureCommand;
+use Src\DemoData\Interface\Console\SeedDemoWorkforceCommand;
 use Src\Identity\Application\Auth\RegistrationThrottle;
 use Src\Identity\Application\Auth\VerificationCodeSender;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 /**
- * The demo data for development domains: an operational tool (one artisan command, no API) that drives the use cases of the other contexts as a client
+ * The demo data for development domains: an operational tool (artisan commands, no API) that drives the use cases of the other contexts as a client
  * does (`docs/design/phase-8-demo-data.md`). Its adapters replace the invitation and verification emails and the registration limit only for the run that
  * asks for them ({@see self::useDemoAdapters()}), never for the application.
  */
@@ -20,7 +24,7 @@ final class DemoDataServiceProvider extends ContextServiceProvider
 {
     public function register(): void
     {
-        $this->commands([SeedDemoDataCommand::class]);
+        $this->commands([SeedDemoDataCommand::class, SeedDemoStructureCommand::class, SeedDemoWorkforceCommand::class, SeedDemoCampaignsCommand::class, SeedDemoPresetsCommand::class]);
     }
 
     /** Swaps the email and throttle ports for the demo adapters in this process; call it before the demo use cases are resolved. */
