@@ -61,8 +61,8 @@ the front end asks for) are coded; the other rows wait even when ready.
 | 15 | `phase-8-candidate-experience.md` (section 5, the agenda, added 2026-10-19) | #14: the pending rejections of the rejections design carry the candidate message |
 | 20 | `phase-8-job-posting.md` | sections 1 to 4 and the jobs with several locations (search, matching, alerts, recommendations) are coded since 2026-10-23; open: sections 5 and 6, the summary in the alert and recommendation emails |
 | 22 | `phase-8-assessment-automation.md` | sections 1 and 2 are coded since 2026-10-23; open: section 3 (comparing results) |
-| 23 | `phase-8-provider-tools.md` | needed before the first partner institution, not for go-live; question 11 |
-| 24 | `phase-8-provider-institutions.md` | after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
+| 23 | `phase-8-provider-tools.md` | sections 1 to 4 coded 2026-10-26/27 (norm groups, candidate context, claiming a review, recommendation); open: sections 5 to 8. Needed before the first partner institution, not for go-live; question 11 |
+| 24 | `phase-8-provider-institutions.md` | sections 1 and 2 coded 2026-10-27 (institution leads manage their team, licence renewals); the rest after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
 | 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
@@ -92,6 +92,8 @@ the front end asks for) are coded; the other rows wait even when ready.
 |---|---|
 | `phase-8-api-translations.md` | translations coded 2026-10-21 for front-end step 0 (see "Next coding"); the notification catalog waits for page 11.6 |
 | `phase-8-user-management.md` | coded after the legacy import |
+
+Designed and coded 2026-10-27/28 outside the numbered list: `phase-1-screening-presets.md` (screening question presets per job level; migrations `000196` to `000198`) and `erp-installation-type.md` (single or multi company installation, no schema change). Audits that drive the front end order: `docs/analysis/implementation-gap-audit.md`, `console-workspace-audit.md`, `super-admin-gap-analysis.md`.
 
 Related, outside phase 8: time-to-fill is in `phase-4-business-intelligence.md` and assessment Part 7 in `phase-6-assessments.md` (both coded
 2026-10-14, migration `000138` for Part 7; Part 7 auto reports wait for question 11).

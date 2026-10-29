@@ -1,6 +1,6 @@
 # Phase 8: escalation of a waiting approval (designed 2026-10-20)
 
-Closes MG-B10 of `docs/analysis/multi-persona-gap-analysis.md` (decision 10). Builds on `phase-3-approvals.md`, `erp-requisitions.md` section 4 (the reminders) and `phase-8-company-team-fixes.md` (the task list). Design only: nothing is coded.
+Closes MG-B10 of `docs/analysis/multi-persona-gap-analysis.md` (decision 10). Builds on `erp-requisitions.md` section 4 (the approval workflow and its reminders) and `phase-8-company-team-fixes.md` (the task list). Design only: nothing is coded.
 
 ## Decisions
 

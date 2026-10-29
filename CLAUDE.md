@@ -78,7 +78,7 @@ Everything read stays in the context for the rest of the session and is sent aga
 - **Design documents:** each starts with a short `## Decisions` section (one line per decision: date, decision, link to its detail section; aim for
   2–4 KB). Read that section first, then the detail sections you need via `grep -n`. Record every new answer in both places in the same edit; if they
   disagree, the detail section wins. A document without the section gets one the next time it is edited (added 2026-10-08).
-- **Large files** (design documents, `docs/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
+- **Large files** (design documents, `docs/archive/handoff-history.md`, legacy schema dumps, legacy routes): list the headings or locate the lines first
   (`grep -n '^#' <file>`, `grep -n <term> <file>`), then read only that range. Do not read a file again when it is already in the context and unchanged.
 - **Source code:** never `cat` several files at once; locate with `grep -n`, then read the relevant range.
 - **Checks, a HARD RULE (decided 2026-10-08, made strict 2026-10-10):** testing, debugging and linting are a separate step from coding, and **only the user runs them**. After writing code
@@ -95,7 +95,7 @@ Everything read stays in the context for the rest of the session and is sent aga
 ## Live site
 
 `https://api-karir.satu.solutions` is a **dev** domain served straight from this folder (nginx + system PHP-FPM, user `nginx`). `APP_DEBUG` must stay
-`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/handoff-history.md`, `grep -n 'POSIX ACLs'`). Karir.pkp live-site accounts are
+`false`. `storage/` and `bootstrap/cache` rely on POSIX ACLs for both `nginx` and `jobportal` (see `docs/archive/handoff-history.md`, `grep -n 'POSIX ACLs'`). Karir.pkp live-site accounts are
 never stored; ask the user when needed.
 
 - **API docs cache, MANDATORY (decided 2026-10-16):** `/docs/api` serves the cached OpenAPI document (Scramble). After every change to a route or to an API response (controller, FormRequest, API resource, response shape), run `php artisan scramble:clear` and then `php artisan scramble:cache`, in that order; otherwise the docs show the old version, and with an empty cache the page takes about 20 seconds.

@@ -1,6 +1,6 @@
 # Phase 8: three company-side gaps: undeliverable email, bulk job assignment and approval tasks (designed 2026-10-20)
 
-Closes MG-P03, MG-B03 and MG-B09 of `docs/analysis/multi-persona-gap-analysis.md` (decisions 18 to 23). Builds on `phase-8-recruiter-workday.md` (the task list), `phase-8-company-permissions.md` (`jobs.assign`), `phase-8-platform-admin.md` section 6 (`email_deliverable`) and `phase-3-approvals.md`. Design only: nothing is coded.
+Closes MG-P03, MG-B03 and MG-B09 of `docs/analysis/multi-persona-gap-analysis.md` (decisions 18 to 23). Builds on `phase-8-recruiter-workday.md` (the task list), `phase-8-company-permissions.md` (`jobs.assign`), `phase-8-platform-admin.md` section 6 (`email_deliverable`) and `erp-requisitions.md` section 4 (approvals). Design only: nothing is coded.
 
 ## Decisions
 

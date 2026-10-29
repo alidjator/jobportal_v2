@@ -1,6 +1,6 @@
 # Phase 8: merging duplicate reference items (designed 2026-10-20)
 
-Closes MG-C02 of `docs/analysis/multi-persona-gap-analysis.md` (decision 11). Builds on `phase-1-migration.md` (every unmatched legacy skill, job role and job category became a new master row) and `phase-0-master-data.md` (D15). Design only: nothing is coded.
+Closes MG-C02 of `docs/analysis/multi-persona-gap-analysis.md` (decision 11). Builds on `phase-1-migration.md` (every unmatched legacy skill, job role and job category became a new master row) and `phase-0-schema.md` ("Masters"). Design only: nothing is coded.
 
 ## Decisions
 
@@ -14,7 +14,7 @@ Closes MG-C02 of `docs/analysis/multi-persona-gap-analysis.md` (decision 11). Bu
 - **Rules:** the target exists, is active and is not the source (422 `invalid-merge-target`); a source that was merged before is not an item any more (404); the source and the target are in the same master. One transaction; the two rows are locked in ascending id.
 - **Effects:** every reference of section 3 moves to the target; the source becomes inactive (`is_active = false`) and keeps its row, its translations and its slug; a row in `reference_item_merges` (`master`, `source_id`, `target_id`, `merged_by_admin_id`, `moved` jsonb, `created_at`; unique `(master, source_id)`) records it; audit `reference.item_merged` (admin, master, source and target slugs, counts). **No undo endpoint:** the references cannot be told apart afterwards, but the retired row and the log allow a manual reversal.
 - **Slugs:** `idBySlug` and the public filters that take a slug (`GET jobs?skill=…`, candidate search, alert criteria by id are re-pointed) look the slug up in `reference_item_merges` and return the target when the slug belongs to a merged source; a merged source is not listed in the public lists and the pickers (it is inactive).
-- **Not built:** merging two items of different masters, merging more than one source at once (D15 repeats the call), and renaming the target on merge.
+- **Not built:** merging two items of different masters, merging more than one source at once (repeat the call instead), and renaming the target on merge.
 
 ## 2. A port per context
 

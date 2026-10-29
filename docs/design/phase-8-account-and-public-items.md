@@ -1,6 +1,6 @@
 # Phase 8: small account and public items (designed 2026-10-20)
 
-Closes MG-A01, MG-A03 (FG7), MG-A11, MG-A12, MG-A13, MG-A14 and MG-C01 of `docs/analysis/multi-persona-gap-analysis.md`. Builds on `frontend.md` (11.4 sitemap, 11.7 address picker, J2, J5, J15, M2), `phase-8-activation.md` (the support settings), `phase-8-company-admin.md` section 3 (the retention) and `phase-8-psychologists.md`. Design only: nothing is coded.
+Closes MG-A01, MG-A03 (FG7), MG-A11, MG-A12, MG-A13, MG-A14 and MG-C01 of `docs/analysis/multi-persona-gap-analysis.md`. Builds on `frontend.md` (11.4 sitemap, 11.7 address picker, J2, J5, J15, M2), `phase-8-activation.md` (the support settings), `phase-8-company-admin.md` section 3 (the retention) and `phase-8-provider-institutions.md` (section 8, in-house psychologists). Design only: nothing is coded.
 
 ## Decisions
 
