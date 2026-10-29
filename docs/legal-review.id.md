@@ -6,7 +6,7 @@ Disusun untuk penasihat hukum **ONESIS ERP** (One Solutions Integrated System) d
 Indonesia. Modul pertama ERP ini adalah rekrutmen (lowongan, lamaran, wawancara, tes psikologi, penawaran kerja), sedangkan situs pencari kerja
 terbuka untuk umum. Dokumen ini mendata apa yang dilakukan sistem, atau yang dirancang akan dilakukan, terhadap data pribadi yang sensitif, beserta
 pertanyaan yang memerlukan jawaban. Dokumen ini adalah inventaris fakta, bukan pendapat hukum. Rujukan peraturan di dalam pertanyaan hanya
-petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 21 Oktober 2026.
+petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 29 Oktober 2026.
 
 ## 0. Prioritas jawaban
 
@@ -17,7 +17,7 @@ setelah ada jawaban.
 | Prioritas | Pertanyaan | Alasan | Keadaan |
 |---|---|---|---|
 | **A. Sebelum peluncuran** | 1 sampai 7, 10, 23 sampai 25 | Syarat dan ketentuan serta kebijakan privasi harus final. Filter sensitif, batas usia, dan isian data pribadi pada CV memerlukan kepastian (tetap mati atau pada nilai bawaan sampai ada jawaban). Rekaman serta kewajiban umum penyelenggara (pendaftaran, pejabat pelindungan data, pemberitahuan kebocoran, pembagian peran, dan lokasi data) harus jelas. | sudah dibangun; 24 dan 25 merupakan kewajiban penyelenggara |
-| **B. Menahan pembangunan fitur** | 12, 13, 15, 20, 21 | Penerimaan penawaran kerja secara daring, daftar kandidat yang dibatasi, masa simpan data pelamar per perusahaan, kandidat yang dimasukkan dari luar platform, dan pemeriksaan pra-kerja tidak dibangun sebelum ada jawaban. | dirancang |
+| **B. Menahan pembangunan fitur** | 12, 13, 15, 20, 21, 26 sampai 28 | Penerimaan penawaran kerja secara daring, daftar kandidat yang dibatasi, masa simpan data pelamar per perusahaan, kandidat yang dimasukkan dari luar platform, pemeriksaan pra-kerja, dan fitur gig (lokasi saat absen, batas pekerja harian lepas dan aturan keandalan, pemeriksaan identitas serta penilaian freelancer) tidak dibangun sebelum ada jawaban. | dirancang |
 | **C. Sebelum mitra psikologi atau psikolog internal pertama** | 11, 17, 19 | Laporan otomatis, masa simpan data mentah, dan penandatangan internal. Tes psikologi dimatikan sampai ada jawaban. | 11 dan 17 sudah dibangun (laporan otomatis mati); 19 dirancang |
 | **D. Isi kebijakan, atau setelah peluncuran** | 8, 9, 14, 16, 18, 22 | Jawabannya mengubah teks kebijakan atau fitur yang datang kemudian. Sementara itu sistem berjalan dengan perilaku yang ada. | 8, 9, 14 sudah dibangun; 16 dan 22 dirancang; 18 masih rencana |
 
@@ -170,6 +170,32 @@ setelah ada jawaban.
     Apakah PP 71/2019 mewajibkan penyelenggara lingkup privat menyimpan data di Indonesia, dan apa yang dituntut Pasal 56 untuk setiap
     penyedia di luar negeri?
 
+26. **Lokasi saat absen masuk shift gig (ditambahkan 29 Oktober 2026).** Fitur gig yang direncanakan memungkinkan perusahaan memasang shift
+    pendek di salah satu lokasinya. Pekerja memesan shift lalu absen masuk dan keluar di situs pencari kerja, yang mencatat garis lintang dan
+    garis bujur ponsel pada kedua saat itu dan mencocokkannya dengan lingkaran 200 sampai 500 m di sekitar lokasi; absen di luar lingkaran tetap
+    dicatat dan ditandai untuk ditinjau perusahaan. Menurut UU 27/2022, apakah pelaksanaan perjanjian kerja merupakan dasar pemrosesan yang sah,
+    atau diperlukan persetujuan? Apakah pengambilan lokasi hanya pada dua saat itu (tidak dilacak di antaranya) sudah proporsional? Berapa lama
+    lokasi boleh disimpan (usulan: lokasi 90 hari, jam kerja yang disetujui selama catatan penggajian perusahaan), dan siapa yang boleh
+    melihatnya (anggota perusahaan yang mengelola gig, admin platform bila ada sengketa)?
+27. **Batas pekerja harian lepas dan aturan keandalan pada shift gig (ditambahkan 29 Oktober 2026).** Perusahaan mempekerjakan pekerja gig secara
+    langsung sebagai pekerja harian lepas; platform hanya menjadi alat. Menurut PP 35/2021 Pasal 10, pekerja harian bekerja kurang dari 21 hari
+    dalam sebulan, dan bekerja 21 hari atau lebih selama 3 bulan berturut-turut mengubah hubungan kerjanya menjadi tetap. Sistem menghitung hari
+    yang berisi shift per pekerja dan per badan hukum, menolak pemesanan yang akan menjadi hari ke-21, dan tidak dapat mengetahui hari kerja di
+    luar sistem. Apakah penghitungan per badan hukum sudah tepat (atau per grup pemberi kerja)? Apakah platform ikut menanggung risiko hukum
+    karena menegakkan, atau gagal menegakkan, batas tersebut? Apakah perjanjian kerja harian tertulis diperlukan per shift atau per bulan, dan
+    bolehkah perjanjian itu disetujui di dalam platform? Platform juga menahan pekerja dari pemesanan selama 7 hari setelah pembatalan mendadak
+    dan ketidakhadiran berulang, berdasarkan poin tetap tanpa keputusan manusia: apakah ini keputusan otomatis menurut Pasal 10 UU 27/2022, dan
+    apa yang wajib diberitahukan kepada pekerja atau dapat ia sanggah?
+28. **Pemeriksaan identitas pekerja gig dan freelancer (ditambahkan 29 Oktober 2026).** Perusahaan dapat mewajibkan dokumen sebelum pekerja
+    memesan shift (kartu identitas, sertifikat penjamah makanan atau sertifikat lain) dan memerlukan identitas pekerja untuk perjanjian kerja
+    harian dan penggajian; tahap berikutnya mungkin membandingkan foto yang diambil saat absen dengan foto profil. Untuk gig proyek dan katalog
+    jasa, freelancer menawarkan jasa kepada perusahaan dalam satu instalasi, yang memberi nilai 1 sampai 5 setelah menerima hasil kerja, dan
+    rata-ratanya ditampilkan kepada perusahaan-perusahaan tersebut. Bolehkah NIK dan salinan kartu identitas dikumpulkan melalui situs pencari
+    kerja saat pemesanan, dan siapa yang menyimpannya (platform atau perusahaan)? Apakah pencocokan foto saat absen termasuk data biometrik
+    (Pasal 4 ayat (2)) yang memerlukan persetujuan eksplisit dan penilaian dampak pelindungan data (Pasal 34)? Apakah nilai seorang freelancer
+    merupakan data pribadi yang boleh ia lihat dan sanggah, dan apakah freelancer yang dibayar per proyek di luar platform berisiko dianggap
+    karyawan perusahaan pemesan?
+
 ## 3. Yang dapat kami ubah setelah ada jawaban
 
 - Mengaktifkan keempat filter sensitif untuk semua pengguna, atau menghapusnya dari sistem.
@@ -194,3 +220,8 @@ setelah ada jawaban.
 - P23: memperpendek 90 hari, membatasi pemutaran rekaman hanya untuk panel pewawancara, atau mematikan perekaman.
 - P24 dan P25: mendaftarkan platform, mencantumkan pejabat pelindungan data dan prosedur kebocoran data dalam kebijakan privasi, serta menambahkan
   ketentuan pengendali dan prosesor ke perjanjian dengan perusahaan dan lembaga mitra.
+- P26: mengambil lokasi hanya pada absen yang ditandai, memperpendek masa simpannya, atau menggantinya dengan kode QR yang dipasang di lokasi.
+- P27: menghitung hari per grup alih-alih per badan hukum, menambahkan perjanjian kerja harian tertulis pada pemesanan, meminta konfirmasi
+  manusia untuk setiap penahanan, atau menampilkan poin dan cara menyanggahnya.
+- P28: mengumpulkan dokumen identitas di luar platform, menyimpannya hanya di catatan perusahaan, meniadakan pencocokan foto, atau menyembunyikan
+  nilai freelancer dari semua pihak selain pemberi nilai.

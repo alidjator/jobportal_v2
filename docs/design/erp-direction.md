@@ -19,6 +19,7 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - 2026-10-17: **several work locations per tenant** (`company_locations`) before the front end; contacts and addresses of users, job seekers,
   companies and legal entities stay single; employee data (several addresses, contacts, family, bank accounts, with history) follows the
   principles and the order of [section 9](#9-locations-and-employee-data-decided-2026-10-17) (decided by the user).
+- 2026-10-29: **the gig service catalogue is an exception to the marketplace freeze** of section 1 (decided by the user; `gigs.md` section 11.2).
 
 ## 1. One codebase
 

@@ -140,6 +140,7 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
   **2026-10-20 (user, second):** #35 and #36 (`phase-8-job-copy-in-application.md`, `phase-8-imported-history-in-reports.md`: they change the import, so they
   must be done before the freeze) and #37 and #38 (`phase-8-company-team-fixes.md`, `phase-8-admin-queue-cards.md`: small, high value) are added too; the order and
   numbers are in `phase-8-multi-persona-order.md`. #39 to #44 wait for the front end to ask for them.
+  **2026-10-29 (user):** #45, shift gigs, and #46, project gigs and the service catalogue (`gigs.md`), are added to the items coded before go-live; the parts that wait for `legal-review.md` questions 26 to 28 are built switched off. **Same day (user): on hold, not coded until the user discusses gigs again.**
 
 ## 6. Still open (see also `phase-0-schema.md`)
 

@@ -56,6 +56,9 @@ a recruiter can start a conversation any time, a job seeker only with a company 
 - Deployment tasks for the user: run Reverb under a process manager, proxy the WebSocket path in nginx, raise `client_max_body_size` and PHP `upload_max_filesize`/`post_max_size` to at least 5 files of 5 MB, run migrations `000083` to `000086` on the real
   database, then `identity:sync-permissions` is not needed (no permission added).
 
+Gigs (2026-10-29, `gigs.md` 13.2, not coded): a job seeker may also start a thread with a company where they have a gig proposal or engagement;
+members with `gigs.order` see such a thread.
+
 ## Starting a conversation from the front end (decided 2026-10-26)
 
 `POST company/conversations` names the job seeker by exactly one of `user_id`, `candidate` (the slug of a candidate the search finds) or `application_id` (an application the member may see; another company's is a 404), so the front end never needs an account id (C7 and C12 "Kirim pesan"). Same pattern as `POST company/talent-pool`. Tests: `ChatTest`.

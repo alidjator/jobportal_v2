@@ -3,7 +3,7 @@
 For the legal adviser of **ONESIS ERP** (One Solutions Integrated System) and its job seeker site **ONESIS Career**, operated in Indonesia. The ERP's
 first module is talent acquisition (jobs, applications, interviews, psychological tests, offers); the job seeker site is public. The brief lists what the
 system does, or is designed to do, with sensitive personal data and what we need answered. It is a factual inventory, not legal advice, and the legal
-references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-21 (not sent yet).
+references in the questions are unverified suggestions of where to look. Written 2026-10-09, brought up to date 2026-10-29 (not sent yet).
 
 ## 0. Priority of the answers
 
@@ -13,7 +13,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Priority | Questions | Why | State |
 |---|---|---|---|
 | **A. Before go-live** | 1 to 7, 10, 23 to 25 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then); the recordings and the operator's general duties (registration, data protection officer, breach notice, roles, where the data is kept) must be settled | built; 24, 25 are duties of the operator |
-| **B. Blocks building a feature** | 12, 13, 15, 20, 21 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform and pre-employment checks are not built until answered | designed |
+| **B. Blocks building a feature** | 12, 13, 15, 20, 21, 26 to 28 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform, pre-employment checks and the gig features (location at clock-in, the daily-worker limit and reliability rules, identity checks and freelancer ratings) are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
 | **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22 designed; 18 a plan |
 
@@ -133,6 +133,29 @@ where the question is open; "designed" means it is planned and waits for the ans
     WhatsApp (question 22) go through outside providers, some possibly outside Indonesia. Does PP 71/2019 require a private operator to keep the
     data in Indonesia, and what does Article 56 require for each provider abroad?
 
+26. **Location at clock-in for gig shifts (added 2026-10-29).** A planned gig feature lets a company post short shifts at one of its locations; the
+    worker books a shift and clocks in and out in the job seeker site, which records the phone's latitude and longitude at both moments and checks
+    them against a circle of 200 to 500 m around the location; a clock-in outside it is still recorded and flagged for the company. Under UU 27/2022,
+    is the performance of the work agreement a sound basis, or is consent needed? Is the location taken only at the two moments (never tracked in
+    between) proportionate? How long may it be kept (proposed: the location for 90 days, the approved times as long as the company's payroll
+    records), and who may see it (the company's members who manage gigs, the platform admin on a dispute)?
+27. **Daily-worker limit and reliability rules for gig shifts (added 2026-10-29).** The company employs the gig worker directly as a daily worker;
+    the platform is only the tool. Under PP 35/2021 Article 10, a daily worker works fewer than 21 days in a month, and 21 days or more for 3
+    months in a row makes the relationship permanent. The system counts the days with a shift per worker and legal entity, refuses a booking that
+    would make the 21st day, and cannot know days worked outside it. Is counting per legal entity right (or per employer group)? Does the platform
+    take on any liability by enforcing, or failing to enforce, the limit? Must a written daily work agreement exist per shift or per month, and
+    may it be accepted in the platform? The platform also suspends a worker from booking for 7 days after repeated late cancellations and
+    no-shows, by fixed points and without a person deciding: is this an automated decision under Article 10 of UU 27/2022, and what must the
+    worker be told or be able to contest?
+28. **Identity checks of gig workers and freelancers (added 2026-10-29).** A company may require documents before a worker books a shift (an
+    identity card, a food-handler or other certificate) and needs the worker's identity for its daily work agreement and payroll; a later step
+    may compare a photo taken at clock-in with the profile photo. For project gigs and the service catalogue, freelancers offer services to the
+    companies of an installation, who rate them 1 to 5 after accepting the work, with the average shown to those companies. May the identity
+    card number (NIK) and a copy of the card be collected through the job seeker site at booking, and who keeps them (the platform or the
+    company)? Is a photo comparison at clock-in biometric data (Article 4(2)) that needs explicit consent and a data protection impact
+    assessment (Article 34)? Are the ratings of a freelancer personal data the freelancer may see and contest, and does a freelancer paid per
+    project outside the platform risk being treated as an employee of the ordering company?
+
 ## 3. What we can change after the answers
 
 - Switch the four filters on for everyone, or remove them in code (one setting, `job_seeker.candidate_sensitive_filters_enabled`).
@@ -154,3 +177,6 @@ where the question is open; "designed" means it is planned and waits for the ans
 - Q22: remove the unofficial adapter, or require a data-processing agreement before an installation may switch it on.
 - Q23: shorten the 90 days (`interview.recording_retention_days`, `assessment.video_retention_days`), limit playback to the interview panel, or switch recording off.
 - Q24 and Q25: register the platform, name a data protection officer and the breach procedure in the privacy policy, and add the controller and processor terms to the agreements with companies and partner institutions.
+- Q26: take the location only on a flagged clock-in, shorten its retention, or replace it with a QR code shown at the site.
+- Q27: count the days per group instead of per legal entity, add the written daily work agreement to the booking, let a person confirm each suspension, or show the points and a way to contest them.
+- Q28: collect identity documents outside the platform, keep them only in the company's records, drop the photo comparison, or hide freelancer ratings from everyone but the rater.

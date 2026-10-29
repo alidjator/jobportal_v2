@@ -84,6 +84,8 @@ Design of the web front end that consumes this API. Code is not started.
 - 2026-10-27: a candidate's picture looks the same wherever the Workspace shows them (`CandidateAvatar`: round, the photo when the candidate can be found and has one, else the initials); other people are a round `UiAvatar`, icon tiles stay rounded squares ([detail](#111-layouts-and-navigation)).
 - 2026-10-28: the units of E7 (`/organisasi/unit`) show as an org chart (`UiOrgChart`: boxes joined to their parent, zoom and pan, the "Simple Flow Chart" of the Org Chart page of Able Pro Vue on `@vue-flow/core`, since the Tailwind edition has none; approved by the user) with a list as the other view, chosen by a button group: the rows of the Stages page (C19), the units under a unit in its row, dragged among their siblings to put them in order (`PUT organization/units/order`, `sort_order` of the unit; the tree view `ac_treeview.html` and the table `dt_ext_row_reorder.html` were tried and replaced the same day), and the org chart follows the same order; the boxes have a fixed height and a radius, and the lines are `step` lines; the chart is drawn in the browser only.
 
+- 2026-10-29: **gig pages** P16 to P19, J19 to J25, C33 to C40, D29, a Workspace menu group "Kerja harian dan proyek", Leaflet maps with OpenStreetMap tiles, front-end step 8 before go-live; the page map is in `gigs.md` section 14, not repeated here (decided by the user).
+
 ## 1. Timing
 
 Decided by the user on 2026-10-13. The design of the front end (stack, application split, authentication, pages) is worked out now through questions and
@@ -387,6 +389,8 @@ Job seekers only. Company and group members sign in on Workspace (B1 to B5, sect
 | J17 | Offer | `/me/applications/{id}/offer` | `GET me/applications/{id}/offer` (terms, deadline countdown), `GET .../offer/letter.pdf` in a PDF viewer, `accept`, `decline` with a note. **#12 section 3:** agreement checkbox, password or Google confirmation, `letter_sha256`, `evidence.pdf`. **#32:** the condition box of the pre-employment checks. |
 | J18 | Followed companies | `/me/followed-companies` | **frozen:** `me/followed-companies` |
 
+Gig pages (P16 to P19, J19 to J25; **#45**, **#46**): page map in `gigs.md` section 14.
+
 Not mapped to a page: `POST`/`DELETE me/device-tokens` (push tokens for a future mobile app or web push), `broadcasting/auth` (proxy only).
 
 ### 7.4 Findings while mapping
@@ -582,6 +586,8 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D27 | Groups and tenants | `/grup`, `/grup/{id}` | `GET`/`POST admin/groups`, `GET .../{id}`, `GET .../{id}/members`, `PUT`/`DELETE .../members/{userId}` (first group role), `PUT`/`DELETE .../legal-entities/{entityId}/tenant`, `suspend`, `restore` | `companies.manage` |
 | D28 | Support access reads | `/dukungan`, `/dukungan/{groupId}` | `GET admin/support/groups` (groups with a running grant for this admin), `GET admin/support/group`, `units[/{id}[/versions]]`, `unit-types`, `positions[/{id}[/versions]]`, `grades`, `cost-centres`, `activity` (read only, under the grant; the remaining time shown) | `groups.support` |
 
+Gig moderation D29 (**#45**, **#46**): `gigs.md` section 14.4.
+
 ### 9.2 Portal Mitra
 
 | # | Page | Path | API |
@@ -728,6 +734,7 @@ into a drawer.
   Delegasi show for a member who holds an approvals or workforce permission or a group role, or who has an approval waiting.
 - *Organisasi* (group role only): Grup dan entitas (E6), Unit (E7), Jabatan (E8), Golongan dan pusat biaya (E9), Anggota grup (E10), Rencana dan
   permintaan grup (E13), Rekrutmen grup (E14), Penyedia asesmen (E16, #24), Pengaturan grup (E11), Log grup (E12), Akses dukungan (E15).
+- *Kerja harian dan proyek* (**#45**, **#46**; `gigs.md` 14.3): Jadwal shift (C33), Posting shift (C34), Timesheet (C36), Pekerja (C37), Katalog jasa (C38), Proyek (C39), Kerja proyek (C40).
 - *Perusahaan:* Profil (C20), Lokasi (C32), Dokumen verifikasi (C21), Ulasan (C24), Tim (C22), Pengaturan (C29), Log aktivitas (C27).
 - Notifikasi, Akun (C25).
 
@@ -1079,6 +1086,7 @@ sign-in, the proxy and the permissions before many pages depend on them. The thr
 | 5 | all | The rest needed to replace karir.pkp. Workspace: C8, C26, C30, C28, C14, C11 to C13, C15, C16, C31, C23, C24, C2, C27. Career: P5 to P7, P9, P10, J8 to J17, the search-engine work of 11.4. Console: D3, D6, D8 to D17, D21, D23 to D26 | Go-live scope |
 | 6 | Career, Workspace | Complex screens (11.5): test runner J7, video rooms J6 and C9 (Janus), voice C10 (JsSIP) | Waits for the root setup of Janus, coturn and Asterisk |
 | 7 | Workspace, Console | ERP pages E1 to E15, D27, D28; Portal Mitra M1 to M6 | New features, not part of replacing the legacy site |
+| 8 | Career, Workspace, Console | Gig pages of `gigs.md` section 14: P16 to P19, J19 to J25, C33 to C40, D29; Leaflet with the tile URL setting | Decided 2026-10-29 before go-live; each page right after its API (#45, then #46); **on hold until the user discusses it again (2026-10-29)** |
 
 Throughout: an element marked **#N** is built with its page once its API item is coded (#38 to #44 wait for the front end); **frozen** and **after
 import** elements (P6b, P12, P13, D22, the suspend and reactivate actions of D21) come last.

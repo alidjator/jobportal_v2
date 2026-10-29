@@ -37,6 +37,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - Performance audit steps 4 (measure) and 6 (query-count tests); then drop `jobportal_v2_perf`.
 - Deferred architecture findings 7, 8, 20 (`decisions.md` section 6), 9, 21 (after the import).
 - Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 in `phase-8-platform-admin.md` (G20 before go-live), G14 in `phase-8-job-discovery.md`; R8 reopened.
+- Gigs, **coding on hold until the user discusses it again (2026-10-29)**: #45 shift gigs (API plan `gigs.md` 12, schema approved, ready for coding) and #46 project gigs and service catalogue (API plan `gigs.md` 13, schema approved), both before go-live (2026-10-29); legal questions 26 to 28 parts built switched off; screens `gigs.md` 14 (front-end step 8); benchmark `docs/analysis/benchmark-gigs.md`.
 - Talent pool notes need a JobSeeker trigger for immediate clearing. Flaky: the `'42'` assertion of `TestAuthoringTest`.
 
 ## Items waiting for the user
@@ -47,7 +48,7 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 - `CORS_ALLOWED_ORIGINS` and the link settings (`COMPANY_INVITATION_URL`, `JOB_SEEKER_*_URL`, `COMPANY_APP*_URL`, ...) with the values of `frontend.md` 4 and 12.2; production `.env`: `REDIS_CLIENT=predis`, `CACHE_STORE=redis`.
 - Tele-interview: SIP trunk with one DID; root setup of Janus, coturn and Asterisk (`deploy/*/README.md`).
 - First admin: `identity:create-admin`; others by `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review `docs/legal-review.md` (25 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
+- Legal review `docs/legal-review.md` (28 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`

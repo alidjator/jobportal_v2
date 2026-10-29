@@ -44,7 +44,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 
 ## Next coding (in this order)
 
-**Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15, #20 and, since 2026-10-20, #34 (and endpoints
+**Limited coding (decided 2026-10-19, `decisions.md` section 5):** until the front end catches up, only #29, #30, #15, #20, since 2026-10-20 #34, since 2026-10-29 #45 and #46 (and endpoints
 the front end asks for) are coded; the other rows wait even when ready.
 
 **Job editor C4, API part (2026-10-23):** asked for by the front end and chosen by the user: `phase-8-job-posting.md` sections 1 to 4, the waiting period of `phase-8-rejections.md` section 3, the job locations of
@@ -76,6 +76,8 @@ the front end asks for) are coded; the other rows wait even when ready.
 | 42 | `phase-8-concurrent-edits.md` (MG-B08) | designed; waits for the front end (it sends `If-Match` before the setting is turned on) |
 | 43 | `phase-8-reference-merge.md` (MG-C02) | designed; waits for the front end |
 | 44 | `phase-8-company-support-access.md` (MG-C05) | designed; waits for the front end |
+| 45 | `gigs.md` sections 1 to 10, shift gigs, **before go-live** (decided 2026-10-29) | **on hold until the user discusses it again (2026-10-29)**; API plan in `gigs.md` section 12; location at clock-in, reliability suspension and identity documents built switched off until `legal-review.md` questions 26 to 28 |
+| 46 | `gigs.md` section 11, project gigs and the service catalogue, **before go-live, after #45** (decided 2026-10-29) | **on hold until the user discusses it again (2026-10-29)**; API plan in `gigs.md` section 13, schema approved 2026-10-29; `legal-review.md` question 28 for the ratings |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 
