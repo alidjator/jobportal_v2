@@ -29,6 +29,10 @@ final class RecruitmentSettings
 
     public const string INTERVIEW_RESCHEDULE_CUTOFF_HOURS = 'recruitment.interview_reschedule_cutoff_hours';
 
+    public const string REJECTION_UNDO_MINUTES = 'recruitment.rejection_undo_minutes';
+
+    public const string PRE_EMPLOYMENT_CHECKS_ENABLED = 'recruitment.pre_employment_checks_enabled';
+
     /** @return list<SettingDefinition> */
     public static function definitions(): array
     {
@@ -86,6 +90,15 @@ final class RecruitmentSettings
                 self::INTERVIEW_RESCHEDULE_CUTOFF_HOURS, 24, 0, 168,
                 'Until how many hours before a confirmed interview the job seeker may ask to move it, and how far ahead the time they propose must be. 0 allows it until the start.',
                 overridable: true,
+            ),
+            SettingDefinition::integer(
+                self::REJECTION_UNDO_MINUTES, 0, 0, 60,
+                'How many minutes a rejection waits before it takes effect, during which the team can still undo it (`docs/design/phase-8-rejections.md` section 2). 0 rejects at once. The design default is 10; it ships as 0 until the screens that undo are checked.',
+                overridable: true,
+            ),
+            SettingDefinition::boolean(
+                self::PRE_EMPLOYMENT_CHECKS_ENABLED, false,
+                'Whether a company may keep a checklist of pre-employment checks (medical check-up, background, references, police record) per application (`docs/design/phase-8-pre-employment-checks.md`). Off until the legal review (question 21) is answered.',
             ),
         ];
     }

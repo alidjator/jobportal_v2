@@ -21,6 +21,7 @@ enum CompanyPermission: string
     case InterviewsParticipate = 'interviews.participate';
     case OffersManage = 'offers.manage';
     case AssessmentsSend = 'assessments.send';
+    case ChecksManage = 'checks.manage';
     case CandidatesSearch = 'candidates.search';
     case TalentPoolManage = 'talent_pool.manage';
     case MessagesSend = 'messages.send';
@@ -45,7 +46,7 @@ enum CompanyPermission: string
         return match ($this) {
             self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll => 'jobs',
             self::ApplicationsView, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport, self::InterviewsManage, self::InterviewsParticipate,
-            self::OffersManage, self::AssessmentsSend => 'applicants',
+            self::OffersManage, self::AssessmentsSend, self::ChecksManage => 'applicants',
             self::CandidatesSearch, self::TalentPoolManage, self::MessagesSend => 'sourcing',
             self::InterviewKitsManage, self::ScreeningQuestionsManage, self::AssessmentsAuthor, self::StagesManage => 'library',
             self::CompanyProfile, self::CampaignsManage, self::ReviewsReply, self::AnalyticsView => 'company',
@@ -59,7 +60,7 @@ enum CompanyPermission: string
     {
         return match ($this) {
             self::JobsCreate, self::JobsPublish, self::JobsAssign, self::JobsViewAll, self::ApplicationsManage, self::ApplicationsReview, self::ApplicationsExport,
-            self::InterviewsManage, self::OffersManage, self::AssessmentsSend => true,
+            self::InterviewsManage, self::OffersManage, self::AssessmentsSend, self::ChecksManage => true,
             default => false,
         };
     }

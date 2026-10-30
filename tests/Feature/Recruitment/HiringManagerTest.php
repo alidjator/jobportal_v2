@@ -96,7 +96,7 @@ final class HiringManagerTest extends FeatureTestCase
     {
         $catalog = $this->api('GET', '/company/permissions')->assertOk()->json('data');
         $applicants = collect($catalog['groups'])->firstWhere('group', 'applicants')['permissions'];
-        $this->assertSame(['applications.view', 'applications.manage', 'applications.review', 'applications.export', 'interviews.manage', 'interviews.participate', 'offers.manage', 'assessments.send'], array_column($applicants, 'permission'));
+        $this->assertSame(['applications.view', 'applications.manage', 'applications.review', 'applications.export', 'interviews.manage', 'interviews.participate', 'offers.manage', 'assessments.send', 'checks.manage'], array_column($applicants, 'permission'));
         $this->assertTrue(collect($applicants)->firstWhere('permission', 'applications.manage')['requires_review']);
         $this->assertFalse(collect($applicants)->firstWhere('permission', 'applications.review')['requires_review']);
 
@@ -230,6 +230,23 @@ final class HiringManagerTest extends FeatureTestCase
 
         // The recruiter holds no jobs.view_all, so as a hiring manager they are bound.
         $this->assertSame([], $this->api('GET', "/company/jobs/{$this->job}/applications", token: $this->recruiterToken)->json('data'));
+    }
+
+    public function test_the_job_says_whether_the_reader_is_bound_to_the_stage_boundary(): void
+    {
+        // The hiring manager is bound; the recruiter of the same job and the company admin (jobs.view_all) are not.
+        $this->api('GET', "/company/jobs/{$this->job}", token: $this->managerToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', true);
+        $this->api('GET', "/company/jobs/{$this->job}", token: $this->recruiterToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', false);
+        $this->api('GET', "/company/jobs/{$this->job}", token: $this->adminToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', false);
+
+        // A recruiter who is made a hiring manager of the job (and holds no jobs.view_all) becomes bound; the company admin is still not.
+        DB::table('job_assignments')->where('job_id', $this->job)->where('user_id', $this->recruiterId)->update(['role' => 'hiring_manager']);
+        $this->api('GET', "/company/jobs/{$this->job}", token: $this->recruiterToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', true);
+        $this->api('GET', "/company/jobs/{$this->job}", token: $this->adminToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', false);
+
+        // On a job where the manager is a recruiter, they are not bound.
+        $other = $this->insertJob('Frontend Developer', 'active', [$this->recruiterId, $this->managerId], attributes: ['deadline' => '2026-12-31']);
+        $this->api('GET', "/company/jobs/{$other}", token: $this->managerToken)->assertOk()->assertJsonPath('data.hiring_manager_bound', false);
     }
 
     public function test_a_hiring_manager_is_not_told_of_a_new_application_but_the_recruiter_is(): void

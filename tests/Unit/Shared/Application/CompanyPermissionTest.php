@@ -10,19 +10,19 @@ use Src\Shared\Domain\Exceptions\AccessDenied;
 
 final class CompanyPermissionTest extends TestCase
 {
-    public function test_the_catalog_has_28_permissions_in_six_groups(): void
+    public function test_the_catalog_has_30_permissions_in_six_groups(): void
     {
-        $this->assertCount(29, CompanyPermission::cases());
+        $this->assertCount(30, CompanyPermission::cases());
         $this->assertSame(['jobs', 'applicants', 'sourcing', 'library', 'company', 'workforce'], array_values(array_unique(array_map(fn (CompanyPermission $p): string => $p->group(), CompanyPermission::cases()))));
     }
 
-    public function test_ten_permissions_need_reading(): void
+    public function test_eleven_permissions_need_reading(): void
     {
         $needing = array_filter(CompanyPermission::cases(), fn (CompanyPermission $p): bool => $p->requiresView());
 
         $this->assertEqualsCanonicalizing([
             'jobs.create', 'jobs.publish', 'jobs.assign', 'jobs.view_all', 'applications.manage', 'applications.review', 'applications.export', 'interviews.manage', 'offers.manage',
-            'assessments.send',
+            'assessments.send', 'checks.manage',
         ], array_values(array_map(fn (CompanyPermission $p): string => $p->value, $needing)));
     }
 

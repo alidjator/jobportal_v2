@@ -25,7 +25,7 @@ enum MemberPreset: string
             self::Recruiter => [
                 CompanyPermission::JobsCreate, CompanyPermission::JobsPublish, CompanyPermission::ApplicationsView,
                 CompanyPermission::ApplicationsManage, CompanyPermission::ApplicationsReview, CompanyPermission::ApplicationsExport,
-                CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate, CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend,
+                CompanyPermission::InterviewsManage, CompanyPermission::InterviewsParticipate, CompanyPermission::OffersManage, CompanyPermission::AssessmentsSend, CompanyPermission::ChecksManage,
                 CompanyPermission::CandidatesSearch, CompanyPermission::TalentPoolManage, CompanyPermission::MessagesSend, CompanyPermission::InterviewKitsManage,
             ],
             self::Interviewer => [CompanyPermission::InterviewsParticipate],

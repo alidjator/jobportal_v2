@@ -182,14 +182,14 @@ final class SettingsTest extends FeatureTestCase
             'identity.avatar_max_size_kb', 'identity.import_summary_retention_days',
             'interview.recording_retention_days', 'interview.video_enabled', 'interview.video_max_concurrent_rooms',
             'interview.voice_enabled', 'interview.voice_max_attempts', 'interview.voice_max_call_minutes', 'interview.voice_max_concurrent_calls', 'interview.voice_monthly_minutes',
-            'invitations.max_per_day',
+            'invitations.email_claim_url', 'invitations.email_enabled', 'invitations.max_per_day',
             'job_seeker.available_from_max_days', 'job_seeker.candidate_sensitive_filters_enabled', 'job_seeker.candidate_views_per_day', 'job_seeker.cv_generations_per_hour', 'job_seeker.max_age', 'job_seeker.min_age', 'job_seeker.resume_max_size_kb',
             'jobalert.max_alerts_per_user',
             'jobs.approval_for_unverified', 'jobs.max_deadline_days', 'jobs.report_hold_threshold', 'jobs.require_approval', 'jobs.suspicious_phrases',
             'messaging.max_attachment_bytes', 'messaging.max_bulk_recipients', 'messaging.max_daily_company_messages',
             'platform.operations_email', 'platform.support_email', 'platform.support_whatsapp',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
-            'recruitment.interview_reschedule_cutoff_hours', 'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.reapply_after_days', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
+            'recruitment.interview_reschedule_cutoff_hours', 'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.pre_employment_checks_enabled', 'recruitment.reapply_after_days', 'recruitment.rejection_undo_minutes', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
             'workforce.fiscal_year_start_month',
         ], $keys);
 

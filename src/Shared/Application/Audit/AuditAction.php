@@ -69,6 +69,22 @@ final class AuditAction
 
     public const string EMAIL_TEMPLATE_RESET = 'email_template.reset';
 
+    public const string COMPANY_PERMISSION_PRESET_CREATED = 'company.permission_preset_created';
+
+    public const string COMPANY_PERMISSION_PRESET_UPDATED = 'company.permission_preset_updated';
+
+    public const string COMPANY_PERMISSION_PRESET_DELETED = 'company.permission_preset_deleted';
+
+    public const string CHECK_OUTCOME_RECORDED = 'check.outcome_recorded';
+
+    public const string CHECK_OUTCOME_VIEWED = 'check.outcome_viewed';
+
+    public const string INVITATION_EMAIL_SENT = 'invitation.email_sent';
+
+    public const string INVITATION_CV_VIEWED = 'invitation.cv_viewed';
+
+    public const string INVITATION_EMAIL_CANCELLED = 'invitation.email_cancelled';
+
     public const string COMPANY_CREATED = 'company.created';
 
     public const string COMPANY_SUSPENDED = 'company.suspended';

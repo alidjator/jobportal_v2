@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Recruitment\Application\ApplicationAnswerView;
 use Src\Recruitment\Application\ApplicationHistoryEntry;
 use Src\Recruitment\Application\ApplicationView;
+use Src\Recruitment\Application\Checks\MyCheck;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\StageType;
 
@@ -51,6 +52,22 @@ final class MyApplicationDetailResource extends JsonResource
                 'at' => $entry->at->format(DATE_ATOM),
                 'by' => $entry->by->value,
             ], $data->history),
+            /** @var list<array{id: int, name: string, kind: string, status: string, scheduled_at: string|null, place: string|null, vendor: string|null, instructions: string|null, note_to_candidate: string|null, consent_required: bool, consent_pending: bool, consented_at: string|null, consent_refused_at: string|null}> the pre-employment checks of the application (`phase-8-pre-employment-checks.md` section 3): never an outcome, a team note or a file; empty while the feature is switched off */
+            'checks' => array_map(static fn (MyCheck $check): array => [
+                'id' => $check->id,
+                'name' => $check->name,
+                'kind' => $check->kind->value,
+                'status' => $check->status->value,
+                'scheduled_at' => $check->scheduledAt?->format(DATE_ATOM),
+                'place' => $check->place,
+                'vendor' => $check->vendor,
+                'instructions' => $check->instructions,
+                'note_to_candidate' => $check->noteToCandidate,
+                'consent_required' => $check->consentRequired,
+                'consent_pending' => $check->status->isOpen() && $check->consentRequired && $check->consentedAt === null,
+                'consented_at' => $check->consentedAt?->format(DATE_ATOM),
+                'consent_refused_at' => $check->consentRefusedAt?->format(DATE_ATOM),
+            ], $this->resource->checks),
             /** @var list<array{question: array{id: int, text: string, type: string}, text: string|null, number: int|null, bool: bool|null, options: list<array{id: int, label: string}>}> */
             'answers' => array_map(static fn (ApplicationAnswerView $answer): array => [
                 'question' => ['id' => $answer->questionId, 'text' => $answer->questionText, 'type' => $answer->type->value],

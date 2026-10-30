@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Application\Checks\MyApplicationChecks;
 use Src\Recruitment\Domain\ApplicationJobSnapshots;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Company\CompanyDirectory;
@@ -18,6 +19,7 @@ final readonly class GetMyApplication
         private JobDirectory $jobs,
         private CompanyDirectory $companies,
         private ApplicationJobSnapshots $jobSnapshots,
+        private MyApplicationChecks $checks,
     ) {}
 
     /**
@@ -35,6 +37,7 @@ final readonly class GetMyApplication
             $this->jobs->titles([$data->row->jobId])[$data->row->jobId] ?? null,
             ($this->companies->summaries([$data->row->companyId])[$data->row->companyId] ?? null)?->name,
             $snapshot === null ? null : LocalisedJobContent::of($snapshot, $language),
+            $this->checks->of($id),
         );
     }
 }

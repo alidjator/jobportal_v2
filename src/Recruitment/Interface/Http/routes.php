@@ -3,10 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Recruitment\Infrastructure\RecruitmentServiceProvider;
+use Src\Recruitment\Interface\Http\Controllers\ApplicationCheckController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationNoteController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
 use Src\Recruitment\Interface\Http\Controllers\BulkApplicationController;
+use Src\Recruitment\Interface\Http\Controllers\CheckTypeController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyStageController;
 use Src\Recruitment\Interface\Http\Controllers\EmailPreviewController;
@@ -19,10 +21,12 @@ use Src\Recruitment\Interface\Http\Controllers\InterviewResultController;
 use Src\Recruitment\Interface\Http\Controllers\JanusWebhookController;
 use Src\Recruitment\Interface\Http\Controllers\JobInterviewKitController;
 use Src\Recruitment\Interface\Http\Controllers\JobScreeningQuestionController;
+use Src\Recruitment\Interface\Http\Controllers\MyCheckController;
 use Src\Recruitment\Interface\Http\Controllers\MyInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\MyOfferController;
 use Src\Recruitment\Interface\Http\Controllers\MyVideoInterviewController;
 use Src\Recruitment\Interface\Http\Controllers\OfferController;
+use Src\Recruitment\Interface\Http\Controllers\PendingRejectionController;
 use Src\Recruitment\Interface\Http\Controllers\ReviewRequestController;
 use Src\Recruitment\Interface\Http\Controllers\ScorecardController;
 use Src\Recruitment\Interface\Http\Controllers\ScreeningPresetController;
@@ -71,6 +75,10 @@ Route::middleware('auth:user')->group(function (): void {
     Route::get('company/jobs/{id}/applications/export', [CompanyApplicationController::class, 'export'])->whereNumber('id')->middleware('throttle:'.RecruitmentServiceProvider::EXPORT_LIMITER);
     Route::post('company/jobs/{id}/applications/bulk-move', [BulkApplicationController::class, 'move'])->whereNumber('id');
     Route::post('company/jobs/{id}/applications/bulk-reject', [BulkApplicationController::class, 'reject'])->whereNumber('id');
+    Route::post('company/jobs/{id}/applications/reject-remaining', [BulkApplicationController::class, 'rejectRemaining'])->whereNumber('id');
+    // A rejection waits the undo window of the company (`recruitment.rejection_undo_minutes`); these take it back, one application or a whole bulk action.
+    Route::delete('company/applications/{id}/pending-rejection', [PendingRejectionController::class, 'destroy'])->whereNumber('id');
+    Route::delete('company/rejection-batches/{batchId}', [PendingRejectionController::class, 'destroyBatch'])->whereUuid('batchId');
     Route::post('company/jobs/{id}/fill', [BulkApplicationController::class, 'fill'])->whereNumber('id');
     Route::get('company/applications/{id}', [CompanyApplicationController::class, 'show'])->whereNumber('id');
     Route::get('company/applications/{id}/resume', [CompanyApplicationController::class, 'resume'])->whereNumber('id');
@@ -79,6 +87,20 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/applications/{id}/withdraw', [CompanyApplicationController::class, 'withdraw'])->whereNumber('id');
     Route::patch('company/applications/{id}/hire', [CompanyApplicationController::class, 'updateHire'])->whereNumber('id');
 
+    Route::get('company/check-types', [CheckTypeController::class, 'index']);
+    Route::post('company/check-types', [CheckTypeController::class, 'store']);
+    Route::patch('company/check-types/{id}', [CheckTypeController::class, 'update'])->whereNumber('id');
+    Route::post('company/check-types/{id}/deactivate', [CheckTypeController::class, 'deactivate'])->whereNumber('id');
+    Route::post('company/check-types/{id}/reactivate', [CheckTypeController::class, 'reactivate'])->whereNumber('id');
+    Route::get('company/applications/{id}/checks', [ApplicationCheckController::class, 'index'])->whereNumber('id');
+    Route::post('company/applications/{id}/checks', [ApplicationCheckController::class, 'store'])->whereNumber('id');
+    Route::patch('company/applications/{id}/checks/{checkId}', [ApplicationCheckController::class, 'update'])->whereNumber(['id', 'checkId']);
+    Route::post('company/applications/{id}/checks/{checkId}/result', [ApplicationCheckController::class, 'result'])->whereNumber(['id', 'checkId']);
+    Route::get('company/applications/{id}/checks/{checkId}/result/file', [ApplicationCheckController::class, 'file'])->whereNumber(['id', 'checkId']);
+    Route::post('company/applications/{id}/checks/{checkId}/waive', [ApplicationCheckController::class, 'waive'])->whereNumber(['id', 'checkId']);
+    Route::post('company/applications/{id}/checks/{checkId}/cancel', [ApplicationCheckController::class, 'cancel'])->whereNumber(['id', 'checkId']);
+    Route::post('me/applications/{id}/checks/{checkId}/consent', [MyCheckController::class, 'consent'])->whereNumber(['id', 'checkId']);
+    Route::post('me/applications/{id}/checks/{checkId}/refuse', [MyCheckController::class, 'refuse'])->whereNumber(['id', 'checkId']);
     Route::get('company/applications/{id}/notes', [ApplicationNoteController::class, 'index'])->whereNumber('id');
     Route::post('company/applications/{id}/notes', [ApplicationNoteController::class, 'store'])->whereNumber('id');
     Route::put('company/applications/{id}/notes/{noteId}', [ApplicationNoteController::class, 'update'])->whereNumber(['id', 'noteId']);
