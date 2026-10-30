@@ -339,7 +339,7 @@ final class RecommendationsTest extends FeatureTestCase
         $this->assertSame(['skills' => 100, 'location' => 100, 'experience' => 100, 'education' => null, 'salary' => null, 'role' => 100], $response->json('data.0.match.signals'));
         // The row of the candidate search, plus the match: no contact data, no protected attribute.
         $this->assertSame(
-            ['slug', 'name', 'has_avatar', 'headline', 'province', 'city', 'experience_level', 'availability', 'highest_education', 'updated_at', 'match', 'invited'],
+            ['slug', 'name', 'has_avatar', 'headline', 'province', 'city', 'experience_level', 'availability', 'highest_education', 'active_within', 'open_to_offers', 'updated_at', 'match', 'invited'],
             array_keys($response->json('data.0')),
         );
         $this->assertSame('Ana Putri', $response->json('data.0.name'));
@@ -389,6 +389,21 @@ final class RecommendationsTest extends FeatureTestCase
     }
 
     // ----- the weekly email -----
+
+    public function test_the_weekly_email_puts_the_summary_of_a_job_under_its_title(): void
+    {
+        Mail::fake();
+        $this->fittingJob('Backend Developer', ['summary' => 'Build the APIs of the job portal with a small team.']);
+        $this->remoteJob();
+
+        $this->assertSame(1, $this->runEmails());
+
+        Mail::assertQueued(RecommendationMail::class, function (RecommendationMail $mail): bool {
+            $mail->assertSeeInOrderInText(['Backend Engineer (100% match)', 'Backend Developer (75% match)', 'Build the APIs of the job portal with a small team.']);
+
+            return true;
+        });
+    }
 
     public function test_the_weekly_email_names_the_best_jobs_once_and_only_new_ones_later(): void
     {

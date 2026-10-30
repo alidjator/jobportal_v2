@@ -270,6 +270,25 @@ final class JobAlertDeliveryTest extends FeatureTestCase
         Mail::assertQueued(AlertDigestMail::class, 2);
     }
 
+    public function test_the_email_puts_the_summary_of_a_job_under_its_title_and_adds_nothing_for_a_job_without_one(): void
+    {
+        Mail::fake();
+        $this->alertId(['frequency' => 'daily']);
+        $this->later('2026-10-05 10:00:00');
+        $this->liveJobFor('With summary', ['summary' => 'Build the APIs of the job portal with a small team.']);
+        $this->liveJobFor('Without summary', ['published_at' => '2026-10-05 12:00:00']);
+
+        Carbon::setTestNow('2026-10-06 01:10:00');
+        $this->assertSame('Job alert summaries sent: 1', $this->runDigests());
+
+        Mail::assertQueued(AlertDigestMail::class, function (AlertDigestMail $mail): bool {
+            // The newest job is named first; the summary of the older one follows its title.
+            $mail->assertSeeInOrderInText(['Without summary', 'With summary', 'Build the APIs of the job portal with a small team.']);
+
+            return true;
+        });
+    }
+
     public function test_a_weekly_summary_comes_on_monday(): void
     {
         $alert = $this->alertId(['frequency' => 'weekly']);

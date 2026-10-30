@@ -122,7 +122,11 @@ final readonly class SendRecommendationBatch
         $this->deliveries->record($candidate->userId, array_map(static fn (array $entry): int => $entry['job']->jobId, $best), $this->clock->now());
         $this->emails->send($contact, [
             'job_count' => (string) count($best),
-            'jobs' => implode("\n\n", array_map(static fn (array $entry): string => "{$entry['job']->title} ({$entry['score']->percent}% match)", $best)),
+            'jobs' => implode("\n\n", array_map(
+                // The title with its match, and the job's one-line summary under it when it has one (a Markdown hard break keeps the two together).
+                static fn (array $entry): string => "{$entry['job']->title} ({$entry['score']->percent}% match)".($entry['job']->summary === null ? '' : "  \n{$entry['job']->summary}"),
+                $best,
+            )),
         ]);
 
         return true;

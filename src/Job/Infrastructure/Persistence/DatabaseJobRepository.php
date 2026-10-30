@@ -36,6 +36,21 @@ final readonly class DatabaseJobRepository implements JobRepository
         return $row === null ? null : $this->toJob($row);
     }
 
+    public function summaries(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $summaries = [];
+
+        foreach ($this->connection->table('job_jobs')->whereIn('id', $ids)->whereNotNull('summary')->get(['id', 'summary']) as $row) {
+            $summaries[(int) $row->id] = (string) $row->summary;
+        }
+
+        return $summaries;
+    }
+
     public function titles(array $ids): array
     {
         if ($ids === []) {

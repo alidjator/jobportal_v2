@@ -25,6 +25,12 @@ final readonly class AlertDelivery
         private AlertEmailSender $emails,
     ) {}
 
+    /** A job as the email names it: its title and, when it has one, its summary on the next line (a Markdown hard break, so the two stay together). */
+    private static function line(string $title, ?string $summary): string
+    {
+        return $summary === null ? $title : "{$title}  \n{$summary}";
+    }
+
     /** Whether the alert would send an email to this person at all, before the day's cap is looked at. */
     public function wantsEmail(JobAlert $alert, ApplicantContact $contact): bool
     {
@@ -46,11 +52,12 @@ final readonly class AlertDelivery
 
         if ($email) {
             $titles = $this->jobs->titles($jobIds);
+            $summaries = $this->jobs->summaries($jobIds);
 
             $this->emails->send($contact, [
                 'alert_name' => $alert->name,
                 'job_count' => (string) $total,
-                'jobs' => implode("\n\n", array_values(array_filter(array_map(static fn (int $id): ?string => $titles[$id] ?? null, $jobIds)))),
+                'jobs' => implode("\n\n", array_values(array_filter(array_map(static fn (int $id): ?string => isset($titles[$id]) ? self::line($titles[$id], $summaries[$id] ?? null) : null, $jobIds)))),
             ]);
         }
     }

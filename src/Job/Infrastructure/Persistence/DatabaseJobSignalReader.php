@@ -47,7 +47,7 @@ final readonly class DatabaseJobSignalReader implements JobSignalReader
             ->leftJoin('reference_education_levels as e', 'e.id', '=', 'j.education_level_id')
             ->whereIn('j.id', $jobIds)
             ->get([
-                'j.id', 'j.title', 'j.work_mode', 'j.province_id', 'j.city_id', 'j.salary_visible', 'j.salary_min', 'j.salary_max', 'j.salary_period_id',
+                'j.id', 'j.title', 'j.summary', 'j.work_mode', 'j.province_id', 'j.city_id', 'j.salary_visible', 'j.salary_min', 'j.salary_max', 'j.salary_period_id',
                 'r.name as role_name', 'x.slug as level_slug', 'x.min_years', 'x.max_years', 'e.rank as education_rank',
             ]) as $row) {
             $jobId = (int) $row->id;
@@ -70,6 +70,7 @@ final readonly class DatabaseJobSignalReader implements JobSignalReader
                 $showsSalary ? (int) $salaryMax : null,
                 $showsSalary ? (int) $row->salary_period_id : null,
                 $places[$jobId] ?? [],
+                $row->summary === null ? null : (string) $row->summary,
             );
         }
 

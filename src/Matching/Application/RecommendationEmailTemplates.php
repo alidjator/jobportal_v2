@@ -21,7 +21,7 @@ final class RecommendationEmailTemplates
                 [
                     new EmailVariable('name', 'The recipient\'s name', 'Siti'),
                     new EmailVariable('job_count', 'How many jobs are listed', '3'),
-                    new EmailVariable('jobs', 'The jobs, one per line, each with its match percentage', "Backend Developer (82% match)\n\nData Engineer (64% match)"),
+                    new EmailVariable('jobs', 'The jobs, one per paragraph: the title with its match percentage and, when the job has one, its one-line summary under it', "Backend Developer (82% match)  \nBuild the APIs of the job portal with a small team.\n\nData Engineer (64% match)"),
                 ],
                 TranslatedText::fromArray(['id' => 'Lowongan yang cocok untuk Anda', 'en' => 'Jobs that fit you']),
                 TranslatedText::fromArray([

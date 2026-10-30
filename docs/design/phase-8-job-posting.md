@@ -1,4 +1,4 @@
-# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14; sections 1 to 4 coded 2026-10-23, 5 and 6 coded 2026-10-31)
+# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14; sections 1 to 4 coded 2026-10-23, 5 and 6 coded 2026-10-31, the summary in the emails 2026-10-31)
 
 Gaps found against Mekari Talenta's job listings (help center articles 34576595122073, 34630221946009 and 34573329191321), chosen by the user from
 the advice of 2026-10-14. Not taken: splitting the description into three fields (the Markdown description stays one field; the front end offers
@@ -137,7 +137,9 @@ Migration `2026_10_31_000370` (new, run on the test and the real database): `job
   profile has now, so a job seeker without a resume sees `resume`, plus the items of the job), `already-applied` (`reapply_on` is the Jakarta day the waiting period ends; a rejected application whose period is over is not a reason),
   `application-limit-reached`, `applications-unavailable` (the company has no default applied stage). `application` is the live (not withdrawn) application in whatever stage, also when it is rejected and releasable.
   `applications_left_today` is the daily limit less the applications submitted since midnight in Jakarta, withdrawn ones included. Reads only, no locks; the general API limiter applies.
-- **Not coded:** the summary in the job alert and recommendation emails (still open from section 2).
+- **The summary in the emails (coded 2026-10-31, closes the open point of section 2).** The job alert email and the recommendation email put the one-line summary of a job under its title (a Markdown hard break keeps the two on
+  adjacent lines); a job without one is named as before. The alert reads it through the new `JobDirectory::summaries` and the recommendation email through `JobSignals::summary`, which the signal reader of Job fills. The template variable
+  `jobs` of `jobalert.digest` and `matching.recommendations` keeps its name; only its text changes. A summary of a job is never longer than 150 characters, so an email stays short.
 
 | Piece | Change |
 |---|---|

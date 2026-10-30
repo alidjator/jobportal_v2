@@ -90,6 +90,14 @@ interface JobDirectory
      */
     public function titles(array $jobIds): array;
 
+    /**
+     * The one-line summaries of jobs (`phase-8-job-posting.md` section 2), keyed by job id, for the emails that name jobs; a job without a summary is missing.
+     *
+     * @param  list<int>  $jobIds
+     * @return array<int, string>
+     */
+    public function summaries(array $jobIds): array;
+
     /** The title, level and category of the job whatever its status, with the names of the master items in the language; null when the job does not exist. */
     public function classification(int $jobId, string $language): ?JobClassification;
 

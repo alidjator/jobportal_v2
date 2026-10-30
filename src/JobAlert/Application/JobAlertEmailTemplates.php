@@ -22,7 +22,7 @@ final class JobAlertEmailTemplates
                     new EmailVariable('name', 'The recipient\'s name', 'Siti'),
                     new EmailVariable('alert_name', 'The name the job seeker gave the alert', 'Backend jobs in Jakarta'),
                     new EmailVariable('job_count', 'How many new jobs match', '3'),
-                    new EmailVariable('jobs', 'The titles of the newest matching jobs (up to 10), one per line', "Backend Developer\n\nData Engineer"),
+                    new EmailVariable('jobs', 'The newest matching jobs (up to 10), one per paragraph: the title and, when the job has one, its one-line summary under it', "Backend Developer  \nBuild the APIs of the job portal with a small team.\n\nData Engineer"),
                 ],
                 TranslatedText::fromArray(['id' => 'Lowongan baru untuk alert {{alert_name}}', 'en' => 'New jobs for your alert {{alert_name}}']),
                 TranslatedText::fromArray([

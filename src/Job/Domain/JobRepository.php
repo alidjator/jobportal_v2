@@ -17,6 +17,14 @@ interface JobRepository
      */
     public function titles(array $ids): array;
 
+    /**
+     * The summaries of the jobs (`phase-8-job-posting.md` section 2), keyed by id; a job without one, or that does not exist, is missing.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function summaries(array $ids): array;
+
     /** Locks the job row until the transaction ends, so two changes to the same job run one after the other. */
     public function lock(int $id): void;
 

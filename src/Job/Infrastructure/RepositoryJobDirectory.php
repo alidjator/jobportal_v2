@@ -125,6 +125,11 @@ final readonly class RepositoryJobDirectory implements JobDirectory
         return $this->jobs->titles($jobIds);
     }
 
+    public function summaries(array $jobIds): array
+    {
+        return $this->jobs->summaries($jobIds);
+    }
+
     public function classification(int $jobId, string $language): ?JobClassification
     {
         $content = $this->jobs->find($jobId)?->content;

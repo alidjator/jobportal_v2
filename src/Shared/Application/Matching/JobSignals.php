@@ -29,5 +29,7 @@ final readonly class JobSignals
         public ?int $salaryMax,
         public ?int $salaryPeriodId,
         public array $places = [],
+        /** The one-line summary the company wrote for the job (`phase-8-job-posting.md` section 2), for the recommendation email; null without one. */
+        public ?string $summary = null,
     ) {}
 }
