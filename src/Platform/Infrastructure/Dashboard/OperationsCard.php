@@ -4,6 +4,8 @@ namespace Src\Platform\Infrastructure\Dashboard;
 
 use DateTimeInterface;
 use Illuminate\Database\ConnectionInterface;
+use Src\Platform\Application\Queue\QueueHealth;
+use Src\Platform\Application\Queue\QueueStatus;
 use Src\Platform\Application\Scheduler\ReadScheduler;
 use Src\Platform\Application\Scheduler\ScheduledTaskStatus;
 use Src\Shared\Application\Clock;
@@ -13,11 +15,11 @@ use Src\Shared\Application\Dashboard\DashboardScope;
 
 /**
  * The queue as the database sees it: queue jobs that failed in the last 24 hours and jobs waiting to run, per queue. The outcome of a mail or a notification is not
- * recorded, so a mail that failed shows up here as a failed job. The scheduler part lists the scheduled tasks, late and failing ones first, with the time of the last heartbeat.
+ * recorded, so a mail that failed shows up here as a failed job. `queues` lists every queue with waiting jobs or recent failures, with the wait of its oldest due job and whether it stalled. The scheduler part lists the scheduled tasks, late and failing ones first, with the time of the last heartbeat.
  */
 final readonly class OperationsCard implements DashboardCardProvider
 {
-    public function __construct(private ConnectionInterface $connection, private Clock $clock, private ReadScheduler $scheduler) {}
+    public function __construct(private ConnectionInterface $connection, private Clock $clock, private ReadScheduler $scheduler, private QueueHealth $queues) {}
 
     public function key(): string
     {
@@ -61,6 +63,13 @@ final readonly class OperationsCard implements DashboardCardProvider
             'failed_by_queue' => (object) $failed,
             'waiting' => array_sum($waiting),
             'waiting_by_queue' => (object) $waiting,
+            'queues' => array_map(fn (QueueStatus $queue): array => [
+                'queue' => $queue->queue,
+                'waiting' => $queue->waiting,
+                'oldest_wait_seconds' => $queue->oldestWaitSeconds,
+                'failed_last_24h' => $queue->failedLast24Hours,
+                'stalled' => $queue->stalled(),
+            ], $this->queues->queues($this->clock->now())),
             'scheduler' => [
                 'last_tick_at' => $scheduler->lastTickAt?->format(DateTimeInterface::ATOM),
                 'tasks' => array_map(fn (ScheduledTaskStatus $task): array => [

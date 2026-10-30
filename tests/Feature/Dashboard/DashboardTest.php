@@ -510,5 +510,10 @@ final class DashboardTest extends FeatureTestCase
         $this->assertSame(['bulk' => 2, 'default' => 1], $operations['failed_by_queue']);
         $this->assertSame(2, $operations['waiting']);
         $this->assertSame(['bulk' => 2], $operations['waiting_by_queue']);
+        $this->assertSame(['bulk', 'default'], array_column($operations['queues'], 'queue'));
+        $this->assertSame([2, 0], array_column($operations['queues'], 'waiting'));
+        $this->assertSame([2, 1], array_column($operations['queues'], 'failed_last_24h'));
+        $this->assertSame([false, false], array_column($operations['queues'], 'stalled'));
+        $this->assertSame(['queue', 'waiting', 'oldest_wait_seconds', 'failed_last_24h', 'stalled'], array_keys($operations['queues'][0]));
     }
 }

@@ -148,6 +148,20 @@ The operations card already shows failed and waiting queue jobs; nobody is told 
 - Essential email in English, as the scheduler alert (a suppressed operations address still gets it). `docs/deployment-checklist.md` lists the
   setting next to the scheduler alert.
 
+## Coded: section 9, queue watch (2026-10-31, #30)
+
+Migration `000360` (`platform_queue_alerts`). Coded as designed; `platform:check-scheduled-tasks` runs `CheckQueues` after the task check (a second output line, `Queue alerts: failed n, stalled n, recovered n`).
+Interpretations:
+
+- **Failed jobs.** Per queue: an email when the queue has `failed_jobs` rows with an id above `last_failed_job_id` of its alert row and the last email about it is more than an hour old. One check sends one email for every
+  queue that is due. The first check after deploy reports every failure already in the table (the watermark starts at 0). The email lists, per queue, the count, the job classes (`displayName` of the payload, counted over the
+  newest 200 rows) and the first line of the newest exception (300 characters); the payload is never sent.
+- **Stalled.** `jobs` rows that are not reserved and whose `available_at` has passed; the wait of the oldest above 600 seconds is a stall. Delayed jobs (not due) never stall a queue. One email when a queue turns stalled and one
+  when it is moving again (an open alert has `alerted_at` and no `recovered_at`).
+- **No address.** Nothing is sent or marked, as in the scheduler watch.
+- **Card.** `queues: [{queue, waiting, oldest_wait_seconds, failed_last_24h, stalled}]`, by queue name, only queues that have waiting jobs or failures in the last 24 hours; `oldest_wait_seconds` is null when nothing is due.
+- Three email templates (`platform.queue_failed_jobs`, `platform.queue_stalled`, `platform.queue_recovered`), English, essential (they go through `OperationsMail`).
+
 ## Changes in short
 
 | Piece | Change |

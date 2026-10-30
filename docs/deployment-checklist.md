@@ -51,7 +51,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 
 ## 4. Processes
 
-- [ ] Scheduler: the `jobportal` crontab has `* * * * * cd /usr/local/src/jobportal && /usr/bin/php artisan schedule:run >> /dev/null 2>&1`. Set the admin setting `platform.operations_email` (alerts when a task is late or failing) and point an outside uptime monitor at `GET /api/v1/health/scheduler` (200 while the every-minute heartbeat is under 5 minutes old, 503 otherwise).
+- [ ] Scheduler: the `jobportal` crontab has `* * * * * cd /usr/local/src/jobportal && /usr/bin/php artisan schedule:run >> /dev/null 2>&1`. Set the admin setting `platform.operations_email` (alerts when a task is late or failing, when queue jobs fail (at most once an hour per queue) and when a queue is stalled for 10 minutes) and point an outside uptime monitor at `GET /api/v1/health/scheduler` (200 while the every-minute heartbeat is under 5 minutes old, 503 otherwise).
 - [ ] Queue workers: copy `deploy/supervisor/jobportal-queue.ini` to `/etc/supervisord.d/service-available/` and link it from `service-enabled`, then `supervisorctl reread && supervisorctl update`. It runs `critical,default` (2 processes) and `bulk` on connection `bulk` with `--timeout=540` (1 process). Check `supervisorctl status` shows all three running.
 - [ ] After every deploy: `php artisan queue:restart` so the workers load the new code.
 - [ ] Reverb (finding 19: a removed member or revoked token keeps receiving chat events until the connection drops; accepted by the user, `architecture.md` 2.13; confirm it on the running server): run `php artisan reverb:start` under a process manager as `jobportal`; chat works over plain REST (clients poll) until then, and the recruiter shows offline.

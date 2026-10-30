@@ -29,6 +29,10 @@ use Src\Platform\Application\Portal\PortalPreviewTokens;
 use Src\Platform\Application\Portal\Portals;
 use Src\Platform\Application\Portal\PortalSingleCompany;
 use Src\Platform\Application\Portal\PortalVerificationFeature;
+use Src\Platform\Application\Queue\QueueAlertRepository;
+use Src\Platform\Application\Queue\QueueAlerts;
+use Src\Platform\Application\Queue\QueueEmailTemplates;
+use Src\Platform\Application\Queue\QueueHealth;
 use Src\Platform\Application\Scheduler\ScheduledTaskRunRepository;
 use Src\Platform\Application\Scheduler\ScheduledTasks;
 use Src\Platform\Application\Scheduler\SchedulerAlerts;
@@ -42,12 +46,15 @@ use Src\Platform\Infrastructure\Email\CommonMarkEmailBodyRenderer;
 use Src\Platform\Infrastructure\Listeners\DropSuppressedRecipients;
 use Src\Platform\Infrastructure\Listeners\RecordScheduledTaskEvents;
 use Src\Platform\Infrastructure\Mail\MailPortalAlerts;
+use Src\Platform\Infrastructure\Mail\MailQueueAlerts;
 use Src\Platform\Infrastructure\Mail\MailSchedulerAlerts;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseEmailSuppressionRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseEmailTemplateOverrideRepository;
 use Src\Platform\Infrastructure\Persistence\DatabasePortals;
+use Src\Platform\Infrastructure\Persistence\DatabaseQueueAlertRepository;
+use Src\Platform\Infrastructure\Persistence\DatabaseQueueHealth;
 use Src\Platform\Infrastructure\Persistence\DatabaseScheduledTaskRunRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseSettingsStore;
 use Src\Platform\Infrastructure\Portal\EncryptedPortalPreviewTokens;
@@ -98,6 +105,9 @@ final class PlatformServiceProvider extends ContextServiceProvider
         ScheduledTaskRunRepository::class => DatabaseScheduledTaskRunRepository::class,
         ScheduledTasks::class => LaravelScheduledTasks::class,
         SchedulerAlerts::class => MailSchedulerAlerts::class,
+        QueueHealth::class => DatabaseQueueHealth::class,
+        QueueAlertRepository::class => DatabaseQueueAlertRepository::class,
+        QueueAlerts::class => MailQueueAlerts::class,
         PortalAlerts::class => MailPortalAlerts::class,
         Portals::class => DatabasePortals::class,
         PortalPreviewTokens::class => EncryptedPortalPreviewTokens::class,
@@ -131,7 +141,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         });
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
-            $catalog->add(...SchedulerEmailTemplates::definitions(), ...PortalEmailTemplates::definitions());
+            $catalog->add(...SchedulerEmailTemplates::definitions(), ...QueueEmailTemplates::definitions(), ...PortalEmailTemplates::definitions());
         });
 
         $this->commands([PurgeAuditLogsCommand::class, CheckScheduledTasksCommand::class, RecordSchedulerTickCommand::class, CheckPortalCommand::class]);
