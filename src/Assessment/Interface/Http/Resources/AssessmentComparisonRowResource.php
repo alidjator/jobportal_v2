@@ -43,9 +43,9 @@ final class AssessmentComparisonRowResource extends JsonResource
             'band' => $skill ? $assessment->band?->value : null,
             /** how many integrity signals the attempt raised, as a tier (`none`, `some`, `major`) */
             'integrity_tier' => $assessment->integrityTier?->value,
-            /** @var list<array{title: string, percentage: float|null}>|null one cell per section of the compared test, in the order of the columns; null for another test */
+            /** one cell per section of the compared test, in the order of the columns; null for another test */
             'sections' => $row->sections,
-            /** @var list<array{scale: string, band: string|null}>|null the bands of a signed battery, one per scale; null before signing and for another test */
+            /** the bands of a signed battery, one per scale; null before signing and for another test */
             'scales' => $row->scales,
             'report_number' => $assessment->reportNumber,
             /** how well the applicant fitted the job when applying, 0 to 100 */
