@@ -34,6 +34,7 @@ use Src\Recruitment\Application\PoolApplicationReader;
 use Src\Recruitment\Application\ProcessApplication;
 use Src\Recruitment\Application\ProvisionDefaultStages;
 use Src\Recruitment\Application\RecruiterApplicationReader;
+use Src\Recruitment\Application\RecruiterJobRoster;
 use Src\Recruitment\Application\RecruitmentEmailTemplates;
 use Src\Recruitment\Application\RecruitmentPoolApplications;
 use Src\Recruitment\Application\RecruitmentSettings;
@@ -243,6 +244,7 @@ use Src\Shared\Application\Recruitment\DefaultStageProvisioner;
 use Src\Shared\Application\Recruitment\HiringManagerBoundary;
 use Src\Shared\Application\Recruitment\JobApplications;
 use Src\Shared\Application\Recruitment\JobHires;
+use Src\Shared\Application\Recruitment\JobRoster;
 use Src\Shared\Application\Recruitment\PoolApplications;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
@@ -268,6 +270,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ScreeningQuestionUsage::class => DatabaseApplicationUsage::class,
         JobApplicationCheck::class => DatabaseApplicationUsage::class,
         JobApplications::class => DatabaseApplicationUsage::class,
+        JobRoster::class => RecruiterJobRoster::class,
         JobHires::class => DatabaseJobHires::class,
         CompanyStages::class => RepositoryCompanyStages::class,
         ApplicationAdvancer::class => ProcessApplication::class,

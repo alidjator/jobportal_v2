@@ -1,4 +1,4 @@
-# Phase 8: default tests per job stage, automatic advance and comparing assessment results (designed 2026-10-14; sections 1 and 2 coded 2026-10-23, section 3 not coded)
+# Phase 8: default tests per job stage, automatic advance and comparing assessment results (designed 2026-10-14; sections 1 and 2 coded 2026-10-23, section 3 coded 2026-10-31)
 
 Gaps found against Mekari Talenta's stage automation ("Assign assessment test", auto-move by score threshold; help center article 34576595122073),
 chosen by the user from the advice of 2026-10-14. Not taken: auto-reject by score (the decision of `phase-8-rejections.md`), "unpublish" (the
@@ -94,6 +94,22 @@ exists), `updated_by` RESTRICT, unique `job_id` + `stage_id`), `assessment_job_s
   admins included whether assigned or not, the set `InvitationChecks::assertAssessors` accepts (at most 5 are chosen per test).
 - **Front end:** the "Acak soal" label is a front-end label for `draw_count`, no API change.
 
+
+## Coded: section 3 (2026-10-31, #22)
+
+No migration. `GET company/jobs/{id}/assessment-results` (`AssessmentComparisonController`), for a member who holds `assessments.send` and may see the job's applications (the roster comes from the new shared port
+`JobRoster`, provided by Recruitment: `RecruiterJobRoster` applies the same scope as the interview comparison, including the bound hiring manager). Interpretations:
+
+- **Filters.** `filter[stage_type]` is the application's stage type (the active applications when left out). `filter[stage_id]` is the assessment stage the **test was sent in** (`assessment_invitations.stage_id`), not the
+  stage the application is in. `filter[test_id]` picks the test; without it the test that is the latest of most rows gives the columns (the oldest test among equals). Unknown filters and sorts are 422.
+- **Rows.** The latest submitted invitation of each application (newest submission), after the stage and test filters. Rows of another test than the columns keep their status, percentage and band but have `sections: null` and
+  `scales: null`. The response carries `test {id, name, kind}` and `columns` (section titles of a skill test; scale names of a battery), both empty or null when nobody has a submitted test; a `filter[test_id]` that no
+  row uses answers an empty list without naming the test.
+- **Cells.** A section's percentage is points earned over its maximum; a speed section uses correct over attempted; null when there is nothing to divide.
+- **Battery.** `awaiting_psychologist_review` with no scales, no report number and no percentage until the report is signed; then `scales [{scale, band}]` (band null when no norm applies) and `report_number`.
+- **Sort.** `percentage` (default), `submitted_at`, `match_score`, highest first, missing last; a battery has no percentage, so its default is `submitted_at`. Rows also carry `match_score`, `rating_average` and `interview_score`
+  (the average of the latest interview with a sent scorecard; null while the caller is on the panel without a sent scorecard).
+- **Not coded:** the team may also see the results as an assessor of one invitation (`GET .../result`); the comparison needs `assessments.send`.
 
 ## Changes in short
 

@@ -51,6 +51,7 @@ use Src\Assessment\Domain\RecommendationRuleRepository;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionRepository;
+use Src\Assessment\Domain\SubmittedAssessmentReader;
 use Src\Assessment\Domain\TestRepository;
 use Src\Assessment\Domain\VideoTakeRepository;
 use Src\Assessment\Infrastructure\Calendar\AssessmentDueCalendarSource;
@@ -84,6 +85,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseRecommendationRuleReposito
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportTemplateRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseSubmittedAssessmentReader;
 use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
 use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
@@ -132,6 +134,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
+        SubmittedAssessmentReader::class => DatabaseSubmittedAssessmentReader::class,
         JobStageTestRepository::class => DatabaseJobStageTestRepository::class,
         AssessmentInvitations::class => AssessmentInvitationService::class,
         TestEmailSender::class => MailTestSender::class,
