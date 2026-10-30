@@ -4,6 +4,7 @@ namespace Src\Recruitment\Infrastructure\Voice;
 
 use Psr\Log\LoggerInterface;
 use Src\Recruitment\Application\Voice\HandleAriEvent;
+use Src\Recruitment\Application\Voice\VoiceEventStream;
 use Src\Recruitment\Application\Voice\VoiceNames;
 use Throwable;
 use WebSocket\Client;
@@ -15,7 +16,7 @@ use WebSocket\Message\Text;
  * It runs for as long as the connection lives and returns when the connection is lost; the command that owns it reconnects. One bad event is logged and
  * skipped, never the end of the listener.
  */
-final readonly class AriEventListener
+final readonly class AriEventListener implements VoiceEventStream
 {
     public function __construct(
         private HandleAriEvent $handler,
@@ -25,13 +26,11 @@ final readonly class AriEventListener
         private ?string $password,
     ) {}
 
-    /** Whether the voice server is configured at all. */
     public function isConfigured(): bool
     {
         return filled($this->ariUrl) && filled($this->user) && filled($this->password);
     }
 
-    /** Connects and listens until the connection ends. */
     public function listen(): void
     {
         $client = new Client($this->streamUrl());

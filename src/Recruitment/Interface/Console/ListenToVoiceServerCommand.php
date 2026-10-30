@@ -3,7 +3,7 @@
 namespace Src\Recruitment\Interface\Console;
 
 use Illuminate\Console\Command;
-use Src\Recruitment\Infrastructure\Voice\AriEventListener;
+use Src\Recruitment\Application\Voice\ListenToVoiceServer;
 use Throwable;
 
 /**
@@ -19,9 +19,9 @@ final class ListenToVoiceServerCommand extends Command
     /** Seconds to wait before connecting again after the connection was lost. */
     private const int RECONNECT_SECONDS = 3;
 
-    public function handle(AriEventListener $listener): int
+    public function handle(ListenToVoiceServer $listen): int
     {
-        if (! $listener->isConfigured()) {
+        if (! $listen->isConfigured()) {
             $this->error('The voice server is not configured (ASTERISK_ARI_URL, ASTERISK_ARI_USER, ASTERISK_ARI_PASSWORD).');
 
             return self::FAILURE;
@@ -30,7 +30,7 @@ final class ListenToVoiceServerCommand extends Command
         // Runs until Supervisor stops it.
         while (true) { // @phpstan-ignore while.alwaysTrue
             try {
-                $listener->listen();
+                $listen->execute();
             } catch (Throwable $e) {
                 $this->warn('Voice server connection lost: '.$e->getMessage());
             }
