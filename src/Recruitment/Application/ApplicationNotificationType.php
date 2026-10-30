@@ -19,6 +19,12 @@ final class ApplicationNotificationType
 
     public const string REJECTED = 'application.rejected';
 
+    /** A rejection that waited its undo window was dropped because the application had left its stage meanwhile (or its requester could no longer reject): the requester is told (team, in-app only). */
+    public const string REJECTION_DROPPED = 'rejection.dropped';
+
+    /** "Reject the remaining" finished: how many applications were rejected (or are waiting their undo window) and how many were skipped. Sent to the member who asked (team, in-app only). */
+    public const string REJECT_REMAINING_DONE = 'applications.reject_remaining_done';
+
     /** A hire brought the job's hires up to its vacancies: the job's assignees are told, and the client opens the "mark as filled" dialog (team, in-app only). */
     public const string JOB_FILLED = 'job.filled';
 

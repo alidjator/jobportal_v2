@@ -2,6 +2,8 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\PendingRejection;
+
 /**
  * The detail of an application for the company's team, with the names the history needs: the company's stage names by stage id (a deleted stage is missing)
  * and the names of the team members that moved it, by account id.
@@ -31,5 +33,7 @@ final readonly class CompanyApplicationView
         public bool $emailDeliverable = true,
         public ?string $candidateSlug = null,
         public bool $candidateHasAvatar = false,
+        /** The rejection that waits its undo window, if any; the application stays in its stage until it takes effect. */
+        public ?PendingRejection $pendingRejection = null,
     ) {}
 }

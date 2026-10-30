@@ -36,6 +36,7 @@ final readonly class FillJob
         private Settings $settings,
         private EventDispatcher $events,
         private Clock $clock,
+        private RejectionWindow $window,
     ) {}
 
     /**
@@ -65,15 +66,17 @@ final readonly class FillJob
             $this->closer->close($actor, $jobId, $ipAddress, $userAgent);
         }
 
-        $items = array_map(fn (int $id): BulkItemResult => $this->reject($actor, $member, $jobId, $id, $note), $applicationIds);
-        $rejected = count(array_filter($items, static fn (BulkItemResult $item): bool => $item->wasMoved()));
+        $batchId = $applicationIds === [] ? null : $this->window->newBatchId($actor);
+        $items = array_map(fn (int $id): BulkItemResult => $this->reject($actor, $member, $jobId, $id, $note, $batchId), $applicationIds);
+        // A rejection that waits its undo window counts as rejected: it is on its way and the team can still undo it.
+        $rejected = count(array_filter($items, static fn (BulkItemResult $item): bool => $item->code === null));
 
         $this->events->dispatch([new JobFillHandled($jobId, $member->companyId, $member->userId, $close, $rejected, count($items) - $rejected, $ipAddress, $userAgent, $this->clock->now())]);
 
         return new FillJobResult($this->jobs->statusOf($jobId) ?? '', $items);
     }
 
-    private function reject(Actor $actor, RecruitmentMember $member, int $jobId, int $applicationId, ?string $note): BulkItemResult
+    private function reject(Actor $actor, RecruitmentMember $member, int $jobId, int $applicationId, ?string $note, ?string $batchId): BulkItemResult
     {
         $application = $this->applications->find($applicationId);
 
@@ -82,13 +85,13 @@ final readonly class FillJob
         }
 
         try {
-            $this->process->reject($actor, $applicationId, RejectionReason::PositionFilled, $note, sparePendingOffer: true);
+            $pending = $this->window->request($actor, $applicationId, RejectionReason::PositionFilled, $note, sparePendingOffer: true, batchId: $batchId);
         } catch (StateConflict|BusinessRuleViolation $error) {
             return new BulkItemResult($applicationId, $error->errorCode());
         } catch (EntityNotFound) {
             return new BulkItemResult($applicationId, 'application-not-found');
         }
 
-        return new BulkItemResult($applicationId);
+        return new BulkItemResult($applicationId, commitAt: $pending?->commitAt, batchId: $pending?->batchId);
     }
 }

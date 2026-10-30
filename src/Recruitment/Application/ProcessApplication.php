@@ -15,6 +15,7 @@ use Src\Recruitment\Domain\Interview;
 use Src\Recruitment\Domain\InterviewRepository;
 use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\OfferRepository;
+use Src\Recruitment\Domain\PendingRejectionRepository;
 use Src\Recruitment\Domain\RejectionReason;
 use Src\Recruitment\Domain\Stage;
 use Src\Recruitment\Domain\StageRepository;
@@ -72,6 +73,7 @@ final readonly class ProcessApplication implements ApplicationAdvancer
         private Clock $clock,
         private CandidateMessageRules $messageRules,
         private WatchJobFill $fill,
+        private PendingRejectionRepository $pending,
     ) {}
 
     public function advance(int $applicationId, int $fromStageId, int $toStageId, string $note, int $senderUserId): bool
@@ -181,6 +183,37 @@ final readonly class ProcessApplication implements ApplicationAdvancer
     }
 
     /**
+     * Checks that the application can be rejected now, without rejecting it: the member sees it, its job is not taken down, it is not final and (when asked) has no pending offer. The rejection
+     * that waits its undo window is stored only after this passes, so the team learns of a refusal at once and not when the window is over.
+     *
+     * @throws EntityNotFound
+     * @throws StateConflict `job-taken-down`, `application-final`, `offer-pending` (with `$sparePendingOffer`) or `applications-unavailable`
+     */
+    public function assertRejectable(RecruitmentMember $member, int $applicationId, bool $sparePendingOffer = false): Application
+    {
+        $application = $this->applications->find($applicationId) ?? throw EntityNotFound::of('Application', $applicationId);
+        $this->applicationAccess->assertCanSee($member, $applicationId, $application->companyId, $application->jobId);
+
+        if ($this->jobs->isTakenDown($application->jobId)) {
+            throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');
+        }
+
+        if ($application->stageType->isTerminal()) {
+            throw new StateConflict('This application is final and cannot be moved.', 'application-final');
+        }
+
+        if ($sparePendingOffer) {
+            $this->assertNoPendingOffer($application);
+        }
+
+        if (! $this->defaultStage($application->companyId, StageType::Rejected) instanceof Stage) {
+            throw new StateConflict('This company cannot reject applications right now.', 'applications-unavailable');
+        }
+
+        return $application;
+    }
+
+    /**
      * @param  callable(Application, RecruitmentMember): array{0: Application, 1: ?RejectionReason, 2: ?string, 3: list<DomainEvent>, 4: ?HireDetails}  $change
      * @return bool whether the change filled the job
      */
@@ -191,6 +224,11 @@ final readonly class ProcessApplication implements ApplicationAdvancer
         $events = $this->transactions->run(function () use ($member, $applicationId, $change): array {
             $before = $this->applications->find($applicationId, forUpdate: true) ?? throw EntityNotFound::of('Application', $applicationId);
             $this->applicationAccess->assertCanSee($member, $applicationId, $before->companyId, $before->jobId);
+
+            // A rejection waiting its undo window holds the application where it is; the commit removes the pending row first, so it is the one move that passes.
+            if ($this->pending->exists($applicationId)) {
+                throw new StateConflict('This application waits to be rejected: undo that first.', 'rejection-pending');
+            }
 
             if ($this->jobs->isTakenDown($before->jobId)) {
                 throw new StateConflict('This job was taken down, so its applications can no longer be processed.', 'job-taken-down');

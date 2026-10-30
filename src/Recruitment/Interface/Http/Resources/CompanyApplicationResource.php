@@ -32,6 +32,8 @@ final class CompanyApplicationResource extends JsonResource
             ],
             /** False when the applicant's email address no longer receives email: reach them by phone or chat. Never says why. */
             'email_deliverable' => $row->emailDeliverable,
+            /** The rejection that waits its undo window, or null: the application stays in its stage until `commit_at`, and `DELETE company/applications/{id}/pending-rejection` takes the rejection back. */
+            'pending_rejection' => $row->pendingRejection === null ? null : ['commit_at' => $row->pendingRejection->commitAt->format(DATE_ATOM), 'requested_by' => $row->pendingRejection->requestedByUserId, 'batch_id' => $row->pendingRejection->batchId],
             'meets_must_have' => $row->meetsMustHave,
             /** how well the applicant fitted the job when applying, 0 to 100; null when the job gave too little to judge */
             'match_score' => $row->matchScore,

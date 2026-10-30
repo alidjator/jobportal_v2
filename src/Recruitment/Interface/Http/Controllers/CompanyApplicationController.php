@@ -13,6 +13,7 @@ use Src\Recruitment\Application\GetCompanyApplicationResume;
 use Src\Recruitment\Application\ListCompanyApplications;
 use Src\Recruitment\Application\ListJobApplications;
 use Src\Recruitment\Application\ProcessApplication;
+use Src\Recruitment\Application\RejectionWindow;
 use Src\Recruitment\Application\UpdateApplicationHire;
 use Src\Recruitment\Application\WithdrawApplicationByTeam;
 use Src\Recruitment\Interface\Http\CsvDownload;
@@ -28,6 +29,7 @@ use Src\Recruitment\Interface\Http\Requests\UpdateApplicationHireRequest;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicantResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationDetailResource;
 use Src\Recruitment\Interface\Http\Resources\CompanyApplicationResource;
+use Src\Recruitment\Interface\Http\Resources\PendingRejectionResource;
 use Src\Recruitment\Interface\Http\Resources\StageCountResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -81,11 +83,19 @@ final class CompanyApplicationController extends ApiController
         return response()->json(['meta' => ['job_filled' => $filled]]);
     }
 
-    public function reject(RejectApplicationRequest $request, int $id, ActorResolver $actors, ProcessApplication $process): Response
+    /**
+     * Rejects the application: 204 when it took effect at once, or 202 with the rejection waiting its undo window when the company has one (`data.commit_at` says until when;
+     * `DELETE company/applications/{id}/pending-rejection` takes it back).
+     */
+    public function reject(RejectApplicationRequest $request, int $id, ActorResolver $actors, RejectionWindow $window): Response|JsonResponse
     {
-        $process->reject($actors->fromRequest($request), $id, $request->reason(), $request->note());
+        $pending = $window->request($actors->fromRequest($request), $id, $request->reason(), $request->note());
 
-        return response()->noContent();
+        if ($pending === null) {
+            return response()->noContent();
+        }
+
+        return (new PendingRejectionResource($pending))->response()->setStatusCode(JsonResponse::HTTP_ACCEPTED);
     }
 
     public function updateHire(UpdateApplicationHireRequest $request, int $id, ActorResolver $actors, UpdateApplicationHire $update): Response

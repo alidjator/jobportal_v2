@@ -34,6 +34,8 @@ final class CompanyApplicationDetailResource extends JsonResource
             'stage' => ['id' => $data->stageId, 'type' => $data->stageType->value, 'name' => $view->stageName],
             /** False when the applicant's email address no longer receives email: reach them by phone or chat. Never says why. */
             'email_deliverable' => $view->emailDeliverable,
+            /** The rejection that waits its undo window, or null: the application stays in its stage until `commit_at`, and `DELETE company/applications/{id}/pending-rejection` takes the rejection back. */
+            'pending_rejection' => $view->pendingRejection === null ? null : ['commit_at' => $view->pendingRejection->commitAt->format(DATE_ATOM), 'requested_by' => $view->pendingRejection->requestedByUserId, 'batch_id' => $view->pendingRejection->batchId],
             /** The slug of the applicant's current profile (`GET company/candidates/{slug}`), only while they can be found; null otherwise, and for a member who sits only on an interview panel. */
             'candidate_slug' => $view->candidateSlug,
             /** Whether the profile at `candidate_slug` has a picture (`GET company/candidates/{slug}/avatar`); false when there is no slug. */

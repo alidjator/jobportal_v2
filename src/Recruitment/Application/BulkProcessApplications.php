@@ -49,6 +49,7 @@ final readonly class BulkProcessApplications
         private JobDirectory $jobs,
         private Settings $settings,
         private Clock $clock,
+        private RejectionWindow $window,
     ) {}
 
     /**
@@ -103,7 +104,23 @@ final readonly class BulkProcessApplications
         $this->selection($member, $jobId, $applicationIds);
         $note = $this->process->rejectionNote($reason, $note);
 
-        return array_map(fn (int $id): BulkItemResult => $this->run(fn () => $this->process->reject($actor, $id, $reason, $note), $id), $applicationIds);
+        $batchId = $this->window->newBatchId($actor);
+
+        return array_map(fn (int $id): BulkItemResult => $this->rejectOne($actor, $id, $reason, $note, $batchId), $applicationIds);
+    }
+
+    /** One rejection of a bulk action: at once, or waiting its undo window together with the rest of the batch. */
+    private function rejectOne(Actor $actor, int $applicationId, RejectionReason $reason, ?string $note, ?string $batchId): BulkItemResult
+    {
+        try {
+            $pending = $this->window->request($actor, $applicationId, $reason, $note, batchId: $batchId);
+        } catch (StateConflict|BusinessRuleViolation $error) {
+            return new BulkItemResult($applicationId, $error->errorCode());
+        } catch (EntityNotFound) {
+            return new BulkItemResult($applicationId, 'application-not-found');
+        }
+
+        return new BulkItemResult($applicationId, commitAt: $pending?->commitAt, batchId: $pending?->batchId);
     }
 
     /** @param  callable(): (bool|void)  $action  true when the action filled the job */

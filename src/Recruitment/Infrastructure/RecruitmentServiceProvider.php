@@ -54,13 +54,16 @@ use Src\Recruitment\Application\Video\RecordingSignal;
 use Src\Recruitment\Application\Video\RecordingVolume;
 use Src\Recruitment\Application\Video\VideoRoomGateway;
 use Src\Recruitment\Application\Voice\HandleAriEvent;
+use Src\Recruitment\Application\Voice\VoiceEventStream;
 use Src\Recruitment\Application\Voice\VoiceGateway;
 use Src\Recruitment\Domain\ApplicantDataEraser;
+use Src\Recruitment\Domain\ApplicationCheckRepository;
 use Src\Recruitment\Domain\ApplicationFacetRepository;
 use Src\Recruitment\Domain\ApplicationJobSnapshots;
 use Src\Recruitment\Domain\ApplicationNoteRepository;
 use Src\Recruitment\Domain\ApplicationRatingRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\CheckTypeRepository;
 use Src\Recruitment\Domain\Events\ApplicantsExported;
 use Src\Recruitment\Domain\Events\ApplicationHireUpdated;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
@@ -74,6 +77,7 @@ use Src\Recruitment\Domain\Events\JobFillHandled;
 use Src\Recruitment\Domain\Events\OfferChanged;
 use Src\Recruitment\Domain\Events\RecordingConverted;
 use Src\Recruitment\Domain\Events\RecordingStopped;
+use Src\Recruitment\Domain\Events\RejectRemainingRequested;
 use Src\Recruitment\Domain\Events\ReviewCompleted;
 use Src\Recruitment\Domain\Events\ReviewRequested;
 use Src\Recruitment\Domain\Events\VoiceRecordingStopped;
@@ -86,6 +90,7 @@ use Src\Recruitment\Domain\JobKitDefaults;
 use Src\Recruitment\Domain\JobQuestionRepository;
 use Src\Recruitment\Domain\OfferLetterUploadRepository;
 use Src\Recruitment\Domain\OfferRepository;
+use Src\Recruitment\Domain\PendingRejectionRepository;
 use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\ScorecardEraser;
 use Src\Recruitment\Domain\ScorecardRepository;
@@ -126,6 +131,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyOfPanelAnswerListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfReviewsListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfWithdrawalListener;
 use Src\Recruitment\Infrastructure\Listeners\RecordRecruitmentAuditEntries;
+use Src\Recruitment\Infrastructure\Listeners\RejectRemainingListener;
 use Src\Recruitment\Infrastructure\Listeners\StoreRecordingWhenConverted;
 use Src\Recruitment\Infrastructure\Listeners\StoreVoiceRecordingWhenStopped;
 use Src\Recruitment\Infrastructure\Mail\MailApplicantSender;
@@ -137,12 +143,14 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantApplicationReade
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantDataEraser;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantNormData;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicantRelations;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationCheckRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationFacetRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationJobSnapshots;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationNoteRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRatingRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseApplicationUsage;
+use Src\Recruitment\Infrastructure\Persistence\DatabaseCheckTypeRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseHireExportReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseHiringManagerVisibility;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseInterviewKitRepository;
@@ -156,6 +164,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseJobQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseMyInterviewReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferLetterUploadRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseOfferRepository;
+use Src\Recruitment\Infrastructure\Persistence\DatabasePendingRejectionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabasePoolApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseRecruiterApplicationReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseReviewRequestRepository;
@@ -195,6 +204,7 @@ use Src\Recruitment\Interface\Console\BackfillJobSnapshotsCommand;
 use Src\Recruitment\Interface\Console\BuildApplicationFacetsCommand;
 use Src\Recruitment\Interface\Console\CloseVideoRoomsCommand;
 use Src\Recruitment\Interface\Console\CloseVoiceSessionsCommand;
+use Src\Recruitment\Interface\Console\CommitRejectionsCommand;
 use Src\Recruitment\Interface\Console\ListenToVoiceServerCommand;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
@@ -270,6 +280,9 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         ApplicationFacetRepository::class => DatabaseApplicationFacetRepository::class,
         ApplicationJobSnapshots::class => DatabaseApplicationJobSnapshots::class,
         ApplicationNoteRepository::class => DatabaseApplicationNoteRepository::class,
+        ApplicationCheckRepository::class => DatabaseApplicationCheckRepository::class,
+        CheckTypeRepository::class => DatabaseCheckTypeRepository::class,
+        PendingRejectionRepository::class => DatabasePendingRejectionRepository::class,
         ApplicationRatingRepository::class => DatabaseApplicationRatingRepository::class,
         InterviewRepository::class => DatabaseInterviewRepository::class,
         InterviewKitRepository::class => DatabaseInterviewKitRepository::class,
@@ -330,6 +343,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $this->service($app, 'asterisk.ari_user'),
             $this->service($app, 'asterisk.ari_password'),
         ));
+        $this->app->bind(VoiceEventStream::class, fn ($app): VoiceEventStream => $app->make(AriEventListener::class));
         $this->app->bind(OfferLetters::class, fn ($app): OfferLetters => new OfferLetters(
             $app->make(OfferRepository::class),
             $app->make(OfferLetterUploadRepository::class),
@@ -411,9 +425,10 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class]);
+        $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class, CommitRejectionsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(CommitRejectionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(SendInterviewRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(SendStartingSoonRemindersCommand::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command(SendReviewNoticesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
@@ -471,6 +486,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(ApplicationHireUpdated::class, [NotifyApplicantOfHireUpdateListener::class, 'email']);
         Event::listen(ApplicationHireUpdated::class, [RecordRecruitmentAuditEntries::class, 'onHireUpdated']);
         Event::listen(JobFilled::class, NotifyAssigneesOfJobFilled::class);
+        Event::listen(RejectRemainingRequested::class, RejectRemainingListener::class);
         Event::listen(JobFillHandled::class, [RecordRecruitmentAuditEntries::class, 'onJobFillHandled']);
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'inApp']);
         Event::listen(ReviewRequested::class, [NotifyOfReviewsListener::class, 'requestedInApp']);

@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\PendingRejectionRepository;
 use Src\Recruitment\Domain\StageMoveActor;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
@@ -35,6 +36,7 @@ final readonly class GetCompanyApplication
         private Clock $clock,
         private ApplicantContacts $contacts,
         private CandidateDirectory $candidates,
+        private PendingRejectionRepository $pending,
     ) {}
 
     /**
@@ -97,6 +99,7 @@ final readonly class GetCompanyApplication
             $this->contacts->undeliverable([$data->userId]) === [],
             $candidate?->slug,
             $candidate->hasAvatar ?? false,
+            $this->pending->findByApplication($id),
         );
     }
 

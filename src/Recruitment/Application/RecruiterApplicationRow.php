@@ -4,6 +4,7 @@ namespace Src\Recruitment\Application;
 
 use DateTimeImmutable;
 use Src\Recruitment\Domain\HireDetails;
+use Src\Recruitment\Domain\PendingRejection;
 use Src\Recruitment\Domain\StageType;
 
 /**
@@ -53,7 +54,15 @@ final readonly class RecruiterApplicationRow
         public int $userId = 0,
         /** False when the applicant's address is on the suppression list; never says why. */
         public bool $emailDeliverable = true,
+        /** The rejection that waits its undo window (`docs/design/phase-8-rejections.md` section 2); the application stays in its stage until it takes effect. */
+        public ?PendingRejection $pendingRejection = null,
     ) {}
+
+    /** The row with the rejection that waits its undo window, if any. */
+    public function withPendingRejection(?PendingRejection $pending): self
+    {
+        return $this->with(pendingRejection: $pending);
+    }
 
     /** The row with whether the applicant's email address still receives email. */
     public function withEmailDeliverable(bool $deliverable): self

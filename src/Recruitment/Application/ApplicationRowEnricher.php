@@ -3,6 +3,7 @@
 namespace Src\Recruitment\Application;
 
 use Src\Recruitment\Domain\InterviewRsvps;
+use Src\Recruitment\Domain\PendingRejectionRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Pagination\Page;
@@ -19,6 +20,7 @@ final readonly class ApplicationRowEnricher
         private ApplicationReviews $reviews,
         private OtherApplications $others,
         private ApplicantContacts $contacts,
+        private PendingRejectionRepository $pending,
     ) {}
 
     /**
@@ -34,9 +36,10 @@ final readonly class ApplicationRowEnricher
         $finalIds = array_values(array_map(static fn (RecruiterApplicationRow $row): int => $row->id, array_filter($page->items, static fn (RecruiterApplicationRow $row): bool => $row->stageType->isTerminal() || $row->stageType === StageType::Hired)));
         $summaries = $this->reviews->summaries($ids, $member->userId, $finalIds);
         $undeliverable = array_flip($this->contacts->undeliverable(array_values(array_unique(array_map(static fn (RecruiterApplicationRow $row): int => $row->userId, $page->items)))));
+        $waiting = $this->pending->forApplications($ids);
 
         return new Page(
-            array_map(static fn (RecruiterApplicationRow $row): RecruiterApplicationRow => $row->withInterviewResult($results[$row->id] ?? null)->withOtherApplications($others[$row->id] ?? 0)->withInterviewRsvp($answers[$row->id] ?? null)->withReviewSummary($summaries[$row->id] ?? null)->withEmailDeliverable(! isset($undeliverable[$row->userId])), $page->items),
+            array_map(static fn (RecruiterApplicationRow $row): RecruiterApplicationRow => $row->withInterviewResult($results[$row->id] ?? null)->withOtherApplications($others[$row->id] ?? 0)->withInterviewRsvp($answers[$row->id] ?? null)->withReviewSummary($summaries[$row->id] ?? null)->withEmailDeliverable(! isset($undeliverable[$row->userId]))->withPendingRejection($waiting[$row->id] ?? null), $page->items),
             $page->total,
             $page->request,
         );
