@@ -4,6 +4,8 @@ namespace Src\Recruitment\Application;
 
 use Psr\Log\LoggerInterface;
 use Src\Recruitment\Domain\Application;
+use Src\Recruitment\Domain\CheckType;
+use Src\Recruitment\Domain\CheckTypeRepository;
 use Src\Recruitment\Domain\LetterSource;
 use Src\Recruitment\Domain\Offer;
 use Src\Recruitment\Domain\OfferLetter;
@@ -34,6 +36,7 @@ final readonly class OfferLetters
         private CompanyLetterheads $letterheads,
         private CompanyMemberAccounts $members,
         private ApplicantContacts $contacts,
+        private CheckTypeRepository $checkTypes,
         private FileStorage $files,
         private Clock $clock,
         private LoggerInterface $logger,
@@ -100,6 +103,7 @@ final readonly class OfferLetters
             $sender === null ? '' : $sender->name,
             $this->platformName,
             $this->clock->now(),
+            array_map(static fn (CheckType $type): string => $type->name, array_values($this->checkTypes->byIds($offer->conditionCheckTypeIds))),
         );
     }
 

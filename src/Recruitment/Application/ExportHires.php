@@ -30,6 +30,7 @@ final readonly class ExportHires
         'Application ID', 'Hired at', 'Join date', 'Name', 'Email', 'Phone', 'City', 'Job ID', 'Job title',
         'Offer position', 'Offer salary (IDR)', 'Offer start date', 'Offer accepted at',
         'Employment type', 'Contract months', 'Probation months', 'Work mode', 'Work location', 'Salary basis', 'Allowances total (IDR)', 'Allowances', 'Benefits',
+        'Checks completed',
     ];
 
     public function __construct(
@@ -125,6 +126,7 @@ final readonly class ExportHires
             $offer === null ? '' : $offer->startDate->format('Y-m-d'),
             $offer === null ? '' : $offer->acceptedAt->format('Y-m-d\TH:i:s\Z'),
             ...$this->termCells($offer?->terms),
+            $hire->checksCompleted === null ? '' : ($hire->checksCompleted ? 'yes' : 'no'),
         ];
     }
 

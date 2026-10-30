@@ -33,6 +33,7 @@ final readonly class DatabaseHireExportReader implements HireExportReader
         foreach (array_chunk($ids, self::CHUNK) as $chunk) {
             $rows = $this->selection($filter)->whereIn('a.id', $chunk)->get(['a.id', 'a.job_id', 'a.join_date', 'a.profile_snapshot', 'h.hired_at'])->keyBy('id');
             $offers = $this->offers($chunk);
+            $checks = $this->checksCompleted($chunk);
 
             foreach ($chunk as $id) {
                 $row = $rows[$id] ?? null;
@@ -52,6 +53,7 @@ final readonly class DatabaseHireExportReader implements HireExportReader
                         $snapshot['phone'] ?? null,
                         $snapshot['location']['city'] ?? null,
                         $offers[$id] ?? null,
+                        $checks[$id] ?? null,
                     );
                 }
             }
@@ -102,6 +104,27 @@ final readonly class DatabaseHireExportReader implements HireExportReader
         }
 
         return $offers;
+    }
+
+    /**
+     * Whether every check of each application is completed or waived; an application whose only checks were cancelled, or that has none, is left out. The outcomes are never read.
+     *
+     * @param  list<int>  $applicationIds
+     * @return array<int, bool>
+     */
+    private function checksCompleted(array $applicationIds): array
+    {
+        $done = [];
+
+        foreach ($this->connection->table('recruitment_application_checks')
+            ->whereIn('application_id', $applicationIds)
+            ->where('status', '!=', 'cancelled')
+            ->get(['application_id', 'status']) as $check) {
+            $id = (int) $check->application_id;
+            $done[$id] = ($done[$id] ?? true) && in_array($check->status, ['completed', 'waived'], true);
+        }
+
+        return $done;
     }
 
     private function time(string $value): DateTimeImmutable

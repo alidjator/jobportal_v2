@@ -209,7 +209,7 @@ final class ProcessApplicationTest extends FeatureTestCase
 
     public function test_every_reason_works_and_the_note_rules_hold(): void
     {
-        $reasons = ['qualifications_mismatch', 'experience_insufficient', 'salary_expectation_mismatch', 'location_mismatch', 'failed_screening', 'position_filled'];
+        $reasons = ['qualifications_mismatch', 'experience_insufficient', 'salary_expectation_mismatch', 'location_mismatch', 'failed_screening', 'position_filled', 'failed_pre_employment_check'];
 
         foreach ($reasons as $index => $reason) {
             $job = $this->insertJob('Job '.$index, 'active', [$this->recruiterId], attributes: ['deadline' => '2026-12-31']);

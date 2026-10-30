@@ -11,6 +11,7 @@ enum RejectionReason: string
     case LocationMismatch = 'location_mismatch';
     case FailedScreening = 'failed_screening';
     case PositionFilled = 'position_filled';
+    case FailedPreEmploymentCheck = 'failed_pre_employment_check';
     case Other = 'other';
 
     /** `other` needs a text note; the others may carry one. */

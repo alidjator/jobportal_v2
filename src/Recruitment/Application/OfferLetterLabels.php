@@ -47,6 +47,7 @@ final class OfferLetterLabels
         'benefits' => 'Benefit',
         'note' => 'Catatan',
         'deadline' => 'Mohon jawab penawaran ini sebelum',
+        'condition' => 'Penawaran ini bergantung pada hasil %s.',
         'issued_by' => 'Diterbitkan oleh %s melalui %s',
     ];
 
@@ -78,6 +79,7 @@ final class OfferLetterLabels
         'benefits' => 'Benefits',
         'note' => 'Note',
         'deadline' => 'Please answer this offer before',
+        'condition' => 'This offer depends on the result of %s.',
         'issued_by' => 'Issued by %s through %s',
     ];
 }

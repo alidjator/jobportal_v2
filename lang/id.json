@@ -666,6 +666,7 @@
     "The battery needs a report template.": "Baterai tes memerlukan templat laporan.",
     "The battery needs an explanation template.": "Baterai tes memerlukan templat penjelasan.",
     "The benefit :benefit does not exist or is not active.": "Benefit :benefit tidak ada atau tidak aktif.",
+    "The check type :type does not exist or is not in use.": "Jenis cek :type tidak ada atau tidak dipakai.",
     "The body is required.": "Isi wajib diisi.",
     "The body may be at most :max characters.": "Isi dapat berisi paling banyak :max karakter.",
     "The body must contain: :variables.": "Isi harus memuat: :variables.",

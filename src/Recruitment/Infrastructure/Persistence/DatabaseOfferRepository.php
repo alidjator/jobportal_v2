@@ -66,6 +66,8 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             'status' => $offer->status->value,
             'active_key' => $offer->status->isActive() ? $offer->applicationId : null,
             ...$this->termColumns($offer->terms),
+            'conditional_on_checks' => $offer->isConditional(),
+            'condition_check_type_ids' => $offer->isConditional() ? json_encode($offer->conditionCheckTypeIds, JSON_THROW_ON_ERROR) : null,
             ...$this->letterColumns($offer->letter),
             'created_at' => $at,
             'updated_at' => $at,
@@ -87,6 +89,7 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             $offer->terms,
             $offer->letter,
             $id,
+            $offer->conditionCheckTypeIds,
         );
     }
 
@@ -159,6 +162,7 @@ final readonly class DatabaseOfferRepository implements OfferRepository
             OfferTermsRow::terms($row),
             $row->letter_path === null ? null : new OfferLetter((string) $row->letter_path, LetterSource::from((string) $row->letter_source), (string) $row->letter_sha256),
             (int) $row->id,
+            $row->condition_check_type_ids === null ? [] : array_map('intval', json_decode((string) $row->condition_check_type_ids, true, flags: JSON_THROW_ON_ERROR)),
         );
     }
 

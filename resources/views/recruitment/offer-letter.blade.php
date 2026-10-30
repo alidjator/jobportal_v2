@@ -70,6 +70,10 @@
     <p>{!! nl2br(e($letter->note)) !!}</p>
 @endif
 
+@if ($letter->condition)
+    <p>{{ $letter->condition }}</p>
+@endif
+
 <p>{{ $letter->labels['deadline'] }}: <strong>{{ $letter->deadline }}</strong>.</p>
 
 <div class="footer">{{ $letter->issuedBy }}</div>

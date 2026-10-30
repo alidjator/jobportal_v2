@@ -147,17 +147,18 @@ final class HiresExportTest extends FeatureTestCase
             'Application ID', 'Hired at', 'Join date', 'Name', 'Email', 'Phone', 'City', 'Job ID', 'Job title',
             'Offer position', 'Offer salary (IDR)', 'Offer start date', 'Offer accepted at',
             'Employment type', 'Contract months', 'Probation months', 'Work mode', 'Work location', 'Salary basis', 'Allowances total (IDR)', 'Allowances', 'Benefits',
+            'Checks completed',
         ], $lines[0]);
         $this->assertCount(5, $lines);
         $this->assertSame([(string) $this->siti, (string) $this->budi, (string) $this->cici, (string) $this->ani], array_column(array_slice($lines, 1), 0));
 
         $this->assertSame([(string) $this->siti, '2026-10-05T10:00:00Z', '2026-10-26', 'Siti Rahma', 'siti@example.test'], array_slice($lines[1], 0, 5));
-        $this->assertSame([(string) $this->jobA, 'Backend Developer', ...array_fill(0, 13, '')], array_slice($lines[1], 7));
+        $this->assertSame([(string) $this->jobA, 'Backend Developer', ...array_fill(0, 14, '')], array_slice($lines[1], 7));
 
         $this->assertSame([(string) $this->cici, '2026-10-07T04:30:00Z', '2026-11-02', 'Cici Hartono'], [$lines[3][0], $lines[3][1], $lines[3][2], $lines[3][3]]);
         $this->assertSame([
             (string) $this->jobB, 'Data Analyst', 'Senior Analyst', '15000000', '2026-11-02', '2026-10-07T04:30:00Z',
-            'permanent', '', '3', 'hybrid', 'Jakarta Selatan', 'gross', '500000', 'Transport: 500000', 'health-insurance; annual-bonus',
+            'permanent', '', '3', 'hybrid', 'Jakarta Selatan', 'gross', '500000', 'Transport: 500000', 'health-insurance; annual-bonus', '',
         ], array_slice($lines[3], 7));
     }
 
@@ -169,7 +170,22 @@ final class HiresExportTest extends FeatureTestCase
         $lines = $this->lines($this->export()->assertOk());
 
         $this->assertSame(['Senior Analyst', '15000000', '2026-11-02'], array_slice($lines[3], 9, 3));
-        $this->assertSame(array_fill(0, 9, ''), array_slice($lines[3], 13));
+        $this->assertSame(array_fill(0, 10, ''), array_slice($lines[3], 13));
+    }
+
+    public function test_the_checks_completed_column_reads_yes_only_when_every_counted_check_is_done(): void
+    {
+        $this->hireAll();
+        $type = DB::table('recruitment_check_types')->insertGetId(['company_id' => $this->companyId, 'name' => 'MCU', 'kind' => 'medical', 'requires_consent' => true, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        $check = fn (int $application, string $status): array => ['application_id' => $application, 'check_type_id' => $type, 'status' => $status, 'consent_required' => true, 'requested_by' => $this->recruiterId, 'created_at' => now(), 'updated_at' => now()];
+
+        // Siti: one completed and one waived; Budi: one completed and one still open; Ani: only a cancelled one; Cici: none.
+        DB::table('recruitment_application_checks')->insert([$check($this->siti, 'completed'), $check($this->siti, 'waived'), $check($this->budi, 'completed'), $check($this->budi, 'scheduled'), $check($this->ani, 'cancelled')]);
+
+        $lines = $this->lines($this->export()->assertOk());
+        $byApplication = array_column(array_slice($lines, 1), 22, 0);
+
+        $this->assertSame([(string) $this->siti => 'yes', (string) $this->budi => 'no', (string) $this->cici => '', (string) $this->ani => ''], $byApplication);
     }
 
     public function test_the_days_are_jakarta_days(): void

@@ -29,6 +29,7 @@ final readonly class Offer
 
     private const string ZONE = 'Asia/Jakarta';
 
+    /** @param  list<int>  $conditionCheckTypeIds */
     public function __construct(
         public int $applicationId,
         public string $position,
@@ -45,10 +46,14 @@ final readonly class Offer
         public ?OfferTerms $terms = null,
         public ?OfferLetter $letter = null,
         public ?int $id = null,
+        public array $conditionCheckTypeIds = [],
     ) {}
 
     /**
      * A new pending offer. The start date is a calendar day that is not before today (Jakarta); the deadline is in the future and at most {@see self::VALID_DAYS_MAX} days away.
+     * `$conditionCheckTypeIds` are the check types the offer depends on (empty for an unconditional offer); the placer has already checked them.
+     *
+     * @param  list<int>  $conditionCheckTypeIds
      *
      * @throws BusinessRuleViolation `invalid-offer`
      */
@@ -62,6 +67,7 @@ final readonly class Offer
         int $createdBy,
         DateTimeImmutable $now,
         ?OfferTerms $terms = null,
+        array $conditionCheckTypeIds = [],
     ): self {
         $position = trim($position);
         $note = self::text($note);
@@ -84,7 +90,13 @@ final readonly class Offer
             throw new BusinessRuleViolation($message, 'invalid-offer', extensions: ['errors' => array_map(static fn (string|ErrorMessage $text): array => [$text], $errors)]);
         }
 
-        return new self($applicationId, $position, $salary, $startDate->setTime(0, 0), $note, $expiresAt, $createdBy, OfferStatus::Pending, null, null, $now, terms: $terms);
+        return new self($applicationId, $position, $salary, $startDate->setTime(0, 0), $note, $expiresAt, $createdBy, OfferStatus::Pending, null, null, $now, terms: $terms, conditionCheckTypeIds: $conditionCheckTypeIds);
+    }
+
+    /** Whether the offer depends on the result of pre-employment checks. */
+    public function isConditional(): bool
+    {
+        return $this->conditionCheckTypeIds !== [];
     }
 
     /** The status as of `$now`: a pending offer past its deadline is expired even before the hourly command marks it. */
@@ -180,6 +192,7 @@ final readonly class Offer
             $this->terms,
             $letter ?? $this->letter,
             $this->id,
+            $this->conditionCheckTypeIds,
         );
     }
 }

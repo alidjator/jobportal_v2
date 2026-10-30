@@ -24,6 +24,8 @@ final class OfferFields
 
     public const int BENEFITS_MAX = 50;
 
+    public const int CONDITION_TYPES_MAX = 20;
+
     /** @return array<string, list<mixed>> */
     public static function rules(string $prefix = '', string $presence = 'required'): array
     {
@@ -46,6 +48,9 @@ final class OfferFields
             $prefix.'benefit_ids' => ['nullable', 'array', 'max:'.self::BENEFITS_MAX],
             $prefix.'benefit_ids.*' => ['integer'],
             $prefix.'letter_upload_id' => ['nullable', 'integer'],
+            $prefix.'conditional_on_checks' => ['nullable', 'boolean'],
+            $prefix.'condition_check_type_ids' => ['nullable', 'required_if_accepted:'.$prefix.'conditional_on_checks', 'array', 'max:'.self::CONDITION_TYPES_MAX],
+            $prefix.'condition_check_type_ids.*' => ['integer'],
         ];
     }
 
@@ -71,6 +76,7 @@ final class OfferFields
                 array_map('intval', array_values($data['benefit_ids'] ?? [])),
             ),
             isset($data['letter_upload_id']) ? (int) $data['letter_upload_id'] : null,
+            ($data['conditional_on_checks'] ?? false) ? array_map('intval', array_values(array_unique($data['condition_check_type_ids'] ?? []))) : [],
         );
     }
 }

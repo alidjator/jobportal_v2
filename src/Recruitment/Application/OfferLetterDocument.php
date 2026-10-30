@@ -22,6 +22,7 @@ final readonly class OfferLetterDocument
      * @param  list<array{label: string, value: string}>  $rows
      * @param  list<array{name: string, amount: string}>  $allowances
      * @param  list<string>  $benefits
+     * @param  string|null  $condition  the sentence that names the checks the offer depends on, null for an unconditional offer
      */
     public function __construct(
         public string $language,
@@ -38,9 +39,11 @@ final readonly class OfferLetterDocument
         public ?string $note,
         public string $deadline,
         public string $issuedBy,
+        public ?string $condition = null,
     ) {}
 
-    public static function of(Offer $offer, OfferTerms $terms, ?CompanyLetterhead $letterhead, string $candidateName, string $language, string $senderName, string $platform, DateTimeImmutable $now): self
+    /** @param  list<string>  $conditionNames  the names of the check types the offer depends on */
+    public static function of(Offer $offer, OfferTerms $terms, ?CompanyLetterhead $letterhead, string $candidateName, string $language, string $senderName, string $platform, DateTimeImmutable $now, array $conditionNames = []): self
     {
         $labels = OfferLetterLabels::for($language);
         $language = $language === 'id' ? 'id' : 'en';
@@ -71,6 +74,7 @@ final readonly class OfferLetterDocument
             $offer->note,
             self::day($offer->expiresAt->setTimezone(new DateTimeZone(self::ZONE)), $language).' '.$offer->expiresAt->setTimezone(new DateTimeZone(self::ZONE))->format('H:i').' WIB',
             sprintf($labels['issued_by'], $senderName, $platform),
+            $conditionNames === [] ? null : sprintf($labels['condition'], implode(', ', $conditionNames)),
         );
     }
 

@@ -10,7 +10,7 @@ use Src\Recruitment\Domain\OfferTerms;
 
 /**
  * An offer, for the team and for the job seeker alike. `status` is as of now: a pending offer past its deadline is `expired`. `answer_note` is the note of a
- * job seeker who declined. `terms` and `letter` are null for an offer sent before they existed; `letter.sha256` is the SHA-256 of the letter file.
+ * job seeker who declined. `conditional_on_checks` says whether the offer depends on pre-employment checks, `condition_check_types` names them (`id`, `name`). `terms` and `letter` are null for an offer sent before they existed; `letter.sha256` is the SHA-256 of the letter file.
  *
  * @property OfferView $resource
  */
@@ -34,6 +34,8 @@ final class OfferResource extends JsonResource
             'answered_at' => $offer->answeredAt?->format(DATE_ATOM),
             'created_by' => $offer->createdBy,
             'created_at' => $offer->createdAt->format(DATE_ATOM),
+            'conditional_on_checks' => $offer->isConditional(),
+            'condition_check_types' => array_map(static fn (int $id, string $name): array => ['id' => $id, 'name' => $name], array_keys($this->resource->conditionChecks), array_values($this->resource->conditionChecks)),
             'terms' => $this->terms($offer->terms),
             'letter' => $offer->letter === null ? null : ['source' => $offer->letter->source->value, 'sha256' => $offer->letter->sha256],
         ];
