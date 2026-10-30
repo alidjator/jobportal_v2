@@ -30,6 +30,8 @@ final class CompanyActivityResource extends JsonResource
             'subject_type' => $entry->subjectType,
             'subject_id' => $entry->subjectId,
             'subject_title' => $this->resource->subjectTitle,
+            /** The name of the member the action was about, when the entry names one other than the actor (for example whose permissions changed); null otherwise. */
+            'target_name' => $this->resource->targetName,
             'ip_address' => $isMember ? $entry->ipAddress : null,
             'user_agent' => $isMember ? $entry->userAgent : null,
         ];

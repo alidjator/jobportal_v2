@@ -35,13 +35,24 @@ final readonly class CompanyActivityReader
         $jobIds = array_values(array_unique(array_filter(array_map(
             static fn (ActivityEntry $e): ?int => $e->subjectType === 'job' ? $e->subjectId : null, $page->items,
         ))));
-        $names = $userIds === [] ? [] : $this->accounts->summaries($userIds);
+        $targetIds = array_filter(array_map(static fn (ActivityEntry $e): ?int => self::targetOf($e), $page->items));
+        $accountIds = array_values(array_unique([...$userIds, ...$targetIds]));
+        $names = $accountIds === [] ? [] : $this->accounts->summaries($accountIds);
         $titles = $jobIds === [] ? [] : $this->jobs->titles($jobIds);
 
         return new CursorPage(array_map(static fn (ActivityEntry $e): CompanyActivityRow => new CompanyActivityRow(
             $e,
             $e->actorType === AuditActorType::User && $e->actorId !== null ? ($names[$e->actorId] ?? null)?->name : null,
             $e->subjectType === 'job' && $e->subjectId !== null ? ($titles[$e->subjectId] ?? null) : null,
+            self::targetOf($e) === null ? null : ($names[self::targetOf($e)] ?? null)?->name,
         ), $page->items), $page->nextCursor, $page->perPage);
+    }
+
+    /** The member an entry is about, when its metadata names one other than the actor (a member joined, their permissions changed, a delegate was chosen); null otherwise. */
+    private static function targetOf(ActivityEntry $entry): ?int
+    {
+        $id = $entry->metadata['user_id'] ?? $entry->metadata['delegate_user_id'] ?? null;
+
+        return is_int($id) && $id !== $entry->actorId ? $id : null;
     }
 }

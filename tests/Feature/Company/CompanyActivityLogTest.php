@@ -185,6 +185,23 @@ final class CompanyActivityLogTest extends FeatureTestCase
         $this->assertSame([], array_values(array_filter($response->json('data'), fn (array $row): bool => ($row['actor']['id'] ?? null) === $this->stranger->id)));
     }
 
+    public function test_an_entry_names_the_member_it_was_about_when_it_is_not_the_actor(): void
+    {
+        $this->seedLog();
+
+        // The owner changed the permissions of the recruiter: the entry names the recruiter as its target; an entry that only names the actor does not.
+        DB::table('platform_audit_logs')->insert([
+            ['actor_type' => 'user', 'actor_id' => $this->owner->id, 'action' => 'company.member_permissions_changed', 'subject_type' => 'company', 'subject_id' => $this->companyId, 'metadata' => json_encode(['user_id' => $this->recruiter->id, 'before' => [], 'added' => ['jobs.create'], 'removed' => []]), 'occurred_at' => now(), 'company_id' => $this->companyId],
+            ['actor_type' => 'user', 'actor_id' => $this->recruiter->id, 'action' => 'auth.login', 'subject_type' => 'user', 'subject_id' => $this->recruiter->id, 'metadata' => json_encode(['user_id' => $this->recruiter->id]), 'occurred_at' => now(), 'company_id' => $this->companyId],
+        ]);
+
+        $rows = collect($this->api('GET', '/activity')->assertOk()->json('data'));
+
+        $this->assertSame('Rina Rekruter Senior', $rows->firstWhere('action', 'company.member_permissions_changed')['target_name']);
+        $this->assertNull($rows->firstWhere('action', 'settings.updated')['target_name']);
+        $this->assertSame([null], $rows->where('action', 'auth.login')->pluck('target_name')->unique()->values()->all(), 'a sign-in is about its own actor');
+    }
+
     public function test_the_log_is_filtered_by_group_member_and_time(): void
     {
         $this->seedLog();
