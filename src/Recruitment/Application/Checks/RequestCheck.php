@@ -6,10 +6,13 @@ use DateTimeImmutable;
 use Src\Recruitment\Domain\ApplicationCheck;
 use Src\Recruitment\Domain\ApplicationCheckRepository;
 use Src\Recruitment\Domain\CheckTypeRepository;
+use Src\Recruitment\Domain\Events\CheckChange;
+use Src\Recruitment\Domain\Events\CheckChanged;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CandidateMessageRules;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -25,6 +28,7 @@ final readonly class RequestCheck
         private CheckTypeRepository $types,
         private CandidateMessageRules $messageRules,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -36,7 +40,7 @@ final readonly class RequestCheck
      */
     public function execute(Actor $actor, int $applicationId, int $checkTypeId, ?DateTimeImmutable $scheduledAt, ?string $place, ?string $vendor, ?string $noteToCandidate): ApplicationCheck
     {
-        return $this->transactions->run(function () use ($actor, $applicationId, $checkTypeId, $scheduledAt, $place, $vendor, $noteToCandidate): ApplicationCheck {
+        $result = $this->transactions->run(function () use ($actor, $applicationId, $checkTypeId, $scheduledAt, $place, $vendor, $noteToCandidate): array {
             $team = $this->access->team($actor, $applicationId, manage: true, forUpdate: true);
 
             if (! in_array($team->application->stageType, [StageType::Interview, StageType::Offer, StageType::Hired], true)) {
@@ -51,7 +55,14 @@ final readonly class RequestCheck
 
             $this->messageRules->assertAllowed($team->member->companyId, $noteToCandidate, 'note_to_candidate');
 
-            return $this->checks->add(ApplicationCheck::request($applicationId, $checkTypeId, $type->requiresConsent, $scheduledAt, $place, $vendor, $noteToCandidate, $team->member->userId, $this->clock->now()));
+            $now = $this->clock->now();
+            $check = $this->checks->add(ApplicationCheck::request($applicationId, $checkTypeId, $type->requiresConsent, $scheduledAt, $place, $vendor, $noteToCandidate, $team->member->userId, $now));
+
+            return [$check, CheckChanged::of(CheckChange::Requested, $team->application, $check, $now)];
         });
+
+        $this->events->dispatch([$result[1]]);
+
+        return $result[0];
     }
 }

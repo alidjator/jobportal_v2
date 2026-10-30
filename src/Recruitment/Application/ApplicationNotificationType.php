@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\Events\CheckChange;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\StageType;
@@ -95,6 +96,33 @@ final class ApplicationNotificationType
     public const string OFFER_DECLINED = 'offer.declined';
 
     public const string OFFER_EXPIRING = 'offer.expiring';
+
+    /** The team asked the job seeker for a pre-employment check (job seeker, in-app and email). */
+    public const string CHECK_REQUESTED = 'check.requested';
+
+    /** The team set the time of a check that had none (job seeker). */
+    public const string CHECK_SCHEDULED = 'check.scheduled';
+
+    /** The team moved the time of a check (job seeker). */
+    public const string CHECK_RESCHEDULED = 'check.rescheduled';
+
+    /** The team cancelled a check (job seeker). */
+    public const string CHECK_CANCELLED = 'check.cancelled';
+
+    /** The job seeker refused a check: the member who requested it is told (team, in-app only). */
+    public const string CHECK_CONSENT_REFUSED = 'check.consent_refused';
+
+    /** The in-app type of a change to a pre-employment check. */
+    public static function forCheck(CheckChange $change): string
+    {
+        return match ($change) {
+            CheckChange::Requested => self::CHECK_REQUESTED,
+            CheckChange::Scheduled => self::CHECK_SCHEDULED,
+            CheckChange::Rescheduled => self::CHECK_RESCHEDULED,
+            CheckChange::Cancelled => self::CHECK_CANCELLED,
+            CheckChange::ConsentRefused => self::CHECK_CONSENT_REFUSED,
+        };
+    }
 
     /** The in-app type of a change to an offer. */
     public static function forOffer(OfferChange $change): string

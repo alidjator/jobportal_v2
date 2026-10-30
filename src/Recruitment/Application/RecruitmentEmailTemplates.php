@@ -2,6 +2,7 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Recruitment\Domain\Events\CheckChange;
 use Src\Recruitment\Domain\Events\InterviewChange;
 use Src\Recruitment\Domain\Events\OfferChange;
 use Src\Recruitment\Domain\StageType;
@@ -96,6 +97,30 @@ final class RecruitmentEmailTemplates
 
     public const string OFFER_EXPIRING = 'recruitment.offer_expiring';
 
+    /** Sent to the job seeker when the team requests a pre-employment check. */
+    public const string CHECK_REQUESTED = 'recruitment.check_requested';
+
+    /** Sent to the job seeker when the team sets the time of a check that had none. */
+    public const string CHECK_SCHEDULED = 'recruitment.check_scheduled';
+
+    /** Sent to the job seeker when the team moves the time of a check. */
+    public const string CHECK_RESCHEDULED = 'recruitment.check_rescheduled';
+
+    /** Sent to the job seeker when the team cancels a check. */
+    public const string CHECK_CANCELLED = 'recruitment.check_cancelled';
+
+    /** The template for a change to a check, or null when nobody is emailed about it (the refusal tells the team in-app only). */
+    public static function keyForCheck(CheckChange $change): ?string
+    {
+        return match ($change) {
+            CheckChange::Requested => self::CHECK_REQUESTED,
+            CheckChange::Scheduled => self::CHECK_SCHEDULED,
+            CheckChange::Rescheduled => self::CHECK_RESCHEDULED,
+            CheckChange::Cancelled => self::CHECK_CANCELLED,
+            CheckChange::ConsentRefused => null,
+        };
+    }
+
     /** The template for a change to an offer, or null when the job seeker is not emailed about it. */
     public static function keyForOffer(OfferChange $change): ?string
     {
@@ -141,7 +166,7 @@ final class RecruitmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::receivedDefinitions(), ...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions(), ...self::withdrawalDefinitions()];
+        return [...self::receivedDefinitions(), ...self::stageDefinitions(), ...self::interviewDefinitions(), ...self::offerDefinitions(), ...self::checkDefinitions(), ...self::withdrawalDefinitions()];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -411,6 +436,65 @@ final class RecruitmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nPenawaran kerja dari {{company_name}} untuk {{job_title}} berlaku sampai {{expires_at}}.\n\nPosisi: {{position}}\nGaji per bulan: {{salary}}\nTanggal mulai: {{start_date}}\n\nBuka akun Anda untuk menerima atau menolaknya sebelum waktunya habis.",
                     'en' => "Hello {{name}},\n\nThe job offer from {{company_name}} for {{job_title}} is valid until {{expires_at}}.\n\nPosition: {{position}}\nMonthly salary: {{salary}}\nStart date: {{start_date}}\n\nOpen your account to accept or decline it before time runs out.",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function checkDefinitions(): array
+    {
+        $variables = [
+            new EmailVariable('name', 'The applicant\'s name', 'Siti'),
+            new EmailVariable('job_title', 'The title of the job applied for', 'Backend Developer'),
+            new EmailVariable('company_name', 'The name of the company', 'PT Contoh Maju'),
+            new EmailVariable('check_name', 'The name of the check', 'Medical check-up'),
+            new EmailVariable('schedule', 'The time of the check (Jakarta time), on its own line with its label; empty when no time is set', "\n\nWaktu: 2026-11-20 10:00 WIB"),
+            new EmailVariable('place', 'The place of the check, on its own line with its label; empty when there is none', "\nTempat: Klinik Sehat, Jakarta"),
+            new EmailVariable('vendor', 'The clinic or agency that does the check, on its own line with its label; empty when there is none', "\nPelaksana: Klinik Sehat"),
+            new EmailVariable('note', 'The company\'s note to the applicant, on its own lines with its label; empty when there is none', "\n\nCatatan: Bawa kartu identitas Anda."),
+            new EmailVariable('consent', 'A line that asks for the applicant\'s consent; empty when the check needs none', "\n\nPemeriksaan ini memerlukan persetujuan Anda. Buka akun Anda untuk menyetujui atau menolaknya."),
+        ];
+
+        return [
+            new EmailTemplateDefinition(
+                self::CHECK_REQUESTED,
+                'Sent to an applicant when the company requests a pre-employment check (medical check-up, background check, reference check and so on).',
+                $variables,
+                TranslatedText::fromArray(['id' => '{{check_name}} untuk lamaran {{job_title}}', 'en' => '{{check_name}} for your application for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} meminta {{check_name}} untuk lamaran Anda untuk {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}{{consent}}\n\nBuka akun Anda untuk melihat rinciannya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} requests a {{check_name}} for your application for {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}{{consent}}\n\nOpen your account to see the details.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::CHECK_SCHEDULED,
+                'Sent to an applicant when the company sets the time of a pre-employment check.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Jadwal {{check_name}} untuk lamaran {{job_title}}', 'en' => 'The time of your {{check_name}} for {{job_title}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} menetapkan jadwal {{check_name}} untuk lamaran Anda untuk {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}{{consent}}\n\nBuka akun Anda untuk melihat rinciannya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} set the time of your {{check_name}} for {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}{{consent}}\n\nOpen your account to see the details.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::CHECK_RESCHEDULED,
+                'Sent to an applicant when the company moves the time of a pre-employment check.',
+                $variables,
+                TranslatedText::fromArray(['id' => 'Jadwal {{check_name}} untuk lamaran {{job_title}} berubah', 'en' => 'The time of your {{check_name}} for {{job_title}} changed']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengubah jadwal {{check_name}} untuk lamaran Anda untuk {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}\n\nBuka akun Anda untuk melihat rinciannya.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} changed the time of your {{check_name}} for {{job_title}}.{{schedule}}{{place}}{{vendor}}{{note}}\n\nOpen your account to see the details.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::CHECK_CANCELLED,
+                'Sent to an applicant when the company cancels a pre-employment check.',
+                $variables,
+                TranslatedText::fromArray(['id' => '{{check_name}} untuk lamaran {{job_title}} dibatalkan', 'en' => 'Your {{check_name}} for {{job_title}} was cancelled']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} membatalkan {{check_name}} untuk lamaran Anda untuk {{job_title}}. Anda tidak perlu melakukan apa pun.\n\nBuka akun Anda untuk melihat status lamaran.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} cancelled the {{check_name}} for your application for {{job_title}}. You do not need to do anything.\n\nOpen your account to see the status of your application.",
                 ]),
             ),
         ];

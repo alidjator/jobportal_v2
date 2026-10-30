@@ -20,6 +20,9 @@ final readonly class ApplicationCheck
 
     public const int REASON_MAX = 500;
 
+    /** The medical outcome and every result file are deleted this many days after the application became final (`phase-8-pre-employment-checks.md` section 5). */
+    public const int RETENTION_DAYS = 90;
+
     public function __construct(
         public int $applicationId,
         public int $checkTypeId,
@@ -138,6 +141,12 @@ final readonly class ApplicationCheck
     public function withoutResult(DateTimeImmutable $now): self
     {
         return $this->with(['outcome' => null, 'resultNote' => null, 'resultFilePath' => null, 'resultFileName' => null, 'updatedAt' => $now]);
+    }
+
+    /** Only the file goes (the retention ended); the outcome of a check that is not medical stays until the applicant retention. */
+    public function withoutFile(DateTimeImmutable $now): self
+    {
+        return $this->with(['resultFilePath' => null, 'resultFileName' => null, 'updatedAt' => $now]);
     }
 
     /** Whether the candidate still has to answer. */

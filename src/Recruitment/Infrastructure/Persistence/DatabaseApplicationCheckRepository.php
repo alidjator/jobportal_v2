@@ -5,11 +5,14 @@ namespace Src\Recruitment\Infrastructure\Persistence;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Src\Recruitment\Domain\ApplicationCheck;
 use Src\Recruitment\Domain\ApplicationCheckRepository;
+use Src\Recruitment\Domain\CheckKind;
 use Src\Recruitment\Domain\CheckOutcome;
 use Src\Recruitment\Domain\CheckStatus;
+use Src\Recruitment\Domain\StageType;
 use Src\Shared\Domain\Exceptions\StateConflict;
 use stdClass;
 
@@ -84,6 +87,23 @@ final readonly class DatabaseApplicationCheckRepository implements ApplicationCh
             fn (stdClass $row): ApplicationCheck => $this->toCheck($row),
             $this->connection->table(self::TABLE)->where('application_id', $applicationId)->orderBy('id')->get()->all(),
         );
+    }
+
+    public function dueForPurge(DateTimeImmutable $finalBefore, int $limit): array
+    {
+        $rows = $this->connection->table(self::TABLE.' as c')
+            ->join('recruitment_applications as a', 'a.id', '=', 'c.application_id')
+            ->join('recruitment_check_types as t', 't.id', '=', 'c.check_type_id')
+            ->whereIn('a.stage_type', [StageType::Rejected->value, StageType::Withdrawn->value, StageType::Hired->value])
+            ->where('a.stage_entered_at', '<=', $this->format($finalBefore))
+            ->where(fn (Builder $query) => $query
+                ->where(fn (Builder $medical) => $medical->where('t.kind', CheckKind::Medical->value)->where(fn (Builder $held) => $held->whereNotNull('c.outcome')->orWhereNotNull('c.result_note')->orWhereNotNull('c.result_file_path')))
+                ->orWhere(fn (Builder $other) => $other->where('t.kind', '!=', CheckKind::Medical->value)->whereNotNull('c.result_file_path')))
+            ->orderBy('c.id')
+            ->limit($limit)
+            ->get(['c.*']);
+
+        return array_map(fn (stdClass $row): ApplicationCheck => $this->toCheck($row), $rows->all());
     }
 
     private function toCheck(stdClass $row): ApplicationCheck

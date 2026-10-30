@@ -6,8 +6,11 @@ use Src\Recruitment\Application\ApplicantGuard;
 use Src\Recruitment\Domain\ApplicationCheck;
 use Src\Recruitment\Domain\ApplicationCheckRepository;
 use Src\Recruitment\Domain\ApplicationRepository;
+use Src\Recruitment\Domain\Events\CheckChange;
+use Src\Recruitment\Domain\Events\CheckChanged;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -23,6 +26,7 @@ final readonly class AnswerCheckConsent
         private ApplicationRepository $applications,
         private ApplicationCheckRepository $checks,
         private TransactionManager $transactions,
+        private EventDispatcher $events,
         private Clock $clock,
     ) {}
 
@@ -33,7 +37,7 @@ final readonly class AnswerCheckConsent
      */
     public function consent(Actor $actor, int $applicationId, int $checkId): ApplicationCheck
     {
-        return $this->answer($actor, $applicationId, $checkId, fn (ApplicationCheck $check): ApplicationCheck => $check->consented($this->clock->now()));
+        return $this->answer($actor, $applicationId, $checkId, fn (ApplicationCheck $check): ApplicationCheck => $check->consented($this->clock->now()), refused: false);
     }
 
     /**
@@ -44,13 +48,14 @@ final readonly class AnswerCheckConsent
      */
     public function refuse(Actor $actor, int $applicationId, int $checkId, ?string $reason): ApplicationCheck
     {
-        return $this->answer($actor, $applicationId, $checkId, fn (ApplicationCheck $check): ApplicationCheck => $check->refused($reason, $this->clock->now()));
+        return $this->answer($actor, $applicationId, $checkId, fn (ApplicationCheck $check): ApplicationCheck => $check->refused($reason, $this->clock->now()), refused: true);
     }
 
     /**
      * @param  callable(ApplicationCheck): ApplicationCheck  $change
+     * @param  bool  $refused  whether the answer is a refusal, which tells the member who requested the check
      */
-    private function answer(Actor $actor, int $applicationId, int $checkId, callable $change): ApplicationCheck
+    private function answer(Actor $actor, int $applicationId, int $checkId, callable $change, bool $refused): ApplicationCheck
     {
         $userId = $this->guard->userId($actor);
 
@@ -58,7 +63,7 @@ final readonly class AnswerCheckConsent
             throw EntityNotFound::of('Check', $checkId);
         }
 
-        return $this->transactions->run(function () use ($userId, $applicationId, $checkId, $change): ApplicationCheck {
+        $result = $this->transactions->run(function () use ($userId, $applicationId, $checkId, $change, $refused): array {
             $application = $this->applications->find($applicationId, true);
 
             if ($application === null || $application->userId !== $userId) {
@@ -74,7 +79,13 @@ final readonly class AnswerCheckConsent
             $answered = $change($check);
             $this->checks->save($answered);
 
-            return $answered;
+            return [$answered, $refused ? CheckChanged::of(CheckChange::ConsentRefused, $application, $answered, $this->clock->now()) : null];
         });
+
+        if ($result[1] instanceof CheckChanged) {
+            $this->events->dispatch([$result[1]]);
+        }
+
+        return $result[0];
     }
 }

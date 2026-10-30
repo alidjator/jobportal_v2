@@ -69,6 +69,7 @@ use Src\Recruitment\Domain\Events\ApplicationHireUpdated;
 use Src\Recruitment\Domain\Events\ApplicationStageChanged;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Recruitment\Domain\Events\ApplicationWithdrawn;
+use Src\Recruitment\Domain\Events\CheckChanged;
 use Src\Recruitment\Domain\Events\HiresExported;
 use Src\Recruitment\Domain\Events\InterviewChanged;
 use Src\Recruitment\Domain\Events\InterviewPanelAnswered;
@@ -125,6 +126,7 @@ use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfHireUpdateListener
 use Src\Recruitment\Infrastructure\Listeners\NotifyApplicantOfStageChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfApplication;
 use Src\Recruitment\Infrastructure\Listeners\NotifyAssigneesOfJobFilled;
+use Src\Recruitment\Infrastructure\Listeners\NotifyOfCheckChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfInterviewChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfOfferChangeListener;
 use Src\Recruitment\Infrastructure\Listeners\NotifyOfPanelAnswerListener;
@@ -208,6 +210,7 @@ use Src\Recruitment\Interface\Console\CommitRejectionsCommand;
 use Src\Recruitment\Interface\Console\ListenToVoiceServerCommand;
 use Src\Recruitment\Interface\Console\ProcessOfferDeadlinesCommand;
 use Src\Recruitment\Interface\Console\ProvisionDefaultStagesCommand;
+use Src\Recruitment\Interface\Console\PurgeCheckResultsCommand;
 use Src\Recruitment\Interface\Console\PurgeExpiredRecordingsCommand;
 use Src\Recruitment\Interface\Console\PurgeOfferLetterUploadsCommand;
 use Src\Recruitment\Interface\Console\SendInterviewRemindersCommand;
@@ -351,6 +354,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $app->make(CompanyLetterheads::class),
             $app->make(CompanyMemberAccounts::class),
             $app->make(ApplicantContacts::class),
+            $app->make(CheckTypeRepository::class),
             $app->make(FileStorage::class),
             $app->make(Clock::class),
             $app->make(LoggerInterface::class),
@@ -425,7 +429,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
         });
 
-        $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class, CommitRejectionsCommand::class]);
+        $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, PurgeCheckResultsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class, CommitRejectionsCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(CommitRejectionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
@@ -434,6 +438,7 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
             $schedule->command(SendReviewNoticesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(ProcessOfferDeadlinesCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeOfferLetterUploadsCommand::class)->daily()->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeCheckResultsCommand::class)->daily()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVideoRoomsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(CloseVoiceSessionsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeExpiredRecordingsCommand::class)->dailyAt('03:30')->withoutOverlapping()->onOneServer();
@@ -497,6 +502,8 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
         Event::listen(InterviewChanged::class, [NotifyOfInterviewChangeListener::class, 'email']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'inApp']);
         Event::listen(OfferChanged::class, [NotifyOfOfferChangeListener::class, 'email']);
+        Event::listen(CheckChanged::class, [NotifyOfCheckChangeListener::class, 'inApp']);
+        Event::listen(CheckChanged::class, [NotifyOfCheckChangeListener::class, 'email']);
         Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'applicantInApp']);
         Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'applicantEmail']);
         Event::listen(ApplicationWithdrawn::class, [NotifyOfWithdrawalListener::class, 'assignees']);
