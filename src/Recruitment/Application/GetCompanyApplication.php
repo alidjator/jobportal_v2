@@ -81,7 +81,7 @@ final readonly class GetCompanyApplication
         [$otherApplications, $othersHidden] = $team->panelOnly ? [[], 0] : $this->others->of($member, $data);
         $untouched = UntouchedImport::applies($data->migratedAt, $data->stageEnteredAt);
         $days = StageClock::days($data->stageEnteredAt, $this->clock->now());
-        $candidate = $team->panelOnly ? null : $this->candidate($data->userId);
+        $candidate = $team->panelOnly ? null : $this->candidate($member->companyId, $data->userId);
 
         return new CompanyApplicationView(
             $data,
@@ -104,9 +104,9 @@ final readonly class GetCompanyApplication
     }
 
     /** The applicant's profile in the candidate search, only while they can be found right now (opted in, active, complete profile); null otherwise. */
-    private function candidate(int $userId): ?CandidateRef
+    private function candidate(int $companyId, int $userId): ?CandidateRef
     {
-        if ($this->candidates->findableIds([$userId]) === []) {
+        if ($this->candidates->findableIds([$userId], $companyId) === []) {
             return null;
         }
 

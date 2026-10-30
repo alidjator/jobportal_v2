@@ -8,7 +8,8 @@ use Src\Shared\Application\Pagination\PageRequest;
 
 /**
  * Reads the candidates a company may find: a profile whose owner switched on `is_discoverable`, whose account is an active job seeker's (not suspended,
- * deactivated or anonymised) and which is complete enough to apply (phone, province and city, a resume, and an experience or an education entry).
+ * deactivated or anonymised) and which is complete enough to apply (phone, province and city, a resume, and an experience or an education entry). A job seeker who
+ * blocked the asking company is not found by it (`BlockCompany`); `$companyId` is that company, and methods without one ignore blocks.
  */
 interface CandidateReader
 {
@@ -16,17 +17,17 @@ interface CandidateReader
      * @param  DateTimeImmutable  $today  the Jakarta date, to turn ages into birth dates
      * @return Page<CandidateRow> the most recently updated profile first
      */
-    public function search(CandidateSearchQuery $query, PageRequest $request, DateTimeImmutable $today): Page;
+    public function search(CandidateSearchQuery $query, PageRequest $request, DateTimeImmutable $today, int $companyId): Page;
 
-    public function findBySlug(string $slug): ?CandidateRow;
+    public function findBySlug(string $slug, int $companyId): ?CandidateRow;
 
     /**
-     * Those of these accounts that can be found now (the rule of `findBySlug`).
+     * Those of these accounts that can be found now (the rule of `findBySlug`); without a company, blocks do not count (whether a person is findable at all).
      *
      * @param  list<int>  $userIds
      * @return list<int>
      */
-    public function findableUserIds(array $userIds): array;
+    public function findableUserIds(array $userIds, ?int $companyId = null): array;
 
     /**
      * The candidates among these accounts who can be found now (the rule of `findBySlug`), as the search reads them.
@@ -34,7 +35,7 @@ interface CandidateReader
      * @param  list<int>  $userIds
      * @return list<CandidateRow>
      */
-    public function findableRows(array $userIds): array;
+    public function findableRows(array $userIds, int $companyId): array;
 
     /**
      * The current or latest position of each of these accounts (the order of the profile's experience list); an account without one is missing.
@@ -58,7 +59,7 @@ interface CandidateReader
      *
      * @return list<CandidateRow>
      */
-    public function pool(?int $provinceId, int $limit): array;
+    public function pool(?int $provinceId, int $limit, int $companyId): array;
 
     /**
      * The slug and name of these accounts whether or not they can be found now; an account without a slug or whose account was anonymised is missing.

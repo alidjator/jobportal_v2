@@ -22,6 +22,7 @@ use Src\Platform\Application\PlatformPermissions;
 use Src\Platform\Application\PlatformSettings;
 use Src\Platform\Application\Portal\EditPortalBrand;
 use Src\Platform\Application\Portal\PortalAlerts;
+use Src\Platform\Application\Portal\PortalCompanyBlockingFeature;
 use Src\Platform\Application\Portal\PortalEmailTemplates;
 use Src\Platform\Application\Portal\PortalGroupFeature;
 use Src\Platform\Application\Portal\PortalPreviewTokens;
@@ -64,6 +65,7 @@ use Src\Shared\Application\Email\EmailSuppressions;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Email\EmailTemplates;
 use Src\Shared\Application\Permissions\PermissionCatalog;
+use Src\Shared\Application\Portal\CompanyBlockingFeature;
 use Src\Shared\Application\Portal\GroupFeature;
 use Src\Shared\Application\Portal\PortalBrandEditor;
 use Src\Shared\Application\Portal\SingleCompany;
@@ -101,6 +103,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         PortalPreviewTokens::class => EncryptedPortalPreviewTokens::class,
         PortalBrandEditor::class => EditPortalBrand::class,
         VerificationFeature::class => PortalVerificationFeature::class,
+        CompanyBlockingFeature::class => PortalCompanyBlockingFeature::class,
         GroupFeature::class => PortalGroupFeature::class,
         SingleCompany::class => PortalSingleCompany::class,
     ];

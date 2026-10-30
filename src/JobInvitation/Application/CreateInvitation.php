@@ -47,7 +47,7 @@ final readonly class CreateInvitation
     private function userId(int $companyId, ?string $candidateSlug, ?int $entryId): int
     {
         if ($entryId === null) {
-            return ($this->candidates->findable((string) $candidateSlug) ?? throw EntityNotFound::of('Candidate', (string) $candidateSlug))->userId;
+            return ($this->candidates->findable($companyId, (string) $candidateSlug) ?? throw EntityNotFound::of('Candidate', (string) $candidateSlug))->userId;
         }
 
         $users = $this->pool->availableUserIds($companyId, [$entryId]);

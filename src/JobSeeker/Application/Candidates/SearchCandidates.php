@@ -24,13 +24,13 @@ final readonly class SearchCandidates
      */
     public function execute(Actor $actor, CandidateSearchQuery $query, PageRequest $request, string $language): Page
     {
-        $this->access->viewer($actor);
+        $viewer = $this->access->viewer($actor);
 
         if ($query->usesSensitiveFilter() && ! $this->settings->boolean(JobSeekerSettings::CANDIDATE_SENSITIVE_FILTERS)) {
             throw new BusinessRuleViolation('The religion, nationality, age and gender filters are not available.', 'filter-not-available');
         }
 
-        $page = $this->candidates->search($query, $request, $this->today->date());
+        $page = $this->candidates->search($query, $request, $this->today->date(), $viewer->companyId);
 
         return new Page($this->items->of($page->items, $language), $page->total, $page->request);
     }

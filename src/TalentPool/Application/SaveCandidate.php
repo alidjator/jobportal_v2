@@ -39,7 +39,7 @@ final readonly class SaveCandidate
     {
         $member = $this->access->member($actor);
         $note = Entry::cleanNote($note);
-        $candidate = $this->candidates->findable($candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug);
+        $candidate = $this->candidates->findable($member->companyId, $candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug);
 
         $entry = $this->transactions->run(fn (): Entry => $this->newEntries->add(
             new Entry($member->companyId, $candidate->userId, $categoryId, $this->clock->now(), note: $note, source: EntrySource::Search, savedByUserId: $member->userId),

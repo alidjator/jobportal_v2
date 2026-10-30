@@ -38,7 +38,7 @@ final readonly class GetCandidateResume
     public function execute(Actor $actor, string $slug, int $resumeId, ?string $ipAddress = null, ?string $userAgent = null): ResumeFile
     {
         $viewer = $this->access->viewer($actor);
-        $row = $this->candidates->findBySlug($slug) ?? throw EntityNotFound::of('Candidate', $slug);
+        $row = $this->candidates->findBySlug($slug, $viewer->companyId) ?? throw EntityNotFound::of('Candidate', $slug);
 
         if (! ($this->profiles->find($row->userId)->resumeDiscoverable ?? false)) {
             throw EntityNotFound::of('Resume', $resumeId);

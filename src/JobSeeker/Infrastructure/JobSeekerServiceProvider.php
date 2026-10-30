@@ -24,6 +24,7 @@ use Src\JobSeeker\Application\JobSeekerSettings;
 use Src\JobSeeker\Application\Reminders\ProfileReminderEmailSender;
 use Src\JobSeeker\Application\Reminders\ProfileReminderEmailTemplates;
 use Src\JobSeeker\Application\Reminders\ProfileReminderNotificationType;
+use Src\JobSeeker\Domain\BlockedCompanyRepository;
 use Src\JobSeeker\Domain\CvGenerationRepository;
 use Src\JobSeeker\Domain\CvTemplateRepository;
 use Src\JobSeeker\Domain\DataExportRepository;
@@ -44,6 +45,7 @@ use Src\JobSeeker\Infrastructure\Mail\MailDataExportSender;
 use Src\JobSeeker\Infrastructure\Mail\MailProfileReminderSender;
 use Src\JobSeeker\Infrastructure\Pdf\DompdfCvRenderer;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseAccountPictures;
+use Src\JobSeeker\Infrastructure\Persistence\DatabaseBlockedCompanyRepository;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseCandidateReader;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseCandidateSignalSource;
 use Src\JobSeeker\Infrastructure\Persistence\DatabaseCvGenerationRepository;
@@ -86,6 +88,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
     /** @var array<class-string, class-string> */
     public array $bindings = [
         ProfileRepository::class => DatabaseProfileRepository::class,
+        BlockedCompanyRepository::class => DatabaseBlockedCompanyRepository::class,
         ExperienceRepository::class => DatabaseExperienceRepository::class,
         EducationRepository::class => DatabaseEducationRepository::class,
         ProfileListRepository::class => DatabaseProfileListRepository::class,

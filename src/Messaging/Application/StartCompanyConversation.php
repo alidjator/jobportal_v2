@@ -44,7 +44,7 @@ final readonly class StartCompanyConversation
     public function execute(Actor $actor, ?int $userId, ?string $candidateSlug, ?int $applicationId, MessageInput $input): StartedConversation
     {
         $sender = $this->access->companyMember($actor);
-        $jobSeekerUserId = $this->recipient($actor, $userId, $candidateSlug, $applicationId);
+        $jobSeekerUserId = $this->recipient($actor, (int) $sender->companyId, $userId, $candidateSlug, $applicationId);
 
         if (! $this->contacts->isActiveJobSeeker($jobSeekerUserId)) {
             throw EntityNotFound::of('Job seeker', $jobSeekerUserId);
@@ -82,14 +82,14 @@ final readonly class StartCompanyConversation
      *
      * @throws EntityNotFound the candidate or the application
      */
-    private function recipient(Actor $actor, ?int $userId, ?string $candidateSlug, ?int $applicationId): int
+    private function recipient(Actor $actor, int $companyId, ?int $userId, ?string $candidateSlug, ?int $applicationId): int
     {
         if ($applicationId !== null) {
             return $this->teamApplications->find($actor, $applicationId)->applicantUserId;
         }
 
         if ($candidateSlug !== null) {
-            return ($this->candidates->findable($candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug))->userId;
+            return ($this->candidates->findable($companyId, $candidateSlug) ?? throw EntityNotFound::of('Candidate', $candidateSlug))->userId;
         }
 
         return $userId ?? throw EntityNotFound::of('Job seeker', 0);

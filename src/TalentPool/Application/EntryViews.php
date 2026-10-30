@@ -41,7 +41,7 @@ final readonly class EntryViews
         }
 
         $userIds = array_values(array_unique(array_map(static fn (Entry $entry): int => $entry->candidateUserId, $entries)));
-        $found = $this->candidates->summaries($userIds, $language);
+        $found = $this->candidates->summaries($userIds, $language, $member->companyId);
         $others = array_values(array_filter($userIds, static fn (int $id): bool => ! isset($found[$id])));
         $snapshots = $this->applications->consentSnapshots($member->companyId, $others, ConsentWindow::since($this->clock->now()), $language);
         $available = array_values(array_filter($userIds, static fn (int $id): bool => isset($found[$id]) || isset($snapshots[$id])));

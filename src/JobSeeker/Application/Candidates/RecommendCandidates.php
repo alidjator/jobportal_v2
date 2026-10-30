@@ -54,7 +54,7 @@ final readonly class RecommendCandidates
         }
 
         $job = $this->jobSignals->forJobs([$jobId])[$jobId] ?? throw EntityNotFound::of('Job', $jobId);
-        $rows = $this->candidates->pool($job->remote ? null : $job->provinceId, self::POOL);
+        $rows = $this->candidates->pool($job->remote ? null : $job->provinceId, self::POOL, $viewer->companyId);
         $userIds = array_map(static fn (CandidateRow $row): int => $row->userId, $rows);
         $signals = $this->candidateSignals->forUsers($userIds);
         $applied = $this->applications->appliedUserIds($jobId, $userIds);

@@ -2,11 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use Src\JobSeeker\Infrastructure\JobSeekerServiceProvider;
+use Src\JobSeeker\Interface\Http\Controllers\BlockedCompanyController;
 use Src\JobSeeker\Interface\Http\Controllers\CandidateController;
 use Src\JobSeeker\Interface\Http\Controllers\CvController;
 use Src\JobSeeker\Interface\Http\Controllers\DataExportController;
 use Src\JobSeeker\Interface\Http\Controllers\ImportSummaryController;
 use Src\JobSeeker\Interface\Http\Controllers\MyProfileController;
+use Src\JobSeeker\Interface\Http\Middleware\RequireCompanyBlocking;
 
 // The job seeker's own profile and its lists; every use case checks that the caller is a job seeker.
 Route::middleware('auth:user')->group(function (): void {
@@ -45,6 +47,13 @@ Route::middleware('auth:user')->group(function (): void {
     // The CV generator: the templates on offer, and a PDF made from the latest profile.
     Route::get('me/cv/templates', [CvController::class, 'templates']);
     Route::post('me/cv', [CvController::class, 'generate']);
+
+    // The companies the job seeker does not want to be found by (the marketplace only).
+    Route::middleware(RequireCompanyBlocking::class)->group(function (): void {
+        Route::get('me/blocked-companies', [BlockedCompanyController::class, 'index']);
+        Route::put('me/blocked-companies/{companyId}', [BlockedCompanyController::class, 'block'])->whereNumber('companyId');
+        Route::delete('me/blocked-companies/{companyId}', [BlockedCompanyController::class, 'unblock'])->whereNumber('companyId');
+    });
 
     // The companies that opened the job seeker's profile or resumes.
     Route::get('me/profile/views', [CandidateController::class, 'views']);

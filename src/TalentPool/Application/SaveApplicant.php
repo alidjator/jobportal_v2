@@ -53,7 +53,7 @@ final readonly class SaveApplicant
 
         $consenting = $facts->consentGiven && $facts->appliedAt >= ConsentWindow::since($now);
 
-        if (! $consenting && $this->candidates->findableIds([$ref->applicantUserId]) === []) {
+        if (! $consenting && $this->candidates->findableIds([$ref->applicantUserId], $member->companyId) === []) {
             throw new StateConflict('The applicant did not allow the company to keep their profile in a talent pool.', 'talent-pool-consent-missing');
         }
 

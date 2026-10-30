@@ -13,6 +13,7 @@ use Src\JobSeeker\Application\Candidates\CandidateSort;
 use Src\JobSeeker\Domain\Availability;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
+use Src\Shared\Application\Portal\CompanyBlockingFeature;
 use Src\Shared\Infrastructure\Persistence\TextSearch;
 use stdClass;
 
@@ -22,12 +23,12 @@ use stdClass;
  */
 final readonly class DatabaseCandidateReader implements CandidateReader
 {
-    public function __construct(private ConnectionInterface $connection) {}
+    public function __construct(private ConnectionInterface $connection, private CompanyBlockingFeature $blocking) {}
 
-    public function search(CandidateSearchQuery $query, PageRequest $request, DateTimeImmutable $today): Page
+    public function search(CandidateSearchQuery $query, PageRequest $request, DateTimeImmutable $today, int $companyId): Page
     {
-        $total = $this->filtered($query, $today)->count();
-        $rows = $total === 0 ? [] : $this->filtered($query, $today)
+        $total = $this->filtered($query, $today, $companyId)->count();
+        $rows = $total === 0 ? [] : $this->filtered($query, $today, $companyId)
             ->when($query->sort === CandidateSort::LastActiveDescending, fn (Builder $q) => $q->orderByRaw('u.last_active_on desc nulls last'))
             ->orderByDesc('p.updated_at')->orderByDesc('p.id')
             ->offset($request->offset())->limit($request->perPage)
@@ -36,29 +37,29 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return new Page($this->candidates($rows), $total, $request);
     }
 
-    public function findBySlug(string $slug): ?CandidateRow
+    public function findBySlug(string $slug, int $companyId): ?CandidateRow
     {
-        $row = $this->searchable()->where('p.slug', $slug)->first($this->columns());
+        $row = $this->searchable($companyId)->where('p.slug', $slug)->first($this->columns());
 
         return $row === null ? null : $this->candidates([$row])[0];
     }
 
-    public function findableUserIds(array $userIds): array
+    public function findableUserIds(array $userIds, ?int $companyId = null): array
     {
         if ($userIds === []) {
             return [];
         }
 
-        return array_map('intval', $this->searchable()->whereIn('p.user_id', $userIds)->pluck('p.user_id')->all());
+        return array_map('intval', $this->searchable($companyId)->whereIn('p.user_id', $userIds)->pluck('p.user_id')->all());
     }
 
-    public function findableRows(array $userIds): array
+    public function findableRows(array $userIds, int $companyId): array
     {
         if ($userIds === []) {
             return [];
         }
 
-        return $this->candidates($this->searchable()->whereIn('p.user_id', $userIds)->get($this->columns())->all());
+        return $this->candidates($this->searchable($companyId)->whereIn('p.user_id', $userIds)->get($this->columns())->all());
     }
 
     public function latestPositions(array $userIds): array
@@ -99,9 +100,9 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         return $skills;
     }
 
-    public function pool(?int $provinceId, int $limit): array
+    public function pool(?int $provinceId, int $limit, int $companyId): array
     {
-        $builder = $this->searchable();
+        $builder = $this->searchable($companyId);
 
         if ($provinceId !== null) {
             $builder->where('p.province_id', $provinceId);
@@ -154,15 +155,21 @@ final readonly class DatabaseCandidateReader implements CandidateReader
         ];
     }
 
-    /** The candidates anyone may find, before any filter. */
-    private function searchable(): Builder
+    /** The candidates the company may find (anyone, when there is no company), before any filter: those who did not block it (blocks count on the marketplace only). */
+    private function searchable(?int $companyId): Builder
     {
-        return CompleteProfiles::query($this->connection)->where('p.is_discoverable', true)->whereNotNull('p.slug');
+        $builder = CompleteProfiles::query($this->connection)->where('p.is_discoverable', true)->whereNotNull('p.slug');
+
+        if ($companyId !== null && $this->blocking->enabled()) {
+            $builder->whereNotExists(fn (Builder $b) => $b->selectRaw('1')->from('jobseeker_blocked_companies as b')->whereColumn('b.user_id', 'p.user_id')->where('b.company_id', $companyId));
+        }
+
+        return $builder;
     }
 
-    private function filtered(CandidateSearchQuery $query, DateTimeImmutable $today): Builder
+    private function filtered(CandidateSearchQuery $query, DateTimeImmutable $today, int $companyId): Builder
     {
-        $builder = $this->searchable();
+        $builder = $this->searchable($companyId);
 
         if ($query->keyword !== null) {
             $builder->where(function (Builder $q) use ($query): void {

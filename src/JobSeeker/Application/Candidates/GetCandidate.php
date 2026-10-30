@@ -48,7 +48,7 @@ final readonly class GetCandidate
     public function execute(Actor $actor, string $slug, string $language): CandidateProfileView
     {
         $viewer = $this->access->viewer($actor);
-        $row = $this->candidates->findBySlug($slug) ?? throw EntityNotFound::of('Candidate', $slug);
+        $row = $this->candidates->findBySlug($slug, $viewer->companyId) ?? throw EntityNotFound::of('Candidate', $slug);
         $userId = $row->userId;
         $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
 

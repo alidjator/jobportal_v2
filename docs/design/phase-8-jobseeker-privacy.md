@@ -1,4 +1,4 @@
-# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14; sections 1 and 2 coded 2026-10-15, section 4 coded 2026-10-31)
+# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14; sections 1 and 2 coded 2026-10-15, sections 3 and 4 coded 2026-10-31)
 
 Gaps found from the job seeker's point of view (Mekari Talenta has no job seeker accounts, so it offers no benchmark here), chosen by the user from
 the advice of 2026-10-14. Sections 1 and 2 are **before go-live**: the export answers UU 27/2022 (PDP) Articles 7 and 13, and the reminder helps the
@@ -125,4 +125,17 @@ Migration `000340` (`identity_users.last_active_on` date; `jobseeker_profiles.op
 - **Search:** `filter[open_to_offers]=1` keeps those open to offers (`0` or absent: no filter); `sort=-last_active` puts the most recently active first with never-seen accounts last, ties by profile update; `sort=-updated_at` is the default.
 - **Export and erasure:** the archive's `account` part gains `last_active_on` and the `profile` part gains `visibility.open_to_offers`; erasure clears `last_active_on`.
 - **Front end:** the "Terbuka untuk tawaran" switch and the activity note on the profile (Career), badges and the filter and sort in the candidate search (Workspace).
+
+## Coded: section 3 (2026-10-31; API)
+
+Migration `000350` (`jobseeker_blocked_companies`: user RESTRICT, company CASCADE as designed, unique pair). Not yet checked by the user. Decisions of 2026-10-31 and interpretations:
+
+- **Port:** `CandidateDirectory::findable(companyId, slug)` and `summaries(userIds, language, companyId)` take the asking company; `findableIds(userIds, ?companyId)` ignores blocks without one. `CandidateReader` takes the company in `search`, `findBySlug`, `findableRows` and `pool` (a `NOT EXISTS` on the block table). So the search, the recommended candidates, the profile, its picture and resumes, invitation by slug, a new chat by slug and saving a candidate by slug all see the person as missing (404).
+- **Talent pool:** an entry stays. `EntryViews` asks for the summaries of the company, so the entry shows `available: false` and no candidate; an entry that rests on application consent stays available. The cleanups (`EntryBasis::withoutBasis`) ignore blocks, because a block hides and never ends a right; the invitation flow (`AvailablePoolCandidates`) honours them, so a blocked person cannot be invited from the pool either (422 `entry-unavailable`).
+- **Applicants (decided 2026-10-31):** an application still opens the applicant profile of the company's own screens, but the link to the public candidate profile is gone (the person is not findable). Saving an applicant to the pool without the pool consent is refused (`talent-pool-consent-missing`) while the person blocks the company; with consent it works.
+- **Existing data (decided 2026-10-31):** invitations and conversations that exist when a company is blocked stay visible and can be answered; only new ones are refused.
+- **Endpoints:** `GET me/blocked-companies` (the most recent first, a suspended or hidden company stays listed so the block can be lifted), `PUT` and `DELETE me/blocked-companies/{companyId}` (204, both idempotent). `PUT` needs a public company (404 for a missing, suspended or hidden one) and a free place (422 `blocked-companies-limit`, 20 at most; blocking a company again at the limit changes nothing).
+- **Export and erasure:** the `profile` part gains `blocked_companies` (company, time); erasure deletes the rows.
+- **Front end:** the list in account settings with a company picker (the public company search), and a note on what blocking does.
+- **Marketplace only (decided 2026-10-31):** blocking companies exists on the marketplace only, as the verification of companies does (`career-modes.md`): `CompanyBlockingFeature` (Platform, true for the `marketplace` mode or a portal without an identity). Elsewhere `GET`, `PUT` and `DELETE me/blocked-companies` answer 404 `company-blocking-unavailable`, `CandidateReader` ignores the rows that exist, and the Career front end hides the card and the button. The last active bucket, "open to offers" and the candidate search are not limited by the mode.
 

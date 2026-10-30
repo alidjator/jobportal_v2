@@ -13,21 +13,21 @@ final readonly class JobSeekerCandidateDirectory implements CandidateDirectory
 
     public function __construct(private CandidateReader $candidates, private CandidateLabels $labels) {}
 
-    public function findable(string $slug): ?CandidateRef
+    public function findable(int $companyId, string $slug): ?CandidateRef
     {
-        $row = $this->candidates->findBySlug($slug);
+        $row = $this->candidates->findBySlug($slug, $companyId);
 
         return $row === null ? null : new CandidateRef($row->userId, $row->slug, $row->name, $row->avatarPath !== null);
     }
 
-    public function findableIds(array $userIds): array
+    public function findableIds(array $userIds, ?int $companyId = null): array
     {
-        return $this->candidates->findableUserIds($userIds);
+        return $this->candidates->findableUserIds($userIds, $companyId);
     }
 
-    public function summaries(array $userIds, string $language): array
+    public function summaries(array $userIds, string $language, int $companyId): array
     {
-        $rows = $this->candidates->findableRows($userIds);
+        $rows = $this->candidates->findableRows($userIds, $companyId);
 
         if ($rows === []) {
             return [];

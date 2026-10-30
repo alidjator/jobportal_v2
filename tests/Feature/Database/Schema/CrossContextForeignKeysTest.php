@@ -44,6 +44,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'jobseeker_resumes' => ['user_id'],
             'jobseeker_cv_generations' => ['user_id'],
             'jobseeker_data_exports' => ['user_id'],
+            'jobseeker_blocked_companies' => ['user_id'],
             'messaging_conversations' => ['job_seeker_user_id', 'started_by_user_id', 'closed_by_user_id'],
             'messaging_messages' => ['sender_user_id'],
             'messaging_conversation_reads' => ['user_id'],
@@ -101,6 +102,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'workforce_requisitions' => ['company_id'],
             'recruitment_interview_kits' => ['company_id'],
             'jobinvitation_invitations' => ['company_id'],
+            'jobseeker_blocked_companies' => ['company_id'],
             'campaign_campaigns' => ['company_id'],
             'review_reviews' => ['company_id'],
             'talentpool_categories' => ['company_id'],
@@ -115,8 +117,8 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
         'recruitment_applications' => ['jobinvitation_invitations' => ['application_id'], 'assessment_invitations' => ['application_id']],
     ];
 
-    /** @var list<string> attachments of a job: they go away with it, so a draft with one can still be deleted */
-    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits', 'assessment_job_stage_tests.job_id', 'job_reports.job_id'];
+    /** @var list<string> attachments of a job: they go away with it, so a draft with one can still be deleted; the block list of a job seeker goes away with its company */
+    private const array CASCADING = ['recruitment_job_questions', 'recruitment_job_stage_kits', 'assessment_job_stage_tests.job_id', 'job_reports.job_id', 'jobseeker_blocked_companies.company_id'];
 
     /** @var array<string, list<string>> logs, views, audit, notifications, deliveries and summaries keep plain columns */
     private const array WITHOUT = [

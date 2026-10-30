@@ -14,7 +14,7 @@ final readonly class AvailablePoolCandidates implements PoolCandidates
     public function availableUserIds(int $companyId, array $entryIds): array
     {
         $entries = $this->entries->findMany($companyId, $entryIds);
-        $unavailable = array_flip(array_map(static fn (Entry $entry): int => (int) $entry->id, $this->basis->withoutBasis($entries)));
+        $unavailable = array_flip(array_map(static fn (Entry $entry): int => (int) $entry->id, $this->basis->withoutBasis($entries, honouringBlocks: true)));
         $users = [];
 
         foreach ($entries as $entry) {

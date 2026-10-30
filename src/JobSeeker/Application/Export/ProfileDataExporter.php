@@ -3,6 +3,7 @@
 namespace Src\JobSeeker\Application\Export;
 
 use DateTimeInterface;
+use Src\JobSeeker\Domain\BlockedCompanyRepository;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
 use Src\JobSeeker\Domain\JobSeekerProfile;
@@ -20,7 +21,7 @@ use Src\Shared\Application\References\ReferenceValues;
 
 /**
  * The JobSeeker part of the personal data export: the profile with its experiences, education, skills, languages and links, the resumes (their names and files)
- * and the companies that opened the profile. Values of a master are given with their Indonesian name; places by name.
+ * the companies that opened the profile and the companies the job seeker blocked. Values of a master are given with their Indonesian name; places by name.
  */
 final readonly class ProfileDataExporter implements PersonalDataExporter
 {
@@ -36,6 +37,7 @@ final readonly class ProfileDataExporter implements PersonalDataExporter
         private ReferenceValues $references,
         private LocationReferences $locations,
         private CompanyDirectory $companies,
+        private BlockedCompanyRepository $blocked,
     ) {}
 
     public function key(): string
@@ -82,6 +84,7 @@ final readonly class ProfileDataExporter implements PersonalDataExporter
             'links' => array_map(static fn ($link): array => ['type' => $link->type->value, 'url' => $link->url], $this->lists->links($userId)),
             'resumes' => $resumeRows,
             'viewed_by_companies' => $this->viewers($userId),
+            'blocked_companies' => $this->blockedCompanies($userId),
         ], $files);
     }
 
@@ -141,6 +144,15 @@ final readonly class ProfileDataExporter implements PersonalDataExporter
         $companies = $this->companies->summaries(array_values(array_unique(array_map(static fn (array $view): int => $view['company_id'], $views))));
 
         return array_map(static fn (array $view): array => ['company' => ($companies[$view['company_id']] ?? null)?->name, 'kind' => $view['kind']->value, 'day' => $view['day']], $views);
+    }
+
+    /** @return list<array{company: string|null, blocked_at: string}> */
+    private function blockedCompanies(int $userId): array
+    {
+        $rows = $this->blocked->forUser($userId);
+        $companies = $this->companies->summaries(array_map(static fn (array $row): int => $row['company_id'], $rows));
+
+        return array_map(static fn (array $row): array => ['company' => ($companies[$row['company_id']] ?? null)?->name, 'blocked_at' => $row['blocked_at']->format(DateTimeInterface::ATOM)], $rows);
     }
 
     private function name(string $master, ?int $id): ?string

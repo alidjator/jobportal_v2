@@ -20,8 +20,8 @@ final readonly class GetCandidateAvatar
      */
     public function execute(Actor $actor, string $slug): CandidateAvatar
     {
-        $this->access->viewer($actor);
-        $path = ($this->candidates->findBySlug($slug) ?? throw EntityNotFound::of('Candidate', $slug))->avatarPath;
+        $viewer = $this->access->viewer($actor);
+        $path = ($this->candidates->findBySlug($slug, $viewer->companyId) ?? throw EntityNotFound::of('Candidate', $slug))->avatarPath;
         $contents = $path === null ? null : $this->files->get($path);
 
         if ($path === null || $contents === null) {
