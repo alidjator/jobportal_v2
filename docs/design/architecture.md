@@ -188,8 +188,9 @@ query inside the reader's own Infrastructure layer, kept because a port would co
 | `Job/.../JobsWithoutApplicantsTask` | `recruitment_applications` | `id`, `job_id` | The task item "jobs without applicants" counts them with one `NOT EXISTS` (decided 2026-10-17). |
 | `JobSeeker/.../CompleteProfiles` | `identity_users` | `id`, `type`, `status`, `anonymized_at` | Which profiles are complete, active and not anonymised. |
 | `JobSeeker/.../DatabaseAccountPictures` | `identity_users` | `id`, `avatar_path` | The picture path, as the candidate search reads it. |
-| `JobSeeker/.../DatabaseCandidateReader` | `identity_users`, `reference_education_levels` | `id`, `name`, `avatar_path`, `anonymized_at`; `id`, `rank` | Candidate search rows and the minimum education filter. |
+| `JobSeeker/.../DatabaseCandidateReader` | `identity_users`, `reference_education_levels` | `id`, `name`, `avatar_path`, `anonymized_at`, `status`, `last_active_on`; `id`, `rank` | Candidate search rows, the last active bucket and sort, and the minimum education filter. |
 | `JobSeeker/.../DatabaseCandidateSignalSource` | `reference_education_levels` | `id`, `rank` | Education rank of many candidates in one query. |
+| `JobSeeker/.../DatabaseProfileRepository` | `identity_users` | `id`, `last_active_on` | The day the job seeker was last active, for the bucket they see on their own profile (`phase-8-jobseeker-privacy.md` section 4; decided 2026-10-31). |
 
 `tests/Feature/Database/Schema/CrossContextReadContractTest.php` keeps this list true: it checks that every listed table and column exists, and scans `src/` so that a read of another
 context's table that is not listed fails the suite. A new exception is added to the test and to this table in the same change; an Identity or Reference schema change that touches one of
