@@ -54,6 +54,15 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
             ->count();
     }
 
+    public function idsInStages(int $jobId, array $stageIds): array
+    {
+        if ($stageIds === []) {
+            return [];
+        }
+
+        return array_map('intval', $this->connection->table('recruitment_applications')->where('job_id', $jobId)->whereIn('stage_id', $stageIds)->orderBy('id')->pluck('id')->all());
+    }
+
     public function find(int $id, bool $forUpdate = false): ?Application
     {
         return $this->load($this->connection->table('recruitment_applications')->where('id', $id), $forUpdate);

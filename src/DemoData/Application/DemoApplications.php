@@ -96,14 +96,13 @@ final readonly class DemoApplications
             $this->process->move($team, $id, $this->stageId($team, StageType::Assessment));
         } elseif ($outcome === StageType::Interview) {
             $this->process->move($team, $id, $this->stageId($team, StageType::Interview), $this->interview($interviewerId, $interviews++));
-        } elseif ($outcome === StageType::Offer || $outcome === StageType::Hired) {
+        } else {
+            // The two stages left, `Offer` and `Hired`: the offer goes out, and a hired outcome is the offer accepted.
             $this->process->move($team, $id, $this->stageId($team, StageType::Offer), offer: $this->offer($job['title'], $job['salary'][0]));
 
             if ($outcome === StageType::Hired) {
                 $this->respondToOffer->accept($seeker, $id);
             }
-        } else {
-            throw new LogicException("The demo has no step for the {$outcome->value} stage.");
         }
     }
 

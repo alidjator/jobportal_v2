@@ -81,6 +81,14 @@ interface ApplicationRepository
     public function moveStage(int $fromStageId, int $toStageId, StageType $type, DateTimeImmutable $at): int;
 
     /**
+     * The applications of the job that sit in any of the stages, oldest first.
+     *
+     * @param  list<int>  $stageIds
+     * @return list<int>
+     */
+    public function idsInStages(int $jobId, array $stageIds): array;
+
+    /**
      * Stores a new application with its answers and its first stage history entry (nothing to applied, by the applicant).
      *
      * @param  list<ApplicationAnswer>  $answers

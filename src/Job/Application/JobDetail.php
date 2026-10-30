@@ -28,7 +28,14 @@ final readonly class JobDetail
         public array $names = [],
         public ?LocationNames $location = null,
         public array $places = [],
+        public bool $hiringManagerBound = false,
     ) {}
+
+    /** The same job for a reader who is, or is not, bound to its stage boundary as a hiring manager (`HiringManagerScope` of Recruitment applies the same rule). */
+    public function forReader(bool $hiringManagerBound): self
+    {
+        return new self($this->job, $this->skills, $this->benefits, $this->assignees, $this->hiresCount, $this->names, $this->location, $this->places, $hiringManagerBound);
+    }
 
     /** "Subdistrict, City, Province": the names of the place chain from the most specific to the province, null when the job has no place. */
     public function locationLabel(): ?string

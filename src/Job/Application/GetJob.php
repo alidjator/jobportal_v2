@@ -2,16 +2,18 @@
 
 namespace Src\Job\Application;
 
+use Src\Job\Domain\JobAssignmentRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
 
-/** A member reads one job they may see, with the names of its skills and benefits and its assignees. */
+/** A member reads one job they may see, with the names of its skills and benefits and its assignees, and whether they are bound to its stage boundary as a hiring manager. */
 final readonly class GetJob
 {
     public function __construct(
         private JobAccess $access,
         private JobDetailBuilder $details,
+        private JobAssignmentRepository $assignments,
     ) {}
 
     /**
@@ -22,6 +24,9 @@ final readonly class GetJob
     {
         $member = $this->access->member($actor);
 
-        return $this->details->build($this->access->job($member, $jobId), $language);
+        $job = $this->access->job($member, $jobId);
+        $bound = ! $member->viewsAll() && in_array($jobId, $this->assignments->hiringManagerJobIdsOf($member->userId), true);
+
+        return $this->details->build($job, $language)->forReader($bound);
     }
 }

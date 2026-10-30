@@ -96,6 +96,8 @@ final class JobDetailResource extends JsonResource
             'report_hold_at' => $job->reportHoldAt?->format(DateTimeInterface::ATOM),
             'requisition_id' => $job->requisitionId,
             'hiring_manager_from_stage_id' => $job->hiringManagerFromStageId,
+            /** Whether the reader is a hiring manager of this job bound to its stage boundary: they see only the applications from the boundary on. False for anyone who holds `jobs.view_all` (every company admin). */
+            'hiring_manager_bound' => $this->resource->hiringManagerBound,
             'reviewed_at' => $job->reviewedAt?->format(DateTimeInterface::ATOM),
             'created_by_user_id' => $job->createdByUserId,
             'created_at' => $job->createdAt?->format(DateTimeInterface::ATOM),
