@@ -42,5 +42,6 @@ final readonly class CandidateProfileView
         public array $resumes,
         public ?array $contact,
         public DateTimeImmutable $updatedAt,
+        public ?string $activeWithin = null,
     ) {}
 }

@@ -27,6 +27,8 @@ final class CandidateListResource extends JsonResource
             'experience_level' => $this->resource->experienceLevel,
             'availability' => $this->resource->availability,
             'highest_education' => $this->resource->highestEducation,
+            'active_within' => $this->resource->activeWithin,
+            'open_to_offers' => $this->resource->openToOffers,
             'updated_at' => $this->resource->updatedAt->format(DateTimeInterface::ATOM),
         ];
     }

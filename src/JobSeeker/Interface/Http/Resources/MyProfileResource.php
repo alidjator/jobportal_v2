@@ -41,6 +41,8 @@ final class MyProfileResource extends JsonResource
             'summary' => $profile->summary,
             'is_discoverable' => $profile->isDiscoverable,
             'resume_discoverable' => $profile->resumeDiscoverable,
+            'open_to_offers' => $profile->openToOffers,
+            'active_within' => $this->resource->activeWithin?->value,
             'experiences' => ExperienceResource::collection($this->resource->experiences),
             'educations' => EducationResource::collection($this->resource->educations),
             'skills' => $this->resource->skills,

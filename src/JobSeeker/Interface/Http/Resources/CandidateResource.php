@@ -56,6 +56,8 @@ final class CandidateResource extends JsonResource
             'skills' => $this->resource->skills,
             'languages' => $this->resource->languages,
             'resumes' => ResumeResource::collection($this->resource->resumes),
+            'active_within' => $this->resource->activeWithin,
+            'open_to_offers' => $profile->openToOffers,
             'contact' => $this->resource->contact,
             'updated_at' => $this->resource->updatedAt->format(DateTimeInterface::ATOM),
         ];

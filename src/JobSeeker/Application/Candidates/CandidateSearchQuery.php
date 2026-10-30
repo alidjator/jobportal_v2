@@ -7,7 +7,7 @@ use Src\JobSeeker\Domain\Gender;
 
 /**
  * What a company asks for in the candidate search. Every field is optional; the lists of skills and languages ask for candidates who have all of them, the other
- * lists for candidates who match any one of them. The minimum education level matches a candidate whose highest education is at that rank or above.
+ * lists for candidates who match any one of them. `openToOffers` keeps only the candidates who switched "open to offers" on. The minimum education level matches a candidate whose highest education is at that rank or above.
  */
 final readonly class CandidateSearchQuery
 {
@@ -35,6 +35,8 @@ final readonly class CandidateSearchQuery
         public ?int $minAge = null,
         public ?int $maxAge = null,
         public ?Gender $gender = null,
+        public bool $openToOffers = false,
+        public CandidateSort $sort = CandidateSort::UpdatedAtDescending,
     ) {}
 
     /** Whether the search filters on religion, nationality, age or gender, which an admin setting can switch off. */

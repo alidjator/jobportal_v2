@@ -5,7 +5,7 @@ namespace Src\JobSeeker\Application\Candidates;
 use DateTimeImmutable;
 use Src\JobSeeker\Domain\Availability;
 
-/** A candidate as the search reads them: the profile columns a company may see in a list, as ids. */
+/** A candidate as the search reads them: the profile columns a company may see in a list, as ids. The last active day stays here: a list item carries only its bucket. */
 final readonly class CandidateRow
 {
     public function __construct(
@@ -20,5 +20,7 @@ final readonly class CandidateRow
         public ?Availability $availability,
         public ?int $highestEducationLevelId,
         public DateTimeImmutable $updatedAt,
+        public ?DateTimeImmutable $lastActiveOn = null,
+        public bool $openToOffers = false,
     ) {}
 }

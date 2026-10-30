@@ -5,6 +5,7 @@ namespace Src\JobSeeker\Interface\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Src\JobSeeker\Application\Candidates\CandidateSearchQuery;
+use Src\JobSeeker\Application\Candidates\CandidateSort;
 use Src\JobSeeker\Domain\Availability;
 use Src\JobSeeker\Domain\Gender;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
@@ -13,7 +14,7 @@ use Src\Shared\Interface\Http\Requests\PaginatedRequest;
  * Allowed: `filter[q]` (a piece of the headline, the summary or a job title), `filter[skill_id][]` and `filter[language_id][]` (the candidate has all of them),
  * `filter[province_id]`, `filter[city_id]`, `filter[experience_level_id][]`, `filter[education_level_id]` (this level or higher), `filter[availability][]`,
  * `filter[expected_salary_max]` with `filter[salary_period_id]`, `filter[religion_id][]`, `filter[nationality_id][]`, `filter[age_min]`, `filter[age_max]`,
- * `filter[gender]`, `page` and `per_page`. Any other filter is refused with 422.
+ * `filter[gender]`, `filter[open_to_offers]` (`1`: only those open to offers), `sort` (`-updated_at`, the default, or `-last_active`), `page` and `per_page`. Any other filter is refused with 422.
  */
 final class SearchCandidatesRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ final class SearchCandidatesRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:q,skill_id,language_id,province_id,city_id,experience_level_id,education_level_id,availability,expected_salary_max,salary_period_id,religion_id,nationality_id,age_min,age_max,gender'],
+            'filter' => ['nullable', 'array:q,skill_id,language_id,province_id,city_id,experience_level_id,education_level_id,availability,expected_salary_max,salary_period_id,religion_id,nationality_id,age_min,age_max,gender,open_to_offers'],
             'filter.q' => ['nullable', 'string', 'min:2', 'max:100'],
             'filter.skill_id' => ['nullable', 'array', 'max:10'],
             'filter.skill_id.*' => ['integer', 'min:1'],
@@ -46,6 +47,8 @@ final class SearchCandidatesRequest extends FormRequest
             'filter.age_min' => ['nullable', 'integer', 'min:13', 'max:100'],
             'filter.age_max' => ['nullable', 'integer', 'min:13', 'max:100', Rule::when($this->filled('filter.age_min'), ['gte:filter.age_min'])],
             'filter.gender' => ['nullable', 'string', Rule::enum(Gender::class)],
+            'filter.open_to_offers' => ['nullable', 'boolean'],
+            'sort' => ['nullable', 'string', Rule::enum(CandidateSort::class)],
         ];
     }
 
@@ -70,6 +73,8 @@ final class SearchCandidatesRequest extends FormRequest
             $int('age_min'),
             $int('age_max'),
             $this->filled('filter.gender') ? Gender::from($this->string('filter.gender')->toString()) : null,
+            $this->boolean('filter.open_to_offers'),
+            $this->filled('sort') ? CandidateSort::from($this->string('sort')->toString()) : CandidateSort::UpdatedAtDescending,
         );
     }
 }

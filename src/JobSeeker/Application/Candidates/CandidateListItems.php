@@ -2,10 +2,13 @@
 
 namespace Src\JobSeeker\Application\Candidates;
 
+use Src\JobSeeker\Application\JakartaToday;
+use Src\JobSeeker\Domain\ActiveWithin;
+
 /** Turns candidate rows into the list items of the search and of the recommendations, with the names in the language of the request. */
 final readonly class CandidateListItems
 {
-    public function __construct(private CandidateLabels $labels) {}
+    public function __construct(private CandidateLabels $labels, private JakartaToday $today) {}
 
     /**
      * @param  list<CandidateRow>  $rows
@@ -18,6 +21,8 @@ final readonly class CandidateListItems
         $levels = $this->labels->names('experience-levels', array_map(static fn (CandidateRow $row): ?int => $row->experienceLevelId, $rows), $language);
         $educations = $this->labels->names('education-levels', array_map(static fn (CandidateRow $row): ?int => $row->highestEducationLevelId, $rows), $language);
 
+        $today = $this->today->date();
+
         return array_map(static fn (CandidateRow $row): CandidateListItem => new CandidateListItem(
             $row->slug,
             $row->name,
@@ -29,6 +34,8 @@ final readonly class CandidateListItems
             $row->availability?->value,
             CandidateLabels::named($educations, $row->highestEducationLevelId),
             $row->updatedAt,
+            ActiveWithin::of($row->lastActiveOn, $today)?->value,
+            $row->openToOffers,
         ), $rows);
     }
 }

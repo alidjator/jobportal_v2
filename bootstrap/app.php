@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
+use Src\Identity\Interface\Http\Middleware\RecordUserActivity;
 use Src\Identity\Interface\Http\Middleware\RequireVerifiedEmail;
 use Src\Shared\Domain\Exceptions\DomainException;
 use Src\Shared\Domain\Exceptions\ExternalServiceUnavailable;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle:'.ApiRateLimit::NAME,
             ResolveRequestLanguage::class,
             EnforceTermsAcceptance::class,
+            RecordUserActivity::class,
         ]);
         // The Nuxt servers of Career and Workspace call from the loopback address and pass the visitor's address in `X-Forwarded-For` (`docs/design/frontend.md` 13.1):
         // only that address is trusted and only that header is read, so the rate limits, audit and consent records see the visitor.

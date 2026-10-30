@@ -26,6 +26,7 @@ final readonly class EloquentUserDataEraser implements UserDataEraser
 
         $this->connection->table('identity_terms_acceptances')->where('user_id', $userId)->update(['ip_address' => null]);
 
+        UserModel::query()->whereKey($userId)->update(['last_active_on' => null]);
         UserModel::query()->whereKey($userId)->first()?->tokens()->delete();
     }
 }

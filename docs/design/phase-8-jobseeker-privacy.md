@@ -1,4 +1,4 @@
-# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14; sections 1 and 2 coded 2026-10-15)
+# Phase 8: personal data export, profile reminders, blocked companies and activity status (designed 2026-10-14; sections 1 and 2 coded 2026-10-15, section 4 coded 2026-10-31)
 
 Gaps found from the job seeker's point of view (Mekari Talenta has no job seeker accounts, so it offers no benchmark here), chosen by the user from
 the advice of 2026-10-14. Sections 1 and 2 are **before go-live**: the export answers UU 27/2022 (PDP) Articles 7 and 13, and the reminder helps the
@@ -114,3 +114,15 @@ user. Interpretations, where the design left room:
   profile, which a reminded person does not have; only the live jobs that match their (unpaused) alerts are, as one sentence of the email, counted up to 100 per alert.
 - **Link and opt-out:** the email links to the client profile page set in `JOB_SEEKER_PROFILE_URL` (empty: no link). There is no signed one-click opt-out
   link yet (no signed routes exist in the API); the preference in the notification settings is the opt-out, and the email says so.
+
+## Coded: section 4 (2026-10-31; API)
+
+Migration `000340` (`identity_users.last_active_on` date; `jobseeker_profiles.open_to_offers` boolean, default false). Not yet checked by the user. Interpretations, where the design left room:
+
+- **Marking:** the middleware `RecordUserActivity` is in the `api` group after the terms gate and acts on routes with `auth:user`. It runs **before** the route, so a job seeker's own answer already shows today's bucket. `UserRepository::recordActiveOn` is one conditional `UPDATE` (job seeker accounts only, only when the stored day is empty or older than today in Jakarta), so a busy day writes once. The terms gate runs first: an account that must accept new terms is refused before it is marked.
+- **Buckets** (`ActiveWithin`): a day counts as inside a bucket when it is at most that many days ago, so 7 days ago is `7d`, 8 is `30d`, 30 is `30d`, 31 is `90d`, 90 is `90d`, 91 is `older`. Null (never seen: an imported account that has not signed in) shows no bucket.
+- **Shown:** `active_within` and `open_to_offers` on the candidate list row (search and recommended candidates), on `GET company/candidates/{slug}` and, as the owner's own view, on `GET me/profile` (`active_within`, `open_to_offers`). The date is never in an answer.
+- **Search:** `filter[open_to_offers]=1` keeps those open to offers (`0` or absent: no filter); `sort=-last_active` puts the most recently active first with never-seen accounts last, ties by profile update; `sort=-updated_at` is the default.
+- **Export and erasure:** the archive's `account` part gains `last_active_on` and the `profile` part gains `visibility.open_to_offers`; erasure clears `last_active_on`.
+- **Front end:** the "Terbuka untuk tawaran" switch and the activity note on the profile (Career), badges and the filter and sort in the candidate search (Workspace).
+

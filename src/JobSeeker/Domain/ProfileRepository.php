@@ -11,6 +11,9 @@ interface ProfileRepository
     /** Writes the profile, creating its row the first time. */
     public function save(JobSeekerProfile $profile, DateTimeImmutable $at): void;
 
+    /** The Jakarta day the account was last seen active (midnight UTC), kept on the account; null when it never was. */
+    public function lastActiveOn(int $userId): ?DateTimeImmutable;
+
     /**
      * Locks the user's profile row until the transaction ends, so changes that count entries (a limit on a list) run one after the other. The row is
      * created empty when the user has none yet; an existing profile is left as it is.

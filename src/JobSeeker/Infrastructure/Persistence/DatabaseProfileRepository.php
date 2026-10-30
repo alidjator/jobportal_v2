@@ -58,6 +58,7 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
                 'summary' => $profile->summary,
                 'is_discoverable' => $profile->isDiscoverable,
                 'resume_discoverable' => $profile->resumeDiscoverable,
+                'open_to_offers' => $profile->openToOffers,
                 'created_at' => $time,
                 'updated_at' => $time,
             ]],
@@ -65,7 +66,7 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
             [
                 'slug', 'phone', 'whatsapp', 'birth_date', 'gender', 'marital_status', 'religion_id', 'nationality_id', 'expected_salary', 'expected_salary_period_id',
                 'experience_level_id', 'availability', 'available_from', 'province_id', 'city_id', 'subdistrict_id', 'village_id', 'postal_code_id', 'address_line',
-                'headline', 'summary', 'is_discoverable', 'resume_discoverable', 'updated_at',
+                'headline', 'summary', 'is_discoverable', 'resume_discoverable', 'open_to_offers', 'updated_at',
             ],
         );
     }
@@ -84,6 +85,13 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
         } while ($this->connection->table('jobseeker_profiles')->where('slug', $slug)->exists());
 
         return $slug;
+    }
+
+    public function lastActiveOn(int $userId): ?DateTimeImmutable
+    {
+        $day = $this->connection->table('identity_users')->where('id', $userId)->value('last_active_on');
+
+        return is_string($day) ? new DateTimeImmutable($day, new DateTimeZone('UTC')) : null;
     }
 
     public function lock(int $userId, DateTimeImmutable $at): void
@@ -133,6 +141,7 @@ final readonly class DatabaseProfileRepository implements ProfileRepository
             $row->summary,
             (bool) $row->is_discoverable,
             (bool) $row->resume_discoverable,
+            (bool) $row->open_to_offers,
         );
     }
 }

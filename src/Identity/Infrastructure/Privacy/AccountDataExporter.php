@@ -46,6 +46,7 @@ final readonly class AccountDataExporter implements PersonalDataExporter
             'created_at' => self::time($user->created_at),
             'first_sign_in_at' => self::time($user->first_login_at),
             'last_sign_in_at' => self::time($user->last_login_at),
+            'last_active_on' => $user->last_active_on,
             'deletion_requested_at' => self::time($user->deletion_requested_at),
             'registration_campaign_code' => $user->registration_campaign_code,
             'has_password' => $user->password !== null,

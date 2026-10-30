@@ -2,6 +2,7 @@
 
 namespace Src\JobSeeker\Application;
 
+use Src\JobSeeker\Domain\ActiveWithin;
 use Src\JobSeeker\Domain\Education;
 use Src\JobSeeker\Domain\JobSeekerProfile;
 use Src\JobSeeker\Domain\LanguageProficiency;
@@ -10,7 +11,7 @@ use Src\JobSeeker\Domain\ProfileLink;
 use Src\JobSeeker\Domain\Resume;
 use Src\JobSeeker\Domain\WorkExperience;
 
-/** The profile as the owner sees it, with its lists and whether it is complete enough to apply. */
+/** The profile as the owner sees it, with its lists, whether it is complete enough to apply and the activity bucket companies see. */
 final readonly class MyProfile
 {
     /**
@@ -30,5 +31,6 @@ final readonly class MyProfile
         public array $languages,
         public array $links,
         public array $resumes,
+        public ?ActiveWithin $activeWithin = null,
     ) {}
 }

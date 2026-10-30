@@ -9,6 +9,7 @@ use Illuminate\Database\Query\Builder;
 use Src\JobSeeker\Application\Candidates\CandidateReader;
 use Src\JobSeeker\Application\Candidates\CandidateRow;
 use Src\JobSeeker\Application\Candidates\CandidateSearchQuery;
+use Src\JobSeeker\Application\Candidates\CandidateSort;
 use Src\JobSeeker\Domain\Availability;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -27,6 +28,7 @@ final readonly class DatabaseCandidateReader implements CandidateReader
     {
         $total = $this->filtered($query, $today)->count();
         $rows = $total === 0 ? [] : $this->filtered($query, $today)
+            ->when($query->sort === CandidateSort::LastActiveDescending, fn (Builder $q) => $q->orderByRaw('u.last_active_on desc nulls last'))
             ->orderByDesc('p.updated_at')->orderByDesc('p.id')
             ->offset($request->offset())->limit($request->perPage)
             ->get($this->columns())->all();
@@ -148,7 +150,7 @@ final readonly class DatabaseCandidateReader implements CandidateReader
     private function columns(): array
     {
         return [
-            'p.user_id', 'p.slug', 'u.name', 'u.avatar_path', 'p.headline', 'p.province_id', 'p.city_id', 'p.experience_level_id', 'p.availability', 'p.updated_at',
+            'p.user_id', 'p.slug', 'u.name', 'u.avatar_path', 'p.headline', 'p.province_id', 'p.city_id', 'p.experience_level_id', 'p.availability', 'p.updated_at', 'u.last_active_on', 'p.open_to_offers',
         ];
     }
 
@@ -233,6 +235,10 @@ final readonly class DatabaseCandidateReader implements CandidateReader
             $builder->whereNotNull('p.birth_date')->where('p.birth_date', '>', $today->modify('-'.($query->maxAge + 1).' years')->format('Y-m-d'));
         }
 
+        if ($query->openToOffers) {
+            $builder->where('p.open_to_offers', true);
+        }
+
         return $builder;
     }
 
@@ -259,6 +265,8 @@ final readonly class DatabaseCandidateReader implements CandidateReader
             $row->availability === null ? null : Availability::from((string) $row->availability),
             $highest[(int) $row->user_id] ?? null,
             new DateTimeImmutable((string) $row->updated_at, $utc),
+            $row->last_active_on === null ? null : new DateTimeImmutable((string) $row->last_active_on, $utc),
+            (bool) $row->open_to_offers,
         ), $rows);
     }
 

@@ -111,7 +111,7 @@ final readonly class ProfileDataExporter implements PersonalDataExporter
             'address_line' => $profile->addressLine,
             'headline' => $profile->headline,
             'summary' => $profile->summary,
-            'visibility' => ['profile_discoverable_by_companies' => $profile->isDiscoverable, 'resume_discoverable_by_companies' => $profile->resumeDiscoverable],
+            'visibility' => ['profile_discoverable_by_companies' => $profile->isDiscoverable, 'resume_discoverable_by_companies' => $profile->resumeDiscoverable, 'open_to_offers' => $profile->openToOffers],
         ];
     }
 

@@ -162,6 +162,17 @@ final class EloquentUserRepository implements UserRepository
             ->all();
     }
 
+    public function recordActiveOn(int $userId, DateTimeImmutable $day): void
+    {
+        $date = $day->format('Y-m-d');
+
+        UserModel::query()
+            ->whereKey($userId)
+            ->where('type', UserType::JobSeeker->value)
+            ->where(fn (Builder $stale) => $stale->whereNull('last_active_on')->orWhere('last_active_on', '<', $date))
+            ->update(['last_active_on' => $date]);
+    }
+
     public function signedInAmong(array $userIds): array
     {
         $signedIn = [];

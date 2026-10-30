@@ -2,6 +2,7 @@
 
 namespace Src\JobSeeker\Application;
 
+use Src\JobSeeker\Domain\ActiveWithin;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
 use Src\JobSeeker\Domain\JobSeekerProfile;
@@ -24,6 +25,7 @@ final readonly class GetMyProfile
         private ProfileListRepository $lists,
         private ResumeRepository $resumes,
         private ReferenceValues $references,
+        private JakartaToday $today,
     ) {}
 
     /** @throws AccessDenied `job-seeker-only` */
@@ -47,6 +49,7 @@ final readonly class GetMyProfile
             array_map(static fn ($entry): array => ['id' => $entry->languageId, 'name' => $languageNames[$entry->languageId] ?? null, 'proficiency' => $entry->proficiency], $languages),
             $this->lists->links($userId),
             $this->resumes->forUser($userId),
+            ActiveWithin::of($this->profiles->lastActiveOn($userId), $this->today->date()),
         );
     }
 }

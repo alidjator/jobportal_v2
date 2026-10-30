@@ -42,6 +42,7 @@ final class UpdateMyProfileRequest extends FormRequest
             'summary' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'is_discoverable' => ['sometimes', 'required', 'boolean'],
             'resume_discoverable' => ['sometimes', 'required', 'boolean'],
+            'open_to_offers' => ['sometimes', 'required', 'boolean'],
         ];
     }
 
@@ -93,7 +94,7 @@ final class UpdateMyProfileRequest extends FormRequest
             }
         }
 
-        foreach (['is_discoverable' => 'isDiscoverable', 'resume_discoverable' => 'resumeDiscoverable'] as $field => $property) {
+        foreach (['is_discoverable' => 'isDiscoverable', 'resume_discoverable' => 'resumeDiscoverable', 'open_to_offers' => 'openToOffers'] as $field => $property) {
             if (array_key_exists($field, $validated)) {
                 $changes[$property] = (bool) $validated[$field];
             }

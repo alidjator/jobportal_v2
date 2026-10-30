@@ -88,6 +88,12 @@ interface UserRepository
     /** How many imported accounts of this type first signed in at or before the moment. */
     public function countImportedSignedInBy(UserType $type, DateTimeImmutable $at): int;
 
+    /**
+     * Notes that the job seeker was active on a day (the Jakarta date at midnight UTC). It writes only when the stored day is older, so a busy day costs one write.
+     * An account of another type is left alone.
+     */
+    public function recordActiveOn(int $userId, DateTimeImmutable $day): void;
+
     /** Inserts a new user or updates an existing one, and returns the stored aggregate (with its id). */
     public function save(User $user): User;
 }

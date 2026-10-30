@@ -2,6 +2,8 @@
 
 namespace Src\JobSeeker\Application\Candidates;
 
+use Src\JobSeeker\Application\JakartaToday;
+use Src\JobSeeker\Domain\ActiveWithin;
 use Src\JobSeeker\Domain\Education;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
@@ -35,6 +37,7 @@ final readonly class GetCandidate
         private ApplicantRelations $relations,
         private ApplicantContacts $contacts,
         private ProfileViews $views,
+        private JakartaToday $today,
     ) {}
 
     /**
@@ -81,6 +84,7 @@ final readonly class GetCandidate
             $profile->resumeDiscoverable ? $this->resumes->forUser($userId) : [],
             $this->relations->canSeeApplicant($viewer->companyId, $viewer->memberId, $viewer->seesAllJobs, $userId) ? $this->contact($profile) : null,
             $row->updatedAt,
+            ActiveWithin::of($row->lastActiveOn, $this->today->date())?->value,
         );
     }
 

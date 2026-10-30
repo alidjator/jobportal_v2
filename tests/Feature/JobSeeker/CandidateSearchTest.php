@@ -213,6 +213,7 @@ final class CandidateSearchTest extends FeatureTestCase
             'experience_level' => ['id' => $this->referenceId('reference_experience_levels', 'fresh'), 'name' => 'fresh'],
             'availability' => 'open_to_work',
             'highest_education' => ['id' => $this->referenceId('reference_education_levels', 'bachelor'), 'name' => 'bachelor'],
+            'active_within' => '7d', 'open_to_offers' => false,
             'updated_at' => '2026-10-03T00:00:00+00:00',
         ], $row);
         $this->assertFalse(collect($this->api('GET', '/company/candidates')->json('data'))->firstWhere('slug', $this->citra['slug'])['has_avatar']);

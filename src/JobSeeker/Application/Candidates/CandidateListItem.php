@@ -24,5 +24,7 @@ final readonly class CandidateListItem
         public ?string $availability,
         public ?array $highestEducation,
         public DateTimeImmutable $updatedAt,
+        public ?string $activeWithin = null,
+        public bool $openToOffers = false,
     ) {}
 }

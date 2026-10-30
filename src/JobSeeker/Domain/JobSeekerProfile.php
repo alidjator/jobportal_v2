@@ -35,6 +35,7 @@ final readonly class JobSeekerProfile
         public ?string $summary = null,
         public bool $isDiscoverable = false,
         public bool $resumeDiscoverable = false,
+        public bool $openToOffers = false,
     ) {}
 
     public static function empty(int $userId): self
