@@ -63,6 +63,7 @@ use Src\Company\Domain\ImportSummaryRepository;
 use Src\Company\Domain\InvitationRepository;
 use Src\Company\Domain\MessageDefaultsRepository;
 use Src\Company\Domain\NameChangeRequestRepository;
+use Src\Company\Domain\PermissionPresetRepository;
 use Src\Company\Infrastructure\Dashboard\CompanyVerificationQueueCard;
 use Src\Company\Infrastructure\Dashboard\NameChangesQueueCard;
 use Src\Company\Infrastructure\Dashboard\PlatformCompaniesCard;
@@ -86,6 +87,7 @@ use Src\Company\Infrastructure\Persistence\DatabaseImportSummaryRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseMessageDefaultsRepository;
 use Src\Company\Infrastructure\Persistence\DatabaseNameChangeRequestRepository;
+use Src\Company\Infrastructure\Persistence\DatabasePermissionPresetRepository;
 use Src\Company\Infrastructure\Persistence\MemberRepositoryMembershipResolver;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyDirectory;
 use Src\Company\Infrastructure\Persistence\RepositoryCompanyLetterheads;
@@ -132,6 +134,7 @@ final class CompanyServiceProvider extends ContextServiceProvider
     /** @var array<class-string, class-string> */
     public array $bindings = [
         CompanyRepository::class => DatabaseCompanyRepository::class,
+        PermissionPresetRepository::class => DatabasePermissionPresetRepository::class,
         CompanyMemberRepository::class => DatabaseCompanyMemberRepository::class,
         ImportSummaryRepository::class => DatabaseImportSummaryRepository::class,
         AdminCompanyReader::class => DatabaseAdminCompanyReader::class,

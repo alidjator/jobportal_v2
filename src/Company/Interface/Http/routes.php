@@ -15,6 +15,7 @@ use Src\Company\Interface\Http\Controllers\ImportSummaryController;
 use Src\Company\Interface\Http\Controllers\InvitationController;
 use Src\Company\Interface\Http\Controllers\MessageDefaultsController;
 use Src\Company\Interface\Http\Controllers\PermissionCatalogController;
+use Src\Company\Interface\Http\Controllers\PermissionPresetController;
 use Src\Company\Interface\Http\Controllers\PublicCompanyController;
 use Src\Company\Interface\Http\Controllers\TeamInvitationController;
 use Src\Company\Interface\Http\Controllers\TeamMemberController;
@@ -41,6 +42,10 @@ foreach (['logo', 'banner'] as $kind) {
 Route::middleware('auth:user')->group(function (): void {
     Route::get('company/me', CurrentCompanyController::class);
     Route::get('company/permissions', PermissionCatalogController::class);
+    Route::get('company/permission-presets', [PermissionPresetController::class, 'index']);
+    Route::post('company/permission-presets', [PermissionPresetController::class, 'store']);
+    Route::patch('company/permission-presets/{id}', [PermissionPresetController::class, 'update'])->whereNumber('id');
+    Route::delete('company/permission-presets/{id}', [PermissionPresetController::class, 'destroy'])->whereNumber('id');
 
     // Logo and banner of the own company: any member sees them, a company admin uploads (a multipart POST: PHP does not read a multipart PUT) and removes them.
     foreach (['logo', 'banner'] as $kind) {
