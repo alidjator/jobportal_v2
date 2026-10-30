@@ -9,6 +9,9 @@ interface RequisitionRepository
 
     public function create(Requisition $requisition): Requisition;
 
+    /** Whether another requisition of the company already has this number, whatever the letter case. */
+    public function numberTaken(int $companyId, string $number, ?int $exceptId = null): bool;
+
     /** Stores every field of the requisition that can change. */
     public function save(Requisition $requisition): void;
 

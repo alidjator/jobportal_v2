@@ -41,6 +41,8 @@ final readonly class Requisition
         public ?DateTimeImmutable $createdAt = null,
         /** The work location the hires will join (`company_locations`); optional, and a job opened from the requisition starts with it. */
         public ?int $locationId = null,
+        /** The number the requisition got when it was made, in the format of its tenant at that time; it never changes. Null only for a row from before numbers existed. */
+        public ?string $number = null,
     ) {}
 
     /**

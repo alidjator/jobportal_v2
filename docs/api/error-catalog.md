@@ -451,6 +451,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `requisition-not-cancellable` | 409 | Workforce | This requisition can no longer be cancelled. |
 | `requisition-not-editable` | 409 | Workforce | Only a draft or a rejected requisition can be submitted. |
 | `requisition-not-open` | 409 | Workforce | Only an approved requisition or one in recruitment can be amended. |
+| `requisition-number-taken` | 409 | Workforce | A requisition of this company already has this number. |
 | `requisition-quota-exceeded` | 422 | Workforce | The plan has :remaining hire(s) left for this position and fiscal year. |
 | `requisition-required` | 422 | Job | This tenant opens its jobs from an approved requisition, so a job cannot be cloned. |
 | `requisition-vacancies-exceeded` | 422 | Workforce | All the hires of this requisition are already open in jobs. |

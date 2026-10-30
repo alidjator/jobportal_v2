@@ -21,6 +21,8 @@ class RequisitionSummaryResource extends JsonResource
 
         return [
             'id' => $requisition->id,
+            /** The number the requisition got when it was made, such as `JR-20261101-001` (the format is the company's setting `workforce.requisition_number_format`); null for one from before numbers existed. */
+            'number' => $requisition->number,
             'status' => $requisition->status->value,
             'type' => $requisition->type->value,
             'legal_entity_id' => $requisition->legalEntityId,

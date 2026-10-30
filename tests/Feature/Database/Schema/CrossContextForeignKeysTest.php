@@ -100,6 +100,7 @@ final class CrossContextForeignKeysTest extends FeatureTestCase
             'company_import_summaries' => ['company_id'],
             'approval_instances' => ['company_id'],
             'workforce_requisitions' => ['company_id'],
+            'workforce_requisition_counters' => ['company_id'],
             'recruitment_interview_kits' => ['company_id'],
             'jobinvitation_invitations' => ['company_id'],
             'jobseeker_blocked_companies' => ['company_id'],

@@ -28,6 +28,7 @@ final readonly class SettingDefinition
         public int $minItems,
         public bool $companyEditable = false,
         public bool $groupEditable = false,
+        public ?string $pattern = null,
     ) {}
 
     public static function integer(string $key, int $default, int $min, int $max, string $description, bool $overridable = false, bool $companyEditable = false, bool $groupEditable = false): self
@@ -40,9 +41,10 @@ final readonly class SettingDefinition
         return new self($key, SettingType::Boolean, $default, $description, $overridable || $companyEditable, null, null, [], 0, $companyEditable, $groupEditable);
     }
 
-    public static function text(string $key, string $default, int $maxLength, string $description, bool $overridable = false, bool $companyEditable = false, bool $groupEditable = false): self
+    /** @param  ?string  $pattern  a regular expression the text must match (an empty text is not checked), for a setting that holds a format */
+    public static function text(string $key, string $default, int $maxLength, string $description, bool $overridable = false, bool $companyEditable = false, bool $groupEditable = false, ?string $pattern = null): self
     {
-        return new self($key, SettingType::Text, $default, $description, $overridable || $companyEditable, null, $maxLength, [], 0, $companyEditable, $groupEditable);
+        return new self($key, SettingType::Text, $default, $description, $overridable || $companyEditable, null, $maxLength, [], 0, $companyEditable, $groupEditable, $pattern);
     }
 
     /**
@@ -94,6 +96,10 @@ final readonly class SettingDefinition
 
         if (mb_strlen($value) > (int) $this->max) {
             throw $this->invalid('The value of :key must be at most :max characters.', ['max' => (int) $this->max]);
+        }
+
+        if ($this->pattern !== null && $value !== '' && preg_match($this->pattern, $value) !== 1) {
+            throw $this->invalid('The value of :key is not in a valid format.');
         }
 
         return $value;

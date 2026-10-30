@@ -190,7 +190,7 @@ final class SettingsTest extends FeatureTestCase
             'platform.operations_email', 'platform.support_email', 'platform.support_whatsapp',
             'probe.enabled', 'probe.global_only', 'probe.label', 'probe.limit', 'probe.templates',
             'recruitment.interview_reschedule_cutoff_hours', 'recruitment.max_applications_per_day', 'recruitment.max_bulk_applications', 'recruitment.max_export_rows', 'recruitment.max_interview_kits', 'recruitment.max_screening_questions', 'recruitment.max_stages', 'recruitment.offer_labor_rules', 'recruitment.pre_employment_checks_enabled', 'recruitment.reapply_after_days', 'recruitment.rejection_undo_minutes', 'recruitment.requisition_required', 'recruitment.screening_enabled', 'recruitment.stale_after_days',
-            'workforce.fiscal_year_start_month',
+            'workforce.fiscal_year_start_month', 'workforce.requisition_number_format', 'workforce.requisition_number_mode',
         ], $keys);
 
         $limit = collect($response->json('data'))->firstWhere('key', 'probe.limit');

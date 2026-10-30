@@ -586,4 +586,111 @@ final class RequisitionTest extends FeatureTestCase
         $this->error($this->as($this->outsider, 'POST', "/company/requisitions/{$id}/jobs"), 403, 'not-an-internal-tenant');
         $this->error($this->as($this->requester, 'POST', '/company/requisitions/999999/jobs'), 404, 'not-found');
     }
+
+    // ----- the number -----
+
+    public function test_a_requisition_gets_its_number_by_the_default_format_with_a_running_number_per_day(): void
+    {
+        $first = $this->draft();
+        $second = $this->draft();
+
+        $this->assertSame('JR-20261016-001', $this->as($this->requester, 'GET', "/company/requisitions/{$first}")->assertOk()->json('data.number'));
+        $this->assertSame('JR-20261016-002', $this->as($this->requester, 'GET', "/company/requisitions/{$second}")->assertOk()->json('data.number'));
+        $this->assertSame(['JR-20261016-002', 'JR-20261016-001'], array_column($this->as($this->requester, 'GET', '/company/requisitions')->assertOk()->json('data'), 'number'));
+
+        Carbon::setTestNow('2026-11-01 03:00:00');
+        $third = $this->draft();
+
+        $this->assertSame('JR-20261101-001', $this->as($this->requester, 'GET', "/company/requisitions/{$third}")->json('data.number'));
+    }
+
+    public function test_the_company_sets_its_own_format_and_an_issued_number_never_changes(): void
+    {
+        $before = $this->draft();
+
+        $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_format' => 'REQ/{YY}{MM}/{SEQ:4}'])->assertOk();
+        $after = $this->draft();
+        $again = $this->draft();
+
+        $this->assertSame('JR-20261016-001', DB::table('workforce_requisitions')->where('id', $before)->value('number'));
+        $this->assertSame('REQ/2610/0001', DB::table('workforce_requisitions')->where('id', $after)->value('number'));
+        $this->assertSame('REQ/2610/0002', DB::table('workforce_requisitions')->where('id', $again)->value('number'));
+
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$before}", $this->body(['hires' => 3]))->assertOk()->assertJsonPath('data.number', 'JR-20261016-001');
+    }
+
+    public function test_a_format_without_exactly_one_running_number_is_refused(): void
+    {
+        foreach (['JR-{YYYY}{MM}{DD}', 'JR-{SEQ}-{SEQ}', 'JR {SEQ}', 'JR-{HOUR}-{SEQ}', str_repeat('A', 40).'{SEQ}'] as $format) {
+            $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_format' => $format])->assertStatus(422);
+        }
+
+        $this->as($this->requester, 'GET', '/company/requisitions/'.$this->draft())->assertJsonPath('data.number', 'JR-20261016-001');
+    }
+
+    public function test_a_format_that_does_not_start_again_keeps_counting_and_the_numbers_stay_unique_per_company(): void
+    {
+        $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_format' => 'JR-{SEQ:3}'])->assertOk();
+        $ids = [$this->draft(), $this->draft()];
+        Carbon::setTestNow('2026-12-01 03:00:00');
+        $ids[] = $this->draft();
+
+        $this->assertSame(['JR-001', 'JR-002', 'JR-003'], DB::table('workforce_requisitions')->whereIn('id', $ids)->orderBy('id')->pluck('number')->all());
+        $this->assertSame(3, DB::table('workforce_requisitions')->where('company_id', $this->holding)->distinct()->count('number'));
+    }
+
+    // ----- a number the member types -----
+
+    private function typing(): void
+    {
+        $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_mode' => 'manual'])->assertOk();
+    }
+
+    public function test_a_company_that_types_its_numbers_needs_one_and_keeps_what_was_typed(): void
+    {
+        $this->typing();
+
+        $this->as($this->requester, 'POST', '/company/requisitions', $this->body())->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:invalid-requisition-field')->assertJsonStructure(['errors' => ['number']]);
+        $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => '   ']))->assertStatus(422);
+        $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => str_repeat('A', 41)]))->assertStatus(422);
+
+        $id = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => "  HR  Ke-2026 / 07 \n"]))->assertCreated()->assertJsonPath('data.number', 'HR Ke-2026 / 07')->json('data.id');
+        $this->assertSame('HR Ke-2026 / 07', DB::table('workforce_requisitions')->where('id', $id)->value('number'));
+        $this->assertSame(0, DB::table('workforce_requisition_counters')->count(), 'A typed number uses no running number.');
+    }
+
+    public function test_a_typed_number_is_never_used_twice_in_a_company_whatever_the_letter_case(): void
+    {
+        $this->typing();
+        $first = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => 'JR-7']))->assertCreated()->json('data.id');
+
+        foreach (['JR-7', 'jr-7', ' Jr-7 '] as $again) {
+            $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => $again]))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:requisition-number-taken');
+        }
+
+        $second = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => 'JR-8']))->assertCreated()->json('data.id');
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$second}", $this->body(['number' => 'jr-7']))->assertStatus(409);
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$first}", $this->body(['number' => 'JR-7', 'hires' => 3]))->assertOk()->assertJsonPath('data.number', 'JR-7');
+    }
+
+    public function test_a_typed_number_changes_until_the_requisition_is_submitted_and_is_kept_when_left_out(): void
+    {
+        $this->typing();
+        $id = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => 'JR-1']))->assertCreated()->json('data.id');
+
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['number' => 'JR-2']))->assertOk()->assertJsonPath('data.number', 'JR-2');
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body())->assertOk()->assertJsonPath('data.number', 'JR-2');
+
+        DB::table('workforce_requisitions')->where('id', $id)->update(['status' => 'pending_approval']);
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['number' => 'JR-3']))->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:requisition-not-editable');
+        $this->assertSame('JR-2', DB::table('workforce_requisitions')->where('id', $id)->value('number'));
+    }
+
+    public function test_a_company_on_the_format_ignores_a_number_that_was_sent_and_keeps_the_one_it_has(): void
+    {
+        $id = (int) $this->as($this->requester, 'POST', '/company/requisitions', $this->body(['number' => 'MINE-1']))->assertCreated()->assertJsonPath('data.number', 'JR-20261016-001')->json('data.id');
+
+        $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['number' => 'MINE-2']))->assertOk()->assertJsonPath('data.number', 'JR-20261016-001');
+        $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_mode' => 'sometimes'])->assertStatus(422);
+    }
 }

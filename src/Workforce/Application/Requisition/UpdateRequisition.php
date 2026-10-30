@@ -22,6 +22,7 @@ final readonly class UpdateRequisition
         private RequisitionViews $views,
         private RequisitionChangeRecorder $recorder,
         private TransactionManager $transactions,
+        private RequisitionNumbers $numbers,
     ) {}
 
     /**
@@ -29,6 +30,7 @@ final readonly class UpdateRequisition
      * @throws EntityNotFound
      * @throws StateConflict `requisition-not-editable`
      * @throws BusinessRuleViolation `invalid-requisition-field`
+     * @throws StateConflict `requisition-number-taken`
      */
     public function execute(Actor $actor, int $id, RequisitionInput $input, ?string $ipAddress, ?string $userAgent): RequisitionView
     {
@@ -45,7 +47,7 @@ final readonly class UpdateRequisition
                 throw new StateConflict('Only a draft or a rejected requisition can be changed.', 'requisition-not-editable');
             }
 
-            $changed = $requisition->with([...$this->rules->fields($requisition->companyId, $requisition->legalEntityId, $input), 'status' => RequisitionStatus::Draft]);
+            $changed = $requisition->with([...$this->rules->fields($requisition->companyId, $requisition->legalEntityId, $input), 'number' => $this->numbers->forChange($requisition, $input->number), 'status' => RequisitionStatus::Draft]);
             $this->requisitions->save($changed);
 
             return $changed;

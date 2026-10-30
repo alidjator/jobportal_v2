@@ -27,6 +27,7 @@ designed here. Plans, billing, payments, orders and invoices stay out of scope.
 - 2026-10-15: with **no flow** for a subject type, submission is refused; a step whose approver **leaves** is reassigned by an admin; reminders
   every **2 days** by default (decided by the user; [Approvals](#4-approvals)).
 - 2026-10-15: **section 5** (tables, routes, catalog additions) approved as written (decided by the user; [Storage and API](#5-storage-and-api)).
+- 2026-10-29: a fact of an approval subject type has a `unit` (`idr` for an amount of money, else null) in `GET company/approval-flows` and `GET organization/approval-flows`, so a client shows the amount as rupiah (`estimated_cost` and `max_budget`); the labels and descriptions the API sends are English and the Workspace translates them by key (`frontend.md`, 2026-10-29).
 
 ## 1. Requisition rule
 
@@ -261,3 +262,32 @@ active accounts of the tenant as `hiring_managers` (`id`, `name`). It needs `wor
 - **Job details:** a job that was opened for a requisition shows it among its position rows, with a link to it for a member who may read requisitions.
 - The requisition of a job never changes after it is created (`requisition_id` is refused on `PATCH`).
 - **Decided 2026-10-29 (the user): the rule stays on by default on a `single` installation too.** Its company is an internal tenant, so a job is opened from an approved requisition there as anywhere else; the company admin may switch the setting off for the company.
+
+## Coded: the requisition number (2026-10-31)
+
+Asked by the user on 2026-10-31 ("permintaan karyawan punya no transaksi, misal JR-20261101"). Migration `000380` (new, run on the test and the real database): `workforce_requisitions.number` (60, unique with the company)
+and `workforce_requisition_counters` (company, series, last number). Decided by the user: the number is **given when the draft is made** (never changes after, a cancelled draft leaves a gap), **the requisitions that exist get one**
+(by the default format, in the order and by the Jakarta day they were made), and **the format is a setting**, not fixed.
+
+- **Format.** The setting `workforce.requisition_number_format` (text, at most 40 characters; the company edits it on its settings page, a group sets it for its tenants without a value of their own; default
+  `JR-{YYYY}{MM}{DD}-{SEQ:3}`, which gives `JR-20261101-001`). Allowed: letters, digits and `- _ / .`, the tokens `{YYYY}`, `{YY}`, `{MM}`, `{DD}` (the Jakarta day the requisition is made) and **exactly one** running
+  number, `{SEQ}` or `{SEQ:n}` padded with zeros to `n` digits (1 to 9). Anything else is refused with 422 `invalid-setting-value` ("The value of :key is not in a valid format."), by the new optional `pattern` of
+  `SettingDefinition::text`. The number may be one character longer than the format (a `{SEQ:9}`); the column holds 60.
+- **Running number.** It counts per company and **series**, the number with its running part left out (`JR-20261101-`): a format with `{DD}` counts per day, one with only `{MM}` per month, one with only `{YYYY}` per year, one with no
+  date never starts again. It is taken in the transaction that stores the draft (`RequisitionCounters::next`, a row lock on the counter), so a failed save gives the number back and two requisitions never share one.
+  Changing the format changes only the numbers made afterwards. A stored format that is no longer valid (an old value) falls back to the default.
+- **Shown.** `number` on the requisition (list and detail, company and group); it is read only and cannot be sent. A requisition from before numbers existed and not backfilled would show `null` (none remain after the migration).
+- **Not coded:** searching the lists by number, and the number in the approval and job screens (the front end can show it from `number`).
+
+### A number the member types (2026-10-31)
+
+Asked by the user as the "free format" option; decided with the user: a **setting chooses the mode**, the number is **changeable until the requisition is submitted**, and a typed number is **free text of 1 to 40 characters**.
+Migration `000390` (new, run on the test and the real database): a unique index on the company and the lower case of `number`.
+
+- **Mode.** The setting `workforce.requisition_number_mode` (`auto`, the default, or `manual`; the company edits it, a group sets it for its tenants without a value of their own; a stricter pattern than the format's). In `auto` the
+  format above gives the number and a `number` sent in the body is ignored (so a client may send back what it read). In `manual` `number` is **required on `POST`** and optional on `PUT` (left out keeps the current one).
+  Switching the mode changes only the requisitions made afterwards; the numbers that exist stay.
+- **The typed number.** Control characters and runs of spaces become one space and the edges are trimmed (`  HR  Ke-2026 / 07 ` is `HR Ke-2026 / 07`); empty or over 40 characters is 422 `invalid-requisition-field` with `errors.number`.
+  Letters, digits, spaces and punctuation are all allowed. It is **never used twice in a company, whatever the letter case**: 409 `requisition-number-taken` (checked in the use case, backed by the unique index). A typed number takes no running number.
+- **Changing it.** Only through `PUT`, so only while the requisition is a draft or rejected (409 `requisition-not-editable` otherwise, as for every field); sending the number it already has changes nothing.
+

@@ -40,6 +40,12 @@ final readonly class DatabaseRequisitionRepository implements RequisitionReposit
         return $this->find($id) ?? throw new \LogicException('The requisition was just stored.');
     }
 
+    public function numberTaken(int $companyId, string $number, ?int $exceptId = null): bool
+    {
+        return $this->connection->table('workforce_requisitions')->where('company_id', $companyId)->whereRaw('lower(number) = ?', [mb_strtolower($number)])
+            ->when($exceptId !== null, fn ($query) => $query->where('id', '!=', $exceptId))->exists();
+    }
+
     public function save(Requisition $requisition): void
     {
         $this->connection->table('workforce_requisitions')->where('id', $requisition->id)->update([...$this->columns($requisition), 'updated_at' => $this->clock->now()->format(self::TIME_FORMAT)]);
@@ -143,6 +149,7 @@ final readonly class DatabaseRequisitionRepository implements RequisitionReposit
     private function columns(Requisition $requisition): array
     {
         return [
+            'number' => $requisition->number,
             'type' => $requisition->type->value,
             'status' => $requisition->status->value,
             'position_id' => $requisition->positionId,
@@ -179,7 +186,7 @@ final readonly class DatabaseRequisitionRepository implements RequisitionReposit
             $this->nullableInt($row->salary_max), $row->justification, $row->replacement_name, $this->nullableTime($row->replacement_leaving_date),
             (int) $row->hiring_manager_user_id, (int) $row->requester_id, $this->nullableInt($row->approval_id), $row->decision_reason, $row->closed_reason,
             $this->nullableTime($row->submitted_at), $this->nullableTime($row->decided_at), $this->nullableTime($row->closed_at), new DateTimeImmutable($row->created_at),
-            $this->nullableInt($row->location_id),
+            $this->nullableInt($row->location_id), $row->number === null ? null : (string) $row->number,
         );
     }
 

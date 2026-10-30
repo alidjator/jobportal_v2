@@ -17,10 +17,12 @@ use Src\Workforce\Application\WorkforceSettings;
 use Src\Workforce\Domain\Events\PlanChanged;
 use Src\Workforce\Domain\Events\RequisitionChanged;
 use Src\Workforce\Domain\PlanRepository;
+use Src\Workforce\Domain\RequisitionCounters;
 use Src\Workforce\Domain\RequisitionRepository;
 use Src\Workforce\Infrastructure\Listeners\ApplyApprovalOutcome;
 use Src\Workforce\Infrastructure\Listeners\RecordWorkforceAuditEntries;
 use Src\Workforce\Infrastructure\Persistence\DatabasePlanRepository;
+use Src\Workforce\Infrastructure\Persistence\DatabaseRequisitionCounters;
 use Src\Workforce\Infrastructure\Persistence\DatabaseRequisitionRepository;
 use Src\Workforce\Infrastructure\Persistence\RequisitionLocationUsage;
 
@@ -31,6 +33,7 @@ final class WorkforceServiceProvider extends ContextServiceProvider
     public array $bindings = [
         PlanRepository::class => DatabasePlanRepository::class,
         RequisitionRepository::class => DatabaseRequisitionRepository::class,
+        RequisitionCounters::class => DatabaseRequisitionCounters::class,
         RequisitionGate::class => RequisitionGateService::class,
     ];
 

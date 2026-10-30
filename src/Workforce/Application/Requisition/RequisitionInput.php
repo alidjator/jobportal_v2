@@ -25,6 +25,8 @@ final readonly class RequisitionInput
         public ?DateTimeImmutable $replacementLeavingDate,
         public int $hiringManagerUserId,
         public ?int $locationId = null,
+        /** Typed by the member; read only when the company types its numbers (`workforce.requisition_number_mode` is `manual`), otherwise ignored. */
+        public ?string $number = null,
     ) {}
 
     public static function of(Requisition $requisition): self
@@ -32,7 +34,7 @@ final readonly class RequisitionInput
         return new self(
             $requisition->type, $requisition->positionId, $requisition->requestedGradeId, $requisition->hires, $requisition->jobTypeId, $requisition->contractMonths,
             $requisition->targetJoinDate, $requisition->costCentreId, $requisition->salaryMin, $requisition->salaryMax, $requisition->justification, $requisition->replacementName,
-            $requisition->replacementLeavingDate, $requisition->hiringManagerUserId, $requisition->locationId,
+            $requisition->replacementLeavingDate, $requisition->hiringManagerUserId, $requisition->locationId, $requisition->number,
         );
     }
 }
