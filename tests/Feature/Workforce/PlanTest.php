@@ -362,6 +362,10 @@ final class PlanTest extends FeatureTestCase
         $this->assertSame(['G1'], array_column($response->json('data.grades'), 'code'));
         $this->assertSame([$cost], array_column($response->json('data.cost_centres'), 'id'));
         $this->assertContains($this->planner->id, array_column($response->json('data.hiring_managers'), 'id'));
+        $this->assertSame('auto', $response->json('data.requisition_number_mode'));
+
+        $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_mode' => 'manual'])->assertOk();
+        $this->assertSame('manual', $this->as($this->planner, 'GET', '/company/workforce/options')->json('data.requisition_number_mode'));
     }
 
     public function test_the_choices_are_closed_to_a_viewer_to_an_outsider_and_to_an_external_tenant(): void

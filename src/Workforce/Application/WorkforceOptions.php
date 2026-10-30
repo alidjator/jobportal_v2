@@ -24,5 +24,7 @@ final readonly class WorkforceOptions
         public array $grades,
         public array $costCentres,
         public array $managers,
+        /** `auto` when the format of the company gives a requisition its number, `manual` when the member types it (`workforce.requisition_number_mode`). */
+        public string $requisitionNumberMode = 'auto',
     ) {}
 }

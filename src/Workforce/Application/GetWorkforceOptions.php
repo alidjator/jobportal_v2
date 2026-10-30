@@ -14,6 +14,7 @@ use Src\Shared\Application\Organization\LegalEntityDirectory;
 use Src\Shared\Application\Organization\PositionDirectory;
 use Src\Shared\Application\Organization\PositionSummary;
 use Src\Shared\Application\Organization\StructureDirectory;
+use Src\Shared\Application\Settings\Settings;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 
 /**
@@ -32,6 +33,7 @@ final readonly class GetWorkforceOptions
         private CompanyTeam $team,
         private CompanyMemberAccounts $accounts,
         private Clock $clock,
+        private Settings $settings,
     ) {}
 
     /** @throws AccessDenied */
@@ -74,6 +76,7 @@ final readonly class GetWorkforceOptions
             $this->structure->gradeOptions($groupId),
             $this->structure->costCentreOptions($legalEntityId),
             $managers,
+            $this->settings->text(WorkforceSettings::REQUISITION_NUMBER_MODE, $membership->companyId) === 'manual' ? 'manual' : 'auto',
         );
     }
 }

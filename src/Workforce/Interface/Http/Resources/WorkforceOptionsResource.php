@@ -35,6 +35,8 @@ final class WorkforceOptionsResource extends JsonResource
             'grades' => array_map(static fn (GradeOption $grade): array => ['id' => $grade->id, 'code' => $grade->code, 'name' => $grade->name, 'rank' => $grade->rank], $this->resource->grades),
             'cost_centres' => array_map(static fn (CostCentreOption $centre): array => ['id' => $centre->id, 'code' => $centre->code, 'name' => $centre->name], $this->resource->costCentres),
             'hiring_managers' => $this->resource->managers,
+            /** @var 'auto'|'manual' `manual` when the member types the number of a requisition (required on creating one), `auto` when the format of the company gives it */
+            'requisition_number_mode' => $this->resource->requisitionNumberMode,
         ];
     }
 }
