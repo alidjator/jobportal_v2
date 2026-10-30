@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Recruitment\Application\Checks\BulkRequestChecks;
 use Src\Recruitment\Application\Checks\CheckView;
 use Src\Recruitment\Application\Checks\GetCheckResultFile;
 use Src\Recruitment\Application\Checks\ListApplicationChecks;
@@ -14,10 +15,12 @@ use Src\Recruitment\Application\Checks\RequestCheck;
 use Src\Recruitment\Application\Checks\UpdateCheck;
 use Src\Recruitment\Domain\CheckStatus;
 use Src\Recruitment\Interface\Http\PdfDownload;
+use Src\Recruitment\Interface\Http\Requests\BulkRequestChecksRequest;
 use Src\Recruitment\Interface\Http\Requests\RecordCheckResultRequest;
 use Src\Recruitment\Interface\Http\Requests\RequestCheckRequest;
 use Src\Recruitment\Interface\Http\Requests\UpdateCheckRequest;
 use Src\Recruitment\Interface\Http\Resources\ApplicationCheckResource;
+use Src\Recruitment\Interface\Http\Resources\BulkItemResultResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 
@@ -35,6 +38,12 @@ final class ApplicationCheckController extends ApiController
         $check = $requestCheck->execute($actor, $id, $request->checkTypeId(), $request->scheduledAt(), $request->place(), $request->vendor(), $request->noteToCandidate());
 
         return (new ApplicationCheckResource($this->view($list->execute($actor, $id), (int) $check->id)))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    /** Requests the same check on several applications of one job; the answer says what happened to each, in the order of the selection (`moved`: the check was requested, `skipped` with the error code of the single request). */
+    public function bulkRequest(BulkRequestChecksRequest $request, int $id, ActorResolver $actors, BulkRequestChecks $bulk): AnonymousResourceCollection
+    {
+        return BulkItemResultResource::collection($bulk->execute($actors->fromRequest($request), $id, $request->applicationIds(), $request->checkTypeId(), $request->scheduledAt(), $request->place(), $request->vendor(), $request->noteToCandidate()));
     }
 
     public function update(UpdateCheckRequest $request, int $id, int $checkId, ActorResolver $actors, UpdateCheck $update, ListApplicationChecks $list): ApplicationCheckResource

@@ -94,6 +94,7 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/check-types/{id}/reactivate', [CheckTypeController::class, 'reactivate'])->whereNumber('id');
     Route::get('company/applications/{id}/checks', [ApplicationCheckController::class, 'index'])->whereNumber('id');
     Route::post('company/applications/{id}/checks', [ApplicationCheckController::class, 'store'])->whereNumber('id');
+    Route::post('company/jobs/{id}/applications/bulk-checks', [ApplicationCheckController::class, 'bulkRequest'])->whereNumber('id');
     Route::patch('company/applications/{id}/checks/{checkId}', [ApplicationCheckController::class, 'update'])->whereNumber(['id', 'checkId']);
     Route::post('company/applications/{id}/checks/{checkId}/result', [ApplicationCheckController::class, 'result'])->whereNumber(['id', 'checkId']);
     Route::get('company/applications/{id}/checks/{checkId}/result/file', [ApplicationCheckController::class, 'file'])->whereNumber(['id', 'checkId']);

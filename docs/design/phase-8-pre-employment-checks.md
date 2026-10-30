@@ -1,4 +1,4 @@
-# Phase 8: pre-employment checks: medical check-up, background and reference checks (designed 2026-10-19, not coded)
+# Phase 8: pre-employment checks: medical check-up, background and reference checks (designed 2026-10-19, part 1 of the API coded 2026-10-30 behind a switch)
 
 Gap FG12 of `docs/analysis/actor-gap-analysis.md`: Indonesian corporate and state-owned employers (the PKP group among them) run a medical
 check-up (MCU), a background check, reference checks and often ask for a police record (SKCK) between the user interview and the join date. Today
@@ -74,3 +74,53 @@ after `docs/legal-review.md` question 21.
 | Rejection reasons | `failed_pre_employment_check` |
 | Legal | `docs/legal-review.md` question 21 |
 | Front end | check types in the company settings; a "Cek pra-kerja" panel on the application; consent card and schedule for the candidate; condition box in the offer form |
+
+## Coded 2026-10-30 (API part 1; the front end and part 2 follow)
+
+Built **switched off** like #31 (the user chose that over waiting for question 21): setting `recruitment.pre_employment_checks_enabled` is `false` until legal answers. While it is off
+the company side answers 403 `feature-disabled`, the candidate's consent calls answer 404 and `GET me/applications/{id}` carries `checks: []`.
+
+- **Coded:** the permission `checks.manage` (catalog 30; the Recruiter preset gains it, Hiring Manager does not; members who already hold explicit permissions do **not** get it, a company admin ticks it), check
+  types (`GET/POST company/check-types`, `PATCH .../{id}`, `POST .../deactivate|reactivate`; a type has a unique name per company and its kind never changes), the checklist of an application
+  (`GET/POST company/applications/{id}/checks`, `PATCH .../{checkId}`, `POST .../{checkId}/waive|cancel`, `POST .../{checkId}/result`, `GET .../{checkId}/result/file`), the candidate's consent
+  (`POST me/applications/{id}/checks/{checkId}/consent|refuse`) and `checks` on `GET me/applications/{id}`; audit `check.outcome_recorded` and `check.outcome_viewed` (medical and police record, and every
+  file read), no note text.
+- **Interpretations:** `recruitment_application_checks.consent_required` records whether consent was needed when the check was requested (the type may change later); the status follows what is known
+  (`requested`, `consented` once the candidate agrees, `scheduled` once a time is set and the consent is in); a refusal keeps the status `requested` and shows to the team with the reason (nothing moves);
+  a result waits for the consent (409 `check-consent-pending`) and completes the check; a closed check frees its type for a new request; the note to the candidate and the instructions follow the link rule
+  (`message-link-not-allowed`); the outcome, note and refusal reason are null for a member without `checks.manage` (`outcome_visible`).
+- **Coded 2026-10-31 (part 2, step 1):** the rejection reason `failed_pre_employment_check` (migration `000330` swaps the check constraint of `recruitment_application_stage_history.rejection_reason`; the enum gains the case). It is a label only: it
+  is accepted whether or not the switch is on, and rejecting with it never depends on a check. Decided with the user 2026-10-31: the candidate's agenda and to-do sources wait for #25; `checks_completed` of the hires export is `yes` when the
+  application has at least one check and all of them are `completed` or `waived`, `no` otherwise, empty when it has none.
+- **Coded 2026-10-31 (part 2, step 2):** the hires export gains the last column `Checks completed`: `yes` when every check of the application that counts is `completed` or `waived`, `no` when one is still open, empty when it has none. A `cancelled` check does not count (a request made again after a cancellation must not leave a permanent `no`); only the status is read, never the outcome.
+- **Coded 2026-10-31 (part 2, step 3, migration `000331`):** the conditional offer. `recruitment_offers` gains `conditional_on_checks` and `condition_check_type_ids` (json); the offer request (send and move, `OfferFields`) takes `conditional_on_checks` and `condition_check_type_ids`;
+  the resource carries `conditional_on_checks` and `condition_check_types: [{id, name}]` (the current names; the generated letter names them as they were when the offer was sent: "Penawaran ini bergantung pada hasil {names}."). Interpretations: an offer is
+  conditional exactly when it names at least one type (`conditional_on_checks: true` without types is 422, types without the flag are ignored); every type must be one of the company's and in use (422 `invalid-offer`); a conditional offer while
+  the switch is off answers 403 `feature-disabled`; the member who sends the offer needs no `checks.manage` for it (the offer permission decides); a revised offer carries its own condition. Accepting never waits for the checks and a failed check leaves the offer as it is.
+- **Coded 2026-10-31 (part 2, step 4, in-app only):** the event `CheckChanged` and the notifications `check.requested`, `check.scheduled`, `check.rescheduled`, `check.cancelled` (to the job seeker) and `check.consent_refused` (to the member who requested the check, in-app only), written by a queued listener. The data holds
+  ids, job title, company name, check name and the scheduled time, never an outcome or a note. Interpretations: `scheduled` when a time is set on a check that had none, `rescheduled` when it moves (a change of place, vendor or note, a cleared time and a waiver are not announced); `requested` also
+  when the request already carries a time. **Not yet:** the four emails to the job seeker (`application_update`), which need four templates in the catalog.
+- **Coded 2026-10-31 (part 2, step 5):** the 90-day purge, `recruitment:purge-check-results` (daily, `PurgeCheckResults`). Decided with the user 2026-10-31: an application is final once it entered `rejected`, `withdrawn` or `hired` (`stage_entered_at`); 90 days later a `medical` check loses its outcome, its
+  note and its file, every other check loses its file only (its outcome stays until the applicant retention of #26), and all stay `completed`. The file goes first, the row after; no audit entry. The handing of a hire's outcome to Employee (#13) is not coded and waits for legal question 21.
+- **Coded 2026-10-31 (part 2, step 6):** bulk requests, `POST company/jobs/{id}/applications/bulk-checks` (`BulkRequestChecks`; body of the single request plus `application_ids`, at most `recruitment.max_bulk_applications`). The selection, the type and the shared input are checked
+  as a whole first (422 `invalid-applications` or `too-many-applications`, 404 type, 422 `check-type-inactive`, `invalid-check`, `message-link-not-allowed`; a mistake changes nothing); then each application goes through the single request and the answer lists each in the order of the selection
+  (`moved`: requested, or `skipped` with the single request's code such as `check-not-allowed-stage` or `check-already-open`). Each check notifies the candidate as the single request does.
+- **Coded 2026-10-31 (part 2, step 7):** the four emails to the job seeker, as templates `recruitment.check_requested`, `check_scheduled`, `check_rescheduled` and `check_cancelled` (variables `name`, `job_title`, `company_name`, `check_name`, `schedule`, `place`, `vendor`, `note` and `consent`; the optional ones carry their label and line breaks, as the offer
+  templates do; `consent` asks for the agreement while the check still awaits it). They follow the preference `application_update` like the offer emails, and the refusal tells the team in-app only.
+- **Open (part 2):** the to-do and agenda sources (they wait for #25: the candidate's agenda and to-do do not exist yet).
+
+## Front end coded 2026-10-30 (part 1)
+
+- **Workspace:** the page `/perusahaan/cek-pra-kerja` (menu "Perusahaan, Jenis cek", `checks.manage`): the company's check types with the five suggested presets, consent forced for medical, background and police
+  record, a type switched off rather than deleted. The tab "Cek pra-kerja" on the application (`applications.view`): the checklist with status, schedule and vendor for everyone, "Minta cek" (from the interview stage on), change of
+  schedule, result (a medical one reads fit, fit with notes, unfit; a PDF for the other kinds), waive and cancel for `checks.manage`; outcome, team note and file only where the API sends them.
+- **Career:** the card "Cek pra-kerja" on the application (`career.checks`): schedule, place, vendor and instructions; a check that needs consent shows "Setuju" (with the consent text and a tick) and "Tolak" (with an
+  optional reason); a completed check reads "Selesai" with no result.
+- While the switch is off both sides stay quiet: the tab and the page show that the feature is not switched on (403 `feature-disabled`), the Career card is absent (`checks: []`).
+## Front end coded 2026-10-31 (part 2)
+
+- **Workspace:** the box "Syarat cek pra-kerja" in the offer dialog (a tick and a multi-select of the company's active check types; the types are read with `checks.manage`, and an offer that is already conditional keeps its box with the types it names for a member without it); the line "Bergantung pada hasil: ..." on each
+  offer of the offers tab; "Minta cek" in the selection bar of an applicant list (`checks.manage`, a dialog with the type, place, vendor and note; the time is set per applicant with "Ubah jadwal"), which reports how many were requested and how many skipped; the reason `failed_pre_employment_check` in every
+  rejection dialog (it is offered whether or not the feature is on: the front end has no flag for the switch, and the API accepts the reason either way).
+- **Career:** the offer page says which checks the offer depends on and that the candidate can answer without waiting for them (`OfferSummary`); the reason has its own text.
+- **Open:** the to-do and agenda of the candidate (#25).
