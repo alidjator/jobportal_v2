@@ -105,6 +105,13 @@ interface JobDirectory
     /** The days after a rejection before the same person may apply to the job again, or null when the job says never (or does not exist). */
     public function reapplyAfterDays(int $jobId): ?int;
 
+    /**
+     * The extra profile items the job asks for before an application is taken (`phase-8-job-posting.md` section 5); empty for none or for a job that does not exist.
+     *
+     * @return list<ApplyRequirement>
+     */
+    public function applyRequirements(int $jobId): array;
+
     /** The status value of the job (`active`, `closed`, ...), or null when it does not exist. */
     public function statusOf(int $jobId): ?string;
 

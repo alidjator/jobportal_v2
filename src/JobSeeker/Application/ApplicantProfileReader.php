@@ -7,6 +7,8 @@ use Src\JobSeeker\Domain\Education;
 use Src\JobSeeker\Domain\EducationRepository;
 use Src\JobSeeker\Domain\ExperienceRepository;
 use Src\JobSeeker\Domain\JobSeekerProfile;
+use Src\JobSeeker\Domain\LanguageEntry;
+use Src\JobSeeker\Domain\LinkType;
 use Src\JobSeeker\Domain\ProfileCompleteness;
 use Src\JobSeeker\Domain\ProfileListRepository;
 use Src\JobSeeker\Domain\ProfileRepository;
@@ -18,6 +20,7 @@ use Src\Shared\Application\Applicant\ApplicantSubmission;
 use Src\Shared\Application\Applicant\GeneratedCvSpec;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\FileStorage;
+use Src\Shared\Application\Job\ApplyRequirement;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 
@@ -47,13 +50,22 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
         private GenerateCv $cvs,
     ) {}
 
-    public function forApplication(int $userId, int $resumeId): ApplicantSubmission
+    public function forApplication(int $userId, int $resumeId, array $requirements = []): ApplicantSubmission
     {
         $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
         $counts = $this->profiles->counts($userId);
         $completeness = ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], $counts['resumes']);
 
-        return new ApplicantSubmission($completeness->missing, $this->resume($userId, $resumeId), $this->snapshot($profile));
+        return new ApplicantSubmission([...$completeness->missing, ...$this->unmet($profile, $requirements)], $this->resume($userId, $resumeId), $this->snapshot($profile));
+    }
+
+    public function missingFor(int $userId, array $requirements = []): array
+    {
+        $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
+        $counts = $this->profiles->counts($userId);
+        $completeness = ProfileCompleteness::evaluate($profile, $counts['experiences'], $counts['educations'], $counts['resumes']);
+
+        return [...$completeness->missing, ...$this->unmet($profile, $requirements)];
     }
 
     public function generateCv(int $userId, GeneratedCvSpec $cv): ?ApplicantResume
@@ -70,12 +82,53 @@ final readonly class ApplicantProfileReader implements ApplicantProfileSource
         return new ApplicantResume($generated->name, $generated->contents);
     }
 
-    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume): ApplicantSubmission
+    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume, array $requirements = []): ApplicantSubmission
     {
         $profile = $this->profiles->find($userId) ?? JobSeekerProfile::empty($userId);
-        $missing = $this->generatedCvCompleteness($profile)->missing;
+        $missing = [...$this->generatedCvCompleteness($profile)->missing, ...$this->unmet($profile, $requirements)];
 
         return new ApplicantSubmission($missing, $missing === [] ? $resume : null, $this->snapshot($profile));
+    }
+
+    /**
+     * The codes of the extra items the profile does not meet: an expected salary with its period, a link of the right type, a WhatsApp number, a language at the minimum proficiency or above.
+     *
+     * @param  list<ApplyRequirement>  $requirements
+     * @return list<string>
+     */
+    private function unmet(JobSeekerProfile $profile, array $requirements): array
+    {
+        if ($requirements === []) {
+            return [];
+        }
+
+        $linkTypes = array_map(static fn ($link): string => $link->type->value, $this->lists->links($profile->userId));
+        $languages = [];
+
+        foreach ($this->lists->languages($profile->userId) as $entry) {
+            /** @var LanguageEntry $entry */
+            $languages[$entry->languageId] = array_search($entry->proficiency->value, ApplyRequirement::PROFICIENCIES, true);
+        }
+
+        $unmet = [];
+
+        foreach ($requirements as $requirement) {
+            $met = match ($requirement->item) {
+                ApplyRequirement::EXPECTED_SALARY => $profile->expectedSalary !== null && $profile->expectedSalaryPeriodId !== null,
+                ApplyRequirement::PORTFOLIO => array_intersect($linkTypes, [LinkType::Portfolio->value, LinkType::Website->value, LinkType::GitHub->value]) !== [],
+                ApplyRequirement::LINKEDIN => in_array(LinkType::LinkedIn->value, $linkTypes, true),
+                ApplyRequirement::WHATSAPP => trim((string) $profile->whatsapp) !== '',
+                ApplyRequirement::LANGUAGE => isset($languages[(int) $requirement->languageId])
+                    && $languages[(int) $requirement->languageId] >= (int) array_search($requirement->minProficiency, ApplyRequirement::PROFICIENCIES, true),
+                default => true,
+            };
+
+            if (! $met) {
+                $unmet[] = $requirement->code();
+            }
+        }
+
+        return $unmet;
     }
 
     /** The completeness for an application that attaches a generated CV: the CV stands for the resume, so one counts. */

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Src\Job\Application\JobTags;
 use Src\Job\Domain\WorkMode;
+use Src\Shared\Application\Job\ApplyRequirement;
 
 /**
  * Create (`POST`, the title is required) or change (`PATCH`, only what is sent changes, a null clears an optional field) a job. This checks only the
@@ -57,6 +58,11 @@ final class SaveJobRequest extends FormRequest
             'vacancies_visible' => ['sometimes', 'required', 'boolean'],
             'salary_note' => ['sometimes', 'nullable', 'string', 'max:500'],
             'reapply_after_days' => ['sometimes', 'nullable', 'integer', 'between:30,365'],
+            'apply_requirements' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'apply_requirements.*' => ['array'],
+            'apply_requirements.*.item' => ['required', 'string', 'max:30'],
+            'apply_requirements.*.language_id' => ['nullable', 'integer', 'min:1'],
+            'apply_requirements.*.min_proficiency' => ['nullable', 'string', 'max:30'],
             'location_ids' => ['sometimes', 'array', 'max:'.self::LOCATIONS_MAX],
             'location_ids.*' => ['integer', 'min:1', 'distinct'],
             'skill_ids' => ['sometimes', 'array', 'max:'.self::SKILLS_MAX],
@@ -108,6 +114,13 @@ final class SaveJobRequest extends FormRequest
 
         if (array_key_exists('reapply_after_days', $validated)) {
             $changes['reapplyAfterDays'] = $validated['reapply_after_days'] === null ? null : (int) $validated['reapply_after_days'];
+        }
+
+        if (array_key_exists('apply_requirements', $validated)) {
+            $changes['applyRequirements'] = array_map(
+                static fn (array $values): ApplyRequirement => ApplyRequirement::fromArray($values),
+                array_values($validated['apply_requirements'] ?? []),
+            );
         }
 
         if (array_key_exists('work_mode', $validated)) {

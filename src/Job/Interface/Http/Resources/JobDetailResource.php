@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Job\Application\JobDetail;
 use Src\Job\Domain\JobStatus;
+use Src\Shared\Application\Job\ApplyRequirement;
 
 /**
  * A job as its company sees it: every field as stored (ids for the classification and the location, each with its name and a formatted location label, Markdown description), the skills and benefits with
@@ -59,6 +60,8 @@ final class JobDetailResource extends JsonResource
             'vacancies' => $content->vacancies,
             /** Whether the public sees the number of vacancies; the company always does. */
             'vacancies_visible' => $content->vacanciesVisible,
+            /** @var list<array{item: string, language_id?: int|null, min_proficiency?: string|null}> the extra profile items an application needs (`expected_salary`, `portfolio`, `linkedin`, `whatsapp`, `language`); empty for none */
+            'apply_requirements' => array_map(static fn (ApplyRequirement $requirement): array => $requirement->toArray(), $content->applyRequirements),
             /** Days after a rejection before the same person may apply again; null means never. */
             'reapply_after_days' => $content->reapplyAfterDays,
             'hires_count' => $this->resource->hiresCount,

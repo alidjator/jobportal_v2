@@ -12,6 +12,7 @@ use Src\Job\Domain\JobStatus;
 use Src\Job\Domain\JobWorkPlace;
 use Src\Job\Domain\WorkMode;
 use Src\Shared\Application\Clock;
+use Src\Shared\Application\Job\ApplyRequirement;
 use Src\Shared\Application\References\TagRegistry;
 use stdClass;
 
@@ -137,6 +138,7 @@ final readonly class DatabaseJobRepository implements JobRepository
             'vacancies_visible' => $content->vacanciesVisible,
             'salary_note' => $content->salaryNote,
             'reapply_after_days' => $content->reapplyAfterDays,
+            'apply_requirements' => $content->applyRequirements === [] ? null : json_encode(array_map(static fn (ApplyRequirement $requirement): array => $requirement->toArray(), $content->applyRequirements), JSON_THROW_ON_ERROR),
             'published_at' => $job->publishedAt?->format(self::TIME_FORMAT),
             'reviewed_at' => $job->reviewedAt?->format(self::TIME_FORMAT),
             'reviewed_by_admin_id' => $job->reviewedByAdminId,
@@ -274,6 +276,7 @@ final readonly class DatabaseJobRepository implements JobRepository
                 $row->salary_note === null ? null : (string) $row->salary_note,
                 $this->nullableInt($row->reapply_after_days),
                 $this->places($id),
+                $this->requirements($row->apply_requirements),
             ),
             (int) $row->created_by_user_id,
             $row->published_at === null ? null : $this->time((string) $row->published_at),
@@ -284,6 +287,19 @@ final readonly class DatabaseJobRepository implements JobRepository
             $row->report_hold_at === null ? null : $this->time((string) $row->report_hold_at),
             $this->nullableInt($row->requisition_id),
             $this->nullableInt($row->hiring_manager_from_stage_id),
+        );
+    }
+
+    /** @return list<ApplyRequirement> */
+    private function requirements(mixed $json): array
+    {
+        if ($json === null) {
+            return [];
+        }
+
+        return array_map(
+            static fn (array $values): ApplyRequirement => ApplyRequirement::fromArray($values),
+            json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR),
         );
     }
 

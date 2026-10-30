@@ -58,6 +58,8 @@ final class PublicJobResource extends JsonResource
                 'postal_code' => $location->postalCode,
                 'address_line' => $content->addressLine,
             ]]),
+            /** The extra profile items an application needs, shown as "Wajib: portofolio, Bahasa Inggris (lancar)"; a language carries its name in the request language and its minimum proficiency (`basic`, `conversational`, `fluent`, `native`). */
+            'apply_requirements' => $this->resource->applyRequirements,
             'skills' => $this->resource->skills,
             'tags' => $content->tags,
             'benefits' => $this->resource->benefits,

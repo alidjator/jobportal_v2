@@ -1,4 +1,4 @@
-# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14; sections 1 to 4 coded 2026-10-23, 5 and 6 not coded)
+# Phase 8: job preview, summary, hidden vacancies, salary note, job list filters, apply requirements and apply state (designed 2026-10-14; sections 1 to 4 coded 2026-10-23, 5 and 6 coded 2026-10-31)
 
 Gaps found against Mekari Talenta's job listings (help center articles 34576595122073, 34630221946009 and 34573329191321), chosen by the user from
 the advice of 2026-10-14. Not taken: splitting the description into three fields (the Markdown description stays one field; the front end offers
@@ -120,9 +120,28 @@ Migration `2026_10_23_000186` (new, run on the test and the real database): `job
   locations) and `created_by {id, name}`.
 - **Company detail:** `summary`, `vacancies_visible`, `salary_note`, `reapply_after_days`, `location_ids` and `locations`.
 
+## Coded: sections 5 and 6 (2026-10-31, #20)
+
+Migration `2026_10_31_000370` (new, run on the test and the real database): `job_jobs.apply_requirements` (jsonb, null for none). Interpretations:
+
+- **Requirements (section 5).** The job form takes `apply_requirements: [{item, language_id?, min_proficiency?}]` (`expected_salary`, `portfolio`, `linkedin`, `whatsapp`, `language`); `null` or `[]` clears it. 422
+  `invalid-apply-requirements` (`errors.apply_requirements`) for an unknown item, a repeated item, a language twice, more than 3 languages, a language without its id or a minimum proficiency (`basic`, `conversational`, `fluent`,
+  `native`) and a language that is not an active master; a language the job already asks for stays valid when it is deactivated later. Not a core field. The company detail carries the raw list (`apply_requirements`), the clone copies it
+  (it is part of the content), and the public detail lists `[{item, language: {id, name}, min_proficiency}]` with the language named in the request language (`language` only for a language item).
+- **Applying.** `ApplyToJob` reads the list from `JobDirectory::applyRequirements` and passes it to `ApplicantProfileSource::forApplication` and `forApplicationWithResume`; the codes of the items the profile does not meet
+  follow the basic ones in `missing` of the existing 422 `profile-incomplete`: `expected_salary` (an amount **and** its period), `portfolio` (a link of type `portfolio`, `website` or `github`), `linkedin`, `whatsapp`,
+  `language:{id}` (that language at the minimum proficiency or higher). A generated CV is rendered before the transaction, so a profile that misses an extra item has already spent one of the hourly CVs when it is refused.
+- **Apply state (section 6).** `GET me/jobs/{job}/apply-state` (`{job}` is the id with or without the slug, `auth:user`, no email-verified middleware because an unverified email is a reason, `Cache-Control: no-store, private`):
+  `{data: {can_apply, reasons: [{code, missing?, reapply_on?}], application: {id, status, applied_at}|null, applications_left_today}}`. 404 for a job that is not live, **a job on a report hold included** (applying answers 409
+  `job-on-hold` for it); 403 `job-seeker-only` for anyone else. The reasons are in the order of the apply request: `email-not-verified`, `profile-incomplete` (`missing`: the basics as `forApplication` finds them with the resumes the
+  profile has now, so a job seeker without a resume sees `resume`, plus the items of the job), `already-applied` (`reapply_on` is the Jakarta day the waiting period ends; a rejected application whose period is over is not a reason),
+  `application-limit-reached`, `applications-unavailable` (the company has no default applied stage). `application` is the live (not withdrawn) application in whatever stage, also when it is rejected and releasable.
+  `applications_left_today` is the daily limit less the applications submitted since midnight in Jakarta, withdrawn ones included. Reads only, no locks; the general API limiter applies.
+- **Not coded:** the summary in the job alert and recommendation emails (still open from section 2).
+
 | Piece | Change |
 |---|---|
-| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note` (coded `000186`), `apply_requirements` (not coded) |
+| Migration | `job_jobs.summary`, `vacancies_visible`, `salary_note` (coded `000186`), `apply_requirements` (coded `000370`) |
 | API | `GET company/jobs/{id}/preview`; the three fields on the job form, the company detail, the public detail and search row, alerts and recommendation emails; new filters, sorts and row fields on `GET company/jobs`; `apply_requirements` on the job form and the public detail; `GET me/jobs/{id}/apply-state` |
 | Review | `summary` and `salary_note` are core fields |
 | Errors | 422 `invalid-summary`, `invalid-salary-note`, `message-link-not-allowed`, (`invalid-filter` dropped, see above), `invalid-apply-requirements`; new `missing` codes in `profile-incomplete` |

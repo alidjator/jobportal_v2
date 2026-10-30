@@ -6,6 +6,8 @@ use Src\Job\Domain\JobContent;
 use Src\Job\Domain\JobWorkPlace;
 use Src\Shared\Application\Company\CandidateMessageRules;
 use Src\Shared\Application\Company\CompanyLocations;
+use Src\Shared\Application\Job\ApplyRequirement;
+use Src\Shared\Application\References\ReferenceValues;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 
 /**
@@ -28,19 +30,21 @@ final readonly class JobContentChanges
         private JobContentRules $rules,
         private CompanyLocations $locations,
         private CandidateMessageRules $messageRules,
+        private ReferenceValues $references,
     ) {}
 
     /**
      * @param  array<string, mixed>  $changes
      * @param  bool  $isNew  true for a new job, where everything counts as changed
      *
-     * @throws BusinessRuleViolation `invalid-job` with `errors` per field, `invalid-summary`, `invalid-salary-note` or `message-link-not-allowed`
+     * @throws BusinessRuleViolation `invalid-job` with `errors` per field, `invalid-summary`, `invalid-salary-note`, `invalid-apply-requirements` or `message-link-not-allowed`
      */
     public function apply(JobContent $base, array $changes, bool $isNew, int $companyId): JobContent
     {
         $errors = [];
 
         $changes = $this->texts($base, $changes, $companyId);
+        $this->assertRequirements($base, $changes);
 
         if (array_key_exists('locationIds', $changes)) {
             /** @var list<int> $ids */
@@ -64,6 +68,63 @@ final readonly class JobContentChanges
         $this->rules->check($content, $isNew ? null : $base, $errors);
 
         return $content;
+    }
+
+    /**
+     * The extra profile items must be known, each at most once (a language once per language), at most 3 languages, each with an active language and a known minimum proficiency.
+     * A language the job already asks for stays valid when an admin deactivated it later.
+     *
+     * @param  array<string, mixed>  $changes
+     *
+     * @throws BusinessRuleViolation `invalid-apply-requirements`
+     */
+    private function assertRequirements(JobContent $base, array $changes): void
+    {
+        if (! array_key_exists('applyRequirements', $changes)) {
+            return;
+        }
+
+        /** @var list<ApplyRequirement> $requirements */
+        $requirements = $changes['applyRequirements'];
+        $held = array_map(static fn (ApplyRequirement $requirement): string => $requirement->code(), $base->applyRequirements);
+        $seen = [];
+        $languages = 0;
+
+        foreach ($requirements as $requirement) {
+            $language = $requirement->item === ApplyRequirement::LANGUAGE;
+
+            if (! in_array($requirement->item, ApplyRequirement::ITEMS, true)) {
+                $message = 'The item is not one a job can ask for.';
+
+                throw new BusinessRuleViolation($message, 'invalid-apply-requirements', extensions: ['errors' => ['apply_requirements' => [$message]]]);
+            }
+
+            if ($language && ($requirement->languageId === null || ! in_array($requirement->minProficiency, ApplyRequirement::PROFICIENCIES, true))) {
+                $message = 'A language needs its id and a minimum proficiency.';
+
+                throw new BusinessRuleViolation($message, 'invalid-apply-requirements', extensions: ['errors' => ['apply_requirements' => [$message]]]);
+            }
+
+            if (in_array($requirement->code(), $seen, true)) {
+                $message = 'An item can be asked for only once.';
+
+                throw new BusinessRuleViolation($message, 'invalid-apply-requirements', extensions: ['errors' => ['apply_requirements' => [$message]]]);
+            }
+
+            if ($language && ++$languages > ApplyRequirement::MAX_LANGUAGES) {
+                $message = 'A job can ask for at most :max languages.';
+
+                throw new BusinessRuleViolation($message, 'invalid-apply-requirements', extensions: ['errors' => ['apply_requirements' => [$message]]], parameters: ['max' => ApplyRequirement::MAX_LANGUAGES]);
+            }
+
+            if ($language && ! in_array($requirement->code(), $held, true) && ! $this->references->isActive('languages', (int) $requirement->languageId)) {
+                $message = 'The language does not exist or is not active.';
+
+                throw new BusinessRuleViolation($message, 'invalid-apply-requirements', extensions: ['errors' => ['apply_requirements' => [$message]]]);
+            }
+
+            $seen[] = $requirement->code();
+        }
     }
 
     /**

@@ -101,10 +101,11 @@ final readonly class ApplyToJob
                 $companyId = $this->liveCompanyId($jobId);
 
                 $release = $this->assertCanApply($userId, $jobId);
+                $requirements = $this->jobs->applyRequirements($jobId);
 
                 $submission = $input->cv !== null
-                    ? $this->applicants->forApplicationWithResume($userId, $generated)
-                    : $this->applicants->forApplication($userId, (int) $input->resumeId);
+                    ? $this->applicants->forApplicationWithResume($userId, $generated, $requirements)
+                    : $this->applicants->forApplication($userId, (int) $input->resumeId, $requirements);
 
                 if ($submission->missing !== []) {
                     throw new BusinessRuleViolation('Complete your profile before applying.', 'profile-incomplete', extensions: ['missing' => $submission->missing]);
@@ -242,9 +243,7 @@ final readonly class ApplyToJob
             throw new StateConflict('You have already applied to this job.', 'already-applied');
         }
 
-        $zone = new DateTimeZone(self::TIME_ZONE);
-        $on = new DateTimeImmutable($rejected['rejected_at']->setTimezone($zone)->format('Y-m-d'), $zone);
-        $on = $on->modify("+{$days} days");
+        $on = ReapplyWindow::opensOn($rejected['rejected_at'], $days);
 
         if ($this->clock->now() < $on) {
             throw new StateConflict('You have already applied to this job.', 'already-applied', extensions: ['reapply_on' => $on->format('Y-m-d')]);

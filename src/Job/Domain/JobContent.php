@@ -4,6 +4,7 @@ namespace Src\Job\Domain;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Src\Shared\Application\Job\ApplyRequirement;
 
 /**
  * Everything a company writes in a job. The classifications, the salary period, the location and the skills and benefits are ids of the shared masters;
@@ -17,6 +18,7 @@ final readonly class JobContent
      * @param  list<string>  $tags  normalised keywords (lower case)
      * @param  list<int>  $benefitIds
      * @param  list<JobWorkPlace>  $workPlaces  the company locations the job is for, the main one first; empty for a job with its own address
+     * @param  list<ApplyRequirement>  $applyRequirements  the extra profile items an application needs; not a core field, it applies to the applications made after the change
      */
     public function __construct(
         public string $title,
@@ -49,6 +51,7 @@ final readonly class JobContent
         public ?string $salaryNote = null,
         public ?int $reapplyAfterDays = null,
         public array $workPlaces = [],
+        public array $applyRequirements = [],
     ) {}
 
     /** The content of a new draft: only the title, a visible salary and no lists. */

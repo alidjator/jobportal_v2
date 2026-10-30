@@ -31,6 +31,11 @@ final readonly class DatabaseApplicationRepository implements ApplicationReposit
         return $this->connection->table('recruitment_applications')->where('active_key', $userId.'-'.$jobId)->exists();
     }
 
+    public function liveApplicationOf(int $userId, int $jobId): ?Application
+    {
+        return $this->load($this->connection->table('recruitment_applications')->where('active_key', $userId.'-'.$jobId), false);
+    }
+
     public function rejectedApplicationOf(int $userId, int $jobId): ?array
     {
         $row = $this->connection->table('recruitment_applications')

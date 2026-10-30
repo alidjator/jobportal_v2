@@ -5,6 +5,7 @@ namespace Src\Job\Application\Browse;
 use Src\Job\Domain\Job;
 use Src\Job\Domain\JobWorkPlace;
 use Src\Shared\Application\Company\PublicCompanyCard;
+use Src\Shared\Application\Job\ApplyRequirement;
 use Src\Shared\Application\References\LocationReferences;
 use Src\Shared\Application\References\ReferenceValues;
 
@@ -46,7 +47,19 @@ final readonly class PublicJobViewBuilder
             $this->namedList('skills', $content->skillIds, $language),
             $this->namedList('benefits', $content->benefitIds, $language),
             places: $this->places($content->workPlaces),
+            applyRequirements: $this->requirements($content->applyRequirements, $language),
         );
+    }
+
+    /**
+     * @param  list<ApplyRequirement>  $requirements
+     * @return list<array{item: string, language?: array{id: int, name: string|null}, min_proficiency?: string}>
+     */
+    private function requirements(array $requirements, string $language): array
+    {
+        return array_map(fn (ApplyRequirement $requirement): array => $requirement->item === ApplyRequirement::LANGUAGE
+            ? ['item' => $requirement->item, 'language' => ['id' => (int) $requirement->languageId, 'name' => $this->references->name('languages', (int) $requirement->languageId, $language)], 'min_proficiency' => (string) $requirement->minProficiency]
+            : ['item' => $requirement->item], $requirements);
     }
 
     /**

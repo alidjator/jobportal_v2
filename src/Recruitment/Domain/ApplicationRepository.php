@@ -10,6 +10,9 @@ interface ApplicationRepository
     /** Whether the applicant has a live application (not withdrawn) for the job: applying again is not allowed. */
     public function hasLiveApplication(int $userId, int $jobId): bool;
 
+    /** The applicant's live application (not withdrawn) for the job, in whatever stage; null when there is none. */
+    public function liveApplicationOf(int $userId, int $jobId): ?Application;
+
     /**
      * The live application of the applicant for the job when a recruiter rejected it, as its id and the time it was rejected; null when there is none or it is in another stage.
      * Only a rejected application can be released for applying again (`releaseActiveKey`).

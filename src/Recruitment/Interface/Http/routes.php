@@ -7,6 +7,7 @@ use Src\Recruitment\Interface\Http\Controllers\ApplicationCheckController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationNoteController;
 use Src\Recruitment\Interface\Http\Controllers\ApplicationRatingController;
+use Src\Recruitment\Interface\Http\Controllers\ApplyStateController;
 use Src\Recruitment\Interface\Http\Controllers\BulkApplicationController;
 use Src\Recruitment\Interface\Http\Controllers\CheckTypeController;
 use Src\Recruitment\Interface\Http\Controllers\CompanyApplicationController;
@@ -183,6 +184,9 @@ Route::post('jobs/{job}/applications', [ApplicationController::class, 'store'])
 
 // The applicant's own applications.
 Route::middleware('auth:user')->group(function (): void {
+    // Whether the job seeker could apply to a live job and, if not, why; the email may be unverified, so it is a reason and not a refusal.
+    Route::get('me/jobs/{job}/apply-state', ApplyStateController::class)->where('job', '[0-9]+(?:-[a-z0-9-]*)?');
+
     Route::get('me/applications', [ApplicationController::class, 'index']);
     Route::get('me/applications/{id}', [ApplicationController::class, 'show'])->whereNumber('id');
     Route::get('me/applications/{id}/resume', [ApplicationController::class, 'resume'])->whereNumber('id');

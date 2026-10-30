@@ -2,14 +2,29 @@
 
 namespace Src\Shared\Application\Applicant;
 
+use Src\Shared\Application\Job\ApplyRequirement;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
 /** What Recruitment needs from the job seeker's profile to take an application. Provided by JobSeeker, so Recruitment never reads the profile tables. */
 interface ApplicantProfileSource
 {
-    /** The profile data and the chosen resume of the job seeker. A resume id that is not the applicant's gives a submission without a resume. */
-    public function forApplication(int $userId, int $resumeId): ApplicantSubmission;
+    /**
+     * The profile data and the chosen resume of the job seeker. A resume id that is not the applicant's gives a submission without a resume. `missing` also names the extra items the
+     * job asks for that the profile lacks (`expected_salary`, `portfolio`, `linkedin`, `whatsapp`, `language:{id}`).
+     *
+     * @param  list<ApplyRequirement>  $requirements
+     */
+    public function forApplication(int $userId, int $resumeId, array $requirements = []): ApplicantSubmission;
+
+    /**
+     * What the profile still lacks before the job seeker can apply: the parts every application needs (`phone`, `location`, `history`, `resume`, as `forApplication` finds them for a
+     * profile with the resumes it has) and the extra items of the job. Reads only.
+     *
+     * @param  list<ApplyRequirement>  $requirements
+     * @return list<string>
+     */
+    public function missingFor(int $userId, array $requirements = []): array;
 
     /**
      * Generates a CV from the profile as it is now, to attach to an application. Null when the profile still lacks something that an application needs
@@ -20,8 +35,12 @@ interface ApplicantProfileSource
      */
     public function generateCv(int $userId, GeneratedCvSpec $cv): ?ApplicantResume;
 
-    /** As `forApplication`, with the resume made by `generateCv`; a null resume gives a submission without a resume. The completeness is checked now. */
-    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume): ApplicantSubmission;
+    /**
+     * As `forApplication`, with the resume made by `generateCv`; a null resume gives a submission without a resume. The completeness is checked now.
+     *
+     * @param  list<ApplyRequirement>  $requirements
+     */
+    public function forApplicationWithResume(int $userId, ?ApplicantResume $resume, array $requirements = []): ApplicantSubmission;
 
     /** Locks the applicant until the transaction ends, so two applications of the same person (and their daily count) run one after the other. */
     public function lock(int $userId): void;

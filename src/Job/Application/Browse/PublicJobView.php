@@ -19,6 +19,7 @@ final readonly class PublicJobView
      * @param  list<array{id: int, name: string}>  $skills
      * @param  list<array{id: int, name: string}>  $benefits
      * @param  list<array{id: int, name: string, type: string, province: ?string, city: ?string, subdistrict: ?string, village: ?string, postal_code: ?string, address_line: ?string}>  $places  the company locations of the job, the main one first
+     * @param  list<array{item: string, language?: array{id: int, name: string|null}, min_proficiency?: string}>  $applyRequirements  the extra profile items an application needs, the language by name in the language of the request
      */
     public function __construct(
         public Job $job,
@@ -31,15 +32,16 @@ final readonly class PublicJobView
         public ?MatchScore $match = null,
         public ?bool $saved = null,
         public array $places = [],
+        public array $applyRequirements = [],
     ) {}
 
     public function withMatch(?MatchScore $match): self
     {
-        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $match ?? new MatchScore(null, []), $this->saved, $this->places);
+        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $match ?? new MatchScore(null, []), $this->saved, $this->places, $this->applyRequirements);
     }
 
     public function withSaved(bool $saved): self
     {
-        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $this->match, $saved, $this->places);
+        return new self($this->job, $this->company, $this->classification, $this->salary, $this->location, $this->skills, $this->benefits, $this->match, $saved, $this->places, $this->applyRequirements);
     }
 }

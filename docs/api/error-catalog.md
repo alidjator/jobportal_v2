@@ -168,6 +168,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-answers` | 422 | Recruitment | Some answers are missing or invalid. |
 | `invalid-application` | 422 | Recruitment | Choose one of your own resumes or a CV to generate. |
 | `invalid-applications` | 422 | Recruitment |  |
+| `invalid-apply-requirements` | 422 | Job |  |
 | `invalid-approver` | 422 | Approval | The replacement must be a member of a tenant of the group, other than the requester. |
 | `invalid-assessment-input` | 422 | Assessment, Recruitment |  |
 | `invalid-assessment-schedule` | 422 | Assessment |  |
