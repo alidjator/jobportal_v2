@@ -17,6 +17,7 @@ use Src\JobSeeker\Application\EraseJobSeekerData;
 use Src\JobSeeker\Application\Export\DataExportEmailSender;
 use Src\JobSeeker\Application\Export\DataExportEmailTemplates;
 use Src\JobSeeker\Application\Export\ProfileDataExporter;
+use Src\JobSeeker\Application\ImportResume;
 use Src\JobSeeker\Application\ImportSummary\ImportSummaryDataExporter;
 use Src\JobSeeker\Application\JobSeekerPermissions;
 use Src\JobSeeker\Application\JobSeekerSettings;
@@ -62,6 +63,7 @@ use Src\JobSeeker\Interface\Console\PurgeImportSummariesCommand;
 use Src\JobSeeker\Interface\Console\SendProfileRemindersCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Applicant\ApplicantProfileSource;
+use Src\Shared\Application\Applicant\ResumeImports;
 use Src\Shared\Application\Candidate\CandidateDirectory;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -94,6 +96,7 @@ final class JobSeekerServiceProvider extends ContextServiceProvider
         CandidateSignalSource::class => DatabaseCandidateSignalSource::class,
         JobSeekerDataEraser::class => DatabaseJobSeekerDataEraser::class,
         ApplicantProfileSource::class => ApplicantProfileReader::class,
+        ResumeImports::class => ImportResume::class,
         CvTemplateRepository::class => DatabaseCvTemplateRepository::class,
         CvGenerationRepository::class => DatabaseCvGenerationRepository::class,
         CvRenderer::class => DompdfCvRenderer::class,

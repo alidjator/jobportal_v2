@@ -37,7 +37,7 @@ use Throwable;
  * A job seeker applies to a live public job. The application keeps its own copy of the chosen resume, a snapshot of the profile as it is now and a copy of the job's content as the candidate read it, so
  * what the recruiter sees never changes under them. The applicant is locked first, so two requests of the same person (and the daily count) run one
  * after the other, then the job, so a job that is closed meanwhile takes no application; the unique key of the application is the last line of defence against a duplicate. It also records where the applicant came from (an invitation
- * wins over the hint of the client) and how well they fitted the job, for the analytics.
+ * wins over the hint of the client, a claimed invitation by email makes it `manual`) and how well they fitted the job, for the analytics.
  */
 final readonly class ApplyToJob
 {
@@ -141,7 +141,11 @@ final readonly class ApplyToJob
                     $this->applications->releaseActiveKey($release);
                 }
 
-                $source = $this->invitations->jobIdsOf($userId, [$jobId]) === [] ? ApplicationSource::fromHint($input->source) : ApplicationSource::Invitation;
+                $source = match (true) {
+                    $this->invitations->hasClaimedEmailInvitation($userId, $jobId) => ApplicationSource::Manual,
+                    $this->invitations->jobIdsOf($userId, [$jobId]) !== [] => ApplicationSource::Invitation,
+                    default => ApplicationSource::fromHint($input->source),
+                };
                 $snapshot = ['name' => $contact->name, 'email' => $contact->email] + $submission->snapshot;
 
                 $application = $this->applications->add(

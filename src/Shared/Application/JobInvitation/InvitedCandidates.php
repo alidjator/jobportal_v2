@@ -23,6 +23,11 @@ interface InvitedCandidates
     public function jobIdsOfUsers(array $userIds, array $jobIds): array;
 
     /**
+     * Whether the job seeker claimed an invitation by email (a candidate the company entered by hand) to the job: the application then comes from a `manual` source.
+     */
+    public function hasClaimedEmailInvitation(int $userId, int $jobId): bool;
+
+    /**
      * Among these job seekers, the ones invited to the job.
      *
      * @param  list<int>  $userIds

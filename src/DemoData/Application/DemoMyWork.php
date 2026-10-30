@@ -162,11 +162,19 @@ final readonly class DemoMyWork
             $invitation = $this->step("test invitation of uiux:{$seeker}", fn (): int => $this->invitationOf($recruiter, $applicationIds["uiux:{$seeker}"]));
             $candidate = Actor::jobSeeker($seekers[$seeker]['user_id']);
 
-            $this->step("test of uiux:{$seeker}", fn (): mixed => $this->takeTest($candidate, $invitation, $strong));
+            $this->step("test of uiux:{$seeker}", function () use ($candidate, $invitation, $strong): bool {
+                $this->takeTest($candidate, $invitation, $strong);
+
+                return true;
+            });
             $taken++;
 
             if ($strong) {
-                $this->step("scoring of uiux:{$seeker}", fn (): mixed => $this->scoreCaseStudy($assessor, $invitation));
+                $this->step("scoring of uiux:{$seeker}", function () use ($assessor, $invitation): bool {
+                    $this->scoreCaseStudy($assessor, $invitation);
+
+                    return true;
+                });
             }
         }
 
@@ -259,7 +267,7 @@ final readonly class DemoMyWork
         return $strong ? $positions : array_slice($positions, 0, 1);
     }
 
-    private function accepted(Question $question): int|float
+    private function accepted(Question $question): float
     {
         return (float) str_replace(',', '.', $this->acceptedText($question));
     }

@@ -11,8 +11,9 @@ enum ApplicationSource: string
     case Direct = 'direct';
     case Invitation = 'invitation';
     case Shared = 'shared';
+    case Manual = 'manual';
 
-    /** The hints a client may send; `invitation` is never one of them. */
+    /** The hints a client may send; `invitation` and `manual` are never among them. */
     public const array HINTS = ['search', 'recommendation', 'alert', 'direct', 'shared'];
 
     /** The source for a hint from the client: `direct` when it is missing or not one of the allowed values. */

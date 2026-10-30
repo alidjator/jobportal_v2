@@ -34,6 +34,11 @@ final readonly class DatabaseInvitedCandidates implements InvitedCandidates
         return $invited;
     }
 
+    public function hasClaimedEmailInvitation(int $userId, int $jobId): bool
+    {
+        return $this->connection->table('jobinvitation_email_invitations')->where('job_id', $jobId)->where('claimed_by_user_id', $userId)->where('status', 'claimed')->exists();
+    }
+
     public function userIdsOf(int $jobId, array $userIds): array
     {
         if ($userIds === []) {
