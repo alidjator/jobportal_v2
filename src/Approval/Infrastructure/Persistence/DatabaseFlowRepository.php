@@ -2,6 +2,8 @@
 
 namespace Src\Approval\Infrastructure\Persistence;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Src\Approval\Domain\ApproverKind;
@@ -43,11 +45,11 @@ final readonly class DatabaseFlowRepository implements FlowRepository
 
             if ($existing === null) {
                 $flowId = (int) $this->connection->table('approval_flows')->insertGetId([
-                    'owner_type' => $flow->owner->type->value, 'owner_id' => $flow->owner->id, 'subject_type' => $flow->subjectType, 'created_at' => $now, 'updated_at' => $now,
+                    'owner_type' => $flow->owner->type->value, 'owner_id' => $flow->owner->id, 'subject_type' => $flow->subjectType, 'created_at' => $now, 'updated_at' => $now, 'updated_by_user_id' => $flow->updatedByUserId,
                 ]);
             } else {
                 $flowId = (int) $existing->id;
-                $this->connection->table('approval_flows')->where('id', $flowId)->update(['updated_at' => $now]);
+                $this->connection->table('approval_flows')->where('id', $flowId)->update(['updated_at' => $now, 'updated_by_user_id' => $flow->updatedByUserId]);
                 $this->connection->table('approval_flow_steps')->where('flow_id', $flowId)->delete();
             }
 
@@ -110,6 +112,8 @@ final readonly class DatabaseFlowRepository implements FlowRepository
 
         return array_map(static fn (stdClass $row): Flow => new Flow(
             (int) $row->id, new FlowOwner(OwnerType::from((string) $row->owner_type), (int) $row->owner_id), (string) $row->subject_type, $stepsByFlow[(int) $row->id] ?? [],
+            new DateTimeImmutable((string) $row->updated_at, new DateTimeZone('UTC')),
+            $row->updated_by_user_id === null ? null : (int) $row->updated_by_user_id,
         ), $rows);
     }
 }

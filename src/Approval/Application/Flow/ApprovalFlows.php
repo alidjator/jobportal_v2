@@ -6,6 +6,7 @@ use Src\Approval\Domain\Events\ApprovalFlowChanged;
 use Src\Approval\Domain\Flow;
 use Src\Approval\Domain\FlowOwner;
 use Src\Approval\Domain\FlowRepository;
+use Src\Shared\Application\Accounts\CompanyMemberAccounts;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Approval\ApprovalSubjectCatalog;
 use Src\Shared\Application\Approval\ApprovalSubjectType;
@@ -28,6 +29,7 @@ final readonly class ApprovalFlows
         private FlowRules $rules,
         private EventDispatcher $events,
         private Clock $clock,
+        private CompanyMemberAccounts $accounts,
     ) {}
 
     /**
@@ -42,7 +44,9 @@ final readonly class ApprovalFlows
         $owner = $this->access->group($actor, false);
         $own = $this->byType($this->flows->ofOwner($owner));
 
-        return array_map(fn (ApprovalSubjectType $type): FlowView => new FlowView($type, $own[$type->code] ?? null, isset($own[$type->code]) ? 'group' : 'none'), $this->catalog->all());
+        $names = $this->namesOfSavers($own);
+
+        return array_map(fn (ApprovalSubjectType $type): FlowView => new FlowView($type, $own[$type->code] ?? null, isset($own[$type->code]) ? 'group' : 'none', $this->saverName($own[$type->code] ?? null, $names)), $this->catalog->all());
     }
 
     /**
@@ -58,9 +62,35 @@ final readonly class ApprovalFlows
         $own = $this->byType($this->flows->ofOwner($owner));
         $inherited = $this->byType($this->flows->ofOwner(FlowOwner::group($groupId)));
 
-        return array_map(static fn (ApprovalSubjectType $type): FlowView => isset($own[$type->code])
-            ? new FlowView($type, $own[$type->code], 'company')
-            : (isset($inherited[$type->code]) ? new FlowView($type, $inherited[$type->code], 'group') : new FlowView($type, null, 'none')), $this->catalog->all());
+        $names = $this->namesOfSavers([...$inherited, ...$own]);
+
+        return array_map(fn (ApprovalSubjectType $type): FlowView => isset($own[$type->code])
+            ? new FlowView($type, $own[$type->code], 'company', $this->saverName($own[$type->code], $names))
+            : (isset($inherited[$type->code]) ? new FlowView($type, $inherited[$type->code], 'group', $this->saverName($inherited[$type->code], $names)) : new FlowView($type, null, 'none')), $this->catalog->all());
+    }
+
+    /**
+     * The names of the accounts that saved these flows, by account id.
+     *
+     * @param  array<string, Flow>  $flows
+     * @return array<int, string>
+     */
+    private function namesOfSavers(array $flows): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn (Flow $flow): ?int => $flow->updatedByUserId, $flows))));
+        $names = [];
+
+        foreach ($ids === [] ? [] : $this->accounts->summaries($ids) as $id => $summary) {
+            $names[$id] = $summary->name;
+        }
+
+        return $names;
+    }
+
+    /** @param  array<int, string>  $names */
+    private function saverName(?Flow $flow, array $names): ?string
+    {
+        return $flow?->updatedByUserId === null ? null : ($names[$flow->updatedByUserId] ?? null);
     }
 
     /** The flow that applies to the tenant for the subject type: its own, else its group's; null when neither exists. */
@@ -116,7 +146,7 @@ final readonly class ApprovalFlows
         $type = $this->catalog->find($subjectType) ?? throw EntityNotFound::of('Approval subject type', $subjectType);
         $this->rules->assertValid($owner, $groupId, $type, $input->steps);
 
-        $flow = $this->flows->save(new Flow(null, $owner, $subjectType, $input->steps));
+        $flow = $this->flows->save(new Flow(null, $owner, $subjectType, $input->steps, null, $actor->id));
         $this->record($actor, $owner, $subjectType, 'saved', count($flow->steps), $ipAddress, $userAgent);
 
         return $flow;

@@ -92,6 +92,8 @@ Route::middleware('auth:user')->group(function (): void {
         });
 
         Route::get('organization/members', [GroupRoleController::class, 'index']);
+        // The accounts that can be given a group role (the active members of the tenants of the group), for the holder of `group.members.manage` who may not be a company admin.
+        Route::get('organization/member-candidates', [GroupRoleController::class, 'candidates']);
         Route::put('organization/members/{userId}', [GroupRoleController::class, 'set'])->whereNumber('userId');
         Route::delete('organization/members/{userId}', [GroupRoleController::class, 'remove'])->whereNumber('userId');
     });

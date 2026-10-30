@@ -13,6 +13,13 @@ interface CompanyTeam
     public function roles(int $companyId): array;
 
     /**
+     * The accounts of the company whose membership is not suspended, for a picker that names a colleague.
+     *
+     * @return list<int>
+     */
+    public function activeUserIds(int $companyId): array;
+
+    /**
      * The accounts of the company that see every job of the company (`jobs.view_all`, which every company admin holds), for checks like "this member
      * works on this job".
      *

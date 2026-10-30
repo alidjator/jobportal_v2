@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Src\Approval\Interface\Http\Controllers\ApprovalController;
 use Src\Approval\Interface\Http\Controllers\ApprovalDelegationController;
 use Src\Approval\Interface\Http\Controllers\ApprovalFlowController;
+use Src\Approval\Interface\Http\Controllers\ApprovalPeopleController;
 use Src\Shared\Interface\Http\Middleware\RequireGroups;
 
 // The approval flows of the group (any member reads, `group.approvals.manage` changes) and of the tenant (any member of an internal tenant reads, `approvals.manage`
@@ -27,6 +28,9 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/approvals/{id}/reject', [ApprovalController::class, 'reject'])->whereNumber('id');
     Route::post('company/approvals/{id}/return', [ApprovalController::class, 'returnForRevision'])->whereNumber('id');
     Route::put('company/approvals/{id}/approvers/{slotId}', [ApprovalController::class, 'replace'])->whereNumber(['id', 'slotId']);
+
+    // The colleagues of the own company a member can name (the delegate of a delegation, the names in a flow): any member, id and name only.
+    Route::get('company/approval-people', [ApprovalPeopleController::class, 'index']);
 
     Route::get('company/approval-delegations', [ApprovalDelegationController::class, 'index']);
     Route::post('company/approval-delegations', [ApprovalDelegationController::class, 'store']);

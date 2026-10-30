@@ -2,6 +2,7 @@
 
 namespace Src\Approval\Interface\Http\Resources;
 
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Approval\Application\Flow\FlowView;
@@ -26,12 +27,17 @@ final class ApprovalFlowResource extends JsonResource
         return [
             'subject_type' => $type->code,
             'description' => $type->description,
+            /** @var list<array{key: string, type: string, label: string, unit: ?string, allowed_values: ?list<string>}> */
             'facts' => array_map(static fn (ApprovalFact $fact): array => [
-                'key' => $fact->key, 'type' => $fact->type, 'label' => $fact->label, 'allowed_values' => $fact->allowedValues === [] ? null : $fact->allowedValues,
+                'key' => $fact->key, 'type' => $fact->type, 'label' => $fact->label, 'unit' => $fact->unit, 'allowed_values' => $fact->allowedValues === [] ? null : $fact->allowedValues,
             ], $type->facts),
             'relative_roles' => $type->relativeRoles,
             'source' => $this->resource->source,
             'flow' => $this->resource->flow === null ? null : self::steps($this->resource->flow),
+            /** When the flow that applies was last saved; null when there is none. A flow inherited from the group carries the group's time. */
+            'updated_at' => $this->resource->flow?->updatedAt?->format(DateTimeInterface::ATOM),
+            /** The name of the account that saved the flow last; null when it is not known (a flow saved before it was recorded) or when there is no flow. */
+            'updated_by' => $this->resource->updatedByName,
         ];
     }
 

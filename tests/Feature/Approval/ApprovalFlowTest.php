@@ -48,6 +48,7 @@ final class ApprovalFlowTest extends FeatureTestCase
                 new ApprovalFact('hires', ApprovalFact::INTEGER, 'Number of hires'),
                 new ApprovalFact('type', ApprovalFact::STRING, 'Type', ['planned', 'replacement', 'unplanned']),
                 new ApprovalFact('urgent', ApprovalFact::BOOLEAN, 'Urgent'),
+                new ApprovalFact('budget', ApprovalFact::INTEGER, 'Budget', unit: ApprovalFact::RUPIAH),
             ],
             ['hiring_manager'],
         ));
@@ -126,9 +127,13 @@ final class ApprovalFlowTest extends FeatureTestCase
     {
         $page = $this->as($this->admin, 'GET', '/organization/approval-flows')->assertOk();
         $page->assertJsonPath('data.0.subject_type', self::TYPE)->assertJsonPath('data.0.source', 'none')->assertJsonPath('data.0.flow', null)
-            ->assertJsonPath('data.0.relative_roles', ['hiring_manager'])->assertJsonPath('data.0.facts.1.allowed_values', ['planned', 'replacement', 'unplanned']);
+            ->assertJsonPath('data.0.relative_roles', ['hiring_manager'])->assertJsonPath('data.0.facts.1.allowed_values', ['planned', 'replacement', 'unplanned'])
+            ->assertJsonPath('data.0.facts.0.unit', null)->assertJsonPath('data.0.facts.3.unit', 'idr')->assertJsonPath('data.0.updated_at', null)->assertJsonPath('data.0.updated_by', null);
 
         $saved = $this->as($this->admin, 'PUT', '/organization/approval-flows/'.self::TYPE, $this->flow())->assertOk();
+        $this->assertNotNull($saved->json('data.0.updated_at'), 'a flow says when it was last saved');
+        $saved->assertJsonPath('data.0.updated_by', $this->admin->name);
+        $this->as($this->recruiter, 'GET', '/organization/approval-flows')->assertOk()->assertJsonPath('data.0.updated_by', $this->admin->name);
         $saved->assertJsonPath('data.0.source', 'group')->assertJsonPath('data.0.flow.steps.0.position', 1)->assertJsonPath('data.0.flow.steps.0.mode', 'any')
             ->assertJsonPath('data.0.flow.steps.1.conditions.0.value', 3)->assertJsonPath('data.0.flow.steps.1.conditions.1.value', ['planned', 'unplanned'])
             ->assertJsonPath('data.0.flow.steps.1.approvers.0.value', (string) $this->recruiter->id);

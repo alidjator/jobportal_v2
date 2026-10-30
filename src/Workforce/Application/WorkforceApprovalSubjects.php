@@ -25,7 +25,7 @@ final class WorkforceApprovalSubjects
                 self::PLAN, 'A manpower plan of a legal entity for a fiscal year.',
                 [
                     new ApprovalFact('additions', ApprovalFact::INTEGER, 'Total additions of the plan'),
-                    new ApprovalFact('estimated_cost', ApprovalFact::INTEGER, 'Total estimated annual cost of the plan, in rupiah'),
+                    new ApprovalFact('estimated_cost', ApprovalFact::INTEGER, 'Total estimated annual cost of the plan, in rupiah', unit: ApprovalFact::RUPIAH),
                     new ApprovalFact('lines', ApprovalFact::INTEGER, 'Number of positions in the plan'),
                     new ApprovalFact('revision', ApprovalFact::BOOLEAN, 'Whether the plan revises a version already in force'),
                 ],
@@ -42,7 +42,7 @@ final class WorkforceApprovalSubjects
             new ApprovalFact('type', ApprovalFact::STRING, 'Type of the requisition', array_map(static fn (RequisitionType $type): string => $type->value, RequisitionType::cases())),
             new ApprovalFact('grade_rank', ApprovalFact::INTEGER, 'Rank of the requested grade (0 when none is named)'),
             new ApprovalFact('hires', ApprovalFact::INTEGER, 'Number of hires'),
-            new ApprovalFact('max_budget', ApprovalFact::INTEGER, 'Highest salary of the budget, in rupiah (0 when none is named)'),
+            new ApprovalFact('max_budget', ApprovalFact::INTEGER, 'Highest salary of the budget, in rupiah (0 when none is named)', unit: ApprovalFact::RUPIAH),
         ];
     }
 

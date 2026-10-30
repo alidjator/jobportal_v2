@@ -439,6 +439,25 @@ final class GroupTest extends FeatureTestCase
         $this->asMember($colleague, 'GET', 'group')->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-group-member');
     }
 
+    public function test_a_group_admin_lists_the_accounts_that_can_be_given_a_group_role(): void
+    {
+        $this->groupWithAdmin();
+        $colleague = $this->member($this->holdingCompany, 'cici@example.test', 'Cici Colleague');
+
+        // The active members of the tenants of the group, by name, with id, name and tenant only; nobody from a company outside the group.
+        $rows = $this->asMember($this->holdingAdmin, 'GET', 'member-candidates')->assertOk()->json('data');
+        $ids = array_column($rows, 'user_id');
+        $this->assertContains($colleague, $ids);
+        $this->assertContains($this->holdingAdmin, $ids);
+        $this->assertNotContains($this->subsidiaryMember, $ids);
+        $this->assertSame(['user_id', 'name', 'company_id', 'company_name'], array_keys($rows[0]));
+        $this->assertSame($this->holdingCompany, $rows[array_search($colleague, $ids, true)]['company_id']);
+
+        // A member without `group.members.manage` is refused, like the list of the roles.
+        $this->asMember($this->holdingAdmin, 'PUT', "members/{$colleague}", ['permissions' => ['group.recruitment.view']])->assertOk();
+        $this->asMember($colleague, 'GET', 'member-candidates')->assertForbidden();
+    }
+
     // ----- the group status -----
 
     public function test_suspending_a_group_suspends_its_tenants_and_refuses_its_roles_and_restoring_brings_back_only_those_tenants(): void

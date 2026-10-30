@@ -11,6 +11,12 @@ final readonly class ApprovalFact
 
     public const string BOOLEAN = 'boolean';
 
-    /** @param  list<string>  $allowedValues  the values of a `string` fact; empty when any text is possible */
-    public function __construct(public string $key, public string $type, public string $label, public array $allowedValues = []) {}
+    /** The unit of an amount of money: Indonesian rupiah. */
+    public const string RUPIAH = 'idr';
+
+    /**
+     * @param  list<string>  $allowedValues  the values of a `string` fact; empty when any text is possible
+     * @param  ?string  $unit  what an `integer` fact counts when it is not a plain number (`RUPIAH`), so a client can show it as such; null for a plain number
+     */
+    public function __construct(public string $key, public string $type, public string $label, public array $allowedValues = [], public ?string $unit = null) {}
 }

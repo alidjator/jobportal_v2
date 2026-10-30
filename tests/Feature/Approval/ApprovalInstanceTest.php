@@ -423,6 +423,20 @@ final class ApprovalInstanceTest extends FeatureTestCase
         $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'approval.delegation_removed')->count());
     }
 
+    public function test_any_member_can_list_the_colleagues_they_may_name_in_an_approval(): void
+    {
+        // A recruiter (no team permission, so `GET company/members` refuses them) reads the names of the own company only: no email, no role, nobody from another company.
+        $people = $this->as($this->manager, 'GET', '/company/approval-people')->assertOk()->assertJsonCount(5, 'data');
+        $this->assertSame(['Andi', 'Gita', 'Mira', 'Rina', 'Rudi'], array_column($people->json('data'), 'name'));
+        $this->assertSame(['id', 'name'], array_keys($people->json('data.0')));
+        $this->assertNotContains($this->outsider->id, array_column($people->json('data'), 'id'));
+        $this->as($this->manager, 'GET', '/company/members')->assertForbidden();
+
+        // A suspended member is left out.
+        DB::table('company_members')->where('company_id', $this->holding)->where('user_id', $this->auditor->id)->update(['status' => 'suspended']);
+        $this->assertNotContains($this->auditor->id, array_column($this->as($this->manager, 'GET', '/company/approval-people')->assertOk()->json('data'), 'id'));
+    }
+
     // ----- an approver who leaves -----
 
     public function test_a_place_whose_account_left_waits_for_a_replacement_named_by_an_admin(): void

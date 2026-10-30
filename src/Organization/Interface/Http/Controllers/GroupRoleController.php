@@ -5,10 +5,12 @@ namespace Src\Organization\Interface\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Organization\Application\Roles\ListGroupMemberCandidates;
 use Src\Organization\Application\Roles\ListGroupMembers;
 use Src\Organization\Application\Roles\RemoveGroupRole;
 use Src\Organization\Application\Roles\SetGroupRole;
 use Src\Organization\Interface\Http\Requests\SetGroupRoleRequest;
+use Src\Organization\Interface\Http\Resources\GroupMemberCandidateResource;
 use Src\Organization\Interface\Http\Resources\GroupMemberResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -22,6 +24,12 @@ final class GroupRoleController extends ApiController
     public function index(Request $request, ActorResolver $actors, ListGroupMembers $list): AnonymousResourceCollection
     {
         return GroupMemberResource::collection($list->execute($actors->fromRequest($request), $this->groupId($request)));
+    }
+
+    /** The accounts that can be given a group role: the active members of the tenants of the group. */
+    public function candidates(Request $request, ActorResolver $actors, ListGroupMemberCandidates $list): AnonymousResourceCollection
+    {
+        return GroupMemberCandidateResource::collection($list->execute($actors->fromRequest($request), $this->groupId($request)));
     }
 
     public function set(SetGroupRoleRequest $request, ActorResolver $actors, SetGroupRole $set): GroupMemberResource

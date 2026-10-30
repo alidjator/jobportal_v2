@@ -21,6 +21,19 @@ final readonly class RepositoryCompanyTeam implements CompanyTeam
         return $roles;
     }
 
+    public function activeUserIds(int $companyId): array
+    {
+        $ids = [];
+
+        foreach ($this->members->ofCompany($companyId) as $member) {
+            if (! $member->isSuspended()) {
+                $ids[] = $member->userId;
+            }
+        }
+
+        return $ids;
+    }
+
     public function viewAllUserIds(int $companyId): array
     {
         $ids = [];
