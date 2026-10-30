@@ -59,7 +59,9 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   move `master` forward without a merge commit and delete the branch; tag each release after a green `composer check`.
 - The live dev site is this working folder, so a checkout changes the served code at once: never check out an older commit or a `master` that is behind.
   Move `master` from the work branch with `git push . HEAD:master` (fast-forward only), then `git checkout master` once both point at the same commit.
-- `origin` is the private GitHub repo `alidjator/jobportal_v2`. **Only the user pushes to it**: never run `git push origin`; give the commands (branch, `master`, tags) instead.
+- `origin` is the private GitHub repo `alidjator/jobportal_v2`.
+- **Git commands are run by you, after confirmation (decided 2026-10-30, replacing "only the user pushes"):** show the command and ask first, every time (branch, `master`,
+  checkout, tags, `git push origin`); run it only after the user agrees. When to commit stays the user's decision: commit only when asked.
 
 ## Commands
 
