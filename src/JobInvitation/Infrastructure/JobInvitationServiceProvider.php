@@ -27,6 +27,7 @@ use Src\JobInvitation\Infrastructure\Mail\MailInvitationSender;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseEmailInvitationRepository;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\JobInvitation\Infrastructure\Persistence\DatabaseInvitedCandidates;
+use Src\JobInvitation\Infrastructure\Tasks\ApplicantInvitationTasks;
 use Src\JobInvitation\Interface\Console\PurgeEmailInvitationsCommand;
 use Src\Recruitment\Domain\Events\ApplicationSubmitted;
 use Src\Shared\Application\Accounts\ErasureStep;
@@ -39,6 +40,7 @@ use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\ApplicantTaskSources;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
 final class JobInvitationServiceProvider extends ContextServiceProvider
@@ -64,6 +66,10 @@ final class JobInvitationServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(PurgeEmailInvitationsCommand::class)->dailyAt('04:00')->withoutOverlapping()->onOneServer();
+        });
+
+        $this->callAfterResolving(ApplicantTaskSources::class, function (ApplicantTaskSources $sources): void {
+            $sources->add($this->app->make(ApplicantInvitationTasks::class));
         });
 
         $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {

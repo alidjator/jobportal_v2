@@ -54,6 +54,7 @@ use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\SubmittedAssessmentReader;
 use Src\Assessment\Domain\TestRepository;
 use Src\Assessment\Domain\VideoTakeRepository;
+use Src\Assessment\Infrastructure\Calendar\ApplicantAssessmentAgenda;
 use Src\Assessment\Infrastructure\Calendar\AssessmentDueCalendarSource;
 use Src\Assessment\Infrastructure\Listeners\AdvanceApplicationListener;
 use Src\Assessment\Infrastructure\Listeners\CopyDefaultTestsWhenJobCloned;
@@ -88,6 +89,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSubmittedAssessmentReader;
 use Src\Assessment\Infrastructure\Persistence\DatabaseTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseVideoTakeRepository;
+use Src\Assessment\Infrastructure\Tasks\ApplicantAssessmentTasks;
 use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\CreatePsychologistCommand;
@@ -100,6 +102,7 @@ use Src\Job\Domain\Events\JobCloned;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
+use Src\Shared\Application\Calendar\ApplicantAgendaSources;
 use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\Notifications\NotificationChannel;
@@ -108,6 +111,7 @@ use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\ApplicantTaskSources;
 use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -158,6 +162,14 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(CalendarSources::class, function (CalendarSources $sources): void {
             $sources->add($this->app->make(AssessmentDueCalendarSource::class));
+        });
+
+        $this->callAfterResolving(ApplicantTaskSources::class, function (ApplicantTaskSources $sources): void {
+            $sources->add($this->app->make(ApplicantAssessmentTasks::class));
+        });
+
+        $this->callAfterResolving(ApplicantAgendaSources::class, function (ApplicantAgendaSources $sources): void {
+            $sources->add($this->app->make(ApplicantAssessmentAgenda::class));
         });
 
         $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);

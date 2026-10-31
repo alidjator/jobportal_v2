@@ -104,7 +104,7 @@ final class DashboardTest extends FeatureTestCase
         $response = $this->mine()->assertOk();
         $cards = $response->json('data.cards');
 
-        $this->assertSame(['applications', 'interviews', 'invitations', 'messages', 'notifications', 'profile'], array_keys($cards));
+        $this->assertSame(['agenda', 'applications', 'interviews', 'invitations', 'messages', 'notifications', 'profile', 'todo'], array_keys($cards));
         $this->assertSame('2026-10-05T09:00:00Z', $response->json('data.generated_at'));
 
         $applications = $cards['applications'];

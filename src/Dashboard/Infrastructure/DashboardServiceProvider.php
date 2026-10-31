@@ -10,12 +10,15 @@ use Src\Dashboard\Application\DashboardPermissions;
 use Src\Dashboard\Application\SendTeamDigests;
 use Src\Dashboard\Application\TeamDigestEmailTemplates;
 use Src\Dashboard\Application\TeamDigestSender;
+use Src\Dashboard\Infrastructure\Dashboard\ApplicantAgendaCard;
+use Src\Dashboard\Infrastructure\Dashboard\ApplicantTodoCard;
 use Src\Dashboard\Infrastructure\Mail\MailTeamDigestSender;
 use Src\Dashboard\Interface\Console\RollUpAnalyticsCommand;
 use Src\Dashboard\Interface\Console\SendTeamDigestsCommand;
 use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
+use Src\Shared\Application\Calendar\ApplicantAgendaSources;
 use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Dashboard\DashboardCards;
 use Src\Shared\Application\Email\EmailTemplateCatalog;
@@ -24,6 +27,7 @@ use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Notifications\NotificationPreferenceDefinition;
 use Src\Shared\Application\Permissions\PermissionCatalog;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\ApplicantTaskSources;
 use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -39,6 +43,8 @@ final class DashboardServiceProvider extends ContextServiceProvider
     public array $singletons = [
         DashboardCards::class => DashboardCards::class,
         TaskProviders::class => TaskProviders::class,
+        ApplicantTaskSources::class => ApplicantTaskSources::class,
+        ApplicantAgendaSources::class => ApplicantAgendaSources::class,
         CalendarSources::class => CalendarSources::class,
         AnalyticsReports::class => AnalyticsReports::class,
         AnalyticsRollups::class => AnalyticsRollups::class,
@@ -50,6 +56,10 @@ final class DashboardServiceProvider extends ContextServiceProvider
 
         // The links of the digest start at the company app; empty means the digest carries no links.
         $this->app->when(SendTeamDigests::class)->needs('$companyAppUrl')->giveConfig('app.company_app_url');
+
+        $this->callAfterResolving(DashboardCards::class, function (DashboardCards $cards): void {
+            $cards->add($this->app->make(ApplicantTodoCard::class), $this->app->make(ApplicantAgendaCard::class));
+        });
 
         $this->callAfterResolving(EmailTemplateCatalog::class, function (EmailTemplateCatalog $catalog): void {
             $catalog->add(...TeamDigestEmailTemplates::definitions());

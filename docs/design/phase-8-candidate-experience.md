@@ -1,4 +1,4 @@
-# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15, not coded)
+# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15; sections 1 and 2 coded, sections 3 and 5 coded 2026-10-31 (API), section 4 not coded)
 
 Gaps found from the candidate's point of view (a job seeker with applications in progress) and against Mekari Talenta (help center articles
 34773101103385: an internal rejection reason plus an optional "Notify candidate via email" note; 61789018343449: email templates per scenario;
@@ -105,3 +105,23 @@ The to-do list holds what waits for the candidate; the agenda holds **when** thi
 | Notifications | `application.job_closed`, `application.under_review`, `applications.reject_remaining_done` (in-app) |
 | Errors | 409 `job-still-open` |
 | Front end | closed-job label; reject-remaining in the close dialog; candidate message in the reject dialogs and the application detail; "Perlu tindakan"; "Jadwal mendatang"; practice and device check before a test |
+
+## Coded 2026-10-31: sections 3 and 5 (API; the front end follows)
+
+Decided with the user 2026-10-31: sections 3 and 5 now, section 4 (practice questions, device check, samples left out of the draw) as a separate item; the two dashboard cards follow the dashboard cache (2 minutes) with no listener that drops them, while `GET me/tasks` and
+`GET me/agenda` are read live; the agenda page has a list and a week view; the check items stay quiet while `recruitment.pre_employment_checks_enabled` is off.
+
+- **Ports:** `Shared` `ApplicantTaskSource` + `ApplicantTaskSources` (value `ApplicantTask`) and `ApplicantAgendaSource` + `ApplicantAgendaSources` (value `ApplicantAgendaItem`), filled from the service providers like `TaskProviders` and `CalendarSources`. A source returns ids and the
+  Dashboard use cases (`GetApplicantTasks`, `GetApplicantAgenda`) name the job and the company. Sources: Recruitment (`ApplicantRecruitmentTasks`, `ApplicantRecruitmentAgenda`), Assessment (`ApplicantAssessmentTasks`, `ApplicantAssessmentAgenda`), JobInvitation (`ApplicantInvitationTasks`).
+- **`GET me/tasks`:** `data` = `{key, subject_id, application_id, job {id, title}, company_name, due_at, created_at}`, the ones with `due_at` first (nearest first), then the rest newest first, at most 100; `meta.total` counts before the cut. Keys: `interview_confirm` (interview `pending` and not started; due at its
+  start), `offer_answer` (offer `pending`, deadline not passed; due at the deadline), `assessment_take` (invitation `invited` or `started`, not past due; due at the due time), `job_invitation` (`sent` or `viewed`, job live; no due time; `application_id` null), `check_consent` (check `requested`
+  with consent required, not given and not refused; no due time; only while the feature is on).
+- **`GET me/agenda?from&to`:** both optional (today and the 29 days after, Jakarta days, `to` included, at most 42 days: 422 `invalid-calendar-range`); `data` = `{id ("interview:12"), type, starts_at, ends_at, all_day, status, application_id, job {id, title}, company_name, details}` earliest first, at most
+  200 (`meta.truncated`). Types: `interview` (pending and confirmed that overlap the range; details: `interview_id`, `format`, `location`, `has_room` for video and voice, `proposed_starts_at`; never the meeting link), `offer_deadline` (offer `pending`), `join_date` (offer `accepted` of an application in `hired`;
+  all day, `starts_at` is the Jakarta day `Y-m-d`), `assessment_window` (`invited` or `started`, from its start to its due time), `check` (open check with a schedule, consent not refused; details `name`, `place`, `vendor`, `awaiting_consent`; never an outcome or a note).
+- **Interpretations:** a rejected or withdrawn application, and an anonymised applicant (`profile_snapshot` null), give no task and no date; `link` of the design is not sent: the screen builds the target from `type`, `application_id` and the ids in `details` (the API knows no route of the front end); `join_date`
+  reads the start date of the accepted offer; a check waiting for consent is a to-do while its status is `requested` (a time may be set already) and still shows in the agenda with `awaiting_consent`.
+- **Dashboard:** `cards.todo` = `{total, items[0..5] {key, subject_id, application_id, job_id, job_title, company_name, due_at}}`; `cards.agenda` = `{next_7_days, items[0..5] {id, type, starts_at, all_day, application_id, job_id, job_title, company_name}}` (looking 30 days ahead from now).
+
+**Front end coded 2026-10-31 (Career):** the cards "Perlu tindakan" and "Jadwal mendatang" on the dashboard (`/me`), the pages `/me/tasks` (menu "Lamaran > Perlu tindakan") and `/me/agenda` (list of 30 days or a week; the days are the days of the device and the range is asked for
+with a day of margin on each side), `components/TodoList.vue`, `components/AgendaEntryRow.vue`, `utils/agenda.ts`. Links: an interview, check or test opens the application, an offer or join date opens the offer page, an invitation to apply opens the job (the test and the invitation list have no page of their own yet).

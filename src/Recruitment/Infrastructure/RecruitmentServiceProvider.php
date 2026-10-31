@@ -110,6 +110,7 @@ use Src\Recruitment\Infrastructure\Analytics\FunnelReport;
 use Src\Recruitment\Infrastructure\Analytics\MatchingReport;
 use Src\Recruitment\Infrastructure\Analytics\RejectionsReport;
 use Src\Recruitment\Infrastructure\Analytics\TransitionsDailyRollup;
+use Src\Recruitment\Infrastructure\Calendar\ApplicantRecruitmentAgenda;
 use Src\Recruitment\Infrastructure\Calendar\InterviewCalendarSource;
 use Src\Recruitment\Infrastructure\Calendar\OfferCalendarSource;
 use Src\Recruitment\Infrastructure\Dashboard\ApplicantApplicationsCard;
@@ -179,6 +180,7 @@ use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionReader;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseScreeningQuestionRepository;
 use Src\Recruitment\Infrastructure\Persistence\DatabaseStageRepository;
 use Src\Recruitment\Infrastructure\Persistence\InterviewLocationUsage;
+use Src\Recruitment\Infrastructure\Tasks\ApplicantRecruitmentTasks;
 use Src\Recruitment\Infrastructure\Tasks\MyReviewsTask;
 use Src\Recruitment\Infrastructure\Tasks\MyRsvpTask;
 use Src\Recruitment\Infrastructure\Tasks\MyScorecardsTask;
@@ -223,6 +225,7 @@ use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Analytics\AnalyticsReports;
 use Src\Shared\Application\Analytics\AnalyticsRollups;
 use Src\Shared\Application\Applicant\ApplicantContacts;
+use Src\Shared\Application\Calendar\ApplicantAgendaSources;
 use Src\Shared\Application\Calendar\CalendarSources;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Company\CompanyLetterheads;
@@ -248,6 +251,7 @@ use Src\Shared\Application\Recruitment\JobRoster;
 use Src\Shared\Application\Recruitment\PoolApplications;
 use Src\Shared\Application\Recruitment\TeamApplications;
 use Src\Shared\Application\Settings\SettingsCatalog;
+use Src\Shared\Application\Tasks\ApplicantTaskSources;
 use Src\Shared\Application\Tasks\TaskProviders;
 use Src\Shared\Infrastructure\ContextServiceProvider;
 
@@ -430,6 +434,14 @@ final class RecruitmentServiceProvider extends ContextServiceProvider
 
         $this->callAfterResolving(CalendarSources::class, function (CalendarSources $sources): void {
             $sources->add($this->app->make(InterviewCalendarSource::class), $this->app->make(OfferCalendarSource::class));
+        });
+
+        $this->callAfterResolving(ApplicantTaskSources::class, function (ApplicantTaskSources $sources): void {
+            $sources->add($this->app->make(ApplicantRecruitmentTasks::class));
+        });
+
+        $this->callAfterResolving(ApplicantAgendaSources::class, function (ApplicantAgendaSources $sources): void {
+            $sources->add($this->app->make(ApplicantRecruitmentAgenda::class));
         });
 
         $this->commands([BackfillJobSnapshotsCommand::class, BuildApplicationFacetsCommand::class, ProvisionDefaultStagesCommand::class, SendInterviewRemindersCommand::class, SendStartingSoonRemindersCommand::class, SendReviewNoticesCommand::class, ProcessOfferDeadlinesCommand::class, PurgeOfferLetterUploadsCommand::class, PurgeCheckResultsCommand::class, CloseVideoRoomsCommand::class, CloseVoiceSessionsCommand::class, ListenToVoiceServerCommand::class, PurgeExpiredRecordingsCommand::class, CommitRejectionsCommand::class]);

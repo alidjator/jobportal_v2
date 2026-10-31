@@ -93,6 +93,7 @@ php -n -l <file>                          # syntax check; plain `php -l` segfaul
      `vendor/bin/pint --test <changed files>`, `vendor/bin/phpstan analyse --no-progress --memory-limit=1G <changed files>`, and `php artisan api:error-catalog --check --untranslated`
      when `lang/` or an exception message changed.
   2. `composer check` runs once, at the end of the whole coding stage (the last part of a design document, or an item of `docs/design/phase-8-index.md`); do not propose it before.
+- **Pint in a command given to the user (decided 2026-10-31):** always `vendor/bin/pint --test <files>` (a check that changes nothing). Give the fixing form (without `--test`) only when a check reported files, in a separate block labelled as fixing, so no file is rewritten without the user knowing.
 
   After coding, give the exact commands in the **last message of the turn**, one `bash` block per command (decided 2026-10-17), with the full path of working rule 10.
 - **Related tests (defined 2026-10-30):** the tests that use a changed class or endpoint (find them with `grep -rl '<Class or route>' tests`), the unit tests of that class, and the
