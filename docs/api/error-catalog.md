@@ -522,10 +522,10 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unit-type-code-taken` | 409 | Organization | The group already has a unit type with this code. |
 | `unit-type-in-use` | 409 | Organization | An active unit still uses this unit type. |
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
-| `unknown-permission-preset` | 422 | Company | The permission preset does not exist. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
 | `unknown-permission` | 422 | Identity | Unknown permission: :permissions. |
+| `unknown-permission-preset` | 422 | Company | The permission preset does not exist. |
 | `unknown-team-action` | 422 | Company | This is not an action of the team history. |
 | `unknown-team-size` | 422 | Company |  |
 | `unsupported-language` | 422 | Platform | The language must be one of: :languages. |
