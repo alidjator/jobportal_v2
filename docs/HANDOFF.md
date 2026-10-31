@@ -13,7 +13,7 @@ Entry point for a new session (any account: the working rules are in `CLAUDE.md`
 | History | `docs/archive/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
 | Front end | `/usr/local/src/jobportal-frontend/onesis-talent` (its `CLAUDE.md`: template rules 1 to 16), design `docs/design/frontend.md` (`## Decisions` first) |
 
-## Current state (2026-10-30)
+## Current state (2026-10-31)
 
 **API (this repository)**
 
@@ -25,13 +25,14 @@ Entry point for a new session (any account: the working rules are in `CLAUDE.md`
 **Front end** (Career `apps/public`, Workspace, Console; shared `packages/ui`, `api`, `i18n`; rules in its `CLAUDE.md`)
 
 - Coded 2026-10-30: R13 undo and reject-remaining, R14 "Menunggu kandidat" (Workspace tab, Career page `/undangan-lamaran/{token}`), team permission presets (tab "Preset izin"), R15 part 1 (page `/perusahaan/cek-pra-kerja`, tab "Cek pra-kerja" on the application, card on the Career application), Console "Pengaturan" with tabs per key prefix, and the **sticky search bar** on every list page (rule 21).
-- Open front end: R15 part 2 (offer condition box, bulk request); search bars in the old shape (`OrganizationReadJobs`, Console audit log, `notifikasi`); icon audit D (`AccountSecurityTab`); photos in conversations; approval-flow extras; `LayoutRowLink`; Portal Mitra per `implementation-gap-audit.md` section 7.
+- **Career, 2026-10-31: all of `implementation-gap-audit.md` section 5 is coded except K10 (my reviews), K11 (salary insight, training, FAQ) and K12 (who viewed my profile)**: J7 tests, newsletter links (K6), account settings (K7, with notifications as a tab), notifications (K4), messages (K2), invitations (K3), saved jobs and job alerts (K8, K9; "Buat peringatan" on the search), campaign landing (K5). Each was checked by the user, not all tried against real data. Not built: J19 `/me/pemindahan`, a "Kirim pesan" button on company pages. Nuxt auto-imports every export of `utils/`: **never reuse an export name** (the typecheck warns "Duplicated imports").
+- Open front end: R15 part 2 (offer condition box, bulk request); Console pages for newsletter, FAQ, email and CV templates, undelivered email, the activation report and support reads; search bars in the old shape (`OrganizationReadJobs`, Console audit log, `notifikasi`); icon audit D (`AccountSecurityTab`); photos in conversations; approval-flow extras; `LayoutRowLink`; Portal Mitra.
 - Workspace components are used **with the folder prefix** (`components/company/CheckTypeDialog.vue` is `<CompanyCheckTypeDialog>`, unless the file name already starts with the folder); Career and Console use the file name.
 
 ## Next (order agreed 2026-10-30; the user decides when to start each)
 
-0. **Phase 0, the user's check of the work of 2026-10-26 to 2026-10-31: passed 2026-10-31** (`composer check` whole suite, the front end `ship`, the manual list in a browser). **Left:** the commits of the files of other sessions, by group (R13, R14, permission presets, R15 part 1, Console settings and search bars, Pest and Arch tests, composer and phpunit files, docs); video recording and upload of J7 (camera) was not tried by the assistant, only unit-tested.
-1. **Done 2026-10-31, waiting for commits of the other sessions' files only:** #32 part 2 (API and front end; only the candidate's agenda and to-do sources were left, now coded with #15) and #15 sections 3, 4 and 5 (`GET me/tasks`, `GET me/agenda`, the cards `todo` and `agenda`, the Career pages `/me/tasks` and `/me/agenda`; section 4: samples not drawn, `GET me/assessment/invitations/{id}/practice`, `requirements`). The practice page and the device check came with **J7** (Career test pages and runner, all three steps coded and committed 2026-10-31: list, invitation page, runner for questions, speed columns, drawing and video answers, explanation page; `implementation-gap-audit.md` K1).
+0. **Phase 0 passed 2026-10-31.** Left over: `MasterSeedersTest.php` (`assertSame` changed to `assertEquals` by another session: find out why) and the root `pnpm-lock.yaml` are uncommitted; nothing is pushed (API and front end); the J7 video recording was only unit-tested, never tried with a camera.
+1. **Order proposed 2026-10-31:** Career K5 to K9 are done; next R15 part 2, then the Console pages above (newsletter and FAQ feed Career), then E1 to E4 and #13 (item 4), then K10 to K12.
 2. **Legal-blocked items behind switches:** #14 restricted candidates (q13; also the #18 skip code and #15 `candidate_note`), #12 section 3 acceptance evidence (q12), #26 retention (q15, then #39 A14). Each asks the user for its interpretations first.
 3. **Ready without legal:** none left (#20, #22, #25, #30 and #38 are coded).
 4. **Employee and module entitlements, designed 2026-10-31, not coded:** E1 to E4 (`self-hosted.md`, "Decided 2026-10-31 for coding"), then #13 parts 1 to 8 (`erp-employee-handoff.md` section 9). **Design sessions still open (no code):** offers through approvals (G5), hires per requisition (FG13).
