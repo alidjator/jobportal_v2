@@ -52,6 +52,8 @@ stays out of scope.
 - 2026-10-31 (user, L1 to L9): **learning methods and evaluation**: pre-test and post-test, an optional sequential order, answer feedback for
   learning tests, practice quizzes still limited, a course feedback survey, live sessions through Janus (from the start), an external link or on
   site, tasks with a rubric, and video answers behind a switch ([Learning methods and evaluation](#learning-methods-and-evaluation)).
+- 2026-10-31 (user, C1 to C9): **course management**: cohorts, a team per course, review before publishing through Approval, duplicating,
+  announcements, invitations, linked translations, actions on learners, and deleting a never-published draft ([Course management](#course-management)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -166,7 +168,7 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | Aggregate | Holds | Rules |
 |---|---|---|
 | `Course` | Owner, audience, category, slug, skills earned | Never deleted once it has learners; archived instead |
-| `CourseVersion` | Modules and lessons of one version | `draft`, `published`, `retired`; a published version is locked; one published version per course; publishing a new one retires the previous |
+| `CourseVersion` | Modules and lessons of one version | `draft`, `submitted` (C3), `published`, `retired`; a published version is locked; one published version per course; publishing a new one retires the previous |
 | `Enrollment` | One learner on one version, with progress per lesson | Locked to the version at enrolment; completed when every required lesson is completed |
 | `Certificate` | A numbered certificate | Copies the learner name, course title and date; never changes with the course; can be revoked with a reason |
 
@@ -175,12 +177,12 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | # | Table | Main columns | Notes |
 |---|---|---|---|
 | 1 | `learning_categories` | `name` json (id/en), `slug`, `sort_order`, `is_active` | Master-data pattern of phase 0; managed by the platform admin |
-| 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
-| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `sequential` (default false, L2), `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
+| 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `translation_of` (nullable, C7), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
+| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `sequential` (default false, L2), `status` (`draft`, `submitted`, `published`, `retired`), `submitted_at`, `published_at`, `published_by` | Partial unique: one `published` per course |
 | 4 | `learning_modules` | `version_id`, `position`, `title` | |
 | 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`, `live_session`, `task`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`, `attended`, `task_passed`), `completion_threshold`, `test_id`, `quiz_role` (`graded`, `pre_test`, `post_test`; L1), `paired_lesson_id` (L1), `feedback_mode` (`never`, `after_pass`, `always`; default `after_pass`; L3), `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
 | 6 | `learning_course_skills` | `course_id`, `skill_id` | Key to `reference_skills` (S4) |
-| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`, `purchased`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
+| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `cohort_id` (nullable, C1), `source` (`self`, `assigned`, `purchased`, `invited`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `invitation_id` (nullable, C6), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `completed_manually_by`, `completion_reason` (C8), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
 | 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `status` (`awaiting_scoring`, `scored`; G3), `score`, `passed` (both null while awaiting), `integrity_tier`, `voided_at`, `voided_by` (G6), `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
 | 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `final_score`, `band` (copies, null when hidden or no quiz; G5), `issued_at`, `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
@@ -188,11 +190,16 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 12 | `learning_course_units` | `course_id`, `unit_id` | Internal step: restricts an internal course to units |
 | 13 | `learning_assignments` | `course_id`, target (`employee`, `unit`, `tenant`), `target_id`, `due_in_days`, `created_by` | Internal step |
 | 14 | `learning_course_feedback` | `enrollment_id` (unique), `course_id`, `version_id`, `rating` (1 to 5), `comment`, `hidden_at`, `hidden_by`, timestamps | L5 |
-| 15 | `learning_live_sessions` | `lesson_id`, `starts_at`, `ends_at`, `mode` (`online_janus`, `online_link`, `onsite`), `url`, `location`, `seat_limit`, `host_user_id`, `check_in_code`, `recorded` | L7 |
+| 15 | `learning_live_sessions` | `lesson_id`, `cohort_id` (nullable, C1), `starts_at`, `ends_at`, `mode` (`online_janus`, `online_link`, `onsite`), `url`, `location`, `seat_limit`, `host_user_id`, `check_in_code`, `recorded` | L7 |
 | 16 | `learning_session_registrations` | `session_id`, `enrollment_id`, `status` (`registered`, `attended`, `absent`, `cancelled`), `checked_in_at`, `recording_consent_at` | Unique `session_id` + `enrollment_id`; L7 |
 | 17 | `learning_task_criteria` | `lesson_id`, `position`, `title`, `max_points` | The rubric; L8 |
 | 18 | `learning_task_submissions` | `enrollment_id`, `lesson_id`, `file_path`, `text`, `status` (`submitted`, `returned`, `passed`, `failed`), `score`, `feedback`, `graded_by`, `submitted_at`, `graded_at` | L8 |
 | 19 | `learning_task_scores` | `submission_id`, `criterion_id`, `points`, `comment` | L8 |
+| 20 | `learning_cohorts` | `course_id`, `name`, `starts_at`, `ends_at`, `seat_limit`, `enrollment_closes_at`, `status` (`planned`, `running`, `finished`, `cancelled`) | C1 |
+| 21 | `learning_course_members` | `course_id`, `user_id`, `role` (`owner`, `instructor`, `grader`), `cohort_id` (nullable) | C2 |
+| 22 | `learning_announcements` | `course_id`, `cohort_id` (nullable), `title`, `body`, `sent_by`, `sent_at` | C5 |
+| 23 | `learning_invite_links` | `course_id`, `cohort_id` (nullable), `token`, `expires_at`, `max_uses`, `uses`, `created_by` | C6 |
+| 24 | `learning_invitations` | `course_id`, `cohort_id` (nullable), `email`, `user_id` (nullable), `token`, `status` (`sent`, `accepted`, `declined`, `expired`), `invited_by`, `expires_at` | C6 |
 
 ### Files (R1, R2, S1 to S4)
 
@@ -221,6 +228,7 @@ Agreed by the user on 2026-10-31 (E1 to E7).
 | Self, public course | `self` | Any account with a verified email (P3) | `POST learning/courses/{id}/enroll`, with `share_with_company` for a company course (P1) | None | `withdraw` |
 | Self, internal course (E5) | `self` | Employees of the owning tenant, in the course's units when `learning_course_units` has rows | `GET company/learning/catalog`, then the same `enroll` | None | `withdraw` |
 | Assigned (internal step) | `assigned` | Employees, by person, unit or tenant | `learning_assignments`, or onboarding (S2) | `due_at` from `due_in_days` | Only HR cancels the assignment; the learner's `withdraw` answers 409 (E4) |
+| Invited (C6) | `invited` | Anyone invited by email, CSV or a private link | `GET learning/invitations/{token}`, then `claim` after signing in or up | Cohort's end, if any | `withdraw` |
 | Purchased (designed only, D10) | `purchased` | Any account with a verified email | `Learning` enrols the buyer on `OrderPaid`; `order_id` is kept (E1) | None | `withdraw`; enrolling again needs no new purchase (B3) |
 
 Rules:
@@ -234,6 +242,22 @@ Rules:
 - **Window and seats (E7, nice-to-have):** `enrollment_opens_at`, `enrollment_closes_at` and `seat_limit` on the course, so a new version does not
   reset them; seats count `active` and `completed` enrolments across versions, not `withdrawn`; assigned enrolments ignore both. Seats of live
   sessions (S6) are designed with S6.
+
+### Course management
+
+Agreed by the user on 2026-10-31 (C1 to C9).
+
+| Code | Topic | Rule |
+|---|---|---|
+| C1 | Cohorts | A course may run in cohorts (`learning_cohorts`): an enrolment and a live session may belong to one; content opens at `starts_at`, the default due date is `ends_at`, seats are counted per cohort, reports filter by cohort, and an assignment may name a cohort. A course without cohorts stays self-paced |
+| C2 | Team per course | `learning_course_members`: `owner` (edits the course and its team; the creator becomes owner), `instructor` (cohorts, sessions, announcements, actions on learners, scoring), `grader` (scores tasks and essays of that course), optionally for one cohort. The catalog permissions still apply but reach only courses of one's team; `learning.courses.view_all` reaches every course of the company. Members only; platform courses use `learning.courses.manage` |
+| C3 | Review before publishing | Approval subject `learning_course_version`: when the company has a flow for it, publishing submits the version (`submitted`, locked; withdrawing returns it to `draft`; a rejection returns it with the reason); without a flow it publishes at once. Platform courses publish at once |
+| C4 | Duplicate | Copies the latest version into a new draft course; quiz tests are copied as new `learning` tests |
+| C5 | Announcements | Per course or cohort, in-app and email, on the `bulk` queue; by the owner or an instructor |
+| C6 | Invitations | Private links with expiry and use limit; invitations by email to an existing account (in-app and email) or to an email without an account (a token link as in #31, behind the existing `invitations.email_enabled`); CSV import of at most 500 rows on the `bulk` queue; enrolments from them have `source = invited` |
+| C7 | Two languages | One language per version; a translation is a separate course linked by `translation_of`; the catalog shows the course in the request's language and links the other |
+| C8 | Actions on learners | Extend the due date, reset progress, mark completed by hand (with a reason, kept in `completion_reason`), remove the learner; each is written to the audit log; by the owner or an instructor |
+| C9 | Delete | A course that was never published and has no learners may be deleted; otherwise it is archived |
 
 ### Grading and ranking
 
@@ -316,6 +340,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | `learning.reports.view` | Company member | Progress reports and export | Public learners: identity only with consent (P1) |
 | `learning.assign` | Company member | Assigning courses to employees, units or tenants | Internal step |
 | `learning.tasks.grade` | Company member | Scoring task submissions (L8) | |
+| `learning.courses.view_all` | Company member | Every course of the company, not only those of one's team (C2) | Pattern of `jobs.view_all` |
 | `learning.courses.manage` | Platform admin (`PlatformPermissions`) | Categories and platform courses | |
 | `learning.moderate` | Platform admin | Archiving a company's public course, revoking a certificate | |
 | `group.learning.view` | Group member | Group dashboard across tenants (S8) | Internal step; pattern of `group.workforce.view` |
@@ -329,6 +354,8 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Public | `GET learning/courses` | Catalog; `filter[q]`, `filter[category]`, `filter[company]`, `filter[skill]`, `sort` (`newest`, `popular`, `rating`, `title`; G7) | |
 | Public | `GET learning/courses/{slug}` | Detail and outline of the published version (lesson titles only) | |
 | Public | `GET learning/certificates/{code}` | Certificate verification | |
+| Public | `GET learning/invitations/{token}`, `POST learning/invitations/{token}/decline` | An invitation or private link, without signing in (C6) | |
+| Learner | `POST me/learning/invitations/{token}/claim` | Accept an invitation or private link (C6) | verified email |
 | Public | `GET learning/courses/{id}/cover` | Course cover with cache headers (S4) | |
 | Learner | `GET learning/files/{token}` | Signed route that streams a lesson video or PDF (S1) | signature |
 | Learner | `POST learning/courses/{id}/enroll` | Self-enrolment; `share_with_company` for a company course (P1) | verified email |
@@ -347,12 +374,19 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `GET company/learning/catalog` | Internal courses an employee may enrol in (E5, internal step) | employee of the tenant |
 | Workspace | `GET/POST company/learning/courses`, `GET/PUT company/learning/courses/{id}` | Courses | author |
 | Workspace | `POST company/learning/courses/{id}/archive` | Archive | publish |
+| Workspace | `DELETE company/learning/courses/{id}` | Delete a never-published course without learners (C9) | author, owner |
+| Workspace | `POST company/learning/courses/{id}/duplicate` | Duplicate (C4) | author |
+| Workspace | `GET/PUT company/learning/courses/{id}/members` | Team (C2) | owner |
+| Workspace | `GET/POST company/learning/courses/{id}/cohorts`, `PUT company/learning/cohorts/{id}`, `POST company/learning/cohorts/{id}/cancel` | Cohorts (C1) | owner, instructor |
+| Workspace | `GET/POST company/learning/courses/{id}/announcements` | Announcements (C5) | owner, instructor |
+| Workspace | `GET/POST company/learning/courses/{id}/invite-links`, `DELETE company/learning/invite-links/{id}`, `GET/POST company/learning/courses/{id}/invitations`, `POST company/learning/courses/{id}/invitations/import` | Invitations (C6) | owner, instructor |
+| Workspace | `POST company/learning/enrollments/{id}/extend`, `.../reset`, `.../complete`, `.../remove` | Actions on learners (C8) | owner, instructor |
 | Workspace | `GET/POST company/learning/courses/{id}/versions`, `GET/PUT company/learning/versions/{id}` | Versions; `POST` copies the latest into a draft | author |
 | Workspace | `POST company/learning/versions/{id}/modules`, `PUT/DELETE company/learning/modules/{id}`, `POST company/learning/versions/{id}/modules/reorder` | Modules | author |
 | Workspace | `POST company/learning/modules/{id}/lessons`, `PUT/DELETE company/learning/lessons/{id}`, `POST company/learning/modules/{id}/lessons/reorder` | Lessons | author |
 | Workspace | `POST company/learning/uploads`, `PUT company/learning/uploads/{id}/chunks/{n}`, `POST company/learning/uploads/{id}/complete` | Chunked upload of a video or PDF, then attached to a lesson (P5) | author |
 | Workspace | `POST/DELETE company/learning/courses/{id}/cover` | Course cover | author |
-| Workspace | `POST company/learning/versions/{id}/publish` | Publish a version | publish |
+| Workspace | `POST company/learning/versions/{id}/publish`, `POST company/learning/versions/{id}/withdraw-submission` | Publish a version, or submit it when an approval flow exists (C3) | publish, owner |
 | Workspace | `GET company/learning/courses/{id}/enrollments`, `GET company/learning/courses/{id}/enrollments/export` | Reports and export; `sort` by `final_score` or `completed_at`, with `rank` (G8) | reports.view |
 | Workspace | `GET/POST company/learning/assignments` | Assignments (internal step) | assign |
 | Workspace | `GET/POST company/learning/lessons/{id}/sessions`, `PUT/DELETE company/learning/sessions/{id}`, `PUT company/learning/sessions/{id}/attendance` | Live sessions (L7) | author; attendance also the host |
@@ -390,6 +424,10 @@ The consent of P1 adds `share_with_company` and `shared_at` to `learning_enrollm
 | Course completed, certificate issued | Learner | Email, in-app |
 | Certificate revoked | Learner | Email, in-app |
 | Course archived by moderation | Members with `learning.courses.publish` | Email, in-app |
+| Version approved or rejected (C3) | The owner of the course | Email, in-app |
+| Invited to a course (C6) | The invitee | Email, in-app when the account exists |
+| Announcement (C5) | Learners of the course or cohort | Email, in-app |
+| Cohort starts, cohort cancelled (C1) | Learners of the cohort | Email, in-app |
 | Assigned, due soon, overdue | Employee; HR for overdue | Email, in-app, WhatsApp (internal step) |
 | Quiz scored by an assessor (G3) | Learner | In-app |
 | Live session registered, a day before, an hour before (L7) | Learner | Email, in-app |
