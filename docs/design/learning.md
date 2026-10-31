@@ -64,6 +64,9 @@ stays out of scope.
 - 2026-11-01 (user, U1 to U7): **user management**: three built-in Learning presets, outside trainers as members, listeners for removed and
   suspended members, certificate reissue with the current name, support access to content only, admin permissions in the existing role editor,
   and learner groups with outside coordinators who see consenting members' progress ([User management](#user-management)).
+- 2026-11-01 (user, V1 to V10): **sales, designed only**: checkout and order states, a price per cohort, seats held while pending, preview
+  lessons, numbered receipts, sale prices, corporate seat purchases, a sales report, two Commerce permissions and manual handling of
+  exceptions ([Sales](#sales-designed-only)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -163,6 +166,30 @@ Notes:
   is needed.
 - `Commerce` is a Core context switched on only where paid features exist; its layers join `tests/Arch/LayersTest.php` when coded.
 
+### Sales (designed only)
+
+Decided by the user on 2026-11-01 (V1 to V10); nothing is coded until the billing scope is lifted and legal question 31 is answered.
+
+| Code | Topic | Rule |
+|---|---|---|
+| V1 | Checkout | "Buy" calls `POST commerce/orders` (`product_type`, `product_id`, optional voucher), which creates a `pending` order and a Midtrans Snap transaction; the Midtrans webhook makes it `paid` and `OrderPaid` enrols the buyer. The buyer needs a verified email and no active enrolment. States: `pending` then `paid`, `expired` (past `expires_at`, the method's deadline), `failed` or `cancelled` (by the buyer while pending). One pending order per buyer and product; buying again reopens it. Price, discount and total are copied into the order. The final state comes only from the webhook, never from the browser redirect. Rupiah only |
+| V2 | Price per cohort | `commerce_products` with `product_type` `course` or `cohort`; a cohort with its own product uses its price, otherwise the course's; the buyer is enrolled in that cohort; course material stays open for life (B3), live sessions and task scoring only while the cohort runs; live sessions are never sold alone; a cancelled cohort's buyers move to another cohort of their choice or are handled by hand (V10) |
+| V3 | Seats | A `pending` order holds its seats (E7, C1) until `expires_at`, at most 24 hours; a full course or cohort refuses a new order (409 `seats-full`); `expired`, `failed` and `cancelled` release them; a payment arriving after the release is handled by hand (V10) |
+| V4 | Preview | `learning_lessons.is_preview` on content lessons only (not quizzes, live sessions or tasks), at most 3 per version; open to anyone through `GET learning/courses/{slug}/preview/{lesson}`, videos through signed URLs; no progress is recorded |
+| V5 | Receipts | `commerce_receipts` (one per paid order: number, buyer name and email, a copy of the items, total, method, `paid_at`, PDF, `tax` nullable) numbered by `commerce.receipt_number_format` (default `INV/{year}/{number}`, per year); made on the `critical` queue, emailed as a PDF, downloadable; the seller's identity comes from a setting; no VAT line or tax invoice until legal question 31 (a) is answered; never changed (corrections are admin notes, V10) |
+| V6 | Corporate seats | A company buys N seats of a paid platform course or cohort from Workspace (`learning.seats.purchase`, held by Company admin and not in the "Admin pembelajaran" preset); the order has `buyer_type` `company`, `company_id`, `purchased_by` and `quantity`; V3 holds every seat; `OrderPaid` creates a `learning_seat_pools` row; seats are handed out through C6 invitations that draw on the pool, to employees or outsiders, who enrol with `source = purchased` and `seat_pool_id`; a declined or expired invitation returns its seat; unused seats lapse after `commerce.seat_pool_valid_months` (12) without refund; the receipt is in the company's legal name (tax number optional); the company sees the pool and the recipients' progress (P1 applies to outsiders); volume pricing is nice-to-have |
+| V7 | Sale price | `sale_price`, `sale_starts_at`, `sale_ends_at` on the product; the catalog shows the struck-through price and the end; vouchers apply on the sale price unless `stackable = false`; a pending order keeps its copied price; `sort=price` and `filter[on_sale]` come with the coding |
+| V8 | Sales report | Console: sales per course and period, vouchers used, failed and expired orders, reconciliation with the Midtrans settlement, CSV export |
+| V9 | Permissions | `commerce.orders.view` (orders and receipts) and `commerce.manage` (products, prices, sale prices, vouchers, exceptions) for platform admins |
+| V10 | Exceptions | Double payments, chargebacks and payments after expiry are handled by hand by `commerce.manage`, with an audit entry; a system error is refunded even though B4 refuses refunds |
+
+Tables (prefix `commerce_`): `commerce_products`, `commerce_orders` (`user_id`, `buyer_type`, `company_id`, `purchased_by`, `seller`,
+`product_type`, `product_id`, `quantity`, `price`, `discount`, `total`, `voucher_id`, `status`, `expires_at`, `paid_at`), `commerce_payments`
+(`order_id`, `gateway`, `gateway_reference`, `method`, `amount`, `status`, `payload` without card data, `received_at`), `commerce_receipts`,
+`commerce_receipt_sequences`, `commerce_vouchers` (B6). Endpoints: `POST commerce/orders`, `GET me/commerce/orders`, `GET me/commerce/orders/{id}`,
+`POST me/commerce/orders/{id}/cancel`, `GET me/commerce/orders/{id}/receipt`, `POST commerce/webhooks/midtrans`, `POST company/commerce/orders`,
+`GET company/commerce/orders`, `GET company/learning/seat-pools`, and the Console routes for products, vouchers, orders and the report.
+
 ## 5. Moodle
 
 `Training` stays as it is (`GET training/courses`, `GET me/training/courses`) until the 16 Moodle courses are rebuilt or imported in `Learning` (S10);
@@ -190,9 +217,9 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `translation_of` (nullable, C7), `certificate_valid_months` (nullable = never expires, J9), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
 | 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `sequential` (default false, L2), `status` (`draft`, `submitted`, `scheduled`, `published`, `retired`), `submitted_at`, `publish_at` (nullable, J1), `published_at`, `published_by` | Partial unique: one `published` per course |
 | 4 | `learning_modules` | `version_id`, `position`, `title`, `release_after_days`, `release_at` (both nullable, at most one; J2) | |
-| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`, `live_session`, `task`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`, `attended`, `task_passed`), `completion_threshold`, `attendance_threshold` (percent, default 100, J6), `test_id`, `quiz_role` (`graded`, `pre_test`, `post_test`; L1), `paired_lesson_id` (L1), `feedback_mode` (`never`, `after_pass`, `always`; default `after_pass`; L3), `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
+| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`, `live_session`, `task`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`, `attended`, `task_passed`), `completion_threshold`, `attendance_threshold` (percent, default 100, J6), `is_preview` (default false, V4), `test_id`, `quiz_role` (`graded`, `pre_test`, `post_test`; L1), `paired_lesson_id` (L1), `feedback_mode` (`never`, `after_pass`, `always`; default `after_pass`; L3), `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
 | 6 | `learning_course_skills` | `course_id`, `skill_id` | Key to `reference_skills` (S4) |
-| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `cohort_id` (nullable, C1), `source` (`self`, `assigned`, `purchased`, `invited`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `invitation_id` (nullable, C6), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `completed_manually_by`, `completion_reason` (C8), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
+| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `cohort_id` (nullable, C1), `source` (`self`, `assigned`, `purchased`, `invited`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `invitation_id` (nullable, C6), `seat_pool_id` (nullable, V6), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `completed_manually_by`, `completion_reason` (C8), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
 | 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `status` (`awaiting_scoring`, `scored`; G3), `score`, `passed` (both null while awaiting), `integrity_tier`, `voided_at`, `voided_by` (G6), `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
 | 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `final_score`, `band` (copies, null when hidden or no quiz; G5), `issued_at`, `expires_at` (nullable, J9), `reissued_at`, `reissue_count` (U4), `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
@@ -215,6 +242,7 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 27 | `learning_learner_groups` | `company_id` (null = platform), `name`, `code`, `join_mode` (`invite`, `code`, `email_domain`), `email_domain`, `status` | U7 |
 | 28 | `learning_learner_group_members` | `group_id`, `user_id`, `role` (`member`, `coordinator`), `consented_at`, `joined_at` | Unique `group_id` + `user_id`; U7 |
 | 29 | `learning_course_groups` | `course_id`, `group_id` | A course opened to a group; U7 |
+| 30 | `learning_seat_pools` | `company_id`, `course_id`, `cohort_id` (nullable), `order_id`, `seats`, `used`, `expires_at` | Corporate seats; designed only (V6) |
 
 ### Files (R1, R2, S1 to S4)
 
@@ -420,6 +448,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | `learning.reports.view` | Company member | Progress reports and export | Public learners: identity only with consent (P1) |
 | `learning.assign` | Company member | Assigning courses to employees, units or tenants | Internal step |
 | `learning.tasks.grade` | Company member | Scoring task submissions (L8) | |
+| `learning.seats.purchase` | Company member | Buying seats for others (V6, designed only) | Held by Company admin; not in the "Admin pembelajaran" preset |
 | `learning.courses.view_all` | Company member | Every course of the company, not only those of one's team (C2) | Pattern of `jobs.view_all` |
 | `learning.courses.manage` | Platform admin (`PlatformPermissions`) | Categories and platform courses | |
 | `learning.moderate` | Platform admin | Archiving a company's public course, revoking a certificate | |
