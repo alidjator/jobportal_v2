@@ -209,6 +209,9 @@ setelah ada jawaban.
     jumlah, dan peserta dapat menarik persetujuannya kemudian. (a) Apakah persetujuan ini sah menurut Pasal 22 (terpisah, spesifik, semudah ditarik
     seperti diberikan)? (b) Bolehkah perusahaan memakai yang dilihatnya (kursus selesai, nilai kuis) saat kemudian menimbang orang yang sama sebagai
     kandidat? (c) Apakah kebijakan privasi harus menyebut perusahaan sebagai pengendali tersendiri atas data yang dibagikan itu?
+    (d) Kelompok peserta (misalnya mahasiswa kampus mitra) dapat memiliki koordinator dari luar perusahaan, seperti dosen, yang melihat progres,
+    nilai, dan sertifikat anggota yang memberi persetujuan saat bergabung: apakah persetujuan itu cukup, dan siapa pengendali data yang dilihat
+    koordinator? (ditambahkan 1 November 2026)
 
 31. **Kursus berbayar yang dijual operator platform (ditambahkan 31 Oktober 2026).** Operator menjual kursus publik dengan harga sekali bayar dan
     akses seumur hidup, dibayar melalui Midtrans; semua penjualan final. (a) Apakah penjualan kursus daring dikenai PPN atas jasa digital, dan apakah

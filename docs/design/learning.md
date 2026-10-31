@@ -61,6 +61,9 @@ stays out of scope.
   exports ([Audit trail](#audit-trail)).
 - 2026-10-31 (user, R1 to R8): **reports and dashboards**: cards on the existing role dashboards, company analytics across courses, a compliance
   matrix, question and drop-off analysis, a group dashboard, Console reports, all computed by direct queries with a short cache ([Reports and dashboards](#reports-and-dashboards)).
+- 2026-11-01 (user, U1 to U7): **user management**: three built-in Learning presets, outside trainers as members, listeners for removed and
+  suspended members, certificate reissue with the current name, support access to content only, admin permissions in the existing role editor,
+  and learner groups with outside coordinators who see consenting members' progress ([User management](#user-management)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -192,7 +195,7 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `cohort_id` (nullable, C1), `source` (`self`, `assigned`, `purchased`, `invited`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `invitation_id` (nullable, C6), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `completed_manually_by`, `completion_reason` (C8), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
 | 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `status` (`awaiting_scoring`, `scored`; G3), `score`, `passed` (both null while awaiting), `integrity_tier`, `voided_at`, `voided_by` (G6), `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
-| 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `final_score`, `band` (copies, null when hidden or no quiz; G5), `issued_at`, `expires_at` (nullable, J9), `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
+| 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `final_score`, `band` (copies, null when hidden or no quiz; G5), `issued_at`, `expires_at` (nullable, J9), `reissued_at`, `reissue_count` (U4), `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
 | 11 | `learning_certificate_sequences` | `year`, `last_number` | Numbering per year, like the Assessment reports |
 | 12 | `learning_course_units` | `course_id`, `unit_id` | Internal step: restricts an internal course to units |
 | 13 | `learning_assignments` | `course_id`, target (`employee`, `unit`, `tenant`), `target_id`, `due_in_days`, `created_by` | Internal step |
@@ -209,6 +212,9 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 24 | `learning_invitations` | `course_id`, `cohort_id` (nullable), `email`, `user_id` (nullable), `token`, `status` (`sent`, `accepted`, `declined`, `expired`), `invited_by`, `expires_at` | C6 |
 | 25 | `learning_session_series` | `lesson_id`, `cohort_id` (nullable), `recurrence` (`daily`, `weekly`), `weekdays`, `occurrences`, `seat_limit`, `timezone` | J6 |
 | 26 | `learning_sharing_consents` | `enrollment_id`, `granted`, `consent_text_version`, `occurred_at`, `ip_address` | History of the consent of P1; kept while the enrolment exists (A4) |
+| 27 | `learning_learner_groups` | `company_id` (null = platform), `name`, `code`, `join_mode` (`invite`, `code`, `email_domain`), `email_domain`, `status` | U7 |
+| 28 | `learning_learner_group_members` | `group_id`, `user_id`, `role` (`member`, `coordinator`), `consented_at`, `joined_at` | Unique `group_id` + `user_id`; U7 |
+| 29 | `learning_course_groups` | `course_id`, `group_id` | A course opened to a group; U7 |
 
 ### Files (R1, R2, S1 to S4)
 
@@ -317,6 +323,21 @@ Agreed by the user on 2026-10-31 (R1 to R8). Follows `phase-4-dashboards.md`: th
 | R8 | Console reports | Platform courses and the public courses of every company: enrolments, completion rate, rating, moderation reports |
 
 Public learners without the consent of P1 are counted in every number but never listed.
+
+### User management
+
+Decided by the user on 2026-11-01 (U1 to U7). Accounts, statuses and sign-in stay with Identity; members get access only through presets
+(`phase-8-company-permissions.md`).
+
+| Code | Topic | Rule |
+|---|---|---|
+| U1 | Built-in presets | "Admin pembelajaran" (every `learning.*` permission), "Pengajar" (`learning.courses.author`, `learning.tasks.grade`), "Penilai" (`learning.tasks.grade`); Company admin holds them all; Recruiter and Interviewer get none; the Learning presets are offered only when the company's package includes ONESIS Learning; a new group `learning` in `CompanyPermission::group()` |
+| U2 | Outside trainers | Invited as company members with the "Pengajar" preset, under the tenant's rules (TOTP for internal tenants) |
+| U3 | Removed or suspended member | `CompanyMemberRemoved`: the course team rows go; a course left without an owner passes to the company admins, who are told to name one. `CompanyMemberSuspended`: the rows stay unusable until `CompanyMemberReactivated`; the admins are told. Either way, future sessions they host are flagged as needing a host (not cancelled), their pending scoring returns to the course's other graders, invitations they sent stay valid, past scores and audit entries keep their name, their own public enrolments are untouched (internal ones follow Employee, since removal is not leaving). Audited `learning.course_member_removed`, `learning.course_owner_reassigned`, `learning.session_host_missing` |
+| U4 | Name on certificates | Copied at issue; `POST me/learning/certificates/{id}/reissue` takes the account's current name, keeps the number and the verification code, renders a new PDF and sets `reissued_at`; at most 3 times; not for a revoked or expired certificate; the verification page shows the current name and the reissue date; audited `learning.certificate_reissued` with the old and new name |
+| U5 | Platform support access | As in `phase-8-company-support-access.md`: course content and settings may be read; learners' progress, scores and submissions may not |
+| U6 | Platform admins | `learning.courses.manage` and `learning.moderate` join the existing admin role editor; no new built-in role |
+| U7 | Learner groups | Owned by a company or the platform; joined by invitation (C6 pattern), a group code, or automatically by a verified email domain; joining asks the member's consent that the group's owner and coordinators see their progress, scores and certificates (recorded as A4); a hidden public course may be opened to a group and a whole group enrolled at once (`source = invited`); reports filter by group; managed by holders of `learning.courses.author`. A **coordinator** may be any account outside the company (for example a lecturer), named by the group's manager and accepting an invitation; they read a report of consenting members in Career. Legal question 30 (d) |
 
 ### Grading and ranking
 
@@ -431,6 +452,9 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/quiz-attempts` | Creates an Assessment invitation (`source = learning`), then the existing test flow | |
 | Learner | `GET me/learning/certificates`, `GET me/learning/certificates/{id}/pdf` | My certificates | |
 | Learner | `GET me/learning/agenda` | Agenda (J10) | |
+| Learner | `POST me/learning/certificates/{id}/reissue` | Reissue with the current name (U4) | |
+| Learner | `POST me/learning/groups/join` (`code`), `POST me/learning/groups/{id}/leave`, `GET me/learning/groups` | Learner groups (U7) | verified email |
+| Learner | `GET me/learning/groups/{id}/report` | Report of consenting members for a coordinator (U7) | coordinator of the group |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/series/{series}/register` | Register for a series (J6) | |
 | Workspace | `GET company/learning/catalog` | Internal courses an employee may enrol in (E5, internal step) | employee of the tenant |
 | Workspace | `GET/POST company/learning/courses`, `GET/PUT company/learning/courses/{id}` | Courses | author |
@@ -456,6 +480,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `GET/POST company/learning/lessons/{id}/sessions`, `PUT/DELETE company/learning/sessions/{id}`, `PUT company/learning/sessions/{id}/attendance` | Live sessions (L7) | author; attendance also the host |
 | Workspace | `PUT company/learning/lessons/{id}/criteria` | Task rubric (L8) | author |
 | Workspace | `GET company/learning/task-submissions`, `PUT company/learning/task-submissions/{id}/score` | Scoring tasks (L8) | tasks.grade |
+| Workspace | `GET/POST company/learning/groups`, `PUT company/learning/groups/{id}`, `GET/POST company/learning/groups/{id}/members`, `PUT company/learning/groups/{id}/courses`, `POST company/learning/groups/{id}/enroll` | Learner groups (U7) | author |
 | Workspace | `GET company/learning/analytics` | Company analytics (R2) | reports.view |
 | Workspace | `GET company/learning/courses/{id}/question-analysis`, `GET company/learning/courses/{id}/drop-off` | Question analysis and drop-off (R4, R5) | owner, instructor, view_all |
 | Workspace | `GET company/learning/compliance` | Compliance matrix (R3, internal step) | reports.view |

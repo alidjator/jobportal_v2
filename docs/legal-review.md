@@ -168,7 +168,9 @@ where the question is open; "designed" means it is planned and waits for the ans
     When a job seeker enrols, the system asks whether the company may see their name, email and progress; without that consent the company sees
     counts only, and the learner can withdraw the consent later. (a) Is this consent valid under Article 22 (separate, specific, as easy to withdraw
     as to give)? (b) May a company use what it sees (a course completed, a quiz score) when it later considers the same person as a candidate?
-    (c) Must the privacy policy name the company as a separate controller of that data once shared?
+    (c) Must the privacy policy name the company as a separate controller of that data once shared? (d) A learner group (for example the students
+    of a partner campus) may have coordinators outside the company, such as a lecturer, who see the progress, scores and certificates of members
+    who consented when joining: is that consent enough, and who is the controller of what the coordinator sees? (added 2026-11-01)
 
 31. **Paid courses sold by the platform operator (added 2026-10-31).** The operator sells public courses for a one-time price with lifetime access,
     paid through Midtrans; every sale is final (`docs/design/learning.md` section 4). (a) Is the sale of an online course subject to VAT on digital
