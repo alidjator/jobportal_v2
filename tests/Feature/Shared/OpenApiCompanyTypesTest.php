@@ -35,7 +35,7 @@ final class OpenApiCompanyTypesTest extends FeatureTestCase
 
     public function test_the_job_seeker_and_admin_dashboards_are_typed_too(): void
     {
-        $this->assertSame(['profile', 'applications', 'interviews', 'invitations', 'messages', 'notifications'], array_keys($this->schema('JobSeekerDashboardResource')['properties']['cards']['properties']));
+        $this->assertSame(['profile', 'applications', 'interviews', 'invitations', 'messages', 'notifications', 'todo', 'agenda'], array_keys($this->schema('JobSeekerDashboardResource')['properties']['cards']['properties']));
         $this->assertContains('operations', array_keys($this->schema('AdminDashboardResource')['properties']['cards']['properties']));
     }
 
