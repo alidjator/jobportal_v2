@@ -36,6 +36,7 @@ Entry point for a new session (any account: the working rules are in `CLAUDE.md`
 2. **Legal-blocked items behind switches:** #14 restricted candidates (q13; also the #18 skip code and #15 `candidate_note`), #12 section 3 acceptance evidence (q12), #26 retention (q15, then #39 A14). Each asks the user for its interpretations first.
 3. **Ready without legal:** none left (#20, #22, #25, #30 and #38 are coded).
 4. **Employee and module entitlements, designed 2026-10-31, not coded:** E1 to E4 (`self-hosted.md`, "Decided 2026-10-31 for coding"), then #13 parts 1 to 8 (`erp-employee-handoff.md` section 9). **Design sessions still open (no code):** offers through approvals (G5), hires per requisition (FG13).
+4b. **ONESIS Learning (LMS), design started 2026-10-31, not coded:** `learning.md` (D1 to D8, domain model K1 to K4, permissions and endpoints P1 to P5 decided); paid courses D10 designed only (section 4, new `Commerce` context, legal question 31); next design step: storage layout (section 9). Public side coded after E1 to E4, internal side after #13.
 5. **Portal Mitra and institutions:** #23 sections 5 to 8, #24 sections 3 to 8, E16, with their screens.
 6. **#39 to #44** when a screen asks. On hold or later: gigs #45 and #46 (user, 2026-10-29), #33 after go-live, the frozen list of `phase-8-index.md`.
 - Also open: Performance audit steps 4 and 6; deferred findings 7, 8, 20, 9, 21; benchmark gaps G1-G21; flaky `'42'` assertion of `TestAuthoringTest`; the settings descriptions are English only (translation postponed).
@@ -44,7 +45,7 @@ Entry point for a new session (any account: the working rules are in `CLAUDE.md`
 
 - Legacy import: rehearsal done 2026-10-13; the **freeze date** is not set. SMTP provider and webhook parser, then `identity:send-activation-emails`; `platform.operations_email` and an uptime monitor on `GET /api/v1/health/scheduler`.
 - `CORS_ALLOWED_ORIGINS` and the link settings (values in `frontend.md` 4 and 12.2); production `.env`: `REDIS_CLIENT=predis`, `CACHE_STORE=redis`. Tele-interview: SIP trunk, root setup of Janus, coturn, Asterisk. First admin: `identity:create-admin` (`phase-8-admin-console.md`).
-- Legal review `docs/legal-review.md` (29 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
+- Legal review `docs/legal-review.md` (31 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`

@@ -118,6 +118,7 @@ documentation. The code stays in `src/<Context>`; nothing moves.
 | **ONESIS Workforce** | Workforce (manpower plans, requisitions) |
 | **ONESIS Talent** | Company (team, permissions), Job, Recruitment (pipeline, interviews, offers, hires), Assessment, TalentPool, Messaging, JobInvitation, Matching, Dashboard |
 | **ONESIS Career** (job seekers, public) | JobSeeker, JobAlert, Review, Newsletter, Campaign, Training |
+| **ONESIS Learning** (added 2026-10-31, not coded; `learning.md`) | Learning (courses for job seekers and employees) |
 | (internal tool) | LegacyImport |
 
 - Workforce is a module of its own (decided by the user); Talent uses it through the requisition rule of `erp-requisitions.md` section 1. A
@@ -126,7 +127,8 @@ documentation. The code stays in `src/<Context>`; nothing moves.
   Talent context, not a context of Career.
 - ~~Whether modules can be switched on per group is not decided~~ **changed 2026-10-16:** the modules of an installation follow the purchased package
   (module entitlements, `self-hosted.md` section 8); prices and billing stay out of scope. Since 2026-10-31 Core, Talent and Career are in every
-  package; only Workforce, Employee and the add-ons psychological tests and tele-interview are licensed (gap A1).
+  package; only Workforce, Employee and the add-ons psychological tests and tele-interview are licensed (gap A1). Learning is licensed too
+  (`learning.md`, decided 2026-10-31).
 
 ## 7. Still open
 

@@ -13,9 +13,9 @@ where the question is open; "designed" means it is planned and waits for the ans
 | Priority | Questions | Why | State |
 |---|---|---|---|
 | **A. Before go-live** | 1 to 7, 10, 23 to 25 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then); the recordings and the operator's general duties (registration, data protection officer, breach notice, roles, where the data is kept) must be settled | built; 24, 25 are duties of the operator |
-| **B. Blocks building a feature** | 12, 13, 15, 20, 21, 26 to 28 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform, pre-employment checks and the gig features (location at clock-in, the daily-worker limit and reliability rules, identity checks and freelancer ratings) are not built until answered | designed |
+| **B. Blocks building a feature** | 12, 13, 15, 20, 21, 26 to 28, 31 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform, pre-employment checks and the gig features (location at clock-in, the daily-worker limit and reliability rules, identity checks and freelancer ratings) and paid courses are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
-| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22, 29 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22, 29 designed (29: its retention is a setting, the code does not wait); 18 a plan |
+| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22, 29, 30 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22, 29, 30 designed (29: its retention is a setting, the code does not wait; 30: consent is asked from the start); 18 a plan |
 
 ## 1. What the system does
 
@@ -164,6 +164,19 @@ where the question is open; "designed" means it is planned and waits for the ans
     (d) The documents are encrypted, readable only by members with the HR permission, and every read is logged: is that enough for specific personal
     data (Article 4), and is the company the controller of the employee record after the hand-off, with the platform only running the system?
 
+30. **Learners of a company's public course (added 2026-10-31).** A company may publish a public course on the platform (`docs/design/learning.md`).
+    When a job seeker enrols, the system asks whether the company may see their name, email and progress; without that consent the company sees
+    counts only, and the learner can withdraw the consent later. (a) Is this consent valid under Article 22 (separate, specific, as easy to withdraw
+    as to give)? (b) May a company use what it sees (a course completed, a quiz score) when it later considers the same person as a candidate?
+    (c) Must the privacy policy name the company as a separate controller of that data once shared?
+
+31. **Paid courses sold by the platform operator (added 2026-10-31).** The operator sells public courses for a one-time price with lifetime access,
+    paid through Midtrans; every sale is final (`docs/design/learning.md` section 4). (a) Is the sale of an online course subject to VAT on digital
+    services, and must the operator issue a tax invoice or is a receipt enough? (b) Is a "no refunds" policy valid under the Consumer Protection Law
+    and Government Regulation 80/2019 on electronic commerce, in particular when the course cannot be reached or does not match its description?
+    (c) What must the course page show before purchase (the seller's identity, the price including tax, the terms of access)? (d) When a course is
+    archived or the platform stops operating, what does the operator owe to buyers of lifetime access?
+
 ## 3. What we can change after the answers
 
 - Switch the four filters on for everyone, or remove them in code (one setting, `job_seeker.candidate_sensitive_filters_enabled`).
@@ -189,3 +202,5 @@ where the question is open; "designed" means it is planned and waits for the ans
 - Q27: count the days per group instead of per legal entity, add the written daily work agreement to the booking, let a person confirm each suspension, or show the points and a way to contest them.
 - Q28: collect identity documents outside the platform, keep them only in the company's records, drop the photo comparison, or hide freelancer ratings from everyone but the rater.
 - Q29: change the retention of the documents (an administrator setting), drop the documents that are not needed before the first day, or leave the salary out of the copy.
+- Q30: show companies counts only, drop the use of course results in recruitment, or change the consent text.
+- Q31: add a conditional refund, change the purchase page, bound lifetime access by a minimum period, or issue tax invoices.
