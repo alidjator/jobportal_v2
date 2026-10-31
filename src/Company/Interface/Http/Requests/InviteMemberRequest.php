@@ -3,9 +3,6 @@
 namespace Src\Company\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use Src\Company\Domain\CompanyRole;
-use Src\Shared\Application\Company\CompanyPermission;
 
 final class InviteMemberRequest extends FormRequest
 {
@@ -15,9 +12,7 @@ final class InviteMemberRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'role' => ['required', 'string', Rule::enum(CompanyRole::class)],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::enum(CompanyPermission::class)],
+            'preset' => ['required', 'string', 'max:40'],
         ];
     }
 
@@ -31,14 +26,9 @@ final class InviteMemberRequest extends FormRequest
         return $this->string('email')->toString();
     }
 
-    public function role(): CompanyRole
+    /** The built-in preset (`recruiter`) or saved preset (`saved_12`) that sets the role and permissions. */
+    public function preset(): string
     {
-        return CompanyRole::from($this->string('role')->toString());
-    }
-
-    /** @return list<string> */
-    public function permissions(): array
-    {
-        return array_values(array_map('strval', $this->array('permissions')));
+        return $this->string('preset')->toString();
     }
 }

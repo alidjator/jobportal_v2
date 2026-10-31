@@ -391,7 +391,7 @@ final class AdminCompanyTest extends FeatureTestCase
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->getJson('/api/v1/company/members')->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-suspended');
         $this->app['auth']->forgetGuards();
-        $this->withToken($token)->postJson('/api/v1/company/invitations', ['name' => 'New Member', 'email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(403);
+        $this->withToken($token)->postJson('/api/v1/company/invitations', ['name' => 'New Member', 'email' => 'new@example.test', 'preset' => 'recruiter'])->assertStatus(403);
 
         // The member still signs in and still sees the company with its status, but never the reason.
         $this->app['auth']->forgetGuards();

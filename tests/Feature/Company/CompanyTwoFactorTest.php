@@ -304,7 +304,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
     {
         $this->assertSame(1, $this->tokenCount($this->recruiter));
 
-        $this->api('PATCH', "/company/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/company/members/{$this->recruiter->id}", ['preset' => 'company_admin'])->assertNoContent();
 
         $this->assertSame(0, $this->tokenCount($this->recruiter));
         Mail::assertQueued(AccountNoticeMail::class, fn (AccountNoticeMail $mail): bool => $mail->hasTo('rina@example.test'));
@@ -315,7 +315,7 @@ final class CompanyTwoFactorTest extends FeatureTestCase
     {
         $this->enrolled($this->recruiter, $this->recruiterToken);
 
-        $this->api('PATCH', "/company/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/company/members/{$this->recruiter->id}", ['preset' => 'company_admin'])->assertNoContent();
 
         $this->assertSame(1, $this->tokenCount($this->recruiter));
         Mail::assertNothingQueued();

@@ -12,7 +12,6 @@ use Src\Company\Application\Documents\SubmitCompanyDocument;
 use Src\Company\Application\Invitations\AcceptInvitation;
 use Src\Company\Application\Invitations\AcceptInvitationCommand;
 use Src\Company\Application\Team\InviteMember;
-use Src\Company\Domain\CompanyRole;
 use Src\DemoData\Domain\DemoPdf;
 use Src\Identity\Application\Auth\SignOutEverywhere;
 use Src\Identity\Application\Users\ListAdminUsers;
@@ -83,7 +82,7 @@ final readonly class DemoOrganization
 
         foreach (DemoCast::sinarMembers() as $member) {
             $this->inviteMember->execute(
-                $sinarAdmin, $member['name'], $member['email'], CompanyRole::Member, $member['preset']->permissionNames(), DemoCast::LANGUAGE, null, $agent,
+                $sinarAdmin, $member['name'], $member['email'], $member['preset']->value, DemoCast::LANGUAGE, null, $agent,
             );
             $sinar['members'][$member['preset']->value] = $this->accept($member['email'], $member['name'], $password);
         }

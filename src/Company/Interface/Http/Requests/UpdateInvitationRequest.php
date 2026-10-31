@@ -3,9 +3,6 @@
 namespace Src\Company\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use Src\Company\Domain\CompanyRole;
-use Src\Shared\Application\Company\CompanyPermission;
 
 final class UpdateInvitationRequest extends FormRequest
 {
@@ -14,9 +11,7 @@ final class UpdateInvitationRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'min:1', 'max:100'],
-            'role' => ['sometimes', 'string', Rule::enum(CompanyRole::class)],
-            'permissions' => ['sometimes', 'array'],
-            'permissions.*' => ['string', Rule::enum(CompanyPermission::class)],
+            'preset' => ['sometimes', 'string', 'max:40'],
         ];
     }
 
@@ -25,14 +20,9 @@ final class UpdateInvitationRequest extends FormRequest
         return $this->has('name') ? $this->string('name')->toString() : null;
     }
 
-    public function role(): ?CompanyRole
+    /** The built-in preset (`recruiter`) or saved preset (`saved_12`) that sets the role and permissions; null leaves them as they are. */
+    public function preset(): ?string
     {
-        return $this->has('role') ? CompanyRole::from($this->string('role')->toString()) : null;
-    }
-
-    /** @return ?list<string> */
-    public function permissions(): ?array
-    {
-        return $this->has('permissions') ? array_values(array_map('strval', $this->array('permissions'))) : null;
+        return $this->has('preset') ? $this->string('preset')->toString() : null;
     }
 }

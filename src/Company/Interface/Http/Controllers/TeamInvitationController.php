@@ -22,7 +22,7 @@ final class TeamInvitationController extends ApiController
     public function store(InviteMemberRequest $request, RequestContext $context, ActorResolver $actors, InviteMember $invite): JsonResponse
     {
         $invitation = $invite->execute(
-            $actors->fromRequest($request), $request->name(), $request->email(), $request->role(), $request->permissions(), $context->language, $request->ip(), $request->userAgent(),
+            $actors->fromRequest($request), $request->name(), $request->email(), $request->preset(), $context->language, $request->ip(), $request->userAgent(),
         );
 
         return (new IssuedInvitationResource($invitation))->response()->setStatusCode(JsonResponse::HTTP_CREATED);
@@ -30,7 +30,7 @@ final class TeamInvitationController extends ApiController
 
     public function update(UpdateInvitationRequest $request, int $id, ActorResolver $actors, UpdateInvitation $update): Response
     {
-        $update->execute($actors->fromRequest($request), $id, $request->name(), $request->role(), $request->permissions(), $request->ip(), $request->userAgent());
+        $update->execute($actors->fromRequest($request), $id, $request->name(), $request->preset(), $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

@@ -5,12 +5,12 @@ namespace Src\Company\Interface\Http\Resources;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Src\Company\Domain\PermissionPreset;
+use Src\Company\Application\Presets\PermissionPresetUsage;
 
 /**
- * A permission preset the company saved.
+ * A permission preset the company saved, with `member_count`: the members who hold exactly its permissions.
  *
- * @property PermissionPreset $resource
+ * @property PermissionPresetUsage $resource
  */
 final class PermissionPresetResource extends JsonResource
 {
@@ -18,12 +18,13 @@ final class PermissionPresetResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->resource->id,
-            'name' => $this->resource->name,
-            'permissions' => $this->resource->permissions,
-            'created_by_user_id' => $this->resource->createdByUserId,
-            'created_at' => $this->resource->createdAt->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->resource->updatedAt->format(DateTimeInterface::ATOM),
+            'id' => $this->resource->preset->id,
+            'name' => $this->resource->preset->name,
+            'permissions' => $this->resource->preset->permissions,
+            'created_by_user_id' => $this->resource->preset->createdByUserId,
+            'created_at' => $this->resource->preset->createdAt->format(DateTimeInterface::ATOM),
+            'member_count' => $this->resource->memberCount,
+            'updated_at' => $this->resource->preset->updatedAt->format(DateTimeInterface::ATOM),
         ];
     }
 }

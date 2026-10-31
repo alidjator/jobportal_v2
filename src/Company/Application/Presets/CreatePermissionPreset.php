@@ -24,6 +24,7 @@ final readonly class CreatePermissionPreset
         private CompanyAdminGuard $guard,
         private CompanyRepository $companies,
         private PermissionPresetRepository $presets,
+        private PresetHolders $holders,
         private AuditTrail $audit,
         private TransactionManager $transactions,
         private Clock $clock,
@@ -36,13 +37,13 @@ final readonly class CreatePermissionPreset
      * @throws BusinessRuleViolation `permissions-required`, `permission-requires-view` or `permission-requires-review`
      * @throws StateConflict `permission-preset-name-taken` or `permission-preset-limit`
      */
-    public function execute(Actor $actor, string $name, array $permissions, ?string $ipAddress = null, ?string $userAgent = null): PermissionPreset
+    public function execute(Actor $actor, string $name, array $permissions, ?string $ipAddress = null, ?string $userAgent = null): PermissionPresetUsage
     {
         $companyId = (int) $this->guard->company($actor)->id;
         $now = $this->clock->now();
         $preset = PermissionPreset::create($companyId, $name, $permissions, (int) $actor->id, $now);
 
-        return $this->transactions->run(function () use ($preset, $companyId, $actor, $ipAddress, $userAgent, $now): PermissionPreset {
+        return $this->transactions->run(function () use ($preset, $companyId, $actor, $ipAddress, $userAgent, $now): PermissionPresetUsage {
             $this->companies->lock($companyId);
 
             if ($this->presets->countOfCompany($companyId) >= PermissionPreset::MAX_PER_COMPANY) {
@@ -55,7 +56,7 @@ final readonly class CreatePermissionPreset
                 ['name' => $saved->name, 'permissions' => $saved->permissions], $ipAddress, $userAgent, $now, $companyId,
             ));
 
-            return $saved;
+            return new PermissionPresetUsage($saved, count($this->holders->userIds($companyId, $saved->permissions)));
         });
     }
 }

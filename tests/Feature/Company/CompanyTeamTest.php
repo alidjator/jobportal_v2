@@ -110,12 +110,24 @@ final class CompanyTeamTest extends FeatureTestCase
         return $this->withToken($token ?? $this->adminToken)->withHeader('Accept-Language', $language)->json($method, '/api/v1/company'.$uri, $body);
     }
 
-    /** @param  ?list<string>  $permissions  the permissions of a member; reading and interviews when null */
+    /** @param  ?list<string>  $permissions  the set of a member, saved as a preset of the company (reading and interviews when null); a call with another admin's token uses the built-in Recruiter */
     private function invite(string $email = 'new@example.test', string $role = 'member', ?string $token = null, ?array $permissions = null): TestResponse
     {
         return $this->api('POST', '/invitations', [
-            'name' => 'Budi Baru', 'email' => $email, 'role' => $role, 'permissions' => $permissions ?? ['applications.view', 'interviews.manage'],
+            'name' => 'Budi Baru', 'email' => $email, 'preset' => $role === 'member' ? ($token === null ? $this->savedPreset($permissions ?? ['applications.view', 'interviews.manage']) : 'recruiter') : $role,
         ], $token);
+    }
+
+    /** A preset of the company with exactly these permissions, written straight to the table (the preset API is tested in `PermissionPresetTest`). */
+    private function savedPreset(array $permissions): string
+    {
+        $name = 'Set '.md5(implode(',', $permissions));
+        $id = DB::table('company_permission_presets')->where('company_id', $this->companyId)->where('name', $name)->value('id')
+            ?? DB::table('company_permission_presets')->insertGetId([
+                'company_id' => $this->companyId, 'name' => $name, 'permissions' => json_encode($permissions), 'created_by_user_id' => $this->admin->id, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+
+        return "saved_{$id}";
     }
 
     private function tokenFromMail(int $index = 0): string
@@ -162,10 +174,10 @@ final class CompanyTeamTest extends FeatureTestCase
     public function test_a_member_cannot_manage_the_team(): void
     {
         foreach ([
-            ['POST', '/invitations', ['name' => 'X', 'email' => 'x@example.test', 'role' => 'member', 'permissions' => ['applications.view']]], ['PATCH', '/invitations/1', []],
+            ['POST', '/invitations', ['name' => 'X', 'email' => 'x@example.test', 'preset' => 'recruiter']], ['PATCH', '/invitations/1', []],
             ['POST', '/invitations/1/resend', []], ['DELETE', '/invitations/1', []], ['GET', '/members', []], ['GET', "/members/{$this->recruiter->id}", []],
             ['GET', "/members/{$this->recruiter->id}/jobs", []], ['GET', "/members/{$this->recruiter->id}/activity", []], ['DELETE', "/members/{$this->admin->id}", []],
-            ['PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin']], ['POST', "/members/{$this->recruiter->id}/suspend", []],
+            ['PATCH', "/members/{$this->recruiter->id}", ['preset' => 'company_admin']], ['POST', "/members/{$this->recruiter->id}/suspend", []],
             ['POST', "/members/{$this->recruiter->id}/reactivate", []], ['POST', "/members/{$this->admin->id}/make-owner", ['password' => self::PASSWORD]],
             ['GET', '/team/history', []], ['GET', '/team/email-domains', []], ['PUT', '/team/email-domains', ['domains' => []]],
         ] as [$method, $uri, $body]) {
@@ -245,7 +257,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_the_invitation_email_follows_the_request_language(): void
     {
-        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'role' => 'company_admin'], null, 'id')->assertCreated();
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'preset' => 'company_admin'], null, 'id')->assertCreated();
 
         $message = $this->app->make('mail.manager')->mailer()->getSymfonyTransport()->messages()[0]->getOriginalMessage();
         $this->assertSame('Undangan bergabung dengan PT Maju Bersama', $message->getSubject());
@@ -255,12 +267,12 @@ final class CompanyTeamTest extends FeatureTestCase
     public function test_the_invitation_is_validated_and_refused_for_an_existing_account(): void
     {
         $this->invite('not-an-email')->assertStatus(422);
-        $this->invite('new@example.test', 'owner')->assertStatus(422);
-        $this->api('POST', '/invitations', ['email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(422)->assertJsonValidationErrors(['name']);
-        $this->invite('new@example.test', 'member', null, ['jobs.fly'])->assertStatus(422);
-
-        $this->invite('new@example.test', 'member', null, [])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permissions-required');
-        $this->invite('new@example.test', 'member', null, ['jobs.create'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permission-requires-view')->assertJsonPath('permission', 'jobs.create');
+        $this->invite('new@example.test', 'owner')->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+        $this->api('POST', '/invitations', ['email' => 'new@example.test', 'preset' => 'recruiter'])->assertStatus(422)->assertJsonValidationErrors(['name']);
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test'])->assertStatus(422)->assertJsonValidationErrors(['preset']);
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'preset' => 'custom'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'preset' => 'saved_999999'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+        $this->api('POST', '/invitations', ['name' => 'Budi', 'email' => 'new@example.test', 'role' => 'member', 'permissions' => ['applications.view']])->assertStatus(422)->assertJsonValidationErrors(['preset']);
 
         $this->invite('RINA@example.test')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:email-already-registered');
 
@@ -442,7 +454,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
         // A recruiter without `jobs.assign` has no list; one who holds it has, without learning any email address.
         $this->api('GET', '/members/options', token: $this->recruiterToken)->assertForbidden()->assertJsonPath('permission', 'jobs.assign');
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['applications.view', 'jobs.assign']])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => $this->savedPreset(['applications.view', 'jobs.assign'])])->assertNoContent();
         $this->api('GET', '/members/options', token: $this->recruiterToken)->assertOk()->assertJsonCount(3, 'data');
     }
 
@@ -563,15 +575,15 @@ final class CompanyTeamTest extends FeatureTestCase
 
     // ----- changing roles and permissions -----
 
-    public function test_a_member_can_be_promoted_and_a_company_admin_demoted_to_the_recruiter_preset(): void
+    public function test_a_member_can_be_promoted_and_a_company_admin_demoted_through_a_preset(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'company_admin'])->assertNoContent();
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertSame(0, DB::table('company_member_permissions')->count());
         // A new company admin without a second factor loses the sessions: the next sign-in asks for the enrolment.
         $this->api('GET', '/members', [], $this->recruiterToken)->assertUnauthorized();
 
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'recruiter'])->assertNoContent();
         $this->assertSame('member', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
 
@@ -579,17 +591,17 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->api('GET', '/members', [], $this->recruiter->createToken('phone', ['*'], now()->addDay())->plainTextToken)->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:company-admin-required');
     }
 
-    public function test_a_demotion_may_name_the_permissions(): void
+    public function test_a_demotion_may_use_a_saved_preset(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member', 'permissions' => ['applications.view']])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => $this->savedPreset(['applications.view'])])->assertNoContent();
 
         $this->assertSame(['applications.view'], $this->permissionsOf($this->recruiter));
     }
 
     public function test_the_permissions_of_a_member_change_at_once_and_are_audited_and_notified(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['applications.view', 'jobs.assign']])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => $this->savedPreset(['applications.view', 'jobs.assign'])])->assertNoContent();
 
         $this->assertEqualsCanonicalizing(['applications.view', 'jobs.assign'], $this->permissionsOf($this->recruiter));
 
@@ -606,41 +618,48 @@ final class CompanyTeamTest extends FeatureTestCase
         $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $this->recruiter->id)->where('type', 'company.permissions_changed')->count());
     }
 
-    public function test_the_permissions_of_a_member_are_checked(): void
+    public function test_only_a_preset_that_exists_gives_access_and_checkboxes_are_not_accepted(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => []])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permissions-required');
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['jobs.publish']])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:permission-requires-view');
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => ['jobs.fly']])->assertStatus(422);
-        $this->api('PATCH', "/members/{$this->admin->id}", ['permissions' => ['applications.view']])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:member-is-company-admin');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'custom'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'saved_999999'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'owner'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
 
+        // Another company's preset is not found by its key either.
+        $other = DB::table('company_permission_presets')->insertGetId([
+            'company_id' => $this->makeCompany('PT Lain', 'pt-lain'), 'name' => 'Lain', 'permissions' => json_encode(['applications.view']), 'created_by_user_id' => $this->admin->id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => "saved_{$other}"])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:unknown-permission-preset');
+
+        // `role` and `permissions` are no longer read: nothing changes without a preset.
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin', 'permissions' => ['applications.view']])->assertNoContent();
+
+        $this->assertSame('member', DB::table('company_members')->where('user_id', $this->recruiter->id)->value('role'));
         $this->assertEqualsCanonicalizing(MemberPreset::Recruiter->permissionNames(), $this->permissionsOf($this->recruiter));
     }
 
     public function test_the_owner_and_the_last_company_admin_cannot_be_demoted(): void
     {
-        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:member-is-owner');
+        $this->api('PATCH', "/members/{$this->admin->id}", ['preset' => 'recruiter'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:member-is-owner');
 
         DB::table('company_members')->update(['is_owner' => false]);
-        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'member'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
+        $this->api('PATCH', "/members/{$this->admin->id}", ['preset' => 'recruiter'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:last-company-admin');
 
         $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $this->admin->id)->value('role'));
     }
 
-    public function test_giving_the_same_role_and_permissions_changes_and_audits_nothing(): void
+    public function test_giving_the_same_preset_changes_and_audits_nothing(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'member'])->assertNoContent();
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['permissions' => array_reverse(MemberPreset::Recruiter->permissionNames())])->assertNoContent();
-        $this->api('PATCH', "/members/{$this->admin->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'recruiter'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->admin->id}", ['preset' => 'company_admin'])->assertNoContent();
 
         $this->assertSame(0, DB::table('platform_audit_logs')->whereIn('action', ['company.member_role_changed', 'company.member_permissions_changed'])->count());
     }
 
-    public function test_a_change_needs_a_valid_role_and_a_member_of_the_own_company(): void
+    public function test_a_change_needs_a_member_of_the_own_company(): void
     {
         $outsider = $this->makeMember($this->makeCompany('PT Lain', 'pt-lain'), 'Oki Lain', 'oki@example.test', 'recruiter');
 
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'owner'])->assertStatus(422);
-        $this->api('PATCH', "/members/{$outsider->id}", ['role' => 'company_admin'])->assertNotFound();
+        $this->api('PATCH', "/members/{$outsider->id}", ['preset' => 'company_admin'])->assertNotFound();
 
         $this->assertSame('member', DB::table('company_members')->where('user_id', $outsider->id)->value('role'));
     }
@@ -657,7 +676,7 @@ final class CompanyTeamTest extends FeatureTestCase
 
     public function test_removals_and_role_changes_are_audited_with_the_actor_and_without_email_addresses(): void
     {
-        $this->api('PATCH', "/members/{$this->recruiter->id}", ['role' => 'company_admin'])->assertNoContent();
+        $this->api('PATCH', "/members/{$this->recruiter->id}", ['preset' => 'company_admin'])->assertNoContent();
         $this->api('DELETE', "/members/{$this->recruiter->id}")->assertNoContent();
 
         $changed = DB::table('platform_audit_logs')->where('action', 'company.member_role_changed')->first();

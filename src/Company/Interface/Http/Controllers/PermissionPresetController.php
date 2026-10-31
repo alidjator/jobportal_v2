@@ -32,7 +32,7 @@ final class PermissionPresetController extends ApiController
 
     public function update(PermissionPresetRequest $request, int $id, ActorResolver $actors, UpdatePermissionPreset $update): PermissionPresetResource
     {
-        return new PermissionPresetResource($update->execute($actors->fromRequest($request), $id, $request->presetName(), $request->permissions(), $request->ip(), $request->userAgent()));
+        return new PermissionPresetResource($update->execute($actors->fromRequest($request), $id, $request->presetName(), $request->permissions(), $request->applyToMembers(), $request->ip(), $request->userAgent()));
     }
 
     public function destroy(Request $request, int $id, ActorResolver $actors, DeletePermissionPreset $delete): Response

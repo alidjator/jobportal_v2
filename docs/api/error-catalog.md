@@ -330,7 +330,6 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `location-name-taken` | 422 | Company | Another location of this company already has this name. |
 | `location-not-found` | 404 | Company | Location not found. |
 | `location-parent-required` | 422 | ReferenceData | Filter by :parent to list the :level. |
-| `member-is-company-admin` | 409 | Company | A company admin holds every permission. |
 | `member-is-owner` | 409 | Company | The owner of the company must hand the ownership over before deleting the account. |
 | `membership-suspended` | 403 | Company | Your access to the company was suspended by a company admin. |
 | `message-link-not-allowed` | 422 | Company | A message to a candidate cannot carry a link or an email address, except one of your own website. |
@@ -523,6 +522,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `unit-type-code-taken` | 409 | Organization | The group already has a unit type with this code. |
 | `unit-type-in-use` | 409 | Organization | An active unit still uses this unit type. |
 | `unknown-industry` | 422 | Company | The industry does not exist or is not active. |
+| `unknown-permission-preset` | 422 | Company | The permission preset does not exist. |
 | `unknown-notification-preference` | 422 | Notification | This notification setting does not exist. |
 | `unknown-organization-type` | 422 | Company | The organization type does not exist or is not active. |
 | `unknown-permission` | 422 | Identity | Unknown permission: :permissions. |

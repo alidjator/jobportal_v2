@@ -92,7 +92,7 @@ final class TeamMemberController extends ApiController
 
     public function update(UpdateMemberRequest $request, int $userId, ActorResolver $actors, UpdateMember $update): Response
     {
-        $update->execute($actors->fromRequest($request), $userId, $request->name(), $request->role(), $request->permissions(), $request->ip(), $request->userAgent());
+        $update->execute($actors->fromRequest($request), $userId, $request->name(), $request->preset(), $request->ip(), $request->userAgent());
 
         return response()->noContent();
     }

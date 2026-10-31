@@ -152,10 +152,52 @@ final class PermissionPresetTest extends FeatureTestCase
         $id = (int) $this->create('Tim wawancara', ['applications.view', 'interviews.participate'])->assertCreated()->json('data.id');
         $member = UserModel::query()->where('email', 'rina@example.test')->firstOrFail();
 
-        $this->api('PATCH', "/members/{$member->id}", ['permissions' => ['applications.view', 'interviews.participate']])->assertNoContent();
+        $this->api('PATCH', "/members/{$member->id}", ['preset' => "saved_{$id}"])->assertNoContent();
         $this->api('DELETE', "/permission-presets/{$id}")->assertNoContent();
 
         $held = DB::table('company_member_permissions')->join('company_members', 'company_members.id', '=', 'company_member_permissions.company_member_id')->where('company_members.user_id', $member->id)->pluck('permission')->all();
         $this->assertEqualsCanonicalizing(['applications.view', 'interviews.participate'], $held);
+    }
+
+    private function permissionsOf(UserModel $member): array
+    {
+        return DB::table('company_member_permissions')->join('company_members', 'company_members.id', '=', 'company_member_permissions.company_member_id')
+            ->where('company_members.user_id', $member->id)->pluck('permission')->all();
+    }
+
+    public function test_a_preset_counts_the_members_who_hold_exactly_its_permissions(): void
+    {
+        $id = (int) $this->create('Tim wawancara', ['applications.view', 'interviews.participate'])->assertCreated()->assertJsonPath('data.member_count', 0)->json('data.id');
+        $member = UserModel::query()->where('email', 'rina@example.test')->firstOrFail();
+
+        $this->api('PATCH', "/members/{$member->id}", ['preset' => "saved_{$id}"])->assertNoContent();
+
+        $this->api('GET', '/permission-presets')->assertOk()->assertJsonPath('data.0.member_count', 1);
+
+        // A company admin holds every permission and is never counted, and a member with another set is not either.
+        $this->api('PATCH', "/members/{$member->id}", ['preset' => 'interviewer'])->assertNoContent();
+        $this->api('GET', '/permission-presets')->assertOk()->assertJsonPath('data.0.member_count', 0);
+    }
+
+    public function test_a_change_can_give_the_new_set_to_the_members_who_held_the_old_one(): void
+    {
+        $id = (int) $this->create('Tim wawancara', ['applications.view', 'interviews.participate'])->assertCreated()->json('data.id');
+        $rina = UserModel::query()->where('email', 'rina@example.test')->firstOrFail();
+        $this->api('PATCH', "/members/{$rina->id}", ['preset' => "saved_{$id}"])->assertNoContent();
+        $admin = UserModel::query()->where('email', 'andi@example.test')->firstOrFail();
+
+        // Without the flag the members keep what they have.
+        $this->api('PATCH', "/permission-presets/{$id}", ['name' => 'Tim wawancara', 'permissions' => ['applications.view']])->assertOk()->assertJsonPath('data.member_count', 0);
+        $this->assertEqualsCanonicalizing(['applications.view', 'interviews.participate'], $this->permissionsOf($rina));
+
+        $this->api('PATCH', "/permission-presets/{$id}", ['name' => 'Tim wawancara', 'permissions' => ['applications.view', 'interviews.participate']])->assertOk()->assertJsonPath('data.member_count', 1);
+        $audited = DB::table('platform_audit_logs')->where('action', 'company.member_permissions_changed')->count();
+        $notified = DB::table('notifications')->where('notifiable_id', $rina->id)->where('type', 'company.permissions_changed')->count();
+        $this->api('PATCH', "/permission-presets/{$id}", ['name' => 'Tim wawancara', 'permissions' => ['applications.view'], 'apply_to_members' => true])->assertOk()->assertJsonPath('data.member_count', 1);
+
+        $this->assertSame(['applications.view'], $this->permissionsOf($rina));
+        $this->assertSame($audited + 1, DB::table('platform_audit_logs')->where('action', 'company.member_permissions_changed')->count());
+        $this->assertSame($notified + 1, DB::table('notifications')->where('notifiable_id', $rina->id)->where('type', 'company.permissions_changed')->count());
+        $this->assertSame('company_admin', DB::table('company_members')->where('user_id', $admin->id)->value('role'));
     }
 }
