@@ -138,3 +138,29 @@ Open questions (to answer before coding, one at a time):
 6. ~~Which parts are add-ons~~ **answered 2026-10-16: psychological tests and tele-interview** (both of Talent). The marketplace features of Career and
    candidate search with the talent pool stay inside their modules. Psychological tests keep their company setting `assessment.psychological_enabled`
    on top of the add-on. All questions of section 8 are answered.
+
+### Decided 2026-10-31 for coding (user), and the order of work
+
+Four gaps found when the entitlement was prepared for coding (the hand-off to Employee, `erp-employee-handoff.md`, needs the module switch). All answered:
+
+7. **External tenants** (companies without a group in the SaaS installation) get **Core, Talent and Career** with no licence file. Workforce and Employee exist only for **internal tenants** (a group with a licence), as `erp-direction.md` already says. The two add-ons (psychological tests, tele-interview) need a licence that lists them, so an external tenant has neither.
+8. **After the licence expires:** a **grace period of 30 days** in which everything works, then **read-only mode**: the module's routes refuse a change with 409 `module-expired` and still answer reads and exports, so no data is lost. Platform admins see a warning before the end and during the grace period.
+9. **Without a licence file:** outside production (`APP_ENV` other than `production`) **every module is on**; the automated tests use a fake provider of the entitlements. In production an installation without a file has **Core only** (and the external tenants of item 7 keep Talent and Career).
+10. **Delivery:** the platform admin **uploads the file per group in the Console**; it is verified when uploaded, and the payload and its signature are kept in the database (`platform_licences`). A self-hosted installation has one group, so one upload.
+
+Technical choices (no question needed): the file is a JSON payload (`schema_version`, `licence_id`, group, `modules`, `add_ons`, `valid_from`, `valid_until`, `issued_at`) with an **Ed25519** signature (PHP `sodium`); the public key is in the repository's configuration, the private key stays with ONESIS outside the repository, and the **tool that issues licences** is a separate script that is not part of a release. The dependencies of question 2 are checked when the file is uploaded (422 `licence-invalid`, `licence-dependency`). The decision point is one port in Shared, `ModuleEntitlements` (`allows(Module)`, `allowsAddOn(AddOn)`, `state()` as `active`, `grace`, `read_only` or `none`), resolved for the company through its legal entity and group.
+
+**Order of coding (each part checked and committed on its own; migrations run by the user):**
+
+| Part | Work |
+|---|---|
+| E1 | The modules and add-ons as enums, the licence value object and its checks (dependencies, validity), the signature check, the table `platform_licences`, the Console endpoints `GET/POST admin/groups/{id}/licence` with a permission `platform.licences.manage`, audit, and the issuing script outside the release; tests with a test key |
+| E2 | The port `ModuleEntitlements` and its two providers (licence-based, and "everything on" outside production), the rules of items 7 to 9, and the middleware `module:<name>` with the read-only mode; applied to the routes, the permissions of the catalogue and the scheduled commands of Workforce, the add-ons (psychological tests, tele-interview) and, when it exists, Employee |
+| E3 | The modules of the company in the session data so the front end hides menus and screens (Workspace, Career), and a licence panel in the Console (state, expiry, warnings) |
+| E4 | Error catalogue and translations, `scramble:cache`, the demo data (a group with a licence), and the status lines of `HANDOFF.md` and `phase-8-index.md` |
+
+The hand-off to Employee (`erp-employee-handoff.md` section 9) then needs no interim switch: **E1 and E2 come before its part 1**, and its `employee.module_enabled` setting is dropped.
+
+**Names the code does not know, and adding a module (decided 2026-10-31, user).** A licence file issued for a newer release may name a module or add-on this release does not have. The upload **accepts it and ignores the unknown names**, and the Console panel marks them "not in this version", so a self-hosted customer can renew the licence before upgrading the application; the signature covers the whole payload, so the file stays valid. `schema_version` lets a later change of the file format keep reading older files. A file with an unknown `schema_version` higher than the release supports is refused (422 `licence-version-unsupported`).
+
+To add a module: (1) a case in `Module` (or `AddOn` for a part licensed separately); (2) its dependencies in the one table of the code, which the upload checks; (3) the middleware `module:<name>` on its routes, its permissions in the catalogue (hidden while the module is off) and its scheduled commands skipped; (4) say whether external tenants get it by default (they do not unless listed); (5) the menus and screens of the front end read the module list of the session data. A licence file issued before the module existed does not entitle it; a new file does.

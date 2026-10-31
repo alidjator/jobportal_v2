@@ -91,14 +91,22 @@ Candidate: `employee.onboarding_started`, `.item_rejected`, `.item_due` (reminde
 
 Written as **question 29** of `legal-review.md` (2026-10-31, step C3; priority D, Indonesian copy updated): how long the pre-boarding documents of someone who does not join may be kept; the basis and the notice for collecting KTP, NPWP, KK and bank details before the first day; whether the copy of the offer salary into Employee needs the candidate's notice. The code does not wait for them; the retention is a setting.
 
-## 9. Order of work
+## 9. Order of coding
 
-| Step | Work | Depends on |
+Each part is coded, checked by the user (`vendor/bin/pint --test`, `php artisan test`, `scramble:clear && scramble:cache` after route or response changes, `api:error-catalog --check`) and committed on its own. Migrations from `000400`, run by the user. The C1 questions are answered (section 10), so nothing waits for the user before part 1.
+
+| Part | Work | Depends on |
 |---|---|---|
-| 1 | the open HRIS questions of `erp-direction.md` section 7 (C1): answered 2026-10-31 (the HRIS has no product name; it is "the HR application") | the user |
-| 2 | the context `Employee`: tables, the hand-off port, start and close, activation command | 1, #27 company locations |
-| 3 | template and items, the candidate upload, review, notifications and the to-do and agenda sources | 2 |
-| 4 | Workspace "Karyawan baru" and the Career page `/me/onboarding` | 3 |
+| 1 | **Foundation.** The context `src/Employee` (layers, Arch tests, service provider); the `Employee` aggregate with its status rules (`pending`, `needs_review`, `active`, `cancelled`) and the tables `employee_employees`, `employee_employment`, `employee_profile`; the settings of section 7; the check of the module `employee` through the `ModuleEntitlements` port (parts E1 and E2 of `self-hosted.md` section 8 are coded **before** this part, so there is no interim switch); the `employee` permission group and the preset "HR onboarding" in the Company catalogue; documentation group "Employee" in `ApiTags` | #27 (coded), E1 and E2 of the entitlements |
+| 2 | **Checklist template.** `employee_preboarding_templates` and `_lines`, `GET/PUT employee/checklist` (`checklist.manage`), the document kinds, validation and audit | 1 |
+| 3 | **Hand-off.** The port in Shared and its providers in Recruitment and Job Seeker (copy of section 3); `GET employee/hand-offs/waiting`, `POST employee/hand-offs` (bulk, skip codes), the items created from the template, `GET employee/employees` and `{id}`, `activate`, `close`, `keep`; listeners for a hire corrected, an offer withdrawn and a changed join date (`needs_review`, due dates moved); the scheduled activation command | 1, 2 |
+| 4 | **Documents.** `employee_preboarding_items` upload from the candidate (`PUT me/onboarding/items/{id}/file`, checks of content, size and type, encrypted private disk), `GET me/onboarding`, the HR review (`approve` or reject with a reason), the logged file read, the retention command that deletes the files of a cancelled record | 3 |
+| 5 | **Reminders and the candidate's lists.** The notification types and e-mail templates of section 6, the reminder and digest commands, the to-do source `preboarding_document` and the agenda source for the due dates (the ports of #15) | 3, 4 |
+| 6 | **API close.** Demo data (an internal tenant with an HR member and a hired candidate), the error catalogue and its translations, `scramble:cache`, `HANDOFF.md` and `phase-8-index.md`, then `composer check` of the whole suite | 1 to 5 |
+| 7 | **Workspace, "Karyawan baru".** The section and its permission checks, the waiting list with the bulk start, the employees list and detail, the document review, the checklist settings; `pnpm api:refresh`, i18n id and en | 6 |
+| 8 | **Career, `/me/onboarding`.** The items with their due dates and rejection reasons, the upload, the to-do and agenda entries and the dashboard card | 6 |
+
+Parts 7 and 8 do not depend on each other. Parts 1 to 3 are the smallest working slice (a record with its terms, the start, the status changes); documents come in part 4.
 
 ## 10. Open
 
