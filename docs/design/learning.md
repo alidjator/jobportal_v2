@@ -43,6 +43,9 @@ stays out of scope.
 - 2026-10-31 (user, P5): **video is uploaded in chunks** through the API; the nginx and PHP body limits stay small.
 - 2026-10-31 (user, S1 to S4): **files stay on the server's private disk** (the volume is enlarged first), chunks of 8 MB, paths
   `learning/<kind>/<hex>`, the cover served through an API route ([Files](#files-r1-r2-s1-to-s4)).
+- 2026-10-31 (user, E1 to E7): **enrolment rules**: modes `self`, `assigned`, `purchased`; `expired` only for recurring certification, a passed
+  due date is a computed `overdue`; re-enrolment, assigned courses, the internal catalog, archived courses, and an optional window and seat limit on
+  the course ([Enrolment](#enrolment)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -166,12 +169,12 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | # | Table | Main columns | Notes |
 |---|---|---|---|
 | 1 | `learning_categories` | `name` json (id/en), `slug`, `sort_order`, `is_active` | Master-data pattern of phase 0; managed by the platform admin |
-| 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
+| 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
 | 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
 | 4 | `learning_modules` | `version_id`, `position`, `title` | |
 | 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`), `completion_threshold`, `test_id`, `pass_mark`, `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
 | 6 | `learning_course_skills` | `course_id`, `skill_id` | Key to `reference_skills` (S4) |
-| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`), `assigned_by`, `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
+| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`, `purchased`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
 | 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `score`, `passed`, `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
 | 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `issued_at`, `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
@@ -196,6 +199,29 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
   scheduler deletes abandoned chunks. On `complete` the server joins the chunks, checks the SHA-256 sent by the client and the type with `finfo`.
 - **Directories (S3):** `<context>/<kind>/<random hex>.<ext>`, as the other contexts do.
 - **Video length:** ffmpeg and ffprobe are not installed on the host, so `duration_seconds` comes from the browser's metadata of the file.
+
+### Enrolment
+
+Agreed by the user on 2026-10-31 (E1 to E7).
+
+| Mode | `source` | Who | How | Due date | Leaving |
+|---|---|---|---|---|---|
+| Self, public course | `self` | Any account with a verified email (P3) | `POST learning/courses/{id}/enroll`, with `share_with_company` for a company course (P1) | None | `withdraw` |
+| Self, internal course (E5) | `self` | Employees of the owning tenant, in the course's units when `learning_course_units` has rows | `GET company/learning/catalog`, then the same `enroll` | None | `withdraw` |
+| Assigned (internal step) | `assigned` | Employees, by person, unit or tenant | `learning_assignments`, or onboarding (S2) | `due_at` from `due_in_days` | Only HR cancels the assignment; the learner's `withdraw` answers 409 (E4) |
+| Purchased (designed only, D10) | `purchased` | Any account with a verified email | `Learning` enrols the buyer on `OrderPaid`; `order_id` is kept (E1) | None | `withdraw`; enrolling again needs no new purchase (B3) |
+
+Rules:
+
+- **Status (E2):** `active`, `completed`, `withdrawn`, `expired`. `expired` is used only by recurring certification (S3): a `completed` enrolment
+  turns `expired` when its certificate's validity ends, and a new assignment follows. A passed `due_at` changes no status: the API returns
+  `overdue: true`, the learner may still finish, and reports tell on time from late. A `purchased` enrolment never expires.
+- **Enrolling again (E3):** after `withdrawn`, a new enrolment on the latest published version; after `completed`, the learner may replay the course
+  without a new certificate, except for recurring certification.
+- **Archived course (E6):** active learners may finish; nobody new may enrol.
+- **Window and seats (E7, nice-to-have):** `enrollment_opens_at`, `enrollment_closes_at` and `seat_limit` on the course, so a new version does not
+  reset them; seats count `active` and `completed` enrolments across versions, not `withdrawn`; assigned enrolments ignore both. Seats of live
+  sessions (S6) are designed with S6.
 
 ## 7. Assessment changes
 
@@ -250,6 +276,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/complete` | Completion for the rule `opened` | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/quiz-attempts` | Creates an Assessment invitation (`source = learning`), then the existing test flow | |
 | Learner | `GET me/learning/certificates`, `GET me/learning/certificates/{id}/pdf` | My certificates | |
+| Workspace | `GET company/learning/catalog` | Internal courses an employee may enrol in (E5, internal step) | employee of the tenant |
 | Workspace | `GET/POST company/learning/courses`, `GET/PUT company/learning/courses/{id}` | Courses | author |
 | Workspace | `POST company/learning/courses/{id}/archive` | Archive | publish |
 | Workspace | `GET/POST company/learning/courses/{id}/versions`, `GET/PUT company/learning/versions/{id}` | Versions; `POST` copies the latest into a draft | author |
