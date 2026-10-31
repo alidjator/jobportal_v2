@@ -1,6 +1,6 @@
 # Handoff
 
-Entry point for a new session. Keep it **under about 5 KB**: replace the status, do not append.
+Entry point for a new session (any account: the working rules are in `CLAUDE.md`, not in anyone's memory). Keep it **short** (about 7 KB at most): replace the status, do not append.
 
 | What | Where |
 |---|---|
@@ -13,48 +13,41 @@ Entry point for a new session. Keep it **under about 5 KB**: replace the status,
 | History | `docs/archive/handoff-history.md` (to 2026-10-08, frozen), then `git log -p docs/HANDOFF.md`; search, do not read whole |
 | Front end | `/usr/local/src/jobportal-frontend/onesis-talent` (its `CLAUDE.md`: template rules 1 to 16), design `docs/design/frontend.md` (`## Decisions` first) |
 
-## Current state (2026-10-29)
+## Current state (2026-10-30)
 
 **API (this repository)**
 
-- Latest tag `v0.9.1`; `master` is 106 commits past it, 52 not pushed (`git status -sb`). Remote `origin`: private GitHub `alidjator/jobportal_v2` (alias `github-jobportal`). Uncommitted work in the tree: installation type, institutions, structure reorder, demo data (`git status`).
-- Phases 0 to 7 coded and committed. Phase 8 per item: `phase-8-index.md`. Coded 2026-10-26/28: #23 provider tools sections 1 to 4, #24 sections 1 and 2, screening presets (`phase-1-screening-presets.md`), installation type (`erp-installation-type.md`). Multi-persona items #34 to #37 coded; #38 maybe coded, not started; #39 to #44 designed, wait for the front end. API coding is limited to #38 and what the front end asks for (`decisions.md` section 5).
-- Branches: `job-editor-api` is merged into `master`; `frontend-step-0-api` holds commit `1b5b359` (status-count endpoints for the Console tabs) not on `master`; `phase-8-activation` and `workspace-api-gaps` also exist: check before deleting.
-- PostgreSQL `jobportal_v2`: migrations go to `000199` (`000195` and `000199` not yet committed): check `migrate:status` (the user runs `migrate`, and `php artisan test:database:migrate --env=testing` before the tests). Reference data only until the final import (`demo:seed` for development).
-- Go-live readiness first (`docs/deployment-checklist.md`); the dev site is this folder, so code with a new migration fails until `migrate`. Name: ONESIS (`naming.md`).
+- Latest tag `v0.9.1`; `master` is well past it and not pushed (`git status -sb`). Uncommitted work: installation type, institutions, structure reorder, demo data, and of 2026-10-30 the undo window `000200`, `000201`, email invitations `000300` (#31), company permission presets `000310`, pre-employment checks `000320` (#32 part 1). The numbering jumped to `000300` on purpose; check `migrate:status` (the user runs `migrate` and `scramble:clear` then `scramble:cache`, then `pnpm api:refresh` in the front end).
+- Phases 0 to 7 coded. Phase 8 per item: `phase-8-index.md`. **Decision 2026-10-30 (`decisions.md` section 5): work blocked by the legal review is coded in full and ships switched off; the platform admin turns it on in Console "Pengaturan".** Switches today: `invitations.email_enabled`, `recruitment.pre_employment_checks_enabled`, `job_seeker.candidate_sensitive_filters_enabled`, `assessment.psychological_enabled`, `interview.video_enabled`, `interview.voice_enabled`. Still to build behind one: #14, #12 section 3, #26, #33 (see Next).
+- Also 2026-10-30: company admins save **permission presets** (`phase-8-company-permissions.md`); the catalog has 30 permissions (`checks.manage`; existing recruiters do not get it automatically).
+- Tests: Pest 4 runs on top of PHPUnit 12 (2026-10-30); `tests/Arch/LayersTest.php` keeps the layer and context boundaries (117 tests, no database, `php artisan test --testsuite=Arch`). Function-style files cannot run with `vendor/bin/phpunit`; use `vendor/bin/pest`.
 
-**Front end** (Career `apps/public`, Workspace, Console; shared `packages/ui`, `api`, `i18n`)
+**Front end** (Career `apps/public`, Workspace, Console; shared `packages/ui`, `api`, `i18n`; rules in its `CLAUDE.md`)
 
-- Able Pro Tailwind 1.2.0, compact density, Font Awesome Pro 7.1 light, 4 px spacing scale (`CLAUDE.md` there); the job description is Markdown (CKEditor Visual or EasyMDE tab); Workspace opens pages as tabs (`frontend.md` 11.1).
-- Coding order `frontend.md` section 13 (its status paragraph is the list of what is coded); Console against the Workspace: `docs/analysis/console-workspace-audit.md`. Last commit `c539eed` (screening presets screen). **Not tried in a browser**: the ERP pages, the kanban across jobs, the MPP grid, the approval flow editor, the Workspace tabs.
-- Open front end questions: icon audit finding D (`AccountSecurityTab`), photos in conversations and in the group's applicant page, more approval flow features (templates, change history), `LayoutRowLink` in older lists.
-- Git: local commits on `main`, no remote, no identity configured; `backup/before-reauthor` may be deleted.
-- Deploy: `pnpm release:<app>` builds and switches `releases/<app>/current`; run it as `jobportal`, never root; Workspace then needs `systemctl restart onesis-workspace` as root. The user runs `pnpm install`, `icons:build`, builds, tests and pushes.
+- Coded 2026-10-30: R13 undo and reject-remaining, R14 "Menunggu kandidat" (Workspace tab, Career page `/undangan-lamaran/{token}`), team permission presets (tab "Preset izin"), R15 part 1 (page `/perusahaan/cek-pra-kerja`, tab "Cek pra-kerja" on the application, card on the Career application), Console "Pengaturan" with tabs per key prefix, and the **sticky search bar** on every list page (rule 21).
+- Open front end: R15 part 2 (offer condition box, bulk request); search bars in the old shape (`OrganizationReadJobs`, Console audit log, `notifikasi`); icon audit D (`AccountSecurityTab`); photos in conversations; approval-flow extras; `LayoutRowLink`; Portal Mitra per `implementation-gap-audit.md` section 7.
+- Workspace components are used **with the folder prefix** (`components/company/CheckTypeDialog.vue` is `<CompanyCheckTypeDialog>`, unless the file name already starts with the folder); Career and Console use the file name.
 
-## Open work (not started)
+## Next (order agreed 2026-10-30; the user decides when to start each)
 
-- Next in the audit order: the job editor steps (screening questions, default test and kit per stage, hiring manager boundary, delete a draft, review requests), then the Career chains (messages, invitations, tests, notifications, settings), Console step 5, Portal Mitra with #23 and #24. Needs `pnpm api:refresh` after API endpoints change.
-- Performance audit steps 4 (measure) and 6 (query-count tests); then drop `jobportal_v2_perf`.
-- Deferred architecture findings 7, 8, 20 (`decisions.md` section 6), 9, 21 (after the import).
-- Benchmark gaps G1-G21 (`docs/analysis/gap-analysis-round-2.md`): G1, G2, G6, G7, G20 in `phase-8-platform-admin.md` (G20 before go-live), G14 in `phase-8-job-discovery.md`; R8 reopened.
-- Gigs, **coding on hold until the user discusses it again (2026-10-29)**: #45 shift gigs (API plan `gigs.md` 12, schema approved, ready for coding) and #46 project gigs and service catalogue (API plan `gigs.md` 13, schema approved), both before go-live (2026-10-29); legal questions 26 to 28 parts built switched off; screens `gigs.md` 14 (front-end step 8); benchmark `docs/analysis/benchmark-gigs.md`.
-- Talent pool notes need a JobSeeker trigger for immediate clearing. Flaky: the `'42'` assertion of `TestAuthoringTest`.
+0. **Phase 0, the user's check of today's work.** Green so far: all migrations `Ran` (to `000320`), `scramble:cache`, test database, `api:error-catalog --check`, the Arch tests (117), the voice listener refactor. **Not yet reported:** `composer check` (whole suite), the front end (`pnpm api:refresh`, `prettier --write apps packages`, `pnpm ship console|workspace|public`), the manual list in a browser (Console "Pengaturan", Workspace "Jenis cek pra-kerja", "Menunggu kandidat", "Preset izin", the sticky search bars), then commits by group (R13, R14, permission presets, R15 part 1, Console settings and search bars, docs, Pest and Arch tests). Nothing of the 2026-10-26 to 2026-10-30 work was tried in a browser.
+1. **Done 2026-10-31, waiting for commits of the other sessions' files only:** #32 part 2 (API and front end; only the candidate's agenda and to-do sources were left, now coded with #15) and #15 sections 3, 4 and 5 (`GET me/tasks`, `GET me/agenda`, the cards `todo` and `agenda`, the Career pages `/me/tasks` and `/me/agenda`; section 4: samples not drawn, `GET me/assessment/invitations/{id}/practice`, `requirements`). The practice page and the device check came with **J7** (Career test pages and runner, all three steps coded and committed 2026-10-31: list, invitation page, runner for questions, speed columns, drawing and video answers, explanation page; `implementation-gap-audit.md` K1).
+2. **Legal-blocked items behind switches:** #14 restricted candidates (q13; also the #18 skip code and #15 `candidate_note`), #12 section 3 acceptance evidence (q12), #26 retention (q15, then #39 A14). Each asks the user for its interpretations first.
+3. **Ready without legal:** none left (#20, #22, #25, #30 and #38 are coded).
+4. **Employee and module entitlements, designed 2026-10-31, not coded:** E1 to E4 (`self-hosted.md`, "Decided 2026-10-31 for coding"), then #13 parts 1 to 8 (`erp-employee-handoff.md` section 9). **Design sessions still open (no code):** offers through approvals (G5), hires per requisition (FG13).
+5. **Portal Mitra and institutions:** #23 sections 5 to 8, #24 sections 3 to 8, E16, with their screens.
+6. **#39 to #44** when a screen asks. On hold or later: gigs #45 and #46 (user, 2026-10-29), #33 after go-live, the frozen list of `phase-8-index.md`.
+- Also open: Performance audit steps 4 and 6; deferred findings 7, 8, 20, 9, 21; benchmark gaps G1-G21; flaky `'42'` assertion of `TestAuthoringTest`; the settings descriptions are English only (translation postponed).
 
 ## Items waiting for the user
 
-- Legacy import: rehearsal done 2026-10-13 (`phase-1-migration.md`); the **freeze date** is not set.
-- SMTP provider and its webhook parser; then `identity:send-activation-emails` (checklist section 3).
-- `platform.operations_email` and an outside uptime monitor on `GET /api/v1/health/scheduler`.
-- `CORS_ALLOWED_ORIGINS` and the link settings (`COMPANY_INVITATION_URL`, `JOB_SEEKER_*_URL`, `COMPANY_APP*_URL`, ...) with the values of `frontend.md` 4 and 12.2; production `.env`: `REDIS_CLIENT=predis`, `CACHE_STORE=redis`.
-- Tele-interview: SIP trunk with one DID; root setup of Janus, coturn and Asterisk (`deploy/*/README.md`).
-- First admin: `identity:create-admin`; others by `identity:create-role` and `identity:set-admin-role` (`phase-8-admin-console.md`).
-- Legal review `docs/legal-review.md` (28 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
+- Legacy import: rehearsal done 2026-10-13; the **freeze date** is not set. SMTP provider and webhook parser, then `identity:send-activation-emails`; `platform.operations_email` and an uptime monitor on `GET /api/v1/health/scheduler`.
+- `CORS_ALLOWED_ORIGINS` and the link settings (values in `frontend.md` 4 and 12.2); production `.env`: `REDIS_CLIENT=predis`, `CACHE_STORE=redis`. Tele-interview: SIP trunk, root setup of Janus, coturn, Asterisk. First admin: `identity:create-admin` (`phase-8-admin-console.md`).
+- Legal review `docs/legal-review.md` (29 questions; Indonesian copy `legal-review.id.md`) **not sent**; before go-live: 1 to 7, 10, 23 to 25. Sensitive candidate-search filters stay off until answered.
 - Deliver `docs/analysis/legacy-security-report.md` (S1-S3, critical) to the karir.pkp maintainers.
 
 ## Operational facts not in `CLAUDE.md`
 
 - Commit identity of this repository is in its `.git/config`.
-- Dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`, `API_DOCS_ENABLED=true`; nginx directly (no `trustProxies`), scheduler in the `jobportal` crontab. The nginx config (`/etc/nginx/conf.d/api-karir.satu.solutions.conf`, copy in `/home/jobportal/nginx/`), the crontab and ACLs are outside git.
-- `tests/Feature/Platform/SettingsTest.php` lists every setting key: update it with each new one.
-- Import: `KARIR_PKP_FILES_ROOT` in `.env`; `--map=masters=<path>`, `--map=groups=<path>`. Rehearsal: own database (`DB_DATABASE`, `LARAVEL_STORAGE_PATH`), then `migrate`, `db:seed`, `legacy:import --all --write`; `legacy` stays MariaDB.
-- `/docs/api` needs `API_DOCS_ENABLED=true`; `php artisan scramble:export` writes `api.json`.
+- Dev site: `APP_ENV=staging`, `MAIL_MAILER=log`, `QUEUE_CONNECTION=sync`; nginx directly (no `trustProxies`), scheduler in the `jobportal` crontab. The nginx config (`/etc/nginx/conf.d/api-karir.satu.solutions.conf`, copy in `/home/jobportal/nginx/`), the crontab and ACLs are outside git.
+- Import: `KARIR_PKP_FILES_ROOT`; `--map=masters=<path>`, `--map=groups=<path>`; rehearsal in its own database, then `migrate`, `db:seed`, `legacy:import --all --write`. `/docs/api` needs `API_DOCS_ENABLED=true`; `scramble:export` writes `api.json`.

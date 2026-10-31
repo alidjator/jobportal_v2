@@ -15,7 +15,7 @@ Everything below passed the full `composer check` (up to #17: tag `v0.6.0`; #18:
 |---|---|
 | `phase-8-admin-console.md` | coded 2026-10-13 (before go-live) |
 | `phase-8-company-permissions.md` | permissions and team coded and tested 2026-10-14 (migrations `000136`, `000137`) |
-| `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; sections 3 and 4 wait (#25) |
+| `phase-8-jobseeker-privacy.md` sections 1 and 2 | coded and checked 2026-10-15 (migration `000139`), committed; section 4 coded 2026-10-31 (migration `000340`, API); section 3 waits (#25) |
 | `phase-8-company-admin.md` sections 1, 2 and 4 | coded and checked 2026-10-15 (migration `000140`), committed; `offer.letter_downloaded` coded with #12, section 3 waits for #26 |
 | `erp-organization.md` (#5) | parts A and B (`000143`, `000144`), C1 to C3 (group log, group settings, support access; `000145`-`000147`) and D (group read rule) coded 2026-10-16 |
 | `naming.md` section 1 | coded 2026-10-15 (no migration; the problem `type` is now `urn:onesis:error:<code>`), checked |
@@ -56,20 +56,20 @@ the front end asks for) are coded; the other rows wait even when ready.
 | # | Document | Waits for |
 |---|---|---|
 | 12 | `phase-8-offer-letters.md` section 3 (acceptance evidence) and offer approval of internal tenants through #6 | section 3: `legal-review.md` question 12; the approval needs a design |
-| 13 | **new** hand-off to Employee (after `phase-8-hiring.md`), with the pre-boarding documents (FG5, decided 2026-10-19) | a design session (`erp-direction.md` section 3) |
-| 14 | `phase-8-rejections.md` | restricted candidates: question 13; the waiting period (section 3) is coded since 2026-10-23, its apply state and team note wait |
-| 15 | `phase-8-candidate-experience.md` (section 5, the agenda, added 2026-10-19) | #14: the pending rejections of the rejections design carry the candidate message |
-| 20 | `phase-8-job-posting.md` | sections 1 to 4 and the jobs with several locations (search, matching, alerts, recommendations) are coded since 2026-10-23; open: sections 5 and 6, the summary in the alert and recommendation emails |
-| 22 | `phase-8-assessment-automation.md` | sections 1 and 2 are coded since 2026-10-23; open: section 3 (comparing results) |
+| 13 | **new** hand-off to Employee (after `phase-8-hiring.md`), with the pre-boarding documents (FG5, decided 2026-10-19) | designed 2026-10-31 in `erp-employee-handoff.md` with no open questions (section 9 gives the coding order; not coded; E1 and E2 of the module entitlements come first) |
+| 14 | `phase-8-rejections.md` | restricted candidates: question 13; the waiting period (section 3) is coded since 2026-10-23, its apply state and team note wait; the undo window (section 2, `000200`, ships as 0 minutes) is coded since 2026-10-29, waiting for the user's check |
+| 15 | `phase-8-candidate-experience.md` (section 5, the agenda, added 2026-10-19) | sections 1 and 2 coded; sections 3 and 5 (to-do list, agenda: API, dashboard cards, Career pages) and the API of section 4 (samples not drawn, practice, `requirements`) coded 2026-10-31, committed; the practice page and the device check came with J7 (the Career test pages, all three steps committed 2026-10-31). #14: the pending rejections of the rejections design carry the candidate message; "reject the remaining" (section 1) is coded since 2026-10-29 without `candidate_note` |
+| 20 | `phase-8-job-posting.md` | sections 1 to 4 and the jobs with several locations (search, matching, alerts, recommendations) are coded since 2026-10-23; sections 5 and 6 coded 2026-10-31 (migration `000370`, API), waits for the user's check; the summary in the alert and recommendation emails coded 2026-10-31 |
+| 22 | `phase-8-assessment-automation.md` | sections 1 and 2 are coded since 2026-10-23; section 3 (comparing results) coded 2026-10-31, waits for the user's check |
 | 23 | `phase-8-provider-tools.md` | sections 1 to 4 coded 2026-10-26/27 (norm groups, candidate context, claiming a review, recommendation); open: sections 5 to 8. Needed before the first partner institution, not for go-live; question 11 |
 | 24 | `phase-8-provider-institutions.md` | sections 1 and 2 coded 2026-10-27 (institution leads manage their team, licence renewals); the rest after the provider tools; before the first partner institution; question 17; section 8 (in-house psychologists, designed 2026-10-16) also needs `erp-organization.md` (#5) and the entitlements of `self-hosted.md` section 8; question 19 |
 | 25 | `phase-8-jobseeker-privacy.md` sections 3 and 4 | |
 | 26 | `phase-8-company-admin.md` section 3 | retention period: question 15 |
-| 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | ready for coding (schema approved 2026-10-19) |
-| 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | `legal-review.md` question 20 (schema approved 2026-10-19) |
-| 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | `legal-review.md` question 21 (schema and rules approved 2026-10-19); uses the agenda of #15 |
+| 30 | `phase-8-platform-admin.md` section 9, queue watch (FG16), before go-live | coded 2026-10-31, waits for the user's check |
+| 31 | `phase-8-manual-candidates.md` (FG9), ERP TA core | API coded 2026-10-30 behind the switch `invitations.email_enabled` (off until `legal-review.md` question 20 is answered); front end coded 2026-10-30 (tab "Menunggu kandidat", dialog, Career page `/undangan-lamaran/{token}`), not tried in a browser |
+| 32 | `phase-8-pre-employment-checks.md` (FG12), ERP TA core | part 1 of the API coded 2026-10-30 behind the switch `recruitment.pre_employment_checks_enabled` (off until `legal-review.md` question 21 is answered); front end part 1 coded 2026-10-30 (check types page, tab "Cek pra-kerja", Career card); part 2 coded 2026-10-31 (rejection reason, hires export column, conditional offer, notifications and emails, 90-day purge, bulk requests; front end: offer condition box, bulk "Minta cek"); the to-do and agenda sources came with #15 |
 | 33 | `phase-8-whatsapp.md` (FG6), **after go-live** | Meta Business verification and template approvals (started by the user); `legal-review.md` question 22 for the unofficial adapter; uses #29 section 6 and #32 |
-| 38 | `phase-8-admin-queue-cards.md` (MG-C06) | may be coded (not started) |
+| 38 | `phase-8-admin-queue-cards.md` (MG-C06) | coded 2026-10-20, committed (`786dd89`) |
 | 39 | `phase-8-account-and-public-items.md` (MG-A01, A03, A11, A12, A13, C01; A14 waits for #26) | designed; waits for the front end |
 | 40 | `phase-8-recruitment-closure.md` (MG-P04, MG-P05) | designed; waits for the front end |
 | 41 | `phase-8-approval-escalation.md` (MG-B10) | designed; waits for the front end |

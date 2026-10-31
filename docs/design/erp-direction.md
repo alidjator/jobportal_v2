@@ -50,7 +50,7 @@ code and no schema before go-live; it adds new designs and sets a new order for 
 - The hires export of `phase-8-hiring.md` is the **bridge** until Employee exists: it feeds the existing HRIS.
 - A hire of an internal tenant later creates a pending employee record through a domain event (hand-off design, section 6, item 13).
 - **Pre-employment documents** (KTP, NPWP, diplomas, SKCK, bank account, BPJS cards; FG5 of `docs/analysis/actor-gap-analysis.md`) are collected
-  by Employee through a pre-boarding page that the new hire opens with the same account, designed with the hand-off (item 13); external tenants keep
+  by Employee through a pre-boarding page that the new hire opens with the same account, designed with the hand-off (item 13, `erp-employee-handoff.md`); external tenants keep
   collecting them outside the system (decided by the user, 2026-10-19).
 - The hand-off does **not** carry psychological reports or test results by default (`phase-6-assessments.md`, "ERP later"; `legal-review.md`
   question 18).
@@ -131,8 +131,7 @@ documentation. The code stays in `src/<Context>`; nothing moves.
 ## 7. Still open
 
 - ~~The IdP product and who runs it~~ settled 2026-10-15: no separate IdP (`erp-sso.md`).
-- Which existing HRIS application runs in production, which of its features Employee replaces (payroll with BPJS and PPh 21 is a large scope of
-  its own) and whether its data is migrated.
+- ~~Which existing HRIS application runs in production~~ it is called "the HR application" (aplikasi HR) and has no product name for us (2026-10-31). ~~Which of its features Employee replaces and whether its data is migrated~~ decided 2026-10-31: employee data and onboarding only, no migration, the hires export stays and is switched off per tenant that uses Employee (`erp-employee-handoff.md`).
 - ~~Requisition approval levels and who approves~~ settled 2026-10-15: flows with conditions (`erp-requisitions.md` section 4).
 - ~~Whether hiring managers and interviewers of internal tenants are company members, employees, or both~~ decided 2026-10-15 (user): they stay
   **company members**; when Employee exists, a member account of an internal tenant may be linked 1:1 to an employee record (used later for
