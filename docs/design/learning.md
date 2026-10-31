@@ -59,6 +59,8 @@ stays out of scope.
 - 2026-10-31 (user, A1 to A7): **audit trail**: a catalog of `learning.*` actions through the shared `AuditTrail`, no audit of learning activity,
   score corrections with a reason, a consent history, durable training records apart from the 12-month log, an erasure step, a log per course and
   exports ([Audit trail](#audit-trail)).
+- 2026-10-31 (user, R1 to R8): **reports and dashboards**: cards on the existing role dashboards, company analytics across courses, a compliance
+  matrix, question and drop-off analysis, a group dashboard, Console reports, all computed by direct queries with a short cache ([Reports and dashboards](#reports-and-dashboards)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -116,7 +118,7 @@ M = must-have, S = should-have, N = nice-to-have. "Reuses" names the existing co
 | S5 | Courses suggested or required by a job; courses for missing skills | Public | Job, screening, Matching |
 | S6 | Live or classroom sessions: schedule, seats, attendance (designed, L7) | Both | Interview calendar, Janus |
 | S7 | Tasks: an uploaded file scored by an instructor with a rubric (designed, L8) | Both | Learning itself (Assessment has no file answer for skill tests) |
-| S8 | Group dashboard across tenants | Internal | Organization group permissions |
+| S8 | Group dashboard across tenants (designed, R7) | Internal | Organization group permissions |
 | S9 | Course ratings and reviews | Public | Review |
 | S10 | Moving the Moodle courses, or showing both catalogs side by side | Both | Training |
 | S11 | Requests to attend external training through approvals | Internal | Approval |
@@ -298,6 +300,24 @@ months, no sensitive values in `metadata`); entries carry the company, so they a
 | A6 | Log per course | `GET company/learning/courses/{id}/activity`: the entries about the course, its versions and cohorts; owner and `learning.courses.view_all` |
 | A7 | Exports | A compliance CSV per period (enrolments, due dates, completion, scores, certificates, attendance) and an export of the company's `learning.*` audit entries, with the same fields the company activity log shows (legal question 10 decides IP and browser) |
 
+### Reports and dashboards
+
+Agreed by the user on 2026-10-31 (R1 to R8). Follows `phase-4-dashboards.md`: the `Dashboard` context reads Learning through a read interface in
+`Shared`, never its tables; days are counted in Asia/Jakarta.
+
+| Code | Topic | Rule |
+|---|---|---|
+| R1 | Dashboard cards | Learning cards on the existing endpoints. `me/dashboard`: active courses, nearest due dates, next session, certificates (with those expiring). `company/dashboard`: active learners, completion rate, overdue learners, tasks waiting for a score; shown only to holders of `learning.reports.view`. `admin/dashboard`: public courses, new enrolments, moderation reports; shown only with `learning.courses.manage` or `learning.moderate` |
+| R2 | Company analytics | Per course: enrolments, completion rate, mean final score, mean learning time, rating, mean pre/post gain (L1); filters `from`, `to`, category, unit, cohort; a 30-day daily series |
+| R3 | Compliance matrix (internal step) | Employees × required courses with the state not started, in progress, overdue, completed, expired; filter by unit; compliance percentage per unit; exported with A7 |
+| R4 | Question analysis | For `learning` tests: share of correct answers per question and the wrong options chosen most; for the owner and instructors; cached 1 hour |
+| R5 | Drop-off | Per lesson, the share of learners whose last completed lesson it is and who have not returned for 14 days; in the course report |
+| R6 | Computation | Direct aggregate queries with a cache of 1 to 5 minutes, as the existing dashboards; indexes on `course_id`, `status`, `enrolled_at`, `completed_at`; a daily summary table (pattern of `job_view_daily`) only if the volume asks for it, without changing the API |
+| R7 | Group dashboard (S8, internal step) | The numbers of R2 and R3 per tenant of the group, with `group.learning.view` |
+| R8 | Console reports | Platform courses and the public courses of every company: enrolments, completion rate, rating, moderation reports |
+
+Public learners without the consent of P1 are counted in every number but never listed.
+
 ### Grading and ranking
 
 Agreed by the user on 2026-10-31 (G1 to G8). Scoring itself is the Assessment engine's (points, percentage, band `low`, `fair`, `good`,
@@ -436,13 +456,17 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `GET/POST company/learning/lessons/{id}/sessions`, `PUT/DELETE company/learning/sessions/{id}`, `PUT company/learning/sessions/{id}/attendance` | Live sessions (L7) | author; attendance also the host |
 | Workspace | `PUT company/learning/lessons/{id}/criteria` | Task rubric (L8) | author |
 | Workspace | `GET company/learning/task-submissions`, `PUT company/learning/task-submissions/{id}/score` | Scoring tasks (L8) | tasks.grade |
+| Workspace | `GET company/learning/analytics` | Company analytics (R2) | reports.view |
+| Workspace | `GET company/learning/courses/{id}/question-analysis`, `GET company/learning/courses/{id}/drop-off` | Question analysis and drop-off (R4, R5) | owner, instructor, view_all |
+| Workspace | `GET company/learning/compliance` | Compliance matrix (R3, internal step) | reports.view |
 | Workspace | `GET company/learning/courses/{id}/activity` | Activity log of a course (A6) | owner, view_all |
 | Workspace | `GET company/learning/compliance/export`, `GET company/learning/activity/export` (`from`, `to`, at most 12 months) | Compliance CSV and audit export (A7) | reports.view with view_all |
 | Workspace | `GET company/learning/courses/{id}/feedback` | Course feedback, anonymous for internal courses (L5) | reports.view |
-| Group | `GET organization/learning/reports` | Group dashboard (internal step) | `group.learning.view` |
+| Group | `GET organization/learning/analytics` | Group dashboard (R7, internal step) | `group.learning.view` |
 | Console | `GET/POST/PUT/DELETE admin/learning/categories` | Categories | courses.manage |
 | Console | The course, version, module, lesson and upload routes of Workspace under `admin/learning/...`, with `company_id` null | Platform courses | courses.manage |
 | Console | `GET admin/learning/courses` with `filter[company]` | Every course | courses.manage or moderate |
+| Console | `GET admin/learning/analytics` | Console reports (R8) | courses.manage or moderate |
 | Console | `POST admin/learning/courses/{id}/archive` | Moderation of a company course (P4) | moderate |
 | Console | `POST admin/learning/certificates/{id}/revoke` | Revoke with a reason | moderate |
 | Console | `POST admin/learning/feedback/{id}/hide` | Hide a feedback comment (L5) | moderate |
