@@ -56,6 +56,9 @@ stays out of scope.
   announcements, invitations, linked translations, actions on learners, and deleting a never-published draft ([Course management](#course-management)).
 - 2026-10-31 (user, J1 to J10): **scheduling**: scheduled publishing, module release (drip), a time zone per session and cohort, conflict checks,
   calendar files, session series with an attendance threshold, certificate validity, automatic cohort status and an agenda ([Scheduling](#scheduling)).
+- 2026-10-31 (user, A1 to A7): **audit trail**: a catalog of `learning.*` actions through the shared `AuditTrail`, no audit of learning activity,
+  score corrections with a reason, a consent history, durable training records apart from the 12-month log, an erasure step, a log per course and
+  exports ([Audit trail](#audit-trail)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -203,6 +206,7 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 23 | `learning_invite_links` | `course_id`, `cohort_id` (nullable), `token`, `expires_at`, `max_uses`, `uses`, `created_by` | C6 |
 | 24 | `learning_invitations` | `course_id`, `cohort_id` (nullable), `email`, `user_id` (nullable), `token`, `status` (`sent`, `accepted`, `declined`, `expired`), `invited_by`, `expires_at` | C6 |
 | 25 | `learning_session_series` | `lesson_id`, `cohort_id` (nullable), `recurrence` (`daily`, `weekly`), `weekdays`, `occurrences`, `seat_limit`, `timezone` | J6 |
+| 26 | `learning_sharing_consents` | `enrollment_id`, `granted`, `consent_text_version`, `occurred_at`, `ip_address` | History of the consent of P1; kept while the enrolment exists (A4) |
 
 ### Files (R1, R2, S1 to S4)
 
@@ -278,6 +282,21 @@ Agreed by the user on 2026-10-31 (J1 to J10). Times are stored in UTC.
 | J8 | Cohort status | The scheduler moves `planned` to `running` at `starts_at` and `running` to `finished` at `ends_at` |
 | J9 | Certificate validity | `certificate_valid_months` on the course is copied as `expires_at` at issue; reminders 30 and 7 days before; on expiry the enrolment turns `expired` (E2), an internal assigned course is assigned again with a new due date, a public learner may enrol again for a new certificate; the verification page shows the validity; an expired certificate stays on the profile with a label and stops counting as a verified skill in matching; a later change affects new certificates only |
 | J10 | Agenda | `GET me/learning/agenda` (sessions, due dates, cohorts, module releases) and `GET company/learning/agenda` (sessions one hosts); `from` and `to`, at most 62 days |
+
+### Audit trail
+
+Agreed by the user on 2026-10-31 (A1 to A7). `Learning` writes through the shared port `AuditTrail` (`platform_audit_logs`, append-only, kept 12
+months, no sensitive values in `metadata`); entries carry the company, so they also show in the company and group activity logs.
+
+| Code | Topic | Rule |
+|---|---|---|
+| A1 | Audited actions | `learning.<subject>_<verb>`: course and version lifecycle (created, submitted, scheduled, published, archived, deleted, duplicated), team and cohort changes, assignments, the actions of C8, scores and score corrections, voided attempts (G6), certificates issued and revoked, moderation, invitations and imports, consent changes (P1) |
+| A2 | Learning activity | Not audited (opening a lesson, watching a video): the record is `learning_lesson_progress`, the quiz attempts and the integrity events |
+| A3 | Score corrections | The old and the new score and the grader in `metadata`; a reason is required |
+| A4 | Consent history | `learning_sharing_consents` (granted or withdrawn, the version of the consent text, time, IP), kept while the enrolment exists; readable by the learner and the platform admin |
+| A5 | Retention | The audit log stays 12 months; the durable training record is Learning's own tables (enrolments, scores, attendance, tasks, certificates), kept while the employee record exists (internal; its retention after leaving follows Employee, #13) or while the account exists (public). A new step of the account erasure chain (pattern of `EraseAssessmentDataWhenUserAnonymized`) deletes progress, task submissions and their files, consents, feedback and session registrations, and anonymises enrolments and certificates; the verification page then says the certificate is not available; quiz attempts follow the Assessment erasure for `source = learning` |
+| A6 | Log per course | `GET company/learning/courses/{id}/activity`: the entries about the course, its versions and cohorts; owner and `learning.courses.view_all` |
+| A7 | Exports | A compliance CSV per period (enrolments, due dates, completion, scores, certificates, attendance) and an export of the company's `learning.*` audit entries, with the same fields the company activity log shows (legal question 10 decides IP and browser) |
 
 ### Grading and ranking
 
@@ -381,7 +400,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Learner | `POST learning/courses/{id}/enroll` | Self-enrolment; `share_with_company` for a company course (P1) | verified email |
 | Learner | `GET me/learning/enrollments`, `GET me/learning/enrollments/{id}` | My courses, outline, progress | |
 | Learner | `POST me/learning/enrollments/{id}/withdraw` | Leave a course | |
-| Learner | `PUT me/learning/enrollments/{id}/sharing` | Give or withdraw the consent of P1 | |
+| Learner | `PUT me/learning/enrollments/{id}/sharing`, `GET me/learning/enrollments/{id}/sharing/history` | Give or withdraw the consent of P1; its history (A4) | |
 | Learner | `GET me/learning/enrollments/{id}/lessons/{lesson}` | Lesson content; video through a signed URL | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/progress` | Video position and watched share | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/complete` | Completion for the rule `opened` | |
@@ -417,6 +436,8 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `GET/POST company/learning/lessons/{id}/sessions`, `PUT/DELETE company/learning/sessions/{id}`, `PUT company/learning/sessions/{id}/attendance` | Live sessions (L7) | author; attendance also the host |
 | Workspace | `PUT company/learning/lessons/{id}/criteria` | Task rubric (L8) | author |
 | Workspace | `GET company/learning/task-submissions`, `PUT company/learning/task-submissions/{id}/score` | Scoring tasks (L8) | tasks.grade |
+| Workspace | `GET company/learning/courses/{id}/activity` | Activity log of a course (A6) | owner, view_all |
+| Workspace | `GET company/learning/compliance/export`, `GET company/learning/activity/export` (`from`, `to`, at most 12 months) | Compliance CSV and audit export (A7) | reports.view with view_all |
 | Workspace | `GET company/learning/courses/{id}/feedback` | Course feedback, anonymous for internal courses (L5) | reports.view |
 | Group | `GET organization/learning/reports` | Group dashboard (internal step) | `group.learning.view` |
 | Console | `GET/POST/PUT/DELETE admin/learning/categories` | Categories | courses.manage |
