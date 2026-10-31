@@ -46,7 +46,7 @@ final readonly class GetApplyState
         $now = $this->clock->now();
         $reasons = [];
 
-        if (! ($this->contacts->contact($userId)?->emailVerified ?? false)) {
+        if (! ($this->contacts->contact($userId)->emailVerified ?? false)) {
             $reasons[] = ['code' => 'email-not-verified'];
         }
 

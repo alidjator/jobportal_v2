@@ -48,7 +48,7 @@ final readonly class UpdateInvitation
             }
 
             $resolved = $preset === null ? null : $this->presets->execute((int) $company->id, $preset);
-            $newRole = $resolved?->role ?? $invitation->role;
+            $newRole = $resolved->role ?? $invitation->role;
             $newName = $name === null ? $invitation->name : trim($name);
             $newPermissions = $resolved === null ? $this->ordered($invitation->permissions) : $resolved->permissionsOrNull();
 

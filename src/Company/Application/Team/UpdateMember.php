@@ -59,7 +59,7 @@ final readonly class UpdateMember
 
             $member = $this->members->find($companyId, $userId) ?? throw EntityNotFound::of('Member', $userId);
             $resolved = $preset === null ? null : $this->presets->execute($companyId, $preset);
-            $newRole = $resolved?->role ?? $member->role;
+            $newRole = $resolved->role ?? $member->role;
             $permissions = $resolved === null || $newRole === CompanyRole::CompanyAdmin ? null : $resolved->permissions;
             $now = $this->clock->now();
             $events = [];

@@ -60,7 +60,7 @@ final readonly class GetPractice
 
         foreach ($this->sections->ofTest($invitation->testId) as $section) {
             if (isset($samples[(int) $section->id])) {
-                $sections[] = new PracticeSection($section, array_values($samples[(int) $section->id]));
+                $sections[] = new PracticeSection($section, $samples[(int) $section->id]);
             }
         }
 

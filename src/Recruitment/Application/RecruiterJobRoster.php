@@ -43,7 +43,7 @@ final readonly class RecruiterJobRoster implements JobRoster
                 $row->stageName,
                 $row->matchScore,
                 $row->ratingAverage,
-                $interviews[$id]->result?->score ?? null,
+                $interviews[$id]->result->score ?? null,
             );
         }
 

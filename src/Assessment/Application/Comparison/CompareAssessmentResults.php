@@ -181,7 +181,7 @@ final readonly class CompareAssessmentResults
 
         $status = $kind === TestKind::Psychological
             ? ($signed ? 'signed' : 'awaiting_psychologist_review')
-            : ($assessment->status?->value ?? 'pending_scoring');
+            : ($assessment->status->value ?? 'pending_scoring');
 
         return new AssessmentComparisonRow(
             $application,

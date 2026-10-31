@@ -38,11 +38,11 @@ final readonly class DatabaseQueueHealth implements QueueHealth
 
         ksort($statuses);
 
-        return array_values(array_map(
+        return array_map(
             fn (array $values, string $queue): QueueStatus => new QueueStatus($queue, ...$values),
             $statuses,
             array_keys($statuses),
-        ));
+        );
     }
 
     public function failedQueues(): array
