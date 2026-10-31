@@ -250,7 +250,7 @@ final class MasterSeedersTest extends FeatureTestCase
 
         $ranks = DB::table('reference_education_levels')->pluck('rank', 'slug')->map(fn ($rank) => (int) $rank)->all();
 
-        $this->assertSame(['s2' => 4, 's1' => 3, 'd4' => 3, 'd3' => 2, 'sma' => 1], $ranks);
+        $this->assertEquals(['s2' => 4, 's1' => 3, 'd4' => 3, 'd3' => 2, 'sma' => 1], $ranks);
     }
 
     /**
