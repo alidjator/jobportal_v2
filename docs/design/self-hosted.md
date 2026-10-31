@@ -198,7 +198,7 @@ A check of the design against the code (nothing of E1 to E4 is coded yet). Group
 
 - C1. The answer for a module that is not licensed (state `none`) has no code; the existing pattern is 404 with a code (`groups-unavailable`), so `module-unavailable`.
 - C2. The expiry warning: how many days before, through what (Console panel only, or a notification or email from a scheduled command), and to whom; in SaaS the platform admin is ONESIS, so the customer's group admin sees nothing.
-- C3. Licence history (one row per group or a history), replacing a licence with an overlapping validity, rotation of the public key (more than one key).
+- C3. Licence history (one row per group or a history; it must give, per group and module, the day the module first became active: `erp-employee-handoff.md` section 11, gap A3), replacing a licence with an overlapping validity, rotation of the public key (more than one key).
 - C4. A cache of the resolved entitlements per request, cleared on upload.
 - C5. The Console licence panel has no page ID in `frontend.md` (D29); E1 to E4 are not in `phase-8-index.md`.
 - C6. The dependency check of question 2 does not cover the add-ons (an add-on without Talent).
