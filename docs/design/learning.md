@@ -46,6 +46,9 @@ stays out of scope.
 - 2026-10-31 (user, E1 to E7): **enrolment rules**: modes `self`, `assigned`, `purchased`; `expired` only for recurring certification, a passed
   due date is a computed `overdue`; re-enrolment, assigned courses, the internal catalog, archived courses, and an optional window and seat limit on
   the course ([Enrolment](#enrolment)).
+- 2026-10-31 (user, G1 to G8): **grading and ranking**: `pass_mark` in percent, the last attempt counts and a passed quiz cannot be retaken,
+  essays wait in `awaiting_scoring`, a weighted final score, score and band on the certificate (switchable per course), integrity only flagged,
+  catalog sort keys, and a rank column in company reports ([Grading and ranking](#grading-and-ranking)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -170,14 +173,14 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 |---|---|---|---|
 | 1 | `learning_categories` | `name` json (id/en), `slug`, `sort_order`, `is_active` | Master-data pattern of phase 0; managed by the platform admin |
 | 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
-| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
+| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
 | 4 | `learning_modules` | `version_id`, `position`, `title` | |
-| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`), `completion_threshold`, `test_id`, `pass_mark`, `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
+| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`), `completion_threshold`, `test_id`, `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
 | 6 | `learning_course_skills` | `course_id`, `skill_id` | Key to `reference_skills` (S4) |
-| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`, `purchased`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
+| 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`, `purchased`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
-| 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `score`, `passed`, `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
-| 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `issued_at`, `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
+| 9 | `learning_quiz_attempts` | `enrollment_id`, `lesson_id`, `assessment_invitation_id`, `status` (`awaiting_scoring`, `scored`; G3), `score`, `passed` (both null while awaiting), `integrity_tier`, `voided_at`, `voided_by` (G6), `submitted_at` | Filled from Assessment events; limited by `max_attempts` |
+| 10 | `learning_certificates` | `enrollment_id` (unique), `number`, `verification_code`, `learner_name`, `course_title`, `final_score`, `band` (copies, null when hidden or no quiz; G5), `issued_at`, `pdf_path`, `revoked_at`, `revoke_reason` | Public verification page by `verification_code` |
 | 11 | `learning_certificate_sequences` | `year`, `last_number` | Numbering per year, like the Assessment reports |
 | 12 | `learning_course_units` | `course_id`, `unit_id` | Internal step: restricts an internal course to units |
 | 13 | `learning_assignments` | `course_id`, target (`employee`, `unit`, `tenant`), `target_id`, `due_in_days`, `created_by` | Internal step |
@@ -223,6 +226,28 @@ Rules:
   reset them; seats count `active` and `completed` enrolments across versions, not `withdrawn`; assigned enrolments ignore both. Seats of live
   sessions (S6) are designed with S6.
 
+### Grading and ranking
+
+Agreed by the user on 2026-10-31 (G1 to G8). Scoring itself is the Assessment engine's (points, percentage, band `low`, `fair`, `good`,
+`excellent` from the admin's skill bands; assessors score long text).
+
+| Code | Topic | Rule |
+|---|---|---|
+| G1 | Pass mark | `pass_mark` is a percentage 0 to 100, compared with the attempt's percentage |
+| G2 | Which attempt counts | The **last** attempt |
+| G2a | Retake after passing | Not allowed: once passed, the quiz is closed, so the last attempt is the passing one; `max_attempts` no longer applies |
+| G3 | Essays waiting for an assessor | The attempt is `awaiting_scoring`; `score` and `passed` stay null, the lesson is not completed, no retake while waiting; the Assessment scoring event (raised again after the assessor) updates the attempt and the lesson, and the learner is told |
+| G4 | Final score | Σ(score × `weight`) / Σ `weight` over the required quiz lessons, at completion once every attempt is `scored`; null for a course without quizzes |
+| G5 | Certificate | Shows the final score and its band (the Assessment skill bands, translated) when `certificate_shows_score` is on and a score exists; both are copied at issue, so a later change of the bands does not alter it; the public verification page shows them too |
+| G6 | Integrity tier `major` | Never fails an attempt by itself; flagged in reports; an author may void the attempt (`voided_at`, `voided_by`), which then counts as not taken |
+| G7 | Catalog sort | `sort` accepts `newest`, `popular` (enrolments of the last 90 days), `rating` (after S9) and `title`, each with `-` for descending |
+| G8 | Company report | `sort` by `final_score` or `completed_at`, plus a computed `rank` per course |
+
+**Rank (G8, interpretation):** computed when the report is read, never stored; among `completed` enrolments with a final score, ordered by
+`final_score` descending and then `completed_at` ascending (the earlier finisher ranks higher on a tie), standard competition ranking (1, 2, 2, 4).
+Public learners without the consent of P1 are ranked but not listed, so the visible ranks may have gaps; the report already shows their count.
+A public leaderboard stays N2.
+
 ## 7. Assessment changes
 
 Agreed by the user on 2026-10-31 (K4). Checked in the code: about 40 files of `src/Assessment` use `application_id`; `Invitation` requires
@@ -262,7 +287,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Area | Route | Purpose | Permission |
 |---|---|---|---|
 | Public | `GET learning/categories` | Categories | |
-| Public | `GET learning/courses` | Catalog; `filter[q]`, `filter[category]`, `filter[company]`, `filter[skill]`, `sort` | |
+| Public | `GET learning/courses` | Catalog; `filter[q]`, `filter[category]`, `filter[company]`, `filter[skill]`, `sort` (`newest`, `popular`, `rating`, `title`; G7) | |
 | Public | `GET learning/courses/{slug}` | Detail and outline of the published version (lesson titles only) | |
 | Public | `GET learning/certificates/{code}` | Certificate verification | |
 | Public | `GET learning/courses/{id}/cover` | Course cover with cache headers (S4) | |
@@ -285,7 +310,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `POST company/learning/uploads`, `PUT company/learning/uploads/{id}/chunks/{n}`, `POST company/learning/uploads/{id}/complete` | Chunked upload of a video or PDF, then attached to a lesson (P5) | author |
 | Workspace | `POST/DELETE company/learning/courses/{id}/cover` | Course cover | author |
 | Workspace | `POST company/learning/versions/{id}/publish` | Publish a version | publish |
-| Workspace | `GET company/learning/courses/{id}/enrollments`, `GET company/learning/courses/{id}/enrollments/export` | Reports and export | reports.view |
+| Workspace | `GET company/learning/courses/{id}/enrollments`, `GET company/learning/courses/{id}/enrollments/export` | Reports and export; `sort` by `final_score` or `completed_at`, with `rank` (G8) | reports.view |
 | Workspace | `GET/POST company/learning/assignments` | Assignments (internal step) | assign |
 | Group | `GET organization/learning/reports` | Group dashboard (internal step) | `group.learning.view` |
 | Console | `GET/POST/PUT/DELETE admin/learning/categories` | Categories | courses.manage |
