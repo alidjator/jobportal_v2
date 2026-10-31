@@ -3,7 +3,8 @@
 Until now the project was designed as SaaS only (`erp-organization.md` section 1: many customer groups share one codebase and one database). This
 document adds a **self-hosted** edition: one installation run on the customer's own infrastructure (also called on-premise when the server is
 physical). It changes no code and no schema; it records the decisions, what blocks them today, and the order of work. Plans, billing, payments,
-orders, invoices and licence enforcement stay out of scope.
+orders and invoices stay out of scope; the module entitlements of section 8 are enforced through an offline licence file, which is a deterrent, not copy
+protection (gap A5).
 
 ## Decisions
 
@@ -28,6 +29,8 @@ orders, invoices and licence enforcement stay out of scope.
 - 2026-10-16: **module dependencies are fixed and an entitlement that breaks them is refused** (decided by the user; section 8, question 2).
 - 2026-10-16: **entitlements come as a signed licence file verified offline** (decided by the user; section 8, question 3).
 - 2026-10-16: **entitlements apply to SaaS too, per group**, through the same signed file (decided by the user; section 8, question 4).
+- 2026-10-31: **Talent and Career are in every package, like Core; Workforce needs Talent**; only Workforce, Employee and the two add-ons are licensed
+  (decided by the user; gap A1 of section 8).
 - 2026-10-16: **entitlements cover modules and two add-ons: psychological tests and tele-interview** (decided by the user; section 8, questions 5 and 6).
   All questions of sections 6 and 8 are answered.
 - 2026-10-16: **the self-hosted edition is released only after the back end is fully Spring Boot** (`spring-boot-migration.md`, question 10); the packaging is
@@ -128,7 +131,9 @@ Open questions (to answer before coding, one at a time):
    Notification that the other modules need; it is not sold separately).
 2. ~~Dependencies between modules~~ **answered 2026-10-16: fixed dependencies, and an entitlement that breaks them is refused when it is set.** Workforce,
    Talent and Employee need Core; Career needs Talent (jobs and applications); Employee needs Talent (hires). Talent without Workforce is valid
-   (`recruitment.requisition_required` is switched off, `erp-direction.md` section 8).
+   (`recruitment.requisition_required` is switched off, `erp-direction.md` section 8). **Changed 2026-10-31 (user, gap A1): Talent and Career are in
+   every package like Core, and Workforce needs Talent**; a package without Talent or Career no longer exists, and their contexts are not gated. What
+   a licence decides: Workforce, Employee, psychological tests, tele-interview.
 3. ~~How an entitlement reaches an installation~~ **answered 2026-10-16: a licence file signed by ONESIS** (the list of modules and a validity period),
    verified offline by the application with a public key. Whether SaaS uses the same file is question 4.
 4. ~~Does it apply to SaaS too~~ **answered 2026-10-16: yes, per group.** Each group of the SaaS installation has its own entitlement (a signed licence
@@ -145,7 +150,7 @@ Four gaps found when the entitlement was prepared for coding (the hand-off to Em
 
 7. **External tenants** (companies without a group in the SaaS installation) get **Core, Talent and Career** with no licence file. Workforce and Employee exist only for **internal tenants** (a group with a licence), as `erp-direction.md` already says. The two add-ons (psychological tests, tele-interview) need a licence that lists them, so an external tenant has neither.
 8. **After the licence expires:** a **grace period of 30 days** in which everything works, then **read-only mode**: the module's routes refuse a change with 409 `module-expired` and still answer reads and exports, so no data is lost. Platform admins see a warning before the end and during the grace period.
-9. **Without a licence file:** outside production (`APP_ENV` other than `production`) **every module is on**; the automated tests use a fake provider of the entitlements. In production an installation without a file has **Core only** (and the external tenants of item 7 keep Talent and Career).
+9. **Without a licence file:** ~~outside production (`APP_ENV` other than `production`)~~ **changed 2026-10-31 (gap A5): while `LICENCE_ENFORCED` is false (default true; false only on our own development and staging sites)** **every module is on**; the automated tests use a fake provider of the entitlements. In production an installation without a file has **Core only** (and the external tenants of item 7 keep Talent and Career). **Changed 2026-10-31 (gap A1): Core, Talent and Career** for every tenant, since they are in every package.
 10. **Delivery:** the platform admin **uploads the file per group in the Console**; it is verified when uploaded, and the payload and its signature are kept in the database (`platform_licences`). A self-hosted installation has one group, so one upload.
 
 Technical choices (no question needed): the file is a JSON payload (`schema_version`, `licence_id`, group, `modules`, `add_ons`, `valid_from`, `valid_until`, `issued_at`) with an **Ed25519** signature (PHP `sodium`); the public key is in the repository's configuration, the private key stays with ONESIS outside the repository, and the **tool that issues licences** is a separate script that is not part of a release. The dependencies of question 2 are checked when the file is uploaded (422 `licence-invalid`, `licence-dependency`). The decision point is one port in Shared, `ModuleEntitlements` (`allows(Module)`, `allowsAddOn(AddOn)`, `state()` as `active`, `grace`, `read_only` or `none`), resolved for the company through its legal entity and group.
@@ -164,3 +169,37 @@ The hand-off to Employee (`erp-employee-handoff.md` section 9) then needs no int
 **Names the code does not know, and adding a module (decided 2026-10-31, user).** A licence file issued for a newer release may name a module or add-on this release does not have. The upload **accepts it and ignores the unknown names**, and the Console panel marks them "not in this version", so a self-hosted customer can renew the licence before upgrading the application; the signature covers the whole payload, so the file stays valid. `schema_version` lets a later change of the file format keep reading older files. A file with an unknown `schema_version` higher than the release supports is refused (422 `licence-version-unsupported`).
 
 To add a module: (1) a case in `Module` (or `AddOn` for a part licensed separately); (2) its dependencies in the one table of the code, which the upload checks; (3) the middleware `module:<name>` on its routes, its permissions in the catalogue (hidden while the module is off) and its scheduled commands skipped; (4) say whether external tenants get it by default (they do not unless listed); (5) the menus and screens of the front end read the module list of the session data. A licence file issued before the module existed does not entitle it; a new file does.
+
+### Gaps found 2026-10-31 (before coding E1 to E4)
+
+A check of the design against the code (nothing of E1 to E4 is coded yet). Group A is decided with the user one at a time, before coding (all six decided 2026-10-31); B corrects the design to the code; C is settled while coding and recorded here.
+
+**A. Decisions needed**
+
+| # | Gap | Status |
+|---|---|---|
+| A1 | E2 gates Workforce, the add-ons and Employee only. Question 2 allows a package without Talent (Workforce needs Core only) and without Career, but no gating of the Talent contexts is planned, and Career (JobSeeker, Training, Newsletter, Campaign, Review) is public and installation-wide, so it has no company to resolve; what "Career off" means for one group of the shared SaaS portal is not decided. | Decided 2026-10-31 (user): **Talent and Career are in every package** (Workforce needs Talent, question 2 and item 9 changed), so neither is gated; the public site keeps following the installation type and the portal settings. |
+| A2 | The entitlement is resolved "for the company through its legal entity and group", from the actor. That does not hold for the candidate's routes of an add-on (`me/assessment/...`, joining a video interview: the company comes from the invitation or the application), for the group routes `organization/workforce/*` and `organization/requisitions*` (they start from the group), and for the provider routes (Portal Mitra) of psychological tests. | Decided 2026-10-31 (user): **gated on every side.** The company's routes use the middleware `module:<name>` (company from the actor); the group routes of Workforce resolve the group of the member's group role; the candidate's and the provider's use cases ask the port `ModuleEntitlements` for the company that owns the invitation or the interview, in the application layer. |
+| A3 | Read-only mode refuses every change, also the candidate's: a psychological test or video interview already under way cannot be finished after the grace period. | Decided 2026-10-31 (user): **what started may finish.** An invitation or interview created before the add-on turned read-only can still be taken, joined and reported by the candidate and the provider until its own deadline; only new ones are refused (409 `module-expired`). |
+| A4 | Only expiry is designed. A new licence that drops a module turns it to `none`, so its data can no longer be read or exported (against item 8, "no data is lost"); removing or revoking a licence is not designed. | Decided 2026-10-31 (user): **a module once licensed and later dropped is read-only**, as after the grace period (reads and exports answer, changes 409 `module-expired`, A3 applies to add-ons); `none` (404) only for a module the group never had. No delete of a licence: a new upload replaces it. So the installation keeps which modules a group ever had (C3). |
+| A5 | "Everything on outside production" lets a self-hosted customer, who holds the `.env`, switch every module on with `APP_ENV=staging`; the public key in the configuration and the server clock (grace period) are in the customer's hands too. Either accept and write down that the licence is a deterrent, or use a switch of its own instead of `APP_ENV`. The introduction of this document still says "licence enforcement stay out of scope", which E2 contradicts. | Decided 2026-10-31 (user): **a switch of its own**, `LICENCE_ENFORCED` (default true), replaces `APP_ENV` in item 9; the automated tests keep the fake provider. The offline licence is written down as a **deterrent, not copy protection**: a self-hosted customer can still change the public key or the clock. The introduction is corrected. |
+| A6 | An installation of type `multi` / `independent` has no group, so all its companies are external tenants (item 7): a self-hosted marketplace customer can never have Workforce, the add-ons or Employee. Intended or not? | Decided 2026-10-31 (user): **intended.** A marketplace has Core, Talent and Career only; licensing add-ons per company is taken up only when a customer asks. |
+
+**B. Design corrected to the code**
+
+- B1. Workforce has no scheduled commands. What keeps running while it is off is `approvals:send-reminders` (Core) for plan and requisition steps, and the Assessment commands (reminders, expiry of invitations) for psychological tests.
+- B2. The approvals inbox (`company/approvals`, Core, not gated) can still approve a plan or a requisition while Workforce is off or read-only, and `Workforce\Infrastructure\Listeners\ApplyApprovalOutcome` then writes Workforce data. Decided with A4: while Workforce is read-only, a waiting step of a plan or a requisition cannot be decided (409 `module-expired`) and the reminders skip it; it continues when the module is active again.
+- B3. With Workforce off and `recruitment.requisition_required` on, `RequisitionGate::isRequired` blocks every new job. The gate must read the setting as off while the module is off, instead of the customer switching it off (`erp-direction.md` section 8).
+- B4. Hiding permissions "in the catalogue" is not enough: the permissions a member already holds (`GET company/me`, group permissions) and the permission presets holding `workforce.*` must be filtered too (front-end rule 20).
+- B5. Like psychological tests, tele-interview needs both the add-on and its settings `interview.video_enabled` / `interview.voice_enabled` (overridable per company). Whether the recorded video answer of an assessment (J7) belongs to the add-on tele-interview is not decided.
+- B6. "16 platform permissions" (`erp-governance.md` section 1, section 3 of this document: "self-hosted adds none") changes with `platform.licences.manage`.
+
+**C. Settled while coding**
+
+- C1. The answer for a module that is not licensed (state `none`) has no code; the existing pattern is 404 with a code (`groups-unavailable`), so `module-unavailable`.
+- C2. The expiry warning: how many days before, through what (Console panel only, or a notification or email from a scheduled command), and to whom; in SaaS the platform admin is ONESIS, so the customer's group admin sees nothing.
+- C3. Licence history (one row per group or a history), replacing a licence with an overlapping validity, rotation of the public key (more than one key).
+- C4. A cache of the resolved entitlements per request, cleared on upload.
+- C5. The Console licence panel has no page ID in `frontend.md` (D29); E1 to E4 are not in `phase-8-index.md`.
+- C6. The dependency check of question 2 does not cover the add-ons (an add-on without Talent).
+- C7. `single` keeps a group (`organization_legal_entities.group_id`), so the resolution holds; `admin/groups/{id}/licence` must stay reachable in Console on `single`.
