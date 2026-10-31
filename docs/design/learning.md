@@ -49,6 +49,9 @@ stays out of scope.
 - 2026-10-31 (user, G1 to G8): **grading and ranking**: `pass_mark` in percent, the last attempt counts and a passed quiz cannot be retaken,
   essays wait in `awaiting_scoring`, a weighted final score, score and band on the certificate (switchable per course), integrity only flagged,
   catalog sort keys, and a rank column in company reports ([Grading and ranking](#grading-and-ranking)).
+- 2026-10-31 (user, L1 to L9): **learning methods and evaluation**: pre-test and post-test, an optional sequential order, answer feedback for
+  learning tests, practice quizzes still limited, a course feedback survey, live sessions through Janus (from the start), an external link or on
+  site, tasks with a rubric, and video answers behind a switch ([Learning methods and evaluation](#learning-methods-and-evaluation)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -104,8 +107,8 @@ M = must-have, S = should-have, N = nice-to-have. "Reuses" names the existing co
 | S3 | Recurring certification: expiry, recertification, reminders | Internal | Scheduler, Notification |
 | S4 | Certificates and earned skills on the profile, the CV and in matching | Public | JobSeeker, CV generator, Matching J8 |
 | S5 | Courses suggested or required by a job; courses for missing skills | Public | Job, screening, Matching |
-| S6 | Live or classroom sessions: schedule, seats, attendance | Both | Interview calendar, Janus |
-| S7 | Assignments: an uploaded file scored by an instructor | Both | Assessment assessors |
+| S6 | Live or classroom sessions: schedule, seats, attendance (designed, L7) | Both | Interview calendar, Janus |
+| S7 | Tasks: an uploaded file scored by an instructor with a rubric (designed, L8) | Both | Learning itself (Assessment has no file answer for skill tests) |
 | S8 | Group dashboard across tenants | Internal | Organization group permissions |
 | S9 | Course ratings and reviews | Public | Review |
 | S10 | Moving the Moodle courses, or showing both catalogs side by side | Both | Training |
@@ -173,9 +176,9 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 |---|---|---|---|
 | 1 | `learning_categories` | `name` json (id/en), `slug`, `sort_order`, `is_active` | Master-data pattern of phase 0; managed by the platform admin |
 | 2 | `learning_courses` | `company_id` (null = platform), `audience` (`public`, `internal`), `category_id`, `slug`, `status` (`active`, `archived`), `enrollment_opens_at`, `enrollment_closes_at`, `seat_limit` (all three nullable, E7), `created_by`, timestamps | Keys to `company_companies`, `identity_users` |
-| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
+| 3 | `learning_course_versions` | `course_id`, `number`, `title`, `summary`, `description`, `cover_path`, `language` (`id`, `en`), `estimated_minutes`, `certificate_shows_score` (default true, G5), `sequential` (default false, L2), `status`, `published_at`, `published_by` | Partial unique: one `published` per course |
 | 4 | `learning_modules` | `version_id`, `position`, `title` | |
-| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`), `completion_threshold`, `test_id`, `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
+| 5 | `learning_lessons` | `module_id`, `position`, `title`, `type` (`video_upload`, `video_embed`, `pdf`, `text`, `link`, `quiz`, `live_session`, `task`), `body`, `file_path`, `embed_url`, `duration_seconds`, `is_required`, `completion_rule` (`opened`, `watched_percent`, `quiz_passed`, `attended`, `task_passed`), `completion_threshold`, `test_id`, `quiz_role` (`graded`, `pre_test`, `post_test`; L1), `paired_lesson_id` (L1), `feedback_mode` (`never`, `after_pass`, `always`; default `after_pass`; L3), `pass_mark` (percent 0 to 100, G1), `weight` (default 1, G4), `max_attempts` | `test_id` is an Assessment test; embeds from YouTube and Vimeo only |
 | 6 | `learning_course_skills` | `course_id`, `skill_id` | Key to `reference_skills` (S4) |
 | 7 | `learning_enrollments` | `course_id`, `version_id`, `user_id`, `source` (`self`, `assigned`, `purchased`), `assigned_by`, `order_id` (nullable, no foreign key; E1), `due_at`, `status` (`active`, `completed`, `withdrawn`, `expired`), `progress_percent`, `final_score` (percent, nullable, G4), `enrolled_at`, `completed_at` | One active enrolment per learner per course; `employee_id` added in the internal step (K3) |
 | 8 | `learning_lesson_progress` | `enrollment_id`, `lesson_id`, `status` (`not_started`, `in_progress`, `completed`), `position_seconds`, `watched_percent`, `completed_at` | Unique `enrollment_id` + `lesson_id` |
@@ -184,6 +187,12 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 11 | `learning_certificate_sequences` | `year`, `last_number` | Numbering per year, like the Assessment reports |
 | 12 | `learning_course_units` | `course_id`, `unit_id` | Internal step: restricts an internal course to units |
 | 13 | `learning_assignments` | `course_id`, target (`employee`, `unit`, `tenant`), `target_id`, `due_in_days`, `created_by` | Internal step |
+| 14 | `learning_course_feedback` | `enrollment_id` (unique), `course_id`, `version_id`, `rating` (1 to 5), `comment`, `hidden_at`, `hidden_by`, timestamps | L5 |
+| 15 | `learning_live_sessions` | `lesson_id`, `starts_at`, `ends_at`, `mode` (`online_janus`, `online_link`, `onsite`), `url`, `location`, `seat_limit`, `host_user_id`, `check_in_code`, `recorded` | L7 |
+| 16 | `learning_session_registrations` | `session_id`, `enrollment_id`, `status` (`registered`, `attended`, `absent`, `cancelled`), `checked_in_at`, `recording_consent_at` | Unique `session_id` + `enrollment_id`; L7 |
+| 17 | `learning_task_criteria` | `lesson_id`, `position`, `title`, `max_points` | The rubric; L8 |
+| 18 | `learning_task_submissions` | `enrollment_id`, `lesson_id`, `file_path`, `text`, `status` (`submitted`, `returned`, `passed`, `failed`), `score`, `feedback`, `graded_by`, `submitted_at`, `graded_at` | L8 |
+| 19 | `learning_task_scores` | `submission_id`, `criterion_id`, `points`, `comment` | L8 |
 
 ### Files (R1, R2, S1 to S4)
 
@@ -248,6 +257,33 @@ Agreed by the user on 2026-10-31 (G1 to G8). Scoring itself is the Assessment en
 Public learners without the consent of P1 are ranked but not listed, so the visible ranks may have gaps; the report already shows their count.
 A public leaderboard stays N2.
 
+### Learning methods and evaluation
+
+Agreed by the user on 2026-10-31 (L1 to L9).
+
+| Method | Lesson type | Completion rule |
+|---|---|---|
+| Self-paced content | `video_upload`, `video_embed`, `pdf`, `text`, `link` | `opened`, `watched_percent` |
+| Quiz, final exam, pre-test, post-test | `quiz` | `quiz_passed` (a pre-test is completed once taken) |
+| Live session (S6) | `live_session` | `attended` |
+| Task (S7) | `task` | `task_passed` |
+
+| Code | Topic | Rule |
+|---|---|---|
+| L1 | Pre-test and post-test | `quiz_role` `pre_test`: one attempt, no pass or fail, not in the final score, no answer feedback; a `post_test` is an ordinary graded quiz linked by `paired_lesson_id`; reports show both scores and the gain per learner, and the mean gain per course |
+| L2 | Order | `sequential` on the version: a lesson opens once every earlier required lesson is completed; a pre-test is always taken first, even when off; an attempt `awaiting_scoring` does not lock the next lesson; the outline marks `locked: true` and a locked lesson answers 409 |
+| L3 | Answer feedback | For `learning` tests only: after an attempt is `scored`, the learner sees their answers, the right answers, the points and the question's `explanation`, as `feedback_mode` allows (`never`, `after_pass`, `always`) |
+| L4 | Practice quizzes | A quiz with `is_required = false` keeps `max_attempts`, is not in the final score and does not decide completion of the course |
+| L5 | Course feedback | Rating 1 to 5 and a comment after completion, optional and editable, per version; anonymous to authors and HR for internal courses; the public rating and `sort=rating` (S9, G7) read it; `learning.moderate` hides comments |
+| L6 | Supervisor evaluation | Nice-to-have, designed with the internal step |
+| L7 | Live sessions | Several dated sessions per lesson, the learner registers for one; `seat_limit` per session (full answers 409); modes `online_janus` (one to many: hosts publish video, learners speak when allowed, at most `learning.live_max_participants`, attendance from the Janus join and leave events through the tele-interview webhook), `online_link` and `onsite` (the host marks attendance or learners check in with the code); reminders a day and an hour before |
+| L7b | Recording | Optional per session, with each learner's consent and a retention period like interviews; behind `learning.live_recording_enabled`, off until legal question 23 is answered |
+| L8 | Tasks | A file (PDF, DOCX, XLSX, PPTX, ZIP, JPG, PNG; 20 MB) and/or text; scored per rubric criterion by holders of `learning.tasks.grade` (platform courses: `learning.courses.manage`); the score is the percentage of points; passed at `pass_mark`, resubmitted up to `max_attempts` with the rules of G2 and G2a; in the final score when required |
+| L9 | Video answers | Allowed in `learning` tests behind `learning.video_answers_enabled`, off by default until legal question 23 is answered |
+
+**Naming (interpretation):** the user agreed "assignment" lessons (L8); they are called `task` in the schema and the API, because
+`learning_assignments` and `source = assigned` already mean a course assigned to an employee.
+
 ## 7. Assessment changes
 
 Agreed by the user on 2026-10-31 (K4). Checked in the code: about 40 files of `src/Assessment` use `application_id`; `Invitation` requires
@@ -259,6 +295,8 @@ Agreed by the user on 2026-10-31 (K4). Checked in the code: about 40 files of `s
 | Active invitation | One per `application_id` | One per `source` + `source_id` |
 | Recruitment code | Reads every invitation | Queries and access policies filter `source = recruitment` |
 | Retakes | One attempt per invitation | Unchanged: each quiz retake is a new invitation |
+| Explanations (L3) | | `explanation` (nullable) on `assessment_questions`, used by `learning` tests only; a review of a scored attempt for the learner when the lesson's `feedback_mode` allows |
+| Video answers (L9) | Skill tests in a video section | Refused in `learning` tests unless `learning.video_answers_enabled` is on |
 | Test owner | `company`, `provider`, `library` | Unchanged: a company course's quiz is owned by the company, a platform course's by the library; skill tests only |
 | Test purpose (P2a) | | `purpose` (`recruitment`, `learning`) on `assessment_tests`, default `recruitment`; recruitment lists and default stage tests filter `recruitment`; an invitation's `source` must match the test's `purpose` |
 | Retention | Follows the application anonymisation | For `learning`: follows the erasure of the learner's account |
@@ -277,6 +315,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | `learning.courses.publish` | Company member | Publishing a version, archiving a course | Split from author, like `jobs.create` and `jobs.publish` |
 | `learning.reports.view` | Company member | Progress reports and export | Public learners: identity only with consent (P1) |
 | `learning.assign` | Company member | Assigning courses to employees, units or tenants | Internal step |
+| `learning.tasks.grade` | Company member | Scoring task submissions (L8) | |
 | `learning.courses.manage` | Platform admin (`PlatformPermissions`) | Categories and platform courses | |
 | `learning.moderate` | Platform admin | Archiving a company's public course, revoking a certificate | |
 | `group.learning.view` | Group member | Group dashboard across tenants (S8) | Internal step; pattern of `group.workforce.view` |
@@ -299,6 +338,10 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Learner | `GET me/learning/enrollments/{id}/lessons/{lesson}` | Lesson content; video through a signed URL | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/progress` | Video position and watched share | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/complete` | Completion for the rule `opened` | |
+| Learner | `GET me/learning/enrollments/{id}/lessons/{lesson}/quiz-attempts/{attempt}/review` | Answer feedback (L3) | |
+| Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/sessions/{session}/register`, `POST .../sessions/{session}/cancel`, `POST .../sessions/{session}/check-in` | Live sessions (L7) | |
+| Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/task-submissions` | Submit a task (L8) | |
+| Learner | `PUT me/learning/enrollments/{id}/feedback` | Course feedback (L5) | |
 | Learner | `POST me/learning/enrollments/{id}/lessons/{lesson}/quiz-attempts` | Creates an Assessment invitation (`source = learning`), then the existing test flow | |
 | Learner | `GET me/learning/certificates`, `GET me/learning/certificates/{id}/pdf` | My certificates | |
 | Workspace | `GET company/learning/catalog` | Internal courses an employee may enrol in (E5, internal step) | employee of the tenant |
@@ -312,12 +355,17 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `POST company/learning/versions/{id}/publish` | Publish a version | publish |
 | Workspace | `GET company/learning/courses/{id}/enrollments`, `GET company/learning/courses/{id}/enrollments/export` | Reports and export; `sort` by `final_score` or `completed_at`, with `rank` (G8) | reports.view |
 | Workspace | `GET/POST company/learning/assignments` | Assignments (internal step) | assign |
+| Workspace | `GET/POST company/learning/lessons/{id}/sessions`, `PUT/DELETE company/learning/sessions/{id}`, `PUT company/learning/sessions/{id}/attendance` | Live sessions (L7) | author; attendance also the host |
+| Workspace | `PUT company/learning/lessons/{id}/criteria` | Task rubric (L8) | author |
+| Workspace | `GET company/learning/task-submissions`, `PUT company/learning/task-submissions/{id}/score` | Scoring tasks (L8) | tasks.grade |
+| Workspace | `GET company/learning/courses/{id}/feedback` | Course feedback, anonymous for internal courses (L5) | reports.view |
 | Group | `GET organization/learning/reports` | Group dashboard (internal step) | `group.learning.view` |
 | Console | `GET/POST/PUT/DELETE admin/learning/categories` | Categories | courses.manage |
 | Console | The course, version, module, lesson and upload routes of Workspace under `admin/learning/...`, with `company_id` null | Platform courses | courses.manage |
 | Console | `GET admin/learning/courses` with `filter[company]` | Every course | courses.manage or moderate |
 | Console | `POST admin/learning/courses/{id}/archive` | Moderation of a company course (P4) | moderate |
 | Console | `POST admin/learning/certificates/{id}/revoke` | Revoke with a reason | moderate |
+| Console | `POST admin/learning/feedback/{id}/hide` | Hide a feedback comment (L5) | moderate |
 
 The consent of P1 adds `share_with_company` and `shared_at` to `learning_enrollments` (null for a platform course).
 
@@ -329,6 +377,10 @@ The consent of P1 adds `share_with_company` and `shared_at` to `learning_enrollm
 | `learning.video_url_minutes` | `60` | Lifetime of a signed video URL |
 | `learning.certificate_number_format` | `CERT/{year}/{number}` | Certificate number |
 | `learning.due_soon_days` | `3` | Reminder before a due date (internal step) |
+| `learning.live_janus_enabled` | `false` | Live sessions through Janus (L7d); on after Janus is installed and the server capacity is checked |
+| `learning.live_max_participants` | `50` | Learners per Janus session (L7c) |
+| `learning.live_recording_enabled` | `false` | Recording of Janus sessions (L7b; legal question 23) |
+| `learning.video_answers_enabled` | `false` | Video answers in learning tests (L9; legal question 23) |
 
 ### Notifications
 
@@ -339,6 +391,10 @@ The consent of P1 adds `share_with_company` and `shared_at` to `learning_enrollm
 | Certificate revoked | Learner | Email, in-app |
 | Course archived by moderation | Members with `learning.courses.publish` | Email, in-app |
 | Assigned, due soon, overdue | Employee; HR for overdue | Email, in-app, WhatsApp (internal step) |
+| Quiz scored by an assessor (G3) | Learner | In-app |
+| Live session registered, a day before, an hour before (L7) | Learner | Email, in-app |
+| Task submitted (L8) | Members with `learning.tasks.grade` | In-app |
+| Task scored or returned (L8) | Learner | Email, in-app |
 
 ## 9. Open (next design steps)
 
