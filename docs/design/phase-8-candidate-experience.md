@@ -1,4 +1,4 @@
-# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15; sections 1 and 2 coded, sections 3 and 5 coded 2026-10-31 (API and Career), section 4 coded 2026-10-31 on the API only: its screens wait for J7)
+# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15; sections 1 and 2 coded, sections 3 and 5 coded 2026-10-31 (API and Career), section 4 coded 2026-10-31: the API, and its screens (practice page, device check) with J7 in Career)
 
 Gaps found from the candidate's point of view (a job seeker with applications in progress) and against Mekari Talenta (help center articles
 34773101103385: an internal rejection reason plus an optional "Notify candidate via email" note; 61789018343449: email templates per scenario;
@@ -126,7 +126,7 @@ Decided with the user 2026-10-31: sections 3 and 5 now, section 4 (practice ques
 **Front end coded 2026-10-31 (Career):** the cards "Perlu tindakan" and "Jadwal mendatang" on the dashboard (`/me`), the pages `/me/tasks` (menu "Lamaran > Perlu tindakan") and `/me/agenda` (list of 30 days or a week; the days are the days of the device and the range is asked for
 with a day of margin on each side), `components/TodoList.vue`, `components/AgendaEntryRow.vue`, `utils/agenda.ts`. Links: an interview, check or test opens the application, an offer or join date opens the offer page, an invitation to apply opens the job (the test and the invitation list have no page of their own yet).
 
-## Coded 2026-10-31: section 4 (API; its screens wait for J7)
+## Coded 2026-10-31: section 4 (API; its screens came with J7, steps 1 and 3)
 
 Decided with the user 2026-10-31: the API of section 4 now; the practice page and the device check are part of J7 (the test pages and runner of Career, not built yet), so no front end for them.
 
