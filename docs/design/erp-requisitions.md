@@ -28,6 +28,10 @@ designed here. Plans, billing, payments, orders and invoices stay out of scope.
   every **2 days** by default (decided by the user; [Approvals](#4-approvals)).
 - 2026-10-15: **section 5** (tables, routes, catalog additions) approved as written (decided by the user; [Storage and API](#5-storage-and-api)).
 - 2026-10-29: a fact of an approval subject type has a `unit` (`idr` for an amount of money, else null) in `GET company/approval-flows` and `GET organization/approval-flows`, so a client shows the amount as rupiah (`estimated_cost` and `max_budget`); the labels and descriptions the API sends are English and the Workspace translates them by key (`frontend.md`, 2026-10-29).
+- 2026-10-31: **a group sees money only with its own permission**: a new group permission `group.workforce.costs.view`, the group's
+  counterpart of `workforce.costs.view`, shows the estimated costs of the plans and the salary budget of the requisitions; without it neither
+  `group.workforce.view` nor `group.workforce.manage` sees them. This settles the two "to be confirmed" points of the coded sections (decided by
+  the user; designed, not coded: [Group cost permission](#group-cost-permission-designed-2026-10-31-not-coded)).
 
 ## 1. Requisition rule
 
@@ -130,6 +134,78 @@ designed here. Plans, billing, payments, orders and invoices stay out of scope.
 
 - Reports (plan against actual per month, time from requisition to hire) are designed with the dashboards after the TA core.
 
+### Manpower planning: not coded yet (collected 2026-10-31)
+
+What section 2 designs and the "Coded: Workforce plans" and "Coded: requisitions and the job rule" sections leave out. Keep it current: strike an item out when it is coded.
+
+1. **Opening headcount from Employee.** Entered by hand; computed once the Employee context exists (#13, `erp-employee-handoff.md`).
+2. **Plan against actual per month.** The monthly split is stored as a target, but no report shows a month ahead of or behind plan (dashboards after the TA core).
+3. **Quota of a closed requisition.** Closing returns the whole quota to the plan line, also the hires already made; it should return only what was not used once hires are counted (`filled`, hiring phase).
+4. **"Head of unit" as an approver of a plan.** The relative role waits for the Employee context.
+5. **Costs for a group reader.** Decided 2026-10-31: hidden unless the member holds `group.workforce.costs.view`; designed in
+   [Group cost permission](#group-cost-permission-designed-2026-10-31-not-coded), not coded (today every group reader sees them).
+
+### From requisition to published job: not coded yet (collected 2026-10-31)
+
+What sections 3 and 4, `phase-1-jobs.md` and `career-modes.md` design along the path requisition, approval, job, publication, and the code leaves
+out. Keep it current: strike an item out when it is coded.
+
+1. **"Head of unit" as an approver of a requisition.** The relative role waits for the Employee context; only `hiring_manager` exists.
+2. **The requisition number:** the lists cannot be searched by number (`ListRequisitions` filters by entity, status, type and position only), and
+   the approval screens do not show it.
+3. **`filled` and hires counting.** The status exists but nothing sets it: hires across the jobs of a requisition are not counted, and the "mark as
+   filled" flow of `phase-8-hiring.md` is not reused yet (hiring phase).
+4. **Hires and join dates per requisition** (FG13; H6 and G10 of `implementation-gap-audit.md`). No read model and no screen; a design session is
+   still open.
+5. **Requisition-to-hire reports** (time from requisition to hire; dashboards after the TA core).
+6. **Publishing to other job boards** (multiposting, `career-modes.md` section 10): a proposal with open questions (10.4), not coded.
+
+### From published job to hire: not coded yet (collected 2026-10-31)
+
+The rest of the path, from the application to the hire and beyond, as `phase-8-index.md` and the documents named below record it. Only what has
+no code is listed; work that is coded but ships switched off (email invitations, psychological tests, tele-interview and video, pre-employment
+checks) is not. Keep it current: strike an item out when it is coded.
+
+1. **Approval of an offer of an internal tenant** (#12; G5 of `implementation-gap-audit.md`): offers cannot go through the approval workflow; the
+   approval needs a design session.
+2. **Acceptance evidence of an offer** (`phase-8-offer-letters.md` section 3): waits for `legal-review.md` question 12; ships behind a switch.
+3. **Restricted candidates** (`phase-8-rejections.md`, #14): waits for `legal-review.md` question 13; ships behind a switch.
+4. **Escalation of a waiting approval** (`phase-8-approval-escalation.md`, #41): designed, nothing coded; it also covers the approvals of plans
+   and requisitions.
+5. **Closing the recruitment of a deleted account and pausing it for a suspended company** (`phase-8-recruitment-closure.md`, #40): designed,
+   nothing coded.
+6. **Psychological reports end to end** (`phase-8-provider-tools.md` sections 5 to 8, `phase-8-provider-institutions.md` sections 3 to 8, #23 and
+   #24): Portal Mitra is partly built, so a report can be signed, but the provider features left in those sections are not coded. Needed
+   before the first partner institution, not for go-live.
+7. **Hand-off of a hire to Employee, with the pre-boarding documents** (`erp-employee-handoff.md`, #13, FG5): designed with no open questions,
+   not coded; E1 and E2 of the module entitlements (`self-hosted.md`) come first. Until then the hires export is the bridge to the HRIS.
+
+### Group cost permission (designed 2026-10-31, not coded)
+
+Replaces "a group reader sees the costs (to be confirmed)" of "Coded: Workforce plans" and "salary included (as for plans, to be confirmed)" of
+"Coded: requisitions and the job rule".
+
+- **Catalog.** `GroupPermission::WorkforceCostsView` = `group.workforce.costs.view`, after `group.workforce.manage`. It adds nothing on its own: it
+  needs `group.workforce.view` or `.manage` to reach the plans and requisitions (without them the reads stay 403 `group-permission-required`).
+  A group role may hold it like any other; no existing role gets it automatically, so after the change no group member sees money until a
+  holder of `group.members.manage` grants it.
+- **Plans** (`organization/workforce/plans`): `PlanAccess` sets `canSeeCosts` from the new permission instead of `true`. Without it the list
+  leaves out `estimated_cost` and the detail leaves out `estimated_annual_cost`, as for a company member without `workforce.costs.view`. A
+  `group.workforce.manage` holder without it may still draft, edit, submit and revise: the costs they send are ignored and those a line has
+  stay (`PlanLineRules`, unchanged).
+- **Requisitions** (`organization/requisitions`): `RequisitionAccess` sets `canSeeCosts` from the new permission; without it `salary_min` and
+  `salary_max` are left out of the requisition and of its amendments.
+- **Unchanged:** the company side (`workforce.costs.view`), and the approvals: the facts of a step (`estimated_cost`, `max_budget`) are shown to
+  its approver whatever the permissions, as today (confirmed by the user on 2026-10-31: the approver needs the amount to decide).
+- **Front end:** the permission joins the catalog lists of the Workspace (`utils/organization-governance.ts`) and the Console
+  (`lib/groups.ts`), with a label and hint in `id.json` and `en.json` (`group_workforce_costs_view`: "Lihat biaya tenaga kerja" /
+  "View workforce costs", hint "Estimasi biaya rencana dan rentang gaji permintaan" / "Estimated plan costs and requisition salary
+  budgets"). The plan and requisition screens need no change: they show money only when the API sends it.
+- **Tests:** `PlanTest` and `RequisitionTest` give the group reader no cost permission and assert the money is left out; a second group member
+  with `group.workforce.view` and `group.workforce.costs.view` sees it; a group manager without it saves a plan and keeps the stored costs.
+- **Demo data:** the group admin of `DemoOrganization` holds every permission (`GroupPermission::cases()`) and so gets it; the workforce role of
+  `DemoWorkforce` (view and manage) does not.
+
 ## Coded: Approval part A, the catalog and the flows (2026-10-16)
 
 #6 is coded in steps, each checked and committed on its own: **Approval A** the subject-type catalog and the flows (this step), **Approval B** instances, decisions, delegation, an approver who leaves and the
@@ -203,7 +279,7 @@ requisitions and the job rule remain (next step). Interpretations, where the des
 - **Shared ports of Organization:** `LegalEntityDirectory` (group of an entity, the names of a group's entities) and `PositionDirectory` (the positions of an entity on a day with the data of the version in force).
 - **Who.** Company side `company/workforce/plans`: `workforce.plans.view` or `.manage` reads, `.manage` changes, `workforce.costs.view` shows the costs; an external tenant gets 403 `not-an-internal-tenant`. Group side
   `organization/workforce/plans`: `group.workforce.view` or `.manage` reads, `.manage` drafts, edits, submits and revises for any legal entity of the group (the body names `legal_entity_id` when creating); a group
-  reader **sees the costs** (to be confirmed). A plan of another group or entity is 404. The five company and two group permissions are in the catalogs (the requisition ones are used by the next step).
+  reader **sees the costs** (to be changed: decided 2026-10-31, see Group cost permission). A plan of another group or entity is 404. The five company and two group permissions are in the catalogs (the requisition ones are used by the next step).
 - **Lines.** Saved whole (`PUT` replaces them); at most 500; one per active position of the entity; target at least the opening headcount (no reductions in a plan); the twelve months add up to the additions
   (422 `invalid-plan-line`). A member without `workforce.costs.view` never sees the costs and cannot change them: the costs they send are ignored and the ones a line has stay.
 - **Versions.** `POST` creates version 1 as a draft (409 `plan-exists` when the entity already has a plan for the year); `POST .../revise` on the version in force copies its lines into the next version as a draft (409
@@ -230,7 +306,7 @@ Interpretations, where the design left room:
   (a closed requisition returns everything until hires are tracked in `phase-8-hiring.md`). The detail shows `quota`. A plan line cannot drop below what is used (422 `plan-below-requisitions`, checked when the lines are saved and at
   submission).
 - **Who.** `company/requisitions`: `workforce.requisitions.view` or `.create` reads, `.create` drafts, edits, submits, amends, closes and cancels, `workforce.costs.view` shows the salary range; `organization/requisitions`
-  reads for a holder of `group.workforce.view` or `.manage`, salary included (as for plans, to be confirmed). Another tenant's requisition is 404.
+  reads for a holder of `group.workforce.view` or `.manage`, salary included (to be changed: decided 2026-10-31, see Group cost permission). Another tenant's requisition is 404.
 - **Approval.** Subject types `workforce.requisition` and `workforce.requisition_amendment`, facts `type`, `grade_rank` (0 without a grade), `hires` and `max_budget` (the highest salary, 0 without one), relative role
   `hiring_manager`. The requester is the member who submits. Approved: `approved`; rejected: `rejected` with the reason (editable; saving makes it a draft); returned: a draft with the reason.
 - **Cancel and close.** Cancel (draft, rejected, waiting or approved, only while no job exists; 409 `requisition-has-jobs`) ends a running approval; close (approved or in recruitment, with a reason) is for the rest. Both
