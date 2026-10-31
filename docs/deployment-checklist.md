@@ -8,6 +8,7 @@ Why it is mandatory: until the items in sections 2 and 3 are done, the hardening
 
 - [ ] PHP 8.3 with `pdo_pgsql` (application), `pdo_mysql` (legacy import only), `pcntl` (queue workers), `redis` not needed (`predis` is a composer package).
 - [ ] PHP `upload_max_filesize` and `post_max_size` at least 12 MB (5 files of 5 MB per chat message; the largest single upload is a company banner, default 5 MB, setting limit 10 MB).
+- [ ] Before course video uploads are used (ONESIS Learning, `docs/design/learning.md`): enough free space on the volume of `storage/` for videos of up to 500 MB each (the dev server had 5.5 GB free on 2026-10-31).
 - [ ] nginx `client_max_body_size 12m` (already in `/etc/nginx/conf.d/api-karir.satu.solutions.conf`; keep it in the production config).
 - [ ] PostgreSQL 16 with the `pg_trgm` and `unaccent` extensions; the application role can run migrations.
 - [ ] Redis reachable from the app (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`).

@@ -41,6 +41,8 @@ stays out of scope.
 - 2026-10-31 (user, P4): **a company's public course goes live when published**; the platform admin moderates afterwards, and the setting
   `learning.company_public_courses_enabled` switches company public courses off.
 - 2026-10-31 (user, P5): **video is uploaded in chunks** through the API; the nginx and PHP body limits stay small.
+- 2026-10-31 (user, S1 to S4): **files stay on the server's private disk** (the volume is enlarged first), chunks of 8 MB, paths
+  `learning/<kind>/<hex>`, the cover served through an API route ([Files](#files-r1-r2-s1-to-s4)).
 
 ## 1. What exists today (read 2026-10-31)
 
@@ -177,13 +179,23 @@ Agreed by the user on 2026-10-31 (K1 to K4). Links to other contexts follow `cro
 | 12 | `learning_course_units` | `course_id`, `unit_id` | Internal step: restricts an internal course to units |
 | 13 | `learning_assignments` | `course_id`, target (`employee`, `unit`, `tenant`), `target_id`, `due_in_days`, `created_by` | Internal step |
 
-### Files (R1, R2)
+### Files (R1, R2, S1 to S4)
 
-| Kind | Limit | Storage |
-|---|---|---|
-| Lesson video | MP4, 500 MB | Private disk, played through a signed URL |
-| Lesson PDF | 20 MB | Private disk |
-| Course cover | JPG, PNG or WebP, 2 MB | Public disk |
+| Kind | Limit | Path on the private disk | Served |
+|---|---|---|---|
+| Lesson video | MP4, 500 MB | `learning/videos/<hex>.mp4` | A signed route streamed by `FileStreamResponse` (byte ranges), valid `learning.video_url_minutes` |
+| Lesson PDF | 20 MB | `learning/documents/<hex>.pdf` | A signed route |
+| Course cover | JPG, PNG or WebP, 2 MB | `learning/covers/<hex>.<ext>` | An API route with cache headers, like company logos (S4; replaces "public disk") |
+| Certificate | | `learning/certificates/<hex>.pdf` | `GET me/learning/certificates/{id}/pdf` |
+| Upload chunks | 8 MB each | `learning/uploads/<upload_id>/<n>.part` | Never; joined on `complete`, then deleted |
+
+- **Storage (S1, user, 2026-10-31):** the application's private disk on the server (`FileStorage`, `FileStreams`), no separate disk or object
+  storage. Checked 2026-10-31: the dev server's `/` is 96% full (5.5 GB free), so the operator enlarges the volume before video uploads are used
+  (`docs/deployment-checklist.md` section 1).
+- **Chunks (S2):** 8 MB each, below nginx `client_max_body_size 12m`, so at most 63 chunks for 500 MB. An upload session lives 24 hours; the
+  scheduler deletes abandoned chunks. On `complete` the server joins the chunks, checks the SHA-256 sent by the client and the type with `finfo`.
+- **Directories (S3):** `<context>/<kind>/<random hex>.<ext>`, as the other contexts do.
+- **Video length:** ffmpeg and ffprobe are not installed on the host, so `duration_seconds` comes from the browser's metadata of the file.
 
 ## 7. Assessment changes
 
@@ -227,6 +239,8 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Public | `GET learning/courses` | Catalog; `filter[q]`, `filter[category]`, `filter[company]`, `filter[skill]`, `sort` | |
 | Public | `GET learning/courses/{slug}` | Detail and outline of the published version (lesson titles only) | |
 | Public | `GET learning/certificates/{code}` | Certificate verification | |
+| Public | `GET learning/courses/{id}/cover` | Course cover with cache headers (S4) | |
+| Learner | `GET learning/files/{token}` | Signed route that streams a lesson video or PDF (S1) | signature |
 | Learner | `POST learning/courses/{id}/enroll` | Self-enrolment; `share_with_company` for a company course (P1) | verified email |
 | Learner | `GET me/learning/enrollments`, `GET me/learning/enrollments/{id}` | My courses, outline, progress | |
 | Learner | `POST me/learning/enrollments/{id}/withdraw` | Leave a course | |
@@ -242,6 +256,7 @@ Agreed by the user on 2026-10-31 (P1 to P5). Routes follow the Workforce pattern
 | Workspace | `POST company/learning/versions/{id}/modules`, `PUT/DELETE company/learning/modules/{id}`, `POST company/learning/versions/{id}/modules/reorder` | Modules | author |
 | Workspace | `POST company/learning/modules/{id}/lessons`, `PUT/DELETE company/learning/lessons/{id}`, `POST company/learning/modules/{id}/lessons/reorder` | Lessons | author |
 | Workspace | `POST company/learning/uploads`, `PUT company/learning/uploads/{id}/chunks/{n}`, `POST company/learning/uploads/{id}/complete` | Chunked upload of a video or PDF, then attached to a lesson (P5) | author |
+| Workspace | `POST/DELETE company/learning/courses/{id}/cover` | Course cover | author |
 | Workspace | `POST company/learning/versions/{id}/publish` | Publish a version | publish |
 | Workspace | `GET company/learning/courses/{id}/enrollments`, `GET company/learning/courses/{id}/enrollments/export` | Reports and export | reports.view |
 | Workspace | `GET/POST company/learning/assignments` | Assignments (internal step) | assign |
@@ -275,4 +290,4 @@ The consent of P1 adds `share_with_company` and `shared_at` to `learning_enrollm
 
 ## 9. Open (next design steps)
 
-- The private disk layout and the chunk size of uploads (P5).
+- None. Coding waits for E1 to E4 (public side) and #13 (internal side); paid courses also wait for legal question 31 and the billing scope.
