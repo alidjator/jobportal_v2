@@ -5,17 +5,16 @@ namespace Src\Assessment\Interface\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Delivery\PracticeSection;
-use Src\Assessment\Domain\Invitation;
+use Src\Assessment\Application\Delivery\PracticeView;
 use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionType;
-use Src\Assessment\Domain\Test;
 
 /**
  * The practice questions of a test: the sample questions by section, each with its correct answer. A choice question lists its options with `is_correct`; a number or short-text question lists the
  * accepted answers; a long-text or video question has no answer to show. Nothing here is scored or stored.
  *
- * @property array{invitation: Invitation, test: Test, sections: list<PracticeSection>} $resource
+ * @property PracticeView $resource
  */
 final class PracticeResource extends JsonResource
 {
@@ -23,13 +22,13 @@ final class PracticeResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'invitation_id' => $this->resource['invitation']->id,
-            'test' => ['id' => $this->resource['test']->id, 'title' => $this->resource['test']->title()],
+            'invitation_id' => $this->resource->invitation->id,
+            'test' => ['id' => $this->resource->test->id, 'title' => $this->resource->test->title()],
             'sections' => array_map(fn (PracticeSection $practice): array => [
                 'title' => $practice->section->title,
                 'format' => $practice->section->format->value,
                 'questions' => array_map(fn (Question $question): array => $this->question($question), $practice->questions),
-            ], $this->resource['sections']),
+            ], $this->resource->sections),
         ];
     }
 

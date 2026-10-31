@@ -4,9 +4,7 @@ namespace Src\Assessment\Application\Delivery;
 
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
-use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionRepository;
-use Src\Assessment\Domain\Section;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestKind;
@@ -31,12 +29,10 @@ final readonly class GetPractice
     ) {}
 
     /**
-     * @return array{invitation: Invitation, test: Test, sections: list<PracticeSection>}
-     *
      * @throws AccessDenied `job-seeker-only`
      * @throws EntityNotFound
      */
-    public function execute(Actor $actor, int $invitationId): array
+    public function execute(Actor $actor, int $invitationId): PracticeView
     {
         if ($actor->kind !== ActorKind::JobSeeker || $actor->id === null) {
             throw new AccessDenied('Only a job seeker can take a test.', 'job-seeker-only');
@@ -68,6 +64,6 @@ final readonly class GetPractice
             }
         }
 
-        return ['invitation' => $invitation, 'test' => $test, 'sections' => $sections];
+        return new PracticeView($invitation, $test, $sections);
     }
 }
