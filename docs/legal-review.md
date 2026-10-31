@@ -15,7 +15,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 | **A. Before go-live** | 1 to 7, 10, 23 to 25 | the terms and the privacy policy must be final; the sensitive filters, the age limits and the CV details need a ruling (they stay off or at their defaults until then); the recordings and the operator's general duties (registration, data protection officer, breach notice, roles, where the data is kept) must be settled | built; 24, 25 are duties of the operator |
 | **B. Blocks building a feature** | 12, 13, 15, 20, 21, 26 to 28 | the online offer acceptance, restricted candidates, the applicant data retention per company, candidates entered from outside the platform, pre-employment checks and the gig features (location at clock-in, the daily-worker limit and reliability rules, identity checks and freelancer ratings) are not built until answered | designed |
 | **C. Before the first psychology partner or in-house psychologist** | 11, 17, 19 | automatic reports, raw data retention and in-house signers; psychological tests are switched off until then | 11, 17 built (auto issue off); 19 designed |
-| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22 designed; 18 a plan |
+| **D. Policy text, or after go-live** | 8, 9, 14, 16, 18, 22, 29 | the answers change the policy text or a later feature; the system works with the present behaviour meanwhile | 8, 9, 14 built; 16, 22, 29 designed (29: its retention is a setting, the code does not wait); 18 a plan |
 
 ## 1. What the system does
 
@@ -155,6 +155,14 @@ where the question is open; "designed" means it is planned and waits for the ans
     company)? Is a photo comparison at clock-in biometric data (Article 4(2)) that needs explicit consent and a data protection impact
     assessment (Article 34)? Are the ratings of a freelancer personal data the freelancer may see and contest, and does a freelancer paid per
     project outside the platform risk being treated as an employee of the ordering company?
+29. **Pre-boarding documents and the hand-off to Employee (added 2026-10-31).** Before the first day, a company that uses the Employee module collects
+    from a new hire, through the job seeker's account, the identity card (KTP), tax number (NPWP), family card (KK), diplomas, police certificate (SKCK),
+    bank account details and BPJS cards, and copies the terms of the accepted offer, salary included, into the employee record. (a) What is the lawful
+    basis for collecting these before the person has started work (the work agreement in preparation, or consent), and is the notice given by the
+    platform or by the company? (b) How long may the documents of someone who does not join (the offer withdrawn, the hire corrected) be kept? The
+    system proposes 30 days, set by an administrator. (c) Must the candidate be told that the salary of the offer is copied into the employee record?
+    (d) The documents are encrypted, readable only by members with the HR permission, and every read is logged: is that enough for specific personal
+    data (Article 4), and is the company the controller of the employee record after the hand-off, with the platform only running the system?
 
 ## 3. What we can change after the answers
 
@@ -180,3 +188,4 @@ where the question is open; "designed" means it is planned and waits for the ans
 - Q26: take the location only on a flagged clock-in, shorten its retention, or replace it with a QR code shown at the site.
 - Q27: count the days per group instead of per legal entity, add the written daily work agreement to the booking, let a person confirm each suspension, or show the points and a way to contest them.
 - Q28: collect identity documents outside the platform, keep them only in the company's records, drop the photo comparison, or hide freelancer ratings from everyone but the rater.
+- Q29: change the retention of the documents (an administrator setting), drop the documents that are not needed before the first day, or leave the salary out of the copy.

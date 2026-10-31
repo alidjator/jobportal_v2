@@ -6,7 +6,7 @@ Disusun untuk penasihat hukum **ONESIS ERP** (One Solutions Integrated System) d
 Indonesia. Modul pertama ERP ini adalah rekrutmen (lowongan, lamaran, wawancara, tes psikologi, penawaran kerja), sedangkan situs pencari kerja
 terbuka untuk umum. Dokumen ini mendata apa yang dilakukan sistem, atau yang dirancang akan dilakukan, terhadap data pribadi yang sensitif, beserta
 pertanyaan yang memerlukan jawaban. Dokumen ini adalah inventaris fakta, bukan pendapat hukum. Rujukan peraturan di dalam pertanyaan hanya
-petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 29 Oktober 2026.
+petunjuk awal dan belum diverifikasi. Disusun 9 Oktober 2026, diperbarui 31 Oktober 2026.
 
 ## 0. Prioritas jawaban
 
@@ -19,7 +19,7 @@ setelah ada jawaban.
 | **A. Sebelum peluncuran** | 1 sampai 7, 10, 23 sampai 25 | Syarat dan ketentuan serta kebijakan privasi harus final. Filter sensitif, batas usia, dan isian data pribadi pada CV memerlukan kepastian (tetap mati atau pada nilai bawaan sampai ada jawaban). Rekaman serta kewajiban umum penyelenggara (pendaftaran, pejabat pelindungan data, pemberitahuan kebocoran, pembagian peran, dan lokasi data) harus jelas. | sudah dibangun; 24 dan 25 merupakan kewajiban penyelenggara |
 | **B. Menahan pembangunan fitur** | 12, 13, 15, 20, 21, 26 sampai 28 | Penerimaan penawaran kerja secara daring, daftar kandidat yang dibatasi, masa simpan data pelamar per perusahaan, kandidat yang dimasukkan dari luar platform, pemeriksaan pra-kerja, dan fitur gig (lokasi saat absen, batas pekerja harian lepas dan aturan keandalan, pemeriksaan identitas serta penilaian freelancer) tidak dibangun sebelum ada jawaban. | dirancang |
 | **C. Sebelum mitra psikologi atau psikolog internal pertama** | 11, 17, 19 | Laporan otomatis, masa simpan data mentah, dan penandatangan internal. Tes psikologi dimatikan sampai ada jawaban. | 11 dan 17 sudah dibangun (laporan otomatis mati); 19 dirancang |
-| **D. Isi kebijakan, atau setelah peluncuran** | 8, 9, 14, 16, 18, 22 | Jawabannya mengubah teks kebijakan atau fitur yang datang kemudian. Sementara itu sistem berjalan dengan perilaku yang ada. | 8, 9, 14 sudah dibangun; 16 dan 22 dirancang; 18 masih rencana |
+| **D. Isi kebijakan, atau setelah peluncuran** | 8, 9, 14, 16, 18, 22, 29 | Jawabannya mengubah teks kebijakan atau fitur yang datang kemudian. Sementara itu sistem berjalan dengan perilaku yang ada. | 8, 9, 14 sudah dibangun; 16, 22, dan 29 dirancang (29: masa simpannya berupa pengaturan, kode tidak menunggu); 18 masih rencana |
 
 ## 1. Apa yang dilakukan sistem
 
@@ -195,6 +195,14 @@ setelah ada jawaban.
     (Pasal 4 ayat (2)) yang memerlukan persetujuan eksplisit dan penilaian dampak pelindungan data (Pasal 34)? Apakah nilai seorang freelancer
     merupakan data pribadi yang boleh ia lihat dan sanggah, dan apakah freelancer yang dibayar per proyek di luar platform berisiko dianggap
     karyawan perusahaan pemesan?
+29. **Dokumen pra-boarding dan serah terima ke Employee (ditambahkan 31 Oktober 2026).** Sebelum hari pertama kerja, perusahaan yang memakai modul
+    Employee mengumpulkan dari karyawan baru, melalui akun pencari kerjanya, KTP, NPWP, kartu keluarga, ijazah, SKCK, data rekening bank, dan kartu BPJS,
+    serta menyalin syarat penawaran yang diterima, termasuk gaji, ke rekaman karyawan. (a) Apa dasar hukum untuk mengumpulkannya sebelum orang itu
+    mulai bekerja (perjanjian kerja yang sedang disiapkan, atau persetujuan), dan pemberitahuannya disampaikan oleh platform atau oleh perusahaan?
+    (b) Berapa lama dokumen orang yang tidak jadi bergabung (penawaran ditarik, status diterima dikoreksi) boleh disimpan? Sistem mengusulkan 30
+    hari, yang diatur oleh administrator. (c) Apakah kandidat harus diberi tahu bahwa gaji dalam penawaran disalin ke rekaman karyawan? (d) Dokumen
+    dienkripsi, hanya dapat dibaca anggota dengan izin HR, dan setiap pembacaan dicatat: apakah itu cukup untuk data pribadi yang bersifat spesifik
+    (Pasal 4), dan apakah perusahaan adalah pengendali rekaman karyawan setelah serah terima, dengan platform hanya menjalankan sistemnya?
 
 ## 3. Yang dapat kami ubah setelah ada jawaban
 
@@ -225,3 +233,4 @@ setelah ada jawaban.
   manusia untuk setiap penahanan, atau menampilkan poin dan cara menyanggahnya.
 - P28: mengumpulkan dokumen identitas di luar platform, menyimpannya hanya di catatan perusahaan, meniadakan pencocokan foto, atau menyembunyikan
   nilai freelancer dari semua pihak selain pemberi nilai.
+- P29: ubah masa simpan dokumen (pengaturan administrator), tinggalkan dokumen yang tidak diperlukan sebelum hari pertama, atau jangan salin gaji.
