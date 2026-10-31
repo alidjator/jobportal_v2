@@ -141,6 +141,12 @@ Gap codes (J = job seeker, R = recruiter) refer to `docs/analysis/gap-analysis.m
   must be done before the freeze) and #37 and #38 (`phase-8-company-team-fixes.md`, `phase-8-admin-queue-cards.md`: small, high value) are added too; the order and
   numbers are in `phase-8-multi-persona-order.md`. #39 to #44 wait for the front end to ask for them.
   **2026-10-29 (user):** #45, shift gigs, and #46, project gigs and the service catalogue (`gigs.md`), are added to the items coded before go-live; the parts that wait for `legal-review.md` questions 26 to 28 are built switched off. **Same day (user): on hold, not coded until the user discusses gigs again.**
+- **Work blocked by the legal review is built, behind a switch (decided 2026-10-30, user):** an item that waits for an answer of `docs/legal-review.md` is still coded in full and
+  ships **switched off**. Each such item has a platform setting (boolean, default off) that the platform admin turns on or off in the Console page "Pengaturan"; the API answers
+  403 `feature-disabled` (company side) or 404 (person side) while it is off, and the screens say that the feature is not switched on. A switch is a boolean entry of the setting
+  catalogue (`SettingDefinition::boolean`, default false, with the question number in its description) and of `tests/Feature/Platform/SettingsTest.php`. The legal answer then only
+  decides whether the switch is turned on, never whether the work is done. Applies to the items of questions 1 to 28 (#14 restricted candidates, #31, #32, #33 unofficial gateway, #45 and #46 gigs, the sensitive candidate-search filters, and the rest). Replaces "wait for legal" in `phase-8-index.md`
+  where it said the coding waits; the earlier decisions of #31 and #32 (2026-10-30) are the first cases.
 
 ## 6. Still open (see also `phase-0-schema.md`)
 

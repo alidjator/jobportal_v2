@@ -1,4 +1,4 @@
-# Phase 8: candidates from outside the platform (designed 2026-10-19, not coded)
+# Phase 8: candidates from outside the platform (designed 2026-10-19, API coded 2026-10-30 behind a switch)
 
 Gap FG9 of `docs/analysis/actor-gap-analysis.md`: HR teams, the internal tenants above all, still receive CVs by email, at walk-in interviews,
 through referrals and at job fairs without a sign-up. Today a team can only work with people who hold an account and apply themselves (or who
@@ -65,3 +65,24 @@ coding session, after `docs/legal-review.md` question 20.
 | Errors | 409 `already-invited`, `invitation-closed`; 422 `job-not-live`, `email-suppressed`, `invalid-file` |
 | Legal | `docs/legal-review.md` question 20 |
 | Front end | "Tambah kandidat" on the job page; "Menunggu kandidat" list; the claim page; "Gunakan CV yang dikirim ke perusahaan" in the apply form |
+
+## Coded 2026-10-30 (API and front end; switched off)
+
+Built as designed, **switched off** (the user chose this over waiting for question 20): setting `invitations.email_enabled` is `false` until legal answers. While it is off the company
+side answers 403 `feature-disabled` and the person's side answers 404, so the links of a test run do nothing in production.
+
+- **Migration** `2026_10_30_000300`: `jobinvitation_email_invitations` as in "Changes in short" (partial unique index on the open invitation per job and lower-case email; the token kept as a
+  SHA-256 hash; the `applications.source` check gains `manual`).
+- **Settings:** `invitations.email_enabled` (boolean, false) and `invitations.email_claim_url` (text, `https://karir.satu.solutions/undangan-lamaran/{token}`; the decline link is the same page with `?tolak=1`).
+  The daily cap `invitations.max_per_day` counts these invitations too.
+- **Permissions:** send, resend, cancel need `applications.manage`; the list and the CV need `applications.view`; both need a job the member sees (404 otherwise).
+- **Endpoints:** `GET/POST company/jobs/{id}/email-invitations` (POST multipart), `GET company/email-invitations/{id}/cv`, `POST company/email-invitations/{id}/resend|cancel`; public
+  `GET email-invitations/{token}` and `POST email-invitations/{token}/decline` (throttled); job seeker `POST me/email-invitations/{token}/claim {agree}`, `.../use-cv` (copies the CV into the
+  resumes, answers `resume_id`) and `.../discard-cv`. The claim needs a job seeker with a verified email (409 `email-not-verified`).
+- **Interpretations:** the CV is team-only while the invitation is open (after a claim, a refusal or a cancel the team has no CV); a claimed invitation's copy of the CV is deleted when the person
+  chooses, when they apply, or 30 days after the claim. `resend` needs the 24 hours since the last send and gives a new token (the old link stops working); the sixth state `expired` is set
+  by the purge. A claimed person's application takes the source `manual` whatever the client hinted.
+- **Purge:** `jobinvitation:purge-email-invitations`, daily 04:00.
+- **Audit:** `invitation.email_sent`, `invitation.cv_viewed`, `invitation.email_cancelled`, without name or email.
+- **Email:** template `invitation.email_received` (editable like the others), sent on the `default` queue in the language of the request of the member.
+- **Front end (2026-10-30):** Workspace tab "Menunggu kandidat" on the job's invitations page (`EmailInvitationsTab`, `EmailInvitationDialog`; list needs `applications.view`, adding and cancelling `applications.manage`; the tab says so while the feature is off), Career page `/undangan-lamaran/{token}` (claim, decline, choose the CV). Not tried in a browser.

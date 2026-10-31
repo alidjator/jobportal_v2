@@ -1,4 +1,4 @@
-# Phase 8: restricted candidates, undoing a rejection and re-applying (designed 2026-10-14; the waiting period of section 3 coded 2026-10-23, the rest not coded)
+# Phase 8: restricted candidates, undoing a rejection and re-applying (designed 2026-10-14; the waiting period of section 3 coded 2026-10-23, the undo window of section 2 coded 2026-10-29, the rest not coded)
 
 Gaps found against Mekari Talenta's rejection tools (help center articles 47788506571289, 48569275253913 and 34773101103385). Not copied on purpose:
 the "notify by email" toggle (the job seeker is always told, as for interviews), the AI auto-reject (it weighs gender and age, against the
@@ -94,6 +94,22 @@ Migration `2026_10_23_000186`: `job_jobs.reapply_after_days` (null: never; the j
   it, and a second rejection starts a new waiting period. Earlier, 409 `already-applied` carries `reapply_on` (`Y-m-d`). A job without a waiting period, and any application that is `hired` or in another stage, answers
   409 `already-applied` without `reapply_on`, as before. The recruiter moving the old application later never takes the key back from the newer one.
 - **Not coded:** `GET me/jobs/{id}/apply-state`, the "Pernah melamar" note on the new application, the restricted badge, restrictions, the undo window.
+
+## Coded: the undo window (2026-10-29)
+
+Migration `2026_10_29_000200`: `recruitment_pending_rejections` (one row per application: `stage_id`, `reason`, `note`, `requested_by_user_id`, `requested_at`, `commit_at`, `batch_id`; no `restrict` payload and no `candidate_note` yet: sections 1 and `phase-8-candidate-experience.md` section 2 are not coded).
+
+- **Setting `recruitment.rejection_undo_minutes`** (0 to 60, overridable per company): **ships as 0** (decided by the user, 2026-10-29: the design default of 10 waits until the screens that undo are checked); 0 keeps the immediate rejection, so nothing changes until an admin raises it.
+- **One entry point, `RejectionWindow`:** the single reject, the bulk reject, "mark as filled" and "reject the remaining" all go through it. With a window it checks the rejection as `ProcessApplication::reject` would (visibility, job taken down, final, pending offer, note) and stores the pending row; without one it rejects at once.
+- **Answers:** the single reject answers 204 (at once) or **202** `data: {application_id, commit_at, requested_by, batch_id}`; the bulk reject and `fill` answer 202 with `meta.commit_at` and `meta.batch_id` when any item waits (items then have `status: pending` and `commit_at`; `fill` counts a waiting rejection as rejected in its audit).
+- **Holding the application:** while a row exists every move and rejection of the application is 409 `rejection-pending` (`ProcessApplication::process`); the job seeker's own actions are not blocked and win.
+- **Undo:** `DELETE company/applications/{id}/pending-rejection` (`applications.manage`, the member may see the application; 404 when nothing waits, 409 `rejection-committed` once due) and `DELETE company/rejection-batches/{batchId}` (404 when nothing of the company is left to undo).
+- **Commit:** `recruitment:commit-rejections` every minute (`CommitPendingRejections`): claims a due row (a concurrent undo wins), checks the application is still in the stage, and rejects as the requester with their current permissions. Dropped (the application left the stage, the job was taken down, or the requester lost `applications.manage`): in-app `rejection.dropped` to the requester.
+- **Read side:** `pending_rejection {commit_at, requested_by, batch_id}` (or null) on the list rows and on the detail.
+
+### Reject the remaining (`phase-8-candidate-experience.md` section 1, coded 2026-10-29)
+
+`POST company/jobs/{id}/applications/reject-remaining {stage_ids, reason, note?}` (`applications.manage`): 409 `job-still-open` unless the job is `closed` or `expired`; 422 `invalid-stage` for a stage that is not the company's, is final **or is the hired stage** (decided here: a hired application is never rejected this way); answers 202 `{data: {count}}` and the event `RejectRemainingRequested` is handled on the `default` queue by `RejectRemainingListener`, which rejects each application through `RejectionWindow` (pending when the company has a window) and sends the in-app notice `applications.reject_remaining_done {job_id, job_title, rejected, skipped, batch_id}`. `candidate_note` is not coded (it waits for `phase-8-candidate-experience.md` section 2).
 
 ## Changes in short
 

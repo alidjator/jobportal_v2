@@ -54,9 +54,9 @@ at once).
 | R10 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | A recruiter cannot choose which of the digest and event emails they receive. |
 | R11 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 | R12 | Candidate search by age, religion, nationality | `filter[age_min]`, `filter[age_max]`, `filter[religion_id]`, `filter[nationality_id]` | Deliberate | Sensitive filters stay off until the legal review (`docs/legal-review.md`). |
-| R13 | Undo a rejection; reject the rest when a job closes | (none) | Waits | Designed in #14 and #15, no endpoint yet. |
-| R14 | Add a candidate by hand (walk-in, referral) | (none) | Waits | Designed in #31. |
-| R15 | Reference check, background check, MCU as steps | (none) | Waits | Designed in #32. |
+| R13 | Undo a rejection; reject the rest when a job closes | `DELETE company/applications/{id}/pending-rejection`, `DELETE company/rejection-batches/{id}`, `POST company/jobs/{id}/applications/reject-remaining` | **Coded 2026-10-30** (API `000200`, ships with an undo window of 0 minutes; the Workspace shows "Batalkan" and the action "Tolak pelamar yang masih aktif") | Waits for the user's check; `candidate_note` of #15 is not part of it. |
+| R14 | Add a candidate by hand (walk-in, referral) | `company/jobs/{id}/email-invitations` (list, send), `company/email-invitations/{id}/cv`, `.../resend`, `.../cancel`, public `email-invitations/{token}`, `me/email-invitations/{token}/claim`, `.../use-cv`, `.../discard-cv` | API and front end coded 2026-10-30 behind `invitations.email_enabled` (off) | Not tried in a browser; switch on in Console "Pengaturan" after legal question 20. |
+| R15 | Reference check, background check, MCU as steps | `company/check-types`, `company/applications/{id}/checks` (request, change, waive, cancel, result, file), `me/applications/{id}/checks/{checkId}/consent`, `.../refuse` | API part 1 and its front end coded 2026-10-30 behind `recruitment.pre_employment_checks_enabled` (off) | Part 2 open (bulk, conditional offer, notifications, retention, export); switch on in Console "Pengaturan" after legal question 21. |
 | R16 | Video and voice rooms, recordings | `.../interview/video|voice/...` | Waits | Step 6 (Janus, coturn, Asterisk). |
 
 What the recruiter does have end to end in the Workspace: jobs (create, edit, preview, publish, close, reopen, fill, clone), the pipeline as a table and a board with
@@ -134,7 +134,7 @@ reviews, training, settings.
 
 | # | What | API | Broken chain with | Status |
 |---|---|---|---|---|
-| K1 | **Tests** (J7): see an invitation, start, answer, draw, record a video answer, submit, read the explanation | `me/assessment/invitations/...` (17 operations) | The Workspace sends tests (stage and manual send) and psychologists sign reports for them | Gap (step 5) |
+| K1 | **Tests** (J7): see an invitation, start, answer, draw, record a video answer, submit, read the explanation | `me/assessment/invitations/...` (17 operations) | The Workspace sends tests (stage and manual send) and psychologists sign reports for them | **Coded 2026-10-31** (J7, all three steps: list, invitation page with consent and device check, runner for questions, speed columns, drawing and video answers, explanation page); the video recording was only unit-tested, not tried with a camera |
 | K2 | **Messages** (J11): read, reply, attachments, block, report | `me/conversations`, `me/messages` | The Workspace sends and reads messages (C14) | Gap (step 5) |
 | K3 | **Invitations to apply** (J8) | `me/invitations[/{id}]`, `.../decline` | The Workspace invites candidates one by one and in bulk | Gap (step 5) |
 | K4 | **Notifications** (J12): the list, read, read all, delete, unread count, preferences | `me/notifications`, `me/notification-preferences` | Every in-app notice and email of the platform; the menu shows a badge that opens nothing | Gap (step 5) |
@@ -147,8 +147,8 @@ reviews, training, settings.
 | K11 | Salary insight (P5), training (P6, J14), FAQ (P9) | `salary-insight`, `training/courses`, `me/training/courses`, `faq` | Job detail links to the salary insight | Gap (step 5) |
 | K12 | Who viewed my profile on the dashboard | `GET me/profile/views` | Companies' profile reads are recorded | Gap |
 | K13 | Video interview room (J6) | `me/applications/{id}/interview/video/lobby`, `.../join` | | Waits (step 6) |
-| K14 | Agenda and "Perlu tindakan" (J16, J1) | `me/agenda`, `me/tasks` | | Waits: no endpoint yet (#15) |
-| K15 | Open an invitation from a company by email without an account, and claim it (P15) | `email-invitations/{token}` | | Waits: #31 |
+| K14 | Agenda and "Perlu tindakan" (J16, J1) | `me/agenda`, `me/tasks` | | **Coded 2026-10-31** (#15 sections 3 and 5: API, dashboard cards `todo` and `agenda`, Career pages `/me/tasks` and `/me/agenda`) |
+| K15 | Open an invitation from a company by email without an account, and claim it (P15) | `email-invitations/{token}` | | **Coded 2026-10-30** (#31, Career page `/undangan-lamaran/{token}`), behind `invitations.email_enabled` (off) |
 
 The order that follows the broken chains: K2 and K3 (the company already talks to the job seeker), then K1 (tests), K4, K6 and K7 (compliance), K5 (campaigns), and the rest.
 No code of this round touches Career; the Workspace items of sections 1 to 4 do not depend on it.
