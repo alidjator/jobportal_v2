@@ -32,11 +32,11 @@ interface QuestionRepository
     public function countInSection(int $sectionId): int;
 
     /**
-     * The number of questions of each section of the test.
+     * The number of questions of each section of the test; `$withoutSamples` leaves out the sample questions (the ones an attempt draws from).
      *
      * @return array<int, int> section id => questions
      */
-    public function countsBySection(int $testId): array;
+    public function countsBySection(int $testId, bool $withoutSamples = false): array;
 
     /** True when another question of the test, of this type, is already a sample. */
     public function sampleTaken(int $testId, QuestionType $type, ?int $exceptQuestionId): bool;

@@ -478,6 +478,107 @@ final class AttemptTest extends FeatureTestCase
         $this->assertSame($drawn, array_values(array_filter($bank, fn (int $id): bool => in_array($id, $drawn, true))));
     }
 
+    // ----- sample questions (`phase-8-candidate-experience.md` section 4) -----
+
+    public function test_sample_questions_are_not_drawn_into_an_attempt(): void
+    {
+        $testId = $this->skillTest([$this->choice('One'), $this->choice('Two'), $this->choice('A practice question', ['is_sample' => true])]);
+        $sample = (int) DB::table('assessment_questions')->where('is_sample', true)->value('id');
+
+        $this->company('GET', "tests/{$testId}")->assertOk()->assertJsonPath('data.sections.0.question_count', 3)->assertJsonPath('data.sections.0.samples_drawn', false);
+
+        $this->invite($testId);
+        $this->start()->assertCreated()->assertJsonCount(2, 'data.questions');
+        $this->assertNotContains($sample, array_map('intval', array_column($this->attempt()->json('data.questions'), 'id')));
+    }
+
+    public function test_a_section_draws_its_samples_while_the_other_questions_cannot_fill_it(): void
+    {
+        $testId = $this->skillTest([$this->choice('One'), $this->choice('Two'), $this->choice('Three')], ['draw_count' => 2]);
+        $first = (int) DB::table('assessment_questions')->orderBy('id')->value('id');
+
+        // The bank without samples (one question) is short of the two the section draws: the samples are drawn again, and the authoring view says so.
+        DB::table('assessment_questions')->whereIn('id', DB::table('assessment_questions')->where('id', '<>', $first)->pluck('id')->all())->update(['is_sample' => true]);
+        $this->company('GET', "tests/{$testId}")->assertOk()->assertJsonPath('data.sections.0.samples_drawn', true);
+
+        $this->invite($testId);
+        $this->start()->assertCreated()->assertJsonCount(2, 'data.questions');
+    }
+
+    public function test_publishing_counts_only_the_questions_that_are_not_samples_against_the_draw(): void
+    {
+        $id = $this->newTest('company');
+        $sectionId = (int) $this->company('POST', "tests/{$id}/sections", $this->section('Basics', 600, ['draw_count' => 2]))->assertCreated()->json('data.id');
+        $this->company('POST', "sections/{$sectionId}/questions", $this->choice('One'))->assertCreated();
+        $this->company('POST', "sections/{$sectionId}/questions", $this->choice('A practice question', ['is_sample' => true]))->assertCreated();
+
+        $this->company('POST', "tests/{$id}/publish")->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:test-incomplete')->assertJsonStructure(['errors' => ['test']]);
+
+        $this->company('POST', "sections/{$sectionId}/questions", $this->number())->assertCreated();
+        $this->company('POST', "tests/{$id}/publish")->assertOk();
+    }
+
+    /** A test of one section with two practice questions (a choice and a number) and two others. */
+    private function practiceTest(): int
+    {
+        return $this->skillTest([
+            $this->choice('Which is a prime number?', ['is_sample' => true]),
+            [...$this->number(), 'is_sample' => true],
+            $this->choice('A question of the bank'),
+            $this->choice('Another question of the bank', ['points' => 1]),
+        ]);
+    }
+
+    public function test_the_practice_shows_the_samples_with_their_answers_and_stores_nothing(): void
+    {
+        $testId = $this->practiceTest();
+        $this->invite($testId);
+
+        $attempts = DB::table('assessment_attempts')->count();
+        $response = $this->take('GET', 'practice')->assertOk()->assertJsonPath('data.invitation_id', $this->invitationId)->assertJsonCount(1, 'data.sections')->assertJsonCount(2, 'data.sections.0.questions');
+
+        $choice = $response->json('data.sections.0.questions.0');
+        $this->assertSame('single_choice', $choice['type']);
+        $this->assertSame([['position' => 1, 'label' => '7', 'is_correct' => true], ['position' => 2, 'label' => '8', 'is_correct' => false], ['position' => 3, 'label' => '9', 'is_correct' => false]], $choice['options']);
+        $this->assertSame([], $choice['accepted_answers']);
+
+        $number = $response->json('data.sections.0.questions.1');
+        $this->assertSame(['42'], $number['accepted_answers']);
+        $this->assertSame([], $number['options']);
+
+        $this->assertSame($attempts, DB::table('assessment_attempts')->count());
+        $this->take('GET', 'practice')->assertOk();
+    }
+
+    public function test_the_practice_is_for_the_candidate_of_an_invitation_that_can_still_be_taken(): void
+    {
+        $testId = $this->practiceTest();
+        $this->invite($testId);
+
+        $other = $this->tokenFor($this->seeker('other@example.test'));
+        $this->take('GET', 'practice', [], $other)->assertNotFound();
+        $this->take('GET', 'practice', [], $this->recruiterToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:job-seeker-only');
+
+        $this->take('GET', 'practice')->assertOk();
+
+        DB::table('assessment_invitations')->where('id', $this->invitationId)->update(['status' => 'submitted']);
+        $this->take('GET', 'practice')->assertNotFound();
+    }
+
+    public function test_a_test_without_samples_has_an_empty_practice(): void
+    {
+        $this->invite($this->skillTest([$this->choice('One')]));
+
+        $this->take('GET', 'practice')->assertOk()->assertJsonCount(0, 'data.sections');
+    }
+
+    public function test_the_invitation_states_the_device_requirements(): void
+    {
+        $this->invite($this->skillTest([$this->choice('One')]));
+
+        $this->api('GET', "/me/assessment/invitations/{$this->invitationId}", [], $this->seekerToken)->assertOk()->assertJsonPath('data.requirements', ['camera' => false, 'microphone' => false]);
+    }
+
     // ----- the clock -----
 
     /** @return array{0: int, 1: int} the two section ids */

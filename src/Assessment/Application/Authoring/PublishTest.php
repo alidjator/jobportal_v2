@@ -74,6 +74,8 @@ final readonly class PublishTest
         $problems = [];
         $sections = $this->sections->ofTest((int) $test->id);
         $counts = $this->questions->countsBySection((int) $test->id);
+        // The sample questions are for practice and are not drawn, so only the other questions count against `draw_count`.
+        $others = $this->questions->countsBySection((int) $test->id, true);
 
         if ($sections === []) {
             $problems[] = 'The test needs at least one section.';
@@ -97,8 +99,10 @@ final readonly class PublishTest
                 }
             }
 
-            if ($section->drawCount !== null && $section->drawCount > $count) {
-                $problems[] = new ErrorMessage('The section ":section" draws :drawn questions but has only :count.', ['section' => $section->title, 'drawn' => $section->drawCount, 'count' => $count]);
+            $drawable = $others[(int) $section->id] ?? 0;
+
+            if ($section->drawCount !== null && $section->drawCount > $drawable) {
+                $problems[] = new ErrorMessage('The section ":section" draws :drawn questions but has only :count.', ['section' => $section->title, 'drawn' => $section->drawCount, 'count' => $drawable]);
             }
         }
 

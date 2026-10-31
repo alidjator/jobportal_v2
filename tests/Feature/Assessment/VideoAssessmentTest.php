@@ -247,7 +247,7 @@ final class VideoAssessmentTest extends FeatureTestCase
     {
         $this->invite($this->publishedVideoTest());
 
-        $this->show()->assertOk()->assertJsonPath('data.video_consent_required', true)->assertJsonPath('data.sections.0.format', 'video');
+        $this->show()->assertOk()->assertJsonPath('data.video_consent_required', true)->assertJsonPath('data.requirements', ['camera' => true, 'microphone' => true])->assertJsonPath('data.sections.0.format', 'video');
     }
 
     public function test_a_test_with_video_questions_needs_the_separate_recording_consent_to_start(): void

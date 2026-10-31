@@ -7,13 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Domain\Section;
 
 /**
- * A section. `question_count` is present when the section is read with its test.
+ * A section. `question_count` and `samples_drawn` (true while the questions that are not samples cannot fill the section, so its samples are still drawn into attempts) are present when the section is read with its test.
  *
  * @property Section $resource
  */
 final class SectionResource extends JsonResource
 {
-    public function __construct(Section $resource, private readonly ?int $questionCount = null)
+    public function __construct(Section $resource, private readonly ?int $questionCount = null, private readonly ?bool $samplesDrawn = null)
     {
         parent::__construct($resource);
     }
@@ -34,6 +34,7 @@ final class SectionResource extends JsonResource
             'draw_count' => $this->resource->drawCount,
             'settings' => (object) $this->resource->settings,
             'question_count' => $this->when($this->questionCount !== null, $this->questionCount),
+            'samples_drawn' => $this->when($this->samplesDrawn !== null, $this->samplesDrawn),
         ];
     }
 }

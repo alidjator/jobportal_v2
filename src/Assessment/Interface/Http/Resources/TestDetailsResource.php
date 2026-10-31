@@ -17,7 +17,7 @@ final class TestDetailsResource extends JsonResource
             ...(new TestResource($this->resource->test))->toArray($request),
             'total_seconds' => array_sum(array_map(static fn (Section $section): int => $section->durationSeconds, $this->resource->sections)),
             'sections' => array_map(
-                fn (Section $section): array => (new SectionResource($section, $this->resource->questionCounts[(int) $section->id] ?? 0))->toArray($request),
+                fn (Section $section): array => (new SectionResource($section, $this->resource->questionCounts[(int) $section->id] ?? 0, $this->resource->samplesDrawn[(int) $section->id] ?? false))->toArray($request),
                 $this->resource->sections,
             ),
         ];

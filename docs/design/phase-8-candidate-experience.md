@@ -1,4 +1,4 @@
-# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15; sections 1 and 2 coded, sections 3 and 5 coded 2026-10-31 (API), section 4 not coded)
+# Phase 8: candidate experience: no silent applications, a rejection message, a to-do list and test preparation (designed 2026-10-15; sections 1 and 2 coded, sections 3 and 5 coded 2026-10-31 (API and Career), section 4 coded 2026-10-31 on the API only: its screens wait for J7)
 
 Gaps found from the candidate's point of view (a job seeker with applications in progress) and against Mekari Talenta (help center articles
 34773101103385: an internal rejection reason plus an optional "Notify candidate via email" note; 61789018343449: email templates per scenario;
@@ -125,3 +125,14 @@ Decided with the user 2026-10-31: sections 3 and 5 now, section 4 (practice ques
 
 **Front end coded 2026-10-31 (Career):** the cards "Perlu tindakan" and "Jadwal mendatang" on the dashboard (`/me`), the pages `/me/tasks` (menu "Lamaran > Perlu tindakan") and `/me/agenda` (list of 30 days or a week; the days are the days of the device and the range is asked for
 with a day of margin on each side), `components/TodoList.vue`, `components/AgendaEntryRow.vue`, `utils/agenda.ts`. Links: an interview, check or test opens the application, an offer or join date opens the offer page, an invitation to apply opens the job (the test and the invitation list have no page of their own yet).
+
+## Coded 2026-10-31: section 4 (API; its screens wait for J7)
+
+Decided with the user 2026-10-31: the API of section 4 now; the practice page and the device check are part of J7 (the test pages and runner of Career, not built yet), so no front end for them.
+
+- **Samples are not drawn:** `QuestionDraw::pool` leaves the samples out of an attempt's bank. `GET company/assessment/tests/{id}` gives each section `samples_drawn`: true while the questions that are not samples are fewer than the section needs (`draw_count`, or one), so the samples are drawn again for want of others (the
+  design's "keeps drawing them until the author fixes it"); it is false for a speed-columns section. Attempts already started keep their drawn questions.
+- **Publishing:** the questions that are not samples are the ones counted against `draw_count` (`test-incomplete`, "draws N questions but has only M"). "Needs at least one question" still counts every question, so a section of samples alone publishes and draws them (flagged by `samples_drawn`), which keeps the tests that existed before this change valid.
+- **`GET me/assessment/invitations/{id}/practice`:** job seekers; the invitation must be theirs, `invited` or `started`, and of a skill test (else 404; a company member is 403 `job-seeker-only`). Answers `{invitation_id, test {id, title}, sections [{title, format, questions [{id, type, text, options [{position, label,
+  is_correct}], accepted_answers, video}]}]}` with only the sections that hold samples (none: an empty list). A choice question lists its options with `is_correct`; a number or short-text question lists `accepted_answers`; a long-text question has neither; a video question carries its `video` settings. Nothing is stored and there is no timer.
+- **`requirements`:** `GET me/assessment/invitations/{id}` gains `requirements {camera, microphone}`, both true when the test has video questions (the same fact as `video_consent_required`).

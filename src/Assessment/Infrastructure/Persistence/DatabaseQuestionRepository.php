@@ -98,13 +98,14 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
         return $this->connection->table(self::TABLE)->where('section_id', $sectionId)->count();
     }
 
-    public function countsBySection(int $testId): array
+    public function countsBySection(int $testId, bool $withoutSamples = false): array
     {
         $counts = [];
 
         $rows = $this->connection->table(self::TABLE)
             ->join('assessment_sections as sections', 'sections.id', '=', self::TABLE.'.section_id')
             ->where('sections.test_id', $testId)
+            ->when($withoutSamples, fn ($query) => $query->where(self::TABLE.'.is_sample', false))
             ->groupBy(self::TABLE.'.section_id')
             ->selectRaw(self::TABLE.'.section_id as section_id, count(*) as total')
             ->get();

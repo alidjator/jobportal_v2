@@ -7,12 +7,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Src\Assessment\Application\Delivery\DeclineInvitation;
 use Src\Assessment\Application\Delivery\GetInvitationAttachment;
+use Src\Assessment\Application\Delivery\GetPractice;
 use Src\Assessment\Application\Delivery\MyInvitations;
 use Src\Assessment\Application\Reports\GetMyExplanation;
 use Src\Assessment\Interface\Http\AttachmentResponse;
 use Src\Assessment\Interface\Http\Requests\ListMyInvitationsRequest;
 use Src\Assessment\Interface\Http\Resources\MyExplanationResource;
 use Src\Assessment\Interface\Http\Resources\MyInvitationResource;
+use Src\Assessment\Interface\Http\Resources\PracticeResource;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Shared\Interface\Http\PaginatedResources;
@@ -30,6 +32,12 @@ final class MyInvitationController extends ApiController
     public function show(Request $request, int $id, ActorResolver $actors, MyInvitations $invitations): MyInvitationResource
     {
         return new MyInvitationResource($invitations->get($actors->fromRequest($request), $id));
+    }
+
+    /** The sample questions of a skill test with their correct answers, to practise with before the start. Nothing is stored. */
+    public function practice(Request $request, int $id, ActorResolver $actors, GetPractice $get): PracticeResource
+    {
+        return new PracticeResource($get->execute($actors->fromRequest($request), $id));
     }
 
     /** The candidate turns the test down before starting it. */

@@ -9,7 +9,8 @@ use Src\Assessment\Application\Delivery\MyInvitationView;
 use Src\Assessment\Domain\Section;
 
 /**
- * A test the job seeker was asked to take. One invitation also carries the instructions and the sections (title, format and length), never a question.
+ * A test the job seeker was asked to take. One invitation also carries the instructions, the sections (title, format and length) and the `requirements` of the device (a camera and a microphone when the test has video
+ * questions), never a question.
  *
  * @property MyInvitationView $resource
  */
@@ -43,6 +44,7 @@ final class MyInvitationResource extends JsonResource
 
         $data['test']['instructions'] = $test->instructions();
         $data['video_consent_required'] = $this->resource->hasVideo;
+        $data['requirements'] = ['camera' => $this->resource->hasVideo, 'microphone' => $this->resource->hasVideo];
         $data['sections'] = array_map(static fn (Section $section): array => [
             'title' => $section->title,
             'format' => $section->format->value,
