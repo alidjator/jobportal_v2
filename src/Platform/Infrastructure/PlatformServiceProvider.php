@@ -13,6 +13,7 @@ use Src\Platform\Application\Audit\AuditLogRepository;
 use Src\Platform\Application\Audit\AuditMemberActivity;
 use Src\Platform\Application\Audit\RecordAuditEntry;
 use Src\Platform\Application\Email\EmailBodyRenderer;
+use Src\Platform\Application\Email\EmailPdfRenderer;
 use Src\Platform\Application\Email\EmailTemplateOverrideRepository;
 use Src\Platform\Application\Email\PlatformAdHocEmails;
 use Src\Platform\Application\Email\PlatformEmailTemplates;
@@ -48,6 +49,7 @@ use Src\Platform\Infrastructure\Listeners\RecordScheduledTaskEvents;
 use Src\Platform\Infrastructure\Mail\MailPortalAlerts;
 use Src\Platform\Infrastructure\Mail\MailQueueAlerts;
 use Src\Platform\Infrastructure\Mail\MailSchedulerAlerts;
+use Src\Platform\Infrastructure\Pdf\DompdfEmailPdfRenderer;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogReader;
 use Src\Platform\Infrastructure\Persistence\DatabaseAuditLogRepository;
 use Src\Platform\Infrastructure\Persistence\DatabaseEmailSuppressionRepository;
@@ -97,6 +99,7 @@ final class PlatformServiceProvider extends ContextServiceProvider
         GroupSettingsEditor::class => EditGroupSettings::class,
         EmailTemplateOverrideRepository::class => DatabaseEmailTemplateOverrideRepository::class,
         EmailBodyRenderer::class => CommonMarkEmailBodyRenderer::class,
+        EmailPdfRenderer::class => DompdfEmailPdfRenderer::class,
         EmailTemplates::class => PlatformEmailTemplates::class,
         EmailPreviewer::class => ViewEmailPreviewer::class,
         AdHocEmails::class => PlatformAdHocEmails::class,

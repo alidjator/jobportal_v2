@@ -18,6 +18,7 @@ Route::prefix('admin')->middleware('auth:admin')->group(function (): void {
         Route::get('email-templates', [AdminEmailTemplateController::class, 'index']);
         Route::get('email-templates/{key}', [AdminEmailTemplateController::class, 'show'])->where('key', '[a-z][a-z0-9_.]*');
         Route::post('email-templates/{key}/preview', [AdminEmailTemplateController::class, 'preview'])->where('key', '[a-z][a-z0-9_.]*');
+        Route::post('email-templates/{key}/preview-pdf', [AdminEmailTemplateController::class, 'previewPdf'])->where('key', '[a-z][a-z0-9_.]*');
         Route::put('email-templates/{key}/{locale}', [AdminEmailTemplateController::class, 'update'])->where(['key' => '[a-z][a-z0-9_.]*', 'locale' => 'id|en']);
         Route::delete('email-templates/{key}/{locale}', [AdminEmailTemplateController::class, 'destroy'])->where(['key' => '[a-z][a-z0-9_.]*', 'locale' => 'id|en']);
     });

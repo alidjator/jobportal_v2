@@ -50,6 +50,7 @@ final class EmailTemplateResource extends JsonResource
                 'sample' => $variable->sample,
                 'required' => $variable->required,
             ], $definition->variables),
+            /** @var array<string, array{default: array{subject: string, body: string}, override: array{subject: string, body: string, updated_at: string, updated_by_admin_id: int|null}|null, is_customized: bool}> */
             'languages' => $languages,
         ];
     }

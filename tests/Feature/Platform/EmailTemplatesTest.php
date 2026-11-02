@@ -60,7 +60,7 @@ final class EmailTemplatesTest extends FeatureTestCase
         $other->givePermissionTo('settings.manage');
         $token = $other->createToken('console', ['*'], now()->addHour())->plainTextToken;
 
-        foreach ([['GET', 'email-templates'], ['GET', 'email-templates/'.self::KEY], ['PUT', 'email-templates/'.self::KEY.'/en'], ['DELETE', 'email-templates/'.self::KEY.'/en'], ['POST', 'email-templates/'.self::KEY.'/preview']] as [$method, $uri]) {
+        foreach ([['GET', 'email-templates'], ['GET', 'email-templates/'.self::KEY], ['PUT', 'email-templates/'.self::KEY.'/en'], ['DELETE', 'email-templates/'.self::KEY.'/en'], ['POST', 'email-templates/'.self::KEY.'/preview'], ['POST', 'email-templates/'.self::KEY.'/preview-pdf']] as [$method, $uri]) {
             $this->asAdmin($method, $uri, [], $token)->assertStatus(403);
         }
     }
@@ -249,6 +249,24 @@ final class EmailTemplatesTest extends FeatureTestCase
             ->assertJsonPath('type', 'urn:onesis:error:invalid-email-template');
         $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview', ['locale' => 'en', 'subject' => 'Hi {{nope}}'])->assertStatus(422);
         $this->asAdmin('POST', 'email-templates/probe.nothing/preview', ['locale' => 'en'])->assertStatus(404);
+    }
+
+    public function test_the_preview_can_be_read_as_a_pdf_and_saves_nothing(): void
+    {
+        $response = $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview-pdf', ['locale' => 'en'])->assertOk();
+
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+        $this->assertSame(0, DB::table('platform_email_template_overrides')->count());
+    }
+
+    public function test_the_pdf_preview_follows_the_same_rules_as_the_preview(): void
+    {
+        $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview-pdf', ['locale' => 'en', 'body' => 'No code'])
+            ->assertStatus(422)
+            ->assertJsonPath('type', 'urn:onesis:error:invalid-email-template');
+        $this->asAdmin('POST', 'email-templates/'.self::KEY.'/preview-pdf', ['locale' => 'fr'])->assertStatus(422);
+        $this->asAdmin('POST', 'email-templates/probe.nothing/preview-pdf', ['locale' => 'en'])->assertStatus(404);
     }
 
     public function test_the_preview_of_a_single_draft_field_uses_the_stored_override_for_the_other(): void

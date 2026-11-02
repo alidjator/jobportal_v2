@@ -5,9 +5,11 @@ namespace Src\Platform\Interface\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Src\Platform\Application\Email\GetEmailTemplate;
 use Src\Platform\Application\Email\ListEmailTemplates;
 use Src\Platform\Application\Email\PreviewEmailTemplate;
+use Src\Platform\Application\Email\PreviewEmailTemplatePdf;
 use Src\Platform\Application\Email\ResetEmailTemplateOverride;
 use Src\Platform\Application\Email\UpdateEmailTemplateOverride;
 use Src\Platform\Interface\Http\Requests\EmailTemplateRequest;
@@ -47,5 +49,19 @@ final class AdminEmailTemplateController extends ApiController
         $rendered = $preview->execute($key, $request->locale(), $request->subject(), $request->body());
 
         return new JsonResponse(['data' => ['subject' => $rendered->subject, 'html' => $rendered->html, 'text' => $rendered->text]]);
+    }
+
+    /** The same preview as a PDF (the subject, then the email as laid out), to open in a viewer. Nothing is saved or sent. */
+    public function previewPdf(string $key, EmailTemplateRequest $request, PreviewEmailTemplatePdf $preview): Response
+    {
+        $pdf = $preview->execute($key, $request->locale(), $request->subject(), $request->body());
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="email-preview.pdf"',
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'",
+        ]);
     }
 }
