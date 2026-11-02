@@ -16,12 +16,16 @@ use Src\Assessment\Interface\Http\Controllers\MySignatureController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
 use Src\Assessment\Interface\Http\Controllers\ReportRegisterController;
+use Src\Assessment\Interface\Http\Controllers\ReportVerificationController;
 use Src\Assessment\Interface\Http\Controllers\ResultController;
 use Src\Assessment\Interface\Http\Controllers\ReviewController;
 use Src\Assessment\Interface\Http\Controllers\TeamController;
 use Src\Assessment\Interface\Http\Controllers\VideoTakeController;
 use Src\Assessment\Interface\Http\Middleware\ReadAttemptSession;
 use Src\Identity\Interface\Http\Middleware\EnforceTermsAcceptance;
+
+// The public check of a psychological report number (no sign-in; 30 requests per address per hour).
+Route::get('verify/assessment-reports', ReportVerificationController::class)->middleware('throttle:'.AssessmentServiceProvider::VERIFY_LIMITER);
 
 Route::prefix('provider')->group(function (): void {
     // The invitee has no account yet, so the token in the URL is the credential.

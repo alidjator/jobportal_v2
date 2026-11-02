@@ -21,6 +21,7 @@ use Src\Assessment\Application\Invitations\InvitationLinkBuilder;
 use Src\Assessment\Application\Invitations\InvitationSender;
 use Src\Assessment\Application\Invitations\InvitationThrottle;
 use Src\Assessment\Application\Reports\ReportPdfRenderer;
+use Src\Assessment\Application\Reports\ReportVerificationLinks;
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AssessmentDataEraser;
 use Src\Assessment\Domain\AttemptOutcomeRepository;
@@ -65,6 +66,7 @@ use Src\Assessment\Infrastructure\Listeners\NotifyOfInvitationDeclinedListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfLicenceDecisionListener;
 use Src\Assessment\Infrastructure\Listeners\NotifyOfReportSignedListener;
 use Src\Assessment\Infrastructure\Listeners\RecordAssessmentAuditEntries;
+use Src\Assessment\Infrastructure\Listeners\StoreReportPdfListener;
 use Src\Assessment\Infrastructure\Mail\MailInvitationSender;
 use Src\Assessment\Infrastructure\Mail\MailTeamSubmissionSender;
 use Src\Assessment\Infrastructure\Mail\MailTestSender;
@@ -121,6 +123,10 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     private const int REGISTER_EXPORTS_PER_HOUR = 10;
 
+    public const string VERIFY_LIMITER = 'assessment-report-verify';
+
+    private const int VERIFICATIONS_PER_HOUR = 30;
+
     /** @var array<class-string, class-string> */
     public array $bindings = [
         ProviderRepository::class => DatabaseProviderRepository::class,
@@ -135,6 +141,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         ReportTemplateRepository::class => DatabaseReportTemplateRepository::class,
         CompanyBatteryRepository::class => DatabaseCompanyBatteryRepository::class,
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
+        ReportVerificationLinks::class => ConfiguredReportVerificationLinks::class,
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
@@ -207,6 +214,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for(self::VERIFY_LIMITER, fn (Request $request): Limit => Limit::perHour(self::VERIFICATIONS_PER_HOUR)->by('assessment-report-verify|'.$request->ip()));
         RateLimiter::for(self::REGISTER_EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REGISTER_EXPORTS_PER_HOUR)->by('assessment-register-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         foreach ([
@@ -237,6 +245,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedInApp']);
         Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedCandidateInApp']);
         Event::listen(ReportRevised::class, [NotifyOfReportSignedListener::class, 'revisedCandidateEmail']);
+        Event::listen(ReportSigned::class, [StoreReportPdfListener::class, 'signed']);
+        Event::listen(ReportRevised::class, [StoreReportPdfListener::class, 'revised']);
 
         $this->app->tag(EraseAssessmentData::class, ErasureStep::class);
         $this->app->tag(AssessmentDataExporter::class, PersonalDataExporter::class);

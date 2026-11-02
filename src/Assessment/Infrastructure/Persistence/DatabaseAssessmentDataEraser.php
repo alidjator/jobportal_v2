@@ -28,6 +28,15 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
             ->all());
     }
 
+    public function reportPdfPaths(int $userId): array
+    {
+        $reports = $this->connection->table('assessment_reports')->whereIn('attempt_id', $this->attemptIds($userId));
+        $paths = (clone $reports)->whereNotNull('pdf_path')->pluck('pdf_path')->all();
+        $revisions = $this->connection->table('assessment_report_revisions')->whereIn('report_id', (clone $reports)->select('id'))->whereNotNull('pdf_path')->pluck('pdf_path')->all();
+
+        return array_values(array_unique(array_map('strval', [...$paths, ...$revisions])));
+    }
+
     public function videoPaths(int $userId): array
     {
         $paths = [];
@@ -58,8 +67,8 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
         $this->connection->table('assessment_results')->whereIn('attempt_id', $attempts)->update(['scale_scores' => null]);
 
         // The text, the explanation and the notes describe the person; the number, the signer and the time stay as the provider's register.
-        $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->update(['body' => '', 'explanation' => null, 'review_notes' => null]);
-        $this->connection->table('assessment_report_revisions')->whereIn('report_id', $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->select('id'))->update(['body' => '', 'explanation' => null]);
+        $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->update(['body' => '', 'explanation' => null, 'review_notes' => null, 'pdf_path' => null, 'pdf_sha256' => null]);
+        $this->connection->table('assessment_report_revisions')->whereIn('report_id', $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->select('id'))->update(['body' => '', 'explanation' => null, 'pdf_path' => null, 'pdf_sha256' => null]);
     }
 
     /** @return Builder the ids of the attempts of the user's invitations, for use in a sub-select */

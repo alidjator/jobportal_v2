@@ -604,6 +604,70 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->api('GET', "/company/assessment/invitations/{$this->invitationId}/report.pdf", [], $this->seekerToken)->assertForbidden();
     }
 
+    public function test_the_pdf_is_rendered_once_kept_with_its_hash_and_downloaded_unchanged(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $report = (array) DB::table('assessment_reports')->first();
+        $this->assertSame('assessment/reports/'.$reportId.'/LEMB-2026-00001.pdf', $report['pdf_path']);
+        Storage::assertExists($report['pdf_path']);
+
+        $first = (string) $this->asTeam('GET', 'report.pdf')->assertOk()->getContent();
+        $second = (string) $this->asTeam('GET', 'report.pdf')->assertOk()->getContent();
+
+        $this->assertSame($first, $second, 'The same bytes every time.');
+        $this->assertSame(hash('sha256', $first), $report['pdf_sha256']);
+    }
+
+    public function test_the_public_check_answers_for_a_number_without_any_personal_data(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $hash = (string) DB::table('assessment_reports')->value('pdf_sha256');
+
+        $this->app['auth']->forgetGuards();
+        $response = $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number='.rawurlencode('lemb/2026/00001'))->assertOk()
+            ->assertJsonPath('data.valid', true)
+            ->assertJsonPath('data.provider.code', 'LEMB')
+            ->assertJsonPath('data.psychologist.name', 'Psikolog Lembaga Psikologi Contoh')
+            ->assertJsonPath('data.revision', null)
+            ->assertJsonPath('data.superseded', false)
+            ->assertJsonPath('data.sha256', $hash)
+            ->assertJsonPath('data.document_erased', false);
+
+        $this->assertSame(['document_erased', 'provider', 'psychologist', 'revision', 'sha256', 'signed_at', 'superseded', 'valid'], collect(array_keys($response->json('data')))->sort()->values()->all(), 'No candidate, company, job, scale or recommendation.');
+
+        $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number='.rawurlencode('LEMB/2026/00099'))->assertOk()->assertExactJson(['data' => ['valid' => false]]);
+        $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number=not-a-number')->assertStatus(422);
+        $this->withoutToken()->getJson('/api/v1/verify/assessment-reports')->assertStatus(422);
+    }
+
+    public function test_an_erased_candidate_leaves_no_pdf_and_the_check_says_so(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $path = (string) DB::table('assessment_reports')->value('pdf_path');
+        Storage::assertExists($path);
+
+        Event::dispatch(new UserAnonymized($this->seekerId, now()->toDateTimeImmutable()));
+
+        Storage::assertMissing($path);
+        $this->assertNull(DB::table('assessment_reports')->value('pdf_path'));
+        $this->assertNull(DB::table('assessment_reports')->value('pdf_sha256'));
+
+        $this->app['auth']->forgetGuards();
+        $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number='.rawurlencode('LEMB/2026/00001'))->assertOk()
+            ->assertJsonPath('data.valid', true)
+            ->assertJsonPath('data.document_erased', true)
+            ->assertJsonPath('data.sha256', null);
+
+        $this->asTeam('GET', 'report.pdf')->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-erased');
+    }
+
     public function test_the_candidate_reads_the_explanation_only_once_the_report_is_signed(): void
     {
         $reportId = $this->takeBattery();

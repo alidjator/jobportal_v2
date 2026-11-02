@@ -114,6 +114,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Report Verification Page
+    |--------------------------------------------------------------------------
+    |
+    | The public page where a reader checks a psychological report number, for
+    | example "https://karir.satu.solutions/verifikasi-laporan". It is printed in the
+    | footer of every report PDF with the number as ?nomor=. Empty = the footer shows
+    | the number only.
+    |
+    */
+
+    'report_verification_url' => env('REPORT_VERIFICATION_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Campaign registration link
     |--------------------------------------------------------------------------
     |

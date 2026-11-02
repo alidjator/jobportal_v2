@@ -21,6 +21,18 @@ interface ReportRepository
     /** Keeps the version of a report that a revision replaces: its text, explanation, number and signer. */
     public function keepVersion(Report $report, DateTimeImmutable $supersededAt): void;
 
+    /** The PDF kept for the report as it stands now, or null when none was rendered yet (or the candidate's account was erased). */
+    public function storedPdf(int $reportId): ?StoredReportPdf;
+
+    /** Keeps the PDF that was rendered for the report as it stands now. */
+    public function storePdf(int $reportId, StoredReportPdf $pdf): void;
+
+    /**
+     * What the public check answers for a number: `CODE/YEAR/SEQUENCE` is the latest revision, `CODE/YEAR/SEQUENCE-R1` that revision (superseded when a later one replaced it); null for a
+     * number that was never issued or belongs to a draft.
+     */
+    public function verification(string $number): ?ReportVerification;
+
     /** The next number of the provider in the year; the caller holds the lock on the provider, so two signatures never take the same one. */
     public function nextSequence(int $providerId, int $year): int;
 

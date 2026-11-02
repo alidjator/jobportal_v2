@@ -4,7 +4,7 @@ namespace Src\Assessment\Domain;
 
 /**
  * Erases what the tests of a user whose account was anonymised hold of them: the answers, the drawings, the files of the invitations, the video answers and their files, the speed-column results, the
- * integrity signals, the psychological scores and the text of the report. The invitations, the attempts' timings, the result totals and the report numbers
+ * integrity signals, the psychological scores, the text of the report and its stored PDFs. The invitations, the attempts' timings, the result totals and the report numbers
  * stay (statistics and the provider's register of signed reports).
  */
 interface AssessmentDataEraser
@@ -29,6 +29,13 @@ interface AssessmentDataEraser
      * @return list<string>
      */
     public function attachmentPaths(int $userId): array;
+
+    /**
+     * The paths of the stored PDFs of the user's reports and of their earlier revisions (they carry the candidate's name).
+     *
+     * @return list<string>
+     */
+    public function reportPdfPaths(int $userId): array;
 
     /** Clears the personal content of every attempt of the user. Running it again changes nothing. */
     public function clearPersonalData(int $userId): void;

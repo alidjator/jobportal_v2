@@ -438,6 +438,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `rejection-pending` | 409 | Recruitment | This application waits to be rejected: undo that first. |
 | `reply-not-pending` | 409 | Review |  |
 | `report-decided` | 409 | Messaging | This report was already decided. |
+| `report-erased` | 409 | Assessment | The report was erased with the candidate's account. |
 | `report-not-auto-issued` | 409 | Assessment | Only a report that was issued automatically can be marked reviewed or revised. |
 | `report-not-open` | 409 | Review | This report was already handled. |
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |

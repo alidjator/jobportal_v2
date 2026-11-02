@@ -21,10 +21,15 @@
     .body { margin: 0; }
     .signature { margin-top: 26px; page-break-inside: avoid; }
     .signature .line { margin-top: 44px; font-weight: bold; }
+    .footer { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 8pt; color: #555; text-align: center; }
     .notice { margin-top: 14px; padding: 6px 8px; border: 1px solid #999; background: #f6f6f6; font-size: 9pt; }
 </style>
 </head>
 <body>
+<div class="footer">
+    {{ $report->reportNumber }}@if ($report->verificationUrl) &nbsp;|&nbsp; Verification: {{ $report->verificationUrl }}@endif
+
+</div>
 <div class="provider">
     <div class="name">{{ $report->providerName }}</div>
     <div class="legal">{{ $report->providerLegalName }}</div>

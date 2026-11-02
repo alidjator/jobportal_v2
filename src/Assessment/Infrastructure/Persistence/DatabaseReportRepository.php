@@ -14,6 +14,8 @@ use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReportSummary;
+use Src\Assessment\Domain\ReportVerification;
+use Src\Assessment\Domain\StoredReportPdf;
 use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Pagination\Page;
@@ -63,6 +65,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
     public function keepVersion(Report $report, DateTimeImmutable $supersededAt): void
     {
         $now = $this->clock->now();
+        $stored = $this->connection->table(self::TABLE)->where('id', $report->id)->first(['pdf_path', 'pdf_sha256']);
 
         $this->connection->table(self::REVISIONS)->insert([
             'report_id' => $report->id,
@@ -77,9 +80,55 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'recommendation' => $report->recommendation?->value,
             'signed_at' => $report->signedAt,
             'superseded_at' => $supersededAt,
+            'pdf_path' => $stored?->pdf_path,
+            'pdf_sha256' => $stored?->pdf_sha256,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+
+        // The revision has its own number and text, so its PDF is rendered again: the file of the replaced version stays with its revision row.
+        $this->connection->table(self::TABLE)->where('id', $report->id)->update(['pdf_path' => null, 'pdf_sha256' => null]);
+    }
+
+    public function storedPdf(int $reportId): ?StoredReportPdf
+    {
+        $row = $this->connection->table(self::TABLE)->where('id', $reportId)->first(['pdf_path', 'pdf_sha256']);
+
+        return $row === null || $row->pdf_path === null || $row->pdf_sha256 === null ? null : new StoredReportPdf((string) $row->pdf_path, (string) $row->pdf_sha256);
+    }
+
+    public function storePdf(int $reportId, StoredReportPdf $pdf): void
+    {
+        $this->connection->table(self::TABLE)->where('id', $reportId)->update(['pdf_path' => $pdf->path, 'pdf_sha256' => $pdf->sha256]);
+    }
+
+    public function verification(string $number): ?ReportVerification
+    {
+        $base = (string) preg_replace('/-R\d+$/', '', $number);
+        $query = $this->connection->table(self::TABLE.' as reports')
+            ->join('assessment_providers as providers', 'providers.id', '=', 'reports.provider_id')
+            ->where('reports.status', ReportStatus::Signed->value)
+            ->where(fn ($q) => $q->where('reports.report_number', $base)->orWhere('reports.report_number', 'like', $base.'-R%'));
+        $row = $query->first(['reports.id', 'reports.report_number', 'reports.revision', 'reports.signer_name', 'reports.signed_at', 'reports.body', 'reports.pdf_sha256', 'providers.name as provider_name', 'providers.code as provider_code']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        // The latest revision is the report row; an earlier one is a row of the revisions.
+        if ($number === $base || $number === (string) $row->report_number) {
+            return new ReportVerification(
+                (string) $row->provider_name, (string) $row->provider_code, (string) $row->signer_name, $this->time((string) $row->signed_at), (int) $row->revision, false,
+                $row->pdf_sha256 === null ? null : (string) $row->pdf_sha256, (string) $row->body === '',
+            );
+        }
+
+        $old = $this->connection->table(self::REVISIONS)->where('report_id', $row->id)->where('report_number', $number)->first(['revision', 'signer_name', 'signed_at', 'body', 'pdf_sha256']);
+
+        return $old === null ? null : new ReportVerification(
+            (string) $row->provider_name, (string) $row->provider_code, (string) $old->signer_name, $this->time((string) $old->signed_at), (int) $old->revision, true,
+            $old->pdf_sha256 === null ? null : (string) $old->pdf_sha256, (string) $old->body === '',
+        );
     }
 
     public function nextSequence(int $providerId, int $year): int
