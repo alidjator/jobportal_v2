@@ -9,7 +9,7 @@ stays out of scope.
 ## Decisions
 
 - 2026-10-31 (user, D1): **we build our own `Learning` bounded context** (`src/Learning`), not a Moodle integration. The `Training` context keeps showing
-  the Moodle catalog until its courses are moved ([Moodle](#5-moodle)).
+  the Moodle catalog until its courses are moved ([Moodle](#5-moodle)). **2026-11-02 (user): Career shows no Moodle catalog page; the training menu goes to this LMS when its public side exists.**
 - 2026-10-31 (user, D2): **a new licensed module, ONESIS Learning**, controlled by the module entitlements; public screens in Career, internal screens
   in Workspace, platform administration in Console.
 - 2026-10-31 (user, D3): **internal learners are employees of the Employee context**, not company members; the internal side waits for E1 to E4 and #13.
@@ -192,8 +192,7 @@ Tables (prefix `commerce_`): `commerce_products`, `commerce_orders` (`user_id`, 
 
 ## 5. Moodle
 
-`Training` stays as it is (`GET training/courses`, `GET me/training/courses`) until the 16 Moodle courses are rebuilt or imported in `Learning` (S10);
-then the Career training page reads `Learning` and `Training` is retired. How and when is decided with S10.
+**Decided 2026-11-02 (user): the Career training menu is redirected to the LMS being built.** Career has no page for the Moodle catalog and none is built: "Pelatihan saya" (`/me/training`) stays "Segera hadir" until the public side of `Learning` is coded, and then it opens the LMS (the public side of this module, `/pelatihan` and `/me/training` read `Learning`). The `Training` context (`GET training/courses`, `GET me/training/courses`) stays in the API until then and is retired when that menu changes over; the 16 Moodle courses are rebuilt or imported in `Learning` (S10), how and when is decided with S10.
 
 ## 6. Domain model
 

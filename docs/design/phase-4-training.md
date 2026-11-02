@@ -1,5 +1,7 @@
 # Moodle training integration (designed and coded 2026-10-10)
 
+> **2026-11-02 (user): no Career page reads this API.** The training menu of Career is redirected to the LMS being built (`learning.md` section 5); the API below stays until that menu changes over, then it is retired.
+
 The legacy site shows a "Training" page to job seekers: the catalog of the PKP Moodle (`course.training.pkp.co.id`, 16 courses) and the courses the signed-in job seeker is enrolled in, with progress. It calls the Moodle web service (`core_course_get_courses_by_field`, `core_user_get_users_by_field`, `core_enrol_get_users_courses`) from the web server. The new system keeps both lists and fixes the problems below. Nothing is written to Moodle and nothing is stored in our database.
 
 ## Legacy problems that are not carried over
