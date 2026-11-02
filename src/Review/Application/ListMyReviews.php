@@ -26,6 +26,6 @@ final readonly class ListMyReviews
     {
         $page = $this->reviews->pageOfUser($this->gate->jobSeekerId($actor), $request);
 
-        return new Page($this->views->of($page->items, false), $page->total, $request);
+        return new Page($this->views->of($page->items, false, withCompany: true), $page->total, $request);
     }
 }

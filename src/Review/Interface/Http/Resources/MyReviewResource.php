@@ -23,6 +23,7 @@ final class MyReviewResource extends JsonResource
         return [
             'id' => $review->id,
             'company_id' => $review->companyId,
+            'company' => $this->resource->company === null ? null : ['id' => $this->resource->company->id, 'name' => $this->resource->company->name, 'slug' => $this->resource->company->slug],
             'status' => $review->status->value,
             'rating' => $review->content->rating,
             'aspects' => ['culture' => $review->content->cultureRating, 'pay' => $review->content->payRating, 'hiring' => $review->content->hiringRating],

@@ -19,6 +19,6 @@ final readonly class GetMyReview
      */
     public function execute(Actor $actor, int $reviewId): ReviewView
     {
-        return $this->views->one($this->own->find($actor, $reviewId), false);
+        return $this->views->one($this->own->find($actor, $reviewId), false, withCompany: true);
     }
 }

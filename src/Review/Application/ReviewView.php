@@ -4,8 +4,9 @@ namespace Src\Review\Application;
 
 use Src\Review\Domain\Reply;
 use Src\Review\Domain\Review;
+use Src\Shared\Application\Company\CompanySummary;
 
-/** A review with the author's name (`Deleted user` for an erased account), the company's reply (when it may be shown) and the number of open reports (admins only). */
+/** A review with the author's name (`Deleted user` for an erased account), the company's reply (when it may be shown), the number of open reports (admins only) and, for the author's own list, the company it is about. */
 final readonly class ReviewView
 {
     public const string DELETED_AUTHOR = 'Deleted user';
@@ -15,5 +16,6 @@ final readonly class ReviewView
         public string $authorName,
         public ?Reply $reply,
         public int $openReports = 0,
+        public ?CompanySummary $company = null,
     ) {}
 }
