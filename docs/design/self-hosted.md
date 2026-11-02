@@ -8,6 +8,7 @@ protection (gap A5).
 
 ## Decisions
 
+- 2026-11-02: **SaaS runs as one deployment with one database per tenant** (`multi-tenancy.md`, bridge model); a tenant is one customer, so "one installation = one customer" below now reads "one tenant = one customer"; a self-hosted installation is the same code with one tenant, and a tenant moves out by dumping its database and folder (its derived `APP_KEY` goes with it).
 - 2026-10-16: the project supports **SaaS and self-hosted** from one codebase; "self-hosted" is the name used in code, documents and `.env` (decided
   by the user; [Meaning](#1-meaning)).
 - 2026-10-16: **both packaging forms**: Docker Compose as the main path and a manual runbook for customers who refuse containers (decided by the user;
@@ -29,6 +30,18 @@ protection (gap A5).
 - 2026-10-16: **module dependencies are fixed and an entitlement that breaks them is refused** (decided by the user; section 8, question 2).
 - 2026-10-16: **entitlements come as a signed licence file verified offline** (decided by the user; section 8, question 3).
 - 2026-10-16: **entitlements apply to SaaS too, per group**, through the same signed file (decided by the user; section 8, question 4).
+- 2026-11-02: **a licence is bound to the group's UUID**, a new unique column `organization_groups.uuid` set once when the group is created (and filled for
+  existing groups); the payload names `group_uuid` instead of the group id, and an upload whose UUID is not a group of this installation (or tenant) is
+  refused. Closes the reuse of one customer's licence by another, between self-hosted installations and between tenants (decision gate, decided by the
+  user; gap A7 of [section 8](#8-module-entitlements)).
+- 2026-11-02: **with the bridge model the licence stays in the tenant database** (`platform_licences`), uploaded in the tenant's Console by its platform admin
+  or installed by ONESIS with `tenant:licence <slug> <file>`; the same path for SaaS and self-hosted (decided by the user; gap A8 of section 8).
+- 2026-11-02: **ONESIS watches the licences of every tenant from the landlord**: `tenant:list` shows the licensed modules and the expiry per tenant, and a
+  warning goes to `platform.operations_email`; the warning in the tenant's Console stays for the customer's admin (decided by the user; gap A9, replaces
+  the SaaS part of C2).
+- 2026-11-02: **`LICENCE_ENFORCED` per tenant under the `.env` switch**: `.env` false turns enforcement off for every tenant (our development and staging
+  sites); `.env` true enforces every tenant except one whose landlord record has `licence_enforced = false`, set only by ONESIS with
+  `tenant:licence-enforcement <slug> off` (for example `demo`); a self-hosted customer holds the landlord, accepted as in A5 (decided by the user; gap A10).
 - 2026-10-31: **Talent and Career are in every package, like Core; Workforce needs Talent**; only Workforce, Employee and the two add-ons are licensed
   (decided by the user; gap A1 of section 8).
 - 2026-10-16: **entitlements cover modules and two add-ons: psychological tests and tele-interview** (decided by the user; section 8, questions 5 and 6).
@@ -40,7 +53,7 @@ protection (gap A5).
 
 ## 1. Meaning
 
-- **One installation = one customer.** The same repository, the same migrations and the same bounded contexts as SaaS; no second code line, no
+- **One installation = one customer** (SaaS: one tenant = one customer, `multi-tenancy.md` 5.1). The same repository, the same migrations and the same bounded contexts as SaaS; no second code line, no
   separate build per package: the code of every module ships in every release and the entitlements of section 8 decide which modules are active.
 - The customer's installation holds its own database, files and secrets. No data goes to ONESIS unless the customer grants support access or switches on the opt-in version ping (version number only).
 - When the package includes ONESIS Career, the customer also runs a **public** site: it is the operator of that portal (terms, privacy notice,
@@ -153,7 +166,7 @@ Four gaps found when the entitlement was prepared for coding (the hand-off to Em
 9. **Without a licence file:** ~~outside production (`APP_ENV` other than `production`)~~ **changed 2026-10-31 (gap A5): while `LICENCE_ENFORCED` is false (default true; false only on our own development and staging sites)** **every module is on**; the automated tests use a fake provider of the entitlements. In production an installation without a file has **Core only** (and the external tenants of item 7 keep Talent and Career). **Changed 2026-10-31 (gap A1): Core, Talent and Career** for every tenant, since they are in every package.
 10. **Delivery:** the platform admin **uploads the file per group in the Console**; it is verified when uploaded, and the payload and its signature are kept in the database (`platform_licences`). A self-hosted installation has one group, so one upload.
 
-Technical choices (no question needed): the file is a JSON payload (`schema_version`, `licence_id`, group, `modules`, `add_ons`, `valid_from`, `valid_until`, `issued_at`) with an **Ed25519** signature (PHP `sodium`); the public key is in the repository's configuration, the private key stays with ONESIS outside the repository, and the **tool that issues licences** is a separate script that is not part of a release. The dependencies of question 2 are checked when the file is uploaded (422 `licence-invalid`, `licence-dependency`). The decision point is one port in Shared, `ModuleEntitlements` (`allows(Module)`, `allowsAddOn(AddOn)`, `state()` as `active`, `grace`, `read_only` or `none`), resolved for the company through its legal entity and group.
+Technical choices (no question needed): the file is a JSON payload (`schema_version`, `licence_id`, `group_uuid` (changed 2026-11-02, gap A7), `modules`, `add_ons`, `valid_from`, `valid_until`, `issued_at`) with an **Ed25519** signature (PHP `sodium`); the public key is in the repository's configuration, the private key stays with ONESIS outside the repository, and the **tool that issues licences** is a separate script that is not part of a release. The dependencies of question 2 are checked when the file is uploaded (422 `licence-invalid`, `licence-dependency`). The decision point is one port in Shared, `ModuleEntitlements` (`allows(Module)`, `allowsAddOn(AddOn)`, `state()` as `active`, `grace`, `read_only` or `none`), resolved for the company through its legal entity and group.
 
 **Order of coding (each part checked and committed on its own; migrations run by the user):**
 
@@ -172,7 +185,7 @@ To add a module: (1) a case in `Module` (or `AddOn` for a part licensed separate
 
 ### Gaps found 2026-10-31 (before coding E1 to E4)
 
-A check of the design against the code (nothing of E1 to E4 is coded yet). Group A is decided with the user one at a time, before coding (all six decided 2026-10-31); B corrects the design to the code; C is settled while coding and recorded here.
+A check of the design against the code (nothing of E1 to E4 is coded yet). Group A is decided with the user one at a time, before coding (A1 to A6 decided 2026-10-31, A7 to A10 on 2026-11-02); B corrects the design to the code; C is settled while coding and recorded here.
 
 **A. Decisions needed**
 
@@ -184,6 +197,10 @@ A check of the design against the code (nothing of E1 to E4 is coded yet). Group
 | A4 | Only expiry is designed. A new licence that drops a module turns it to `none`, so its data can no longer be read or exported (against item 8, "no data is lost"); removing or revoking a licence is not designed. | Decided 2026-10-31 (user): **a module once licensed and later dropped is read-only**, as after the grace period (reads and exports answer, changes 409 `module-expired`, A3 applies to add-ons); `none` (404) only for a module the group never had. No delete of a licence: a new upload replaces it. So the installation keeps which modules a group ever had (C3). |
 | A5 | "Everything on outside production" lets a self-hosted customer, who holds the `.env`, switch every module on with `APP_ENV=staging`; the public key in the configuration and the server clock (grace period) are in the customer's hands too. Either accept and write down that the licence is a deterrent, or use a switch of its own instead of `APP_ENV`. The introduction of this document still says "licence enforcement stay out of scope", which E2 contradicts. | Decided 2026-10-31 (user): **a switch of its own**, `LICENCE_ENFORCED` (default true), replaces `APP_ENV` in item 9; the automated tests keep the fake provider. The offline licence is written down as a **deterrent, not copy protection**: a self-hosted customer can still change the public key or the clock. The introduction is corrected. |
 | A6 | An installation of type `multi` / `independent` has no group, so all its companies are external tenants (item 7): a self-hosted marketplace customer can never have Workforce, the add-ons or Employee. Intended or not? | Decided 2026-10-31 (user): **intended.** A marketplace has Core, Talent and Career only; licensing add-ons per company is taken up only when a customer asks. |
+| A7 | The payload names the group by its id, and every database starts its groups at `1`: a signed licence of one self-hosted customer (or, with the bridge model of `multi-tenancy.md`, of one tenant) is valid for another. The signature proves who issued the licence, not for whom. | Decided 2026-11-02 (user, option B of four: tenant slug, group UUID, both, none): **bind to the group's UUID** (`organization_groups.uuid`, unique, set at creation and filled for existing groups; new migration in E1); the payload carries `group_uuid`; the upload refuses a UUID that is not a group of this installation or tenant. The UUID moves with the database when a tenant goes self-hosted and does not change with the slug, the name or the domain. |
+| A8 | With the bridge model (`multi-tenancy.md`) the platform admin of a tenant is the customer's operator, not ONESIS, so "the platform admin uploads the file" (item 10) no longer means ONESIS. | Decided 2026-11-02 (user): **the licence stays in the tenant database**; the tenant's Console upload stays, and ONESIS also installs it with `tenant:licence <slug> <file>`. The UUID of A7 keeps a licence on its own group. |
+| A9 | The expiry warning of C2 reached only the Console of the installation; with many tenants ONESIS has no overview. | Decided 2026-11-02 (user): **`tenant:list` shows the licensed modules and the expiry per tenant, and a warning goes to `platform.operations_email`**; the tenant's Console warning stays for the customer. |
+| A10 | `LICENCE_ENFORCED` (A5) is one `.env` value for the whole deployment: with the bridge model the tenant `demo` on a production deployment would be locked too. | Decided 2026-11-02 (user): **`.env` false: no tenant is enforced; `.env` true: every tenant is enforced except one whose landlord record (`tenancy_tenants.licence_enforced`) is false**, set only by ONESIS with `tenant:licence-enforcement <slug> off`. On self-hosted the customer holds the landlord; the licence stays a deterrent (A5). |
 
 **B. Design corrected to the code**
 

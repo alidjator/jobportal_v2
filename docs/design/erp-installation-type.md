@@ -10,6 +10,7 @@ payments, orders and invoices stay out of scope.
 - 2026-10-28: **`single` is `multi` with a limit of one company**, not a second code path: every table keeps its company key, so going from `single` to `multi` needs no data migration. Going back is not supported.
 - 2026-10-28: **the name is "installation type"** (decided by the user, after "character" was found not to be a common term; Odoo and ERPNext call the second value "multi-company"). In code and in the API: `installation_type` (`single` | `multi`) and, for `multi`, `multi_kind` (`group` | `independent`).
 - 2026-10-28: **the Console screen "Career portal" became "Installation type"** (decided by the user): one choice of three, instead of a site mode and a scope; the companies are asked for only when the type needs them.
+- 2026-11-02: **the installation type belongs to the tenant** (`multi-tenancy.md`, bridge model): each tenant has its own type; ONESIS sets it at `tenant:create` and the Console screen "Installation type" shows it read only; the name `installation_type` stays, one tenant counts as one installation (decided by the user).
 
 ## 1. The types
 

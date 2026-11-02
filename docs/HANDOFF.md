@@ -34,7 +34,7 @@ Entry point for a new session (any account: the working rules are in `CLAUDE.md`
 
 ## Next (order agreed 2026-10-30; the user decides when to start each)
 
-- **Multi-tenancy (`multi-tenancy.md`), started 2026-11-02 at the user's choice, design only:** bridge model (one deployment, one database per tenant), tenant = one customer, built in Laravel now; all questions answered; next is step T1 (inventory of `config()`, `env()` and memoized services), each step its own coding session.
+- **Multi-tenancy (`multi-tenancy.md`), started 2026-11-02 at the user's choice, design only:** bridge model (one deployment, one database per tenant), tenant = one customer, built in Laravel now; all questions answered; **T1 (inventory) done 2026-11-02, section 8 of the document** (one item left for T5); next is T1b (renaming the old meaning of "tenant", its section 5.7), then T2 (the `Tenancy` landlord context), each step its own coding session; licence changes for the bridge model are gaps A7 to A10 of `self-hosted.md` section 8.
 0. **Phase 0 passed 2026-10-31.** Left over: the J7 video recording was only unit-tested, never tried with a camera; the Console pages of step 5 and the Career pages were never tried in a browser.
 1. **Order proposed 2026-10-31, updated 2026-11-02:** Career K5 to K9 are done; Console pages done 2026-11-02; next E1 to E4 and #13 (item 4), K10 to K12 done 2026-11-02.
 2. **Legal-blocked items behind switches:** #14 restricted candidates (q13; also the #18 skip code and #15 `candidate_note`), #12 section 3 acceptance evidence (q12), #26 retention (q15, then #39 A14). Each asks the user for its interpretations first.
