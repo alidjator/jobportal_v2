@@ -2,7 +2,6 @@
 
 namespace Src\Organization\Interface\Http\Controllers;
 
-use DateTimeInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -14,6 +13,7 @@ use Src\Organization\Application\Support\ListSupportGrants;
 use Src\Organization\Application\Support\RevokeSupportAccess;
 use Src\Organization\Interface\Http\Requests\GrantSupportAccessRequest;
 use Src\Organization\Interface\Http\Resources\SupportGrantResource;
+use Src\Organization\Interface\Http\Resources\SupportGroupResource;
 use Src\Shared\Application\Accounts\AdminSummary;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
@@ -47,13 +47,8 @@ final class SupportGrantController extends ApiController
         return response()->noContent();
     }
 
-    public function groupsOfAdmin(Request $request, ActorResolver $actors, ListMySupportGroups $list): JsonResponse
+    public function groupsOfAdmin(Request $request, ActorResolver $actors, ListMySupportGroups $list): AnonymousResourceCollection
     {
-        return response()->json(['data' => array_map(static fn (array $row): array => [
-            'group_id' => $row['group']->id,
-            'name' => $row['group']->name,
-            'status' => $row['group']->status->value,
-            'expires_at' => $row['grant']->expiresAt->format(DateTimeInterface::ATOM),
-        ], $list->execute($actors->fromRequest($request)))]);
+        return SupportGroupResource::collection($list->execute($actors->fromRequest($request)));
     }
 }

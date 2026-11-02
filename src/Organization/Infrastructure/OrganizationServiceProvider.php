@@ -2,6 +2,7 @@
 
 namespace Src\Organization\Infrastructure;
 
+use Dedoc\Scramble\Scramble;
 use Illuminate\Support\Facades\Event;
 use Src\Company\Domain\Events\CompanyMemberRemoved;
 use Src\Organization\Application\Group\GroupPermissionCheck;
@@ -46,6 +47,7 @@ use Src\Organization\Infrastructure\Persistence\RepositoryGroupDirectory;
 use Src\Organization\Infrastructure\Persistence\RepositoryLegalEntityDirectory;
 use Src\Organization\Infrastructure\Persistence\RepositoryPositionDirectory;
 use Src\Organization\Infrastructure\Persistence\RepositoryStructureDirectory;
+use Src\Organization\Interface\Documentation\SupportGroupParameter;
 use Src\Shared\Application\Organization\GroupDirectory;
 use Src\Shared\Application\Organization\GroupPermissions;
 use Src\Shared\Application\Organization\LegalEntityDirectory;
@@ -91,6 +93,8 @@ final class OrganizationServiceProvider extends ContextServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        Scramble::configure()->withOperationTransformers(SupportGroupParameter::document(...));
 
         Event::listen(CompanyMemberRemoved::class, RemoveGroupRoleWhenMemberRemoved::class);
         Event::listen(GroupSettingChanged::class, RequireTwoFactorWhenGroupSwitchesItOn::class);
