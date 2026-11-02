@@ -573,7 +573,7 @@ The menu follows the admin's permissions (from `GET admin/me`): `dashboard.view`
 | D10 | Newsletter | `/newsletter` | `admin/newsletter/issues` (CRUD, `test`, `send`), `GET`/`DELETE admin/newsletter/subscribers` | `newsletter.manage` |
 | D11 | FAQ | `/faq` | `admin/faq-categories`, `admin/faqs` (CRUD) | `faqs.manage` |
 | D12 | Legal documents | `/dokumen-legal` | `admin/legal-documents` (CRUD, `publish`) | `legal_documents.manage` |
-| D13 | Email templates | `/template-email` | `GET admin/email-templates[/{key}]`, `PUT`/`DELETE .../{key}/{locale}`, `POST .../{key}/preview` | `email_templates.manage` |
+| D13 | Email templates | `/template-email` | `GET admin/email-templates[/{key}]`, `PUT`/`DELETE .../{key}/{locale}`, `POST .../{key}/preview`, `POST .../{key}/preview-pdf` (the same preview as a PDF, added 2026-11-01 because the Console CSP `style-src 'self'` strips the inline styles of an HTML preview; shown with `UiPdfViewer` like the resume preview) | `email_templates.manage` |
 | D14 | CV templates | `/template-cv` | `GET admin/cv-templates`, `PATCH .../{key}` | `cv_templates.manage` |
 | D15 | Reference data (one generic page per master) | `/data-referensi/{master}` | benefits, education and experience levels, industries, job categories, levels, roles and types, languages, nationalities, organization types, religions, salary periods, skills, tags, team sizes, work times (`GET`/`POST`/`PUT`); company document types (`admin/company-document-types`) | `reference_data.manage`; company document types `companies.manage` |
 | D16 | Settings | `/pengaturan` | `GET admin/settings`, `PUT`/`DELETE .../{key}` | `settings.manage` |

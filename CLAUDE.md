@@ -109,6 +109,7 @@ php -n -l <file>                          # syntax check; plain `php -l` segfaul
 - **Exit code:** trust the exit code, not the JSON summary: it can say `"passed"` while a PHPUnit warning makes the run exit with 1. To see the warning, give the user
   `env -u AI_AGENT -u CLAUDECODE -u CLAUDE_CODE vendor/bin/phpunit --no-progress 2>&1 | tail -n 40 | cut -c1-4000`. It only shows the warning and never replaces
   `php artisan test` (plain PHPUnit skips the Pest `arch()` tests).
+- **Pasted errors get a one-line reply (decided 2026-10-31):** when the user pastes an error or a failure, fix it and answer with one short line ("Fixed, check again") plus the command to rerun; no explanation of the cause or of the fix. Say more only when the fix needs a decision from the user.
 - **Generators are not checks:** `php artisan api:error-catalog` (without `--check`, rewrites `docs/api/error-catalog.md`) and the Scramble cache commands are run by you.
 
 ## Keeping the context small
