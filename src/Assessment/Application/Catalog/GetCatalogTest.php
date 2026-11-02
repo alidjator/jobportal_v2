@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Catalog;
 
+use Src\Assessment\Domain\ExampleReportRepository;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Assessment\Domain\TestKind;
@@ -22,6 +23,7 @@ final readonly class GetCatalogTest
         private TestRepository $tests,
         private SectionRepository $sections,
         private QuestionRepository $questions,
+        private ExampleReportRepository $examples,
     ) {}
 
     /**
@@ -49,6 +51,7 @@ final readonly class GetCatalogTest
             count($sections),
             array_sum(array_map(static fn ($section): int => $section->durationSeconds, $sections)),
             $this->questions->samplesOfTest($testId),
+            $this->examples->find($testId) !== null,
         );
     }
 }

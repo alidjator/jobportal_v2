@@ -195,6 +195,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-education` | 422 | JobSeeker | The education level does not exist or is not active. |
 | `invalid-email-domain` | 422 | Company | Each domain must look like example.com. |
 | `invalid-email-template` | 422 | Platform | The email template is not valid. |
+| `invalid-example-report` | 422 | Assessment | The example report must be a PDF. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-export-range` | 422 | Recruitment | The period must run from one day to a later or the same day, and last at most 366 days. |
 | `invalid-file` | 422 | JobInvitation, Recruitment | The CV must be a PDF of at most 5 MB, without scripts or embedded files. |

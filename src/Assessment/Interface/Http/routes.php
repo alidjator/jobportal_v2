@@ -7,6 +7,7 @@ use Src\Assessment\Interface\Http\Controllers\AssessmentComparisonController;
 use Src\Assessment\Interface\Http\Controllers\AttemptController;
 use Src\Assessment\Interface\Http\Controllers\BatteryController;
 use Src\Assessment\Interface\Http\Controllers\CatalogController;
+use Src\Assessment\Interface\Http\Controllers\ExampleReportController;
 use Src\Assessment\Interface\Http\Controllers\InstitutionController;
 use Src\Assessment\Interface\Http\Controllers\InvitationController;
 use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
@@ -55,6 +56,9 @@ Route::prefix('provider')->group(function (): void {
         Route::get('tests/{id}/recommendation-rules', [BatteryController::class, 'recommendationRules'])->whereNumber('id');
         Route::put('tests/{id}/recommendation-rules', [BatteryController::class, 'saveRecommendationRules'])->whereNumber('id');
         Route::delete('tests/{id}/recommendation-rules', [BatteryController::class, 'deleteRecommendationRules'])->whereNumber('id');
+        Route::get('tests/{id}/example-report', [ExampleReportController::class, 'show'])->whereNumber('id');
+        Route::post('tests/{id}/example-report', [ExampleReportController::class, 'store'])->whereNumber('id');
+        Route::delete('tests/{id}/example-report', [ExampleReportController::class, 'destroy'])->whereNumber('id');
         Route::get('tests/{id}/report-template', [BatteryController::class, 'reportTemplate'])->whereNumber('id');
         Route::put('tests/{id}/report-template', [BatteryController::class, 'saveReportTemplate'])->whereNumber('id');
         Route::get('tests/{id}/explanation-template', [BatteryController::class, 'explanationTemplate'])->whereNumber('id');
@@ -97,6 +101,7 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     Route::get('batteries', [CatalogController::class, 'batteries']);
     Route::get('sendable-tests', [CatalogController::class, 'sendable']);
     Route::get('catalog/{id}', [CatalogController::class, 'show'])->whereNumber('id');
+    Route::get('catalog/{id}/example-report', [CatalogController::class, 'exampleReport'])->whereNumber('id');
 
     // The tests sent to the candidates, for the members who may see the application.
     Route::get('applications/{id}/invitations', [InvitationController::class, 'index'])->whereNumber('id');

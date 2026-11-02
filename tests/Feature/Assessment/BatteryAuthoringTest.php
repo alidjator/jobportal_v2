@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Assessment;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Tests\Concerns\BuildsAssessmentFixtures;
 use Tests\FeatureTestCase;
@@ -440,5 +443,82 @@ final class BatteryAuthoringTest extends FeatureTestCase
         $this->assessmentAdmin('GET', 'batteries', [], $token)->assertForbidden();
         $this->assessmentAdmin('POST', "companies/{$this->companyId}/batteries", ['test_id' => 1], $token)->assertForbidden();
         $this->assessmentAdmin('DELETE', "companies/{$this->companyId}/batteries/1", [], $token)->assertForbidden();
+    }
+
+    // ----- the example report (phase-8-provider-tools.md section 6) -----
+
+    private function uploadExample(int $testId, string $contents = "%PDF-1.4\n%example", string $name = 'Contoh Laporan.pdf', ?string $token = null): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($token ?? $this->psychologistToken)->post("/api/v1/provider/tests/{$testId}/example-report", [
+            'file' => UploadedFile::fake()->createWithContent($name, $contents),
+        ], ['Accept' => 'application/json']);
+    }
+
+    public function test_a_psychologist_attaches_replaces_and_removes_the_example_report(): void
+    {
+        Storage::fake();
+        $id = $this->readyBattery();
+
+        $this->provider('GET', "tests/{$id}/example-report")->assertOk()->assertJsonPath('data', null);
+
+        $this->uploadExample($id)->assertCreated()->assertJsonPath('data.name', 'Contoh Laporan.pdf');
+        $first = (string) DB::table('assessment_example_reports')->where('test_id', $id)->value('path');
+        Storage::assertExists($first);
+        $this->provider('GET', "tests/{$id}/example-report")->assertOk()->assertJsonPath('data.name', 'Contoh Laporan.pdf')->assertJsonPath('data.size_bytes', strlen("%PDF-1.4\n%example"));
+
+        // A new upload replaces the old file.
+        $this->uploadExample($id, "%PDF-1.4\n%second", 'Baru.pdf')->assertCreated();
+        $second = (string) DB::table('assessment_example_reports')->where('test_id', $id)->value('path');
+        $this->assertNotSame($first, $second);
+        Storage::assertMissing($first);
+        Storage::assertExists($second);
+        $this->assertSame(1, DB::table('assessment_example_reports')->count());
+
+        $this->provider('DELETE', "tests/{$id}/example-report")->assertNoContent();
+        $this->provider('DELETE', "tests/{$id}/example-report")->assertNoContent();
+        Storage::assertMissing($second);
+        $this->assertSame(0, DB::table('assessment_example_reports')->count());
+    }
+
+    public function test_the_example_report_is_checked_by_its_content_and_belongs_to_the_provider(): void
+    {
+        Storage::fake();
+        $id = $this->readyBattery();
+
+        $this->uploadExample($id, 'not a pdf')->assertUnprocessable()->assertJsonPath('type', 'urn:onesis:error:invalid-example-report');
+        $this->uploadExample($id, '%PDF-'.str_repeat('x', 10 * 1024 * 1024))->assertUnprocessable()->assertJsonPath('type', 'urn:onesis:error:file-too-large');
+        $this->assertSame([], Storage::allFiles('assessment/examples'));
+        $this->uploadExample(999999)->assertNotFound();
+
+        // The shape of the request is read before who sends it, so the file is there; a company member is not a psychologist.
+        $this->uploadExample($id, "%PDF-1.4\n%example", 'Contoh.pdf', $this->recruiterToken)->assertForbidden();
+    }
+
+    public function test_a_company_downloads_the_example_report_of_a_battery_it_may_use(): void
+    {
+        Storage::fake();
+        $id = $this->readyBattery();
+        $this->provider('PUT', 'questions/'.(int) DB::table('assessment_questions')->value('id'), $this->likert('I enjoy meeting new people.', 'extraversion', ['is_sample' => true]))->assertOk();
+        $this->provider('POST', "tests/{$id}/publish")->assertOk();
+        $this->assessmentAdmin('POST', "companies/{$this->companyId}/batteries", ['test_id' => $id])->assertNoContent();
+        $this->overrideSetting('assessment.psychological_enabled', true);
+
+        $this->company('GET', "catalog/{$id}", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.has_example_report', false);
+        $this->company('GET', "catalog/{$id}/example-report", [], $this->recruiterToken)->assertNotFound();
+
+        // Not locked by invitations: the example is marketing, so it can change once the battery is published.
+        $this->uploadExample($id)->assertCreated();
+
+        $this->company('GET', "catalog/{$id}", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.has_example_report', true);
+        $pdf = $this->company('GET', "catalog/{$id}/example-report", [], $this->recruiterToken)->assertOk();
+        $this->assertSame('application/pdf', $pdf->headers->get('Content-Type'));
+        $this->assertStringContainsString('Contoh Laporan.pdf', (string) $pdf->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF-', (string) $pdf->getContent());
+
+        // A company without the grant gets the same 404 as for the entry.
+        $this->overrideSetting('assessment.psychological_enabled', true, $this->otherCompanyId);
+        $this->company('GET', "catalog/{$id}/example-report", [], $this->otherAdminToken)->assertNotFound();
     }
 }

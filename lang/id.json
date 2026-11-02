@@ -423,6 +423,7 @@
     "Only a psychological battery has a recommendation rule.": "Hanya baterai tes psikologi yang memiliki aturan rekomendasi.",
     "Only a psychological battery has a report template.": "Hanya baterai tes psikologi yang memiliki templat laporan.",
     "Only a psychological battery has an explanation template.": "Hanya baterai tes psikologi yang memiliki templat penjelasan.",
+    "Only a psychological battery has an example report.": "Hanya baterai tes psikologi yang memiliki contoh laporan.",
     "A submission of this licence is waiting for a decision.": "Pengajuan lisensi ini sedang menunggu keputusan.",
     "Only an administrator can approve a licence.": "Hanya administrator yang dapat menyetujui lisensi.",
     "Only an administrator can list licence submissions.": "Hanya administrator yang dapat melihat daftar pengajuan lisensi.",
@@ -1264,5 +1265,8 @@
     "Check not found: :id": "Pemeriksaan tidak ditemukan: :id",
     "Check type not found": "Jenis pemeriksaan tidak ditemukan",
     "Check type not found: :id": "Jenis pemeriksaan tidak ditemukan: :id",
+    "Example report not found": "Contoh laporan tidak ditemukan",
+    "Example report not found: :id": "Contoh laporan tidak ditemukan: :id",
+    "The example report must be a PDF.": "Contoh laporan harus berupa PDF.",
     "Too long.": "Terlalu panjang."
 }

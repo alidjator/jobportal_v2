@@ -23,6 +23,8 @@ final class CatalogEntryResource extends JsonResource
             'instructions' => $this->resource->test->instructions(),
             'section_count' => $this->resource->sectionCount,
             'total_seconds' => $this->resource->totalSeconds,
+            /** The example report is `GET company/assessment/catalog/{id}/example-report`. */
+            'has_example_report' => $this->resource->hasExampleReport,
             'samples' => array_map(static fn (Question $question): array => [
                 'type' => $question->type->value,
                 'text' => $question->text,

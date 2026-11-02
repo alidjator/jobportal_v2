@@ -2,8 +2,10 @@
 
 namespace Src\Assessment\Application\Authoring;
 
+use Src\Assessment\Domain\ExampleReportRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\TransactionManager;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -15,6 +17,8 @@ final readonly class DeleteTest
     public function __construct(
         private AuthoringAccess $access,
         private TestRepository $tests,
+        private ExampleReportRepository $examples,
+        private FileStorage $files,
         private TransactionManager $transactions,
     ) {}
 
@@ -27,14 +31,22 @@ final readonly class DeleteTest
     {
         $author = $this->access->author($actor);
 
-        $this->transactions->run(function () use ($author, $testId): void {
+        $example = $this->transactions->run(function () use ($author, $testId) {
             $test = $this->access->ownedTest($author, $testId, true);
 
             if (! $test->isDraft()) {
                 throw new StateConflict('Only a draft can be deleted. Archive the test instead.', 'test-not-draft');
             }
 
+            $example = $this->examples->find($testId);
             $this->tests->delete($testId);
+
+            return $example;
         });
+
+        // The row of the example report went with the draft; its file goes too.
+        if ($example !== null) {
+            $this->files->delete($example->path);
+        }
     }
 }

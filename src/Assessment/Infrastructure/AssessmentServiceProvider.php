@@ -40,6 +40,7 @@ use Src\Assessment\Domain\Events\ReportRegisterExported;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Assessment\Domain\Events\ResultFinalized;
+use Src\Assessment\Domain\ExampleReportRepository;
 use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\JobStageTestRepository;
 use Src\Assessment\Domain\LicenceSubmissionRepository;
@@ -76,6 +77,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseAssessmentDataEraser;
 use Src\Assessment\Infrastructure\Persistence\DatabaseAttemptOutcomeRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseAttemptRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseCompanyBatteryRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseExampleReportRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseJobStageTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseLicenceSubmissionRepository;
@@ -139,6 +141,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         NormRepository::class => DatabaseNormRepository::class,
         RecommendationRuleRepository::class => DatabaseRecommendationRuleRepository::class,
         ReportTemplateRepository::class => DatabaseReportTemplateRepository::class,
+        ExampleReportRepository::class => DatabaseExampleReportRepository::class,
         CompanyBatteryRepository::class => DatabaseCompanyBatteryRepository::class,
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
         ReportVerificationLinks::class => ConfiguredReportVerificationLinks::class,
