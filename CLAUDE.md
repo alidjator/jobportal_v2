@@ -46,7 +46,7 @@ A Laravel 13 (PHP 8.3) REST API with DDD, replacing the production web applicati
   The legacy source (`legacy` connection, used only by `src/LegacyImport`) stays MariaDB, so the server needs both `pdo_pgsql` and `pdo_mysql`.
 - Tables are prefixed per bounded context (`identity_`, `company_`, `reference_`, ...). **Tests run in their own database, `jobportal_v2_test`** (decided 2026-10-06, replacing the
   old `test_` table prefix), with the same table names and no prefix; credentials are only in the git-ignored `.env.testing`. A guard aborts any test run or test migration whose
-  database is not `jobportal_v2_test`.
+  database is not `jobportal_v2_test`. The tenancy suite also uses `jobportal_v2_test_landlord`, `jobportal_v2_test_t1` and `jobportal_v2_test_t2` (decided 2026-11-02, `docs/design/multi-tenancy.md` 5.6); the guard allows those three as well.
 - **Foreign keys** (decided by the user, 2026-10-05, widened 2026-10-10 in `docs/design/cross-context-foreign-keys.md`): a column that references `reference_*`, `company_companies`,
   `company_locations`, `identity_users`, `identity_admins` or `job_jobs` has a `RESTRICT` foreign key, also across contexts (only `recruitment_job_questions.job_id` is `CASCADE`). Never on logs, audit,
   notifications, `*_daily` tables, the legacy id map, match deliveries or polymorphic columns. Tests that insert such rows create real parent rows (`tests/Concerns/CreatesReferenceRows.php`).

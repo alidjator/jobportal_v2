@@ -15,6 +15,8 @@ billing, payments, orders and invoices stay out of scope.
   [section 8](#8-open-questions) answered). Each portal shows one company, or the legal entities of one group, and nothing of any other customer.
 - 2026-10-25: **one installation per company**: a portal has its own API process, database, files and accounts, built from the same code; PKP's portal and
   each client's portal share nothing (decided by the user; [section 6](#6-where-the-data-of-a-portal-lives)).
+  **Changed 2026-11-02 for the process (`multi-tenancy.md`, bridge model):** one deployment serves every customer; each portal keeps its own database,
+  files and accounts, so nothing of PKP's portal reaches a client's portal.
 - 2026-10-25: **the company admin sets the brand in Workspace** (logo, banner, welcome text and colours from a fixed set), as proposed (decided by the user;
   [section 4](#4-brand)).
 - 2026-10-25: **a subdomain of ours first** (`<company>.karir.satu.solutions`, one wildcard certificate); the company's own domain (CNAME, DNS
@@ -148,6 +150,8 @@ The gate is the port `Shared\Application\Portal\GroupFeature` (Platform context,
   applications on another portal.
 
 ## 6. Where the data of a portal lives
+
+> **Changed 2026-11-02:** the process is shared by every customer, the data stays per customer (database and files per tenant): see `multi-tenancy.md`.
 
 **Decided 2026-10-25: one installation per company.** A portal has its own API process, database, files and accounts, built from the same code. PKP's portal
 and each client's portal share nothing, so the API lock of section 5 reduces to "the company of this installation" (for PKP, its one group); there is no
