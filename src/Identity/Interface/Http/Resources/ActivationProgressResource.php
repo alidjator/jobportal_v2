@@ -15,7 +15,21 @@ use Src\Identity\Interface\Http\Payloads\ActivationProgressPayload;
  */
 final class ActivationProgressResource extends JsonResource
 {
-    /** @return array<string, mixed> */
+    /**
+     * @return array{
+     *     audience: string,
+     *     imported: int,
+     *     deactivated: int,
+     *     unverified: int,
+     *     suppressed: int,
+     *     eligible: int,
+     *     activation: array{first_sent_at: string|null, sent: int, reminders_sent: int, bounced: int, complaints: int},
+     *     signed_in: array{count: int, percent_of_sent: float|null, percent_of_imported: float|null},
+     *     milestones: list<array{day: int, date: string, reached: bool, signed_in: int|null, percent_of_sent: float|null}>,
+     *     batches: list<array{batch: string, sent_at: string, sent: int, bounced: int, complaints: int, signed_in: int}>,
+     *     companies_not_signed_in?: list<array{company_id: int, name: string}>
+     * }
+     */
     public function toArray(Request $request): array
     {
         return $this->resource->report;
