@@ -18,7 +18,13 @@ final class ConversationResource extends JsonResource
         return [
             'id' => $row->id,
             'company' => ['id' => $row->companyId, 'name' => $this->resource->companyName],
-            'job_seeker' => ['id' => $row->jobSeekerUserId, 'name' => $this->resource->jobSeekerName],
+            'job_seeker' => [
+                'id' => $row->jobSeekerUserId,
+                'name' => $this->resource->jobSeekerName,
+                // Only for the company side and only while the company can find the job seeker: the picture is `GET company/candidates/{slug}/avatar`.
+                'slug' => $this->when($this->resource->candidate !== null, $this->resource->candidate?->slug),
+                'has_avatar' => $this->when($this->resource->candidate !== null, $this->resource->candidate?->hasAvatar),
+            ],
             'closed' => $row->closedAt !== null,
             'closed_at' => $row->closedAt?->format(DATE_ATOM),
             // The job seeker closed the conversation: the company cannot send until they unblock it (the job seeker still reads).
