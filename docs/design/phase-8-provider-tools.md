@@ -125,6 +125,14 @@ with a legal review of the purpose). Extends `phase-6-assessments.md` (Assessmen
 - `GET admin/assessment/providers/{id}/register` (`assessment_providers.manage`) reads the same lines for the platform admin (404 for an unknown provider); there is no admin export.
 - Code: `RegisterEntry` and `RegisterFilter` (Domain), `ReportRepository::registerOfProvider`, `registerCount` and `registerRows`, the use cases `ListReportRegister`, `ExportReportRegister` and `ListProviderRegister`, `ReportRegisterController` and `AdminProviderRegisterController`. Tests: `ReportRegisterTest` (run after `php artisan test:database:migrate --env=testing`).
 
+**Section 7 (report verification), coded 2026-11-02** (migration `000400`; the 0004xx range starts here on purpose):
+
+- **Stored PDF:** `assessment_reports.pdf_path` and `pdf_sha256`, the same two columns on `assessment_report_revisions`. `ReportPdfStore` renders the PDF once (`ReportDocumentBuilder` gathers the document), writes it to `assessment/reports/{report}/{number}.pdf` on the private disk and keeps its SHA-256; `DownloadReport` serves that file, so every download is the same bytes. It is made by a queued listener (`StoreReportPdfListener`, `default` queue, 3 tries) on `ReportSigned` (a manual signature and an automatic issue alike) and `ReportRevised`; a report whose file is not there yet gets it at the first download (so a queue delay or an older report is never a gap). A revision keeps the file of the version it replaces in its revision row and renders its own. The footer of every PDF carries the number and, when `REPORT_VERIFICATION_URL` is set, the address `…/verifikasi-laporan?nomor=CODE/YEAR/SEQUENCE`.
+- **Public check:** `GET verify/assessment-reports?number=` (no sign-in, 30 per address per hour, throttle `assessment-report-verify`): `{valid: true, provider {name, code}, psychologist {name}, signed_at, revision (R1, R2 or null), superseded, sha256, document_erased}`; a number nobody issued is `{valid: false}` (200); a malformed number is 422. `CODE/YEAR/SEQUENCE` is the latest revision, `…-R1` that revision (superseded when a later one replaced it). No candidate, company, job, scale or recommendation.
+- **Erasure:** `EraseAssessmentData` deletes the PDF files (reports and revisions) before it clears the rows and nulls `pdf_path` and `pdf_sha256`; the check then says `document_erased: true` with `sha256: null`, and a download answers 409 `report-erased` (it is never rendered again from an anonymised candidate).
+- **Front end:** Career `/verifikasi-laporan` (`/en/verify-report`, `noindex`, `?nomor=` fills the field): the result, and a file chooser that works out the SHA-256 in the browser and compares it with the kept one.
+- Not coded: the identity and signature of the institution on the PDF (`phase-8-provider-institutions.md` section 3, second part). A test for a revision's own PDF and hash is still to write.
+
 ## Changes in short
 
 | Piece | Change |
