@@ -88,7 +88,7 @@ where the question is open; "designed" means it is planned and waits for the ans
 17. **Raw psychological test data and account erasure (added 2026-10-15).** When a candidate erases their account, the answers, drawings and the
     stored report PDF of their psychological tests are deleted today (`phase-6-assessments.md`; `phase-8-provider-institutions.md`). How long must
     a partner institution keep the raw data of an examination under Law 23/2022 and the HIMPSI code of ethics, and does that duty override the
-    candidate's erasure request (UU 27/2022)? If it does, the data would move to a locked institution archive instead.
+    candidate's erasure request (UU 27/2022)? If it does, the data would move to a locked institution archive instead (designed 2026-11-02 behind the switch `assessment.raw_data_retention_enabled`, off until this is answered; the years to keep are the setting `assessment.raw_data_retention_years`, 5 as a placeholder).
 18. **Psychological results after hiring (added 2026-10-15).** A candidate consents to a psychological test for selection. When a hire moves to the
     employee record of the ONESIS ERP (`erp-direction.md` section 3), the plan is **not** to carry the report or the results over
     (`phase-6-assessments.md`, "ERP later"). May the employer keep using the selection report for employment purposes (placement, promotion) under

@@ -22,7 +22,7 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   reason (chosen by the user).
 - 2026-10-15: a **review target in working days** per institution, shown in the queue and to the company (chosen by the user).
 - 2026-10-15: **questions about a signed report** from the company to the institution, routed to the signer and the leads (chosen by the user).
-- 2026-10-15: the retention of raw test data against the account erasure goes to the legal review (question 17).
+- 2026-10-15: the retention of raw test data against the account erasure goes to the legal review (question 17). **2026-11-02 (user): designed behind a switch** (off until the answer): a locked archive made by the erasure step, kept for a number of years, read only on a documented request ([section 7](#7-raw-data-retention-legal-question-17-designed-2026-11-02-behind-a-switch)).
 - 2026-10-15: the schema below (decided by the user).
 - 2026-10-16: **in-house psychologists** (a customer's own psychologist): a provider may be **private to one group**; candidate scope as for partners; the report
   states the signer is in-house (legal review question 19); the add-on and `assessment.psychological_enabled` apply as for partners; the group admin registers
@@ -146,11 +146,38 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - **Rules:** plain text, no attachments; the link rule of `phase-8-interview-calendar.md` section 6 applies to both sides. The messages are not part
   of the report and never reach the candidate. Erased with the assessment erasure step.
 
-## 7. Raw data retention (legal question)
+## 7. Raw data retention (legal question 17, designed 2026-11-02 behind a switch)
 
-- `docs/legal-review.md` question 17: how long an institution must keep the raw data of an examination (answers, drawings, stored report), and
-  whether that duty overrides a candidate's account erasure. Until answered the erasure stays as it is. If retention is required, the assessment
-  erasure step moves the data to a locked institution archive instead of deleting it (designed then).
+The law answer is still open (`docs/legal-review.md` question 17: how long an institution must keep the raw data of an examination, and whether that duty overrides a candidate's account erasure). By
+the decision of 2026-10-30 (`decisions.md` section 5) the work is **coded in full and ships switched off**; the platform admin turns it on in Console "Pengaturan" once the answer is in. The
+proposal below was accepted by the user on 2026-11-02.
+
+- **Switch and period.** `assessment.raw_data_retention_enabled` (boolean, **off**, not overridable) and `assessment.raw_data_retention_years` (integer, 1 to 30, default 5, a placeholder until the legal
+  answer; platform-wide, not per provider). **Off**: the erasure step deletes the raw data as today. **On**: it archives first and deletes after. Switching off again never deletes what is archived; the
+  purge below runs by date whatever the switch says.
+- **What is archived (psychological batteries only, 1).** The answers, the drawings (rows and files) with their scores, the scale scores, the age and education rank the norms used, the text, the explanation
+  and the review notes of the report and of its revisions, and the stored PDFs (`phase-8-provider-tools.md` section 7) with their SHA-256. **Not archived:** skill tests, video answers, integrity signals,
+  the IP address and session hash, invitation attachments, the candidate's email or any profile data. The report text and the PDF hold the candidate's name (that is part of the record); nothing else of the
+  person is copied.
+- **Where (2).** Table `assessment_archived_examinations` (migration of its own): `attempt_id` (unique, no cascade: the attempt stays), `provider_id`, `report_number` (nullable for an attempt that was never
+  signed), `archived_at`, `retain_until` (date), `payload` (the rows above as JSON, encrypted with the application key through the `encrypted` cast) and `files` (JSON: the archive path, kind, original name and
+  SHA-256 of each file). The files are copied to `assessment/archive/{provider}/{attempt}/{n}` on the private disk. The archive has no update path: the code can insert, read for an authorised request and
+  purge. It is not part of the exports of the candidate, the company or the register.
+- **Order of the erasure step.** For each psychological attempt of the user: (1) build the archive row and copy the files, keyed by `attempt_id`, so a retry skips what is there; (2) the existing step deletes
+  the live files, then the rows (`EraseAssessmentData`), as it does now. A failure in (1) stops the whole step before anything is deleted; the retry starts again. The public check of a report number
+  (`phase-8-provider-tools.md` section 7) still says `document_erased: true` and gives no hash: the file is kept, not served.
+- **Who reads it (3).** Nobody through the portal or the Console in this part. Reading is by an operator command on a documented legal request, `assessment:archive:show {report_number}`, which prints the
+  record and writes the audit entry `assessment.archive_read` (the request reference is a required argument and goes into the metadata). A screen can be designed later if the law answer needs one.
+- **Purge (4).** `assessment:purge-archive` runs daily (03:55), deletes the rows whose `retain_until` has passed and their files, and audits `assessment.archive_purged` with the counts. `retain_until` is the
+  erasure day plus `raw_data_retention_years` at the time of archiving (a later change of the setting does not move rows already archived).
+- **What the candidate is told (5).** Account erasure goes on whatever the archive holds: the account is anonymised; only the data above stays. Before the person confirms, `GET me/retained-data` (signed in)
+  says whether the switch is on and, per kind, how long it would be kept: `{retention: {assessment_examinations: {years, count}} | null}` (`count` is the person's psychological attempts; null while the switch
+  is off). The Career deletion dialog shows it, and the privacy policy and the consent text of the psychological test (legal documents in Console) say the same; both are content, not code.
+- **Export (6).** The archive is not part of the candidate's data export: while the account lives the data is live (and exported as today); after the erasure the account is gone and there is nobody to export to.
+- **Tests.** The switch off changes nothing (the erasure tests of today stay as they are); on, the archive row and the files exist, the live rows and files are gone, a second run archives nothing twice, a
+  failed copy leaves the data in place, the purge removes only what is past its date, `me/retained-data` answers by the switch, and the show command audits the read.
+- **Coding order.** Migration, switch and period settings, the archive writer inside the erasure step, the purge and show commands, `me/retained-data`, the Career dialog line; after the legal answer only the
+  switch and the number of years change.
 
 ## 8. In-house psychologists (designed 2026-10-16)
 

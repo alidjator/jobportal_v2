@@ -78,6 +78,7 @@ the front end asks for) are coded; the other rows wait even when ready.
 | 44 | `phase-8-company-support-access.md` (MG-C05) | designed; waits for the front end |
 | 45 | `gigs.md` sections 1 to 10, shift gigs, **before go-live** (decided 2026-10-29) | **on hold until the user discusses it again (2026-10-29)**; API plan in `gigs.md` section 12; location at clock-in, reliability suspension and identity documents built switched off until `legal-review.md` questions 26 to 28 |
 | 46 | `gigs.md` section 11, project gigs and the service catalogue, **before go-live, after #45** (decided 2026-10-29) | **on hold until the user discusses it again (2026-10-29)**; API plan in `gigs.md` section 13, schema approved 2026-10-29; `legal-review.md` question 28 for the ratings |
+| 47 | `phase-8-disc-profile.md`, the most/least choice and the DISC profile (user, 2026-11-02, "DISC penuh") | designed 2026-11-02, D1 (the partners fill the catalogue like any psychometric battery; no content of the platform's own), D4 and D5 decided; API, Portal Mitra, Career runner, charts |
 
 ## Frozen (marketplace features; after the ERP TA core, not dropped)
 
