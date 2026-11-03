@@ -14,11 +14,12 @@ enum QuestionType: string
     case ForcedChoice = 'forced_choice';
     case Drawing = 'drawing';
     case VideoAnswer = 'video_answer';
+    case MostLeast = 'most_least';
 
     /** The types a psychological battery alone may use. */
     public function isPsychologicalOnly(): bool
     {
-        return in_array($this, [self::Likert, self::ForcedChoice, self::Drawing], true);
+        return in_array($this, [self::Likert, self::ForcedChoice, self::Drawing, self::MostLeast], true);
     }
 
     /** The type only a skill test may use, and only in a video section. */
@@ -30,7 +31,7 @@ enum QuestionType: string
     /** True when the options are choices the candidate picks from (as opposed to accepted answers, or none). */
     public function hasChoices(): bool
     {
-        return in_array($this, [self::SingleChoice, self::MultipleResponse, self::TrueFalse, self::Likert, self::ForcedChoice], true);
+        return in_array($this, [self::SingleChoice, self::MultipleResponse, self::TrueFalse, self::Likert, self::ForcedChoice, self::MostLeast], true);
     }
 
     /** True when the answer is checked against the options, with no person involved. */

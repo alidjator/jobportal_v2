@@ -113,6 +113,13 @@ final readonly class PublishTest
                 $problems[] = new ErrorMessage('The scale :scale has no norm.', ['scale' => $scale]);
             }
 
+            // The most/least questions of a DISC battery share one set of dimensions, at least two (`phase-8-disc-profile.md`).
+            $sets = array_values(array_unique(array_map(static fn (array $dimensions): string => implode(',', $dimensions), $this->questions->mostLeastDimensions((int) $test->id))));
+
+            if ($sets !== [] && (count($sets) > 1 || count(explode(',', $sets[0])) < 2)) {
+                $problems[] = 'The most/least questions must all use the same set of at least two dimensions.';
+            }
+
             if ($this->templates->bodyOf((int) $test->id) === null) {
                 $problems[] = 'The battery needs a report template.';
             }

@@ -24,6 +24,7 @@ final class AnswerRules
         return match ($question->type) {
             QuestionType::SingleChoice, QuestionType::TrueFalse, QuestionType::Likert, QuestionType::ForcedChoice => self::choice($question, $optionPositions, $number, $text, single: true),
             QuestionType::MultipleResponse => self::choice($question, $optionPositions, $number, $text, single: false),
+            QuestionType::MostLeast => self::mostLeast($question, $optionPositions, $number, $text),
             QuestionType::Number => self::number($id, $optionPositions, $number, $text),
             QuestionType::ShortText => new Answer($id, textValue: self::text($id, $optionPositions, $number, $text, self::MAX_SHORT_TEXT)),
             QuestionType::LongText => new Answer($id, textValue: self::text($id, $optionPositions, $number, $text, self::MAX_LONG_TEXT)),
@@ -53,6 +54,36 @@ final class AnswerRules
         }
 
         sort($positions);
+
+        return new Answer((int) $question->id, $positions);
+    }
+
+    /**
+     * The most and the least statement of a group: two different positions, in that order (the first is the most like the candidate, the second the least).
+     *
+     * @param  list<int>|null  $positions
+     */
+    private static function mostLeast(Question $question, ?array $positions, int|float|null $number, ?string $text): Answer
+    {
+        if ($number !== null || $text !== null) {
+            throw self::invalid('option_positions', 'This question is answered by choosing options.');
+        }
+
+        $positions = array_values($positions ?? []);
+
+        if (count($positions) !== 2) {
+            throw self::invalid('option_positions', 'Choose the statement that is most like you and the one that is least like you.');
+        }
+
+        if ($positions[0] === $positions[1]) {
+            throw self::invalid('option_positions', 'The most and the least statement must be different.');
+        }
+
+        foreach ($positions as $position) {
+            if ($position < 1 || $position > count($question->options)) {
+                throw self::invalid('option_positions', 'Choose among the options of the question.');
+            }
+        }
 
         return new Answer((int) $question->id, $positions);
     }

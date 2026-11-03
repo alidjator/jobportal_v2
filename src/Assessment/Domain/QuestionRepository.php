@@ -55,6 +55,13 @@ interface QuestionRepository
      */
     public function scalesOfTest(int $testId): array;
 
+    /**
+     * The dimensions of the statements of each most/least question of the test, by question id, sorted without repeats: a battery of this family needs the same set in every question.
+     *
+     * @return array<int, list<string>>
+     */
+    public function mostLeastDimensions(int $testId): array;
+
     /** Whether any question of the test has the type. */
     public function testHasType(int $testId, QuestionType $type): bool;
 }

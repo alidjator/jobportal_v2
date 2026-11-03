@@ -31,6 +31,13 @@ final class ReportRenderer
             $values["scale:{$scale}:band"] = $norm === null ? self::NOT_AVAILABLE : $norm->band;
         }
 
+        // A most/least battery: the dimensions that are high in each of its three graphs (`phase-8-disc-profile.md`).
+        if (MostLeast::dimensionsOfScales(array_keys($scaleScores)) !== []) {
+            foreach (MostLeast::GRAPHS as $graph) {
+                $values["profile:{$graph}"] = MostLeast::profile($scaleScores, $norms, $candidate, $graph);
+            }
+        }
+
         return self::fill($template, $values);
     }
 

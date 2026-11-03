@@ -1,4 +1,4 @@
-# Phase 8: the most/least choice and the DISC profile (#47, designed 2026-11-02, not coded)
+# Phase 8: the most/least choice and the DISC profile (#47, designed 2026-11-02, step 1 of the API coded 2026-11-03)
 
 Chosen by the user on 2026-11-02 ("DISC penuh"): a battery of the DISC family (the questionnaire in which the candidate marks, in each group of statements, the one that is **most** like them and the one that is **least** like them, scored on four dimensions with three graphs) can be built in Portal Mitra and taken in Career. Extends `phase-6-assessments.md` (questions, scales, norms, attempts), `phase-8-provider-tools.md` (norms by group, report, recommendation, automatic issue) and `phase-8-provider-institutions.md`. D1, D4 and D5 were decided by the user on 2026-11-02 (D1 settled the same day: the partners fill the catalogue like for any psychometric battery). The coding of the mechanism can start; no content is awaited from PKP.
 
@@ -38,6 +38,19 @@ An item bank, named profile patterns, graphs plotted against a published norm gr
 ## Tests
 
 The type rules (statement count, dimensions, same set across questions), answering (two positions, same position refused, one missing), the scoring (a known set of answers gives the known twelve raw scores and the right `_change`), norms accept negative ranges and refuse the bare dimension, signing needs a norm row for each derived scale, the report placeholders, an automatic issue of a DISC battery, and the Career runner and editor (Vitest of the helpers).
+
+## Coded 2026-11-03: step 1, the API (migration `000407`)
+
+`QuestionType::MostLeast`; `Domain\MostLeast` (the dimension pattern, the twelve keys, the contributions of an answer, `withChanges`, the high mark and the profile letters); the rules in `QuestionRules` and `AnswerRules`;
+`ScoreAttempt` adds the contributions and the changes; `QuestionRepository::scalesOfTest` returns the derived keys and `mostLeastDimensions`; `PublishTest` checks the set of dimensions; `ReportTemplateRules` and
+`ReportRenderer` know `{{profile:most|least|change}}`. Tests: `tests/Feature/Assessment/MostLeastBatteryTest.php`. Interpretations to confirm:
+
+1. **Both positions are required** to save an answer (422 `invalid-answer` for one, two equal, or out of range); a half-made choice lives in the runner until both are marked. The design line "marking only one is a saved draft" is read that way.
+2. **The high mark** is the lowest standard score among the norm rows of the battery whose band is "high" or "tinggi" (any case); without such a row, 55. It is one mark for the battery, read from all its norm rows.
+3. **`dimensions-differ`** is not a separate code: the check is a problem in the `test-incomplete` list when publishing ("the most/least questions must all use the same set of at least two dimensions"); the editor warning
+   is for the front end step.
+4. **A dimension** is 1 to 20 lowercase letters or digits, with no underscore (the underscore separates it from the graph in the scale key).
+5. A group whose statements share a dimension is allowed (picking both as most and least cancels out); only the set of dimensions of the battery is checked.
 
 ## Coding order
 

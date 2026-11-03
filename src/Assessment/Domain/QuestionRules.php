@@ -36,6 +36,7 @@ final class QuestionRules
         'short_text' => [1, 10],
         'likert' => [2, 10],
         'forced_choice' => [2, 6],
+        'most_least' => [3, 6],
     ];
 
     /**
@@ -68,7 +69,7 @@ final class QuestionRules
             throw self::invalid('text', new ErrorMessage('The question must have between :min and :max characters.', ['min' => self::TEXT_MIN, 'max' => self::TEXT_MAX]));
         }
 
-        $scored = ! in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice], true);
+        $scored = ! in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice, QuestionType::MostLeast], true);
 
         if ($scored && ($points < 1 || $points > self::POINTS_MAX)) {
             throw self::invalid('points', new ErrorMessage('The points must be between 1 and :max.', ['max' => self::POINTS_MAX]));
@@ -146,7 +147,7 @@ final class QuestionRules
     {
         $scaleKey = $scaleKey === null || trim($scaleKey) === '' ? null : trim($scaleKey);
 
-        $needsScale = $kind === TestKind::Psychological && ! in_array($type, [QuestionType::ForcedChoice, QuestionType::Drawing, QuestionType::LongText], true);
+        $needsScale = $kind === TestKind::Psychological && ! in_array($type, [QuestionType::ForcedChoice, QuestionType::MostLeast, QuestionType::Drawing, QuestionType::LongText], true);
 
         if (! $needsScale) {
             if ($scaleKey !== null) {
@@ -223,6 +224,18 @@ final class QuestionRules
 
     private static function option(QuestionType $type, string $label, QuestionOption $option): QuestionOption
     {
+        if ($type === QuestionType::MostLeast) {
+            if ($option->isCorrect || $option->scoreValue !== null) {
+                throw self::invalid('options', 'A statement of a most/least question has a dimension and neither a score nor a correct answer.');
+            }
+
+            if ($option->scaleKey === null || preg_match(MostLeast::DIMENSION_PATTERN, $option->scaleKey) !== 1) {
+                throw self::invalid('options', 'Every statement needs a dimension of 1 to 20 lowercase letters or digits.');
+            }
+
+            return new QuestionOption($label, false, null, $option->scaleKey);
+        }
+
         if (in_array($type, [QuestionType::Likert, QuestionType::ForcedChoice], true)) {
             if ($option->isCorrect) {
                 throw self::invalid('options', 'A scored statement has no correct answer.');

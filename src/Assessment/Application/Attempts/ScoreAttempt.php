@@ -12,6 +12,7 @@ use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\AttemptResult;
 use Src\Assessment\Domain\IntegrityTier;
 use Src\Assessment\Domain\Invitation;
+use Src\Assessment\Domain\MostLeast;
 use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
@@ -115,6 +116,11 @@ final readonly class ScoreAttempt
                     if ($scale !== null && $score !== null) {
                         $scales[$scale] += $score;
                     }
+
+                    // A most/least group adds one to the count of the statement picked as most and one to the count of the one picked as least.
+                    foreach (AnswerGrader::contributions($question, $answer) as $key => $amount) {
+                        $scales[$key] = ($scales[$key] ?? 0.0) + $amount;
+                    }
                 }
             }
 
@@ -131,7 +137,7 @@ final readonly class ScoreAttempt
         }
 
         $result = $test->kind() === TestKind::Psychological
-            ? new AttemptResult($attemptId, ResultStatus::Scored, $sectionScores, $scales, null, null, null, null, $tier)
+            ? new AttemptResult($attemptId, ResultStatus::Scored, $sectionScores, MostLeast::withChanges($scales), null, null, null, null, $tier)
             : $this->skillResult($attemptId, $invitation->companyId, $sectionScores, $earned, $max, $pending, $tier);
 
         $this->outcomes->saveResult($result);
@@ -158,6 +164,10 @@ final readonly class ScoreAttempt
     /** @return list<string> the scales a question can score for */
     private function scalesOf(Question $question): array
     {
+        if ($question->type === QuestionType::MostLeast) {
+            return array_values(array_filter(MostLeast::derivedKeys(MostLeast::dimensionsOf($question)), static fn (string $key): bool => ! str_ends_with($key, '_change')));
+        }
+
         $keys = $question->scaleKey === null ? [] : [$question->scaleKey];
 
         foreach ($question->options as $option) {

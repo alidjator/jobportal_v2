@@ -3,6 +3,7 @@
 namespace Src\Assessment\Infrastructure\Persistence;
 
 use Illuminate\Database\ConnectionInterface;
+use Src\Assessment\Domain\MostLeast;
 use Src\Assessment\Domain\Question;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionRepository;
@@ -161,16 +162,39 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
             ->where('sections.test_id', $testId)->whereNotNull(self::TABLE.'.scale_key')
             ->pluck(self::TABLE.'.scale_key')->all();
 
+        // The statements of a most/least question carry a dimension, which is not a scale of its own: the scales are the three graphs of each dimension.
         $optionScales = $this->connection->table(self::OPTIONS)
             ->join(self::TABLE.' as questions', 'questions.id', '=', self::OPTIONS.'.question_id')
             ->join('assessment_sections as sections', 'sections.id', '=', 'questions.section_id')
-            ->where('sections.test_id', $testId)->whereNotNull(self::OPTIONS.'.scale_key')
+            ->where('sections.test_id', $testId)->whereNotNull(self::OPTIONS.'.scale_key')->where('questions.type', '!=', QuestionType::MostLeast->value)
             ->pluck(self::OPTIONS.'.scale_key')->all();
 
-        $scales = array_values(array_unique([...$questionScales, ...$optionScales]));
+        $dimensions = array_values(array_unique(array_merge([], ...array_values($this->mostLeastDimensions($testId)))));
+
+        $scales = array_values(array_unique([...$questionScales, ...$optionScales, ...MostLeast::derivedKeys($dimensions)]));
         sort($scales);
 
         return $scales;
+    }
+
+    public function mostLeastDimensions(int $testId): array
+    {
+        $sets = [];
+
+        foreach ($this->connection->table(self::OPTIONS)
+            ->join(self::TABLE.' as questions', 'questions.id', '=', self::OPTIONS.'.question_id')
+            ->join('assessment_sections as sections', 'sections.id', '=', 'questions.section_id')
+            ->where('sections.test_id', $testId)->where('questions.type', QuestionType::MostLeast->value)->whereNotNull(self::OPTIONS.'.scale_key')
+            ->get(['questions.id as question_id', self::OPTIONS.'.scale_key as scale_key']) as $row) {
+            $sets[(int) $row->question_id][(string) $row->scale_key] = true;
+        }
+
+        return array_map(static function (array $dimensions): array {
+            $keys = array_map('strval', array_keys($dimensions));
+            sort($keys);
+
+            return $keys;
+        }, $sets);
     }
 
     /** @return array<string, mixed> */

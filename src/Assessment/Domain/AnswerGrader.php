@@ -39,6 +39,16 @@ final class AnswerGrader
         return $question->scaleKey;
     }
 
+    /**
+     * What an answer adds to the scales of a psychological battery besides its own score: nothing for most questions (their score goes to `scaleOf`), the counts of the most and the least statement for a most/least group.
+     *
+     * @return array<string, float>
+     */
+    public static function contributions(Question $question, ?Answer $answer): array
+    {
+        return $question->type === QuestionType::MostLeast ? MostLeast::contributions($question, $answer) : [];
+    }
+
     private static function pointsWhen(Question $question, bool $right): float
     {
         return $right ? (float) $question->points : 0.0;

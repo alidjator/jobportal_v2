@@ -9,7 +9,7 @@ use Src\Shared\Domain\Exceptions\ErrorMessage;
  * The text of a psychologist's report with placeholders in double braces. The report is rendered when it is drafted (part 6) from these:
  * `{{candidate_name}}`, `{{test_title}}`, `{{report_number}}`, `{{signed_on}}`, `{{psychologist_name}}` and, per scale, `{{scale:KEY:raw}}`,
  * `{{scale:KEY:standard}}` and `{{scale:KEY:band}}`; the report text (not the explanation) also knows `{{candidate_age}}`, `{{job_title}}` and `{{recommendation}}`. The explanation template of a battery (the plain-language text an automatic report gives the candidate) also
- * knows `{{scale:KEY:explanation}}`, the explanation of the norm range the candidate's raw score falls in.
+ * knows `{{scale:KEY:explanation}}`, the explanation of the norm range the candidate's raw score falls in. The report text of a most/least (DISC) battery also knows `{{profile:most}}`, `{{profile:least}}` and `{{profile:change}}`.
  */
 final class ReportTemplateRules
 {
@@ -50,6 +50,15 @@ final class ReportTemplateRules
             }
 
             $parts = explode(':', $token);
+
+            // `{{profile:most}}`, `{{profile:least}}` and `{{profile:change}}` of a most/least battery: the high dimensions of a graph as letters (the report text only).
+            if (! $forExplanation && count($parts) === 2 && $parts[0] === 'profile' && in_array($parts[1], MostLeast::GRAPHS, true)) {
+                if (MostLeast::dimensionsOfScales($knownScales) === []) {
+                    throw self::invalid(new ErrorMessage('The placeholder {{:token}} needs a battery of most/least questions.', ['token' => $token]));
+                }
+
+                continue;
+            }
 
             $values = $forExplanation ? [...self::SCALE_VALUES, self::EXPLANATION_VALUE] : self::SCALE_VALUES;
 
