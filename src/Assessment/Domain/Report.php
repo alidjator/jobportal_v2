@@ -40,6 +40,12 @@ final readonly class Report
         public ?DateTimeImmutable $claimedAt = null,
         public ?DateTimeImmutable $claimTouchedAt = null,
         public ?Recommendation $recommendation = null,
+        /** @var array<string, mixed>|null the institution's identity as it was when the report was signed, issued or revised (`ProviderIdentitySnapshot`) */
+        public ?array $providerIdentity = null,
+        /** Why the psychologist revised a signed report; never shown to the company or the candidate. */
+        public ?string $revisionReason = null,
+        /** The copy of the signer's signature image kept in the report's folder, or null when there was none. */
+        public ?string $signerSignaturePath = null,
     ) {}
 
     public static function draft(int $attemptId, int $providerId, string $body): self
@@ -155,21 +161,27 @@ final readonly class Report
     }
 
     /**
-     * A psychologist replaces the text and the explanation of a report that was issued automatically. The number stays and gets the suffix `-R<n>`; the reviser signs.
+     * A psychologist replaces the text and the explanation of a signed report (one signed by hand or issued automatically), with the reason. The number stays and gets the suffix `-R<n>`; the reviser signs.
      *
-     * @throws StateConflict `report-not-auto-issued`
+     * @throws StateConflict `report-not-signed`
      */
-    public function revised(string $body, string $explanation, Psychologist $reviser, string $signerName, DateTimeImmutable $now, ?Recommendation $recommendation = null): self
+    public function revised(string $body, string $explanation, Psychologist $reviser, string $signerName, DateTimeImmutable $now, ?Recommendation $recommendation = null, ?string $reason = null): self
     {
-        $this->assertAutoIssued();
+        $this->assertSigned();
 
         $revision = $this->revision + 1;
 
         return $this->with([
             'body' => $body, 'explanation' => $explanation, 'number' => $this->baseNumber().'-R'.$revision, 'revision' => $revision, 'signedByPsychologistId' => $reviser->id,
             'signerName' => $signerName, 'signerStrNumber' => $reviser->strNumber(), 'signerSilpNumber' => $reviser->silpNumber(), 'signedAt' => $now,
-            'reviewedAt' => $now, 'reviewedByPsychologistId' => $reviser->id, 'recommendation' => $recommendation ?? $this->recommendation,
+            'reviewedAt' => $now, 'reviewedByPsychologistId' => $reviser->id, 'recommendation' => $recommendation ?? $this->recommendation, 'revisionReason' => $reason,
         ]);
+    }
+
+    /** The same report with the copy of the institution's identity and of the signature image of the version just signed. */
+    public function snapshotted(?array $providerIdentity, ?string $signerSignaturePath): self
+    {
+        return $this->with(['providerIdentity' => $providerIdentity, 'signerSignaturePath' => $signerSignaturePath]);
     }
 
     /** The same report with the hiring advice the psychologist chose (or the rule worked out); null takes it away. */
@@ -188,6 +200,14 @@ final readonly class Report
     {
         if ($this->isSigned()) {
             throw new StateConflict('This report is signed and cannot be changed.', 'report-signed');
+        }
+    }
+
+    /** @throws StateConflict `report-not-signed` */
+    private function assertSigned(): void
+    {
+        if (! $this->isSigned()) {
+            throw new StateConflict('Only a signed report can be revised.', 'report-not-signed');
         }
     }
 

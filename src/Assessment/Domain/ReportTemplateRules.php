@@ -17,8 +17,11 @@ final class ReportTemplateRules
 
     public const array FIXED_PLACEHOLDERS = ['candidate_name', 'test_title', 'report_number', 'signed_on', 'psychologist_name'];
 
-    /** Known in the report text only (never in the explanation the candidate reads): the candidate's age when they applied, the job, and the recommendation (filled in at signing, as its Indonesian label). */
-    public const array DRAFT_PLACEHOLDERS = ['candidate_age', 'job_title', 'recommendation'];
+    /**
+     * Known in the report text only (never in the explanation the candidate reads): the candidate's age when they applied, the job, the recommendation (filled in at signing, as its Indonesian label), and the
+     * institution's address and practice licence (text, filled in at signing) and its letterhead and the signer's signature image (pictures the PDF draws where they stand).
+     */
+    public const array DRAFT_PLACEHOLDERS = ['candidate_age', 'job_title', 'recommendation', 'provider_address', 'provider_licence', 'provider_letterhead', 'signature_image'];
 
     public const array SCALE_VALUES = ['raw', 'standard', 'band'];
 

@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Review;
 
+use Src\Assessment\Application\Reports\ReportIdentitySnapshots;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Events\ReportRevised;
 use Src\Assessment\Domain\InvitationRepository;
@@ -20,12 +21,14 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 
 /**
- * A psychologist of the provider, with a valid STR and SILP, replaces the text and the explanation of a report that was issued automatically. The report keeps its
- * number and gets the suffix `-R1`, `-R2`; the version it replaces is kept; the reviser signs (a copy of their name and licence numbers) and the report counts as
- * reviewed. The company team and the candidate are told. A report a psychologist signed by hand stays locked.
+ * A psychologist of the provider, with a valid STR and SILP, replaces the text and the explanation of a signed report (one signed by hand or issued automatically), giving the reason. The report keeps its
+ * number and gets the suffix `-R1`, `-R2`; the version it replaces is kept; the reviser signs (a copy of their name and licence numbers, of the institution's identity and of their signature image) and the
+ * report counts as reviewed. The company team and the candidate are told; the reason stays with the institution.
  */
 final readonly class ReviseReport
 {
+    public const int REASON_MAX = 1000;
+
     public function __construct(
         private ReviewAccess $access,
         private ReviewViews $views,
@@ -35,6 +38,7 @@ final readonly class ReviseReport
         private AttemptRepository $attempts,
         private InvitationRepository $invitations,
         private PsychologistAccounts $accounts,
+        private ReportIdentitySnapshots $snapshots,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -43,15 +47,15 @@ final readonly class ReviseReport
     /**
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended`, `provider-suspended` or `cannot-sign-reports`
      * @throws EntityNotFound
-     * @throws StateConflict `report-not-auto-issued` or `claim-required`
-     * @throws BusinessRuleViolation `invalid-report` or `explanation-required`
+     * @throws StateConflict `report-not-signed` or `claim-required`
+     * @throws BusinessRuleViolation `invalid-report`, `explanation-required` or `reason-required`
      */
-    public function execute(Actor $actor, int $reportId, string $body, string $explanation, ?string $ipAddress, ?string $userAgent, ?Recommendation $recommendation = null): ReviewView
+    public function execute(Actor $actor, int $reportId, string $body, string $explanation, ?string $ipAddress, ?string $userAgent, ?Recommendation $recommendation = null, ?string $reason = null): ReviewView
     {
-        [$view, $event] = $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $ipAddress, $userAgent, $recommendation): array {
+        [$view, $event] = $this->transactions->run(function () use ($actor, $reportId, $body, $explanation, $ipAddress, $userAgent, $recommendation, $reason): array {
             $psychologist = $this->access->psychologist($actor);
             // The provider row first, as signing does.
-            $this->providers->findById($psychologist->providerId, forUpdate: true) ?? throw EntityNotFound::of('Provider', $psychologist->providerId);
+            $provider = $this->providers->findById($psychologist->providerId, forUpdate: true) ?? throw EntityNotFound::of('Provider', $psychologist->providerId);
             $report = $this->access->report($psychologist, $reportId, forUpdate: true);
             $now = $this->clock->now();
 
@@ -70,14 +74,20 @@ final readonly class ReviseReport
                 throw new BusinessRuleViolation('Write the explanation for the candidate.', 'explanation-required', extensions: ['errors' => ['explanation' => ['Write the explanation for the candidate.']]]);
             }
 
+            $reason = trim((string) $reason);
+
+            if ($reason === '' || mb_strlen($reason) > self::REASON_MAX) {
+                throw new BusinessRuleViolation('Give the reason for the revision, at most :max characters.', 'reason-required', extensions: ['errors' => ['revision_reason' => ['Give the reason for the revision.']]], parameters: ['max' => self::REASON_MAX]);
+            }
+
             $accounts = $this->accounts->summaries([(int) $actor->id]);
             $name = isset($accounts[(int) $actor->id]) ? $accounts[(int) $actor->id]->name : '';
 
-            $revised = $report->revised($body, $explanation, $psychologist, $name, $now, $recommendation);
+            $revised = $report->revised($body, $explanation, $psychologist, $name, $now, $recommendation, $reason);
             $this->claims->assertHeld($psychologist, $report);
-            $revised = $revised->withBody(ReportRenderer::signed($revised->body, (string) $revised->number, $now->format('Y-m-d'), $name, $revised->recommendation));
+            $revised = $revised->withBody(ReportRenderer::signed($revised->body, (string) $revised->number, $now->format('Y-m-d'), $name, $revised->recommendation, $this->snapshots->identityOf($provider)));
 
-            $revised = $revised->claimReleased();
+            $revised = $this->snapshots->take($revised->claimReleased(), $provider, $psychologist);
             $this->reports->keepVersion($report, $now);
             $this->reports->update($revised);
 

@@ -82,6 +82,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'superseded_at' => $supersededAt,
             'pdf_path' => $stored?->pdf_path,
             'pdf_sha256' => $stored?->pdf_sha256,
+            'provider_identity' => $report->providerIdentity === null ? null : json_encode($report->providerIdentity, JSON_THROW_ON_ERROR),
+            'revision_reason' => $report->revisionReason,
+            'signer_signature_path' => $report->signerSignaturePath,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -307,6 +310,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'claimed_at' => $report->claimedAt,
             'claim_touched_at' => $report->claimTouchedAt,
             'recommendation' => $report->recommendation?->value,
+            'provider_identity' => $report->providerIdentity === null ? null : json_encode($report->providerIdentity, JSON_THROW_ON_ERROR),
+            'revision_reason' => $report->revisionReason,
+            'signer_signature_path' => $report->signerSignaturePath,
             'updated_at' => $this->clock->now(),
         ];
     }
@@ -339,6 +345,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->claimed_at === null ? null : $this->time((string) $row->claimed_at),
             $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
             $row->recommendation === null ? null : Recommendation::from((string) $row->recommendation),
+            $row->provider_identity === null ? null : (array) json_decode((string) $row->provider_identity, true, 512, JSON_THROW_ON_ERROR),
+            $row->revision_reason,
+            $row->signer_signature_path,
         );
     }
 

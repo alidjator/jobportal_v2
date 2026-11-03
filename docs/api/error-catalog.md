@@ -421,7 +421,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `question-in-use` | 409 | Recruitment | This question is attached to a job or a preset, or has answers, so it can only be archived. |
 | `question-limit-reached` | 409 | Assessment | The section has reached its limit of questions. |
 | `question-locked` | 409 | Assessment | This question is closed: the section does not let you go back to it. |
-| `reason-required` | 422 | Organization, Recruitment | A change dated in the past needs a reason of 5 to 500 characters. |
+| `reason-required` | 422 | Assessment, Organization, Recruitment | Give the reason for the revision, at most :max characters. |
 | `reason-too-long` | 422 | JobInvitation | The reason may have at most :max characters. |
 | `recipient-unavailable` | 409 | Messaging | This job seeker no longer has an account that can receive messages. |
 | `recommendation-required` | 422 | Recruitment |  |

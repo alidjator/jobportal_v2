@@ -64,9 +64,20 @@ final class ReportRenderer
         return preg_match('/\{\{.*?\}\}/s', $text) === 1 ? null : $text;
     }
 
-    public static function signed(string $body, string $number, string $signedOn, string $psychologistName, ?Recommendation $recommendation = null): string
+    /**
+     * The text of a signed report with the signature placeholders filled in. With the institution's `$identity` the text placeholders `{{provider_address}}` and `{{provider_licence}}` are filled too (a dash when
+     * the institution has none); `{{provider_letterhead}}` and `{{signature_image}}` stay in the text, because the PDF draws them as pictures.
+     *
+     * @param  array<string, mixed>|null  $identity
+     */
+    public static function signed(string $body, string $number, string $signedOn, string $psychologistName, ?Recommendation $recommendation = null, ?array $identity = null): string
     {
         $values = ['report_number' => $number, 'signed_on' => $signedOn, 'psychologist_name' => $psychologistName];
+
+        if ($identity !== null) {
+            $values['provider_address'] = is_string($identity['address'] ?? null) && $identity['address'] !== '' ? $identity['address'] : '-';
+            $values['provider_licence'] = is_string($identity['practice_licence_number'] ?? null) && $identity['practice_licence_number'] !== '' ? $identity['practice_licence_number'] : '-';
+        }
 
         if ($recommendation !== null) {
             $values['recommendation'] = $recommendation->label();

@@ -604,6 +604,66 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->api('GET', "/company/assessment/invitations/{$this->invitationId}/report.pdf", [], $this->seekerToken)->assertForbidden();
     }
 
+    private function pngBytes(): string
+    {
+        $image = imagecreatetruecolor(120, 80);
+        imagefill($image, 0, 0, (int) imagecolorallocate($image, 20, 20, 20));
+
+        ob_start();
+        imagepng($image);
+
+        return (string) ob_get_clean();
+    }
+
+    public function test_a_signed_report_keeps_the_identity_and_the_signature_of_the_moment_it_was_signed(): void
+    {
+        Storage::fake();
+        DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->update(['role' => 'lead']);
+        $this->provider('PUT', 'institution', ['address' => 'Jl. Merdeka 10, Bandung', 'practice_licence_number' => 'SIP-123', 'phone' => '022-555', 'email' => 'info@lembaga.test'])->assertOk();
+        $this->app['auth']->forgetGuards();
+        foreach (['institution/logo', 'me/signature'] as $uri) {
+            $this->withToken($this->psychologistToken)->post('/api/v1/provider/'.$uri, ['file' => UploadedFile::fake()->createWithContent('image.png', $this->pngBytes())], ['Accept' => 'application/json'])->assertNoContent();
+        }
+
+        $reportId = $this->takeBattery();
+        $this->provider('PUT', "reviews/{$reportId}/drawings/{$this->drawingQuestionId()}", ['score' => 7.5, 'note' => 'Roots are strong.'])->assertOk();
+        $this->provider('PUT', "reviews/{$reportId}", [
+            'body' => "{{provider_letterhead}}\nAddress: {{provider_address}}\nLicence: {{provider_licence}}\nBy {{psychologist_name}}\n{{signature_image}}",
+            'explanation' => 'You like people and often seek company.', 'review_notes' => null, 'recommendation' => 'recommended',
+        ])->assertOk();
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        // The text placeholders are filled; the two pictures stay in the text for the PDF to draw.
+        $report = (array) DB::table('assessment_reports')->first();
+        $this->assertStringContainsString('Address: Jl. Merdeka 10, Bandung', $report['body']);
+        $this->assertStringContainsString('Licence: SIP-123', $report['body']);
+        $this->assertStringContainsString('{{provider_letterhead}}', $report['body']);
+        $this->assertStringContainsString('{{signature_image}}', $report['body']);
+
+        // The copies sit in the report's folder, and the identity is kept as it was.
+        $identity = json_decode((string) $report['provider_identity'], true);
+        $this->assertSame(['Jl. Merdeka 10, Bandung', 'SIP-123', '022-555', 'info@lembaga.test'], [$identity['address'], $identity['practice_licence_number'], $identity['phone'], $identity['email']]);
+        Storage::assertExists($identity['logo_path']);
+        Storage::assertExists($report['signer_signature_path']);
+        $this->assertStringStartsWith('assessment/reports/'.$reportId.'/', $report['signer_signature_path']);
+
+        // A later change of the institution and of the signature never alters the report.
+        $this->provider('PUT', 'institution', ['address' => 'Somewhere else'])->assertOk();
+        $this->provider('DELETE', 'me/signature')->assertNoContent();
+        $after = (array) DB::table('assessment_reports')->first();
+        $this->assertSame($report['body'], $after['body']);
+        $this->assertSame($report['provider_identity'], $after['provider_identity']);
+        Storage::assertExists($report['signer_signature_path']);
+
+        // The PDF draws them (a PDF is rendered from the kept copies), and the candidate reads who to contact.
+        $this->assertStringStartsWith('%PDF', (string) $this->asTeam('GET', 'report.pdf')->assertOk()->getContent());
+        $this->take('GET', 'explanation')->assertOk()
+            ->assertJsonPath('data.institution.name', 'Lembaga Psikologi Contoh')
+            ->assertJsonPath('data.institution.address', 'Jl. Merdeka 10, Bandung')
+            ->assertJsonPath('data.institution.phone', '022-555')
+            ->assertJsonPath('data.institution.email', 'info@lembaga.test');
+    }
+
     public function test_the_pdf_is_rendered_once_kept_with_its_hash_and_downloaded_unchanged(): void
     {
         $reportId = $this->takeBattery();
@@ -824,7 +884,8 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->readyToSign($reportId);
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk()->assertJsonPath('data.claimed_by', null);
         $this->assertNull(DB::table('assessment_reports')->where('id', $reportId)->value('claimed_by_psychologist_id'));
-        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
+        // A signed report can be claimed (to revise it), but it stays locked for editing.
+        $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertOk();
     }
 
     public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void

@@ -462,7 +462,7 @@ final class AutoIssueTest extends FeatureTestCase
 
     // ----- marking a manual report and revising -----
 
-    public function test_a_report_signed_by_hand_is_neither_marked_nor_revised(): void
+    public function test_a_report_signed_by_hand_is_not_marked_but_can_be_revised_with_a_reason(): void
     {
         $this->allow()->assertOk();
         $battery = $this->battery();
@@ -471,7 +471,16 @@ final class AutoIssueTest extends FeatureTestCase
         $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
 
         $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
+        // A report signed by hand stays locked for editing but can be revised, with a reason that stays with the institution.
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => 'Changed', 'explanation' => 'Changed', 'review_notes' => null])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-signed');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:reason-required');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New', 'revision_reason' => '   '])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:reason-required');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New text', 'explanation' => 'New explanation', 'revision_reason' => 'A scale was mislabelled.'])->assertOk()
+            ->assertJsonPath('data.report_number', 'LEMB/2026/00001-R1')
+            ->assertJsonPath('data.revision', 1);
+        $this->assertSame('A scale was mislabelled.', DB::table('assessment_reports')->value('revision_reason'));
+        $this->assertNull(DB::table('assessment_report_revisions')->value('revision_reason'));
+        $this->assertStringNotContainsString('mislabelled', $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->getContent());
         $this->provider('GET', 'reviews?filter[reviewed]=1')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reviewed', true);
     }
 
@@ -482,7 +491,7 @@ final class AutoIssueTest extends FeatureTestCase
         $reportId = $this->takeBattery($battery);
 
         $this->provider('POST', "reviews/{$reportId}/mark-reviewed")->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-auto-issued');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'New', 'explanation' => 'New', 'revision_reason' => 'x'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-not-signed');
     }
 
     public function test_a_revision_keeps_the_number_with_a_suffix_and_the_earlier_version(): void
@@ -494,7 +503,7 @@ final class AutoIssueTest extends FeatureTestCase
 
         Carbon::setTestNow(now()->addMinutes(30));
         $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $secondToken)->assertOk();
-        $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Revised text for {{candidate_name}}. Ref {{report_number}} by {{psychologist_name}}.', 'explanation' => 'Revised explanation.'], $secondToken)->assertOk()
+        $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Revised text for {{candidate_name}}. Ref {{report_number}} by {{psychologist_name}}.', 'explanation' => 'Revised explanation.', 'revision_reason' => 'The wording was unclear.'], $secondToken)->assertOk()
             ->assertJsonPath('data.report_number', 'LEMB/2026/00001-R1')
             ->assertJsonPath('data.revision', 1)
             ->assertJsonPath('data.reviewed', true)
@@ -509,6 +518,7 @@ final class AutoIssueTest extends FeatureTestCase
         $kept = (array) DB::table('assessment_report_revisions')->first();
         $this->assertSame([$reportId, 0, 'LEMB/2026/00001', $original['body'], $original['explanation'], 'STR-1'], [(int) $kept['report_id'], (int) $kept['revision'], $kept['report_number'], $kept['body'], $kept['explanation'], $kept['signer_str_number']]);
         $this->assertSame('2026-10-05 09:30:00', $kept['superseded_at']);
+        $this->assertSame('The wording was unclear.', $report['revision_reason']);
 
         $this->assertDatabaseHas('platform_audit_logs', ['action' => 'assessment.report_revised', 'actor_type' => 'user', 'subject_id' => $reportId]);
         $this->assertSame(['assessment.report_revised'], DB::table('notifications')->where('notifiable_id', $this->recruiterId)->where('type', 'assessment.report_revised')->pluck('type')->all());
@@ -516,7 +526,7 @@ final class AutoIssueTest extends FeatureTestCase
 
         // A second revision becomes -R2 and keeps the first one too (the first one released the claim).
         $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $secondToken)->assertOk();
-        $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Second text', 'explanation' => 'Second explanation'], $secondToken)->assertOk()->assertJsonPath('data.report_number', 'LEMB/2026/00001-R2');
+        $this->api('POST', "/provider/reviews/{$reportId}/revise", ['body' => 'Second text', 'explanation' => 'Second explanation', 'revision_reason' => 'Second pass.'], $secondToken)->assertOk()->assertJsonPath('data.report_number', 'LEMB/2026/00001-R2');
         $this->assertSame([0, 1], DB::table('assessment_report_revisions')->orderBy('revision')->pluck('revision')->map(fn ($n): int => (int) $n)->all());
         $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->assertJsonPath('data.result.report.number', 'LEMB/2026/00001-R2');
     }
@@ -529,6 +539,7 @@ final class AutoIssueTest extends FeatureTestCase
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => '   ', 'explanation' => 'x'])->assertStatus(422);
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => '   '])->assertStatus(422);
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:validation-failed');
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => 'y'])->assertStatus(422)->assertJsonPath('type', 'urn:onesis:error:reason-required');
 
         DB::table('assessment_psychologists')->update(['silp_valid_until' => '2026-10-04']);
         $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'x', 'explanation' => 'y'])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:cannot-sign-reports');
@@ -553,7 +564,7 @@ final class AutoIssueTest extends FeatureTestCase
     {
         $battery = $this->readyBattery();
         $reportId = $this->takeBattery($battery);
-        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'Revised text', 'explanation' => 'Revised explanation'])->assertOk();
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'Revised text', 'explanation' => 'Revised explanation', 'revision_reason' => 'Corrected.'])->assertOk();
         $this->assertNotSame('', (string) DB::table('assessment_report_revisions')->value('body'));
 
         $this->app->make(EraseAssessmentData::class)->execute($this->seekerId);

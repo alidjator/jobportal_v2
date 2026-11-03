@@ -19,6 +19,11 @@
     .scales th, .scales td { border: 1px solid #999; padding: 3px 6px; text-align: left; }
     .scales th { background: #eee; }
     .body { margin: 0; }
+    .letterhead { text-align: center; margin: 0 0 14px 0; }
+    .letterhead img { max-height: 22mm; max-width: 60mm; margin-bottom: 4px; }
+    .letterhead .name { font-size: 13pt; font-weight: bold; }
+    .letterhead .detail { font-size: 9pt; color: #555; }
+    .signature-image { max-height: 24mm; max-width: 60mm; margin-top: 8px; }
     .signature { margin-top: 26px; page-break-inside: avoid; }
     .signature .line { margin-top: 44px; font-weight: bold; }
     .footer { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 8pt; color: #555; text-align: center; }
@@ -30,10 +35,12 @@
     {{ $report->reportNumber }}@if ($report->verificationUrl) &nbsp;|&nbsp; Verification: {{ $report->verificationUrl }}@endif
 
 </div>
-<div class="provider">
-    <div class="name">{{ $report->providerName }}</div>
-    <div class="legal">{{ $report->providerLegalName }}</div>
-</div>
+@if (! $report->hasLetterheadPlaceholder())
+    <div class="provider">
+        <div class="name">{{ $report->providerName }}</div>
+        <div class="legal">{{ $report->providerLegalName }}</div>
+    </div>
+@endif
 
 <h1>{{ $report->testTitle }}</h1>
 <p class="number">{{ $report->reportNumber }}</p>
@@ -62,7 +69,38 @@
 @endif
 
 <h2>Report</h2>
-<p class="body">{!! nl2br(e($report->body)) !!}</p>
+<div class="body">
+    @foreach ($report->bodyParts() as $part)
+        @if ($part['type'] === 'letterhead')
+            @if ($report->letterhead)
+                <div class="letterhead">
+                    @if ($report->letterhead['logo'])
+                        <img src="{{ $report->letterhead['logo'] }}" alt=""><br>
+                    @endif
+                    <div class="name">{{ $report->letterhead['name'] }}</div>
+                    @if ($report->letterhead['legal_name'] && $report->letterhead['legal_name'] !== $report->letterhead['name'])
+                        <div class="detail">{{ $report->letterhead['legal_name'] }}</div>
+                    @endif
+                    @if ($report->letterhead['address'])
+                        <div class="detail">{{ $report->letterhead['address'] }}</div>
+                    @endif
+                    @if ($report->letterhead['practice_licence_number'])
+                        <div class="detail">Practice licence {{ $report->letterhead['practice_licence_number'] }}</div>
+                    @endif
+                    @if ($report->letterhead['phone'] || $report->letterhead['email'])
+                        <div class="detail">{{ implode(' | ', array_filter([$report->letterhead['phone'], $report->letterhead['email']])) }}</div>
+                    @endif
+                </div>
+            @endif
+        @elseif ($part['type'] === 'signature')
+            @if ($report->signatureImage)
+                <img class="signature-image" src="{{ $report->signatureImage }}" alt=""><br>
+            @endif
+        @else
+            {!! nl2br(e($part['text'])) !!}
+        @endif
+    @endforeach
+</div>
 
 @if ($report->autoIssued)
     <p class="notice">This report was issued automatically at the time the test was submitted, under the responsibility of the psychologist named below.</p>

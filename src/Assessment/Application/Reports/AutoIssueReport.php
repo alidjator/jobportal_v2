@@ -39,6 +39,7 @@ final readonly class AutoIssueReport
         private AnswerRepository $answers,
         private ApplicantContacts $applicants,
         private RecommendationAdvisor $advisor,
+        private ReportIdentitySnapshots $snapshots,
         private Clock $clock,
     ) {}
 
@@ -95,8 +96,8 @@ final readonly class AutoIssueReport
             return null;
         }
 
-        $issued = $report->issueAutomatically(ReportRenderer::signed($report->body, $number, $signedOn, $signerName, $recommendation), $explanation, $number, $year, $sequence, $responsible, $signerName, $now, $recommendation);
-        $this->reports->update($issued);
+        $issued = $report->issueAutomatically(ReportRenderer::signed($report->body, $number, $signedOn, $signerName, $recommendation, $this->snapshots->identityOf($provider)), $explanation, $number, $year, $sequence, $responsible, $signerName, $now, $recommendation);
+        $this->reports->update($this->snapshots->take($issued, $provider, $responsible));
 
         return new ReportSigned(
             (int) $issued->id, $number, (int) $invitation->id, $invitation->applicationId, $invitation->jobId, $invitation->companyId, $providerId, $responsible->userId, null, null, $now,

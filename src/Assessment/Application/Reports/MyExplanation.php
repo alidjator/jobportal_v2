@@ -6,7 +6,7 @@ use DateTimeImmutable;
 
 /**
  * What the candidate gets to read after a psychologist signed the report of their test: the report number, who signed and when, the plain-language explanation
- * and the score of each scale. The company's full report is not part of it.
+ * and the score of each scale, and the institution's name, address, phone and email ("Untuk konsultasi, hubungi lembaga"). The company's full report is not part of it.
  */
 final readonly class MyExplanation
 {
@@ -19,5 +19,7 @@ final readonly class MyExplanation
         public string $signerName,
         public string $explanation,
         public array $scales,
+        /** @var array{name: string, address: string|null, phone: string|null, email: string|null}|null the institution the report was issued under, for the candidate to contact it */
+        public ?array $institution = null,
     ) {}
 }

@@ -25,6 +25,8 @@ final class MyExplanationResource extends JsonResource
             'signer_name' => $this->resource->signerName,
             'explanation' => $this->resource->explanation,
             'scales' => $this->resource->scales,
+            /** The institution the report was issued under, to contact it; null when it is not known. */
+            'institution' => $this->resource->institution,
         ];
     }
 }

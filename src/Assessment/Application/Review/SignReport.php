@@ -2,6 +2,7 @@
 
 namespace Src\Assessment\Application\Review;
 
+use Src\Assessment\Application\Reports\ReportIdentitySnapshots;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Events\ReportSigned;
 use Src\Assessment\Domain\InvitationRepository;
@@ -34,6 +35,7 @@ final readonly class SignReport
         private AttemptRepository $attempts,
         private InvitationRepository $invitations,
         private PsychologistAccounts $accounts,
+        private ReportIdentitySnapshots $snapshots,
         private TransactionManager $transactions,
         private EventDispatcher $events,
         private Clock $clock,
@@ -67,9 +69,9 @@ final readonly class SignReport
             $name = isset($accounts[(int) $actor->id]) ? $accounts[(int) $actor->id]->name : '';
 
             $signed = $report->sign(
-                ReportRenderer::signed($report->body, $number, $now->format('Y-m-d'), $name, $report->recommendation), $number, $year, $sequence, $psychologist, $name, $now,
+                ReportRenderer::signed($report->body, $number, $now->format('Y-m-d'), $name, $report->recommendation, $this->snapshots->identityOf($provider)), $number, $year, $sequence, $psychologist, $name, $now,
             );
-            $signed = $signed->claimReleased();
+            $signed = $this->snapshots->take($signed->claimReleased(), $provider, $psychologist);
             $this->reports->update($signed);
 
             $attempt = $this->attempts->find($report->attemptId) ?? throw EntityNotFound::of('Attempt', $report->attemptId);

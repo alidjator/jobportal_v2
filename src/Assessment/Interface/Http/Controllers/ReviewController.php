@@ -79,10 +79,10 @@ final class ReviewController extends ApiController
         return new ReviewResource($mark->execute($actors->fromRequest($request), $id));
     }
 
-    /** Replaces the text and the explanation of a report that was issued automatically; the number gets `-R1`, `-R2`. */
+    /** Replaces the text and the explanation of a signed report with a reason (422 `reason-required`); the number gets `-R1`, `-R2`. */
     public function revise(ReviseReportRequest $request, int $id, ActorResolver $actors, ReviseReport $revise): ReviewResource
     {
-        return new ReviewResource($revise->execute($actors->fromRequest($request), $id, $request->body(), $request->explanation(), $request->ip(), $request->userAgent(), $request->recommendation()));
+        return new ReviewResource($revise->execute($actors->fromRequest($request), $id, $request->body(), $request->explanation(), $request->ip(), $request->userAgent(), $request->recommendation(), $request->reason()));
     }
 
     public function sign(Request $request, int $id, ActorResolver $actors, SignReport $sign): ReviewResource

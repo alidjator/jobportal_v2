@@ -6,6 +6,8 @@ use Src\Assessment\Domain\AttemptOutcomeRepository;
 use Src\Assessment\Domain\AttemptRepository;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\InvitationRepository;
+use Src\Assessment\Domain\ProviderRepository;
+use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Actor;
@@ -24,6 +26,7 @@ final readonly class GetMyExplanation
         private ReportRepository $reports,
         private TestRepository $tests,
         private ScaleSummaries $scales,
+        private ProviderRepository $providers,
     ) {}
 
     /**
@@ -60,6 +63,21 @@ final readonly class GetMyExplanation
             (string) $report->signerName,
             (string) $report->explanation,
             $result?->scaleScores === null ? [] : $this->scales->rows($invitation->testId, $result->scaleScores, $attempt->normCandidate()),
+            $this->institutionOf($report),
         );
+    }
+
+    /**
+     * The institution as the report kept it, or its name today for a report that kept nothing.
+     *
+     * @return array{name: string, address: string|null, phone: string|null, email: string|null}|null
+     */
+    private function institutionOf(Report $report): ?array
+    {
+        $kept = $report->providerIdentity ?? [];
+        $text = static fn (string $key): ?string => is_string($kept[$key] ?? null) && $kept[$key] !== '' ? $kept[$key] : null;
+        $name = $text('name') ?? $this->providers->findById($report->providerId)?->name();
+
+        return $name === null ? null : ['name' => $name, 'address' => $text('address'), 'phone' => $text('phone'), 'email' => $text('email')];
     }
 }
