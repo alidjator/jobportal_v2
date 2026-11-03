@@ -311,6 +311,43 @@ final class PsychologistSignInTest extends FeatureTestCase
         $this->assertSame(0, DB::table('personal_access_tokens')->where('tokenable_id', $this->userId)->count());
     }
 
+    public function test_a_psychologist_reads_the_second_factor_and_renews_the_recovery_codes_but_cannot_switch_it_off(): void
+    {
+        [$secret, $enrolled] = $this->enrol();
+        $token = $enrolled->json('data.token');
+        $old = $enrolled->json('data.recovery_codes');
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)->getJson('/api/v1/me/two-factor')->assertOk()->assertExactJson(['data' => ['enabled' => true, 'required' => true, 'recovery_codes_left' => 10]]);
+
+        $this->app['auth']->forgetGuards();
+        $new = $this->withToken($token)->postJson('/api/v1/me/two-factor/recovery-codes', ['code' => $this->totp($secret, 1)])->assertOk()->assertJsonCount(10, 'data.recovery_codes');
+        $this->assertEmpty(array_intersect($old, $new->json('data.recovery_codes')));
+        $this->assertSame(10, DB::table('identity_user_recovery_codes')->where('user_id', $this->userId)->count());
+
+        // Only a code of the app renews them, and the factor itself stays: a psychologist cannot switch it off or enrol it again.
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->postJson('/api/v1/me/two-factor/recovery-codes', ['code' => '000000'])->assertUnprocessable();
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->postJson('/api/v1/me/two-factor/disable', ['password' => self::PASSWORD, 'code' => $this->totp($secret, 2)])->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:not-a-company-member');
+        $this->assertNotNull(DB::table('identity_user_two_factor')->where('user_id', $this->userId)->value('confirmed_at'));
+    }
+
+    public function test_a_psychologist_changes_the_password_and_signs_in_with_the_new_one(): void
+    {
+        [, $enrolled] = $this->enrol();
+        $token = $enrolled->json('data.token');
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)->putJson('/api/v1/me/password', ['current_password' => 'not-the-password', 'password' => 'Another-passphrase-2026', 'password_confirmation' => 'Another-passphrase-2026'])->assertUnprocessable();
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->putJson('/api/v1/me/password', ['current_password' => self::PASSWORD, 'password' => 'Another-passphrase-2026', 'password_confirmation' => 'Another-passphrase-2026'])->assertNoContent();
+
+        $this->login(password: self::PASSWORD)->assertUnauthorized();
+        $this->login(password: 'Another-passphrase-2026')->assertOk()->assertJsonPath('data.status', 'two_factor_required');
+    }
+
     public function test_the_nightly_purge_also_removes_the_old_challenges_of_psychologists(): void
     {
         $this->login()->assertOk();

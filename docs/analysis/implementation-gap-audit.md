@@ -82,7 +82,7 @@ the calendar; the requisition and plan pages need the `workforce.*` permissions,
 | H4 | Create and track requisitions | `company/requisitions` (E5) | **Done 2026-10-27** (preset) | The design lets a hiring manager create, submit, amend and track a requisition, but the Hiring manager preset has no `workforce.requisitions.view` or `.create`: the menu entry is hidden until a company admin ticks them one by one. The permission is decided by the user; see the point below. |
 | H5 | Plan of the unit | `company/workforce/plans` (E4) | **Done 2026-10-27** (preset) | `workforce.plans.view` is now in the preset. |
 | H6 | Hires and join dates of a requisition | (none) | Waits | API gap FG13: the requisition links to its jobs but there is no rollup of hires. |
-| H7 | Assessment summary on the review card | (none) | Waits | Designed in #23, not coded. |
+| H7 | Assessment summary on the review card | `card.assessment` of `GET company/review-requests/{id}`; `assessment` on `interview-results` rows | **Coded 2026-11-03** (API; screens left) | One line per candidate (skill: percentage and band; battery: state and recommendation), under the rule of the result page. |
 | H8 | Notification preferences (A3) | `me/notification-preferences` | **Done 2026-10-27** (A3) | Reminders of reviews and interviews cannot be tuned. |
 | H9 | Own account (A11) | `me/*` | **Partly done 2026-10-27** (A11) | |
 

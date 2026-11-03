@@ -19,6 +19,10 @@ use Src\Assessment\Domain\ReportRenderer;
 use Src\Assessment\Domain\ReviewTarget;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Platform\Application\Settings\SettingsStore;
+use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\ApplicationAssessmentSummaries;
+use Src\Shared\Application\Assessment\AssessmentSummary;
+use Src\Shared\Application\Company\CompanyMembership;
 use Src\Shared\Application\FileStorage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
@@ -688,6 +692,52 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->assertSame(hash('sha256', $first), $report['pdf_sha256']);
     }
 
+    public function test_a_revision_renders_its_own_pdf_and_keeps_the_pdf_of_the_version_it_replaced(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $original = (array) DB::table('assessment_reports')->first();
+        $originalBytes = (string) Storage::get($original['pdf_path']);
+
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'A revised text for the report.', 'explanation' => 'A revised explanation.', 'revision_reason' => 'The wording was unclear.'])
+            ->assertOk()->assertJsonPath('data.report_number', 'LEMB/2026/00001-R1');
+
+        // The report now holds a PDF of its own for the revised text; the company downloads exactly that file.
+        $revised = (array) DB::table('assessment_reports')->first();
+        $this->assertNotSame($original['pdf_path'], $revised['pdf_path']);
+        $this->assertNotSame($original['pdf_sha256'], $revised['pdf_sha256']);
+        Storage::assertExists($revised['pdf_path']);
+        $downloaded = (string) $this->asTeam('GET', 'report.pdf')->assertOk()->getContent();
+        $this->assertStringStartsWith('%PDF', $downloaded);
+        $this->assertSame(hash('sha256', $downloaded), $revised['pdf_sha256']);
+
+        // The version it replaced keeps its own file and hash, untouched.
+        $kept = (array) DB::table('assessment_report_revisions')->first();
+        $this->assertSame($original['pdf_path'], $kept['pdf_path']);
+        $this->assertSame($original['pdf_sha256'], $kept['pdf_sha256']);
+        Storage::assertExists($kept['pdf_path']);
+        $this->assertSame($originalBytes, (string) Storage::get($kept['pdf_path']));
+        $this->assertSame($kept['pdf_sha256'], hash('sha256', (string) Storage::get($kept['pdf_path'])));
+
+        // The public check: the plain number is the latest revision, whatever it is (`phase-8-provider-tools.md` section 7).
+        $this->app['auth']->forgetGuards();
+        $check = fn (string $number) => $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number='.rawurlencode($number))->assertOk();
+        $check('LEMB/2026/00001')->assertJsonPath('data.valid', true)->assertJsonPath('data.superseded', false)->assertJsonPath('data.revision', 'R1')->assertJsonPath('data.sha256', $revised['pdf_sha256']);
+        $check('LEMB/2026/00001-R1')->assertJsonPath('data.superseded', false)->assertJsonPath('data.sha256', $revised['pdf_sha256']);
+
+        // A second revision replaces the first: its number now says superseded and still gives the hash of its own file.
+        $this->provider('POST', "reviews/{$reportId}/revise", ['body' => 'A second text.', 'explanation' => 'A second explanation.', 'revision_reason' => 'Second pass.'])->assertOk()->assertJsonPath('data.report_number', 'LEMB/2026/00001-R2');
+        $second = (array) DB::table('assessment_reports')->first();
+        $this->assertNotSame($revised['pdf_sha256'], $second['pdf_sha256']);
+
+        $this->app['auth']->forgetGuards();
+        $check('LEMB/2026/00001-R1')->assertJsonPath('data.valid', true)->assertJsonPath('data.superseded', true)->assertJsonPath('data.revision', 'R1')->assertJsonPath('data.sha256', $revised['pdf_sha256']);
+        $check('LEMB/2026/00001-R2')->assertJsonPath('data.superseded', false)->assertJsonPath('data.revision', 'R2')->assertJsonPath('data.sha256', $second['pdf_sha256']);
+        $check('LEMB/2026/00001')->assertJsonPath('data.revision', 'R2')->assertJsonPath('data.sha256', $second['pdf_sha256']);
+    }
+
     public function test_the_public_check_answers_for_a_number_without_any_personal_data(): void
     {
         $reportId = $this->takeBattery();
@@ -1219,6 +1269,67 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->api('GET', '/me/retained-data', [], $this->psychologistToken)->assertForbidden();
         $this->app['auth']->forgetGuards();
         $this->withoutToken()->getJson('/api/v1/me/retained-data')->assertUnauthorized();
+    }
+
+    // ----- the summary on the review card and the comparison (`phase-8-hiring-managers.md` section 4) -----
+
+    /**
+     * What the port behind the review card and the interview comparison answers for the application, for a company member who holds only the given permissions (the recruiter of the fixtures, who
+     * also assesses the written test).
+     *
+     * @param  list<string>  $permissions
+     * @return array<int, AssessmentSummary>
+     */
+    private function summaryFor(array $permissions): array
+    {
+        $viewer = Actor::companyMember($this->recruiterId)->withMembership(new CompanyMembership($this->companyId, CompanyMembership::ROLE_MEMBER, $permissions));
+
+        return $this->app->make(ApplicationAssessmentSummaries::class)->latestForApplications($viewer, [$this->applicationId]);
+    }
+
+    public function test_the_summary_of_a_skill_test_follows_the_scoring_and_needs_the_right_to_read_the_result(): void
+    {
+        $this->assertSame([], $this->summaryFor(['applications.view', 'assessments.send']), 'No submitted test, no summary.');
+
+        $this->takeWrittenTest();
+        $this->assertSame([], $this->summaryFor(['applications.view', 'assessments.send']), 'A test that is not submitted has none.');
+
+        $this->take('POST', 'attempt/submit')->assertOk();
+        $written = (int) DB::table('assessment_questions')->where('type', 'long_text')->value('id');
+
+        $pending = $this->summaryFor(['applications.view', 'assessments.send'])[$this->applicationId]->toArray();
+        $this->assertSame(['skill', 'pending_scoring', null, null], [$pending['kind'], $pending['status'], $pending['percentage'], $pending['band']]);
+
+        $this->asTeam('PUT', "scoring/questions/{$written}", ['score' => 4])->assertOk();
+        $scored = $this->summaryFor(['applications.view', 'assessments.send'])[$this->applicationId]->toArray();
+        $this->assertSame(['scored', 85.71], [$scored['status'], $scored['percentage']]);
+        $this->assertNotNull($scored['band']);
+        $this->assertNull($scored['recommendation']);
+
+        // The member who assesses this test reads it without `assessments.send`; a member with neither does not.
+        $this->assertArrayHasKey($this->applicationId, $this->summaryFor(['applications.view']));
+        DB::table('assessment_invitation_assessors')->delete();
+        $this->assertSame([], $this->summaryFor(['applications.view']));
+    }
+
+    public function test_the_summary_of_a_battery_has_its_state_and_recommendation_and_never_a_score(): void
+    {
+        $reportId = $this->takeBattery();
+
+        $waiting = $this->summaryFor(['applications.view', 'assessments.send'])[$this->applicationId]->toArray();
+        $this->assertSame(['psychological', 'awaiting_psychologist_review', null, null], [$waiting['kind'], $waiting['status'], $waiting['recommendation'], $waiting['percentage']]);
+
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $signed = $this->summaryFor(['applications.view', 'assessments.send'])[$this->applicationId]->toArray();
+        $this->assertSame(['psychological', 'signed', 'recommended'], [$signed['kind'], $signed['status'], $signed['recommendation']]);
+        $this->assertNotNull($signed['recommendation_label']);
+        $this->assertSame(['band', 'kind', 'percentage', 'recommendation', 'recommendation_label', 'status', 'submitted_at', 'test_title'], collect(array_keys($signed))->sort()->values()->all(), 'No scale, score or text.');
+
+        // Only a member who may read the result sees it, even when they assess nothing.
+        $this->assertSame([], $this->summaryFor(['applications.view']));
+        $this->assertSame([], $this->summaryFor(['applications.view', 'interviews.participate']));
     }
 
     public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void

@@ -3,6 +3,7 @@
 namespace Src\Identity\Application\TwoFactor;
 
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\ActorKind;
 use Src\Shared\Application\Company\MemberTwoFactorPolicy;
 use Src\Shared\Domain\Exceptions\AccessDenied;
 use Src\Shared\Domain\Exceptions\EntityNotFound;
@@ -22,9 +23,9 @@ final readonly class GetMyTwoFactor
      */
     public function execute(Actor $actor): MyTwoFactorStatus
     {
-        $userId = (int) $this->access->user($actor)->id;
+        $userId = (int) $this->access->account($actor)->id;
         $enabled = $this->factors->find($userId)?->isConfirmed() ?? false;
 
-        return new MyTwoFactorStatus($enabled, $this->policy->isRequired($userId), $enabled ? $this->recoveryCodes->remaining($userId) : 0);
+        return new MyTwoFactorStatus($enabled, $actor->kind === ActorKind::Psychologist || $this->policy->isRequired($userId), $enabled ? $this->recoveryCodes->remaining($userId) : 0);
     }
 }

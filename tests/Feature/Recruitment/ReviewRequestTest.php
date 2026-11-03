@@ -185,6 +185,7 @@ final class ReviewRequestTest extends FeatureTestCase
         $this->assertArrayHasKey('expected_salary', $card);
         $this->assertArrayHasKey('screening_answers', $card);
         $this->assertArrayHasKey('interview_result', $card);
+        $this->assertNull($card['assessment'], 'The candidate took no test.');
     }
 
     public function test_someone_outside_the_request_does_not_see_it(): void

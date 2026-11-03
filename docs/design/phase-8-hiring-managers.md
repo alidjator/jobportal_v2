@@ -159,6 +159,29 @@ Interpretations, where the design left room:
 - **Erasure:** the reasons of reviews about an erased applicant are cleared with the other personal text; the decisions stay.
 - **Not coded:** the assessment summary on the review card, and a recruiter-facing "remind now" (not in the design).
 
+## 4. Assessment summary on the review card (agreed and coded 2026-11-03)
+
+Gap H7 of `docs/analysis/implementation-gap-audit.md`; the same field fills "the latest assessment result" that `phase-8-interview-results.md` (interpretation 2) left out of the comparison rows.
+
+- **Which test.** The latest test of the application that the candidate submitted (by `submitted_at`); a candidate with none, or whose tests are not visible to the reader, has `assessment: null`. One summary, not a list: the application detail
+  has the full results.
+- **What it holds.**
+  - A skill test: `{kind: 'skill', test_title, submitted_at, status: 'scored'|'pending_scoring', percentage, band}`; `percentage` and `band` are null while a written answer waits for its assessor.
+  - A psychological battery: `{kind: 'psychological', test_title, submitted_at, status: 'awaiting_psychologist_review'|'signed', recommendation, recommendation_label}`; the recommendation (`recommended`, `consider`,
+    `not_yet`) only once the report is signed. **Never** the scales, the scores, the report text, the explanation or the integrity tier: a reviewer who needs them opens the result, where its own rules apply.
+- **Who sees it: the rule of `GET company/assessment/invitations/{id}/result`, unchanged.** A member sees the summary of an invitation when they may read its result: `assessments.send`, or an assessor of that
+  invitation, or (skill tests only) an interview panel member of the application; a panel-only member never sees a psychological summary. This is `VisibleInvitations::findForResults` and `panelOnly`, so the card can show
+  nothing the result page would refuse. The Hiring manager preset has no `assessments.send`: a hiring manager sees a summary only for tests they assess or sit on the panel for. The preset is not changed here
+  (a permission decision is the user's, as for H4 and H5).
+- **Where.** A new Shared port `AssessmentSummaries::latestForApplications(list<int> $applicationIds, int $viewerId, ...)` implemented in Assessment, read in one query for the ids of the page (like
+  `InterviewResults::latestForApplications`); Recruitment calls it with the viewer. It fills `assessment` on each card of `GET company/review-requests/{id}` and, with the same rule, on each row of
+  `GET company/jobs/{id}/interview-results` (the column the comparison design left out). No migration, no setting, no new route.
+- **Screens.** The Workspace review page shows one line on the card ("Tes keterampilan: 82% (baik)" or "Tes psikologi: disarankan" or "menunggu psikolog"), linking to the result page only for a reader who
+  may open it; the interview comparison gets one column. Both hide the line when `assessment` is null (CLAUDE.md frontend rule 20).
+- **Coded.** `Shared\Application\Assessment\ApplicationAssessmentSummaries` (provided by `Assessment\Application\Summaries\AssessmentSummaries`, which reads `SubmittedAssessmentReader::latest`, the report for the recommendation and `TeamApplications` for the panel rule); `ReviewRequestViews` fills `card.assessment` when it gets the viewer's `Actor`, and `CompareInterviewResults` fills `assessment` on each row. The port tests are in `ResultsAndReportsTest`; the screens are not done.
+- **Tests.** The summary of a skill test and of a signed and an unsigned battery; none for a candidate without a submitted test; the visibility rule per reader (assessments.send, assessor, panel member on a skill
+  test, panel member on a battery, a reviewer with none of them); the response never carries a score, a scale or text of a battery.
+
 ## Changed 2026-10-27: requisition permissions in the preset
 
 The Hiring Manager preset gains `workforce.plans.view`, `workforce.requisitions.create` and `workforce.requisitions.view` (user decision after the front end audit,

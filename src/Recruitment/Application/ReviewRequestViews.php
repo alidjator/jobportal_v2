@@ -12,6 +12,9 @@ use Src\Recruitment\Domain\ReviewRequestRepository;
 use Src\Recruitment\Domain\StageRepository;
 use Src\Recruitment\Domain\StageType;
 use Src\Shared\Application\Accounts\CompanyMemberAccounts;
+use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\ApplicationAssessmentSummaries;
+use Src\Shared\Application\Assessment\AssessmentSummary;
 use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\JobDirectory;
 
@@ -29,6 +32,7 @@ final readonly class ReviewRequestViews
         private CompanyMemberAccounts $accounts,
         private RecruiterApplicationReader $reader,
         private InterviewResults $results,
+        private ApplicationAssessmentSummaries $assessments,
         private Clock $clock,
     ) {}
 
@@ -36,7 +40,7 @@ final readonly class ReviewRequestViews
      * @param  list<ReviewRequest>  $requests  of one company
      * @return list<ReviewRequestView>
      */
-    public function of(array $requests, int $viewerId, bool $withCards = false): array
+    public function of(array $requests, int $viewerId, bool $withCards = false, ?Actor $viewer = null): array
     {
         if ($requests === []) {
             return [];
@@ -75,8 +79,10 @@ final readonly class ReviewRequestViews
 
         $titles = $this->jobs->titles(array_values(array_unique(array_map(static fn (ReviewRequest $request): int => $request->jobId, $requests))));
         $interviewResults = $withCards ? $this->results->latestForApplications($applicationIds, $viewerId) : [];
+        // The latest test of each candidate, as far as the viewer may read its result (`phase-8-hiring-managers.md` section 4).
+        $assessments = $withCards && $viewer instanceof Actor ? $this->assessments->latestForApplications($viewer, $applicationIds) : [];
 
-        return array_map(function (ReviewRequest $request) use ($viewerId, $withCards, $itemIds, $reviewerIds, $answers, $loaded, $stageNames, $names, $titles, $interviewResults, $today): ReviewRequestView {
+        return array_map(function (ReviewRequest $request) use ($viewerId, $withCards, $itemIds, $reviewerIds, $answers, $loaded, $stageNames, $names, $titles, $interviewResults, $assessments, $today): ReviewRequestView {
             $id = (int) $request->id;
             $reviewers = $reviewerIds[$id] ?? [];
             $isReviewer = in_array($viewerId, $reviewers, true);
@@ -112,7 +118,7 @@ final readonly class ReviewRequestViews
                     $active,
                     $locked,
                     array_map(fn (int $reviewerId): ReviewAnswerView => ReviewAnswerView::of($reviewerId, $names[$reviewerId] ?? null, $reviewerId === $viewerId, $given[$applicationId][$reviewerId] ?? null, $locked && $reviewerId !== $viewerId), $reviewers),
-                    $withCards ? $this->card($applicationId, $interviewResults[$applicationId] ?? null) : null,
+                    $withCards ? $this->card($applicationId, $interviewResults[$applicationId] ?? null, $assessments[$applicationId] ?? null) : null,
                 );
             }
 
@@ -140,7 +146,7 @@ final readonly class ReviewRequestViews
      *
      * @return array<string, mixed>
      */
-    private function card(int $applicationId, ?InterviewResult $result): array
+    private function card(int $applicationId, ?InterviewResult $result, ?AssessmentSummary $assessment): array
     {
         $detail = $this->reader->find($applicationId);
         $snapshot = $detail?->snapshot;
@@ -159,6 +165,7 @@ final readonly class ReviewRequestViews
             'meets_must_have' => $detail?->meetsMustHave,
             'screening_answers' => array_map(fn (ApplicationAnswerView $answer): array => ['question' => $answer->questionText, 'answer' => $this->answerText($answer)], $detail === null ? [] : $detail->answers),
             'interview_result' => $result === null ? null : ['score' => $result->score, 'yes' => $result->yes(), 'no' => $result->no()],
+            'assessment' => $assessment?->toArray(),
             'has_resume' => $detail !== null && $detail->resumeName !== null,
         ];
     }

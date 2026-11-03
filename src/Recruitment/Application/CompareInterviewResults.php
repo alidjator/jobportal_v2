@@ -6,6 +6,8 @@ use Src\Recruitment\Domain\InterviewKit;
 use Src\Recruitment\Domain\InterviewPanel;
 use Src\Recruitment\Domain\KitQuestion;
 use Src\Shared\Application\Actor;
+use Src\Shared\Application\Assessment\ApplicationAssessmentSummaries;
+use Src\Shared\Application\Assessment\AssessmentSummary;
 use Src\Shared\Application\Company\CompanyPermission;
 use Src\Shared\Application\Pagination\Page;
 use Src\Shared\Application\Pagination\PageRequest;
@@ -28,6 +30,7 @@ final readonly class CompareInterviewResults
         private InterviewKitLookup $kits,
         private JobInterviewStages $stages,
         private HiringManagerScope $scope,
+        private ApplicationAssessmentSummaries $assessments,
     ) {}
 
     /**
@@ -56,7 +59,7 @@ final readonly class CompareInterviewResults
         $ordered = $this->sorted($latest, $matchScores, $comparison->sort);
         $pageIds = array_slice($ordered, $request->offset(), $request->perPage);
 
-        return new InterviewComparison($kit, new Page($this->rows($pageIds, $latest, $query, $kit), count($ordered), $request));
+        return new InterviewComparison($kit, new Page($this->rows($pageIds, $latest, $query, $kit, $this->assessments->latestForApplications($actor, $pageIds)), count($ordered), $request));
     }
 
     /** @param  array<int, LatestInterview>  $latest */
@@ -120,9 +123,10 @@ final readonly class CompareInterviewResults
     /**
      * @param  list<int>  $ids
      * @param  array<int, LatestInterview>  $latest
+     * @param  array<int, AssessmentSummary>  $assessments  by application id
      * @return list<InterviewComparisonRow>
      */
-    private function rows(array $ids, array $latest, RecruiterApplicationQuery $query, ?InterviewKit $kit): array
+    private function rows(array $ids, array $latest, RecruiterApplicationQuery $query, ?InterviewKit $kit, array $assessments): array
     {
         $applications = $this->reader->rows($ids, $query);
         $interviewIds = array_map(static fn (int $id): int => $latest[$id]->interviewId, $ids);
@@ -149,6 +153,7 @@ final readonly class CompareInterviewResults
                 $interview,
                 1 + count($panels[$interview->interviewId] ?? []),
                 $interview->locked || ! $kit instanceof InterviewKit ? null : $this->cells($kit, $interview->kitId === $kit->id ? ($scores[$interview->interviewId] ?? []) : []),
+                $assessments[$id] ?? null,
             );
         }
 

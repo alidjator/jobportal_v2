@@ -45,6 +45,8 @@ final class InterviewComparisonRowResource extends JsonResource
                 static fn (QuestionScore $cell): array => ['question' => $cell->text, 'average' => $cell->average, 'count' => $cell->count],
                 $row->cells,
             ),
+            /** @var array{kind: 'skill'|'psychological', test_title: string, submitted_at: string, status: string, percentage: float|null, band: string|null, recommendation: string|null, recommendation_label: string|null}|null the latest submitted test of the applicant, only when the caller may read its result (a psychological battery shows its state and recommendation, never a score) */
+            'assessment' => $row->assessment?->toArray(),
             /** how well the applicant fitted the job when applying, 0 to 100 */
             'match_score' => $application->matchScore,
             'rating_average' => $application->ratingAverage,

@@ -39,6 +39,6 @@ final readonly class GetReviewRequest
             $this->access->job($member, $request->jobId);
         }
 
-        return $this->views->of([$request], $member->userId, withCards: true)[0];
+        return $this->views->of([$request], $member->userId, withCards: true, viewer: $actor)[0];
     }
 }

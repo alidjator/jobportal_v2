@@ -2,6 +2,8 @@
 
 namespace Src\Recruitment\Application;
 
+use Src\Shared\Application\Assessment\AssessmentSummary;
+
 /**
  * One application of a comparison with its latest scored interview. `$result` and `$cells` are null for a locked row (the viewer is on the panel and has not
  * sent their scorecard). A cell holds the average of one kit question, null with a count of 0 when the interview has no matching scored question.
@@ -14,5 +16,7 @@ final readonly class InterviewComparisonRow
         public LatestInterview $interview,
         public int $panelSize,
         public ?array $cells,
+        /** The latest submitted test of the application as far as the viewer may read its result (`phase-8-hiring-managers.md` section 4). */
+        public ?AssessmentSummary $assessment = null,
     ) {}
 }

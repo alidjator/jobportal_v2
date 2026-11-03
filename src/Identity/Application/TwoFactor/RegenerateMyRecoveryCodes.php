@@ -13,7 +13,7 @@ use Src\Shared\Domain\Exceptions\EntityNotFound;
 use Src\Shared\Domain\Exceptions\StateConflict;
 use Src\Shared\Domain\Exceptions\TooManyAttempts;
 
-/** Replaces the recovery codes of a company member (the old ones stop working). Needs a current code of the authenticator app. */
+/** Replaces the recovery codes of a company member or of a psychologist (the old ones stop working). Needs a current code of the authenticator app. */
 final readonly class RegenerateMyRecoveryCodes
 {
     public function __construct(
@@ -38,7 +38,7 @@ final readonly class RegenerateMyRecoveryCodes
      */
     public function execute(Actor $actor, string $code, ?string $ipAddress, ?string $userAgent): array
     {
-        $user = $this->access->user($actor);
+        $user = $this->access->account($actor);
         $userId = (int) $user->id;
         $step = $this->codes->check($user, $code, $ipAddress);
         $now = $this->clock->now();

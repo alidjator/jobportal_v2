@@ -264,6 +264,7 @@ final class InterviewResultsTest extends FeatureTestCase
         $this->assertSame(['strong_no' => 0, 'no' => 1, 'yes' => 1, 'strong_yes' => 0], $ani['recommendations']);
         $this->assertSame(2, $ani['scorecards_sent']);
         $this->assertSame(2, $ani['panel_size']);
+        $this->assertNull($ani['assessment'], 'The candidate took no test.');
         $this->assertEquals([
             ['question' => 'Explain a database transaction.', 'average' => 3.0, 'count' => 2],
             ['question' => 'Tell us about a hard bug.', 'average' => 3.0, 'count' => 2],

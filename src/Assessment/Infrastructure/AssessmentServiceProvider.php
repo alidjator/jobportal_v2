@@ -24,6 +24,7 @@ use Src\Assessment\Application\Invitations\InvitationThrottle;
 use Src\Assessment\Application\Notices\ProviderNoticeSender;
 use Src\Assessment\Application\Reports\ReportPdfRenderer;
 use Src\Assessment\Application\Reports\ReportVerificationLinks;
+use Src\Assessment\Application\Summaries\AssessmentSummaries;
 use Src\Assessment\Domain\AnswerRepository;
 use Src\Assessment\Domain\AssessmentDataEraser;
 use Src\Assessment\Domain\AttemptOutcomeRepository;
@@ -118,6 +119,7 @@ use Src\Identity\Domain\Events\UserAnonymized;
 use Src\Job\Domain\Events\JobCloned;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\ActorKind;
+use Src\Shared\Application\Assessment\ApplicationAssessmentSummaries;
 use Src\Shared\Application\Assessment\AssessmentInvitations;
 use Src\Shared\Application\Calendar\ApplicantAgendaSources;
 use Src\Shared\Application\Calendar\CalendarSources;
@@ -170,6 +172,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         SubmittedAssessmentReader::class => DatabaseSubmittedAssessmentReader::class,
         JobStageTestRepository::class => DatabaseJobStageTestRepository::class,
         AssessmentInvitations::class => AssessmentInvitationService::class,
+        ApplicationAssessmentSummaries::class => AssessmentSummaries::class,
         TestEmailSender::class => MailTestSender::class,
         TeamSubmissionSender::class => MailTeamSubmissionSender::class,
         AttemptRepository::class => DatabaseAttemptRepository::class,
