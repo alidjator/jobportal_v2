@@ -52,6 +52,14 @@ The type rules (statement count, dimensions, same set across questions), answeri
 4. **A dimension** is 1 to 20 lowercase letters or digits, with no underscore (the underscore separates it from the graph in the scale key).
 5. A group whose statements share a dimension is allowed (picking both as most and least cancels out); only the set of dimensions of the battery is checked.
 
+### Coded 2026-11-03: steps 2 and 3, the screens
+
+- **Portal Mitra (`apps/console`):** `lib/battery.ts` knows `most_least` (three to six options, a dimension on each statement instead of a score, no points, no scale on the question, `carriesScaleKey`, `DIMENSION_KEY`); the question
+  dialog shows the dimension field; `scalesOf` gives the three graphs of each dimension for the norms, recommendation and template tabs; `dimensionsProblem` drives the warning of the editor (`mitra.battery.dimensionsProblem`).
+- **Career (`apps/public`):** `QuestionView` draws a table of the statements with two radio columns (Paling, Paling tidak); `utils/assessment.ts` keeps the draft as `[most, least]` (0 for one not marked), picking a
+  statement as one clears it from the other, and a half-made group counts as unanswered and is never sent.
+- The charts (step 4) and the demo data (step 5) are left.
+
 ## Coding order
 
 1. API: the type and its rules, the migration, the answer rule, the scoring and the derived scales, the placeholders and the publish check.
