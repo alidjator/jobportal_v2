@@ -114,6 +114,19 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - **Still to code (second part):** the placeholders `{{provider_letterhead}}`, `{{provider_address}}`, `{{provider_licence}}` and `{{signature_image}}` in the report template and the PDF, the copy of the
   signature into the report when it is signed, auto-issued or revised, and the institution's contact on the explanation page of the candidate.
 
+**Section 3, second part, coded 2026-11-03** (migration `000403`):
+
+- **Snapshot (added to the design).** `assessment_reports` and `assessment_report_revisions` gain `provider_identity` (JSON: name, legal name, address, practice licence, phone, email and the path of the logo copy) next to the existing `signer_signature_path`. `ReportIdentitySnapshots` fills them when a version is signed, issued automatically or revised: the text of the identity as it was, and the logo and the signature image copied to `assessment/reports/{report}/logo-{revision}` and `signature-{revision}`. A revision row keeps the snapshot of the version it replaces. A later change of the institution or of the psychologist never alters an issued version.
+- **Placeholders.** `{{provider_address}}` and `{{provider_licence}}` are text, filled at signing from the identity (a dash when empty). `{{provider_letterhead}}` (logo, name, legal name when different, address, practice licence, phone and email) and `{{signature_image}}` stay in the stored text and are drawn by the PDF from the snapshot (`ReportDocument::bodyParts`, data addresses: remote files stay off); a text with the letterhead placeholder drops the default header. All four are known to the report template and not to the explanation template.
+- **Candidate.** `GET me/assessment/invitations/{id}/explanation` gains `institution` (name, address, phone, email, as the report kept them), shown in Career as "Pertanyaan tentang hasil".
+- A report signed before this kept no snapshot: its PDF shows the provider's name and legal name as of today and no picture.
+
+**Section 4, coded 2026-11-03** (same migration):
+
+- `POST provider/reviews/{id}/revise` takes any **signed** report (signed by hand or issued automatically; a draft is 409 `report-not-signed`), by the psychologist who holds the claim and has a valid STR and SILP. `revision_reason` is required, at most 1,000 characters (422 `reason-required`, checked after the text and the explanation); it is stored on the report row (`revision_reason`) and moves to the revision row of the version it replaces only when that version had its own. The company's result and the public check show the revision and its date, never the reason. Marking reviewed stays for automatic reports.
+- **Claim.** Any report can be claimed now, a signed one too (the claim is what a revision needs); a signed report stays locked for editing, scoring and signing (409 `report-signed`).
+- Front end: Portal Mitra, the review page offers "Revisi" for every signed report the psychologist holds, with the reason field; the template placeholders list gains the four new ones.
+
 ## 4. Revising a manually signed report
 
 - `POST /provider/reviews/{id}/revise` accepts every `signed` report, not only auto-issued ones, by any psychologist of the institution with a valid
