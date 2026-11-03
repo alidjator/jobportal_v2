@@ -27,8 +27,10 @@ final class DemoBatteryContent
     {
         $short = ['professional', 'leadership', 'operational'];
 
-        // The DISC battery has one size: a few fictitious groups to try the mechanism (`DemoDiscBattery`).
-        return $full ? [...$short, ...array_map(static fn (string $key): string => $key.'_full', $short), 'disc'] : [...$short, 'disc'];
+        // The DISC batteries are small enough to be written every time: a few fictitious groups, and the 24 original groups (`DemoDiscBattery`).
+        $disc = ['disc', 'disc_full'];
+
+        return $full ? [...$short, ...array_map(static fn (string $key): string => $key.'_full', $short), ...$disc] : [...$short, ...$disc];
     }
 
     /**
@@ -36,8 +38,8 @@ final class DemoBatteryContent
      */
     public static function battery(string $key): array
     {
-        if ($key === 'disc') {
-            return DemoDiscBattery::battery();
+        if ($key === 'disc' || $key === 'disc_full') {
+            return DemoDiscBattery::battery($key === 'disc_full');
         }
 
         $full = str_ends_with($key, '_full');

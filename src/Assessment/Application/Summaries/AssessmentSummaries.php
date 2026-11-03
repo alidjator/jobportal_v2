@@ -76,7 +76,7 @@ final readonly class AssessmentSummaries implements ApplicationAssessmentSummari
     {
         if ($test->kind() === TestKind::Skill) {
             return new AssessmentSummary(
-                'skill', $test->title(), $assessment->submittedAt, $assessment->status?->value ?? 'pending_scoring',
+                'skill', $test->title(), $assessment->submittedAt, $assessment->status->value ?? 'pending_scoring',
                 $assessment->percentage, $assessment->band?->value,
             );
         }

@@ -74,7 +74,7 @@ final class MostLeast
      */
     public static function contributions(Question $question, ?Answer $answer): array
     {
-        $positions = $answer?->optionPositions ?? [];
+        $positions = $answer->optionPositions ?? [];
 
         if (count($positions) !== 2 || $positions[0] === $positions[1]) {
             return [];
@@ -87,11 +87,7 @@ final class MostLeast
             return [];
         }
 
-        $added = [];
-        $added[self::key($most, 'most')] = ($added[self::key($most, 'most')] ?? 0.0) + 1.0;
-        $added[self::key($least, 'least')] = ($added[self::key($least, 'least')] ?? 0.0) + 1.0;
-
-        return $added;
+        return [self::key($most, 'most') => 1.0, self::key($least, 'least') => 1.0];
     }
 
     /**

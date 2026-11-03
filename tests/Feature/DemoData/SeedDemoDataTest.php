@@ -134,10 +134,10 @@ final class SeedDemoDataTest extends FeatureTestCase
         $this->assertGreaterThan(0, DB::table('assessment_norms')->count());
         $this->assertSame(count(DemoBatteryContent::keys()), DB::table('assessment_report_templates')->count());
 
-        // The DISC battery (all fictitious): six most/least groups, norms for the twelve derived scales, and no bare dimension among them.
+        // The DISC batteries: six fictitious most/least groups and the 24 original ones, norms for the twelve derived scales, and no bare dimension among them.
         $disc = (int) DB::table('assessment_tests')->where('title', 'Profil Perilaku DISC (contoh fiktif)')->where('status', 'published')->value('id');
         $this->assertGreaterThan(0, $disc);
-        $this->assertSame(6, DB::table('assessment_questions')->where('type', 'most_least')->count());
+        $this->assertSame(6 + 24, DB::table('assessment_questions')->where('type', 'most_least')->count());
         $this->assertSame(
             ['c_change', 'c_least', 'c_most', 'd_change', 'd_least', 'd_most', 'i_change', 'i_least', 'i_most', 's_change', 's_least', 's_most'],
             DB::table('assessment_norms')->where('test_id', $disc)->distinct()->orderBy('scale_key')->pluck('scale_key')->all(),

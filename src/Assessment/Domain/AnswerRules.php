@@ -69,7 +69,7 @@ final class AnswerRules
             throw self::invalid('option_positions', 'This question is answered by choosing options.');
         }
 
-        $positions = array_values($positions ?? []);
+        $positions ??= [];
 
         if (count($positions) !== 2) {
             throw self::invalid('option_positions', 'Choose the statement that is most like you and the one that is least like you.');
