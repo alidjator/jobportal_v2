@@ -24,5 +24,7 @@ final readonly class ReportSummary
         public ?DateTimeImmutable $claimTouchedAt = null,
         /** The day the review is due; null once signed, for an automatic report and for a draft that has none. */
         public ?DateTimeImmutable $reviewDueOn = null,
+        /** Whether the last message about the report is a company's question nobody answered. */
+        public bool $hasOpenQuestion = false,
     ) {}
 }

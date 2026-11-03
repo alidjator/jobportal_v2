@@ -53,6 +53,7 @@ use Src\Assessment\Domain\PsychologistInvitationRepository;
 use Src\Assessment\Domain\PsychologistRepository;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\RecommendationRuleRepository;
+use Src\Assessment\Domain\ReportMessageRepository;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
 use Src\Assessment\Domain\SectionRepository;
@@ -92,6 +93,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepo
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseQuestionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseRecommendationRuleRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseReportMessageRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportTemplateRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseSectionRepository;
@@ -132,6 +134,10 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     private const int REGISTER_EXPORTS_PER_HOUR = 10;
 
+    public const string REPORT_MESSAGE_LIMITER = 'assessment-report-messages';
+
+    private const int REPORT_MESSAGES_PER_HOUR = 20;
+
     public const string VERIFY_LIMITER = 'assessment-report-verify';
 
     private const int VERIFICATIONS_PER_HOUR = 30;
@@ -166,6 +172,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         AnswerRepository::class => DatabaseAnswerRepository::class,
         VideoTakeRepository::class => DatabaseVideoTakeRepository::class,
         AttemptOutcomeRepository::class => DatabaseAttemptOutcomeRepository::class,
+        ReportMessageRepository::class => DatabaseReportMessageRepository::class,
         ReportRepository::class => DatabaseReportRepository::class,
         ReportPdfRenderer::class => DompdfReportRenderer::class,
         AssessmentDataEraser::class => DatabaseAssessmentDataEraser::class,
@@ -236,6 +243,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for(self::REPORT_MESSAGE_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REPORT_MESSAGES_PER_HOUR)->by('assessment-report-messages|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         RateLimiter::for(self::VERIFY_LIMITER, fn (Request $request): Limit => Limit::perHour(self::VERIFICATIONS_PER_HOUR)->by('assessment-report-verify|'.$request->ip()));
         RateLimiter::for(self::REGISTER_EXPORT_LIMITER, fn (Request $request): Limit => Limit::perHour(self::REGISTER_EXPORTS_PER_HOUR)->by('assessment-register-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
 

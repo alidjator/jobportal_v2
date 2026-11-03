@@ -903,6 +903,8 @@
     "The report is not signed yet.": "Laporan belum ditandatangani.",
     "The report was erased with the candidate's account.": "Laporan dihapus bersama akun kandidat.",
     "Only a signed report can be revised.": "Hanya laporan yang sudah ditandatangani yang dapat direvisi.",
+    "Questions about this report are closed: only a signed report takes them, for 30 days after its signing.": "Pertanyaan tentang laporan ini sudah ditutup: hanya laporan yang sudah ditandatangani yang menerimanya, selama 30 hari setelah penandatanganan.",
+    "Your STR or SILP is not valid today, so you cannot answer about reports.": "STR atau SILP Anda tidak berlaku hari ini, sehingga Anda tidak dapat menjawab pertanyaan tentang laporan.",
     "Give the reason for the revision, at most :max characters.": "Tuliskan alasan revisi, paling banyak :max karakter.",
     "Give the reason for the revision.": "Tuliskan alasan revisi.",
     "The report template must have between 1 and :max characters.": "Templat laporan harus terdiri dari 1 sampai :max karakter.",

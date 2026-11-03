@@ -205,6 +205,23 @@ final readonly class Report
         }
     }
 
+    /** The company may ask about a signed report this long after its signing (`docs/design/phase-8-provider-institutions.md` section 6). */
+    public const string QUESTION_WINDOW = '+30 days';
+
+    /** Whether questions about the report are still open: it is signed and its signing is less than 30 days old. */
+    public function acceptsQuestions(DateTimeImmutable $now): bool
+    {
+        return $this->isSigned() && $this->signedAt !== null && $now < $this->signedAt->modify(self::QUESTION_WINDOW);
+    }
+
+    /** @throws StateConflict `report-questions-closed` */
+    public function assertAcceptsQuestions(DateTimeImmutable $now): void
+    {
+        if (! $this->acceptsQuestions($now)) {
+            throw new StateConflict('Questions about this report are closed: only a signed report takes them, for 30 days after its signing.', 'report-questions-closed');
+        }
+    }
+
     /** @throws StateConflict `report-not-signed` */
     private function assertSigned(): void
     {

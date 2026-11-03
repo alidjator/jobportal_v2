@@ -18,6 +18,8 @@ final class AssessmentEmailTemplates
     /** Sent to a psychologist when more reviews wait at their provider than when they were last told (the preference `provider_reviews`). */
     public const string PROVIDER_REVIEWS_WAITING = 'assessment.provider_reviews_waiting';
 
+    public const string REPORT_QUESTION = 'assessment.report_question';
+
     /** Sent to a psychologist when their STR or SILP ends in 60, 30 or 7 days, or ended (always sent: it decides whether reports can be signed). */
     public const string LICENCE_EXPIRING = 'assessment.licence_expiring';
 
@@ -87,6 +89,21 @@ final class AssessmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo {{name}},\n\nSaat ini ada {{count}} tinjauan laporan yang menunggu di lembaga Anda, {{overdue}} di antaranya melewati tenggat. Buka Portal Mitra untuk mengambil dan menyelesaikannya.\n\nAnda dapat mematikan email ini di pengaturan notifikasi akun Anda.",
                     'en' => "Hello {{name}},\n\n{{count}} report reviews are waiting at your provider right now, {{overdue}} of them past their review day. Open Portal Mitra to claim and finish them.\n\nYou can switch this email off in the notification settings of your account.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::REPORT_QUESTION,
+                'Sent to the psychologist who signed a report when a company asks about it (to the leads of the institution when the signer is no longer active).',
+                [
+                    new EmailVariable('name', 'The psychologist\'s name', 'Dewi'),
+                    new EmailVariable('company_name', 'The company that asks', 'PT Sinar Jaya'),
+                    new EmailVariable('test_title', 'The battery of the report', 'Inventori Kepribadian'),
+                    new EmailVariable('report_number', 'The number of the report', 'LPCT/2026/0007'),
+                ],
+                TranslatedText::fromArray(['id' => 'Pertanyaan tentang laporan {{report_number}}', 'en' => 'A question about report {{report_number}}']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{company_name}} mengajukan pertanyaan tentang laporan {{report_number}} ({{test_title}}). Buka Portal Mitra untuk membaca dan menjawabnya.\n\nAnda dapat mematikan email ini di pengaturan notifikasi akun Anda.",
+                    'en' => "Hello {{name}},\n\n{{company_name}} asked a question about report {{report_number}} ({{test_title}}). Open Portal Mitra to read and answer it.\n\nYou can switch this email off in the notification settings of your account.",
                 ]),
             ),
             new EmailTemplateDefinition(

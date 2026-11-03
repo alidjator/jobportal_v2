@@ -16,6 +16,7 @@ use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
 use Src\Assessment\Interface\Http\Controllers\MySignatureController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
+use Src\Assessment\Interface\Http\Controllers\ReportMessageController;
 use Src\Assessment\Interface\Http\Controllers\ReportRegisterController;
 use Src\Assessment\Interface\Http\Controllers\ReportVerificationController;
 use Src\Assessment\Interface\Http\Controllers\ResultController;
@@ -89,6 +90,8 @@ Route::prefix('provider')->group(function (): void {
             Route::post('sign', [ReviewController::class, 'sign']);
             Route::post('mark-reviewed', [ReviewController::class, 'markReviewed']);
             Route::post('revise', [ReviewController::class, 'revise']);
+            Route::get('messages', [ReportMessageController::class, 'providerIndex']);
+            Route::post('messages', [ReportMessageController::class, 'providerStore'])->middleware('throttle:'.AssessmentServiceProvider::REPORT_MESSAGE_LIMITER);
         });
     });
 });
@@ -121,6 +124,8 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
         Route::put('scoring/questions/{questionId}', [ResultController::class, 'score']);
         Route::get('videos/{questionId}', [ResultController::class, 'video']);
         Route::get('report.pdf', [ResultController::class, 'report']);
+        Route::get('report-messages', [ReportMessageController::class, 'companyIndex']);
+        Route::post('report-messages', [ReportMessageController::class, 'companyStore'])->middleware('throttle:'.AssessmentServiceProvider::REPORT_MESSAGE_LIMITER);
     });
 });
 

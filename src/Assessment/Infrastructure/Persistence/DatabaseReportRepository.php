@@ -11,6 +11,7 @@ use Src\Assessment\Domain\Recommendation;
 use Src\Assessment\Domain\RegisterEntry;
 use Src\Assessment\Domain\RegisterFilter;
 use Src\Assessment\Domain\Report;
+use Src\Assessment\Domain\ReportMessageAuthor;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReportSummary;
@@ -155,7 +156,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
         $this->connection->table(self::TABLE)->where('claimed_by_psychologist_id', $psychologistId)->update(['claimed_by_psychologist_id' => null, 'claimed_at' => null, 'claim_touched_at' => null]);
     }
 
-    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null, bool $overdue = false): Page
+    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null, bool $overdue = false, bool $openQuestions = false): Page
     {
         $today = ReviewTarget::today($this->clock->now());
         $builder = $this->connection->table(self::TABLE.' as reports')
@@ -192,9 +193,17 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $builder->where('reports.status', ReportStatus::PendingReview->value)->where('reports.review_due_on', '<', $today);
         }
 
+        // The last message of the report is a company's question nobody answered.
+        $openQuestion = 'exists (select 1 from assessment_report_messages as messages where messages.report_id = reports.id and messages.author_kind = ? and messages.id = (select max(latest.id) from assessment_report_messages as latest where latest.report_id = reports.id))';
+
+        if ($openQuestions) {
+            $builder->whereRaw($openQuestion, [ReportMessageAuthor::Company->value]);
+        }
+
         $total = (clone $builder)->count();
         $rows = $builder
-            ->select(['reports.review_due_on', 'reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'reports.claimed_by_psychologist_id', 'reports.claim_touched_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'invitations.job_id', 'invitations.company_id', 'tests.title'])
+            ->selectRaw($openQuestion.' as open_question', [ReportMessageAuthor::Company->value])
+            ->addSelect(['reports.review_due_on', 'reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'reports.claimed_by_psychologist_id', 'reports.claim_touched_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'invitations.job_id', 'invitations.company_id', 'tests.title'])
             ->orderByRaw('case when reports.status = ? and reports.review_due_on < ? then 0 else 1 end', [ReportStatus::PendingReview->value, $today])
             ->orderBy('attempts.submitted_at')
             ->orderBy('reports.id')
@@ -218,6 +227,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
             $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
             $row->review_due_on === null ? null : $this->time((string) $row->review_due_on),
+            (bool) $row->open_question,
         ), $rows->all()), $total, $request);
     }
 

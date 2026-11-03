@@ -68,7 +68,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `cannot-change-own-group-role` | 422 | Organization | You cannot change your own group role. |
 | `cannot-remove-self` | 409 | Company | You cannot remove yourself; another company admin can. |
 | `cannot-reset-self` | 409 | Company | You cannot reset your own second factor here. |
-| `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot review reports. |
+| `cannot-sign-reports` | 403 | Assessment | Your STR or SILP is not valid today, so you cannot answer about reports. |
 | `cannot-suspend-self` | 409 | Assessment, Company | You cannot suspend yourself. |
 | `category-limit` | 422 | TalentPool | A company has at most :max categories. |
 | `category-name-invalid` | 422 | TalentPool | A category name has 1 to :max characters. |
@@ -443,6 +443,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `report-not-auto-issued` | 409 | Assessment | Only a report that was issued automatically can be marked reviewed or revised. |
 | `report-not-open` | 409 | Review | This report was already handled. |
 | `report-not-signed` | 409 | Assessment | A psychologist has not signed the report of this test yet. |
+| `report-questions-closed` | 409 | Assessment | Questions about this report are closed: only a signed report takes them, for 30 days after its signing. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
 | `reports-to-cycle` | 422 | Organization | The position would report to itself through the chain. |
 | `requisition-has-jobs` | 409 | Workforce | A requisition with jobs is closed, not cancelled. |

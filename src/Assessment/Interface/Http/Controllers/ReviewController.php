@@ -30,7 +30,7 @@ final class ReviewController extends ApiController
 {
     public function index(ListReviewsRequest $request, ActorResolver $actors, ListReviews $list): AnonymousResourceCollection
     {
-        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->reviewed(), $request->pageRequest(), $request->claimed(), $request->overdue());
+        $page = $list->execute($actors->fromRequest($request), $request->status(), $request->reviewed(), $request->pageRequest(), $request->claimed(), $request->overdue(), $request->openQuestions());
 
         return ReviewListItemResource::collection(PaginatedResources::paginator($page, $request));
     }

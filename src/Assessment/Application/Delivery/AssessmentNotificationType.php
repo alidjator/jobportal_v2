@@ -45,6 +45,12 @@ final class AssessmentNotificationType
     /** To a psychologist: reports wait for a review at their provider (`data.count`, and `data.overdue` of them past their review day); sent when the count rises (`phase-8-provider-tools.md` section 5). */
     public const string PROVIDER_REVIEWS_WAITING = 'provider.reviews_waiting';
 
+    /** To the signer and the leads of the institution: a company asked about a signed report (`data.report_id`, `company_name`, `test_title`, `report_number`). */
+    public const string PROVIDER_REPORT_QUESTION = 'provider.report_question';
+
+    /** To the company members who asked: the institution answered about a signed report (`data.invitation_id`, `test_title`, `report_number`). */
+    public const string REPORT_ANSWERED = 'assessment.report_answered';
+
     /** To a psychologist: their STR or SILP ends in 60, 30 or 7 days, or ended (`data.kind`, `valid_until`, `days_left`; 0 or less means it ended and they cannot sign). */
     public const string LICENCE_EXPIRING = 'assessment.licence_expiring';
 

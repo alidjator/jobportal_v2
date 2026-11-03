@@ -37,6 +37,8 @@ final class ReviewListItemResource extends JsonResource
             'reviewed' => ! $summary->autoIssued || $summary->reviewedAt !== null,
             /** The day the review is due (`Y-m-d`, Jakarta working days); null once signed and for an automatic report. */
             'review_due_on' => $summary->status === ReportStatus::PendingReview ? $summary->reviewDueOn?->format('Y-m-d') : null,
+            /** Whether the last message about the report is a company's question nobody answered. */
+            'open_question' => $summary->hasOpenQuestion,
             /** Whether the review is past its due day; overdue reports come first in the queue. */
             'overdue' => $this->resource->overdue,
         ];

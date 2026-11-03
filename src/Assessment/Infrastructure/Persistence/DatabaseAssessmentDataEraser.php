@@ -62,6 +62,8 @@ final readonly class DatabaseAssessmentDataEraser implements AssessmentDataErase
             $this->connection->table($table)->whereIn('attempt_id', $attempts)->delete();
         }
 
+        // The questions about the candidate's reports mention them.
+        $this->connection->table('assessment_report_messages')->whereIn('report_id', $this->connection->table('assessment_reports')->whereIn('attempt_id', $attempts)->select('id'))->delete();
         $this->connection->table('assessment_attempts')->whereIn('id', $attempts)->update(['last_ip' => null, 'session_hash' => null, 'norm_age' => null, 'norm_education_rank' => null]);
         $this->connection->table('assessment_invitations')->where('applicant_user_id', $userId)->update(['attachment_path' => null, 'attachment_name' => null, 'attachment_mime' => null, 'attachment_size_bytes' => null]);
         $this->connection->table('assessment_results')->whereIn('attempt_id', $attempts)->update(['scale_scores' => null]);

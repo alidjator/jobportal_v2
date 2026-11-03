@@ -34,10 +34,10 @@ final readonly class ListReviews
      *
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended` or `provider-suspended`
      */
-    public function execute(Actor $actor, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, bool $overdue = false): Page
+    public function execute(Actor $actor, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, bool $overdue = false, bool $openQuestions = false): Page
     {
         $psychologist = $this->access->psychologist($actor);
-        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $reviewed, $request, $claimed, $psychologist->id, $overdue);
+        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $reviewed, $request, $claimed, $psychologist->id, $overdue, $openQuestions);
         $names = $this->accounts->names(array_values(array_unique(array_map(static fn (ReportSummary $summary): int => $summary->applicantUserId, $page->items))));
 
         $titles = $this->jobs->titles(array_values(array_unique(array_filter(array_map(static fn (ReportSummary $summary): ?int => $summary->jobId, $page->items)))));

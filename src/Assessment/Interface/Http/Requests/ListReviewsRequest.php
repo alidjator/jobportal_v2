@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Shared\Interface\Http\Requests\PaginatedRequest;
 
-/** Allowed: `filter[status]` (`pending_review` or `signed`), `filter[reviewed]` (boolean), `filter[claimed]` (`mine`, `others` or `none`: by the live claim), `filter[overdue]` (boolean: `1` keeps the reports past their review day), `page` and `per_page`. Any other filter is refused with 422. */
+/** Allowed: `filter[status]` (`pending_review` or `signed`), `filter[reviewed]` (boolean), `filter[claimed]` (`mine`, `others` or `none`: by the live claim), `filter[questions]` (`open`: a company's question waits for an answer), `filter[overdue]` (boolean: `1` keeps the reports past their review day), `page` and `per_page`. Any other filter is refused with 422. */
 final class ListReviewsRequest extends FormRequest
 {
     use PaginatedRequest;
@@ -17,11 +17,12 @@ final class ListReviewsRequest extends FormRequest
     {
         return [
             ...$this->paginationRules(),
-            'filter' => ['nullable', 'array:status,reviewed,claimed,overdue'],
+            'filter' => ['nullable', 'array:status,reviewed,claimed,overdue,questions'],
             'filter.status' => ['nullable', 'string', Rule::enum(ReportStatus::class)],
             'filter.reviewed' => ['nullable', 'boolean'],
             'filter.claimed' => ['nullable', 'string', Rule::in(['mine', 'others', 'none'])],
             'filter.overdue' => ['nullable', 'boolean'],
+            'filter.questions' => ['nullable', 'string', Rule::in(['open'])],
         ];
     }
 
@@ -29,6 +30,12 @@ final class ListReviewsRequest extends FormRequest
     public function reviewed(): ?bool
     {
         return $this->filled('filter.reviewed') ? $this->boolean('filter.reviewed') : null;
+    }
+
+    /** `filter[questions]=open` keeps the reports whose last message is a company's question nobody answered. */
+    public function openQuestions(): bool
+    {
+        return $this->input('filter.questions') === 'open';
     }
 
     public function overdue(): bool

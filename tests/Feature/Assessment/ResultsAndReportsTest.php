@@ -927,6 +927,106 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->provider('GET', 'reviews?filter[overdue]=1')->assertOk()->assertJsonCount(0, 'data');
     }
 
+    // ----- questions about a signed report -----
+
+    private function signedReport(): int
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        return $reportId;
+    }
+
+    public function test_a_report_takes_questions_only_once_signed_and_for_thirty_days(): void
+    {
+        $reportId = $this->takeBattery();
+
+        $this->asTeam('GET', 'report-messages')->assertOk()->assertJsonPath('data.open', false)->assertJsonPath('data.closes_at', null)->assertJsonPath('data.messages', []);
+        $this->asTeam('POST', 'report-messages', ['body' => 'Why this score?'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-questions-closed');
+
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $this->asTeam('GET', 'report-messages')->assertOk()->assertJsonPath('data.open', true);
+        $this->asTeam('POST', 'report-messages', ['body' => 'Why this score?'])->assertCreated();
+
+        DB::table('assessment_reports')->where('id', $reportId)->update(['signed_at' => now()->subDays(31)]);
+        $this->asTeam('GET', 'report-messages')->assertOk()->assertJsonPath('data.open', false)->assertJsonCount(1, 'data.messages');
+        $this->asTeam('POST', 'report-messages', ['body' => 'And now?'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-questions-closed');
+        $this->provider('POST', "reviews/{$reportId}/messages", ['body' => 'An answer'])->assertStatus(409)->assertJsonPath('type', 'urn:onesis:error:report-questions-closed');
+    }
+
+    public function test_the_company_asks_and_the_institution_answers_and_each_side_is_told(): void
+    {
+        $reportId = $this->signedReport();
+        $psychologistUser = (int) DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->value('user_id');
+        $notices = fn (int $user, string $type): int => DB::table('notifications')->where('notifiable_type', 'user')->where('notifiable_id', $user)->where('type', $type)->count();
+
+        $this->asTeam('POST', 'report-messages', ['body' => '  Why is the score on extraversion this high?  '])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.0.author_kind', 'company')
+            ->assertJsonPath('data.messages.0.mine', true)
+            ->assertJsonPath('data.messages.0.body', 'Why is the score on extraversion this high?');
+        $this->assertSame(1, $notices($psychologistUser, 'provider.report_question'));
+
+        // The queue shows the question that waits, and the psychologist reads it with the name of the asker.
+        $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.open_question', true);
+        $this->assertSame([$reportId], array_column($this->provider('GET', 'reviews?filter[questions]=open')->assertOk()->json('data'), 'id'));
+        $this->provider('GET', "reviews/{$reportId}/messages")->assertOk()->assertJsonPath('data.messages.0.mine', false)->assertJsonPath('data.messages.0.author_kind', 'company');
+        $this->provider('GET', 'reviews?filter[questions]=closed')->assertUnprocessable();
+
+        $this->provider('POST', "reviews/{$reportId}/messages", ['body' => 'The raw score was 3 of 4 answers "Always".'])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.1.author_kind', 'psychologist')
+            ->assertJsonPath('data.messages.1.mine', true);
+        $this->assertSame(1, $notices($this->recruiterId, 'assessment.report_answered'));
+        $this->assertSame(0, $notices($this->recruiterId, 'provider.report_question'));
+
+        $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.open_question', false);
+        $this->provider('GET', 'reviews?filter[questions]=open')->assertOk()->assertJsonCount(0, 'data');
+        $this->asTeam('GET', 'report-messages')->assertOk()->assertJsonCount(2, 'data.messages')->assertJsonPath('data.messages.1.mine', false);
+    }
+
+    public function test_a_message_about_a_report_carries_no_link_and_has_a_length(): void
+    {
+        $reportId = $this->signedReport();
+
+        $this->asTeam('POST', 'report-messages', ['body' => 'See https://elsewhere.example/doc'])->assertUnprocessable()->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
+        $this->provider('POST', "reviews/{$reportId}/messages", ['body' => 'Write to someone@elsewhere.example'])->assertUnprocessable()->assertJsonPath('type', 'urn:onesis:error:message-link-not-allowed');
+        $this->asTeam('POST', 'report-messages', ['body' => ''])->assertUnprocessable()->assertJsonValidationErrors(['body']);
+        $this->asTeam('POST', 'report-messages', ['body' => str_repeat('a', 2001)])->assertUnprocessable()->assertJsonValidationErrors(['body']);
+        $this->assertSame(0, DB::table('assessment_report_messages')->count());
+    }
+
+    public function test_only_the_two_sides_of_the_report_reach_its_messages(): void
+    {
+        $reportId = $this->signedReport();
+
+        $this->asTeam('GET', 'report-messages', [], $this->otherAdminToken)->assertNotFound();
+        $this->asTeam('POST', 'report-messages', ['body' => 'Hello'], $this->otherAdminToken)->assertNotFound();
+        $this->api('GET', "/company/assessment/invitations/{$this->invitationId}/report-messages", [], $this->seekerToken)->assertForbidden();
+        $this->api('GET', "/provider/reviews/{$reportId}/messages", [], $this->otherPsychologistToken)->assertNotFound();
+        $this->api('POST', "/provider/reviews/{$reportId}/messages", ['body' => 'Hello'], $this->otherPsychologistToken)->assertNotFound();
+        $this->api('GET', "/provider/reviews/{$reportId}/messages", [], $this->seekerToken)->assertForbidden();
+
+        // A psychologist whose licence ended can read but not answer.
+        $this->asTeam('POST', 'report-messages', ['body' => 'A question'])->assertCreated();
+        DB::table('assessment_psychologists')->where('provider_id', $this->providerId)->update(['str_valid_until' => '2020-01-01']);
+        $this->api('GET', "/provider/reviews/{$reportId}/messages", [], $this->psychologistToken)->assertOk();
+        $this->api('POST', "/provider/reviews/{$reportId}/messages", ['body' => 'An answer'], $this->psychologistToken)->assertForbidden()->assertJsonPath('type', 'urn:onesis:error:cannot-sign-reports');
+    }
+
+    public function test_the_questions_about_a_report_go_with_the_erasure_of_the_candidate(): void
+    {
+        $this->signedReport();
+        $this->asTeam('POST', 'report-messages', ['body' => 'A question about this candidate'])->assertCreated();
+        $this->assertSame(1, DB::table('assessment_report_messages')->count());
+
+        Event::dispatch(new UserAnonymized($this->seekerId, now()->toDateTimeImmutable()));
+
+        $this->assertSame(0, DB::table('assessment_report_messages')->count());
+    }
+
     public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void
     {
         $reportId = $this->takeBattery();

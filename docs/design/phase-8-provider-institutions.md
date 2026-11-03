@@ -162,6 +162,11 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
   `assessment.report_answered` to the members who asked.
 - **Rules:** plain text, no attachments; the link rule of `phase-8-interview-calendar.md` section 6 applies to both sides. The messages are not part
   of the report and never reach the candidate. Erased with the assessment erasure step.
+- **Coded 2026-11-03** (migration `000405`): routes `GET`/`POST company/assessment/invitations/{id}/report-messages` and `GET`/`POST provider/reviews/{id}/messages` (20 posts per hour per account, `assessment-report-messages`), the
+  thread resource `{report_id, open, closes_at, messages[{id, author_kind, author_name, mine, body, created_at}]}`; the company reads with the right to read the result (not the interview panel) and posts with
+  `assessments.send`; a psychologist answers only with a valid licence (403 `cannot-sign-reports`, as for signing). Both sides go through `CandidateMessageRules` with the invitation's company, so a link
+  or an address outside the company's own domain is refused on both sides (422 `message-link-not-allowed`, field `body`). The queue has `open_question` and `filter[questions]=open`. The email goes to the
+  signer, or to the leads when the signer is no longer active, and follows `provider_reviews`; the in-app notices are `provider.report_question` and `assessment.report_answered`.
 
 ## 7. Raw data retention (legal question 17, designed 2026-11-02 behind a switch)
 
