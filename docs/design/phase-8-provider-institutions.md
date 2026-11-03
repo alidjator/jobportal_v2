@@ -198,6 +198,10 @@ proposal below was accepted by the user on 2026-11-02.
 - **Export (6).** The archive is not part of the candidate's data export: while the account lives the data is live (and exported as today); after the erasure the account is gone and there is nobody to export to.
 - **Tests.** The switch off changes nothing (the erasure tests of today stay as they are); on, the archive row and the files exist, the live rows and files are gone, a second run archives nothing twice, a
   failed copy leaves the data in place, the purge removes only what is past its date, `me/retained-data` answers by the switch, and the show command audits the read.
+- **Coded 2026-11-03** (migration `000406`, switch off): settings `assessment.raw_data_retention_enabled` and `assessment.raw_data_retention_years`; `ArchiveExaminations` runs first in `EraseAssessmentData`; the payload is
+  encrypted with `Encrypter` in the repository (the query builder has no cast); a live file that is already gone is left out of the archive (it cannot be kept; a retry would stay stuck otherwise);
+  `PurgeArchivedExaminations` (daily 03:55, audit `assessment.archive_purged`, only when something was purged), `assessment:archive:show {report_number} {reference}` (audit `assessment.archive_read`, one entry per
+  row read, none for a number that is not archived) and `GET me/retained-data`. Open: the Career deletion dialog line and the two legal texts (content).
 - **Coding order.** Migration, switch and period settings, the archive writer inside the erasure step, the purge and show commands, `me/retained-data`, the Career dialog line; after the legal answer only the
   switch and the number of years change.
 

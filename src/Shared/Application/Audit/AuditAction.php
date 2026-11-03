@@ -139,6 +139,10 @@ final class AuditAction
 
     public const string ASSESSMENT_REPORT_DOWNLOADED = 'assessment.report_downloaded';
 
+    public const string ASSESSMENT_ARCHIVE_READ = 'assessment.archive_read';
+
+    public const string ASSESSMENT_ARCHIVE_PURGED = 'assessment.archive_purged';
+
     public const string INTERVIEW_RECORDING_DOWNLOADED = 'interview.recording_downloaded';
 
     public const string OFFER_LETTER_DOWNLOADED = 'offer.letter_downloaded';

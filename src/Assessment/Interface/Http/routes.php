@@ -13,6 +13,7 @@ use Src\Assessment\Interface\Http\Controllers\InvitationController;
 use Src\Assessment\Interface\Http\Controllers\JobDefaultController;
 use Src\Assessment\Interface\Http\Controllers\LicenceController;
 use Src\Assessment\Interface\Http\Controllers\MyInvitationController;
+use Src\Assessment\Interface\Http\Controllers\MyRetainedDataController;
 use Src\Assessment\Interface\Http\Controllers\MySignatureController;
 use Src\Assessment\Interface\Http\Controllers\ProviderProfileController;
 use Src\Assessment\Interface\Http\Controllers\PsychologistInvitationController;
@@ -137,6 +138,9 @@ Route::middleware('auth:user')->group(function (): void {
     Route::put('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'put'])->whereNumber(['id', 'stageId']);
     Route::delete('company/jobs/{id}/assessments/{stageId}', [JobDefaultController::class, 'destroy'])->whereNumber(['id', 'stageId']);
 });
+
+// What the erasure of the account would keep for an institution, shown before the person confirms it.
+Route::middleware('auth:user')->get('me/retained-data', MyRetainedDataController::class);
 
 // The tests a job seeker was asked to take.
 Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void {

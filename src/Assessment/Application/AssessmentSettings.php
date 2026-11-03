@@ -31,6 +31,10 @@ final class AssessmentSettings
 
     public const string IDLE_MINUTES = 'assessment.idle_minutes';
 
+    public const string RAW_DATA_RETENTION_ENABLED = 'assessment.raw_data_retention_enabled';
+
+    public const string RAW_DATA_RETENTION_YEARS = 'assessment.raw_data_retention_years';
+
     public const string BAND_FAIR_FROM = 'assessment.band_fair_from';
 
     public const string BAND_GOOD_FROM = 'assessment.band_good_from';
@@ -96,6 +100,14 @@ final class AssessmentSettings
             SettingDefinition::integer(
                 self::IDLE_MINUTES, 3, 1, 30,
                 'How many minutes a candidate may give no input (pointer, key, touch) during a test before the browser reports an idle signal and shows a pop-up.',
+            ),
+            SettingDefinition::boolean(
+                self::RAW_DATA_RETENTION_ENABLED, false,
+                'Whether the erasure of a candidate\'s account first archives the raw data of their psychological examinations for the institution (answers, drawings, scores, report and PDFs) and keeps it for the period below. Off until the legal answer on the retention duty is in; switching it off never deletes what is archived.',
+            ),
+            SettingDefinition::integer(
+                self::RAW_DATA_RETENTION_YEARS, 5, 1, 30,
+                'How many years the archived raw data of a psychological examination is kept after the erasure of the candidate\'s account, then purged. A placeholder until the legal answer is in; a change does not move what is archived already.',
             ),
             SettingDefinition::integer(
                 self::BAND_FAIR_FROM, 50, 1, 99,

@@ -11,11 +11,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use RuntimeException;
+use Src\Assessment\Domain\ExaminationArchiveRepository;
 use Src\Assessment\Domain\Norm;
 use Src\Assessment\Domain\NormConverter;
 use Src\Assessment\Domain\ReportRenderer;
 use Src\Assessment\Domain\ReviewTarget;
 use Src\Identity\Domain\Events\UserAnonymized;
+use Src\Platform\Application\Settings\SettingsStore;
+use Src\Shared\Application\FileStorage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
 use Tests\Concerns\BuildsApplicationFixtures;
@@ -1025,6 +1029,196 @@ final class ResultsAndReportsTest extends FeatureTestCase
         Event::dispatch(new UserAnonymized($this->seekerId, now()->toDateTimeImmutable()));
 
         $this->assertSame(0, DB::table('assessment_report_messages')->count());
+    }
+
+    // ----- the archive of erased examinations (the retention switch) -----
+
+    private function switchRetention(bool $on, int $years = 5): void
+    {
+        $this->app->make(SettingsStore::class)->setGlobal('assessment.raw_data_retention_enabled', $on, null);
+        $this->app->make(SettingsStore::class)->setGlobal('assessment.raw_data_retention_years', $years, null);
+    }
+
+    private function erase(): void
+    {
+        Event::dispatch(new UserAnonymized($this->seekerId, now()->toDateTimeImmutable()));
+    }
+
+    public function test_with_the_switch_off_the_erasure_keeps_nothing(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $this->erase();
+
+        $this->assertSame(0, DB::table('assessment_archived_examinations')->count());
+        $this->assertSame(0, DB::table('assessment_answers')->count());
+        $this->assertSame([], Storage::allFiles('assessment/archive'));
+    }
+
+    public function test_with_the_switch_on_the_erasure_archives_the_raw_data_then_deletes_the_live_data(): void
+    {
+        $this->switchRetention(true, 7);
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $pdf = (string) DB::table('assessment_reports')->value('pdf_path');
+        $drawing = (string) DB::table('assessment_drawings')->value('path');
+        $pdfHash = hash('sha256', (string) Storage::get($pdf));
+        $drawingBytes = (string) Storage::get($drawing);
+        $answers = DB::table('assessment_answers')->count();
+
+        $this->erase();
+
+        // The live data is gone.
+        $this->assertSame(0, DB::table('assessment_answers')->count());
+        $this->assertSame(0, DB::table('assessment_drawings')->count());
+        $this->assertSame('', DB::table('assessment_reports')->value('body'));
+        Storage::assertMissing($pdf);
+        Storage::assertMissing($drawing);
+
+        // The archive has it: one row, the day it may be purged, the encrypted payload and the copied files.
+        $this->assertSame(1, DB::table('assessment_archived_examinations')->count());
+        $row = DB::table('assessment_archived_examinations')->first();
+        $this->assertSame('LEMB/2026/00001', $row->report_number);
+        $this->assertSame(now()->addYears(7)->format('Y-m-d'), substr((string) $row->retain_until, 0, 10));
+        $this->assertStringNotContainsString('extraversion', (string) $row->payload, 'The payload is encrypted.');
+
+        $found = $this->app->make(ExaminationArchiveRepository::class)->findByReportNumber('LEMB/2026/00001');
+        $this->assertCount(1, $found);
+        $this->assertCount($answers, $found[0]->payload['answers']);
+        $this->assertSame(7.5, (float) $found[0]->payload['drawings'][0]['score']);
+        $this->assertSame('Roots are strong.', $found[0]->payload['drawings'][0]['note']);
+        $this->assertArrayHasKey('norm_age', $found[0]->payload);
+        $this->assertArrayHasKey('scale_scores', $found[0]->payload);
+        $this->assertNotSame('', $found[0]->payload['report']['body']);
+        $this->assertSame('You like people and often seek company.', $found[0]->payload['report']['explanation']);
+        $this->assertSame($pdfHash, $found[0]->payload['report']['pdf_sha256']);
+
+        $kinds = array_column($found[0]->files, 'kind');
+        sort($kinds);
+        $this->assertSame(['drawing', 'report_pdf'], $kinds);
+
+        foreach ($found[0]->files as $file) {
+            Storage::assertExists($file['path']);
+            $this->assertSame($file['sha256'], hash('sha256', (string) Storage::get($file['path'])));
+            $this->assertStringStartsWith('assessment/archive/'.$row->provider_id.'/'.$row->attempt_id.'/', $file['path']);
+        }
+
+        $this->assertSame($drawingBytes, (string) Storage::get(collect($found[0]->files)->firstWhere('kind', 'drawing')['path']));
+
+        // A second run archives nothing twice, and the public check still says the document was erased.
+        $this->erase();
+        $this->assertSame(1, DB::table('assessment_archived_examinations')->count());
+        $this->app['auth']->forgetGuards();
+        $this->withoutToken()->getJson('/api/v1/verify/assessment-reports?number='.rawurlencode('LEMB/2026/00001'))->assertOk()
+            ->assertJsonPath('data.document_erased', true)->assertJsonPath('data.sha256', null);
+    }
+
+    public function test_a_failed_copy_leaves_the_data_where_it_is(): void
+    {
+        $this->switchRetention(true);
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $this->app->extend(FileStorage::class, fn (FileStorage $inner): FileStorage => new class($inner) implements FileStorage
+        {
+            public function __construct(private readonly FileStorage $inner) {}
+
+            public function put(string $path, string $contents): void
+            {
+                if (str_starts_with($path, 'assessment/archive/')) {
+                    throw new RuntimeException('The disk is full.');
+                }
+
+                $this->inner->put($path, $contents);
+            }
+
+            public function get(string $path): ?string
+            {
+                return $this->inner->get($path);
+            }
+
+            public function delete(string $path): void
+            {
+                $this->inner->delete($path);
+            }
+        });
+
+        // The step fails (the daily reconciliation runs it again) and nothing was deleted.
+        try {
+            $this->erase();
+            $this->fail('The step should have failed.');
+        } catch (RuntimeException $failure) {
+            $this->assertSame('The disk is full.', $failure->getMessage());
+        }
+
+        $this->assertSame(0, DB::table('assessment_archived_examinations')->count());
+        $this->assertGreaterThan(0, DB::table('assessment_answers')->count());
+        $this->assertNotSame('', DB::table('assessment_reports')->value('body'));
+        Storage::assertExists((string) DB::table('assessment_reports')->value('pdf_path'));
+        $this->assertSame(0, DB::table('identity_erasure_receipts')->where('user_id', $this->seekerId)->where('step', 'assessment-data')->count());
+    }
+
+    public function test_the_purge_removes_only_what_is_past_its_day_and_audits_it(): void
+    {
+        $this->switchRetention(true);
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $this->erase();
+
+        $files = array_column($this->app->make(ExaminationArchiveRepository::class)->findByReportNumber('LEMB/2026/00001')[0]->files, 'path');
+
+        // Not due yet: nothing happens, whatever the switch says.
+        $this->switchRetention(false);
+        $this->artisan('assessment:purge-archive')->assertSuccessful();
+        $this->assertSame(1, DB::table('assessment_archived_examinations')->count());
+        $this->assertSame(0, DB::table('platform_audit_logs')->where('action', 'assessment.archive_purged')->count());
+
+        DB::table('assessment_archived_examinations')->update(['retain_until' => now()->subDay()->format('Y-m-d')]);
+        $this->artisan('assessment:purge-archive')->assertSuccessful();
+
+        $this->assertSame(0, DB::table('assessment_archived_examinations')->count());
+
+        foreach ($files as $path) {
+            Storage::assertMissing($path);
+        }
+
+        $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'assessment.archive_purged')->count());
+    }
+
+    public function test_the_operator_reads_the_archive_with_a_request_reference_and_the_read_is_audited(): void
+    {
+        $this->switchRetention(true);
+        $reportId = $this->takeBattery();
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $this->erase();
+
+        $this->artisan('assessment:archive:show', ['report_number' => 'LEMB/2026/00001', 'reference' => 'COURT-2026-17'])->assertSuccessful();
+
+        $entry = DB::table('platform_audit_logs')->where('action', 'assessment.archive_read')->first();
+        $this->assertNotNull($entry);
+        $this->assertStringContainsString('COURT-2026-17', (string) $entry->metadata);
+
+        $this->artisan('assessment:archive:show', ['report_number' => 'LEMB/2026/09999', 'reference' => 'COURT-2026-18'])->assertFailed();
+        $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'assessment.archive_read')->count());
+    }
+
+    public function test_the_candidate_is_told_what_the_erasure_would_keep(): void
+    {
+        $this->takeBattery();
+
+        $this->api('GET', '/me/retained-data', [], $this->seekerToken)->assertOk()->assertExactJson(['data' => ['retention' => null]]);
+
+        $this->switchRetention(true, 6);
+        $this->api('GET', '/me/retained-data', [], $this->seekerToken)->assertOk()->assertExactJson(['data' => ['retention' => ['assessment_examinations' => ['years' => 6, 'count' => 1]]]]);
+        $this->api('GET', '/me/retained-data', [], $this->psychologistToken)->assertForbidden();
+        $this->app['auth']->forgetGuards();
+        $this->withoutToken()->getJson('/api/v1/me/retained-data')->assertUnauthorized();
     }
 
     public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void
