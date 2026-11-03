@@ -319,7 +319,7 @@ Interpretations, where the design left room:
   plus those of its other open jobs must not exceed its hires (422 `requisition-vacancies-exceeded`, with `remaining`). The first job moves it to `in_recruitment`; the job takes the job role of the position; changing the
   vacancies of such a job is checked the same way. Jobs that are closed or expired no longer count. `job_jobs.requisition_id` is shown as `requisition_id` in the job; the position, unit and cost centre are read from the
   requisition, not copied. `POST company/requisitions/{id}/jobs` (optional `title`, `vacancies`; defaults the position's title and the hires still to open) opens a draft job through the same rule and needs `jobs.create`.
-- **Audit.** `workforce.requisition_` `created`, `updated`, `submitted`, `approved`, `rejected`, `returned`, `cancelled`, `closed`, `reduced`, `job_opened`, `amendment_requested`, `amendment_approved`,
+- **Audit.** `workforce.requisition_` `created`, `updated`, `submitted`, `approved`, `rejected`, `returned`, `cancelled`, `closed`, `reduced`, `job_opened`, `document_added`, `document_removed`, `amendment_requested`, `amendment_approved`,
   `amendment_rejected`, `amendment_returned`, with the tenant's `company_id` and the `group_id`.
 - **Left out:** `filled` and hires counting (hiring phase), the requisition-to-hire reports (dashboards after the TA core).
 
@@ -367,3 +367,15 @@ Migration `000390` (new, run on the test and the real database): a unique index 
   Letters, digits, spaces and punctuation are all allowed. It is **never used twice in a company, whatever the letter case**: 409 `requisition-number-taken` (checked in the use case, backed by the unique index). A typed number takes no running number.
 - **Changing it.** Only through `PUT`, so only while the requisition is a draft or rejected (409 `requisition-not-editable` otherwise, as for every field); sending the number it already has changes nothing.
 
+## Coded: documents on a requisition (2026-11-03)
+
+Asked by the user: a requester can attach documents to a requisition (a budget note, an organisation chart, the leaver's letter). Decided 2026-11-03: add and remove **until the requisition is decided** (draft, rejected, or waiting for
+approval; 409 `requisition-documents-closed` after); **up to 5 files of 5 MB**, a PDF, a Word or Excel file (`docx`, `xlsx`, no macros) or a JPEG or PNG picture, checked by content and by extension (422 `invalid-file`; 422
+`too-many-documents`); seen and downloaded by **whoever may read the requisition** (the tenant's readers and the group's), and **not carried to the jobs** opened from it.
+
+- Table `workforce_requisition_documents` (migration `000408`); the file sits on the private disk under `workforce/requisition-documents/`.
+- `POST company/requisitions/{id}/documents` (multipart `file`, `workforce.requisitions.create`) answers with the requisition; `DELETE company/requisitions/{id}/documents/{documentId}`;
+  `GET company/requisitions/{id}/documents/{documentId}` and `GET organization/requisitions/{id}/documents/{documentId}` send the file as an attachment. The detail lists `documents` (id, name, content type, size, uploader, date).
+- Confirmed by the user 2026-11-03: "until approved" is read as the states in which no decision is final; a returned requisition is a draft again, so it is open too. Adding to a requisition that waits changes neither its status nor
+  the running approval.
+- Audit: `document_added` and `document_removed` (with the document id and name).

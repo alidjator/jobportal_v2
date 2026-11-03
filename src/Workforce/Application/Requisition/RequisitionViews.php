@@ -6,15 +6,17 @@ use Src\Shared\Application\Clock;
 use Src\Shared\Application\Job\RequisitionJobs;
 use Src\Shared\Application\Organization\PositionDirectory;
 use Src\Workforce\Domain\Requisition;
+use Src\Workforce\Domain\RequisitionDocumentRepository;
 use Src\Workforce\Domain\RequisitionRepository;
 use Src\Workforce\Domain\RequisitionType;
 
-/** Builds the views of requisitions: positions are looked up once per legal entity; the detail adds amendments, jobs and quota. */
+/** Builds the views of requisitions: positions are looked up once per legal entity; the detail adds amendments, jobs, quota and documents. */
 final readonly class RequisitionViews
 {
     public function __construct(
         private PositionDirectory $positions,
         private RequisitionRepository $requisitions,
+        private RequisitionDocumentRepository $documents,
         private RequisitionJobs $jobs,
         private PlanQuota $quota,
         private Clock $clock,
@@ -44,7 +46,7 @@ final readonly class RequisitionViews
 
         return new RequisitionView(
             $requisition, $this->positions->ofEntity($requisition->legalEntityId, $this->clock->now())[$requisition->positionId] ?? null, $scope->canSeeCosts,
-            $this->requisitions->amendmentsOf($id), $this->jobs->count($id), $this->jobs->openVacancies($id), $quota,
+            $this->requisitions->amendmentsOf($id), $this->jobs->count($id), $this->jobs->openVacancies($id), $quota, $this->documents->of($id),
         );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Workforce;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -692,5 +693,92 @@ final class RequisitionTest extends FeatureTestCase
 
         $this->as($this->requester, 'PUT', "/company/requisitions/{$id}", $this->body(['number' => 'MINE-2']))->assertOk()->assertJsonPath('data.number', 'JR-20261016-001');
         $this->as($this->admin, 'PATCH', '/company/settings', ['workforce.requisition_number_mode' => 'sometimes'])->assertStatus(422);
+    }
+
+    // ----- documents -----
+
+    private function upload(UserModel $user, int $id, string $name, string $content): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($user->createToken('phone', ['*'], now()->addDay())->plainTextToken)
+            ->post("/api/v1/company/requisitions/{$id}/documents", ['file' => UploadedFile::fake()->createWithContent($name, $content)], ['Accept' => 'application/json']);
+    }
+
+    private function pdf(): string
+    {
+        return "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF";
+    }
+
+    public function test_a_requester_attaches_documents_and_whoever_reads_the_requisition_downloads_them(): void
+    {
+        $id = $this->draft();
+        $docx = "PK\x03\x04[Content_Types].xml word/document.xml";
+
+        $created = $this->upload($this->requester, $id, 'budget.pdf', $this->pdf())->assertCreated()->assertJsonCount(1, 'data.documents')
+            ->assertJsonPath('data.documents.0.name', 'budget.pdf')->assertJsonPath('data.documents.0.content_type', 'application/pdf')->assertJsonPath('data.documents.0.uploaded_by_id', $this->requester->id);
+        $this->upload($this->requester, $id, 'letter.docx', $docx)->assertCreated()->assertJsonCount(2, 'data.documents');
+        $document = (int) $created->json('data.documents.0.id');
+
+        $this->assertStringNotContainsString('path', json_encode($created->json('data.documents.0')));
+        $this->as($this->viewer, 'GET', "/company/requisitions/{$id}/documents/{$document}")->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->as($this->groupReader, 'GET', "/organization/requisitions/{$id}/documents/{$document}")->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->as($this->outsider, 'GET', "/company/requisitions/{$id}/documents/{$document}")->assertStatus(403);
+        $this->as($this->nobody, 'GET', "/company/requisitions/{$id}/documents/{$document}")->assertStatus(403);
+        $this->as($this->requester, 'GET', "/company/requisitions/{$id}")->assertJsonCount(2, 'data.documents');
+        $this->assertSame(2, DB::table('platform_audit_logs')->where('action', 'workforce.requisition_document_added')->count());
+    }
+
+    public function test_only_a_requester_changes_the_documents_and_a_removed_one_is_gone(): void
+    {
+        $id = $this->draft();
+        $document = (int) $this->upload($this->requester, $id, 'budget.pdf', $this->pdf())->assertCreated()->json('data.documents.0.id');
+
+        $this->error($this->upload($this->viewer, $id, 'extra.pdf', $this->pdf()), 403, 'company-permission-required');
+        $this->error($this->as($this->viewer, 'DELETE', "/company/requisitions/{$id}/documents/{$document}"), 403, 'company-permission-required');
+
+        $this->as($this->requester, 'DELETE', "/company/requisitions/{$id}/documents/{$document}")->assertNoContent();
+        $this->as($this->requester, 'GET', "/company/requisitions/{$id}/documents/{$document}")->assertNotFound();
+        $this->as($this->requester, 'DELETE', "/company/requisitions/{$id}/documents/{$document}")->assertNotFound();
+        $this->assertSame(0, DB::table('workforce_requisition_documents')->count());
+        $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'workforce.requisition_document_removed')->count());
+    }
+
+    public function test_the_file_must_be_what_its_name_says_and_small_enough(): void
+    {
+        $id = $this->draft();
+
+        foreach ([['budget.pdf', 'plain text'], ['budget.exe', 'MZ'], ['budget.pdf', $this->pdf().'/JavaScript'], ['sheet.xlsx', "PK\x03\x04[Content_Types].xml xl/workbook.xml xl/vbaProject.bin"], ['letter.docx', "PK\x03\x04[Content_Types].xml xl/workbook.xml"], ['big.pdf', $this->pdf().str_repeat('a', 5 * 1024 * 1024)]] as [$name, $content]) {
+            $this->error($this->upload($this->requester, $id, $name, $content), 422, 'invalid-file');
+        }
+
+        $this->upload($this->requester, $id, 'photo.png', "\x89PNG\r\n\x1A\n0000")->assertCreated();
+        $this->assertSame(1, DB::table('workforce_requisition_documents')->count());
+    }
+
+    public function test_a_requisition_holds_at_most_five_documents(): void
+    {
+        $id = $this->draft();
+
+        foreach (range(1, 5) as $number) {
+            $this->upload($this->requester, $id, "note-{$number}.pdf", $this->pdf())->assertCreated();
+        }
+
+        $this->error($this->upload($this->requester, $id, 'note-6.pdf', $this->pdf()), 422, 'too-many-documents');
+    }
+
+    public function test_documents_change_until_the_requisition_is_decided(): void
+    {
+        $id = $this->draft();
+        $document = (int) $this->upload($this->requester, $id, 'budget.pdf', $this->pdf())->assertCreated()->json('data.documents.0.id');
+
+        DB::table('workforce_requisitions')->where('id', $id)->update(['status' => 'pending_approval']);
+        $this->upload($this->requester, $id, 'more.pdf', $this->pdf())->assertCreated();
+
+        DB::table('workforce_requisitions')->where('id', $id)->update(['status' => 'approved']);
+        $this->error($this->upload($this->requester, $id, 'late.pdf', $this->pdf()), 409, 'requisition-documents-closed');
+        $this->error($this->as($this->requester, 'DELETE', "/company/requisitions/{$id}/documents/{$document}"), 409, 'requisition-documents-closed');
+        $this->as($this->viewer, 'GET', "/company/requisitions/{$id}/documents/{$document}")->assertOk();
+        $this->assertSame(2, DB::table('workforce_requisition_documents')->count());
     }
 }

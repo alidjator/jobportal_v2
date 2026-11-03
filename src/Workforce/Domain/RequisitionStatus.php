@@ -19,6 +19,12 @@ enum RequisitionStatus: string
         return $this === self::Draft || $this === self::Rejected;
     }
 
+    /** Whether documents may still be added or removed: until the requisition is decided (a draft, a rejected one and one waiting for approval). */
+    public function acceptsDocuments(): bool
+    {
+        return $this === self::Draft || $this === self::Rejected || $this === self::PendingApproval;
+    }
+
     /** Whether jobs may be opened for it and it may still be amended or closed. */
     public function isOpen(): bool
     {

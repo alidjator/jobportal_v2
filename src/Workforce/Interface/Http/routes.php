@@ -38,9 +38,14 @@ Route::middleware('auth:user')->group(function (): void {
     Route::post('company/requisitions/{id}/close', [RequisitionController::class, 'close'])->whereNumber('id');
     Route::post('company/requisitions/{id}/cancel', [RequisitionController::class, 'cancel'])->whereNumber('id');
     Route::post('company/requisitions/{id}/jobs', [RequisitionController::class, 'openJob'])->whereNumber('id');
+    // Documents (up to 5 files of 5 MB) can be added and removed until the requisition is decided; whoever reads the requisition downloads them.
+    Route::post('company/requisitions/{id}/documents', [RequisitionController::class, 'addDocument'])->whereNumber('id');
+    Route::delete('company/requisitions/{id}/documents/{documentId}', [RequisitionController::class, 'removeDocument'])->whereNumber(['id', 'documentId']);
+    Route::get('company/requisitions/{id}/documents/{documentId}', [RequisitionController::class, 'companyDocument'])->whereNumber(['id', 'documentId']);
 
     Route::middleware(RequireGroups::class)->group(function (): void {
         Route::get('organization/requisitions', [RequisitionController::class, 'groupIndex']);
         Route::get('organization/requisitions/{id}', [RequisitionController::class, 'groupShow'])->whereNumber('id');
+        Route::get('organization/requisitions/{id}/documents/{documentId}', [RequisitionController::class, 'groupDocument'])->whereNumber(['id', 'documentId']);
     });
 });

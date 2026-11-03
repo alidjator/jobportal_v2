@@ -9,13 +9,16 @@ use Illuminate\Http\Response;
 use Src\Shared\Interface\Http\ActorResolver;
 use Src\Shared\Interface\Http\ApiController;
 use Src\Workforce\Application\Plan\PlanSide;
+use Src\Workforce\Application\Requisition\AddRequisitionDocument;
 use Src\Workforce\Application\Requisition\AmendRequisition;
 use Src\Workforce\Application\Requisition\CancelRequisition;
 use Src\Workforce\Application\Requisition\CloseRequisition;
 use Src\Workforce\Application\Requisition\CreateJobFromRequisition;
 use Src\Workforce\Application\Requisition\CreateRequisition;
 use Src\Workforce\Application\Requisition\GetRequisition;
+use Src\Workforce\Application\Requisition\GetRequisitionDocument;
 use Src\Workforce\Application\Requisition\ListRequisitions;
+use Src\Workforce\Application\Requisition\RemoveRequisitionDocument;
 use Src\Workforce\Application\Requisition\SubmitRequisition;
 use Src\Workforce\Application\Requisition\UpdateRequisition;
 use Src\Workforce\Interface\Http\Requests\AmendRequisitionRequest;
@@ -23,8 +26,10 @@ use Src\Workforce\Interface\Http\Requests\CloseRequisitionRequest;
 use Src\Workforce\Interface\Http\Requests\ListRequisitionsRequest;
 use Src\Workforce\Interface\Http\Requests\OpenRequisitionJobRequest;
 use Src\Workforce\Interface\Http\Requests\SaveRequisitionRequest;
+use Src\Workforce\Interface\Http\Requests\UploadRequisitionDocumentRequest;
 use Src\Workforce\Interface\Http\Resources\RequisitionResource;
 use Src\Workforce\Interface\Http\Resources\RequisitionSummaryResource;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 /** The requisitions of the signed-in member's own tenant (`company/requisitions`) or, read only, of every legal entity of the group (`organization/requisitions`). */
 final class RequisitionController extends ApiController
@@ -87,6 +92,45 @@ final class RequisitionController extends ApiController
         $jobId = $open->execute($actors->fromRequest($request), $id, $request->title(), $request->vacancies(), $request->ip(), $request->userAgent());
 
         return response()->json(['data' => ['job_id' => $jobId, 'requisition_id' => $id]], Response::HTTP_CREATED);
+    }
+
+    /** Attaches a document (`file`, multipart) to a requisition that is not decided yet; the answer is the requisition with its documents. */
+    public function addDocument(UploadRequisitionDocumentRequest $request, int $id, ActorResolver $actors, AddRequisitionDocument $add, GetRequisition $get): JsonResponse
+    {
+        $actor = $actors->fromRequest($request);
+        $add->execute($actor, $id, $request->fileContents(), $request->fileName(), $request->ip(), $request->userAgent());
+
+        return (new RequisitionResource($get->execute($actor, PlanSide::Company, $id)))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    public function removeDocument(Request $request, int $id, int $documentId, ActorResolver $actors, RemoveRequisitionDocument $remove): Response
+    {
+        $remove->execute($actors->fromRequest($request), $id, $documentId, $request->ip(), $request->userAgent());
+
+        return response()->noContent();
+    }
+
+    public function companyDocument(Request $request, int $id, int $documentId, ActorResolver $actors, GetRequisitionDocument $get): Response
+    {
+        return $this->download($get, $actors, $request, PlanSide::Company, $id, $documentId);
+    }
+
+    public function groupDocument(Request $request, int $id, int $documentId, ActorResolver $actors, GetRequisitionDocument $get): Response
+    {
+        return $this->download($get, $actors, $request, PlanSide::Group, $id, $documentId);
+    }
+
+    private function download(GetRequisitionDocument $get, ActorResolver $actors, Request $request, PlanSide $side, int $id, int $documentId): Response
+    {
+        $file = $get->execute($actors->fromRequest($request), $side, $id, $documentId);
+
+        return new Response($file->contents, Response::HTTP_OK, [
+            'Content-Type' => $file->contentType,
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $file->name, 'document.'.pathinfo($file->name, PATHINFO_EXTENSION)),
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'",
+        ]);
     }
 
     private function index(ListRequisitionsRequest $request, ActorResolver $actors, ListRequisitions $list, PlanSide $side): AnonymousResourceCollection

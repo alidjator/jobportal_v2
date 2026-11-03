@@ -6,6 +6,7 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 use Src\Workforce\Application\Requisition\RequisitionView;
 use Src\Workforce\Domain\RequisitionAmendment;
+use Src\Workforce\Domain\RequisitionDocument;
 
 /**
  * A requisition with its amendments, the jobs opened for it and, for a `planned` one, the quota of its plan line.
@@ -22,6 +23,15 @@ final class RequisitionResource extends RequisitionSummaryResource
             'job_count' => $this->resource->jobCount,
             'open_vacancies' => $this->resource->openVacancies,
             'quota' => $this->resource->quota,
+            /** The documents attached to the requisition, oldest first; `GET .../documents/{id}` sends one. */
+            'documents' => array_map(static fn (RequisitionDocument $document): array => [
+                'id' => $document->id,
+                'name' => $document->name,
+                'content_type' => $document->contentType,
+                'size_bytes' => $document->sizeBytes,
+                'uploaded_by_id' => $document->uploadedById,
+                'created_at' => $document->createdAt?->format(DateTimeInterface::ATOM),
+            ], $this->resource->documents),
             'amendments' => array_map(fn (RequisitionAmendment $amendment): array => [
                 'id' => $amendment->id,
                 'status' => $amendment->status->value,

@@ -198,7 +198,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-example-report` | 422 | Assessment | The example report must be a PDF. |
 | `invalid-experience` | 422 | JobSeeker | The job type does not exist or is not active. |
 | `invalid-export-range` | 422 | Recruitment | The period must run from one day to a later or the same day, and last at most 366 days. |
-| `invalid-file` | 422 | JobInvitation, Recruitment | The CV must be a PDF of at most 5 MB, without scripts or embedded files. |
+| `invalid-file` | 422 | JobInvitation, Recruitment, Workforce | The CV must be a PDF of at most 5 MB, without scripts or embedded files. |
 | `invalid-flow-approver` | 422 | Approval | Step :position has 1 to :max approvers. |
 | `invalid-flow-condition` | 422 | Approval | Step :position has more than :max conditions. |
 | `invalid-flow-steps` | 422 | Approval | A flow has 1 to :max steps. |
@@ -446,6 +446,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `report-questions-closed` | 409 | Assessment | Questions about this report are closed: only a signed report takes them, for 30 days after its signing. |
 | `report-signed` | 409 | Assessment | This report is signed and cannot be changed. |
 | `reports-to-cycle` | 422 | Organization | The position would report to itself through the chain. |
+| `requisition-documents-closed` | 409 | Workforce | Documents can be added or removed until the requisition is decided. |
 | `requisition-has-jobs` | 409 | Workforce | A requisition with jobs is closed, not cancelled. |
 | `requisition-hires-below-jobs` | 422 | Workforce | The hires cannot drop below the vacancies of the jobs already opened. |
 | `requisition-no-change` | 422 | Workforce | Nothing changes: name other hires or another salary range. |
@@ -509,6 +510,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `test-not-psychological` | 422 | Assessment | Only a psychological battery issues reports. |
 | `too-many-applications` | 422 | Recruitment | Select at most :max applications at a time. |
 | `too-many-attachments` | 422 | Messaging | A message can have at most :max files. |
+| `too-many-documents` | 422 | Workforce | A requisition holds at most :max documents. |
 | `too-many-recipients` | 422 | Messaging | A bulk message can go to at most :max applications. |
 | `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |

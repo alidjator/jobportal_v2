@@ -6,7 +6,7 @@ use DateTimeImmutable;
 use Src\Shared\Domain\DomainEvent;
 
 /**
- * A requisition was `created`, `updated`, `submitted`, `approved`, `rejected`, `returned`, `cancelled`, `closed`, `reduced` (fewer hires, no approval needed), `job_opened`, or its amendment
+ * A requisition was `created`, `updated`, `submitted`, `approved`, `rejected`, `returned`, `cancelled`, `closed`, `reduced` (fewer hires, no approval needed), `job_opened`, `document_added`, `document_removed`, or its amendment
  * was `amendment_requested`, `amendment_approved`, `amendment_rejected` or `amendment_returned`. `actorId` is null when the system did it.
  */
 final readonly class RequisitionChanged implements DomainEvent
