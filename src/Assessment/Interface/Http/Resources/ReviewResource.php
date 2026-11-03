@@ -6,6 +6,7 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Review\ReviewView;
+use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\SpeedColumnResult;
 
 /**
@@ -50,6 +51,8 @@ final class ReviewResource extends JsonResource
             'reviewed' => ! $report->autoIssued || $report->reviewedAt !== null,
             'reviewed_at' => $report->reviewedAt?->format(DateTimeInterface::ATOM),
             'revision' => $report->revision,
+            /** The day the review is due (`Y-m-d`, Jakarta working days) while the report waits for one; null otherwise. */
+            'review_due_on' => $report->status === ReportStatus::PendingReview ? $report->reviewDueOn?->format('Y-m-d') : null,
             /** For the psychologist only. */
             'context' => $this->resource->context,
             /** The holder of the live claim; editing, scoring, signing, marking reviewed and revising need your own (409 `claim-required`). */

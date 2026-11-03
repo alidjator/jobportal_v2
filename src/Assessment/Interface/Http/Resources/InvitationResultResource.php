@@ -57,6 +57,8 @@ final class InvitationResultResource extends JsonResource
         return [
             'status' => $signed ? 'signed' : 'awaiting_psychologist_review',
             'integrity_tier' => $this->resource->result?->integrityTier->value,
+            /** While the report waits for a psychologist: the day the review is expected (`Y-m-d`), when the provider's target gave one. */
+            'review_due_on' => $signed ? null : $report?->reviewDueOn?->format('Y-m-d'),
             'scales' => $signed ? $this->resource->scales : [],
             'report' => $report === null || ! $signed ? null : [
                 'number' => $report->number,

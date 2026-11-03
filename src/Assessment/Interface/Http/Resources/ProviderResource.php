@@ -24,6 +24,8 @@ final class ProviderResource extends JsonResource
             'practice_licence_number' => $this->resource->identity()->practiceLicenceNumber,
             'phone' => $this->resource->identity()->phone,
             'email' => $this->resource->identity()->email,
+            /** The working days (1 to 10) the psychologists take to review a report. */
+            'review_target_days' => $this->resource->reviewTargetDays(),
             'has_logo' => $this->resource->identity()->logoPath !== null,
             'created_at' => $this->resource->createdAt?->format(DateTimeInterface::ATOM),
         ];

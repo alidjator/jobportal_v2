@@ -6,6 +6,7 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Review\ReviewListItem;
+use Src\Assessment\Domain\ReportStatus;
 
 /**
  * One line of the psychologist's review queue.
@@ -34,6 +35,10 @@ final class ReviewListItemResource extends JsonResource
             'signed_at' => $summary->signedAt?->format(DateTimeInterface::ATOM),
             'auto_issued' => $summary->autoIssued,
             'reviewed' => ! $summary->autoIssued || $summary->reviewedAt !== null,
+            /** The day the review is due (`Y-m-d`, Jakarta working days); null once signed and for an automatic report. */
+            'review_due_on' => $summary->status === ReportStatus::PendingReview ? $summary->reviewDueOn?->format('Y-m-d') : null,
+            /** Whether the review is past its due day; overdue reports come first in the queue. */
+            'overdue' => $this->resource->overdue,
         ];
     }
 }

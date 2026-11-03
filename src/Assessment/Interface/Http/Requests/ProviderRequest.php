@@ -45,6 +45,11 @@ final class ProviderRequest extends FormRequest
         return InstitutionRequest::changesOf($this);
     }
 
+    public function reviewTargetDays(): ?int
+    {
+        return InstitutionRequest::reviewTargetOf($this);
+    }
+
     public function legalName(): string
     {
         return $this->string('legal_name')->toString();

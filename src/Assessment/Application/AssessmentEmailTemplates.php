@@ -81,11 +81,12 @@ final class AssessmentEmailTemplates
                 [
                     new EmailVariable('name', 'The psychologist\'s name', 'Dewi'),
                     new EmailVariable('count', 'How many reviews wait now', '3'),
+                    new EmailVariable('overdue', 'How many of them are past their review day', '1'),
                 ],
                 TranslatedText::fromArray(['id' => '{{count}} tinjauan laporan menunggu', 'en' => '{{count}} report reviews are waiting']),
                 TranslatedText::fromArray([
-                    'id' => "Halo {{name}},\n\nSaat ini ada {{count}} tinjauan laporan yang menunggu di lembaga Anda. Buka Portal Mitra untuk mengambil dan menyelesaikannya.\n\nAnda dapat mematikan email ini di pengaturan notifikasi akun Anda.",
-                    'en' => "Hello {{name}},\n\n{{count}} report reviews are waiting at your provider right now. Open Portal Mitra to claim and finish them.\n\nYou can switch this email off in the notification settings of your account.",
+                    'id' => "Halo {{name}},\n\nSaat ini ada {{count}} tinjauan laporan yang menunggu di lembaga Anda, {{overdue}} di antaranya melewati tenggat. Buka Portal Mitra untuk mengambil dan menyelesaikannya.\n\nAnda dapat mematikan email ini di pengaturan notifikasi akun Anda.",
+                    'en' => "Hello {{name}},\n\n{{count}} report reviews are waiting at your provider right now, {{overdue}} of them past their review day. Open Portal Mitra to claim and finish them.\n\nYou can switch this email off in the notification settings of your account.",
                 ]),
             ),
             new EmailTemplateDefinition(

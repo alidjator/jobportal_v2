@@ -47,12 +47,12 @@ final readonly class NotifyOfReviewsWaiting
         $accounts = $this->accounts->summaries($userIds);
 
         foreach ($told as $row) {
-            $this->notifier->send([$row->userId], AssessmentNotificationType::PROVIDER_REVIEWS_WAITING, ['count' => $row->count]);
+            $this->notifier->send([$row->userId], AssessmentNotificationType::PROVIDER_REVIEWS_WAITING, ['count' => $row->count, 'overdue' => $row->overdue]);
 
             $account = $accounts[$row->userId] ?? null;
 
             if ($account !== null && $account->status === 'active' && in_array($row->userId, $wanted, true)) {
-                $this->emails->send($account->email, $account->locale, AssessmentEmailTemplates::PROVIDER_REVIEWS_WAITING, ['name' => $account->name, 'count' => (string) $row->count]);
+                $this->emails->send($account->email, $account->locale, AssessmentEmailTemplates::PROVIDER_REVIEWS_WAITING, ['name' => $account->name, 'count' => (string) $row->count, 'overdue' => (string) $row->overdue]);
             }
 
             $this->notices->markReviewsNotified($row->psychologistId, $row->count);

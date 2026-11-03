@@ -11,6 +11,7 @@ use Src\Assessment\Domain\PsychologistLicences;
 use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReviewsWaiting;
+use Src\Assessment\Domain\ReviewTarget;
 use Src\Shared\Application\Clock;
 
 final readonly class DatabaseProviderNoticeRepository implements ProviderNoticeRepository
@@ -33,10 +34,21 @@ final readonly class DatabaseProviderNoticeRepository implements ProviderNoticeR
             $counts[(int) $row->provider_id] = (int) $row->waiting;
         }
 
+        $overdue = [];
+
+        foreach ($this->connection->table('assessment_reports')
+            ->where('status', ReportStatus::PendingReview->value)
+            ->where('review_due_on', '<', ReviewTarget::today($this->clock->now()))
+            ->groupBy('provider_id')
+            ->selectRaw('provider_id, count(*) as late')
+            ->get() as $row) {
+            $overdue[(int) $row->provider_id] = (int) $row->late;
+        }
+
         $rows = [];
 
         foreach ($this->activePsychologists()->get(['psychologists.id', 'psychologists.user_id', 'psychologists.provider_id', 'psychologists.reviews_notified_count']) as $row) {
-            $rows[] = new ReviewsWaiting((int) $row->id, (int) $row->user_id, (int) $row->provider_id, $counts[(int) $row->provider_id] ?? 0, (int) $row->reviews_notified_count);
+            $rows[] = new ReviewsWaiting((int) $row->id, (int) $row->user_id, (int) $row->provider_id, $counts[(int) $row->provider_id] ?? 0, (int) $row->reviews_notified_count, $overdue[(int) $row->provider_id] ?? 0);
         }
 
         return $rows;

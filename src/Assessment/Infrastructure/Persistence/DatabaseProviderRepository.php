@@ -49,6 +49,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
                 'phone' => $provider->identity()->phone,
                 'email' => $provider->identity()->email,
                 'logo_path' => $provider->identity()->logoPath,
+                'review_target_days' => $provider->reviewTargetDays(),
                 'updated_at' => $now,
             ]);
 
@@ -124,6 +125,7 @@ final readonly class DatabaseProviderRepository implements ProviderRepository
                 $row->email === null ? null : (string) $row->email,
                 $row->logo_path === null ? null : (string) $row->logo_path,
             ),
+            (int) $row->review_target_days,
         );
     }
 }

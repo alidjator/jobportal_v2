@@ -16,6 +16,7 @@ final class Provider
         public readonly ?DateTimeImmutable $createdAt = null,
         private bool $autoIssueAllowed = false,
         private ProviderIdentity $identity = new ProviderIdentity,
+        private int $reviewTargetDays = ReviewTarget::DEFAULT_DAYS,
     ) {}
 
     public static function register(string $code, string $name, string $legalName): self
@@ -68,6 +69,19 @@ final class Provider
     public function changeIdentity(ProviderIdentity $identity): void
     {
         $this->identity = $identity;
+    }
+
+    /** How many working days the psychologists of the provider take to review a report. */
+    public function reviewTargetDays(): int
+    {
+        return $this->reviewTargetDays;
+    }
+
+    public function changeReviewTarget(int $days): void
+    {
+        ReviewTarget::assertValid($days);
+
+        $this->reviewTargetDays = $days;
     }
 
     public function rename(string $code, string $name, string $legalName): void

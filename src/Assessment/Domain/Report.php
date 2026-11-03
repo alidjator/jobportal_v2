@@ -46,11 +46,13 @@ final readonly class Report
         public ?string $revisionReason = null,
         /** The copy of the signer's signature image kept in the report's folder, or null when there was none. */
         public ?string $signerSignaturePath = null,
+        /** The day a report that waits for a review is due (`ReviewTarget`); null for an automatic report and for a draft made before the target existed. */
+        public ?DateTimeImmutable $reviewDueOn = null,
     ) {}
 
-    public static function draft(int $attemptId, int $providerId, string $body): self
+    public static function draft(int $attemptId, int $providerId, string $body, ?DateTimeImmutable $reviewDueOn = null): self
     {
-        return new self(null, $attemptId, $providerId, ReportStatus::PendingReview, $body, null, null, null, null, null, null, null, null, null, null, null);
+        return new self(null, $attemptId, $providerId, ReportStatus::PendingReview, $body, null, null, null, null, null, null, null, null, null, null, null, reviewDueOn: $reviewDueOn);
     }
 
     public function isSigned(): bool

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Assessment;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
@@ -12,6 +14,7 @@ use Illuminate\Testing\TestResponse;
 use Src\Assessment\Domain\Norm;
 use Src\Assessment\Domain\NormConverter;
 use Src\Assessment\Domain\ReportRenderer;
+use Src\Assessment\Domain\ReviewTarget;
 use Src\Identity\Domain\Events\UserAnonymized;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
@@ -886,6 +889,42 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->assertNull(DB::table('assessment_reports')->where('id', $reportId)->value('claimed_by_psychologist_id'));
         // A signed report can be claimed (to revise it), but it stays locked for editing.
         $this->api('POST', "/provider/reviews/{$reportId}/claim", [], $colleague)->assertOk();
+    }
+
+    public function test_a_draft_is_due_the_target_in_working_days_after_the_submission_and_the_company_sees_it(): void
+    {
+        DB::table('assessment_providers')->where('id', $this->providerId)->update(['review_target_days' => 3]);
+        $reportId = $this->takeBattery();
+
+        $submitted = new DateTimeImmutable((string) DB::table('assessment_attempts')->where('invitation_id', $this->invitationId)->value('submitted_at'), new DateTimeZone('UTC'));
+        $due = ReviewTarget::dueOn($submitted, 3)->format('Y-m-d');
+
+        $this->assertSame($due, substr((string) DB::table('assessment_reports')->where('id', $reportId)->value('review_due_on'), 0, 10));
+        $this->provider('GET', "reviews/{$reportId}")->assertOk()->assertJsonPath('data.review_due_on', $due);
+        $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->assertJsonPath('data.result.status', 'awaiting_psychologist_review')->assertJsonPath('data.result.review_due_on', $due);
+
+        // Once signed the day is gone from both.
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk()->assertJsonPath('data.review_due_on', null);
+        $this->company('GET', "invitations/{$this->invitationId}/result")->assertOk()->assertJsonPath('data.result.review_due_on', null);
+    }
+
+    public function test_the_queue_puts_the_overdue_reviews_first_and_can_keep_only_them(): void
+    {
+        $reportId = $this->takeBattery();
+        $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.overdue', false);
+        $this->provider('GET', 'reviews?filter[overdue]=1')->assertOk()->assertJsonCount(0, 'data');
+
+        DB::table('assessment_reports')->where('id', $reportId)->update(['review_due_on' => now('Asia/Jakarta')->subDays(2)->format('Y-m-d')]);
+
+        $this->provider('GET', 'reviews')->assertOk()->assertJsonPath('data.0.overdue', true)->assertJsonPath('data.0.review_due_on', now('Asia/Jakarta')->subDays(2)->format('Y-m-d'));
+        $this->assertSame([$reportId], array_column($this->provider('GET', 'reviews?filter[overdue]=1')->assertOk()->json('data'), 'id'));
+        $this->provider('GET', 'reviews?filter[overdue]=maybe')->assertUnprocessable();
+
+        // A report that was signed is never overdue, whatever its day was.
+        $this->readyToSign($reportId);
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+        $this->provider('GET', 'reviews?filter[overdue]=1')->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_suspending_a_psychologist_releases_the_reports_they_hold(): void

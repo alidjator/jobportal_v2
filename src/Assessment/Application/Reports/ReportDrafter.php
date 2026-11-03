@@ -6,10 +6,12 @@ use Src\Assessment\Domain\Attempt;
 use Src\Assessment\Domain\AttemptResult;
 use Src\Assessment\Domain\Invitation;
 use Src\Assessment\Domain\NormRepository;
+use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRenderer;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportTemplateRepository;
+use Src\Assessment\Domain\ReviewTarget;
 use Src\Assessment\Domain\Test;
 use Src\Assessment\Domain\TestKind;
 use Src\Shared\Application\Applicant\ApplicantContacts;
@@ -31,6 +33,7 @@ final readonly class ReportDrafter
         private ApplicantContacts $accounts,
         private JobDirectory $jobs,
         private RecommendationAdvisor $advisor,
+        private ProviderRepository $providers,
     ) {}
 
     public function draft(Attempt $attempt, Invitation $invitation, Test $test, AttemptResult $result): void
@@ -63,6 +66,10 @@ final readonly class ReportDrafter
             return;
         }
 
-        $this->reports->add(Report::draft($attempt->id, $providerId, $body)->withRecommendation($advice));
+        // The review is due the target of the provider in working days after the submission.
+        $provider = $this->providers->findById($providerId);
+        $dueOn = $attempt->submittedAt === null || $provider === null ? null : ReviewTarget::dueOn($attempt->submittedAt, $provider->reviewTargetDays());
+
+        $this->reports->add(Report::draft($attempt->id, $providerId, $body, $dueOn)->withRecommendation($advice));
     }
 }

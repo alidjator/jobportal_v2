@@ -22,5 +22,7 @@ final readonly class ReportSummary
         public ?int $companyId = null,
         public ?int $claimedByPsychologistId = null,
         public ?DateTimeImmutable $claimTouchedAt = null,
+        /** The day the review is due; null once signed, for an automatic report and for a draft that has none. */
+        public ?DateTimeImmutable $reviewDueOn = null,
     ) {}
 }

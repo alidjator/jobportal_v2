@@ -125,6 +125,32 @@ final class ProviderInstitutionTest extends FeatureTestCase
         ])->assertOk()->assertJsonPath('data.address', 'Jl. Asia Afrika 1');
     }
 
+    // ----- the review target -----
+
+    public function test_the_review_target_is_two_working_days_until_a_lead_or_the_platform_admin_changes_it(): void
+    {
+        $this->provider('GET', 'institution')->assertOk()->assertJsonPath('data.review_target_days', 2);
+
+        $this->provider('PUT', 'institution', ['review_target_days' => 5])->assertOk()->assertJsonPath('data.review_target_days', 5);
+        // Without the field the target stays.
+        $this->provider('PUT', 'institution', ['phone' => '022-555'])->assertOk()->assertJsonPath('data.review_target_days', 5);
+        $this->provider('GET', 'institution', [], $this->memberToken)->assertOk()->assertJsonPath('data.review_target_days', 5);
+
+        $this->assessmentAdmin('PUT', "providers/{$this->providerId}", [
+            'code' => 'LPCT', 'name' => 'Lembaga Psikologi Contoh', 'legal_name' => 'PT Lembaga Psikologi Contoh', 'review_target_days' => 3,
+        ])->assertOk()->assertJsonPath('data.review_target_days', 3);
+        $this->assertSame(3, (int) DB::table('assessment_providers')->where('id', $this->providerId)->value('review_target_days'));
+    }
+
+    public function test_the_review_target_is_validated_and_a_member_cannot_change_it(): void
+    {
+        $this->provider('PUT', 'institution', ['review_target_days' => 0])->assertUnprocessable()->assertJsonValidationErrors(['review_target_days']);
+        $this->provider('PUT', 'institution', ['review_target_days' => 11])->assertUnprocessable()->assertJsonValidationErrors(['review_target_days']);
+        $this->provider('PUT', 'institution', ['review_target_days' => 'soon'])->assertUnprocessable();
+        $this->provider('PUT', 'institution', ['review_target_days' => 4], $this->memberToken)->assertForbidden();
+        $this->assertSame(2, (int) DB::table('assessment_providers')->where('id', $this->providerId)->value('review_target_days'));
+    }
+
     // ----- the logo -----
 
     public function test_a_lead_puts_replaces_and_takes_off_the_logo(): void

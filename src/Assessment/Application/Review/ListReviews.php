@@ -6,6 +6,7 @@ use Src\Assessment\Domain\Report;
 use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReportSummary;
+use Src\Assessment\Domain\ReviewTarget;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\Applicant\ApplicantContacts;
 use Src\Shared\Application\Clock;
@@ -33,16 +34,17 @@ final readonly class ListReviews
      *
      * @throws AccessDenied `not-a-psychologist`, `psychologist-suspended` or `provider-suspended`
      */
-    public function execute(Actor $actor, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null): Page
+    public function execute(Actor $actor, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, bool $overdue = false): Page
     {
         $psychologist = $this->access->psychologist($actor);
-        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $reviewed, $request, $claimed, $psychologist->id);
+        $page = $this->reports->pageOfProvider($psychologist->providerId, $status, $reviewed, $request, $claimed, $psychologist->id, $overdue);
         $names = $this->accounts->names(array_values(array_unique(array_map(static fn (ReportSummary $summary): int => $summary->applicantUserId, $page->items))));
 
         $titles = $this->jobs->titles(array_values(array_unique(array_filter(array_map(static fn (ReportSummary $summary): ?int => $summary->jobId, $page->items)))));
         $companies = $this->companies->summaries(array_values(array_unique(array_filter(array_map(static fn (ReportSummary $summary): ?int => $summary->companyId, $page->items)))));
 
-        $live = $this->clock->now()->modify(Report::CLAIM_LAPSE);
+        $now = $this->clock->now();
+        $live = $now->modify(Report::CLAIM_LAPSE);
         $holders = $this->claims->holders($psychologist, array_map(static fn (ReportSummary $summary): ?int => $summary->claimTouchedAt !== null && $summary->claimTouchedAt > $live ? $summary->claimedByPsychologistId : null, $page->items));
 
         return new Page(
@@ -52,6 +54,7 @@ final readonly class ListReviews
                 $summary->jobId === null ? null : ($titles[$summary->jobId] ?? null),
                 $summary->companyId === null ? null : ($companies[$summary->companyId]->name ?? null),
                 $summary->claimedByPsychologistId === null || $summary->claimTouchedAt === null || $summary->claimTouchedAt <= $live ? null : ($holders[$summary->claimedByPsychologistId] ?? null),
+                $summary->status === ReportStatus::PendingReview && ReviewTarget::isOverdue($summary->reviewDueOn, $now),
             ), $page->items),
             $page->total,
             $page->request,

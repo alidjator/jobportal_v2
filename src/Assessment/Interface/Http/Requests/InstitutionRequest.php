@@ -3,8 +3,9 @@
 namespace Src\Assessment\Interface\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Src\Assessment\Domain\ReviewTarget;
 
-/** The body of a lead editing their institution: the identity fields of `docs/design/phase-8-provider-institutions.md` section 3. Only the fields that are sent change; a blank one clears. */
+/** The body of a lead editing their institution: the identity fields of `docs/design/phase-8-provider-institutions.md` section 3 and the review target of section 5. Only the fields that are sent change; a blank one clears. */
 final class InstitutionRequest extends FormRequest
 {
     private const array FIELDS = ['address', 'practice_licence_number', 'phone', 'email'];
@@ -23,7 +24,19 @@ final class InstitutionRequest extends FormRequest
             'practice_licence_number' => ['sometimes', 'nullable', 'string', 'max:100'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:40'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'review_target_days' => ['sometimes', 'integer', 'between:'.ReviewTarget::MIN_DAYS.','.ReviewTarget::MAX_DAYS],
         ];
+    }
+
+    /** The working days the psychologists take to review a report, when it was sent. */
+    public static function reviewTargetOf(FormRequest $request): ?int
+    {
+        return $request->has('review_target_days') ? $request->integer('review_target_days') : null;
+    }
+
+    public function reviewTargetDays(): ?int
+    {
+        return self::reviewTargetOf($this);
     }
 
     /** @return array<string, string|null> the identity fields that were sent */

@@ -313,6 +313,7 @@ final class ReportRegisterTest extends FeatureTestCase
         $notices = $this->noticesOf('user', $user, 'provider.reviews_waiting');
         $this->assertCount(1, $notices);
         $this->assertSame(1, json_decode((string) $notices[0]->data, true)['count']);
+        $this->assertSame(0, json_decode((string) $notices[0]->data, true)['overdue']);
         $this->assertSame(1, $this->mailsTo('dewi@example.test'));
         $this->assertSame(1, (int) DB::table('assessment_psychologists')->where('id', $id)->value('reviews_notified_count'));
         $this->assertSame([], $this->noticesOf('user', $this->userOf($this->psychologistId($this->otherProviderId)), 'provider.reviews_waiting'), 'The other provider has nothing waiting.');
@@ -333,6 +334,20 @@ final class ReportRegisterTest extends FeatureTestCase
         $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
         $this->assertCount(2, $this->noticesOf('user', $user, 'provider.reviews_waiting'));
         $this->assertSame(1, $this->mailsTo('dewi@example.test'));
+    }
+
+    public function test_the_notice_of_waiting_reviews_counts_those_past_their_review_day(): void
+    {
+        Mail::fake();
+        // A report that waits for a psychologist (not an automatic one) has a day it is due.
+        $this->takeBattery($this->battery());
+        DB::table('assessment_reports')->update(['review_due_on' => now('Asia/Jakarta')->subDay()->format('Y-m-d')]);
+
+        $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
+
+        $notices = $this->noticesOf('user', $this->userOf($this->psychologistId()), 'provider.reviews_waiting');
+        $this->assertCount(1, $notices);
+        $this->assertSame(['count' => 1, 'overdue' => 1], array_intersect_key(json_decode((string) $notices[0]->data, true), ['count' => 1, 'overdue' => 1]));
     }
 
     public function test_the_licences_that_end_are_told_once_per_threshold_and_a_renewal_starts_again(): void

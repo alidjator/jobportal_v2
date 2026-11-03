@@ -42,7 +42,7 @@ final class AssessmentNotificationType
     /** To the psychologist: the platform admin rejected the licence they submitted; the note is on the submission. */
     public const string LICENCE_REJECTED = 'assessment.licence_rejected';
 
-    /** To a psychologist: reports wait for a review at their provider (`data.count`); sent when the count rises (`phase-8-provider-tools.md` section 5). */
+    /** To a psychologist: reports wait for a review at their provider (`data.count`, and `data.overdue` of them past their review day); sent when the count rises (`phase-8-provider-tools.md` section 5). */
     public const string PROVIDER_REVIEWS_WAITING = 'provider.reviews_waiting';
 
     /** To a psychologist: their STR or SILP ends in 60, 30 or 7 days, or ended (`data.kind`, `valid_until`, `days_left`; 0 or less means it ended and they cannot sign). */

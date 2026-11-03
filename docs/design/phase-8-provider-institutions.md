@@ -143,6 +143,10 @@ and status only; reports copy the signer's name, STR and SILP but no signature i
 - **Queue:** `GET /provider/reviews` gains `review_due_on` and `overdue`, `filter[overdue]=1`, and sorts overdue first. The reviews-waiting notice
   of `phase-8-provider-tools.md` section 5 adds the overdue count.
 - **Company:** the result of a battery awaiting review shows `review_due_on` ("Perkiraan selesai").
+- **Coded 2026-11-03** (migration `000404`): the due day is stored (`assessment_reports.review_due_on`, a date), worked out once when the draft is made with the target of that moment, so changing the
+  target does not move the days of reports that already wait; drafts that existed before the migration have none. `Domain\ReviewTarget` holds the working-day rule, the Jakarta day and the 1-to-10 range.
+  `review_target_days` is on `GET`/`PUT provider/institution` (leads) and on the platform admin's provider update. The queue and the detail carry `review_due_on` (only while `pending_review`); the queue
+  also carries `overdue`, sorts the overdue ones first and takes `filter[overdue]=1`. The reviews-waiting notice and email carry the overdue count (`data.overdue`, variable `overdue`).
 
 ## 6. Questions about a report
 

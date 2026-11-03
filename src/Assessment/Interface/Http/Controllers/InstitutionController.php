@@ -25,7 +25,7 @@ final class InstitutionController extends ApiController
 
     public function update(InstitutionRequest $request, ActorResolver $actors, UpdateInstitution $update): ProviderResource
     {
-        return new ProviderResource($update->execute($actors->fromRequest($request), $request->changes()));
+        return new ProviderResource($update->execute($actors->fromRequest($request), $request->changes(), $request->reviewTargetDays()));
     }
 
     public function logo(Request $request, ActorResolver $actors, GetInstitutionLogo $get): Response

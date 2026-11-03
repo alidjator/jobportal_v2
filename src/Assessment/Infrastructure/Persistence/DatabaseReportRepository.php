@@ -15,6 +15,7 @@ use Src\Assessment\Domain\ReportRepository;
 use Src\Assessment\Domain\ReportStatus;
 use Src\Assessment\Domain\ReportSummary;
 use Src\Assessment\Domain\ReportVerification;
+use Src\Assessment\Domain\ReviewTarget;
 use Src\Assessment\Domain\StoredReportPdf;
 use Src\Shared\Application\Analytics\AnalyticsDays;
 use Src\Shared\Application\Clock;
@@ -154,8 +155,9 @@ final readonly class DatabaseReportRepository implements ReportRepository
         $this->connection->table(self::TABLE)->where('claimed_by_psychologist_id', $psychologistId)->update(['claimed_by_psychologist_id' => null, 'claimed_at' => null, 'claim_touched_at' => null]);
     }
 
-    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null): Page
+    public function pageOfProvider(int $providerId, ?ReportStatus $status, ?bool $reviewed, PageRequest $request, ?string $claimed = null, ?int $psychologistId = null, bool $overdue = false): Page
     {
+        $today = ReviewTarget::today($this->clock->now());
         $builder = $this->connection->table(self::TABLE.' as reports')
             ->join('assessment_attempts as attempts', 'attempts.id', '=', 'reports.attempt_id')
             ->join('assessment_invitations as invitations', 'invitations.id', '=', 'attempts.invitation_id')
@@ -186,9 +188,14 @@ final readonly class DatabaseReportRepository implements ReportRepository
             };
         }
 
+        if ($overdue) {
+            $builder->where('reports.status', ReportStatus::PendingReview->value)->where('reports.review_due_on', '<', $today);
+        }
+
         $total = (clone $builder)->count();
         $rows = $builder
-            ->select(['reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'reports.claimed_by_psychologist_id', 'reports.claim_touched_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'invitations.job_id', 'invitations.company_id', 'tests.title'])
+            ->select(['reports.review_due_on', 'reports.id', 'reports.status', 'reports.report_number', 'reports.signed_at', 'reports.auto_issued', 'reports.reviewed_at', 'reports.claimed_by_psychologist_id', 'reports.claim_touched_at', 'attempts.invitation_id', 'attempts.submitted_at', 'invitations.applicant_user_id', 'invitations.job_id', 'invitations.company_id', 'tests.title'])
+            ->orderByRaw('case when reports.status = ? and reports.review_due_on < ? then 0 else 1 end', [ReportStatus::PendingReview->value, $today])
             ->orderBy('attempts.submitted_at')
             ->orderBy('reports.id')
             ->offset($request->offset())
@@ -210,6 +217,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             (int) $row->company_id,
             $row->claimed_by_psychologist_id === null ? null : (int) $row->claimed_by_psychologist_id,
             $row->claim_touched_at === null ? null : $this->time((string) $row->claim_touched_at),
+            $row->review_due_on === null ? null : $this->time((string) $row->review_due_on),
         ), $rows->all()), $total, $request);
     }
 
@@ -313,6 +321,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             'provider_identity' => $report->providerIdentity === null ? null : json_encode($report->providerIdentity, JSON_THROW_ON_ERROR),
             'revision_reason' => $report->revisionReason,
             'signer_signature_path' => $report->signerSignaturePath,
+            'review_due_on' => $report->reviewDueOn?->format('Y-m-d'),
             'updated_at' => $this->clock->now(),
         ];
     }
@@ -348,6 +357,7 @@ final readonly class DatabaseReportRepository implements ReportRepository
             $row->provider_identity === null ? null : (array) json_decode((string) $row->provider_identity, true, 512, JSON_THROW_ON_ERROR),
             $row->revision_reason,
             $row->signer_signature_path,
+            $row->review_due_on === null ? null : $this->time((string) $row->review_due_on),
         );
     }
 

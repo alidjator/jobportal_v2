@@ -20,7 +20,7 @@ final readonly class UpdateProvider
      * @throws EntityNotFound
      * @throws StateConflict `provider-name-taken` or `provider-code-taken`
      */
-    public function execute(Actor $actor, int $providerId, string $code, string $name, string $legalName, array $identityChanges = []): Provider
+    public function execute(Actor $actor, int $providerId, string $code, string $name, string $legalName, array $identityChanges = [], ?int $reviewTargetDays = null): Provider
     {
         AdminOnly::assert($actor, 'change a provider');
 
@@ -37,6 +37,10 @@ final readonly class UpdateProvider
 
         $provider->rename($code, $name, trim($legalName));
         $provider->changeIdentity($provider->identity()->with($identityChanges));
+
+        if ($reviewTargetDays !== null) {
+            $provider->changeReviewTarget($reviewTargetDays);
+        }
 
         return $this->providers->save($provider);
     }
