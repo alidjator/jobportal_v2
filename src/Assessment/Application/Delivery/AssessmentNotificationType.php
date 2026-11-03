@@ -42,6 +42,21 @@ final class AssessmentNotificationType
     /** To the psychologist: the platform admin rejected the licence they submitted; the note is on the submission. */
     public const string LICENCE_REJECTED = 'assessment.licence_rejected';
 
+    /** To a psychologist: reports wait for a review at their provider (`data.count`); sent when the count rises (`phase-8-provider-tools.md` section 5). */
+    public const string PROVIDER_REVIEWS_WAITING = 'provider.reviews_waiting';
+
+    /** To a psychologist: their STR or SILP ends in 60, 30 or 7 days, or ended (`data.kind`, `valid_until`, `days_left`; 0 or less means it ended and they cannot sign). */
+    public const string LICENCE_EXPIRING = 'assessment.licence_expiring';
+
+    /** To a platform admin with `assessment_providers.manage`: a psychologist's licence is ending or ended (`data.provider_name`, `psychologist_name`, `kind`, `valid_until`, `days_left`). */
+    public const string PROVIDER_LICENCE_EXPIRING = 'assessment.provider_licence_expiring';
+
+    /** To the psychologists of a provider: the licence of the psychologist who answers for the automatic issue of a battery ended, so its reports wait for a psychologist again (`data.test_title`). */
+    public const string AUTO_ISSUE_PAUSED = 'provider.auto_issue_paused';
+
+    /** The email preference of the waiting-reviews notice, registered by Assessment for psychologists (the licence emails are always sent). */
+    public const string REVIEWS_PREFERENCE = 'provider_reviews';
+
     /** The email preference of application updates, registered by Recruitment: a candidate who turned it off gets no email about tests either. */
     public const string UPDATE_PREFERENCE = 'application_update';
 

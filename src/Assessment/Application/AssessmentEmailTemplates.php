@@ -15,6 +15,12 @@ final class AssessmentEmailTemplates
     /** Sent to an assessor when a test they score was submitted (the preference `team_scoring`). */
     public const string TEAM_TEST_SUBMITTED = 'team.test_submitted';
 
+    /** Sent to a psychologist when more reviews wait at their provider than when they were last told (the preference `provider_reviews`). */
+    public const string PROVIDER_REVIEWS_WAITING = 'assessment.provider_reviews_waiting';
+
+    /** Sent to a psychologist when their STR or SILP ends in 60, 30 or 7 days, or ended (always sent: it decides whether reports can be signed). */
+    public const string LICENCE_EXPIRING = 'assessment.licence_expiring';
+
     public const string TEST_INVITED = 'assessment.test_invited';
 
     public const string TEST_REMINDER = 'assessment.test_reminder';
@@ -41,7 +47,7 @@ final class AssessmentEmailTemplates
     /** @return list<EmailTemplateDefinition> */
     public static function definitions(): array
     {
-        return [...self::psychologistDefinitions(), ...self::testDefinitions(), ...self::teamDefinitions()];
+        return [...self::psychologistDefinitions(), ...self::providerNoticeDefinitions(), ...self::testDefinitions(), ...self::teamDefinitions()];
     }
 
     /** @return list<EmailTemplateDefinition> */
@@ -60,6 +66,41 @@ final class AssessmentEmailTemplates
                 TranslatedText::fromArray([
                     'id' => "Halo,\n\nAnda diundang sebagai psikolog mitra {{provider}}.\n\nBuka tautan ini untuk menerima undangan dan membuat kata sandi akun Anda:\n\n{{link}}\n\nSetelah itu Anda akan diminta memasang aplikasi autentikator saat masuk pertama kali.\n\nUndangan berlaku selama {{days}} hari dan hanya dapat digunakan sekali.\n\nJika Anda tidak mengenal pengirimnya, abaikan email ini.",
                     'en' => "Hello,\n\nYou are invited as a psychologist of {{provider}}.\n\nOpen this link to accept the invitation and set the password of your account:\n\n{{link}}\n\nAt your first sign-in you will be asked to set up an authenticator app.\n\nThe invitation is valid for {{days}} days and can be used once.\n\nIf you do not know the sender, you can ignore this email.",
+                ]),
+            ),
+        ];
+    }
+
+    /** @return list<EmailTemplateDefinition> */
+    private static function providerNoticeDefinitions(): array
+    {
+        return [
+            new EmailTemplateDefinition(
+                self::PROVIDER_REVIEWS_WAITING,
+                'Sent to a psychologist when more reviews wait at their provider than when they were last told (at most once an hour, only when the count rose).',
+                [
+                    new EmailVariable('name', 'The psychologist\'s name', 'Dewi'),
+                    new EmailVariable('count', 'How many reviews wait now', '3'),
+                ],
+                TranslatedText::fromArray(['id' => '{{count}} tinjauan laporan menunggu', 'en' => '{{count}} report reviews are waiting']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\nSaat ini ada {{count}} tinjauan laporan yang menunggu di lembaga Anda. Buka Portal Mitra untuk mengambil dan menyelesaikannya.\n\nAnda dapat mematikan email ini di pengaturan notifikasi akun Anda.",
+                    'en' => "Hello {{name}},\n\n{{count}} report reviews are waiting at your provider right now. Open Portal Mitra to claim and finish them.\n\nYou can switch this email off in the notification settings of your account.",
+                ]),
+            ),
+            new EmailTemplateDefinition(
+                self::LICENCE_EXPIRING,
+                'Sent to a psychologist when their STR or SILP ends in 60, 30 or 7 days, and on the day it ends. It is always sent: an expired licence stops them from signing reports.',
+                [
+                    new EmailVariable('name', 'The psychologist\'s name', 'Dewi'),
+                    new EmailVariable('kind', 'The licence: STR or SILP', 'STR'),
+                    new EmailVariable('valid_until', 'The day the licence ends', '2026-12-31'),
+                    new EmailVariable('days', 'How many days are left (0 on the day it ends or after)', '30'),
+                ],
+                TranslatedText::fromArray(['id' => '{{kind}} Anda segera berakhir', 'en' => 'Your {{kind}} is about to end']),
+                TranslatedText::fromArray([
+                    'id' => "Halo {{name}},\n\n{{kind}} Anda berlaku sampai {{valid_until}} (sisa {{days}} hari). Setelah berakhir Anda tidak dapat menandatangani laporan, dan baterai yang Anda tanggung jawabi tidak lagi menerbitkan laporan otomatis.\n\nAjukan perpanjangan beserta dokumennya di halaman akun Portal Mitra.",
+                    'en' => "Hello {{name}},\n\nYour {{kind}} is valid until {{valid_until}} ({{days}} days left). Once it ends you cannot sign reports, and the batteries you answer for stop issuing reports automatically.\n\nSubmit the renewal with its document on the account page of Portal Mitra.",
                 ]),
             ),
         ];

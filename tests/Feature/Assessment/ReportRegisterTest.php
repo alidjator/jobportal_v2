@@ -4,8 +4,10 @@ namespace Tests\Feature\Assessment;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Src\Assessment\Application\EraseAssessmentData;
+use Src\Assessment\Infrastructure\Mail\TestMail;
 use Src\Identity\Infrastructure\Persistence\Eloquent\AdminModel;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\Concerns\BuildsAssessmentFixtures;
@@ -278,5 +280,130 @@ final class ReportRegisterTest extends FeatureTestCase
         $limited = AdminModel::query()->create(['name' => 'Library only', 'email' => 'library@example.test', 'password' => 'hash', 'status' => 'active']);
         $limited->givePermissionTo(['assessment_library.manage']);
         $this->assessmentAdmin('GET', "providers/{$this->providerId}/register", [], $limited->createToken('console', ['*'], now()->addHour())->plainTextToken)->assertForbidden();
+    }
+
+    // ----- the notices to psychologists (phase-8-provider-tools.md section 5) -----
+
+    private function userOf(int $psychologistId): int
+    {
+        return (int) DB::table('assessment_psychologists')->where('id', $psychologistId)->value('user_id');
+    }
+
+    /** How many emails were queued to the address (the other mail of the flow goes to the candidate and the team). */
+    private function mailsTo(string $email): int
+    {
+        return Mail::queued(TestMail::class, static fn (TestMail $mail): bool => $mail->hasTo($email))->count();
+    }
+
+    /** @return list<object> */
+    private function noticesOf(string $notifiable, int $id, string $type): array
+    {
+        return DB::table('notifications')->where('notifiable_type', $notifiable)->where('notifiable_id', $id)->where('type', $type)->orderBy('created_at')->get()->all();
+    }
+
+    public function test_a_psychologist_is_told_when_reviews_wait_and_again_only_when_more_arrive(): void
+    {
+        Mail::fake();
+        $this->takeBattery($this->readyBattery());
+        $id = $this->psychologistId();
+        $user = $this->userOf($id);
+
+        $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
+
+        $notices = $this->noticesOf('user', $user, 'provider.reviews_waiting');
+        $this->assertCount(1, $notices);
+        $this->assertSame(1, json_decode((string) $notices[0]->data, true)['count']);
+        $this->assertSame(1, $this->mailsTo('dewi@example.test'));
+        $this->assertSame(1, (int) DB::table('assessment_psychologists')->where('id', $id)->value('reviews_notified_count'));
+        $this->assertSame([], $this->noticesOf('user', $this->userOf($this->psychologistId($this->otherProviderId)), 'provider.reviews_waiting'), 'The other provider has nothing waiting.');
+
+        // Nothing changed: nothing is sent.
+        $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
+        $this->assertCount(1, $this->noticesOf('user', $user, 'provider.reviews_waiting'));
+
+        // Reviewed: the count falls and is remembered without a notice; a later rise is told again.
+        DB::table('assessment_reports')->update(['reviewed_at' => now()]);
+        $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
+        $this->assertSame(0, (int) DB::table('assessment_psychologists')->where('id', $id)->value('reviews_notified_count'));
+        $this->assertCount(1, $this->noticesOf('user', $user, 'provider.reviews_waiting'));
+
+        // The email is the psychologist's to switch off; the notice in the app stays.
+        $this->api('PUT', '/me/notification-preferences/provider_reviews/email', ['enabled' => false], $this->psychologistToken)->assertNoContent();
+        DB::table('assessment_reports')->update(['reviewed_at' => null]);
+        $this->artisan('assessment:notify-reviews-waiting')->assertSuccessful();
+        $this->assertCount(2, $this->noticesOf('user', $user, 'provider.reviews_waiting'));
+        $this->assertSame(1, $this->mailsTo('dewi@example.test'));
+    }
+
+    public function test_the_licences_that_end_are_told_once_per_threshold_and_a_renewal_starts_again(): void
+    {
+        Mail::fake();
+        $id = $this->psychologistId();
+        $user = $this->userOf($id);
+
+        // 60 days left on the frozen day (2026-10-05).
+        DB::table('assessment_psychologists')->where('id', $id)->update(['str_valid_until' => '2026-12-04']);
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+
+        $notices = $this->noticesOf('user', $user, 'assessment.licence_expiring');
+        $this->assertCount(1, $notices);
+        $this->assertEquals(['kind' => 'str', 'valid_until' => '2026-12-04', 'days_left' => 60], json_decode((string) $notices[0]->data, true));
+        $admin = $this->noticesOf('admin', $this->assessmentAdminId, 'assessment.provider_licence_expiring');
+        $this->assertCount(1, $admin);
+        $this->assertSame('Lembaga Psikologi Contoh', json_decode((string) $admin[0]->data, true)['provider_name']);
+        $this->assertSame(1, $this->mailsTo('dewi@example.test'));
+
+        // The same day again: each threshold is told once.
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+        $this->assertCount(1, $this->noticesOf('user', $user, 'assessment.licence_expiring'));
+
+        // A renewal (another end date) starts again, and a licence already inside a threshold is told once, for the smallest.
+        DB::table('assessment_psychologists')->where('id', $id)->update(['str_valid_until' => '2026-10-10']);
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+        $notices = $this->noticesOf('user', $user, 'assessment.licence_expiring');
+        $this->assertCount(2, $notices);
+        $this->assertSame(5, json_decode((string) $notices[1]->data, true)['days_left']);
+    }
+
+    public function test_when_the_licence_of_the_responsible_psychologist_ends_the_provider_hears_which_battery_stops_issuing(): void
+    {
+        Mail::fake();
+        $this->readyBattery();
+        $id = $this->psychologistId();
+        $colleague = $this->userOf($id);
+
+        DB::table('assessment_psychologists')->where('id', $id)->update(['silp_valid_until' => '2026-10-05']);
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+
+        $ended = array_values(array_filter($this->noticesOf('user', $colleague, 'assessment.licence_expiring'), static fn (object $row): bool => json_decode((string) $row->data, true)['days_left'] === 0));
+        $this->assertCount(1, $ended);
+        $paused = $this->noticesOf('user', $colleague, 'provider.auto_issue_paused');
+        $this->assertCount(1, $paused);
+        $this->assertSame('Personality', json_decode((string) $paused[0]->data, true)['test_title']);
+
+        // Told once: the next day's run adds nothing.
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+        $this->assertCount(1, $this->noticesOf('user', $colleague, 'provider.auto_issue_paused'));
+    }
+
+    public function test_a_platform_admin_reads_marks_and_deletes_their_own_notifications(): void
+    {
+        DB::table('assessment_psychologists')->where('id', $this->psychologistId())->update(['str_valid_until' => '2026-10-12']);
+        $this->artisan('assessment:notify-licence-expiry')->assertSuccessful();
+
+        $list = $this->api('GET', '/admin/notifications', [], $this->assessmentAdminToken)->assertOk();
+        $this->assertSame('assessment.provider_licence_expiring', $list->json('data.0.type'));
+        $this->api('GET', '/admin/notifications/unread-count', [], $this->assessmentAdminToken)->assertOk()->assertJsonPath('data.count', 1);
+
+        $id = (string) $list->json('data.0.id');
+        // A public user cannot reach the admin's list, and the admin's list holds nothing of a user's.
+        $this->api('GET', '/admin/notifications', [], $this->psychologistToken)->assertUnauthorized();
+        $this->api('POST', "/me/notifications/{$id}/read", [], $this->psychologistToken)->assertNotFound();
+
+        $this->api('POST', "/admin/notifications/{$id}/read", [], $this->assessmentAdminToken)->assertNoContent();
+        $this->api('GET', '/admin/notifications/unread-count', [], $this->assessmentAdminToken)->assertOk()->assertJsonPath('data.count', 0);
+        $this->api('DELETE', "/admin/notifications/{$id}", [], $this->assessmentAdminToken)->assertNoContent();
+        $this->api('GET', '/admin/notifications', [], $this->assessmentAdminToken)->assertOk()->assertJsonCount(0, 'data');
     }
 }

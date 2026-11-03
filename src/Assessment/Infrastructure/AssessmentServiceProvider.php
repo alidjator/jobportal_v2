@@ -14,12 +14,14 @@ use Src\Assessment\Application\Attempts\AttemptSessionToken;
 use Src\Assessment\Application\Attempts\NotifyOfAttemptSubmission;
 use Src\Assessment\Application\Attempts\TeamSubmissionSender;
 use Src\Assessment\Application\Delivery\AssessmentInvitationService;
+use Src\Assessment\Application\Delivery\AssessmentNotificationType;
 use Src\Assessment\Application\Delivery\TestEmailSender;
 use Src\Assessment\Application\EraseAssessmentData;
 use Src\Assessment\Application\Export\AssessmentDataExporter;
 use Src\Assessment\Application\Invitations\InvitationLinkBuilder;
 use Src\Assessment\Application\Invitations\InvitationSender;
 use Src\Assessment\Application\Invitations\InvitationThrottle;
+use Src\Assessment\Application\Notices\ProviderNoticeSender;
 use Src\Assessment\Application\Reports\ReportPdfRenderer;
 use Src\Assessment\Application\Reports\ReportVerificationLinks;
 use Src\Assessment\Domain\AnswerRepository;
@@ -45,6 +47,7 @@ use Src\Assessment\Domain\InvitationRepository;
 use Src\Assessment\Domain\JobStageTestRepository;
 use Src\Assessment\Domain\LicenceSubmissionRepository;
 use Src\Assessment\Domain\NormRepository;
+use Src\Assessment\Domain\ProviderNoticeRepository;
 use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
 use Src\Assessment\Domain\PsychologistRepository;
@@ -69,6 +72,7 @@ use Src\Assessment\Infrastructure\Listeners\NotifyOfReportSignedListener;
 use Src\Assessment\Infrastructure\Listeners\RecordAssessmentAuditEntries;
 use Src\Assessment\Infrastructure\Listeners\StoreReportPdfListener;
 use Src\Assessment\Infrastructure\Mail\MailInvitationSender;
+use Src\Assessment\Infrastructure\Mail\MailProviderNoticeSender;
 use Src\Assessment\Infrastructure\Mail\MailTeamSubmissionSender;
 use Src\Assessment\Infrastructure\Mail\MailTestSender;
 use Src\Assessment\Infrastructure\Pdf\DompdfReportRenderer;
@@ -82,6 +86,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseJobStageTestRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseLicenceSubmissionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseNormRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseProviderNoticeRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseProviderRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistRepository;
@@ -98,6 +103,8 @@ use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\CreatePsychologistCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
+use Src\Assessment\Interface\Console\NotifyOfLicenceExpiryCommand;
+use Src\Assessment\Interface\Console\NotifyOfReviewsWaitingCommand;
 use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
 use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
@@ -145,6 +152,8 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         CompanyBatteryRepository::class => DatabaseCompanyBatteryRepository::class,
         InvitationLinkBuilder::class => ConfiguredInvitationLinkBuilder::class,
         ReportVerificationLinks::class => ConfiguredReportVerificationLinks::class,
+        ProviderNoticeRepository::class => DatabaseProviderNoticeRepository::class,
+        ProviderNoticeSender::class => MailProviderNoticeSender::class,
         InvitationThrottle::class => RateLimiterInvitationThrottle::class,
         InvitationSender::class => MailInvitationSender::class,
         InvitationRepository::class => DatabaseInvitationRepository::class,
@@ -182,7 +191,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(ApplicantAssessmentAgenda::class));
         });
 
-        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class]);
+        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class, NotifyOfReviewsWaitingCommand::class, NotifyOfLicenceExpiryCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInvitationRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
@@ -190,6 +199,9 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $schedule->command(AutoSubmitAttemptsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeStaleVideoChunksCommand::class)->hourly()->withoutOverlapping()->onOneServer();
             $schedule->command(PurgeExpiredVideosCommand::class)->dailyAt('03:45')->withoutOverlapping()->onOneServer();
+            // `phase-8-provider-tools.md` section 5: the reviews waiting every hour, the licences that end once a day.
+            $schedule->command(NotifyOfReviewsWaitingCommand::class)->hourlyAt(10)->withoutOverlapping()->onOneServer();
+            $schedule->command(NotifyOfLicenceExpiryCommand::class)->dailyAt('06:30')->withoutOverlapping()->onOneServer();
         });
 
         $this->callAfterResolving(PermissionCatalog::class, function (PermissionCatalog $catalog): void {
@@ -206,6 +218,13 @@ final class AssessmentServiceProvider extends ContextServiceProvider
 
         // Email only: the in-app notice is always written. Off until the assessor switches it on.
         $this->callAfterResolving(NotificationPreferenceCatalog::class, function (NotificationPreferenceCatalog $catalog): void {
+            $catalog->add(new NotificationPreferenceDefinition(
+                AssessmentNotificationType::REVIEWS_PREFERENCE,
+                'Email when reviews wait for a psychologist at your provider.',
+                [NotificationChannel::Email->value => true],
+                [ActorKind::Psychologist->value],
+                scheduled: true,
+            ));
             $catalog->add(new NotificationPreferenceDefinition(
                 NotifyOfAttemptSubmission::PREFERENCE,
                 'Email when a test you score as an assessor was submitted.',
