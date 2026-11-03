@@ -26,6 +26,12 @@ final readonly class GetMyTwoFactor
         $userId = (int) $this->access->account($actor)->id;
         $enabled = $this->factors->find($userId)?->isConfirmed() ?? false;
 
-        return new MyTwoFactorStatus($enabled, $actor->kind === ActorKind::Psychologist || $this->policy->isRequired($userId), $enabled ? $this->recoveryCodes->remaining($userId) : 0);
+        return new MyTwoFactorStatus($enabled, $this->required($actor, $userId), $enabled ? $this->recoveryCodes->remaining($userId) : 0);
+    }
+
+    /** A psychologist always needs the second factor (it is enrolled at the first sign-in); a company member needs it by the policy of their company. */
+    private function required(Actor $actor, int $userId): bool
+    {
+        return $actor->kind === ActorKind::Psychologist || $this->policy->isRequired($userId);
     }
 }
