@@ -73,7 +73,7 @@ final readonly class DemoBatteries
             foreach ($section['questions'] as $question) {
                 $this->addQuestion->execute($author, (int) $created->id, new QuestionDraft(
                     $question['type'], $question['text'], 1, $question['scale'], false,
-                    array_map(static fn (array $option): QuestionOption => new QuestionOption($option[0], $option[1], $option[2]), $question['options']),
+                    array_map(static fn (array $option): QuestionOption => new QuestionOption($option[0], $option[1], $option[2], $option[3] ?? null), $question['options']),
                 ));
             }
         }

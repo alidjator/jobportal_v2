@@ -58,13 +58,17 @@ The type rules (statement count, dimensions, same set across questions), answeri
   dialog shows the dimension field; `scalesOf` gives the three graphs of each dimension for the norms, recommendation and template tabs; `dimensionsProblem` drives the warning of the editor (`mitra.battery.dimensionsProblem`).
 - **Career (`apps/public`):** `QuestionView` draws a table of the statements with two radio columns (Paling, Paling tidak); `utils/assessment.ts` keeps the draft as `[most, least]` (0 for one not marked), picking a
   statement as one clears it from the other, and a half-made group counts as unanswered and is never sent.
-- The demo data (step 5) is left.
+- The demo data (step 5): see below.
 
 ### Coded 2026-11-03: step 4, the charts
 
 - **PDF:** `MostLeast::chart` takes the data from the scale rows; `ProfileChartSvg` draws an inline SVG (three lines over the dimensions, grid, legend, dash and shape per graph); `ReportDocument::profileChart()` feeds the "Profile" section of `report.blade.php`, between the scores and the text, only for a battery with most/least scales. No norm-group band or high-mark line is drawn.
 - **Console:** `lib/profile-chart.ts` (the same data and the same axis rule) and `components/mitra/ProfileChart.vue` (an inline SVG plus a table for screen readers) under the scales table of the review page.
 - **To check by eye:** whether dompdf draws the inline SVG as intended; the tests only prove that the PDF is made and that the markup is there.
+
+### Coded 2026-11-03: step 5, the demo data
+
+`DemoDiscBattery` (six groups of four obviously fictitious statements, norms for the twelve scales, report and explanation templates with the profile placeholders, a recommendation rule on `d_most` and `i_most`) is part of `DemoBatteryContent::keys()` as `disc` and is written, published and granted like the other demo batteries (`DemoBatteries` passes the dimension of a statement as the fourth value of an option). Only the optional step 6 (a bulk entry of the groups) is left.
 
 ## Coding order
 

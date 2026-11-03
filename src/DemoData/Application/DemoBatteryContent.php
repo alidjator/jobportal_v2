@@ -14,7 +14,7 @@ use Src\Assessment\Domain\SectionFormat;
  * the speed columns are not counted as questions). The items are original, written or generated for the demo (`DemoPsychometricBanks`), with the norm
  * table, report text, explanation and recommendation rule each battery needs to be published.
  *
- * A question is `{type, text, scale, options: [[label, correct, score]]}`; a section is `{title, instructions, format, minutes, settings, questions}`.
+ * A question is `{type, text, scale, options: [[label, correct, score, scale?]]}` (the fourth value is the dimension of a most/least statement); a section is `{title, instructions, format, minutes, settings, questions}`.
  */
 final class DemoBatteryContent
 {
@@ -27,7 +27,8 @@ final class DemoBatteryContent
     {
         $short = ['professional', 'leadership', 'operational'];
 
-        return $full ? [...$short, ...array_map(static fn (string $key): string => $key.'_full', $short)] : $short;
+        // The DISC battery has one size: a few fictitious groups to try the mechanism (`DemoDiscBattery`).
+        return $full ? [...$short, ...array_map(static fn (string $key): string => $key.'_full', $short), 'disc'] : [...$short, 'disc'];
     }
 
     /**
@@ -35,6 +36,10 @@ final class DemoBatteryContent
      */
     public static function battery(string $key): array
     {
+        if ($key === 'disc') {
+            return DemoDiscBattery::battery();
+        }
+
         $full = str_ends_with($key, '_full');
         $plan = match (str_replace('_full', '', $key)) {
             'professional' => self::professional($full),
