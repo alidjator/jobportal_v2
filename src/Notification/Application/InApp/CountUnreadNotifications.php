@@ -11,6 +11,6 @@ final readonly class CountUnreadNotifications
 
     public function execute(Actor $actor): int
     {
-        return $this->reader->unreadCount((int) $actor->id);
+        return $this->reader->unreadCount((int) $actor->id, NotifiableKind::of($actor));
     }
 }

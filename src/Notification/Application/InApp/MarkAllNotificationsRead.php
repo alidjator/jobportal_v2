@@ -15,6 +15,6 @@ final readonly class MarkAllNotificationsRead
 
     public function execute(Actor $actor): void
     {
-        $this->notifications->markAllRead((int) $actor->id, $this->clock->now());
+        $this->notifications->markAllRead((int) $actor->id, $this->clock->now(), NotifiableKind::of($actor));
     }
 }

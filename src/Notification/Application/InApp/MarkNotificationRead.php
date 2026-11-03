@@ -17,7 +17,7 @@ final readonly class MarkNotificationRead
     /** @throws EntityNotFound when the actor has no notification with that id (also when it belongs to someone else) */
     public function execute(Actor $actor, string $id): void
     {
-        if (! $this->notifications->markRead((int) $actor->id, $id, $this->clock->now())) {
+        if (! $this->notifications->markRead((int) $actor->id, $id, $this->clock->now(), NotifiableKind::of($actor))) {
             throw EntityNotFound::of('Notification', $id);
         }
     }

@@ -9,6 +9,7 @@ use Illuminate\Database\Query\Builder;
 use JsonException;
 use Src\Notification\Application\InApp\InAppNotification;
 use Src\Notification\Application\InApp\InAppNotificationReader;
+use Src\Notification\Application\InApp\NotifiableKind;
 use Src\Shared\Application\Pagination\CursorPage;
 use Src\Shared\Application\Pagination\CursorRequest;
 use Src\Shared\Domain\Exceptions\BusinessRuleViolation;
@@ -21,16 +22,13 @@ use stdClass;
  */
 final readonly class DatabaseInAppNotificationReader implements InAppNotificationReader
 {
-    /** The short name Identity registers for public users in the polymorphic morph map. */
-    private const string USER_MORPH_TYPE = 'user';
-
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
 
     public function __construct(private ConnectionInterface $connection) {}
 
-    public function read(int $userId, ?bool $read, CursorRequest $request): CursorPage
+    public function read(int $userId, ?bool $read, CursorRequest $request, NotifiableKind $kind = NotifiableKind::User): CursorPage
     {
-        $builder = $this->owned($userId)
+        $builder = $this->owned($userId, $kind)
             ->select(['id', 'type', 'data', 'read_at', 'created_at'])
             ->when($read === true, fn (Builder $b) => $b->whereNotNull('read_at'))
             ->when($read === false, fn (Builder $b) => $b->whereNull('read_at'));
@@ -55,15 +53,15 @@ final readonly class DatabaseInAppNotificationReader implements InAppNotificatio
         );
     }
 
-    public function unreadCount(int $userId): int
+    public function unreadCount(int $userId, NotifiableKind $kind = NotifiableKind::User): int
     {
-        return $this->owned($userId)->whereNull('read_at')->count();
+        return $this->owned($userId, $kind)->whereNull('read_at')->count();
     }
 
-    private function owned(int $userId): Builder
+    private function owned(int $userId, NotifiableKind $kind): Builder
     {
         return $this->connection->table('notifications')
-            ->where('notifiable_type', self::USER_MORPH_TYPE)
+            ->where('notifiable_type', $kind->value)
             ->where('notifiable_id', $userId);
     }
 

@@ -12,6 +12,15 @@ Route::middleware('auth:user')->group(function (): void {
     Route::delete('me/device-tokens/{token}', [DeviceTokenController::class, 'destroy']);
 });
 
+// The Console bell: the in-app notifications of a platform admin, the same shape as a user's own (`me/notifications`).
+Route::middleware('auth:admin')->prefix('admin/notifications')->group(function (): void {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::get('unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('{id}/read', [NotificationController::class, 'markRead'])->whereUuid('id');
+    Route::delete('{id}', [NotificationController::class, 'destroy'])->whereUuid('id');
+});
+
 Route::middleware('auth:user')->prefix('me/notifications')->group(function (): void {
     Route::get('/', [NotificationController::class, 'index']);
     Route::get('unread-count', [NotificationController::class, 'unreadCount']);

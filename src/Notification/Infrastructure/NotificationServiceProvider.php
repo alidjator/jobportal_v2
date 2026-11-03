@@ -15,6 +15,7 @@ use Src\Notification\Application\PurgeUserNotificationData;
 use Src\Notification\Application\UserNotificationDataPurger;
 use Src\Notification\Infrastructure\Dashboard\UnreadNotificationsCard;
 use Src\Notification\Infrastructure\Listeners\PurgeNotificationDataWhenUserAnonymized;
+use Src\Notification\Infrastructure\Persistence\DatabaseAdminInAppNotifier;
 use Src\Notification\Infrastructure\Persistence\DatabaseDeviceTokenRepository;
 use Src\Notification\Infrastructure\Persistence\DatabaseInAppNotificationReader;
 use Src\Notification\Infrastructure\Persistence\DatabaseInAppNotificationRepository;
@@ -24,6 +25,7 @@ use Src\Notification\Infrastructure\Persistence\DatabaseUserNotificationDataPurg
 use Src\Notification\Interface\Console\PurgeNotificationsCommand;
 use Src\Shared\Application\Accounts\ErasureStep;
 use Src\Shared\Application\Dashboard\DashboardCards;
+use Src\Shared\Application\Notifications\AdminInAppNotifier;
 use Src\Shared\Application\Notifications\InAppNotifier;
 use Src\Shared\Application\Notifications\NotificationPreferences;
 use Src\Shared\Application\Privacy\PersonalDataExporter;
@@ -40,6 +42,7 @@ final class NotificationServiceProvider extends ContextServiceProvider
         NotificationPreferenceStore::class => DatabaseNotificationPreferenceStore::class,
         NotificationPreferences::class => StoredNotificationPreferences::class,
         InAppNotifier::class => DatabaseInAppNotifier::class,
+        AdminInAppNotifier::class => DatabaseAdminInAppNotifier::class,
     ];
 
     public function register(): void

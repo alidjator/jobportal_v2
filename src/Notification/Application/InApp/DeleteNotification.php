@@ -13,7 +13,7 @@ final readonly class DeleteNotification
     /** @throws EntityNotFound when the actor has no notification with that id (also when it belongs to someone else) */
     public function execute(Actor $actor, string $id): void
     {
-        if (! $this->notifications->delete((int) $actor->id, $id)) {
+        if (! $this->notifications->delete((int) $actor->id, $id, NotifiableKind::of($actor))) {
             throw EntityNotFound::of('Notification', $id);
         }
     }
