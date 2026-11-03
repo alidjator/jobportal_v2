@@ -18,6 +18,7 @@
     .scales { width: 100%; border-collapse: collapse; }
     .scales th, .scales td { border: 1px solid #999; padding: 3px 6px; text-align: left; }
     .scales th { background: #eee; }
+    .chart { text-align: center; margin: 4px 0 8px 0; }
     .body { margin: 0; }
     .letterhead { text-align: center; margin: 0 0 14px 0; }
     .letterhead img { max-height: 22mm; max-width: 60mm; margin-bottom: 4px; }
@@ -66,6 +67,11 @@
             </tr>
         @endforeach
     </table>
+@endif
+
+@if ($report->profileChart())
+    <h2>Profile</h2>
+    <div class="chart">{!! $report->profileChart() !!}</div>
 @endif
 
 <h2>Report</h2>

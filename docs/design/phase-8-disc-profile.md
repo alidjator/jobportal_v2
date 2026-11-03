@@ -58,7 +58,13 @@ The type rules (statement count, dimensions, same set across questions), answeri
   dialog shows the dimension field; `scalesOf` gives the three graphs of each dimension for the norms, recommendation and template tabs; `dimensionsProblem` drives the warning of the editor (`mitra.battery.dimensionsProblem`).
 - **Career (`apps/public`):** `QuestionView` draws a table of the statements with two radio columns (Paling, Paling tidak); `utils/assessment.ts` keeps the draft as `[most, least]` (0 for one not marked), picking a
   statement as one clears it from the other, and a half-made group counts as unanswered and is never sent.
-- The charts (step 4) and the demo data (step 5) are left.
+- The demo data (step 5) is left.
+
+### Coded 2026-11-03: step 4, the charts
+
+- **PDF:** `MostLeast::chart` takes the data from the scale rows; `ProfileChartSvg` draws an inline SVG (three lines over the dimensions, grid, legend, dash and shape per graph); `ReportDocument::profileChart()` feeds the "Profile" section of `report.blade.php`, between the scores and the text, only for a battery with most/least scales. No norm-group band or high-mark line is drawn.
+- **Console:** `lib/profile-chart.ts` (the same data and the same axis rule) and `components/mitra/ProfileChart.vue` (an inline SVG plus a table for screen readers) under the scales table of the review page.
+- **To check by eye:** whether dompdf draws the inline SVG as intended; the tests only prove that the PDF is made and that the markup is there.
 
 ## Coding order
 

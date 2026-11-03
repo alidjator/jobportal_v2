@@ -131,6 +131,36 @@ final class MostLeast
     }
 
     /**
+     * The data of the three charts of a DISC report from the rows of its scales (`scale`, `standard`): the dimensions and, per graph, the standard score of each dimension in the same order (null where no norm
+     * covers the raw score). Null when the rows hold no most/least scales.
+     *
+     * @param  list<array{scale: string, standard: float|null}>  $rows
+     * @return array{dimensions: list<string>, graphs: array<string, list<float|null>>}|null
+     */
+    public static function chart(array $rows): ?array
+    {
+        $standards = [];
+
+        foreach ($rows as $row) {
+            $standards[$row['scale']] = $row['standard'];
+        }
+
+        $dimensions = self::dimensionsOfScales(array_keys($standards));
+
+        if ($dimensions === []) {
+            return null;
+        }
+
+        $graphs = [];
+
+        foreach (self::GRAPHS as $graph) {
+            $graphs[$graph] = array_map(static fn (string $dimension): ?float => $standards[self::key($dimension, $graph)] ?? null, $dimensions);
+        }
+
+        return ['dimensions' => $dimensions, 'graphs' => $graphs];
+    }
+
+    /**
      * The standard score from which a dimension counts as high: the lowest standard score among the norm rows whose band the author calls high ("high" or "tinggi"), else the default.
      *
      * @param  list<Norm>  $norms

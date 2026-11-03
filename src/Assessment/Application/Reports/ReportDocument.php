@@ -3,6 +3,7 @@
 namespace Src\Assessment\Application\Reports;
 
 use DateTimeImmutable;
+use Src\Assessment\Domain\MostLeast;
 
 /** Everything the PDF of a signed report prints. `recommendation` is the Indonesian label of the hiring advice. `autoIssued` (a report issued automatically and not revised since) adds the notice that it was issued automatically under the signer's responsibility. `verificationUrl` is the public address where the number can be checked (printed in the footer). */
 final readonly class ReportDocument
@@ -53,6 +54,16 @@ final readonly class ReportDocument
         }
 
         return $parts;
+    }
+
+    /**
+     * The charts of a DISC report: an inline SVG with the three graphs over the dimensions, or null for a battery that has no most/least scales. The names of the graphs are the fixed words of the report.
+     */
+    public function profileChart(): ?string
+    {
+        $chart = MostLeast::chart(array_map(static fn (array $row): array => ['scale' => $row['scale'], 'standard' => $row['standard']], $this->scales));
+
+        return $chart === null ? null : ProfileChartSvg::render($chart, ['most' => 'Paling', 'least' => 'Paling tidak', 'change' => 'Perubahan']);
     }
 
     /** Whether the text places the institution's letterhead itself (the default header is then left out). */

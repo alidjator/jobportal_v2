@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Assessment;
 
+use DateTimeImmutable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use Src\Assessment\Application\Reports\ReportDocument;
 use Tests\Concerns\BuildsApplicationFixtures;
 use Tests\Concerns\BuildsAssessmentFixtures;
 use Tests\FeatureTestCase;
@@ -264,5 +267,65 @@ final class MostLeastBatteryTest extends FeatureTestCase
         $this->assertEquals(0, $scales['d_most']);
         $this->assertEquals(-1, $scales['s_change']);
         $this->assertCount(12, $scales);
+    }
+
+    // ----- the charts of the report (D5) -----
+
+    /** The candidate answers the three groups (most d / least c, most d / least s, most i / least c) and hands in; returns the report id. */
+    private function submitted(): int
+    {
+        $this->invite($this->discBattery());
+        $this->take('POST', 'start', ['consent' => true])->assertCreated();
+
+        foreach ([['Group One', [1, 4]], ['Group Two', [1, 3]], ['Group Three', [2, 4]]] as [$text, $positions]) {
+            $this->take('PUT', 'attempt/questions/'.$this->questionId($text).'/answer', ['option_positions' => $positions])->assertNoContent();
+        }
+
+        $this->take('POST', 'attempt/submit')->assertOk();
+
+        return (int) DB::table('assessment_reports')->value('id');
+    }
+
+    public function test_the_review_carries_the_standard_scores_the_charts_are_drawn_from(): void
+    {
+        $reportId = $this->submitted();
+
+        $scales = collect($this->provider('GET', "reviews/{$reportId}")->assertOk()->json('data.scales'))->keyBy('scale');
+
+        $this->assertCount(12, $scales);
+        $this->assertEquals(60, $scales['d_most']['standard']);
+        $this->assertEquals(40, $scales['c_most']['standard']);
+        $this->assertEquals(-2, $scales['c_change']['raw']);
+        $this->assertEquals(40, $scales['c_change']['standard']);
+    }
+
+    public function test_the_signed_pdf_draws_the_profile_chart(): void
+    {
+        $reportId = $this->submitted();
+        $this->provider('PUT', "reviews/{$reportId}", ['body' => (string) DB::table('assessment_reports')->value('body'), 'explanation' => 'You act at once and press on.', 'review_notes' => null, 'recommendation' => 'consider'])->assertOk();
+        $this->provider('POST', "reviews/{$reportId}/sign")->assertOk();
+
+        $pdf = (string) Storage::get((string) DB::table('assessment_reports')->value('pdf_path'));
+        $this->assertStringStartsWith('%PDF', $pdf);
+
+        $document = new ReportDocument(
+            'Lembaga', 'PT Lembaga', 'LEMB/2026/00001', 'Behaviour profile', 'Siti', 'Text', [
+                ['scale' => 'd_most', 'raw' => 2.0, 'standard' => 60.0, 'band' => 'High', 'norm_group' => null],
+                ['scale' => 'd_least', 'raw' => 0.0, 'standard' => 40.0, 'band' => 'Low', 'norm_group' => null],
+                ['scale' => 'd_change', 'raw' => 2.0, 'standard' => 60.0, 'band' => 'High', 'norm_group' => null],
+                ['scale' => 'i_most', 'raw' => 1.0, 'standard' => 40.0, 'band' => 'Low', 'norm_group' => null],
+                ['scale' => 'i_least', 'raw' => 0.0, 'standard' => 40.0, 'band' => 'Low', 'norm_group' => null],
+                ['scale' => 'i_change', 'raw' => 1.0, 'standard' => 60.0, 'band' => 'High', 'norm_group' => null],
+            ], 'Dewi', 'STR-1', 'SIPP-1', new DateTimeImmutable('2026-11-03'),
+        );
+        $html = view('assessment.report', ['report' => $document])->render();
+
+        $this->assertStringContainsString('<h2>Profile</h2>', $html);
+        $this->assertSame(3, substr_count($html, '<polyline'));
+        $this->assertStringContainsString('Paling tidak', $html);
+
+        // A battery that is not of this family has no chart.
+        $plain = new ReportDocument('Lembaga', 'PT Lembaga', 'LEMB/2026/00002', 'Personality', 'Siti', 'Text', [['scale' => 'extraversion', 'raw' => 3.0, 'standard' => 60.0, 'band' => 'High', 'norm_group' => null]], 'Dewi', 'STR-1', 'SIPP-1', new DateTimeImmutable('2026-11-03'));
+        $this->assertStringNotContainsString('<h2>Profile</h2>', view('assessment.report', ['report' => $plain])->render());
     }
 }
