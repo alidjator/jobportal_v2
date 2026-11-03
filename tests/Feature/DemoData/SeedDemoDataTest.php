@@ -149,9 +149,14 @@ final class SeedDemoDataTest extends FeatureTestCase
         $this->assertSame(count(DemoLibraryContent::tests()), DB::table('assessment_tests')->where('status', 'published')->whereNull('company_id')->whereNull('provider_id')->count());
         $this->assertSame(count(DemoAssessmentContent::jobDefaults()), DB::table('assessment_job_stage_tests')->count());
 
-        $recruiterId = (int) DB::table('identity_users')->where('email', DemoCast::sinarMembers()[0]['email'])->value('id');
-        $hiringManagerId = (int) DB::table('identity_users')->where('email', DemoCast::sinarMembers()[1]['email'])->value('id');
-        $backend = (int) DB::table('job_jobs')->where('title', 'Backend Developer')->value('id');
+        // Everything is looked up inside the demo company, so a row of the same title or email that another test left behind cannot be taken for the demo's.
+        $sinarId = (int) DB::table('company_companies')->where('name', DemoCast::COMPANIES[DemoCast::SINAR]['name'])->value('id');
+        $memberId = static fn (string $email): int => (int) DB::table('identity_users as users')
+            ->join('company_members as members', 'members.user_id', '=', 'users.id')
+            ->where('members.company_id', $sinarId)->where('users.email', $email)->value('users.id');
+        $recruiterId = $memberId(DemoCast::sinarMembers()[0]['email']);
+        $hiringManagerId = $memberId(DemoCast::sinarMembers()[1]['email']);
+        $backend = (int) DB::table('job_jobs')->where('company_id', $sinarId)->where('title', 'Backend Developer')->value('id');
         $this->assertSame(
             [$recruiterId => 'recruiter', $hiringManagerId => 'hiring_manager'],
             DB::table('job_assignments')->where('job_id', $backend)->orderBy('user_id')->pluck('role', 'user_id')->all(),
