@@ -106,6 +106,7 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     Route::get('sendable-tests', [CatalogController::class, 'sendable']);
     Route::get('catalog/{id}', [CatalogController::class, 'show'])->whereNumber('id');
     Route::get('catalog/{id}/example-report', [CatalogController::class, 'exampleReport'])->whereNumber('id');
+    Route::get('catalog/{id}/samples/{questionId}/images/{imageId}', [CatalogController::class, 'sampleImage'])->whereNumber(['id', 'questionId', 'imageId']);
 
     // The tests sent to the candidates, for the members who may see the application.
     Route::get('applications/{id}/invitations', [InvitationController::class, 'index'])->whereNumber('id');
@@ -118,11 +119,12 @@ Route::middleware('auth:user')->prefix('company/assessment')->group(function ():
     Route::get('invitations/{id}/attachment', [InvitationController::class, 'attachment'])->whereNumber('id');
 
     // The result of a test, its integrity log, the scoring of the written and video answers by the assessors, the video streams and the signed report as a PDF.
-    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+'])->group(function (): void {
+    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'imageId' => '[0-9]+'])->group(function (): void {
         Route::get('result', [ResultController::class, 'show']);
         Route::get('integrity-events', [ResultController::class, 'integrityEvents']);
         Route::get('scoring', [ResultController::class, 'scoring']);
         Route::put('scoring/questions/{questionId}', [ResultController::class, 'score']);
+        Route::get('scoring/questions/{questionId}/images/{imageId}', [ResultController::class, 'scoringImage']);
         Route::get('videos/{questionId}', [ResultController::class, 'video']);
         Route::get('report.pdf', [ResultController::class, 'report']);
         Route::get('report-messages', [ReportMessageController::class, 'companyIndex']);

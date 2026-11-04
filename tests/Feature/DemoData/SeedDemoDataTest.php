@@ -155,7 +155,9 @@ final class SeedDemoDataTest extends FeatureTestCase
 
         // Assessment tests: published, one default per job at the assessment stage.
         $this->assertSame(count(DemoAssessmentContent::tests()), DB::table('assessment_tests')->where('status', 'published')->whereNotNull('company_id')->count());
-        $this->assertSame(count(DemoLibraryContent::tests()), DB::table('assessment_tests')->where('status', 'published')->whereNull('company_id')->whereNull('provider_id')->count());
+        $this->assertSame(count(DemoLibraryContent::tests()) + 1, DB::table('assessment_tests')->where('status', 'published')->whereNull('company_id')->whereNull('provider_id')->count());
+        // The figural test has pictures as the options of its items, and its first item is a sample.
+        $this->assertSame(15, DB::table('assessment_question_images')->whereNotNull('question_id')->count());
         $this->assertSame(count(DemoAssessmentContent::jobDefaults()), DB::table('assessment_job_stage_tests')->count());
 
         // Everything is looked up inside the demo company, so a row of the same title or email that another test left behind cannot be taken for the demo's.

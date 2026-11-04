@@ -264,10 +264,11 @@ final class QuestionImagesTest extends FeatureTestCase
 
     // ----- the candidate -----
 
-    private function sendTest(int $testId): void
+    /** @param  array<string, mixed>  $extra */
+    private function sendTest(int $testId, array $extra = []): void
     {
         $stage = (int) DB::table('recruitment_stages')->where('company_id', $this->companyId)->where('type', 'assessment')->where('is_default', 1)->value('id');
-        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => ['test_id' => $testId, 'due_at' => now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z')]], $this->recruiterToken)->assertOk();
+        $this->api('POST', "/company/applications/{$this->applicationId}/move", ['stage_id' => $stage, 'assessment' => ['test_id' => $testId, 'due_at' => now()->addDays(3)->utc()->format('Y-m-d\TH:i:s\Z'), ...$extra]], $this->recruiterToken)->assertOk();
         $this->invitationId = (int) DB::table('assessment_invitations')->orderByDesc('id')->value('id');
     }
 
@@ -342,5 +343,47 @@ final class QuestionImagesTest extends FeatureTestCase
         $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$real}/images/{$realImage}", [], $this->seekerToken)->assertNotFound();
         $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$sample}/images/{$realImage}", [], $this->seekerToken)->assertNotFound();
         $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$sample}/images/{$imageId}", [], $this->tokenFor($this->seeker('yanti@example.test')))->assertNotFound();
+    }
+
+    public function test_the_assessor_sees_the_pictures_of_the_question_to_score_and_no_one_else_does(): void
+    {
+        [$id, $sectionId] = $this->newTestWithSection();
+        $question = (int) $this->company('POST', "sections/{$sectionId}/questions", ['type' => 'long_text', 'text' => 'Describe what you see.', 'points' => 4, 'image_ids' => [$this->pictureId($id, 'The chart')]])->assertCreated()->json('data.id');
+        $this->company('POST', "tests/{$id}/publish")->assertOk();
+        $this->sendTest($id, ['assessor_ids' => [$this->recruiterId]]);
+        $this->take('POST', 'start', ['consent' => true])->assertCreated();
+        $this->take('PUT', "attempt/questions/{$question}/answer", ['text' => 'A rising line.'])->assertNoContent();
+        $this->take('POST', 'attempt/submit')->assertOk();
+
+        $list = $this->company('GET', "invitations/{$this->invitationId}/scoring", [], $this->recruiterToken)->assertOk()->assertJsonPath('data.0.images.0.alt', 'The chart');
+        $picture = (int) $list->json('data.0.images.0.id');
+
+        $this->company('GET', "invitations/{$this->invitationId}/scoring/questions/{$question}/images/{$picture}", [], $this->recruiterToken)->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        $this->company('GET', "invitations/{$this->invitationId}/scoring/questions/{$question}/images/999999", [], $this->recruiterToken)->assertNotFound();
+        $this->company('GET', "invitations/{$this->invitationId}/scoring/questions/{$question}/images/{$picture}")->assertStatus(403)->assertJsonPath('type', 'urn:onesis:error:not-an-assessor');
+    }
+
+    public function test_the_catalogue_shows_the_pictures_of_a_sample_and_keeps_the_others_hidden(): void
+    {
+        $id = $this->newTest('library');
+        $section = (int) $this->library('POST', "tests/{$id}/sections", $this->section())->assertCreated()->json('data.id');
+        $upload = fn (string $alt): int => (int) $this->upload($id, 'library', alt: $alt)->assertCreated()->json('data.id');
+
+        $options = array_map(fn (string $letter): array => ['label' => $letter, 'is_correct' => $letter === 'A', 'image_id' => $upload("Option {$letter}")], ['A', 'B', 'C']);
+        $sample = (int) $this->library('POST', "sections/{$section}/questions", ['type' => 'single_choice', 'text' => 'Pick the figure that differs.', 'points' => 1, 'is_sample' => true, 'image_ids' => [$upload('The sample figure')], 'options' => $options])->assertCreated()->json('data.id');
+        $hidden = (int) $this->library('POST', "sections/{$section}/questions", ['type' => 'long_text', 'text' => 'Describe what you see.', 'points' => 2, 'image_ids' => [$upload('A hidden figure')]])->assertCreated()->json('data.id');
+        $this->library('POST', "tests/{$id}/publish")->assertOk();
+
+        $entry = $this->company('GET', "catalog/{$id}", [], $this->recruiterToken)->assertOk()->assertJsonCount(1, 'data.samples')
+            ->assertJsonPath('data.samples.0.id', $sample)->assertJsonPath('data.samples.0.images.0.alt', 'The sample figure')->assertJsonPath('data.samples.0.option_images.1.alt', 'Option B');
+        $stem = (int) $entry->json('data.samples.0.images.0.id');
+        $option = (int) $entry->json('data.samples.0.option_images.2.id');
+
+        $this->company('GET', "catalog/{$id}/samples/{$sample}/images/{$stem}", [], $this->recruiterToken)->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        $this->company('GET', "catalog/{$id}/samples/{$sample}/images/{$option}", [], $this->recruiterToken)->assertOk();
+
+        $hiddenImage = (int) DB::table('assessment_question_images')->where('question_id', $hidden)->value('id');
+        $this->company('GET', "catalog/{$id}/samples/{$hidden}/images/{$hiddenImage}", [], $this->recruiterToken)->assertNotFound();
+        $this->company('GET', "catalog/{$id}/samples/{$sample}/images/{$hiddenImage}", [], $this->recruiterToken)->assertNotFound();
     }
 }

@@ -28,7 +28,7 @@ final readonly class ListScoringAnswers
         return array_map(
             static fn (array $entry): ScoringItem => new ScoringItem(
                 (int) $entry['question']->id, $entry['question']->text, $entry['question']->points, $entry['question']->type === QuestionType::LongText ? (string) $entry['answer']->textValue : null,
-                $entry['answer']->score, $entry['question']->type,
+                $entry['answer']->score, $entry['question']->type, $entry['question']->images,
             ),
             $this->access->scorable($attempt),
         );

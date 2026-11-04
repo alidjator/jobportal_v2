@@ -11,7 +11,9 @@ use Src\Assessment\Application\Results\ListIntegrityEvents;
 use Src\Assessment\Application\Results\ListInvitationsToScore;
 use Src\Assessment\Application\Results\ListScoringAnswers;
 use Src\Assessment\Application\Results\OpenCandidateVideo;
+use Src\Assessment\Application\Results\OpenScoringQuestionImage;
 use Src\Assessment\Application\Results\ScoreAnswer;
+use Src\Assessment\Interface\Http\QuestionImageResponse;
 use Src\Assessment\Interface\Http\Requests\ListScoringQueueRequest;
 use Src\Assessment\Interface\Http\Requests\ScoreAnswerRequest;
 use Src\Assessment\Interface\Http\Resources\IntegrityLogResource;
@@ -52,6 +54,12 @@ final class ResultController extends ApiController
     public function score(ScoreAnswerRequest $request, int $id, int $questionId, ActorResolver $actors, ScoreAnswer $score): ScoringItemResource
     {
         return new ScoringItemResource($score->execute($actors->fromRequest($request), $id, $questionId, $request->score()));
+    }
+
+    /** A picture of a question the assessor scores (the same access as the scoring list). */
+    public function scoringImage(Request $request, int $id, int $questionId, int $imageId, ActorResolver $actors, OpenScoringQuestionImage $open): Response
+    {
+        return QuestionImageResponse::of($open->execute($actors->fromRequest($request), $id, $questionId, $imageId));
     }
 
     public function video(Request $request, int $id, int $questionId, ActorResolver $actors, OpenCandidateVideo $open): SymfonyResponse

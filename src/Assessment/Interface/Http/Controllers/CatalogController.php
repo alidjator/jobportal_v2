@@ -5,11 +5,13 @@ namespace Src\Assessment\Interface\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Src\Assessment\Application\Catalog\GetCatalogSampleImage;
 use Src\Assessment\Application\Catalog\GetCatalogTest;
 use Src\Assessment\Application\Catalog\ListBatteryCatalog;
 use Src\Assessment\Application\Catalog\ListLibraryTests;
 use Src\Assessment\Application\Catalog\ListSendableTests;
 use Src\Assessment\Application\Example\DownloadExampleReport;
+use Src\Assessment\Interface\Http\QuestionImageResponse;
 use Src\Assessment\Interface\Http\Requests\ListCatalogRequest;
 use Src\Assessment\Interface\Http\Requests\ListSendableTestsRequest;
 use Src\Assessment\Interface\Http\Resources\CatalogEntryResource;
@@ -46,6 +48,12 @@ final class CatalogController extends ApiController
     public function show(Request $request, int $id, ActorResolver $actors, GetCatalogTest $get): CatalogEntryResource
     {
         return new CatalogEntryResource($get->execute($actors->fromRequest($request), $id));
+    }
+
+    /** A picture of a sample question of the entry (the same access as the entry; any other question stays hidden). */
+    public function sampleImage(Request $request, int $id, int $questionId, int $imageId, ActorResolver $actors, GetCatalogSampleImage $get): Response
+    {
+        return QuestionImageResponse::of($get->execute($actors->fromRequest($request), $id, $questionId, $imageId));
     }
 
     /** The example report a provider attached to the battery (a PDF about a fictitious candidate); the entry says whether there is one (`has_example_report`). */

@@ -78,7 +78,7 @@ final readonly class ScoreAnswer
                 $finalized = new ResultFinalized((int) $invitation->id, $invitation->applicationId, $invitation->jobId, $invitation->companyId, $result->percentage, $result->integrityTier->value, $this->clock->now());
             }
 
-            return new ScoringItem($questionId, $entry['question']->text, $points, $entry['question']->type === QuestionType::LongText ? (string) $entry['answer']->textValue : null, (float) $score, $entry['question']->type);
+            return new ScoringItem($questionId, $entry['question']->text, $points, $entry['question']->type === QuestionType::LongText ? (string) $entry['answer']->textValue : null, (float) $score, $entry['question']->type, $entry['question']->images);
         });
 
         // The result may have just become final: the automatic advance of the job's default test looks at it once the scores are saved.
