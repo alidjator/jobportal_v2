@@ -209,7 +209,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `invalid-hire-input` | 422 | Recruitment |  |
 | `invalid-hire-note` | 422 | Recruitment |  |
 | `invalid-ideal-answer` | 422 | Recruitment |  |
-| `invalid-image` | 422 | Shared | The file is not a usable JPEG, PNG or WebP image. |
+| `invalid-image` | 422 | Assessment, Shared | The file is not a usable JPEG, PNG or WebP image. |
 | `invalid-integrity-event` | 422 | Assessment | This signal is noticed by the server, not reported. |
 | `invalid-interview` | 422 | Recruitment |  |
 | `invalid-interviewer` | 422 | Recruitment |  |
@@ -511,6 +511,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `too-many-applications` | 422 | Recruitment | Select at most :max applications at a time. |
 | `too-many-attachments` | 422 | Messaging | A message can have at most :max files. |
 | `too-many-documents` | 422 | Workforce | A requisition holds at most :max documents. |
+| `too-many-images` | 422 | Assessment | A question shows at most :max pictures. |
 | `too-many-recipients` | 422 | Messaging | A bulk message can go to at most :max applications. |
 | `too-many-requests` | 429 | Assessment, Company, Identity, Job, Platform | Too many requests. Try again later. The `Retry-After` header tells how long to wait. |
 | `training-unavailable` | 503 | Training | The training platform is not configured. |
