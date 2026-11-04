@@ -8,6 +8,7 @@ final readonly class Question
      * `thinkSeconds`, `answerSeconds` and `maxRetakes` belong to a video answer question only; a null think time means it is not limited.
      *
      * @param  list<QuestionOption>  $options
+     * @param  list<QuestionImage>  $images  the pictures of the question itself, in the order shown (those of the options sit on the options)
      */
     public function __construct(
         public ?int $id,
@@ -22,6 +23,7 @@ final readonly class Question
         public ?int $thinkSeconds = null,
         public ?int $answerSeconds = null,
         public ?int $maxRetakes = null,
+        public array $images = [],
     ) {}
 
     /** The least time a section needs for this question: the limited think time (none counted when it is unlimited) plus every take at full length. */

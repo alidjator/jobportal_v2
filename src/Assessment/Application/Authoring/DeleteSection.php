@@ -2,6 +2,8 @@
 
 namespace Src\Assessment\Application\Authoring;
 
+use Src\Assessment\Domain\QuestionImage;
+use Src\Assessment\Domain\QuestionImageRepository;
 use Src\Assessment\Domain\SectionRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\TransactionManager;
@@ -15,6 +17,8 @@ final readonly class DeleteSection
     public function __construct(
         private AuthoringAccess $access,
         private SectionRepository $sections,
+        private QuestionImageRepository $pictures,
+        private QuestionImages $images,
         private TransactionManager $transactions,
     ) {}
 
@@ -27,11 +31,16 @@ final readonly class DeleteSection
     {
         $author = $this->access->author($actor);
 
-        $this->transactions->run(function () use ($author, $sectionId): void {
+        $paths = $this->transactions->run(function () use ($author, $sectionId): array {
             $section = $this->sections->find($sectionId) ?? throw EntityNotFound::of('Section', $sectionId);
             $this->access->editableTest($author, $section->testId);
 
+            $paths = array_map(static fn (QuestionImage $image): string => $image->path, $this->pictures->ofSection($sectionId));
             $this->sections->delete($sectionId);
+
+            return $paths;
         });
+
+        $this->images->discard($paths);
     }
 }

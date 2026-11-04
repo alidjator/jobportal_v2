@@ -4,6 +4,7 @@ namespace Src\Assessment\Interface\Http;
 
 use Illuminate\Support\Facades\Route;
 use Src\Assessment\Interface\Http\Controllers\QuestionController;
+use Src\Assessment\Interface\Http\Controllers\QuestionImageController;
 use Src\Assessment\Interface\Http\Controllers\SectionController;
 use Src\Assessment\Interface\Http\Controllers\TestController;
 
@@ -26,6 +27,10 @@ final class AuthoringRoutes
         Route::put('tests/{id}/sections/order', [SectionController::class, 'reorder'])->whereNumber('id');
         Route::put('sections/{sectionId}', [SectionController::class, 'update'])->whereNumber('sectionId');
         Route::delete('sections/{sectionId}', [SectionController::class, 'destroy'])->whereNumber('sectionId');
+
+        // A picture is uploaded to the test first and attached when a question names its id; `GET` previews it.
+        Route::post('tests/{id}/images', [QuestionImageController::class, 'store'])->whereNumber('id');
+        Route::get('tests/{id}/images/{imageId}', [QuestionImageController::class, 'show'])->whereNumber(['id', 'imageId']);
 
         Route::get('sections/{sectionId}/questions', [QuestionController::class, 'index'])->whereNumber('sectionId');
         Route::post('sections/{sectionId}/questions', [QuestionController::class, 'store'])->whereNumber('sectionId');

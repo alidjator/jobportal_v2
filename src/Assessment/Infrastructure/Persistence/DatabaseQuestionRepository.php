@@ -5,6 +5,7 @@ namespace Src\Assessment\Infrastructure\Persistence;
 use Illuminate\Database\ConnectionInterface;
 use Src\Assessment\Domain\MostLeast;
 use Src\Assessment\Domain\Question;
+use Src\Assessment\Domain\QuestionImageRepository;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\QuestionType;
@@ -20,6 +21,7 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
     public function __construct(
         private ConnectionInterface $connection,
         private Clock $clock,
+        private QuestionImageRepository $images,
     ) {}
 
     public function ofSection(int $sectionId): array
@@ -245,12 +247,26 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
             ->whereIn('question_id', array_map(static fn (stdClass $row): int => (int) $row->id, $rows))
             ->orderBy('position')->orderBy('id')->get();
 
+        $ids = array_map(static fn (stdClass $row): int => (int) $row->id, $rows);
+        $stem = [];
+        $optionImages = [];
+
+        foreach ($this->images->ofQuestions($ids) as $image) {
+            if ($image->optionPosition === null) {
+                $stem[(int) $image->questionId][] = $image;
+            } else {
+                $optionImages[(int) $image->questionId][$image->optionPosition] = $image;
+            }
+        }
+
         foreach ($optionRows as $option) {
-            $options[(int) $option->question_id][] = new QuestionOption(
+            $questionId = (int) $option->question_id;
+            $options[$questionId][] = new QuestionOption(
                 (string) $option->label,
                 (bool) $option->is_correct,
                 $option->score_value === null ? null : (int) $option->score_value,
                 $option->scale_key,
+                $optionImages[$questionId][(int) $option->position] ?? null,
             );
         }
 
@@ -267,6 +283,7 @@ final readonly class DatabaseQuestionRepository implements QuestionRepository
             $row->think_seconds === null ? null : (int) $row->think_seconds,
             $row->answer_seconds === null ? null : (int) $row->answer_seconds,
             $row->max_retakes === null ? null : (int) $row->max_retakes,
+            $stem[(int) $row->id] ?? [],
         ), $rows);
     }
 }

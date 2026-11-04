@@ -22,6 +22,7 @@ final readonly class AddQuestion
         private SectionRepository $sections,
         private QuestionRepository $questions,
         private QuestionFactory $factory,
+        private QuestionImages $images,
         private Settings $settings,
         private TransactionManager $transactions,
     ) {}
@@ -29,7 +30,7 @@ final readonly class AddQuestion
     /**
      * @throws AccessDenied see `AuthoringAccess::author`
      * @throws EntityNotFound
-     * @throws BusinessRuleViolation `invalid-question` or `invalid-section`
+     * @throws BusinessRuleViolation `invalid-question`, `invalid-section`, `invalid-image` or `too-many-images`
      * @throws StateConflict `test-archived`, `test-locked` or `question-limit-reached`
      */
     public function execute(Actor $actor, int $sectionId, QuestionDraft $draft): Question
@@ -44,7 +45,10 @@ final readonly class AddQuestion
                 throw new StateConflict('The section has reached its limit of questions.', 'question-limit-reached');
             }
 
-            return $this->questions->add($this->factory->build($test, $section, $draft));
+            $question = $this->questions->add($this->factory->build($test, $section, $draft));
+            $this->images->place($test, $question, $draft);
+
+            return $this->questions->find((int) $question->id) ?? $question;
         });
     }
 }

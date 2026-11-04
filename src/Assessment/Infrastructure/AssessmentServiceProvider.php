@@ -53,6 +53,7 @@ use Src\Assessment\Domain\ProviderNoticeRepository;
 use Src\Assessment\Domain\ProviderRepository;
 use Src\Assessment\Domain\PsychologistInvitationRepository;
 use Src\Assessment\Domain\PsychologistRepository;
+use Src\Assessment\Domain\QuestionImageRepository;
 use Src\Assessment\Domain\QuestionRepository;
 use Src\Assessment\Domain\RecommendationRuleRepository;
 use Src\Assessment\Domain\ReportMessageRepository;
@@ -94,6 +95,7 @@ use Src\Assessment\Infrastructure\Persistence\DatabaseProviderNoticeRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseProviderRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistInvitationRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabasePsychologistRepository;
+use Src\Assessment\Infrastructure\Persistence\DatabaseQuestionImageRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseQuestionRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseRecommendationRuleRepository;
 use Src\Assessment\Infrastructure\Persistence\DatabaseReportMessageRepository;
@@ -112,6 +114,7 @@ use Src\Assessment\Interface\Console\NotifyOfLicenceExpiryCommand;
 use Src\Assessment\Interface\Console\NotifyOfReviewsWaitingCommand;
 use Src\Assessment\Interface\Console\PurgeArchivedExaminationsCommand;
 use Src\Assessment\Interface\Console\PurgeExpiredVideosCommand;
+use Src\Assessment\Interface\Console\PurgeOrphanQuestionImagesCommand;
 use Src\Assessment\Interface\Console\PurgeStaleVideoChunksCommand;
 use Src\Assessment\Interface\Console\SendInvitationRemindersCommand;
 use Src\Assessment\Interface\Console\ShowArchivedExaminationCommand;
@@ -157,6 +160,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         TestRepository::class => DatabaseTestRepository::class,
         SectionRepository::class => DatabaseSectionRepository::class,
         QuestionRepository::class => DatabaseQuestionRepository::class,
+        QuestionImageRepository::class => DatabaseQuestionImageRepository::class,
         NormRepository::class => DatabaseNormRepository::class,
         RecommendationRuleRepository::class => DatabaseRecommendationRuleRepository::class,
         ReportTemplateRepository::class => DatabaseReportTemplateRepository::class,
@@ -206,7 +210,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(ApplicantAssessmentAgenda::class));
         });
 
-        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class, NotifyOfReviewsWaitingCommand::class, NotifyOfLicenceExpiryCommand::class, PurgeArchivedExaminationsCommand::class, ShowArchivedExaminationCommand::class]);
+        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class, NotifyOfReviewsWaitingCommand::class, NotifyOfLicenceExpiryCommand::class, PurgeArchivedExaminationsCommand::class, ShowArchivedExaminationCommand::class, PurgeOrphanQuestionImagesCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInvitationRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();
@@ -216,6 +220,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $schedule->command(PurgeExpiredVideosCommand::class)->dailyAt('03:45')->withoutOverlapping()->onOneServer();
             // `phase-8-provider-institutions.md` section 7: the archived raw data whose retention ended, by date whatever the switch says.
             $schedule->command(PurgeArchivedExaminationsCommand::class)->dailyAt('03:55')->withoutOverlapping()->onOneServer();
+            $schedule->command(PurgeOrphanQuestionImagesCommand::class)->dailyAt('04:05')->withoutOverlapping()->onOneServer();
             // `phase-8-provider-tools.md` section 5: the reviews waiting every hour, the licences that end once a day.
             $schedule->command(NotifyOfReviewsWaitingCommand::class)->hourlyAt(10)->withoutOverlapping()->onOneServer();
             $schedule->command(NotifyOfLicenceExpiryCommand::class)->dailyAt('06:30')->withoutOverlapping()->onOneServer();

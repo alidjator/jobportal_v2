@@ -13,6 +13,7 @@ use Src\Shared\Application\Email\EmailTemplateCatalog;
 use Src\Shared\Application\EventDispatcher;
 use Src\Shared\Application\FileStorage;
 use Src\Shared\Application\FileStreams;
+use Src\Shared\Application\Images\ImageOverlay;
 use Src\Shared\Application\Images\ImageProcessor;
 use Src\Shared\Application\Notifications\NotificationPreferenceCatalog;
 use Src\Shared\Application\Permissions\PermissionCatalog;
@@ -25,6 +26,7 @@ use Src\Shared\Infrastructure\ContainerPersonalDataExporters;
 use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
 use Src\Shared\Infrastructure\Documentation\ErrorCatalogCommand;
 use Src\Shared\Infrastructure\Events\LaravelEventDispatcher;
+use Src\Shared\Infrastructure\Images\GdImageOverlay;
 use Src\Shared\Infrastructure\Images\GdImageProcessor;
 use Src\Shared\Infrastructure\Persistence\LaravelTransactionManager;
 use Src\Shared\Infrastructure\Storage\LaravelFileStorage;
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         FileStorage::class => LaravelFileStorage::class,
         FileStreams::class => LaravelFileStreams::class,
         ImageProcessor::class => GdImageProcessor::class,
+        ImageOverlay::class => GdImageOverlay::class,
         ErasureSteps::class => ContainerErasureSteps::class,
         PersonalDataExporters::class => ContainerPersonalDataExporters::class,
     ];

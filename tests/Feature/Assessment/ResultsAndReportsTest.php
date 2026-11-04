@@ -452,6 +452,33 @@ final class ResultsAndReportsTest extends FeatureTestCase
         $this->provider('GET', "reviews/{$reportId}/drawings/999999")->assertNotFound();
     }
 
+    public function test_a_canvas_drawing_is_handed_out_over_the_sheet_of_its_question_and_a_photo_as_it_is(): void
+    {
+        Storage::fake();
+        $battery = $this->battery();
+        $sheet = imagecreatetruecolor(200, 100);
+        imagefill($sheet, 0, 0, (int) imagecolorallocate($sheet, 255, 255, 255));
+        ob_start();
+        imagepng($sheet);
+        $bytes = (string) ob_get_clean();
+
+        $this->app['auth']->forgetGuards();
+        $picture = (int) $this->withToken($this->psychologistToken)->post(
+            "/api/v1/provider/tests/{$battery}/images", ['file' => UploadedFile::fake()->createWithContent('sheet.png', $bytes), 'alt' => 'Sheet with eight squares'], ['Accept' => 'application/json'],
+        )->assertCreated()->json('data.id');
+        $question = (int) DB::table('assessment_questions')->where('type', 'drawing')->value('id');
+        $this->provider('PUT', "questions/{$question}", ['type' => 'drawing', 'text' => 'Draw a tree as you see it.', 'points' => 10, 'image_ids' => [$picture]])->assertOk()->assertJsonPath('data.images.0.id', $picture);
+
+        $reportId = $this->takeBattery($battery);
+        $drawing = $this->provider('GET', "reviews/{$reportId}/drawings/{$question}")->assertOk();
+        $this->assertSame('image/png', $drawing->headers->get('Content-Type'));
+        $this->assertSame([200, 100], array_slice((array) getimagesizefromstring((string) $drawing->getContent()), 0, 2), 'the size of the sheet, not of the strokes (120 by 80)');
+
+        DB::table('assessment_drawings')->update(['source' => 'upload']);
+        $photo = $this->provider('GET', "reviews/{$reportId}/drawings/{$question}")->assertOk();
+        $this->assertSame([120, 80], array_slice((array) getimagesizefromstring((string) $photo->getContent()), 0, 2));
+    }
+
     public function test_the_psychologist_scores_a_drawing_and_edits_the_report(): void
     {
         $reportId = $this->takeBattery();

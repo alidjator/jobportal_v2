@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 use Src\Assessment\Application\Attempts\AttemptView;
 use Src\Assessment\Application\Attempts\FinishSection;
 use Src\Assessment\Application\Attempts\GetAttempt;
+use Src\Assessment\Application\Attempts\GetAttemptQuestionImage;
 use Src\Assessment\Application\Attempts\MoveToQuestion;
 use Src\Assessment\Application\Attempts\ReportIntegrityEvent;
 use Src\Assessment\Application\Attempts\SaveAnswer;
@@ -15,6 +16,7 @@ use Src\Assessment\Application\Attempts\SaveColumn;
 use Src\Assessment\Application\Attempts\StartAttempt;
 use Src\Assessment\Application\Attempts\SubmitAttempt;
 use Src\Assessment\Application\Attempts\UploadDrawing;
+use Src\Assessment\Interface\Http\QuestionImageResponse;
 use Src\Assessment\Interface\Http\Requests\IntegrityEventRequest;
 use Src\Assessment\Interface\Http\Requests\MoveQuestionRequest;
 use Src\Assessment\Interface\Http\Requests\SaveAnswerRequest;
@@ -77,6 +79,12 @@ final class AttemptController extends ApiController
         $upload->execute($actors->fromRequest($request), $id, $questionId, $request->source(), $request->contents(), $request->ip());
 
         return response()->noContent();
+    }
+
+    /** A picture of a question the section lets the candidate see now (an `<img>` may call it; no session header is needed). */
+    public function image(Request $request, int $id, int $questionId, int $imageId, ActorResolver $actors, GetAttemptQuestionImage $get): Response
+    {
+        return QuestionImageResponse::of($get->execute($actors->fromRequest($request), $id, $questionId, $imageId, $request->ip()));
     }
 
     public function reportEvent(IntegrityEventRequest $request, int $id, ActorResolver $actors, ReportIntegrityEvent $report): Response

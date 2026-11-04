@@ -3,6 +3,8 @@
 namespace Src\Assessment\Application\Authoring;
 
 use Src\Assessment\Domain\ExampleReportRepository;
+use Src\Assessment\Domain\QuestionImage;
+use Src\Assessment\Domain\QuestionImageRepository;
 use Src\Assessment\Domain\TestRepository;
 use Src\Shared\Application\Actor;
 use Src\Shared\Application\FileStorage;
@@ -18,6 +20,8 @@ final readonly class DeleteTest
         private AuthoringAccess $access,
         private TestRepository $tests,
         private ExampleReportRepository $examples,
+        private QuestionImageRepository $pictures,
+        private QuestionImages $images,
         private FileStorage $files,
         private TransactionManager $transactions,
     ) {}
@@ -31,7 +35,9 @@ final readonly class DeleteTest
     {
         $author = $this->access->author($actor);
 
-        $example = $this->transactions->run(function () use ($author, $testId) {
+        $pictures = [];
+
+        $example = $this->transactions->run(function () use ($author, $testId, &$pictures) {
             $test = $this->access->ownedTest($author, $testId, true);
 
             if (! $test->isDraft()) {
@@ -39,10 +45,13 @@ final readonly class DeleteTest
             }
 
             $example = $this->examples->find($testId);
+            $pictures = array_map(static fn (QuestionImage $image): string => $image->path, $this->pictures->ofTest($testId));
             $this->tests->delete($testId);
 
             return $example;
         });
+
+        $this->images->discard($pictures);
 
         // The row of the example report went with the draft; its file goes too.
         if ($example !== null) {

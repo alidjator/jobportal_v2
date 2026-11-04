@@ -5,6 +5,7 @@ namespace Src\Assessment\Interface\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Domain\Question;
+use Src\Assessment\Domain\QuestionImage;
 use Src\Assessment\Domain\QuestionOption;
 
 /**
@@ -29,12 +30,22 @@ final class QuestionResource extends JsonResource
             'think_seconds' => $this->resource->thinkSeconds,
             'answer_seconds' => $this->resource->answerSeconds,
             'max_retakes' => $this->resource->maxRetakes,
-            'options' => array_map(static fn (QuestionOption $option): array => [
+            /** The pictures of the question in the order shown; `GET tests/{id}/images/{imageId}` sends one. */
+            'images' => array_map($this->image(...), $this->resource->images),
+            'options' => array_map(fn (QuestionOption $option): array => [
                 'label' => $option->label,
+                /** The picture of the option, or null. */
+                'image' => $option->image === null ? null : $this->image($option->image),
                 'is_correct' => $option->isCorrect,
                 'score_value' => $option->scoreValue,
                 'scale_key' => $option->scaleKey,
             ], $this->resource->options),
         ];
+    }
+
+    /** @return array{id: int|null, alt: string, width: int, height: int} */
+    private function image(QuestionImage $image): array
+    {
+        return ['id' => $image->id, 'alt' => $image->alt, 'width' => $image->width, 'height' => $image->height];
     }
 }

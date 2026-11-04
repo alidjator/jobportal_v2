@@ -23,6 +23,10 @@ final class AssessmentSettings
 
     public const string MAX_DRAWING_MEGABYTES = 'assessment.max_drawing_megabytes';
 
+    public const string MAX_QUESTION_IMAGES = 'assessment.max_question_images';
+
+    public const string MAX_QUESTION_IMAGE_MEGABYTES = 'assessment.max_question_image_megabytes';
+
     public const string VIDEO_RETENTION_DAYS = 'assessment.video_retention_days';
 
     public const string MAX_VIDEO_MEGABYTES = 'assessment.max_video_megabytes';
@@ -83,6 +87,14 @@ final class AssessmentSettings
             SettingDefinition::integer(
                 self::MAX_DRAWING_MEGABYTES, 5, 1, 20,
                 'The largest drawing a candidate may upload (JPG or PNG), in megabytes.',
+            ),
+            SettingDefinition::integer(
+                self::MAX_QUESTION_IMAGES, 4, 1, 8,
+                'The most pictures one question may show (the options have one each).',
+            ),
+            SettingDefinition::integer(
+                self::MAX_QUESTION_IMAGE_MEGABYTES, 2, 1, 5,
+                'The largest picture an author may put on a question or an option (JPEG, PNG or WebP), in megabytes.',
             ),
             SettingDefinition::integer(
                 self::VIDEO_RETENTION_DAYS, 90, 1, 365,

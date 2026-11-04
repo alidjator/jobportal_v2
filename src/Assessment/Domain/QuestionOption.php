@@ -10,5 +10,6 @@ final readonly class QuestionOption
         public bool $isCorrect = false,
         public ?int $scoreValue = null,
         public ?string $scaleKey = null,
+        public ?QuestionImage $image = null,
     ) {}
 }

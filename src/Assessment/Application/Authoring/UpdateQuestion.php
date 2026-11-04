@@ -20,28 +20,36 @@ final readonly class UpdateQuestion
         private SectionRepository $sections,
         private QuestionRepository $questions,
         private QuestionFactory $factory,
+        private QuestionImages $images,
         private TransactionManager $transactions,
     ) {}
 
     /**
      * @throws AccessDenied see `AuthoringAccess::author`
      * @throws EntityNotFound
-     * @throws BusinessRuleViolation `invalid-question`
+     * @throws BusinessRuleViolation `invalid-question`, `invalid-image` or `too-many-images`
      * @throws StateConflict `test-archived` or `test-locked`
      */
     public function execute(Actor $actor, int $questionId, QuestionDraft $draft): Question
     {
         $author = $this->access->author($actor);
 
-        return $this->transactions->run(function () use ($author, $questionId, $draft): Question {
+        $gone = [];
+
+        $question = $this->transactions->run(function () use ($author, $questionId, $draft, &$gone): Question {
             $current = $this->questions->find($questionId) ?? throw EntityNotFound::of('Question', $questionId);
             $section = $this->sections->find($current->sectionId) ?? throw EntityNotFound::of('Section', $current->sectionId);
             $test = $this->access->editableTest($author, $section->testId);
 
             $question = $this->factory->build($test, $section, $draft, $questionId, $current->position);
             $this->questions->update($question);
+            $gone = $this->images->place($test, $question, $draft);
 
             return $this->questions->find($questionId) ?? throw EntityNotFound::of('Question', $questionId);
         });
+
+        $this->images->discard($gone);
+
+        return $question;
     }
 }

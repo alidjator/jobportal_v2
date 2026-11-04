@@ -152,7 +152,7 @@ Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void
     Route::get('invitations/{id}/attachment', [MyInvitationController::class, 'attachment'])->whereNumber('id');
 
     // Taking the test. The server keeps the time and the rules of every section.
-    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'column' => '[0-9]+', 'takeId' => '[0-9]+', 'index' => '[0-9]+'])->group(function (): void {
+    Route::prefix('invitations/{id}')->where(['id' => '[0-9]+', 'questionId' => '[0-9]+', 'imageId' => '[0-9]+', 'column' => '[0-9]+', 'takeId' => '[0-9]+', 'index' => '[0-9]+'])->group(function (): void {
         Route::post('start', [AttemptController::class, 'start']);
         // Every other call carries the token of the device that holds the attempt (`X-Attempt-Session`, issued by `start`).
         Route::middleware(ReadAttemptSession::class)->group(function (): void {
@@ -160,6 +160,7 @@ Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void
             Route::put('attempt/questions/{questionId}/answer', [AttemptController::class, 'saveAnswer']);
             Route::delete('attempt/questions/{questionId}/answer', [AttemptController::class, 'clearAnswer']);
             Route::post('attempt/questions/{questionId}/drawing', [AttemptController::class, 'uploadDrawing']);
+            Route::get('attempt/questions/{questionId}/images/{imageId}', [AttemptController::class, 'image']);
             Route::get('attempt/questions/{questionId}/video', [VideoTakeController::class, 'show']);
             Route::post('attempt/questions/{questionId}/video/takes', [VideoTakeController::class, 'start']);
             Route::put('attempt/questions/{questionId}/video/takes/{takeId}/chunks/{index}', [VideoTakeController::class, 'chunk']);

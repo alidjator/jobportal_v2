@@ -9,6 +9,7 @@ use Src\Assessment\Application\Attempts\AttemptView;
 use Src\Assessment\Application\Attempts\DeliveredQuestion;
 use Src\Assessment\Domain\Answer;
 use Src\Assessment\Domain\Question;
+use Src\Assessment\Domain\QuestionImage;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionType;
 
@@ -92,6 +93,8 @@ final class AttemptResource extends JsonResource
             'id' => $question->id,
             'type' => $question->type->value,
             'text' => $question->text,
+            /** The pictures of the question in the order shown; `GET .../attempt/questions/{questionId}/images/{imageId}` sends one. */
+            'images' => array_map(static fn (QuestionImage $image): array => ['id' => $image->id, 'alt' => $image->alt, 'width' => $image->width, 'height' => $image->height], $question->images),
             'options' => $this->options($question),
             'answer' => $delivered->answer instanceof Answer ? [
                 'option_positions' => $delivered->answer->optionPositions,
@@ -103,13 +106,17 @@ final class AttemptResource extends JsonResource
         ];
     }
 
-    /** @return list<array{position: int, label: string}> */
+    /** @return list<array{position: int, label: string, image: array{id: int|null, alt: string, width: int, height: int}|null}> */
     private function options(Question $question): array
     {
         if (! $question->type->hasChoices()) {
             return [];
         }
 
-        return array_map(static fn (QuestionOption $option, int $index): array => ['position' => $index + 1, 'label' => $option->label], $question->options, array_keys($question->options));
+        return array_map(static fn (QuestionOption $option, int $index): array => [
+            'position' => $index + 1,
+            'label' => $option->label,
+            'image' => $option->image === null ? null : ['id' => $option->image->id, 'alt' => $option->image->alt, 'width' => $option->image->width, 'height' => $option->image->height],
+        ], $question->options, array_keys($question->options));
     }
 }
