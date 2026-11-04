@@ -147,6 +147,7 @@ Route::middleware('auth:user')->prefix('me/assessment')->group(function (): void
     Route::get('invitations', [MyInvitationController::class, 'index']);
     Route::get('invitations/{id}', [MyInvitationController::class, 'show'])->whereNumber('id');
     Route::get('invitations/{id}/practice', [MyInvitationController::class, 'practice'])->whereNumber('id');
+    Route::get('invitations/{id}/practice/questions/{questionId}/images/{imageId}', [MyInvitationController::class, 'practiceImage'])->whereNumber(['id', 'questionId', 'imageId']);
     Route::get('invitations/{id}/explanation', [MyInvitationController::class, 'explanation'])->whereNumber('id');
     Route::post('invitations/{id}/decline', [MyInvitationController::class, 'decline'])->whereNumber('id');
     Route::get('invitations/{id}/attachment', [MyInvitationController::class, 'attachment'])->whereNumber('id');

@@ -8,9 +8,11 @@ use Illuminate\Http\Response;
 use Src\Assessment\Application\Delivery\DeclineInvitation;
 use Src\Assessment\Application\Delivery\GetInvitationAttachment;
 use Src\Assessment\Application\Delivery\GetPractice;
+use Src\Assessment\Application\Delivery\GetPracticeQuestionImage;
 use Src\Assessment\Application\Delivery\MyInvitations;
 use Src\Assessment\Application\Reports\GetMyExplanation;
 use Src\Assessment\Interface\Http\AttachmentResponse;
+use Src\Assessment\Interface\Http\QuestionImageResponse;
 use Src\Assessment\Interface\Http\Requests\ListMyInvitationsRequest;
 use Src\Assessment\Interface\Http\Resources\MyExplanationResource;
 use Src\Assessment\Interface\Http\Resources\MyInvitationResource;
@@ -38,6 +40,12 @@ final class MyInvitationController extends ApiController
     public function practice(Request $request, int $id, ActorResolver $actors, GetPractice $get): PracticeResource
     {
         return new PracticeResource($get->execute($actors->fromRequest($request), $id));
+    }
+
+    /** A picture of a sample question of the practice (the same access as the practice itself). */
+    public function practiceImage(Request $request, int $id, int $questionId, int $imageId, ActorResolver $actors, GetPracticeQuestionImage $get): Response
+    {
+        return QuestionImageResponse::of($get->execute($actors->fromRequest($request), $id, $questionId, $imageId));
     }
 
     /** The candidate turns the test down before starting it. */

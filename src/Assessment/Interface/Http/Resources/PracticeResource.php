@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Src\Assessment\Application\Delivery\PracticeSection;
 use Src\Assessment\Application\Delivery\PracticeView;
 use Src\Assessment\Domain\Question;
+use Src\Assessment\Domain\QuestionImage;
 use Src\Assessment\Domain\QuestionOption;
 use Src\Assessment\Domain\QuestionType;
 
@@ -41,10 +42,13 @@ final class PracticeResource extends JsonResource
             'id' => $question->id,
             'type' => $question->type->value,
             'text' => $question->text,
+            /** The pictures of the question in the order shown; `GET .../practice/questions/{questionId}/images/{imageId}` sends one. */
+            'images' => array_map(static fn (QuestionImage $image): array => ['id' => $image->id, 'alt' => $image->alt, 'width' => $image->width, 'height' => $image->height], $question->images),
             'options' => $choices ? array_map(static fn (QuestionOption $option, int $index): array => [
                 'position' => $index + 1,
                 'label' => $option->label,
                 'is_correct' => $option->isCorrect,
+                'image' => $option->image === null ? null : ['id' => $option->image->id, 'alt' => $option->image->alt, 'width' => $option->image->width, 'height' => $option->image->height],
             ], $question->options, array_keys($question->options)) : [],
             /** The answers a number or short-text question accepts; empty for the other types. */
             'accepted_answers' => in_array($question->type, [QuestionType::Number, QuestionType::ShortText], true)

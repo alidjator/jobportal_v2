@@ -319,4 +319,28 @@ final class QuestionImagesTest extends FeatureTestCase
 
         $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/attempt/questions/{$question}/images/{$picture}", [], $this->tokenFor($this->seeker('wawan@example.test')), ['X-Attempt-Session' => (string) $this->attemptSession])->assertNotFound();
     }
+
+    public function test_the_practice_shows_the_pictures_of_a_sample_question_and_no_other(): void
+    {
+        [$id, $sectionId] = $this->newTestWithSection();
+        $sample = (int) $this->company('POST', "sections/{$sectionId}/questions", [...$this->oddOneOut($id, 'Sample'), 'is_sample' => true])->assertCreated()->json('data.id');
+        $real = (int) $this->company('POST', "sections/{$sectionId}/questions", $this->oddOneOut($id, 'Real'))->assertCreated()->json('data.id');
+        $this->company('POST', "tests/{$id}/publish")->assertOk();
+        $this->sendTest($id);
+
+        $practice = $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice", [], $this->seekerToken)->assertOk()->assertJsonCount(1, 'data.sections.0.questions');
+        $question = $practice->json('data.sections.0.questions.0');
+        $this->assertSame($sample, $question['id']);
+        $this->assertSame([], $question['images']);
+        $this->assertSame('Sample C of five', $question['options'][2]['image']['alt']);
+        $this->assertArrayNotHasKey('path', $question['options'][2]['image']);
+
+        $imageId = (int) $question['options'][2]['image']['id'];
+        $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$sample}/images/{$imageId}", [], $this->seekerToken)->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+
+        $realImage = (int) DB::table('assessment_question_images')->where('question_id', $real)->value('id');
+        $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$real}/images/{$realImage}", [], $this->seekerToken)->assertNotFound();
+        $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$sample}/images/{$realImage}", [], $this->seekerToken)->assertNotFound();
+        $this->api('GET', "/me/assessment/invitations/{$this->invitationId}/practice/questions/{$sample}/images/{$imageId}", [], $this->tokenFor($this->seeker('yanti@example.test')))->assertNotFound();
+    }
 }
