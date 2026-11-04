@@ -21,6 +21,7 @@ use Src\Assessment\Application\Export\AssessmentDataExporter;
 use Src\Assessment\Application\Invitations\InvitationLinkBuilder;
 use Src\Assessment\Application\Invitations\InvitationSender;
 use Src\Assessment\Application\Invitations\InvitationThrottle;
+use Src\Assessment\Application\Library\Figural\FigureRenderer;
 use Src\Assessment\Application\Notices\ProviderNoticeSender;
 use Src\Assessment\Application\Reports\ReportPdfRenderer;
 use Src\Assessment\Application\Reports\ReportVerificationLinks;
@@ -65,6 +66,7 @@ use Src\Assessment\Domain\TestRepository;
 use Src\Assessment\Domain\VideoTakeRepository;
 use Src\Assessment\Infrastructure\Calendar\ApplicantAssessmentAgenda;
 use Src\Assessment\Infrastructure\Calendar\AssessmentDueCalendarSource;
+use Src\Assessment\Infrastructure\Figures\GdFigureRenderer;
 use Src\Assessment\Infrastructure\Listeners\AdvanceApplicationListener;
 use Src\Assessment\Infrastructure\Listeners\CopyDefaultTestsWhenJobCloned;
 use Src\Assessment\Infrastructure\Listeners\EraseAssessmentDataWhenUserAnonymized;
@@ -110,6 +112,7 @@ use Src\Assessment\Infrastructure\Tasks\MyScoringTask;
 use Src\Assessment\Interface\Console\AutoSubmitAttemptsCommand;
 use Src\Assessment\Interface\Console\CreatePsychologistCommand;
 use Src\Assessment\Interface\Console\ExpireInvitationsCommand;
+use Src\Assessment\Interface\Console\InstallFiguralReasoningTestCommand;
 use Src\Assessment\Interface\Console\NotifyOfLicenceExpiryCommand;
 use Src\Assessment\Interface\Console\NotifyOfReviewsWaitingCommand;
 use Src\Assessment\Interface\Console\PurgeArchivedExaminationsCommand;
@@ -161,6 +164,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
         SectionRepository::class => DatabaseSectionRepository::class,
         QuestionRepository::class => DatabaseQuestionRepository::class,
         QuestionImageRepository::class => DatabaseQuestionImageRepository::class,
+        FigureRenderer::class => GdFigureRenderer::class,
         NormRepository::class => DatabaseNormRepository::class,
         RecommendationRuleRepository::class => DatabaseRecommendationRuleRepository::class,
         ReportTemplateRepository::class => DatabaseReportTemplateRepository::class,
@@ -210,7 +214,7 @@ final class AssessmentServiceProvider extends ContextServiceProvider
             $sources->add($this->app->make(ApplicantAssessmentAgenda::class));
         });
 
-        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class, NotifyOfReviewsWaitingCommand::class, NotifyOfLicenceExpiryCommand::class, PurgeArchivedExaminationsCommand::class, ShowArchivedExaminationCommand::class, PurgeOrphanQuestionImagesCommand::class]);
+        $this->commands([CreatePsychologistCommand::class, ExpireInvitationsCommand::class, SendInvitationRemindersCommand::class, AutoSubmitAttemptsCommand::class, PurgeExpiredVideosCommand::class, PurgeStaleVideoChunksCommand::class, NotifyOfReviewsWaitingCommand::class, NotifyOfLicenceExpiryCommand::class, PurgeArchivedExaminationsCommand::class, ShowArchivedExaminationCommand::class, PurgeOrphanQuestionImagesCommand::class, InstallFiguralReasoningTestCommand::class]);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command(SendInvitationRemindersCommand::class)->hourly()->withoutOverlapping()->onOneServer();

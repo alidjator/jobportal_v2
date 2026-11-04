@@ -321,6 +321,7 @@ Every error is an RFC 9457 problem document (`application/problem+json`) with `t
 | `legal-entity-inactive` | 409 | Organization | The legal entity is inactive. |
 | `legal-entity-name-taken` | 409 | Organization | The group already has a legal entity with this name. |
 | `legal-entity-required` | 422 | Organization | The legal entity is required. |
+| `library-test-exists` | 409 | Assessment | The figural reasoning test is already in the library. Archive or delete it first. |
 | `licence-already-expired` | 422 | Assessment | The licence has expired already. |
 | `licence-decided` | 409 | Assessment | This licence was decided already. |
 | `licence-pending` | 409 | Assessment | A submission of this licence is waiting for a decision. |
